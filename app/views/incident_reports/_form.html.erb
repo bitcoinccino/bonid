@@ -1,0 +1,16 @@
+
+<%= simple_form_for incident_report do |f| %>
+  <%= f.input :crime_type, collection: IncidentReport::CRIME_TYPES.values.flatten, prompt: "Select Type" %>
+  <%= f.input :description %>
+  <%= f.input :occurred_at, as: :datetime %>
+  <%= f.simple_fields_for :address do |a| %>
+    <%= a.input :department_id %>
+    <%= a.input :commune_id %>
+    <%= a.input :communal_section_id %>
+    <%= a.input :postal_code %>
+    <%= a.input :street_address %>
+    <%= a.input :locality %>
+  <% end %>
+  <%= f.input :media, as: :file, input_html: { multiple: true } %>
+  <%= f.button :submit %>
+<% end %>

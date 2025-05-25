@@ -1,0 +1,267 @@
+<%= render "shared/navbar" %>
+<div style="padding-top: 60px;"></div>
+
+<div class="container d-flex align-items-center justify-content-center min-vh-100 bg-light">
+  <div class="form-container p-4 rounded-3 bg-white shadow-sm w-100" style="max-width: 500px;">
+    <!-- Header with Logo/Icon -->
+    <div class="text-center mb-4">
+      <div class="d-flex justify-content-center align-items-center mb-3">
+        <%= image_tag "bonid_logo.png", alt: "BonID Logo", class: "logo-img me-2", style: "max-width: 40px;" if asset_exists?("bonid_logo.png") %>
+        <h2 class="h4 text-primary mb-0"><i class="ri-edit-line me-2"></i> Edit Profile</h2>
+      </div>
+      <p class="text-muted small">Update your BonID account details</p>
+    </div>
+
+    <!-- Error Messages -->
+    <% if resource.errors.any? %>
+      <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+        <ul class="mb-0">
+          <% resource.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
+
+    <!-- Edit Profile Form -->
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f| %>
+      <div class="mb-3">
+        <%= f.label :email, class: "form-label fw-bold" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control rounded-3", placeholder: "Enter your email", aria_label: "Email address" %>
+      </div>
+
+      <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+        <div class="alert alert-info rounded-3 mb-3">
+          Currently waiting confirmation for: <%= resource.unconfirmed_email %>
+        </div>
+      <% end %>
+
+      <div class="mb-3">
+        <%= f.label :password, class: "form-label fw-bold" %>
+        <%= f.password_field :password, autocomplete: "new-password", class: "form-control rounded-3", placeholder: "New password (leave blank to keep current)", aria_label: "New password" %>
+        <small class="text-muted form-text">Leave blank if you don’t want to change it</small>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :password_confirmation, class: "form-label fw-bold" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control rounded-3", placeholder: "Confirm new password", aria_label: "Password confirmation" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :current_password, class: "form-label fw-bold" %>
+        <%= f.password_field :current_password, autocomplete: "current-password", class: "form-control rounded-3", placeholder: "Current password", aria_label: "Current password" %>
+        <small class="text-muted form-text">We need your current password to confirm your changes</small>
+      </div>
+
+      <div class="d-grid">
+        <%= f.submit "Update", class: "btn btn-primary fw-semibold rounded-3", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Update your profile", aria_label: "Update profile" %>
+      </div>
+    <% end %>
+
+    <!-- Cancel Account -->
+    <div class="mt-5">
+      <h3 class="text-primary mb-3">Cancel My Account</h3>
+      <p class="text-muted small mb-3">Unhappy? You can cancel your account below.</p>
+      <%= button_to "Cancel My Account",
+                    registration_path(resource_name),
+                    data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" },
+                    method: :delete,
+                    class: "btn btn-danger fw-semibold rounded-3 w-100",
+                    data: { bs_toggle: "tooltip", bs_placement: "top" },
+                    title: "Permanently delete your account",
+                    aria_label: "Cancel account" %>
+    </div>
+
+    <!-- Back Link -->
+    <div class="text-center mt-4">
+      <%= link_to "Back",
+                  :back,
+                  class: "text-decoration-none text-primary",
+                  data: { bs_toggle: "tooltip", bs_placement: "top" },
+                  title: "Return to previous page",
+                  aria_label: "Go back" %>
+    </div>
+  </div>
+</div>
+
+<%= render "shared/footer" %>
+
+<!-- Custom CSS -->
+<style>
+  /* Reset browser defaults */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Sticky footer and full-width styles */
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .main-content {
+    flex: 1 0 auto;
+    width: 100%;
+  }
+
+  .navbar, footer {
+    flex-shrink: 0;
+    width: 100vw;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .container-fluid {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  /* BonID Styles */
+  .bg-light {
+    background-color: #F8F9FA !important; /* Light Gray */
+  }
+
+  .form-container {
+    max-width: 500px;
+    background-color: #FFFFFF; /* Pure White */
+    border: 1px solid #F8F9FA; /* Light Gray */
+    transition: all 0.3s ease;
+  }
+
+  .text-primary {
+    color: #3366CC !important; /* Ocean Blue */
+  }
+
+  .text-muted {
+    color: #6C757D !important; /* Mid Gray */
+  }
+
+  .btn-primary {
+    background-color: #00209F; /* Haitian Blue */
+    border-color: #00209F;
+    color: #FFFFFF;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #001A80; /* Darker Haitian Blue */
+    border-color: #001A80;
+  }
+
+  .btn-danger {
+    background-color: #E63946; /* Coral Red */
+    border-color: #E63946;
+    color: #FFFFFF;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .btn-danger:hover {
+    background-color: #D32F3B; /* Darker Coral Red */
+    border-color: #D32F3B;
+  }
+
+  .form-control {
+    border: 1px solid #6C757D; /* Mid Gray */
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .form-control:focus {
+    border-color: #3366CC; /* Ocean Blue */
+    box-shadow: 0 0 0 0.2rem rgba(51, 102, 204, 0.25);
+  }
+
+  .form-text {
+    font-size: 0.8rem;
+    color: #6C757D; /* Mid Gray */
+  }
+
+  .alert-danger {
+    background-color: rgba(230, 57, 70, 0.1); /* Coral Red with opacity */
+    border-color: #E63946; /* Coral Red */
+    color: #343A40; /* Dark Gray */
+    border  border-radius: 0.5rem;
+  }
+
+  .alert-danger .btn-close {
+    filter: invert(0.5);
+  }
+
+  .alert-info {
+    background-color: rgba(51, 102, 204, 0.1); /* Ocean Blue with opacity */
+    border-color: #3366CC; /* Ocean Blue */
+    color: #343A40; /* Dark Gray */
+    border-radius: 0.5rem;
+  }
+
+  .text-decoration-none:hover {
+    color: #00209F !important; /* Haitian Blue */
+  }
+
+  .logo-img {
+    max-width: 40px;
+    height: auto;
+  }
+
+  /* Tooltip styles */
+  .tooltip-inner {
+    background-color: #343A40; /* Dark Gray */
+    color: #FFFFFF;
+    border-radius: 0.5rem;
+  }
+
+  .tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #343A40;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .form-container {
+      padding: 1rem;
+      max-width: 400px;
+    }
+    .btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+    }
+    .form-control {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.6rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+    }
+    h3 {
+      font-size: 1.25rem;
+    }
+    .logo-img {
+      max-width: 32px;
+    }
+    .text-muted {
+      font-size: 0.8rem;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+</script>

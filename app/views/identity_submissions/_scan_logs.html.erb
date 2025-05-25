@@ -1,0 +1,46 @@
+<!-- app/views/identity_submissions/_scan_logs.html.erb -->
+<div class="collapse mt-3" id="qrScanHistory">
+  <% if submission.qr_scan_logs.any? %>
+    <h5 class="fw-bold text-primary mb-3"><i class="ri-eye-line me-2"></i> QR Scan Logs</h5>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped table-sm align-middle rounded-3 overflow-hidden">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>IP</th>
+            <th>Country</th>
+            <th>City</th>
+            <th>Region</th>
+            <th>ISP</th>
+            <th>Scanned At</th>
+            <th>Verified By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% submission.qr_scan_logs.order(scanned_at: :desc).each_with_index do |scan, index| %>
+            <tr class="<%= 'table-warning' if index == 0 %>">
+              <td>
+                <%= index + 1 %>
+                <% if index == 0 %>
+                  <span class="badge bg-primary ms-2">Last Scan</span>
+                <% end %>
+              </td>
+              <td><%= scan.ip_address %></td>
+              <td><%= scan.country || "N/A" %></td>
+              <td><%= scan.city || "-" %></td>
+              <td><%= scan.region || "-" %></td>
+              <td><%= scan.organization || "-" %></td>
+              <td><%= scan.scanned_at.strftime("%b %d, %Y %I:%M %p") %></td>
+              <td><span class="badge bg-light text-dark border border-primary rounded-pill">
+                <%= scan.verified_by.presence || "Unknown" %>
+              </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-muted mb-0">No scan history available.</p>
+  <% end %>
+</div>

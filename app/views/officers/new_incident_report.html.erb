@@ -1,0 +1,61 @@
+<%= render "shared/navbar" %>
+
+<!-- app/views/officers/new_incident_report.html.erb -->
+<div class="container-fluid my-5" style="max-width: 800px">
+  <h1 class="fw-bold mb-4">Submit New Incident Report</h1>
+  <%= simple_form_for @incident_report, url: create_officer_incident_report_path, html: { multipart: true } do |f| %>
+  <%= f.error_notification %>
+  <%= render "officers/incident_reports/form_sections/accordion1", f: f %>
+  <%= render "officers/incident_reports/form_sections/accordion2", f: f %>
+<% end %>
+</div>
+
+
+  <script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const bonidInput = document.querySelector("[data-bonid-lookup-target='input']");
+      const editBtn = document.querySelector("[data-bonid-lookup-target='editBtn']");
+      const resultDiv = document.querySelector("[data-bonid-lookup-target='result']");
+
+      if (bonidInput) {
+        bonidInput.addEventListener("blur", function() {
+          // Fetch and display BonID details
+          fetchBonIDDetails(bonidInput.value);
+        });
+      }
+
+      if (editBtn) {
+        editBtn.addEventListener("click", function() {
+          bonidInput.value = "";
+          resultDiv.innerHTML = "";
+          editBtn.classList.add("d-none");
+        });
+      }
+
+      function fetchBonIDDetails(bonid) {
+        // Simulate an API call to fetch BonID details
+        setTimeout(() => {
+          resultDiv.innerHTML = `BonID Details: ${bonid}`;
+          editBtn.classList.remove("d-none");
+        }, 1000);
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+  const form = document.querySelector("form");
+  const firstInvalid = form?.querySelector(".is-invalid");
+
+  if (firstInvalid) {
+    const collapse = firstInvalid.closest(".accordion-collapse");
+    if (collapse && !collapse.classList.contains("show")) {
+      const button = document.querySelector(`button[data-bs-target="#${collapse.id}"]`);
+      if (button) button.click();
+    }
+    firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    firstInvalid.focus();
+  }
+});
+
+  </script>
+

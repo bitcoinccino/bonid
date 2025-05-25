@@ -1,0 +1,479 @@
+
+<%= render "partner_applications/flash_messages" %>
+<!-- Partner Application Form -->
+<section id="partner-form" class="container py-5" role="main" aria-labelledby="partner-form-title">
+  <h2 id="partner-form-title" class="h4 fw-bold text-primary text-center mb-5">
+  <% if @partner_application.persisted? %>
+    Edit Partner Application
+    <span class="badge bg-warning text-dark ms-2">Editing</span>
+  <% else %>
+    Apply to Become a BonID Partner
+      <p class="text-muted text-center mb-4">
+    Join us in revolutionizing identity verification in Haiti. Fill out the form below to apply.</p>
+  <% end %>
+</h2>
+ <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+      <div class="card shadow-sm rounded-4 bg-white p-4 p-md-5">
+      <%= simple_form_for @partner_application, url: @partner_application.persisted? ? [:admin, @partner_application] : partner_applications_path, html: { class: "needs-validation", novalidate: true, data: { controller: "form-validation" } } do |f| %>
+
+      
+         <%= f.error_notification %> 
+          <!-- Honeypot Field -->
+          <%= f.input :contact_code, as: :hidden, input_html: { autocomplete: "off", value: "", data: { form_validation_target: "honeypot" } } %>
+
+          <!-- Accordion for Form Sections -->
+          <div class="accordion accordion-flush" id="partnerFormAccordion">
+            <!-- Logo Upload Section -->
+            <div class="accordion-item border rounded-3 mb-3">
+              <h2 class="accordion-header" id="logoHeading">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#logoSection" aria-expanded="false" aria-controls="logoSection" aria-label="Toggle organization logo section">
+                  <i class="ri-image-line me-2 text-primary"></i> Organization Logo
+                </button>
+              </h2>
+              <div id="logoSection" class="accordion-collapse collapse" data-bs-parent="#partnerFormAccordion">
+                <div class="accordion-body p-4">
+                  <%= f.input :logo,
+                              label: "Upload Logo (Optional)",
+                              as: :file,
+                              input_html: { accept: "image/*", class: "form-control rounded-3" },
+                              hint: "PNG, JPG, or SVG — displayed on public partner listings.",
+                              wrapper_html: { class: "mb-0" } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Organization Info Section -->
+            <div class="accordion-item border rounded-3 mb-3">
+              <h2 class="accordion-header" id="orgInfoHeading">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#orgInfoSection" aria-expanded="false" aria-controls="orgInfoSection" aria-label="Toggle organization information section">
+                  <i class="ri-building-line me-2 text-primary"></i> Organization Information
+                </button>
+              </h2>
+              <div id="orgInfoSection" class="accordion-collapse collapse" data-bs-parent="#partnerFormAccordion">
+                <div class="accordion-body p-4">
+                  <%= f.input :organization_name,
+                              label: "Organization Name",
+                              required: true,
+                              input_html: { placeholder: "e.g., Unibank", class: "form-control rounded-3", data: { form_validation_target: "input" } },
+                              wrapper_html: { class: "mb-3" } %>
+                 
+                                <%= f.label :description, "Organization Description", class: "form-label fw-bold" %>
+                                <%= f.text_area :description, rows: 4, class: "form-control rounded-3", placeholder: "Briefly describe your organization and how you plan to use BonID" %>
+
+
+                  <%= f.input :website,
+                              label: "Website (Optional)",
+                              input_html: { placeholder: "e.g., https://unibank.ht", class: "form-control rounded-3", data: { form_validation_target: "input" } },
+                              wrapper_html: { class: "mb-0" } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Primary Contact Section -->
+            <div class="accordion-item border rounded-3 mb-3">
+              <h2 class="accordion-header" id="contactHeading">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#contactSection" aria-expanded="false" aria-controls="contactSection" aria-label="Toggle primary contact section">
+                  <i class="ri-user-line me-2 text-primary"></i> Primary Contact
+                </button>
+              </h2>
+              <div id="contactSection" class="accordion-collapse collapse" data-bs-parent="#partnerFormAccordion">
+                <div class="accordion-body p-4">
+                  <%= f.input :contact_person,
+                              label: "Full Name",
+                              required: true,
+                              input_html: { placeholder: "e.g., Jean Doe", class: "form-control rounded-3", data: { form_validation_target: "input" } },
+                              wrapper_html: { class: "mb-3" } %>
+                  <%= f.input :email,
+                              label: "Email Address",
+                              required: true,
+                              input_html: { placeholder: "e.g., hello@unibank.ht", class: "form-control rounded-3", data: { form_validation_target: "input" } },
+                              wrapper_html: { class: "mb-3" } %>
+                  <%= f.input :phone_number,
+                              label: "Phone Number (Optional)",
+                              as: :tel,
+                              input_html: { placeholder: "+509 3456 7890", class: "form-control rounded-3", data: { form_validation_target: "input" } },
+                              wrapper_html: { class: "mb-0" } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Address Information Section -->
+            <div class="accordion-item border rounded-3 mb-3">
+              <h2 class="accordion-header" id="addressHeading">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#addressSection" aria-expanded="false" aria-controls="addressSection" aria-label="Toggle address information section">
+                  <i class="ri-map-pin-line me-2 text-primary"></i> Address Information
+                </button>
+              </h2>
+              <div id="addressSection" class="accordion-collapse collapse" data-bs-parent="#partnerFormAccordion">
+                <div class="accordion-body p-4">
+                  <%= f.simple_fields_for :address do |a| %>
+                    <div class="row g-3" data-controller="address">
+                      <div class="col-md-6">
+                        <%= a.input :department_id,
+                                    collection: Department.all.map { |d| [d.name, d.id] },
+                                    prompt: "Select Department",
+                                    input_html: {
+                                      class: "form-select rounded-3",
+                                      data: {
+                                        action: "change->address#loadArrondissements",
+                                        address_target: "department",
+                                        slug_map: Department.all.index_by(&:id).transform_values(&:slug).to_json
+                                      }
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :arrondissement_id,
+                                    collection: [],
+                                    prompt: "Select Arrondissement",
+                                    input_html: {
+                                      class: "form-select rounded-3",
+                                      data: {
+                                        action: "change->address#loadCommunes",
+                                        address_target: "arrondissement"
+                                      }
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :commune_id,
+                                    collection: [],
+                                    prompt: "Select Commune",
+                                    input_html: {
+                                      class: "form-select rounded-3",
+                                      data: {
+                                        action: "change->address#loadCommunalSections",
+                                        address_target: "commune"
+                                      }
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :communal_section_id,
+                                    collection: [],
+                                    prompt: "Select Section Communale",
+                                    input_html: {
+                                      class: "form-select rounded-3",
+                                      data: {
+                                        action: "change->address#loadPostalCode",
+                                        address_target: "section"
+                                      }
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :postal_code,
+                                    input_html: {
+                                      class: "form-control rounded-3",
+                                      readonly: true,
+                                      placeholder: "HT0000",
+                                      data: { address_target: "postalCode" }
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :street_address,
+                                    input_html: {
+                                      class: "form-control rounded-3",
+                                      placeholder: "e.g., 123 Rue Principale"
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :locality,
+                                    input_html: {
+                                      class: "form-control rounded-3",
+                                      placeholder: "e.g., Quartier Morin"
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-3" } %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :country,
+                                    as: :select,
+                                    collection: ["Haiti", "Dominican Republic", "USA", "Canada", "France", "Brazil", "Chile", "Mexico"],
+                                    selected: "Haiti",
+                                    prompt: "Select Country",
+                                    input_html: {
+                                      class: "form-select rounded-3"
+                                    },
+                                    label_html: { class: "form-label fw-bold" },
+                                    wrapper_html: { class: "mb-0" } %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Use & Industry Section -->
+             <!-- Use & Industry Section -->
+    <div class="accordion-item border rounded-3 mb-3">
+      <h2 class="accordion-header" id="useIndustryHeading">
+        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#useIndustrySection" aria-expanded="false" aria-controls="useIndustrySection" aria-label="Toggle use and industry section">
+          <i class="ri-briefcase-line me-2 text-primary"></i> Use & Industry
+        </button>
+      </h2>
+      <div id="useIndustrySection" class="accordion-collapse collapse" data-bs-parent="#partnerFormAccordion">
+        <div class="accordion-body p-4" data-controller="sector">
+          <%= f.input :department_sector,
+                      as: :grouped_select,
+                      collection: PartnerApplication.department_sectors,
+                      group_method: :last,
+                      group_label_method: :first,
+                      label_method: :first,
+                      value_method: :last,
+                      prompt: "Select a sector",
+                      input_html: { class: "form-select rounded-3", data: { sector_target: "sectorSelect", action: "change->sector#toggleUnitFields" } },
+                      wrapper_html: { class: "mb-3" } %>
+
+          <div data-sector-target="unitNameWrapper" class="mb-3 d-none">
+            <%= f.input :unit_name, label: "Unit Name", input_html: { class: "form-control rounded-3" } %>
+          </div>
+
+          <div data-sector-target="unitTypeWrapper" class="mb-3 d-none">
+            <%= f.input :unit_type,
+                        collection: ["BOID", "BRI", "EDUPOL", "POLIFRONT", "SWAT", "POLITOUR", "UTAG", "CIMO", "UDMO", "BLTS", "USGPN", "USP", "BIM", "BAFE"],
+                        prompt: "Select Unit Type",
+                        input_html: { class: "form-select rounded-3" } %>
+          </div>
+
+          <%= f.input :use_cases,
+                      as: :grouped_select,
+                      collection: PartnerApplication.use_cases_for_bonid,
+                      group_method: :last,
+                      group_label_method: :first,
+                      label_method: :first,
+                      value_method: :last,
+                      input_html: { multiple: true, class: "form-select rounded-3", data: { form_validation_target: "input" } },
+                      wrapper_html: { class: "mb-0" } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if Rails.env.production? %>
+    <div class="mb-4 text-center">
+      <div class="g-recaptcha" data-sitekey="<%= ENV['RECAPTCHA_SITE_KEY'] %>"></div>
+      <small class="form-text text-muted">Verify you’re not a robot.</small>
+    </div>
+  <% end %>
+
+  <div class="d-grid mb-3">
+   <%= f.button :submit,
+             @partner_application.persisted? ? "Update Application" : "Submit Application",
+             class: "btn btn-primary fw-semibold rounded-pill py-3",
+             data: { disable_with: "Submitting...", form_validation_target: "submit" } %>
+
+  </div>
+
+  <p class="text-muted small text-center mb-0">
+    Your data is confidential and used solely for BonID partnership evaluation.
+  </p>
+<% end %>
+      </div>
+    </div>
+  </div>
+</section>
+<div style="padding-top: 50px;"></div>
+<%= render "shared/footer" %>
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 1200px;
+    padding: 0 15px;
+  }
+
+  /* Colors */
+  .bg-primary { background-color: #1e40af !important; }
+  .text-primary { color: #1e40af !important; }
+  .bg-success { background-color: #059669 !important; }
+  .text-secondary { color: #6b7280 !important; }
+
+  /* Hero Section */
+  .min-vh-50 {
+    min-height: 50vh;
+  }
+
+  .bg-light {
+    background-color: #f5f5f5 !important;
+  }
+
+  /* Cards */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Accordion */
+  .accordion-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .accordion-button {
+    background: #ffffff;
+    color: #1e40af;
+    font-weight: 600;
+    border-radius: 8px !important;
+    padding: 16px;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background: #eff6ff;
+    color: #1e40af;
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .accordion-body {
+    padding: 24px;
+  }
+
+  /* Form Elements */
+  .form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: #1e40af;
+    border-color: #1e40af;
+  }
+
+  .btn-primary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 12px;
+    }
+    .card {
+      padding: 16px;
+    }
+    .accordion-button {
+      font-size: 0.875rem;
+      padding: 12px;
+    }
+    .accordion-body {
+      padding: 16px;
+    }
+    .btn-lg {
+      font-size: 0.875rem;
+      padding: 10px 20px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    h1.display-5 {
+      font-size: 1.75rem;
+    }
+    .lead {
+      font-size: 1rem;
+    }
+    .form-control, .form-select {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips and Form Validation -->
+<script>
+  // Bootstrap Tooltips
+  document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  // Stimulus Controller for Form Validation
+  import { Controller } from "@hotwired/stimulus";
+  class FormValidationController extends Controller {
+    static targets = ["honeypot", "input", "submit"];
+    connect() {
+      this.element.addEventListener("submit", this.validate.bind(this));
+    }
+    validate(event) {
+      if (this.honeypotTarget.value !== "") {
+        event.preventDefault();
+        return;
+      }
+      let isValid = true;
+      this.inputTargets.forEach(input => {
+        if (input.required && !input.value.trim()) {
+          input.classList.add("is-invalid");
+          isValid = false;
+        } else {
+          input.classList.remove("is-invalid");
+        }
+      });
+      if (!isValid) {
+        event.preventDefault();
+        this.submitTarget.disabled = false;
+      }
+    }
+  }
+</script>

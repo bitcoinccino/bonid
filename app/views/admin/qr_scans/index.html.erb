@@ -1,0 +1,103 @@
+<!-- app/views/admin/qr_scans/index.html.erb -->
+<%=render "shared/navbar" %>
+<section class="container py-5" role="main">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="h4 fw-bold text-primary mb-1">
+      <i class="ri-scan-line me-2"></i>Scan Logs
+    </h2>
+    <p class="text-muted small mb-0">
+      This table logs each unique scan of a BonID QR code. It shows when, where, and by whom a code was scanned — useful for identifying suspicious activity or expired verifications.
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <%= link_to "Export CSV", admin_qr_scans_path(format: :csv), class: "btn btn-outline-primary btn-sm" %>
+  </div>
+</div>
+
+  <!-- Search and Filter -->
+  <%= form_with url: admin_qr_scans_path, method: :get, class: "mb-4" do |f| %>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <%= f.text_field :search, value: params[:search], placeholder: "Search by partner or user...", class: "form-control", aria_label: "Search scan logs" %>
+      </div>
+      <div class="col-md-3">
+        <%= f.select :partner_id, options_for_select([["All Partners", ""]] + Partner.all.map { |p| [p.name, p.id] }, params[:partner_id]), {}, class: "form-select", onchange: "this.form.submit()", aria_label: "Filter by partner" %>
+      </div>
+      <div class="col-md-3">
+        <%= f.text_field :date_range, value: params[:date_range], placeholder: "Select date range...", class: "form-control date-range-picker", aria_label: "Filter by date range" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.submit "Filter", class: "btn btn-primary w-100" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Scan Logs Table -->
+  <div class="table-responsive rounded-3 shadow-sm">
+    <table class="table table-bordered table-hover table-sm align-middle mb-0">
+      <thead class="table-light text-center">
+        <tr>
+          <th>User</th>
+          <th>Scanned By</th>
+          <th>Case Type</th>
+          <th>Date</th>
+          <th>IP Address</th>
+          <th>Location</th>
+          <th>Device</th>
+        </tr>
+      </thead>
+        <tbody>
+  <% @qr_scans.each do |scan| %>
+    <tr>
+      <!-- Verified User -->
+      <td>
+        <%= scan.identity_submission&.user&.full_name || "N/A" %>
+      </td>
+
+      <!-- Scanned By -->
+      <td>
+        <%= scan.partner&.name || scan.verified_by || "N/A" %>
+      </td>
+
+      <!-- Case Type -->
+      <td>
+        <%= scan.identity_submission&.submission_type&.humanize || "—" %>
+      </td>
+
+      <!-- Date -->
+      <td class="text-nowrap text-muted text-center">
+        <%= scan.created_at.strftime("%b %d, %Y %I:%M %p") %>
+      </td>
+
+      <!-- IP Address -->
+      <td class="text-center">
+        <%= scan.ip_address.presence || "N/A" %>
+      </td>
+
+      <!-- Location -->
+      <td>
+        <%= [scan.city, scan.region, scan.country].compact.join(", ").presence || "N/A" %>
+      </td>
+
+      <!-- Device -->
+      <td>
+        <%= truncate(scan.user_agent.to_s, length: 60) %>
+      </td>
+    </tr>
+  <% end %>
+</tbody>
+
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <!-- Empty State -->
+<% if @qr_scans.blank? %>
+  <div class="text-center text-muted mt-5">
+    <i class="ri-information-line display-4"></i>
+    <p class="mt-3">No QR scan records found.</p>
+  </div>
+<% end %>
+
+</section>

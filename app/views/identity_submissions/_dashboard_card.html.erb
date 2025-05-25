@@ -1,0 +1,58 @@
+<!-- app/views/identity_submissions/_dashboard_card.html.erb -->
+<div class="col-lg-6 col-md-12">
+  <div class="card shadow-sm rounded-3 border-0 submission-card bg-white">
+    <div class="card-header header-bg text-white p-3 rounded-top d-flex align-items-center justify-content-between">
+      <h5 class="mb-0">BonID: <%= submission.user&.bonid.presence || "N/A" %></h5>
+    </div>
+    <div class="card-body p-4">
+      <div class="row g-3">
+        <div class="col-6">
+          <strong class="form-label fw-bold">Full Name:</strong><br>
+          <%= [submission.user&.first_name, submission.user&.middle_name, submission.user&.last_name].compact.join(" ") %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Status:</strong><br>
+          <% status_info = submission_status_info(submission) %>
+          <span class="badge <%= status_info[:badge_class] %> rounded-3">
+            <%= status_info[:text] %>
+          </span>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Expires:</strong><br>
+          <%= submission.expires_at&.strftime("%b %d, %Y") || "-" %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Reissued:</strong><br>
+          <%= submission.reissued_at&.strftime("%b %d, %Y") || "-" %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Sex:</strong><br>
+          <%= submission.user&.sex.presence || "-" %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Date of Birth:</strong><br>
+          <%= submission.user&.dob&.strftime("%b %d, %Y") || "-" %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Marital Status:</strong><br>
+          <%= submission.user&.marital_status.presence || "-" %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Phone:</strong><br>
+          <%= submission.user&.phone.presence || "-" %>
+        </div>
+        <div class="col-6">
+          <strong class="form-label fw-bold">Email:</strong><br>
+          <%= submission.user&.email.presence || "-" %>
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-4">
+     <%= link_to "View", main_app.identity_submission_path(submission), class: "btn btn-outline-primary rounded-3 flex-grow-1 fw-semibold" %>
+        <% if submission.status == "rejected" %>
+         <%= link_to "Resubmit", edit_identity_submission_path(submission), class: "btn btn-outline-danger rounded-3 flex-grow-1 fw-semibold" if submission.status == "rejected" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <%= render "shared/submission_status_alert", submission: submission %>
+</div>

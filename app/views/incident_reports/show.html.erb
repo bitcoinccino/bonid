@@ -1,0 +1,38 @@
+<!-- app/views/incident_reports/show.html.erb -->
+<div class="container py-5">
+  <div class="mb-4">
+    <h2 class="fw-bold"><%= @incident_report.incident_type %></h2>
+    <p class="text-muted">
+      Occurred on <%= @incident_report.occurred_at&.strftime("%B %d, %Y at %I:%M %p") %><br>
+      Reported from <%= @incident_report.full_address %>
+    </p>
+  </div>
+
+  <div class="mb-4">
+    <h5 class="fw-semibold">Description</h5>
+    <p><%= simple_format(@incident_report.description) %></p>
+  </div>
+
+  <% if @incident_report.media.attached? %>
+  <div class="row mt-4">
+    <% @incident_report.media.each do |file| %>
+      <div class="col-md-4 mb-3">
+        <% if file.image? %>
+          <%= image_tag file, class: "img-fluid rounded-3 shadow" %>
+        <% elsif file.video? %>
+          <video controls class="w-100 rounded-3 shadow">
+            <source src="<%= url_for(file) %>">
+            Your browser does not support the video tag.
+          </video>
+        <% else %>
+          <%= link_to file.filename, url_for(file), target: "_blank" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,87 @@
+<!-- Address Fields -->
+<div class="border rounded p-4 mb-4" data-controller="address">
+  <h5 class="mb-3 fw-semibold">Incident Location</h5>
+
+  <%= f.simple_fields_for :address do |a| %>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= a.input :department_id,
+                    collection: Department.all.map { |d| [d.name, d.id] },
+                    prompt: "Select Department",
+                    input_html: {
+                      class: "form-select rounded-3",
+                      data: {
+                        action: "change->address#loadArrondissements",
+                        address_target: "department",
+                        slug_map: Department.all.index_by(&:id).transform_values(&:slug).to_json
+                      }
+                    } %>
+      </div>
+
+      <div class="col-md-6">
+        <%= a.input :arrondissement_id,
+                    collection: [],
+                    prompt: "Select Arrondissement",
+                    input_html: {
+                      class: "form-select rounded-3",
+                      data: {
+                        action: "change->address#loadCommunes",
+                        address_target: "arrondissement"
+                      }
+                    } %>
+      </div>
+
+      <div class="col-md-6">
+        <%= a.input :commune_id,
+                    collection: [],
+                    prompt: "Select Commune",
+                    input_html: {
+                      class: "form-select rounded-3",
+                      data: {
+                        action: "change->address#loadCommunalSections",
+                        address_target: "commune"
+                      }
+                    } %>
+      </div>
+
+      <div class="col-md-6">
+        <%= a.input :communal_section_id,
+                    collection: [],
+                    prompt: "Select Section Communale",
+                    input_html: {
+                      class: "form-select rounded-3",
+                      data: {
+                        action: "change->address#loadPostalCode",
+                        address_target: "section"
+                      }
+                    } %>
+      </div>
+
+      <div class="col-md-6">
+        <%= a.input :postal_code,
+                    input_html: {
+                      class: "form-control rounded-3",
+                      readonly: true,
+                      placeholder: "HT0000",
+                      data: { address_target: "postalCode" }
+                    } %>
+      </div>
+
+      <div class="col-md-6">
+        <%= a.input :street_address,
+                    input_html: {
+                      class: "form-control rounded-3",
+                      placeholder: "e.g., 123 Rue Principale"
+                    } %>
+      </div>
+
+      <div class="col-md-6">
+        <%= a.input :locality,
+                    input_html: {
+                      class: "form-control rounded-3",
+                      placeholder: "e.g., Quartier Morin"
+                    } %>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,33 @@
+<!-- app/views/admin/identity_submissions/modals/_document_modal.html.erb -->
+<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-3 bg-white">
+      <div class="modal-header gradient-bg text-white">
+        <h5 class="modal-title" id="<%= modal_id %>Label"><%= label %></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <% file = submission.send(field) %>
+        <% if file.content_type.starts_with?('image/') %>
+          <%= image_tag file.variant(resize_to_limit: [700, 500]), class: "img-fluid rounded shadow-sm", alt: "#{label} document" %>
+        <% elsif file.content_type == 'application/pdf' %>
+          <iframe src="<%= url_for(file) %>" width="100%" height="600px" style="border: none;"></iframe>
+        <% else %>
+          <p class="text-muted">Preview not available. Please download the file.</p>
+        <% end %>
+      </div>
+      <div class="modal-footer">
+        <%= link_to url_for(file),
+                    class: "btn btn-success rounded-3",
+                    target: "_blank",
+                    download: true,
+                    role: "button",
+                    aria_label: "Download #{label} document",
+                    title: "Download #{label} document" do %>
+          <i class="ri-download-line me-1"></i> Download
+        <% end %>
+        <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal" aria-label="Close modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

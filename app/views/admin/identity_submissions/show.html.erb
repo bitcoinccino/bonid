@@ -1,0 +1,688 @@
+
+<%= render "shared/navbar" %>
+<!-- Main Content -->
+<main class="form-container bg-white p-3 p-md-4 rounded-3 shadow-sm" style="max-width: 1000px; margin: 0 auto;">
+  <!-- Flash Messages -->
+  <% if notice %>
+    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-4" role="alert" aria-live="polite">
+      <%= notice %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+  <% if alert %>
+    <div class="alert alert-warning alert-dismissible fade show rounded-3 mb-4" role="alert" aria-live="polite">
+      <%= alert %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+
+  <!-- Submission Status -->
+  <section class="mb-4" aria-labelledby="status-heading">
+    <h2 class="h5 text-primary fw-semibold mb-3" id="status-heading">Status</h2>
+    <div class="card border-0 rounded-3 shadow-sm p-3">
+      <div class="d-flex align-items-center mb-3">
+        <% case @submission.status
+           when "approved" %>
+          <i class="ri-checkbox-circle-fill text-success fs-4 me-2"></i>
+        <% when "pending" %>
+          <i class="ri-time-fill text-warning fs-4 me-2"></i>
+        <% when "rejected" %>
+          <i class="ri-close-circle-fill text-danger fs-4 me-2"></i>
+        <% else %>
+          <i class="ri-question-fill text-muted fs-4 me-2"></i>
+        <% end %>
+        <div>
+          <strong>Status:</strong>
+          <% if @submission.reset_request_status == "approved" %>
+            <span class="badge bg-success rounded-pill">BONID Reissued ✅</span>
+          <% elsif @submission.reset_request_status == "rejected" %>
+            <span class="badge bg-danger rounded-pill">Reset Rejected ❌</span>
+          <% elsif @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+            <span class="badge bg-info rounded-pill">Reset Requested ⏳</span>
+          <% else %>
+            <span class="badge <%= submission_status_badge(@submission.status) %> rounded-pill">
+              <%= @submission.status.to_s.titleize %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+      <ul class="list-unstyled small text-muted">
+        <li class="mb-2"><strong>Type:</strong> <%= @submission.submission_type&.titleize || "N/A" %></li>
+        <% if @submission.reason.present? %>
+          <li class="mb-2"><strong>Reason:</strong> <%= @submission.reason.humanize %></li>
+        <% end %>
+        <% if @submission.other_reason.present? %>
+          <li class="mb-2"><strong>Details:</strong> <%= @submission.other_reason %></li>
+        <% end %>
+        <li class="mb-2"><strong>Submitted:</strong> <%= @submission.created_at.strftime("%b %d, %Y, %I:%M %p") %></li>
+        <li class="mb-2"><strong>Token:</strong> <%= @submission.verification_token.presence&.truncate(10) || "N/A" %></li>
+        <li><strong>Expires:</strong> <%= @submission.expires_at&.strftime("%b %d, %Y") || "Not verified" %></li>
+      </ul>
+      <% if @submission.reissued_at.present? %>
+        <div class="alert alert-success mt-3 rounded-3 small">
+          <strong>Reissued:</strong> <%= @submission.reissued_at.strftime("%b %d, %Y, %I:%M %p") %>
+        </div>
+      <% end %>
+      <% if @submission.reset_request_status == "rejected" && @submission.reset_rejection_reason.present? %>
+        <div class="alert alert-warning mt-3 rounded-3 small">
+          <strong>Reset Rejection:</strong> <%= simple_format(@submission.reset_rejection_reason) %>
+        </div>
+      <% end %>
+      <% if @submission.rejected? && @submission.rejection_reason.present? %>
+        <div class="alert alert-warning mt-3 rounded-3 small">
+          <strong>Rejection Reason:</strong> <%= simple_format(@submission.rejection_reason) %>
+        </div>
+      <% end %>
+      <% if @submission.rejected? && !current_user.admin? %>
+        <div class="mt-3">
+          <%= link_to edit_identity_submission_path(@submission),
+                      class: "btn btn-outline-danger rounded-pill w-100 py-2",
+                      role: "button",
+                      "aria-label": "Resubmit BonID" do %>
+            <i class="ri-refresh-line me-2"></i> Resubmit
+          <% end %>
+        </div>
+      <% end %>
+      <% if current_user.admin? && @submission.pending? %>
+        <div class="mt-3 dropdown">
+          <button class="btn btn-outline-primary rounded-pill w-100 py-2 dropdown-toggle" type="button" id="adminActions" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ri-settings-3-line me-2"></i> Admin Actions
+          </button>
+          <ul class="dropdown-menu w-100" aria-labelledby="adminActions">
+            <% if @submission.pending? || @submission.rejection_reason == "bad_bin" %>
+              <li>
+                <%= button_to approve_bin_admin_identity_submission_path(@submission),
+                              method: :patch,
+                              class: "dropdown-item",
+                              data: { turbo: false } do %>
+                  <i class="ri-verified-badge-line me-2"></i> Move to BonBin
+                <% end %>
+              </li>
+              <li>
+                <button class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#badBinModal">
+                  <i class="ri-delete-bin-line me-2"></i> Move to BadBin
+                </button>
+              </li>
+            <% end %>
+            <% if @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+              <li>
+                <%= button_to "Approve Reset",
+                              approve_reset_admin_identity_submission_path(@submission),
+                              method: :patch,
+                              class: "dropdown-item",
+                              data: { bs_toggle: "tooltip", bs_placement: "right", bs_title: "Approve reset request" } %>
+              </li>
+              <li>
+                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#rejectResetModal">
+                  <i class="ri-close-circle-line me-2"></i> Reject Reset
+                </button>
+              </li>
+            <% elsif @submission.pending? %>
+              <li>
+                <%= button_to "Approve",
+                              admin_identity_submission_path(@submission, approve: true),
+                              method: :patch,
+                              class: "dropdown-item",
+                              data: { bs_toggle: "tooltip", bs_placement: "right", bs_title: "Approve submission" } %>
+              </li>
+              <li>
+                <button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                  <i class="ri-close-circle-line me-2"></i> Reject
+                </button>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <!-- Personal Information -->
+  <section class="mb-4" aria-labelledby="personal-heading">
+      <h2 class="h5 text-primary fw-semibold mb-3 d-flex justify-content-between align-items-center" id="personal-heading">
+        Personal Information
+        <button class="btn btn-link text-primary p-0" data-bs-toggle="collapse" data-bs-target="#personalDetails" aria-expanded="true" aria-controls="personalDetails" aria-label="Toggle personal information">
+          <i class="ri-arrow-down-s-line fs-5"></i>
+        </button>
+      </h2>
+    <div class="card border-0 rounded-3 shadow-sm p-3 collapse show" id="personalDetails">
+      <% user = @submission.user %>
+      <div class="row g-3">
+        <div class="col-12">
+          <strong>Full Name:</strong> <%= [user.first_name, user.middle_name, user.last_name].compact.join(" ") %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>BonID:</strong> <%= user.bonid || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Email:</strong> <%= user.email %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Phone:</strong> <%= user.phone.presence || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Sex:</strong> <%= user.sex&.upcase || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Date of Birth:</strong> <%= user.dob&.strftime("%b %d, %Y") || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Marital Status:</strong> <%= user.marital_status&.titleize || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>ID Type:</strong> <%= user.id_type&.upcase || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>ID Number:</strong> <%= user.id_number.presence || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Issue Date:</strong> <%= user.id_issued_on&.strftime("%b %d, %Y") || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Expiration Date:</strong> <%= user.id_expires_on&.strftime("%b %d, %Y") || "N/A" %>
+        </div>
+        <div class="col-12 col-md-6">
+          <strong>Place of Birth:</strong> <%= user.place_of_birth.presence || "N/A" %>
+        </div>
+        <div class="col-12">
+          <strong>Address:</strong><br>
+          <% address = user.address %>
+          <% if address %>
+            <%= address.communal_section.name %><br>
+            <%= address.street_address %><br>
+            <%= "#{address.postal_code}, #{address.commune&.name&.upcase}" %><br>
+            <%= address.country&.upcase %>
+          <% else %>
+            <em class="text-muted">No address provided</em>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Documents -->
+  <section aria-labelledby="documents-heading">
+    <h2 class="h5 text-primary fw-semibold mb-3" id="documents-heading">Documents</h2>
+    <div class="card border-0 rounded-3 shadow-sm p-3">
+      <!-- Filter Tabs -->
+      <ul class="nav nav-pills mb-3" id="documentTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active rounded-pill px-3 py-2" id="all-tab" data-bs-toggle="pill" data-bs-target="#all-docs" type="button" role="tab" aria-controls="all-docs" aria-selected="true">All</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link rounded-pill px-3 py-2" id="primary-tab" data-bs-toggle="pill" data-bs-target="#primary-docs" type="button" role="tab" aria-controls="primary-docs" aria-selected="false">Primary</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link rounded-pill px-3 py-2" id="secondary-tab" data-bs-toggle="pill" data-bs-target="#secondary-docs" type="button" role="tab" aria-controls="secondary-docs" aria-selected="false">Secondary</button>
+        </li>
+      </ul>
+      <!-- Document Content -->
+      <div class="tab-content" id="documentTabContent">
+        <% all_documents = {
+             primary: {
+               "CIN Front" => :cin_front,
+               "CIN Back" => :cin_back,
+               "Passport" => :passport,
+               "Selfie" => :selfie
+             },
+             secondary: {
+               "Proof of Address" => :proof_of_address,
+               "Digicel Phone Bill" => :digicel_phone_bill,
+               "Natcom Phone Bill" => :natcom_phone_bill,
+               "Baptismal Certificate" => :baptismal_certificate,
+               "Birth Certificate" => :birth_certificate,
+               "Adoption Certificate" => :adoption_certificate,
+               "Naturalization Copy" => :naturalization_monitor_copy,
+               "Archives Extract" => :archives_extract,
+               "PNH Record" => :pnh_record,
+               "Bank Record" => :bank_record,
+               "Western Union Record" => :western_union_record,
+               "MoneyGram Record" => :moneygram_record,
+               "SendWave Record" => :sendwave_record,
+               "Unibank Transfer" => :unitransfer_record,
+               "Taptap Receipt" => :taptap_record,
+               "Car Registration" => :car_registration,
+               "Other Supporting Document" => :additional_proof
+             }
+           } %>
+        <!-- All Documents -->
+        <div class="tab-pane fade show active" id="all-docs" role="tabpanel" aria-labelledby="all-tab">
+          <div class="row g-3">
+            <% all_documents.each do |category, docs| %>
+              <% docs.each do |label, field| %>
+                <% if @submission.send(field).attached? %>
+                  <div class="col-6 col-md-4">
+                    <div class="card border-0 rounded-3 shadow-sm h-100">
+                      <div class="card-img-top d-flex align-items-center justify-content-center rounded-top-3" style="height: 150px; background-color: #f8f9fa;">
+                        <% file = @submission.send(field) %>
+                        <% if file.content_type.starts_with?('image/') %>
+                          <%= image_tag file.variant(resize_to_limit: [200, 200]), class: "img-fluid", style: "max-height: 100%; max-width: 100%; object-fit: contain;", alt: "#{label} thumbnail" %>
+                        <% else %>
+                          <i class="ri-file-pdf-2-line fs-3 text-muted"></i>
+                        <% end %>
+                      </div>
+                      <div class="card-body p-2 text-center">
+                        <p class="card-text small mb-2"><%= label %></p>
+                        <% modal_id = "#{field}_Modal" %>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>" aria-label="View <%= label %> document">
+                          View
+                        </button>
+                      </div>
+                    </div>
+                    <!-- Document Modal -->
+                    <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+                      <div class="modal-dialog modal-lg modal-dialog-centered">
+                        <div class="modal-content rounded-3 bg-white">
+                          <div class="modal-header gradient-bg text-white">
+                            <h5 class="modal-title" id="<%= modal_id %>Label"><%= label %></h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body text-center">
+                            <% if file.content_type.starts_with?('image/') %>
+                              <%= image_tag file.variant(resize_to_limit: [700, 500]), class: "img-fluid rounded shadow-sm", alt: "#{label} document" %>
+                            <% elsif file.content_type == 'application/pdf' %>
+                              <iframe src="<%= url_for(file) %>" class="w-100" style="height: 50vh; border: none;"></iframe>
+                            <% else %>
+                              <p class="text-muted">Preview not available.</p>
+                            <% end %>
+                          </div>
+                          <div class="modal-footer">
+                            <%= link_to url_for(file),
+                                        class: "btn btn-success rounded-pill",
+                                        target: "_blank",
+                                        download: true,
+                                        role: "button",
+                                        "aria-label" => "Download #{label} document" do %>
+                              <i class="ri-download-line me-1"></i> Download
+                            <% end %>
+                            <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+        <!-- Primary Documents -->
+        <div class="tab-pane fade" id="primary-docs" role="tabpanel" aria-labelledby="primary-tab">
+          <div class="row g-3">
+            <% all_documents[:primary].each do |label, field| %>
+              <% if @submission.send(field).attached? %>
+                <div class="col-6 col-md-4">
+                  <div class="card border-0 rounded-3 shadow-sm h-100">
+                    <div class="card-img-top d-flex align-items-center justify-content-center rounded-top-3" style="height: 150px; background-color: #f8f9fa;">
+                      <% file = @submission.send(field) %>
+                      <% if file.content_type.starts_with?('image/') %>
+                        <%= image_tag file.variant(resize_to_limit: [200, 200]), class: "img-fluid", style: "max-height: 100%; max-width: 100%; object-fit: contain;", alt: "#{label} thumbnail" %>
+                      <% else %>
+                        <i class="ri-file-pdf-2-line fs-3 text-muted"></i>
+                      <% end %>
+                    </div>
+                    <div class="card-body p-2 text-center">
+                      <p class="card-text small mb-2"><%= label %></p>
+                      <% modal_id = "#{field}_Modal" %>
+                      <button type="button" class="btn btn-outline-primary btn-sm rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>" aria-label="View <%= label %> document">
+                        View
+                      </button>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+          <!-- Secondary Documents -->
+          <div class="tab-pane fade" id="secondary-docs" role="tabpanel" aria-labelledby="secondary-tab">
+            <div class="row g-3">
+              <% all_documents[:secondary].each do |label, field| %>
+                <% if @submission.send(field).attached? %>
+                  <div class="col-6 col-md-4">
+                    <div class="card border-0 rounded-3 shadow-sm h-100">
+                      <div class="card-img-top d-flex align-items-center justify-content-center rounded-top-3" style="height: 150px; background-color: #f8f9fa;">
+                        <% file = @submission.send(field) %>
+                        <% if file.content_type.starts_with?('image/') %>
+                          <%= image_tag file.variant(resize_to_limit: [200, 200]), class: "img-fluid", style: "max-height: 100%; max-width: 100%; object-fit: contain;", alt: "#{label} thumbnail" %>
+                        <% else %>
+                          <i class="ri-file-pdf-2-line fs-3 text-muted"></i>
+                        <% end %>
+                      </div>
+                      <div class="card-body p-2 text-center">
+                        <p class="card-text small mb-2"><%= label %></p>
+                        <% modal_id = "#{field}_Modal" %>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>" aria-label="View <%= label %> document">
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BadBin Modal -->
+    <div class="modal fade" id="badBinModal" tabindex="-1" aria-labelledby="badBinModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 bg-white">
+          <%= form_with model: [:admin, @submission], url: reject_bin_admin_identity_submission_path(@submission), method: :patch, local: true do |form| %>
+            <div class="modal-header gradient-bg text-white">
+              <h5 class="modal-title" id="badBinModalLabel">Move to BadBin</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <%= form.label :rejection_reason, "Reason for Rejection", class: "form-label fw-bold mb-2" %>
+              <%= form.select :rejection_reason,
+                              IdentitySubmission.rejection_reasons_options,
+                              { prompt: "Select a reason" },
+                              class: "form-select rounded-pill py-2",
+                              required: true %>
+
+              <div class="mt-3">
+                <%= form.label :other_reason, "Additional Details (optional)", class: "form-label mb-2" %>
+                <%= form.text_area :other_reason, rows: 3, class: "form-control rounded-3", placeholder: "Provide more context if needed" %>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+              <%= form.submit "Move to BadBin", class: "btn btn-danger rounded-pill" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<style>
+  /* Reset Defaults */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background-color: #F5F7FA;
+    color: #1A202C;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1200px;
+    padding: 0 15px;
+    margin: 0 auto;
+  }
+
+  /* BonID Styles */
+  .bg-light {
+    background-color: #F5F7FA !important;
+  }
+
+  .form-container {
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #00209F, #D21034);
+    border-radius: 12px 12px 0 0;
+  }
+
+  .text-primary {
+    color: #00209F !important;
+  }
+
+  .text-muted {
+    color: #4A5568 !important;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background-color: #00209F;
+    border-color: #00209F;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #001A80;
+    border-color: #001A80;
+  }
+
+  .btn-success {
+    background-color: #2F855A;
+    border-color: #2F855A;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+
+  .btn-success:hover {
+    background-color: #276749;
+    border-color: #276749;
+  }
+
+  .btn-danger {
+    background-color: #E53E3E;
+    border-color: #E53E3E;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+
+  .btn-danger:hover {
+    background-color: #C53030;
+    border-color: #C53030;
+  }
+
+  .btn-outline-primary {
+    border-color: #00209F;
+    color: #00209F;
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #00209F;
+    color: #FFFFFF;
+  }
+
+  .btn-outline-secondary {
+    border-color: #4A5568;
+    color: #4A5568;
+    padding: 10px 16px;
+    border-radius: 8px;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #4A5568;
+    color: #FFFFFF;
+  }
+
+  .btn-outline-light {
+    border-color: #FFFFFF;
+    color: #FFFFFF;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .btn-outline-light:hover {
+    background-color: #FFFFFF;
+    color: #1A202C;
+  }
+
+  /* Form Elements */
+  .form-select, .form-control {
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1rem;
+  }
+
+  .form-select:focus, .form-control:focus {
+    border-color: #00209F;
+    box-shadow: 0 0 0 3px rgba(0, 32, 159, 0.1);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #1A202C;
+    margin-bottom: 8px;
+  }
+
+  /* Badges */
+  .badge {
+    font-size: 0.875rem;
+    padding: 6px 12px;
+    border-radius: 12px;
+  }
+
+  .badge.bg-success { background-color: #2F855A; }
+  .badge.bg-danger { background-color: #E53E3E; }
+  .badge.bg-info { background-color: #3182CE; }
+  .badge.bg-pending { background-color: #ED8936; color: #1A202C; }
+  .badge.bg-approved { background-color: #2F855A; }
+  .badge.bg-rejected { background-color: #E53E3E; }
+
+  /* Alerts */
+  .alert {
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid transparent;
+  }
+
+  .alert-success {
+    background-color: #E6FFFA;
+    border-color: #2F855A;
+    color: #1A202C;
+  }
+
+  .alert-warning {
+    background-color: #FFFAF0;
+    border-color: #ED8936;
+    color: #1A202C;
+  }
+
+  /* Cards */
+  .card {
+    background-color: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Modals */
+  .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-header, .modal-footer {
+    border: none;
+    padding: 16px 24px;
+  }
+
+  .btn-close-white {
+    filter: invert(1);
+  }
+
+  /* Navigation Pills */
+  .nav-pills .nav-link {
+    color: #4A5568;
+    font-size: 0.875rem;
+    padding: 8px 16px;
+  }
+
+  .nav-pills .nav-link.active {
+    background-color: #00209F;
+    color: #FFFFFF;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 767.98px) {
+    .container {
+      padding: 0 10px;
+    }
+    .form-container {
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .btn, .form-select, .form-control {
+      font-size: 0.875rem;
+      padding: 8px 12px;
+    }
+    h1.h4 {
+      font-size: 1.25rem;
+    }
+    h2.h5 {
+      font-size: 1.125rem;
+    }
+    .card {
+      padding: 12px;
+    }
+    .modal-dialog {
+      margin: 10px;
+    }
+    .dropdown-menu {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .btn {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 4px 8px;
+    }
+    ul.list-unstyled li {
+      font-size: 0.875rem;
+    }
+    .card-img-top {
+      height: 80px;
+    }
+  }
+</style>
+
+<!-- JavaScript -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize Tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el, { trigger: 'hover focus' }));
+
+    // Smooth Scroll for Anchor Links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Focus Management for Modals
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('shown.bs.modal', function () {
+        const firstFocusable = modal.querySelector('button, [href], input, select, textarea');
+        if (firstFocusable) firstFocusable.focus();
+      });
+    });
+  });
+</script>

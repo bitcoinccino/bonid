@@ -1,0 +1,80 @@
+<%# app/views/identity_submissions/_request_modal.html.erb %>
+<% if !current_user&.admin? && profile_complete?(current_user) && has_verified_bonid?(current_user) && eligible_for_new_bonid_request?(current_user, submissions) %>
+  <div class="modal fade" id="requestNewBonIDModal" tabindex="-1" aria-labelledby="requestNewBonIDModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-white shadow-lg rounded-3">
+        <div class="modal-header header-bg text-white">
+          <h5 class="modal-title" id="requestNewBonIDModalLabel">
+            <i class="ri-add-line me-2"></i> Request New BonID
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <% modal_reason_text = if submission.submission_type == "reissue"
+            "Please explain why you're requesting a replacement BonID after your previous one was revoked, expired, or lost."
+          elsif submission.status == "approved"
+            "Select a reason for requesting a new BonID. Your existing BonID will be revoked if this is approved."
+          else
+            "Select a reason for requesting a new BonID. Provide details for 'Other' below."
+          end %>
+
+          <div class="alert alert-info rounded-3 mb-4">
+            <i class="ri-information-line me-2"></i>
+            <%= modal_reason_text %>
+          </div>
+
+          <%= form_with url: request_new_identity_submissions_path,
+                        method: :post,
+                        local: true,
+                        data: { turbo: false },
+                        html: { class: "needs-validation", novalidate: true, data: { controller: "reason" } } do |f| %>
+            <div class="mb-3">
+              <%= f.label :reason, "Reason for Request", class: "form-label fw-bold" %>
+              <%= f.select :reason,
+                [
+                  ["Lost access to previous QR code", "lost_access"],
+                  ["Information changed (e.g., name, address, or contact details)", "info_changed"],
+                  ["Document updates (e.g., new passport or ID)", "document_updates"],
+                  ["QR code expired", "expired"],
+                  ["Suspected compromise or unauthorized access", "compromised"],
+                  ["Technical issues (e.g., QR code not scanning)", "technical_issues"],
+                  ["Legal or administrative requirement", "legal_requirement"],
+                  ["Other", "other"]
+                ],
+                { prompt: "Select a reason" },
+                class: "form-select",
+                data: { reason_target: "select", action: "reason#toggle" } %>
+            </div>
+
+            <div class="mb-3" data-reason-target="textareaWrapper" style="display: none;">
+              <%= f.label :other_reason, "Please specify", class: "form-label fw-bold" %>
+              <%= f.text_area :other_reason, class: "form-control", data: { reason_target: "textarea" }, rows: 3 %>
+            </div>
+
+            <div class="d-flex gap-2">
+              <%= f.submit "Submit Request", class: "btn btn-primary fw-semibold rounded-3 flex-grow-1" %>
+              <button type="button" class="btn btn-outline-secondary fw-semibold rounded-3 flex-grow-1" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          <% end %>
+
+          <div class="alert alert-warning mt-3 rounded-3">
+            <i class="ri-error-warning-line me-2"></i>
+            Requesting a new BonID may invalidate your current one. Proceed with caution.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+
+<script>
+  document.addEventListener("turbo:load", () => {
+  const modalEl = document.getElementById("requestNewBonIDModal");
+  if (modalEl) {
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+  }
+});
+
+  </script>

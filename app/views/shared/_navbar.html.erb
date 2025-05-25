@@ -1,0 +1,278 @@
+<nav class="navbar navbar-expand-lg fixed-top gradient-bg">
+  <div class="container-fluid">
+    <%= link_to root_path, class: "navbar-brand bonid-text", aria_label: "BonID Home" do %>
+      BonID
+    <% end %>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <i class="ri-menu-line text-white"></i>
+    </button>
+
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav align-items-center ms-auto gap-2">
+
+        <!-- Officer Signed In -->
+        <% if current_officer.present? %>
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link text-white-75 d-flex align-items-center dropdown-toggle"
+               id="officerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="badge bg-warning text-dark me-2">OFFICER</span>
+              <i class="ri-shield-user-line me-1"></i> <%= current_officer.full_name %>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow rounded-3 text-end" aria-labelledby="officerDropdown">
+              <li>
+                <%= link_to officer_dashboard_path, class: "dropdown-item" do %>
+                  <i class="ri-dashboard-line me-2"></i> Dashboard
+                <% end %>
+              </li>
+              <li>
+                <%= link_to edit_officer_profile_path, class: "dropdown-item" do %>
+                  <i class="ri-user-settings-line me-2"></i> Edit Profile
+                <% end %>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <%= link_to destroy_officer_session_path,
+                            method: :delete,
+                            data: { turbo_method: :delete },
+                            class: "dropdown-item text-danger" do %>
+                  <i class="ri-logout-box-line me-2"></i> Log Out
+                <% end %>
+              </li>
+            </ul>
+          </li>
+
+        <!-- Devise User Signed In -->
+        <% elsif current_user.present? %>
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link text-white-75 d-flex align-items-center dropdown-toggle"
+               id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="ri-user-line me-2"></i> My BonID
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow rounded-3 text-end" aria-labelledby="userDropdown">
+              <% unless current_user.admin? %>
+                <li>
+                  <%= link_to user_dashboard_path, class: "dropdown-item" do %>
+                    <i class="ri-dashboard-line me-2"></i> Dashboard
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to edit_profile_path, class: "dropdown-item" do %>
+                    <i class="ri-user-settings-line me-2"></i> Edit Profile
+                  <% end %>
+                </li>
+              <% end %>
+
+              <% if current_user.admin? %>
+                <li><h6 class="dropdown-header text-muted">Admin Tools</h6></li>
+                <li>
+                  <%= link_to admin_identity_submissions_path, class: "dropdown-item" do %>
+                    <i class="ri-dashboard-line me-2"></i> All BonID Submissions
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to admin_partner_applications_path, class: "dropdown-item" do %>
+                  <i class="ri-shake-hands-line"></i> Application Partners
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to admin_partners_path, class: "dropdown-item" do %>
+                    <i class="ri-user-shared-line me-2"></i> Verified Partners
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to admin_qr_scans_path, class: "dropdown-item" do %>
+                    <i class="ri-scan-line me-2"></i> QR Scan Logs
+                  <% end %>
+                </li>
+                <li>
+                  <%= link_to admin_qr_scan_logs_path, class: "dropdown-item" do %>
+                    <i class="ri-history-line me-2"></i> General Scan Logs
+                  <% end %>
+                </li>
+              <% end %>
+
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <%= link_to destroy_user_session_path,
+            method: :delete,
+            data: { turbo_method: :delete },
+            class: "dropdown-item text-danger" do %>
+              <i class="ri-logout-box-line me-2"></i> Log Out
+            <% end %>
+
+              </li>
+            </ul>
+          </li>
+
+        <!-- Guest (Not Signed In) -->
+        <!-- Guest (Not Signed In) -->
+<% else %>
+  <li class="nav-item">
+    <%= link_to "Home", root_path, class: "nav-link text-white-75" %>
+  </li>
+  <li class="nav-item">
+    <%= link_to "About", "/about", class: "nav-link text-white-75" %>
+  </li>
+  <li class="nav-item">
+    <%= link_to "IDPOL", new_officer_session_path, class: "nav-link text-white-75" %>
+  </li>
+  <li class="nav-item">
+    <%= link_to "For Partners", partners_path, class: "nav-link text-white-75" %>
+  </li>
+
+  <% verified_partner = begin
+      defined?(partner) && partner.present? ? partner :
+      (Partner.find_by(id: session[:bonid_partner_id]) if session[:bonid_partner_id].present?)
+    rescue
+      nil
+    end %>
+
+   <li class="nav-item">
+  <%= link_to "Get Verified", partners_path, class: "btn btn-outline-light nav-cta rounded-pill" %>
+</li>
+
+<% end %>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+
+<!-- Spacer to prevent content overlap with fixed navbar -->
+<div style="padding-top: 70px;"></div>
+
+<style>
+  /* Navbar Styles */
+  .navbar {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(90deg, #00209F 0%, #D21034 100%);
+    border: none;
+    min-height: 48px;
+  }
+
+  .navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff !important;
+    font-family: 'Poppins', sans-serif;
+    line-height: 1.2;
+  }
+
+  .navbar-nav {
+    gap: 0.5rem; /* Space between nav items */
+  }
+
+  .nav-link {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff !important;
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    text-align: end; /* Explicit right-alignment for text */
+  }
+
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 0.4rem;
+    color: #fff !important;
+  }
+
+  .nav-link i {
+    font-size: 1.2rem;
+    margin-right: 0.4rem;
+  }
+
+  .dropdown-toggle::after {
+    margin-left: 0.4rem;
+    vertical-align: middle;
+    border-top-color: #fff;
+  }
+
+  .dropdown-menu {
+    background: #fff;
+    min-width: 220px;
+    padding: 0.5rem 0;
+    border-radius: 0.4rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    margin-top: 0.2rem;
+    right: 0; /* Ensure dropdown aligns to right edge */
+  }
+
+  .dropdown-item {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #333;
+    padding: 0.5rem 1.2rem;
+    display: flex;
+    align-items: center;
+    text-align: end; /* Right-align dropdown text */
+  }
+
+  .dropdown-item i {
+    font-size: 1.2rem;
+    margin-right: 0.4rem;
+    width: 1.8rem;
+  }
+
+  .dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #00209F; /* BonID blue for hover */
+  }
+
+  .dropdown-item.text-danger {
+    color: #D21034; /* BonID red for logout */
+  }
+
+  .dropdown-item.text-danger:hover {
+    color: #B91C1C;
+    background-color: #f8f9fa;
+  }
+
+  .dropdown-divider {
+    border-color: #f1f1f1;
+    margin: 0.3rem 0;
+  }
+
+  .nav-cta {
+    padding: 0.4rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* Mobile Adjustments */
+  @media (max-width: 991px) {
+    .navbar-nav {
+      padding: 0.5rem 0;
+      align-items: flex-start; /* Stack items cleanly on mobile */
+    }
+    .nav-link {
+      text-align: left; /* Left-align on mobile for readability */
+      padding: 0.5rem 1rem;
+    }
+    .dropdown-menu {
+      text-align: left; /* Left-align dropdown on mobile */
+      width: 100%;
+      right: auto;
+    }
+    .dropdown-item {
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .navbar-brand {
+      font-size: 1.25rem;
+    }
+    .nav-link {
+      font-size: 0.9rem;
+    }
+    .nav-cta {
+      font-size: 0.85rem;
+      padding: 0.3rem 0.8rem;
+    }
+  }
+</style>

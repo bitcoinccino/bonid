@@ -1,0 +1,450 @@
+<!-- app/views/admin/identity_submissions/index.html.erb -->
+<%=render "shared/navbar" %>
+<!-- Main Content -->
+<section class="content-container py-5" role="main">
+  <!-- Flash Messages -->
+  <% flash.each do |key, value| %>
+    <div class="alert alert-<%= key == 'notice' ? 'success' : 'danger' %> alert-dismissible fade show mb-4 rounded-3" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-<%= key == 'notice' ? 'checkbox-circle-fill' : 'error-warning-fill' %> fs-5"></i>
+        <span><%= value %></span>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="h4 fw-bold text-haitian-blue mb-0">Identity Submissions</h2>
+  </div>
+
+  <!-- Search and Filter -->
+  <%= form_with url: admin_identity_submissions_path, method: :get, class: "mb-4" do |f| %>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= f.text_field :query, value: params[:query], placeholder: "Search by name, email, or BonID...", class: "form-control rounded-3", aria_label: "Search submissions" %>
+      </div>
+      <div class="col-md-4">
+        <%= f.select :submission_type, options_for_select([["All Types", ""], ["Initial", "initial"], ["Resubmission", "resubmission"], ["Reissue", "reissue"]], params[:submission_type]), {}, class: "form-select rounded-3", onchange: "this.form.submit()", aria_label: "Filter by submission type" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.submit "Filter", class: "btn btn-haitian-blue w-100 rounded-pill" %>
+      </div>
+      <div class="col-12 mt-3 d-flex flex-wrap gap-2">
+        <%= link_to "All", admin_identity_submissions_path(query: params[:query], submission_type: params[:submission_type]), class: "btn btn-outline-haitian-blue btn-sm rounded-pill #{params[:status].blank? ? 'active' : ''}", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Show all submissions" %>
+        <%= link_to "Pending", admin_identity_submissions_path(status: :pending, query: params[:query], submission_type: params[:submission_type]), class: "btn btn-outline-warning btn-sm rounded-pill #{params[:status] == 'pending' ? 'active' : ''}", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Show pending submissions" %>
+        <%= link_to "Approved", admin_identity_submissions_path(status: :approved, query: params[:query], submission_type: params[:submission_type]), class: "btn btn-outline-success btn-sm rounded-pill #{params[:status] == 'approved' ? 'active' : ''}", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Show approved submissions" %>
+        <%= link_to "Rejected", admin_identity_submissions_path(status: :rejected, query: params[:query], submission_type: params[:submission_type]), class: "btn btn-outline-danger btn-sm rounded-pill #{params[:status] == 'rejected' ? 'active' : ''}", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Show rejected submissions" %>
+        <%= link_to "Revoked", admin_identity_submissions_path(status: :revoked, query: params[:query], submission_type: params[:submission_type]), class: "btn btn-outline-dark btn-sm rounded-pill #{params[:status] == 'revoked' ? 'active' : ''}", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Show revoked submissions" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Summary -->
+  <div class="d-flex flex-wrap gap-3 mb-4">
+    <div class="badge bg-success text-white d-flex align-items-center gap-2 px-4 py-2 rounded-pill">
+      <i class="ri-verified-badge-fill fs-5"></i>
+      <strong><%= @bonbin_count %></strong> BonBins
+    </div>
+    <div class="badge bg-danger text-white d-flex align-items-center gap-2 px-4 py-2 rounded-pill">
+      <i class="ri-close-circle-fill fs-5"></i>
+      <strong><%= @badbin_count %></strong> BadBins
+    </div>
+  </div>
+
+  <!-- Bulk Actions Form -->
+  <%= form_with url: bulk_update_admin_identity_submissions_path, method: :post, local: true do %>
+    <div data-controller="select-all">
+      <div class="mb-4 d-flex flex-wrap gap-2">
+        <%= button_tag "Select All Initial", type: "button", class: "btn btn-outline-secondary btn-sm rounded-pill", data: { action: "select-all#selectInitial", bs_toggle: "tooltip", bs_placement: "top" }, title: "Select all initial submissions" %>
+        <%= button_tag "Select All Resubmissions", type: "button", class: "btn btn-outline-secondary btn-sm rounded-pill", data: { action: "select-all#selectResubmission", bs_toggle: "tooltip", bs_placement: "top" }, title: "Select all resubmission submissions" %>
+        <%= button_tag "Select All Reissues", type: "button", class: "btn btn-outline-secondary btn-sm rounded-pill", data: { action: "select-all#selectReissue", bs_toggle: "tooltip", bs_placement: "top" }, title: "Select all reissue submissions" %>
+        <%= button_tag "Clear Selection", type: "button", class: "btn btn-outline-dark btn-sm rounded-pill", data: { action: "select-all#clearAll", bs_toggle: "tooltip", bs_placement: "top" }, title: "Clear all selected submissions" %>
+      </div>
+
+      <!-- Submissions Grid -->
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <% @submissions.each do |submission| %>
+          <div class="col">
+            <div class="card shadow-sm border-0 h-100 hover-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="rounded me-3 bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="ri-user-line text-muted"></i>
+                  </div>
+                  <div>
+                    <h5 class="card-title fw-semibold text-haitian-blue mb-1"><%= submission.user.full_name %></h5>
+                    <small class="text-muted"><%= submission.user.email %></small>
+                  </div>
+                </div>
+                <p class="card-text small">
+                  <strong>BonID:</strong> <%= submission.user.bonid || "N/A" %><br>
+                  <strong>Type:</strong> <%= submission.submission_type&.titleize || "N/A" %><br>
+                  <strong>Status:</strong>
+                  <span class="badge bg-<%= submission.status == 'pending' ? 'warning' : submission.status == 'approved' ? 'success' : submission.status == 'rejected' ? 'danger' : 'secondary' %> text-white rounded-pill">
+                    <%= submission.status&.titleize || "Unknown" %>
+                  </span><br>
+                  <% if submission.staged_for.present? && submission.staged_for != "none" %>
+                    <strong>Stage:</strong> <%= submission.staged_for.titleize %><br>
+                  <% end %>
+                  <strong>Submitted:</strong> <%= time_ago_in_words(submission.created_at) %> ago
+                </p>
+                <% if submission.reason.present? || submission.other_reason.present? %>
+                  <div class="mb-3">
+                    <strong class="small">Details:</strong>
+                    <ul class="small ps-3">
+                      <% if submission.reason.present? %>
+                        <li><%= submission.reason.humanize %></li>
+                      <% end %>
+                      <% if submission.other_reason.present? %>
+                        <li><%= submission.other_reason %></li>
+                      <% end %>
+                    </ul>
+                  </div>
+                <% end %>
+                <div class="d-flex gap-2">
+                  <%= link_to "View", admin_identity_submission_path(submission), class: "btn btn-sm btn-outline-haitian-blue rounded-pill flex-grow-1", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "View details for #{submission.user.full_name}", aria_label: "View details for #{submission.user.full_name}" %>
+                  <% if submission.pending? || submission.staged_for_badbin? %>
+                    <%= check_box_tag "submission_ids[]",
+                                      submission.id,
+                                      false,
+                                      class: "btn btn-sm btn-outline-secondary rounded-pill flex-grow-1 d-flex align-items-center justify-content-center",
+                                      style: "height: 34px; width: auto;",
+                                      data: {
+                                        "select-all-target": "checkbox",
+                                        type: submission.submission_type.to_s.downcase,
+                                        bs_toggle: "tooltip",
+                                        bs_placement: "top"
+                                      },
+                                      title: "Select #{submission.user.full_name} for bulk action" %>
+                  <% else %>
+                    <span class="btn btn-sm btn-outline-secondary rounded-pill flex-grow-1 disabled" data-bs-toggle="tooltip" data-bs-placement="top" title="Not selectable for bulk actions">Select</span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Bulk Action Buttons -->
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <% if @bonbin_count > 0 %>
+          <%= submit_tag "Approve BonBin", name: "bulk_action", value: "approve_bin", class: "btn btn-success btn-sm rounded-pill", data: { turbo_confirm: "Approve selected submissions?", bs_toggle: "tooltip", bs_placement: "top" }, title: "Approve selected BonBin submissions" %>
+        <% end %>
+        <% if @badbin_count > 0 %>
+          <%= submit_tag "Reject BadBin", name: "bulk_action", value: "reject_bin", class: "btn btn-outline-danger btn-sm rounded-pill", data: { turbo_confirm: "Reject selected submissions?", bs_toggle: "tooltip", bs_placement: "top" }, title: "Reject selected BadBin submissions" %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Empty State -->
+  <% if @submissions.empty? %>
+    <div class="text-center text-muted mt-5">
+      <i class="ri-information-line display-4"></i>
+      <p class="mt-3">No identity submissions found.</p>
+      <p>Check back later or adjust your filters.</p>
+    </div>
+  <% end %>
+
+  <!-- Pagination -->
+  <div class="d-flex justify-content-between align-items-center mt-5">
+    <%= paginate @submissions, theme: "bootstrap4", nav_class: "pagination-sm" %>
+    <p class="text-muted mb-0 small">Showing <%= @submissions.size %> of <%= @submissions.total_count %> submissions</p>
+  </div>
+</section>
+
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+
+  /* Colors */
+  .bg-haitian-blue { background-color: #003087 !important; }
+  .text-haitian-blue { color: #003087 !important; }
+  .bg-success { background-color: #10b981 !important; }
+  .bg-danger { background-color: #c8102e !important; }
+  .bg-warning { background-color: #f59e0b !important; }
+  .bg-secondary { background-color: #6b7280 !important; }
+  .text-muted { color: #6b7280 !important; }
+
+  /* Cards */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+
+  .hover-card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Form Elements */
+  .form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #003087;
+    box-shadow: 0 0 0 0.2rem rgba(0, 48, 135, 0.25);
+    outline: none;
+  }
+
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #6b7280;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+
+  .form-check-input:checked {
+    background-color: #003087;
+    border-color: #003087;
+  }
+
+  .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 48, 135, 0.2);
+    border-color: #003087;
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-haitian-blue {
+    background: #003087;
+    border-color: #003087;
+    color: #ffffff;
+  }
+
+  .btn-haitian-blue:hover {
+    background: #002066;
+    border-color: #002066;
+    color: #ffffff;
+  }
+
+  .btn-success {
+    background: #10b981;
+    border-color: #10b981;
+  }
+
+  .btn-success:hover {
+    background: #0d8f6b;
+    border-color: #0d8f6b;
+  }
+
+  .btn-outline-danger {
+    border-color: #c8102e;
+    color: #c8102e;
+  }
+
+  .btn-outline-danger:hover {
+    background: #c8102e;
+    color: #ffffff;
+  }
+
+  .btn-outline-haitian-blue {
+    border-color: #003087;
+    color: #003087;
+  }
+
+  .btn-outline-haitian-blue:hover {
+    background: #003087;
+    color: #ffffff;
+  }
+
+  .btn-outline-warning {
+    border-color: #f59e0b;
+    color: #f59e0b;
+  }
+
+  .btn-outline-warning:hover {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+
+  .btn-outline-success {
+    border-color: #10b981;
+    color: #10b981;
+  }
+
+  .btn-outline-success:hover {
+    background: #10b981;
+    color: #ffffff;
+  }
+
+  .btn-outline-dark {
+    border-color: #6b7280;
+    color: #6b7280;
+  }
+
+  .btn-outline-dark:hover {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
+  .btn-outline-secondary {
+    border-color: #6b7280;
+    color: #6b7280;
+  }
+
+  .btn-outline-secondary:hover {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  /* Alerts */
+  .alert {
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    padding: 1rem;
+  }
+
+  .alert-success {
+    background-color: #e6f4ea;
+    color: #0d3b26;
+  }
+
+  .alert-danger {
+    background-color: #fdedef;
+    color: #5a1a2a;
+  }
+
+  /* Pagination */
+  .pagination {
+    margin-bottom: 0;
+  }
+
+  .pagination .page-link {
+    border-radius: 8px;
+    margin: 0 3px;
+    color: #003087;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #d1d5db;
+    transition: all 0.2s ease;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #003087;
+    border-color: #003087;
+    color: #ffffff;
+  }
+
+  .pagination .page-item.disabled .page-link {
+    color: #6b7280;
+    border-color: #d1d5db;
+    background-color: #f8f9fa;
+  }
+
+  .pagination .page-link:hover {
+    background-color: #e9ecef;
+    color: #003087;
+  }
+
+  .pagination .page-item.active .page-link:hover {
+    background-color: #002066;
+    border-color: #002066;
+    color: #ffffff;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .navbar-vertical {
+      width: 200px;
+    }
+    .content-container {
+      margin-left: 200px;
+      max-width: calc(100% - 200px);
+    }
+    .card {
+      padding: 16px;
+    }
+    .btn {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+    }
+    .row-cols-md-2 > .col {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .navbar-vertical {
+      width: 100%;
+      height: auto;
+      position: relative;
+      padding: 0.5rem;
+    }
+    .content-container {
+      margin-left: 0;
+      max-width: 100%;
+    }
+    h2.h4 {
+      font-size: 1.25rem;
+    }
+    .form-control, .form-select {
+      font-size: 0.75rem;
+    }
+    .d-flex.gap-2 {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 1rem;
+    }
+    .card-text {
+      font-size: 0.75rem;
+    }
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.3rem 0.6rem;
+    }
+    .pagination .page-link {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.6rem;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+</script>

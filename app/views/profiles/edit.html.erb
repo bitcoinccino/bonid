@@ -1,0 +1,484 @@
+<%= render "shared/navbar"%>
+
+<div style="padding-top: 80px;"></div>
+
+<div class="container py-4 py-md-5 certificate-font">
+  <div class="form-container p-4 rounded-3 bg-white shadow-sm mx-auto" style="max-width: 800px;">
+    <h4 class="text-center mb-4 fw-bold text-primary">Complete Your Profile</h4>
+
+    <% if @user.errors.any? %>
+      <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <ul class="mb-0 ps-3">
+          <% @user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
+
+    <%= simple_form_for @user, url: profile_path, method: :patch,
+        html: {
+          multipart: true,
+          data: { controller: "id-switcher" },
+          class: "profile-form"
+        },
+        error_notification: false do |f| %>
+
+      <div class="accordion accordion-flush" id="profileAccordion">
+        <!-- Personal Info -->
+        <div class="accordion-item mb-2 border rounded-3">
+          <h2 class="accordion-header" id="headingPersonal">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#personalSection" aria-expanded="false" aria-controls="personalSection">
+              <i class="ri-user-line me-2 text-primary"></i> Personal Information
+            </button>
+          </h2>
+          <div id="personalSection" class="accordion-collapse collapse" data-bs-parent="#profileAccordion">
+            <div class="accordion-body p-4">
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <%= f.input :first_name, input_html: { placeholder: "e.g. Jean", class: "form-control rounded-3" }, label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :middle_name, input_html: { placeholder: "e.g. Marc", class: "form-control rounded-3" }, label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :last_name, input_html: { placeholder: "e.g. Louis", class: "form-control rounded-3" }, label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :sex,
+                    collection: User.sexes.keys.map { |key| [key == "M" ? "MALE" : "FEMALE", key] },
+                    prompt: "Select Sex",
+                    input_html: {
+                      class: "form-select rounded-3",
+                      data: {
+                        action: "change->id-switcher#updateNationality",
+                        id_switcher_target: "sex"
+                      }
+                    },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :dob, as: :date, start_year: 1920, end_year: Date.today.year - 18,
+                    prompt: { day: 'Day', month: 'Month', year: 'Year' },
+                    input_html: { class: "form-select rounded-3" },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :phone, input_html: { placeholder: "+509 1234 5678", class: "form-control rounded-3" }, label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :marital_status,
+                    collection: User.marital_statuses.keys.map { |key| [key.titleize, key] },
+                    prompt: "Select Marital Status",
+                    input_html: { class: "form-select rounded-3" },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :social_handle, input_html: { placeholder: "e.g. @username", class: "form-control rounded-3" }, label_html: { class: "form-label fw-bold" } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Info -->
+        <div class="accordion-item mb-2 border rounded-3">
+          <h2 class="accordion-header" id="headingAddress">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#addressSection" aria-expanded="false" aria-controls="addressSection">
+              <i class="ri-map-pin-line me-2 text-primary"></i> Address Information
+            </button>
+          </h2>
+          <div id="addressSection" class="accordion-collapse collapse" data-bs-parent="#profileAccordion">
+            <div class="accordion-body p-4">
+              <%= f.simple_fields_for :address do |a| %>
+                <div class="row g-3" data-controller="address">
+                  <div class="col-12 col-md-6">
+                    <%= a.input :department_id,
+                      collection: Department.all.map { |d| [d.name, d.id] },
+                      prompt: "Select Department",
+                      input_html: {
+                        class: "form-select rounded-3",
+                        data: {
+                          action: "change->address#loadArrondissements",
+                          address_target: "department",
+                          slug_map: Department.all.index_by(&:id).transform_values(&:slug).to_json
+                        }
+                      },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :arrondissement_id,
+                      collection: [],
+                      prompt: "Select Arrondissement",
+                      input_html: {
+                        class: "form-select rounded-3",
+                        data: {
+                          action: "change->address#loadCommunes",
+                          address_target: "arrondissement"
+                        }
+                      },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :commune_id,
+                      collection: [],
+                      prompt: "Select Commune",
+                      input_html: {
+                        class: "form-select rounded-3",
+                        data: { action: "change->address#loadCommunalSections", address_target: "commune" }
+                      },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :communal_section_id,
+                      collection: [],
+                      prompt: "Select Section Communale",
+                      input_html: {
+                        class: "form-select rounded-3",
+                        data: { action: "change->address#loadPostalCode", address_target: "section" }
+                      },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :postal_code,
+                      input_html: {
+                        class: "form-control rounded-3",
+                        readonly: true,
+                        placeholder: "HT0000",
+                        data: { address_target: "postalCode" }
+                      },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :street_address,
+                      input_html: { class: "form-control rounded-3", placeholder: "e.g. 123 Rue Principale" },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :locality,
+                      input_html: { class: "form-control rounded-3", placeholder: "e.g. Jacmel" },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <%= a.input :country, as: :select,
+                      collection: ["Haiti", "Dominican Republic", "Chile", "Brazil", "Mexico", "Canada", "France", "USA"],
+                      selected: @user.address&.country || "Haiti",
+                      prompt: "Select Country",
+                      input_html: { class: "form-select rounded-3" },
+                      label_html: { class: "form-label fw-bold" } %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <!-- ID Info -->
+        <div class="accordion-item mb-2 border rounded-3">
+          <h2 class="accordion-header" id="headingId">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#idSection" aria-expanded="false" aria-controls="idSection">
+              <i class="ri-fingerprint-line me-2 text-primary"></i> Identification Information
+            </button>
+          </h2>
+          <div id="idSection" class="accordion-collapse collapse" data-bs-parent="#profileAccordion">
+            <div class="accordion-body p-4">
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <%= f.input :id_type,
+                    collection: User.id_types.keys.map { |key| [key.upcase, key] },
+                    prompt: "Select ID Type",
+                    input_html: {
+                      class: "form-select rounded-3",
+                      data: { action: "change->id-switcher#toggle" }
+                    },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :id_number,
+                    input_html: { class: "form-control rounded-3", placeholder: "e.g. A123456789 or CIN" },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :place_of_birth,
+                    input_html: { class: "form-control rounded-3", placeholder: "e.g. Jérémie" },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :nationality,
+                    input_html: {
+                      class: "form-control rounded-3",
+                      readonly: true,
+                      data: { id_switcher_target: "nationality" }
+                    },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :id_issued_on, as: :date,
+                    input_html: { class: "form-select rounded-3" },
+                    label: "Date Issued",
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6">
+                  <%= f.input :id_expires_on, as: :date,
+                    input_html: { class: "form-select rounded-3" },
+                    label: "Expiration Date",
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+                <div class="col-12 col-md-6" data-id-switcher-target="issuingAuthority" style="display: none;">
+                  <%= f.input :issuing_authority,
+                    input_html: { class: "form-control rounded-3", placeholder: "e.g. Ministry of Justice" },
+                    label_html: { class: "form-label fw-bold" } %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="mt-4 text-center">
+        <%= f.button :submit, "Save Profile", class: "btn btn-primary btn-lg w-100 rounded-3 py-2 fw-semibold" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Custom CSS for Mobile-Friendly Styling -->
+<style>
+  /* Reset browser defaults */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Navbar styles */
+  .navbar {
+    padding: 0.5rem 0;
+    margin: 0 !important;
+    width: 100vw;
+    box-sizing: border-box;
+    border: none !important;
+    background: linear-gradient(90deg, #00209F 0%, #D21034 100%); /* Haitian Blue to Red */
+  }
+
+  .navbar-brand {
+    padding-left: 1rem;
+    transition: transform 0.3s ease;
+  }
+
+  .navbar-brand:hover {
+    transform: scale(1.05);
+  }
+
+  .bonid-text {
+    color: #FFFFFF !important;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .nav-link {
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem !important;
+    color: #FFFFFF !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+  }
+
+  .navbar-toggler {
+    border: none;
+    padding: 0.5rem;
+    margin-right: 1rem;
+  }
+
+  .navbar-toggler:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.5);
+  }
+
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.75)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    width: 1.5em;
+    height: 1.5em;
+  }
+
+  .navbar-collapse {
+    transition: all 0.3s ease;
+  }
+
+  .container-fluid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Profile page styles adapted from certificate page */
+  .certificate-font {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+  }
+
+  .form-container {
+    transition: all 0.3s ease;
+    background-color: #FFFFFF !important; /* Pure White */
+    border: 1px solid #F8F9FA; /* Light Gray */
+  }
+
+  .shadow-sm {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06) !important; /* Subtle shadow */
+  }
+
+  .text-primary {
+    color: #3366CC !important; /* Ocean Blue */
+  }
+
+  .text-muted {
+    color: #6C757D !important; /* Mid Gray */
+  }
+
+  .accordion-button {
+    background-color: #F8F9FA; /* Light Gray */
+    color: #343A40; /* Dark Gray */
+    padding: 1rem;
+    border-radius: 0.5rem !important;
+    font-weight: 600;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background-color: #E9ECEF; /* Slightly darker Light Gray */
+    color: #3366CC; /* Ocean Blue */
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 32, 159, 0.25);
+    outline: none;
+  }
+
+  .form-control, .form-select {
+    height: 48px;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #343A40; /* Dark Gray */
+    background-color: #F8F9FA; /* Light Gray */
+    border: 1px solid #6C757D; /* Mid Gray */
+    border-radius: 0.5rem !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #00209F; /* Haitian Blue */
+    box-shadow: 0 0 0 0.2rem rgba(0, 32, 159, 0.25);
+    color: #343A40;
+  }
+
+  .form-control::placeholder, .form-select:invalid {
+    color: #6C757D; /* Mid Gray */
+    font-weight: 400;
+    opacity: 1;
+  }
+
+  .form-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #343A40; /* Dark Gray */
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-primary {
+    background-color: #00209F; /* Haitian Blue */
+    border-color: #00209F;
+    color: #FFFFFF; /* Pure White */
+    min-height: 48px;
+  }
+
+  .btn-primary:hover {
+    background-color: #001A80; /* Darker Haitian Blue */
+    border-color: #001A80;
+  }
+
+  .btn-outline-danger {
+    border-color: #E63946; /* Coral Red */
+    color: #E63946;
+  }
+
+  .btn-outline-danger:hover {
+    background-color: #E63946;
+    color: #FFFFFF;
+  }
+
+  .alert-danger {
+    background-color: rgba(230, 57, 70, 0.1); /* Coral Red with opacity */
+    border-color: #E63946;
+    color: #343A40;
+  }
+
+  [class^="ri-"], [class*=" ri-"] {
+    font-family: 'remixicon' !important;
+    font-style: normal;
+    font-weight: normal;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: inline-block !important;
+    vertical-align: middle;
+  }
+
+  .accordion-button i[class^="ri-"], .accordion-button i[class*=" ri-"] {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+  }
+
+  @media (max-width: 576px) {
+    .navbar-nav {
+      padding: 1rem;
+      background-color: rgba(0, 32, 159, 0.9);
+      border-radius: 0.5rem;
+    }
+    .nav-link {
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem !important;
+    }
+    .bonid-text {
+      font-size: 1.25rem;
+    }
+    .form-container {
+      padding: 1rem;
+    }
+    .accordion-body {
+      padding: 1rem;
+    }
+    .btn {
+      font-size: 0.9rem;
+      padding: 0.5rem 1rem;
+    }
+    .btn-primary {
+      font-size: 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,23 @@
+<!-- app/views/incident_reports/index.html.erb -->
+<div class="container py-5">
+  <h2 class="mb-4 fw-bold">Your Incident Reports</h2>
+
+  <% if @incident_reports.any? %>
+    <div class="list-group">
+      <% @incident_reports.each do |report| %>
+        <%= link_to incident_report_path(report), class: "list-group-item list-group-item-action d-flex justify-content-between align-items-center" do %>
+          <div>
+            <h5 class="mb-1 fw-semibold"><%= report.incident_type %></h5>
+            <p class="mb-1 text-muted">
+              <%= report.occurred_at&.strftime("%b %d, %Y") %> —
+              <%= report.full_address %>
+            </p>
+          </div>
+          <i class="ri-arrow-right-s-line"></i>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="alert alert-info">No reports submitted yet.</div>
+  <% end %>
+</div>

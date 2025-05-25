@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= content_for(:title) || "BonID – Haiti's Open Digital Identification" %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="turbo-cache-control" content="no-cache">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <!-- Stylesheets -->
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+      
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS (✅ Correct SHA for 1.9.4) -->
+    <link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha512-sA+3BbUccP7wG52NbyD3UsfwHKLSLoX23U6sbNBIVsmkk7JvD59JroJjU9VrgyNFN0NSj7nOXTu9e+h1j5oGiw=="
+  crossorigin=""
+>
+  
+  </head>
+
+  <body class="d-flex flex-column min-vh-100" data-controller="tooltip">
+    <main class="flex-fill">
+      <% if ENV["STAGING"] == "true" %>
+  <div class="alert alert-warning text-center">
+    🚧 This is a staging preview of BonID. Data is not final.
+  </div>
+<% end %>
+
+      <%= render "shared/confirmation_modal" %>
+      <% unless controller.devise_controller? %>
+        <%= render "shared/flash" %>
+      <% end %>
+      <%= yield %>
+    </main>
+
+    <!-- ✅ Bundled JavaScript -->
+    <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+
+    <!-- Leaflet JS (✅ SHA updated for 1.9.4) -->
+    <script 
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg=="
+      crossorigin=""
+    ></script>
+  </body>
+</html>

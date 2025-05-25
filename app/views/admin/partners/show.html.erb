@@ -1,0 +1,528 @@
+<!-- app/views/admin/identity_submissions/index.html.erb -->
+<%=render "shared/navbar" %>
+<div class="container py-4 bg-light">
+  <div class="card shadow-sm rounded-4 bg-white p-4 p-md-5">
+    <!-- Header -->
+    <header class="d-flex justify-content-between align-items-center mb-4">
+      <% if @partner.present? %>
+        <h1 class="h4 fw-bold text-primary">Partner: <%= @partner.name %></h1>
+      <% elsif defined?(@application) && @application.present? %>
+        <h1 class="h4 fw-bold text-primary">Partner Application: <%= @application.organization_name %></h1>
+      <% else %>
+        <h1 class="h4 fw-bold text-primary text-danger">No partner found.</h1>
+      <% end %>
+    </header>
+
+    <!-- Accordion for Partner Sections -->
+    <div class="accordion accordion-flush" id="partnerShowAccordion">
+      <!-- Partner Details Section -->
+      <div class="accordion-item border rounded-3 mb-3">
+        <h2 class="accordion-header" id="detailsHeading">
+          <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#detailsSection" aria-expanded="true" aria-controls="detailsSection" aria-label="Toggle partner details section">
+            <i class="ri-building-line me-2 text-primary"></i> Partner Details
+          </button>
+        </h2>
+        <div id="detailsSection" class="accordion-collapse collapse show" data-bs-parent="#partnerShowAccordion">
+          <div class="accordion-body p-4">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Logo:</strong><br>
+                <% if @partner.logo.attached? %>
+                  <%= image_tag @partner.logo.variant(resize_to_limit: [100, 100]), class: "rounded shadow-sm mb-2", alt: "#{@partner.name} logo" %>
+                <% else %>
+                  <span class="text-muted">No Logo</span>
+                <% end %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Name:</strong><br>
+                <%= @partner.name %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Sector:</strong><br>
+                <%= @partner.sector&.titleize || "N/A" %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Website:</strong><br>
+                <%= link_to @partner.website, @partner.website, target: "_blank", class: "text-primary" if @partner.website.present? %>
+                <%= "N/A" if @partner.website.blank? %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Description:</strong><br>
+                <%= @partner.description.presence || "No description provided" %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Verified At:</strong><br>
+                <%= @partner.verified_at&.strftime("%B %d, %Y") || "Not verified" %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Address:</strong><br>
+                <%= if @partner.address.present?
+                      [
+                        @partner.address.street_address,
+                        @partner.address.communal_section,
+                        @partner.address.commune,
+                        @partner.address.postal_code,
+                        @partner.address.department,
+                        @partner.address.country || "HAITI"
+                      ].compact.reject(&:blank?).join(', ')
+                    else
+                      "Not available"
+                    end %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Coordinates:</strong><br>
+                <% if @partner.address&.latitude.present? && @partner.address&.longitude.present? %>
+                  <%= "#{@partner.address.latitude}, #{@partner.address.longitude}" %>
+                <% else %>
+                  Not available
+                <% end %>
+              </div>
+              <% if @partner.address&.latitude && @partner.address&.longitude %>
+                <div class="col-12 mt-3">
+                  <strong class="form-label fw-bold">Location Map:</strong>
+                  <div
+                    data-controller="map"
+                    data-map-latitude-value="<%= @partner.address.latitude %>"
+                    data-map-longitude-value="<%= @partner.address.longitude %>"
+                    data-map-zoom-value="16"
+                    style="height: 300px; width: 100%;"
+                  ></div>
+                </div>
+              <% end %>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">Start Link:</strong><br>
+                <code class="text-primary d-block mb-1" id="link_<%= @partner.id %>">
+                  /start?partner=<%= @partner.slug %>
+                </code>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="copyToClipboard('<%= @partner.slug %>')" data-bs-toggle="tooltip" title="Copy start link">
+                  Copy Link
+                </button>
+                <%= link_to "Visit", start_verification_url(partner: @partner.slug), class: "btn btn-outline-primary btn-sm rounded-pill ms-2", target: "_blank", data: { turbo: false, bs_toggle: "tooltip" }, title: "Visit start link" %>
+              </div>
+              <div class="col-md-6">
+                <strong class="form-label fw-bold">QR Code:</strong><br>
+                <%= image_tag url_for(RQRCode::QRCode.new(start_verification_url(partner: @partner.slug)).as_png(size: 150).to_data_url), alt: "QR Code for #{@partner.name}", class: "img-thumbnail", style: "width: 100px;" %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Section -->
+      <div class="accordion-item border rounded-3 mb-3">
+        <h2 class="accordion-header" id="locationHeading">
+          <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#locationSection" aria-expanded="false" aria-controls="locationSection" aria-label="Toggle location section">
+            <i class="ri-map-pin-line me-2 text-primary"></i> Location
+          </button>
+        </h2>
+        <div id="locationSection" class="accordion-collapse collapse" data-bs-parent="#partnerShowAccordion">
+          <div class="accordion-body p-4">
+            <% if @partner.latitude && @partner.longitude %>
+              <div
+                data-controller="map"
+                data-map-latitude-value="<%= @partner.latitude %>"
+                data-map-longitude-value="<%= @partner.longitude %>"
+                data-map-zoom-value="16"
+                style="height: 300px; width: 100%;"
+              ></div>
+            <% else %>
+              <p class="text-muted">No location data available.</p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Application Details Section -->
+      <% if defined?(@application) && @application.present? %>
+        <div class="accordion-item border rounded-3 mb-3">
+          <h2 class="accordion-header" id="applicationHeading">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#applicationSection" aria-expanded="false" aria-controls="applicationSection" aria-label="Toggle application details section">
+              <i class="ri-file-text-line me-2 text-primary"></i> Application Details
+            </button>
+          </h2>
+          <div id="applicationSection" class="accordion-collapse collapse" data-bs-parent="#partnerShowAccordion">
+            <div class="accordion-body p-4">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <strong class="form-label fw-bold">Submitted Address:</strong><br>
+                  <%= [
+                        @application.street_address,
+                        @application.communal_section,
+                        @application.commune,
+                        @application.postal_code,
+                        @application.department,
+                        @application.country || "HAITI"
+                      ].compact.reject(&:blank?).join(', ') %>
+                </div>
+                <div class="col-md-6">
+                  <strong class="form-label fw-bold">Submitted Coordinates:</strong><br>
+                  <%= @application.latitude && @application.longitude ? "#{@application.latitude}, #{@application.longitude}" : "Not available" %>
+                </div>
+                <% if @application.latitude && @application.longitude %>
+                  <div class="col-12 mt-3">
+                    <strong class="form-label fw-bold">Submitted Map:</strong>
+                    <div
+                      data-controller="map"
+                      data-map-latitude-value="<%= @application.latitude %>"
+                      data-map-longitude-value="<%= @application.longitude %>"
+                      data-map-zoom-value="16"
+                      style="height: 300px; width: 100%;"
+                    ></div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Scan History Section -->
+      <div class="accordion-item border rounded-3 mb-3">
+        <h2 class="accordion-header" id="scansHeading">
+          <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#scansSection" aria-expanded="false" aria-controls="scansSection" aria-label="Toggle scan history section">
+            <i class="ri-qr-scan-line me-2 text-primary"></i> Scan History
+          </button>
+        </h2>
+        <div id="scansSection" class="accordion-collapse collapse" data-bs-parent="#partnerShowAccordion">
+          <div class="accordion-body p-4">
+            <div class="mb-3">
+              <strong>Total Scans:</strong> <%= @partner.qr_scans.count %>
+              <br>
+              <strong>Last Scan:</strong> <%= @partner.qr_scans.maximum(:scanned_at)&.strftime("%B %d, %Y %H:%M") || "No scans" %>
+            </div>
+            <% if @partner.qr_scans.any? %>
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th scope="col">Scan ID</th>
+                    <th scope="col">Date</th>
+                    <th scope="col">IP Address</th>
+                    <th scope="col">Identity Submission</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @partner.qr_scans.order(scanned_at: :desc).limit(10).each do |scan| %>
+                    <tr>
+                      <td><%= scan.id %></td>
+                      <td><%= scan.scanned_at.strftime("%b %d, %Y %H:%M") %></td>
+                      <td><%= scan.ip_address %></td>
+                      <td>
+                        <%= link_to scan.identity_submission.user.full_name, admin_identity_submission_path(scan.identity_submission), class: "text-primary" if scan.identity_submission %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+              <% if @partner.qr_scans.count > 10 %>
+                <p class="text-muted small">Showing 10 of <%= @partner.qr_scans.count %> scans.</p>
+              <% end %>
+            <% else %>
+              <p class="text-muted">No scan history available.</p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Actions Section -->
+      <div class="accordion-item border rounded-3 mb-3">
+        <h2 class="accordion-header" id="actionsHeading">
+          <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#actionsSection" aria-expanded="false" aria-controls="actionsSection" aria-label="Toggle admin actions section">
+            <i class="ri-settings-3-line me-2 text-primary"></i> Admin Actions
+          </button>
+        </h2>
+        <div id="actionsSection" class="accordion-collapse collapse" data-bs-parent="#partnerShowAccordion">
+          <div class="accordion-body p-4">
+            <!-- Edit Partner Form -->
+            <h5 class="fw-bold text-primary mb-3">Edit Partner</h5>
+            <%= simple_form_for [:admin, @partner],html: { multipart: true,  class: "needs-validation", data: { controller: "form-validation" } } do |f| %>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <%= f.input :name,
+                              label: "Organization Name",
+                              required: true,
+                              input_html: { class: "form-control rounded-3", data: { form_validation_target: "input" } } %>
+                </div>
+                <div class="col-md-6">
+                  <%= f.input :sector,
+                              collection: Partner.distinct.pluck(:sector).compact.sort,
+                              prompt: "Select Sector",
+                              input_html: { class: "form-select rounded-3", data: { form_validation_target: "input" } } %>
+                </div>
+                <div class="col-md-6">
+                  <%= f.input :website,
+                              label: "Website (Optional)",
+                              input_html: { class: "form-control rounded-3", data: { form_validation_target: "input" } } %>
+                </div>
+                <div class="col-md-6">
+                  <%= f.input :description,
+                              as: :text,
+                              input_html: { rows: 3, class: "form-control rounded-3", data: { form_validation_target: "input" } } %>
+                </div>
+                <div class="col-md-6">
+                  <%= f.input :logo,
+                              as: :file,
+                              label: "Update Logo (Optional)",
+                              input_html: { accept: "image/*", class: "form-control rounded-3" },
+                              hint: "PNG, JPG, or SVG" %>
+                </div>
+                <div class="col-md-6">
+                  <%= f.input :verified_at,
+                              as: :datetime,
+                              label: "Verification Date",
+                              input_html: { class: "form-control rounded-3" } %>
+                </div>
+              </div>
+              <div class="d-flex gap-2 mt-4">
+                <%= f.button :submit, "Update Partner", class: "btn btn-success rounded-pill flex-grow-1", data: { form_validation_target: "submit" } %>
+                <%= link_to "Cancel", admin_partner_path(@partner), class: "btn btn-outline-secondary rounded-pill flex-grow-1" %>
+              </div>
+            <% end %>
+
+            <!-- Other Actions -->
+            <h5 class="fw-bold text-primary mt-5 mb-3">Other Actions</h5>
+            <div class="d-flex flex-column gap-2">
+              <%= button_to "Resend Verification Email",
+                            resend_verification_email_admin_partner_path(@partner),
+                            method: :post,
+                            class: "btn btn-outline-secondary rounded-pill",
+                            data: { turbo_confirm: "Resend verification email to #{@partner.name}?" } %>
+              <%= button_to "Delete Partner",
+                            admin_partner_path(@partner),
+                            method: :delete,
+                            class: "btn btn-danger rounded-pill",
+                            data: { turbo_confirm: "Are you sure you want to delete #{@partner.name}? This cannot be undone." } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 1200px;
+    padding: 0 15px;
+  }
+
+  /* Colors */
+  .bg-primary { background-color: #1e40af !important; }
+  .text-primary { color: #1e40af !important; }
+  .bg-success { background-color: #059669 !important; }
+  .text-secondary { color: #6b7280 !important; }
+
+  /* Cards */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Accordion */
+  .accordion-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .accordion-button {
+    background: #ffffff;
+    color: #1e40af;
+    font-weight: 600;
+    border-radius: 8px !important;
+    padding: 16px;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background: #eff6ff;
+    color: #1e40af;
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .accordion-body {
+    padding: 24px;
+  }
+
+  /* Form Elements */
+  .form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: #1e40af;
+    border-color: #1e40af;
+  }
+
+  .btn-primary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+  }
+
+  .btn-success {
+    background: #059669;
+    border-color: #059669;
+  }
+
+  .btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+  }
+
+  .btn-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+  }
+
+  .btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
+
+  .btn-outline-primary {
+    border-color: #1e40af;
+    color: #1e40af;
+  }
+
+  .btn-outline-primary:hover {
+    background: #1e40af;
+    color: #ffffff;
+  }
+
+  .btn-outline-secondary {
+    border-color: #6b7280;
+    color: #6b7280;
+  }
+
+  .btn-outline-secondary:hover {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
+  /* Table */
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 12px;
+    }
+    .card {
+      padding: 16px;
+    }
+    .accordion-button {
+      font-size: 0.875rem;
+      padding: 12px;
+    }
+    .accordion-body {
+      padding: 16px;
+    }
+    .btn {
+      font-size: 0.875rem;
+      padding: 8px 12px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    h1.h4 {
+      font-size: 1.25rem;
+    }
+    .table {
+      font-size: 0.75rem;
+    }
+    .img-thumbnail {
+      width: 80px;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips, Clipboard, and Form Validation -->
+<script>
+  // Bootstrap Tooltips
+  document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  // Copy to Clipboard
+  function copyToClipboard(slug) {
+    const text = `${window.location.origin}/start?partner=${slug}`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Copied to clipboard: " + text);
+    });
+  }
+
+  // Stimulus Controller for Form Validation
+  import { Controller } from "@hotwired/stimulus";
+  class FormValidationController extends Controller {
+    static targets = ["input", "submit"];
+    connect() {
+      this.element.addEventListener("submit", this.validate.bind(this));
+    }
+    validate(event) {
+      let isValid = true;
+      this.inputTargets.forEach(input => {
+        if (input.required && !input.value.trim()) {
+          input.classList.add("is-invalid");
+          isValid = false;
+        } else {
+          input.classList.remove("is-invalid");
+        }
+      });
+      if (!isValid) {
+        event.preventDefault();
+        this.submitTarget.disabled = false;
+      }
+    }
+  }
+</script>

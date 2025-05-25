@@ -1,0 +1,131 @@
+<h1 class="mb-4 fw-bold">Submit Incident Report</h1>
+
+<%= simple_form_for @incident_report, url: incident_reports_path, html: { multipart: true, class: "needs-validation", novalidate: true } do |f| %>
+  <%= f.error_notification %>
+
+  <div class="mb-4">
+    <%= f.input :crime_type, 
+                collection: IncidentReport::CRIME_TYPE_CATEGORIES.transform_values(&:sort),
+                as: :grouped_select,
+                group_method: :last,
+                group_label_method: :first,
+                label_method: :to_s,
+                value_method: :to_s,
+                prompt: "Select Crime Type",
+                input_html: { class: "form-select rounded-3" },
+                label_html: { class: "form-label fw-bold" } %>
+  </div>
+
+  <div class="mb-4">
+    <%= f.input :description, 
+                as: :text,
+                label: "Incident Description",
+                input_html: { rows: 5, class: "form-control rounded-3", placeholder: "Describe what happened..." },
+                label_html: { class: "form-label fw-bold" } %>
+  </div>
+
+  <div class="mb-4">
+    <%= f.input :occurred_at,
+                as: :datetime,
+                label: "Date & Time of Incident",
+                input_html: { class: "form-control rounded-3" },
+                label_html: { class: "form-label fw-bold" } %>
+  </div>
+
+  <<div class="mb-3">
+  <%= form.label :media, "Upload Media (Optional)", class: "form-label fw-bold" %>
+  <%= form.file_field :media, multiple: true, direct_upload: true, class: "form-control", accept: "image/*,video/*" %>
+  <small class="form-text text-muted">You can upload photos or videos related to the incident.</small>
+</div>
+
+
+  <h5 class="fw-semibold mb-3">Incident Location</h5>
+  <div class="row g-3" data-controller="address">
+    <div class="col-md-6">
+      <%= f.input :department_id,
+                  collection: Department.all.map { |d| [d.name, d.id] },
+                  prompt: "Select Department",
+                  input_html: {
+                    class: "form-select rounded-3",
+                    data: {
+                      action: "change->address#loadArrondissements",
+                      address_target: "department"
+                    }
+                  },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :arrondissement_id,
+                  collection: [],
+                  prompt: "Select Arrondissement",
+                  input_html: {
+                    class: "form-select rounded-3",
+                    data: {
+                      action: "change->address#loadCommunes",
+                      address_target: "arrondissement"
+                    }
+                  },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :commune_id,
+                  collection: [],
+                  prompt: "Select Commune",
+                  input_html: {
+                    class: "form-select rounded-3",
+                    data: {
+                      action: "change->address#loadCommunalSections",
+                      address_target: "commune"
+                    }
+                  },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :communal_section_id,
+                  collection: [],
+                  prompt: "Select Section Communale",
+                  input_html: {
+                    class: "form-select rounded-3",
+                    data: {
+                      action: "change->address#loadPostalCode",
+                      address_target: "section"
+                    }
+                  },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :postal_code,
+                  input_html: {
+                    readonly: true,
+                    class: "form-control rounded-3",
+                    data: { address_target: "postalCode" },
+                    placeholder: "HT0000"
+                  },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :street_address,
+                  input_html: { class: "form-control rounded-3", placeholder: "e.g., 21 Rue Toussaint Louverture" },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :locality,
+                  input_html: { class: "form-control rounded-3", placeholder: "e.g., Marché Salomon" },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :latitude,
+                  input_html: { step: "any", class: "form-control rounded-3", placeholder: "e.g., 18.5393" },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :longitude,
+                  input_html: { step: "any", class: "form-control rounded-3", placeholder: "e.g., -72.3350" },
+                  label_html: { class: "form-label fw-bold" } %>
+    </div>
+  </div>
+
+  <div class="d-grid mt-4">
+    <%= f.button :submit, "Submit Report", class: "btn btn-danger fw-semibold rounded-pill py-3" %>
+  </div>
+<% end %>

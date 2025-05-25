@@ -1,0 +1,34 @@
+<h2 style="color:#0d6efd;">🎉 BonID Approved</h2>
+
+<p><strong>Hi <%= @submission.user.first_name %>,</strong></p>
+
+<p>Great news — your BonID submission has been <strong>successfully approved</strong>! You can now present your BonID to verify your identity with trusted institutions across Haiti.</p>
+
+<p><strong>Details:</strong></p>
+<ul>
+  <li><strong>Full Name:</strong> <%= @submission.user.full_name %></li>
+  <li><strong>BonID:</strong> <%= @submission.user.bonid.presence || "Pending" %></li>
+  <li><strong>Status:</strong> <%= @submission.status.titleize %></li>
+  <li><strong>Submitted On:</strong> <%= @submission.created_at.strftime("%B %d, %Y") %></li>
+  <% if @submission.rejection_reason.present? %>
+    <li><strong>Previous Rejection Reason:</strong> <%= @submission.rejection_reason %></li>
+  <% end %>
+</ul>
+
+<p>Your BonID QR code is now valid and may be used with:</p>
+<ul>
+  <li>PNH (Police Nationale d'Haïti)</li>
+  <li>Banks and financial institutions</li>
+  <li>Educational institutions</li>
+  <li>Border and immigration authorities</li>
+</ul>
+
+<p>
+👉 <strong><a href="<%= verify_identity_submission_url(@submission.verification_token) %>" style="color:#0d6efd;">Click here to view and share your BonID</a></strong>
+</p>
+
+<p><strong>Important:</strong> This BonID expires on <strong><%= @submission.expires_at.strftime("%B %d, %Y") %></strong>. Be sure to request a renewal before that date if needed.</p>
+
+<p>Thank you for choosing BonID to secure and verify your identity transparently.</p>
+
+<p>— The BonID Team 🇭🇹</p>

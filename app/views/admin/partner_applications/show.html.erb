@@ -1,0 +1,358 @@
+<%=render "shared/navbar" %>
+
+<div class="container py-4 bg-light">
+  <!-- app/views/admin/partner_applications/show.html.erb -->
+<%= render "shared/navbar" %>
+
+<div class="container py-4 bg-light">
+  <div class="card shadow-sm rounded-4 bg-white p-4 p-md-5">
+
+    <!-- Header -->
+    <header class="d-flex justify-content-between align-items-center mb-4">
+      <% if @partner.present? %>
+        <h1 class="h4 fw-bold text-primary">Partner: <%= @partner.name %></h1>
+      <% elsif @application.present? %>
+        <h1 class="h4 fw-bold text-secondary">Partner Application: <%= @application.organization_name %></h1>
+      <% else %>
+        <h1 class="h4 fw-bold text-danger">No application or partner found.</h1>
+      <% end %>
+      <div>
+        <%= link_to "Back", admin_partner_applications_path, class: "btn btn-outline-secondary me-2" %>
+       <% if @application.present? %>
+  <%= link_to "Edit", edit_admin_partner_application_path(@application), class: "btn btn-outline-primary" %>
+<% end %>
+
+      </div>
+    </header>
+
+    <% if @application.logo&.attached? %>
+  <div class="mb-4 d-flex align-items-start">
+    <%= image_tag @application.logo.variant(resize_to_limit: [120, 120]), class: "rounded shadow-sm me-4" %>
+    <div>
+    </div>
+  </div>
+
+
+      <div class="row g-4">
+        <div class="col-md-6"><strong>Name:</strong><br><%= @application.organization_name %></div>
+        <div class="col-md-6"><strong>Sector:</strong><br><%= @application.department_sector&.titleize || "N/A" %></div>
+        <div class="col-md-6"><strong>Unit Name:</strong><br><%= @application.unit_name.presence || "N/A" %></div>
+        <div class="col-md-6"><strong>Unit Type:</strong><br><%= @application.unit_type.presence || "N/A" %></div>
+        <div class="col-md-6"><strong>Website:</strong><br>
+          <% if @application.website.present? %>
+            <%= link_to @application.website, @application.website, class: "text-primary", target: "_blank" %>
+          <% else %>
+            <span class="text-muted">N/A</span>
+          <% end %>
+        </div>
+        <div class="col-md-6"><strong>Submitted At:</strong><br><%= @application.created_at.strftime("%B %d, %Y %H:%M") %></div>
+        <div class="col-md-6"><strong>Description:</strong><br><%= @application.description.presence || "N/A" %></div>
+        <div class="col-md-6"><strong>Use Cases:</strong><br><%= @application.use_cases&.join(", ") || "N/A" %></div>
+        <div class="col-md-6"><strong>Contact Person:</strong><br><%= @application.contact_person %></div>
+        <div class="col-md-6"><strong>Email:</strong><br><%= mail_to @application.email %></div>
+        <div class="col-md-6"><strong>Phone:</strong><br><%= @application.phone_number.presence || "N/A" %></div>
+        <div class="col-md-6"><strong>Address:</strong><br><%= @application.address&.formatted_address || "N/A" %></div>
+        <div class="col-md-6"><strong>Coordinates:</strong><br>
+          <% if @application.address&.latitude && @application.address&.longitude %>
+            <%= "#{@application.address.latitude}, #{@application.address.longitude}" %>
+          <% else %>
+            N/A
+          <% end %>
+        </div>
+      </div>
+
+      <% if @application.address&.latitude && @application.address&.longitude %>
+        <div class="mt-4">
+          <div
+            data-controller="map"
+            data-map-latitude-value="<%= @application.address.latitude %>"
+            data-map-longitude-value="<%= @application.address.longitude %>"
+            data-map-label-value="<%= j "#{@application.organization_name}<br>#{@application.address.full_address}" %>"
+            style="height: 300px;"
+            class="rounded-3 shadow-sm"
+          ></div>
+          <% if @application.address.present? %>
+            <%= button_to "📍 Re-Geocode Address", geocode_address_admin_partner_application_path(@application), method: :post, class: "btn btn-outline-secondary rounded-pill", data: { turbo_confirm: "Re-run geocoding for this address?" } %>
+          <% end %>
+
+        </div>
+      <% end %>
+
+      <div class="mt-4">
+        <strong>Status:</strong><br>
+        <% if @application.approved? %>
+          <span class="badge bg-success">Approved</span>
+        <% elsif @application.rejection_reason.present? %>
+          <span class="badge bg-danger">Rejected</span>
+        <% else %>
+          <span class="badge bg-secondary">Pending</span>
+        <% end %>
+      </div>
+
+      <% if current_user.admin? && !@application.approved? && @application.rejection_reason.blank? %>
+        <div class="mt-5 d-flex flex-column flex-md-row gap-3">
+          <!-- Approve Button -->
+          <%= form_with url: admin_partner_application_path(@application), method: :patch, local: true do |f| %>
+            <%= f.hidden_field :approve, value: true %>
+            <%= f.submit "✅ Approve", class: "btn btn-success px-4 rounded-pill" %>
+          <% end %>
+
+          <!-- Reject Form -->
+          <%= form_with url: admin_partner_application_path(@application, reject: true), method: :patch, local: true do |f| %>
+            <div class="mb-2">
+              <%= f.label :rejection_reason, "Reason for Rejection", class: "form-label fw-bold" %>
+              <%= f.select :rejection_reason, PartnerApplication::REJECTION_REASONS,
+                { prompt: "Select a reason" },
+                class: "form-select rounded-3", required: true %>
+            </div>
+            <div class="mb-3">
+              <%= f.label :rejection_comment, "Additional Notes (Optional)", class: "form-label fw-bold" %>
+              <%= f.text_area :rejection_comment, rows: 3, class: "form-control rounded-3" %>
+            </div>
+            <%= f.submit "❌ Reject", class: "btn btn-danger px-4 rounded-pill" %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if @application.rejection_reason.present? %>
+        <div class="alert alert-danger mt-4">
+          <strong>Rejection Reason:</strong> <%= @application.rejection_reason %><br>
+          <strong>Notes:</strong> <%= @application.rejection_comment.presence || "None" %>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="text-muted">No application data found.</p>
+    <% end %>
+  </div>
+</div>
+
+</div>
+
+
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 1200px;
+    padding: 0 15px;
+  }
+
+  /* Colors */
+  .bg-primary { background-color: #1e40af !important; }
+  .text-primary { color: #1e40af !important; }
+  .bg-success { background-color: #059669 !important; }
+  .text-secondary { color: #6b7280 !important; }
+
+  /* Cards */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Accordion */
+  .accordion-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .accordion-button {
+    background: #ffffff;
+    color: #1e40af;
+    font-weight: 600;
+    border-radius: 8px !important;
+    padding: 16px;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background: #eff6ff;
+    color: #1e40af;
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .accordion-body {
+    padding: 24px;
+  }
+
+  /* Form Elements */
+  .form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: #1e40af;
+    border-color: #1e40af;
+  }
+
+  .btn-primary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+  }
+
+  .btn-success {
+    background: #059669;
+    border-color: #059669;
+  }
+
+  .btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+  }
+
+  .btn-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+  }
+
+  .btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
+
+  .btn-outline-primary {
+    border-color: #1e40af;
+    color: #1e40af;
+  }
+
+  .btn-outline-primary:hover {
+    background: #1e40af;
+    color: #ffffff;
+  }
+
+  .btn-outline-secondary {
+    border-color: #6b7280;
+    color: #6b7280;
+  }
+
+  .btn-outline-secondary:hover {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
+  /* Table */
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 12px;
+    }
+    .card {
+      padding: 16px;
+    }
+    .accordion-button {
+      font-size: 0.875rem;
+      padding: 12px;
+    }
+    .accordion-body {
+      padding: 16px;
+    }
+    .btn {
+      font-size: 0.875rem;
+      padding: 8px 12px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    h1.h4 {
+      font-size: 1.25rem;
+    }
+    .table {
+      font-size: 0.75rem;
+    }
+    .img-thumbnail {
+      width: 80px;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips, Clipboard, and Form Validation -->
+<script>
+  // Bootstrap Tooltips
+  document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  // Copy to Clipboard
+  function copyToClipboard(slug) {
+    const text = `${window.location.origin}/start?partner=${slug}`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Copied to clipboard: " + text);
+    });
+  }
+
+  // Stimulus Controller for Form Validation
+  import { Controller } from "@hotwired/stimulus";
+  class FormValidationController extends Controller {
+    static targets = ["input", "submit"];
+    connect() {
+      this.element.addEventListener("submit", this.validate.bind(this));
+    }
+    validate(event) {
+      let isValid = true;
+      this.inputTargets.forEach(input => {
+        if (input.required && !input.value.trim()) {
+          input.classList.add("is-invalid");
+          isValid = false;
+        } else {
+          input.classList.remove("is-invalid");
+        }
+      });
+      if (!isValid) {
+        event.preventDefault();
+        this.submitTarget.disabled = false;
+      }
+    }
+  }
+</script>

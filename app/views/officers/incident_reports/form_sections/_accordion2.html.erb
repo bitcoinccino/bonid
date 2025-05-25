@@ -1,0 +1,193 @@
+<!-- app/views/officers/incident_reports/_accordion2.html.erb -->
+<div class="container py-5" style="max-width: 800px;">
+  <section class="text-center mb-5" aria-labelledby="incidentDetailsTitle">
+    <h2 class="fw-bold text-primary h4 h-md-3" id="incidentDetailsTitle">
+      <i class="ri-file-info-line me-2"></i> Additional Incident Details
+    </h2>
+    <p class="text-muted small mb-0">
+      Provide further details about the incident, including status, timing, location, and evidence. All fields marked with * are required.
+    </p>
+  </section>
+
+  <div class="accordion accordion-flush" id="incidentReportAccordion2">
+    <!-- Suspect Status -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingStatus">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatus" aria-expanded="false" aria-controls="collapseStatus">
+          <i class="ri-user-settings-line me-2"></i> Suspect Status
+        </button>
+      </h2>
+      <div id="collapseStatus" class="accordion-collapse collapse" aria-labelledby="headingStatus" data-bs-parent="#incidentReportAccordion2">
+        <div class="accordion-body p-4">
+          <%= f.label :suspect_status, "Suspect Status *", class: "form-label fw-bold small" %>
+          <%= f.input :suspect_status,
+                     collection: IncidentReport.suspect_statuses.map { |k, v| [v, k] },
+                     prompt: "Select status",
+                     input_html: { class: "form-select rounded-3 shadow-sm", required: true },
+                     aria: { describedby: "statusHelp" } %>
+          <small id="statusHelp" class="form-text text-muted">Indicate the current status of the suspect.</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Date and Time -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingOccurredAt">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOccurredAt" aria-expanded="false" aria-controls="collapseOccurredAt">
+          <i class="ri-calendar-line me-2"></i> Incident Date and Time
+        </button>
+      </h2>
+      <div id="collapseOccurredAt" class="accordion-collapse collapse" aria-labelledby="headingOccurredAt" data-bs-parent="#incidentReportAccordion2">
+        <div class="accordion-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.label :occurred_at, "Incident Date *", class: "form-label fw-bold small" %>
+              <%= f.input :occurred_at,
+                         as: :date,
+                         input_html: { class: "form-control rounded-3 shadow-sm", required: true },
+                         aria: { describedby: "dateHelp" } %>
+              <small id="dateHelp" class="form-text text-muted">Select the date of the incident.</small>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :occurred_at, "Incident Time *", class: "form-label fw-bold small" %>
+              <%= f.input :occurred_at,
+                         as: :time,
+                         input_html: { class: "form-control rounded-3 shadow-sm", required: true },
+                         aria: { describedby: "timeHelp" } %>
+              <small id="timeHelp" class="form-text text-muted">Select the time of the incident.</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Location -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingLocation">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLocation" aria-expanded="false" aria-controls="collapseLocation">
+          <i class="ri-map-pin-line me-2"></i> Incident Location
+        </button>
+      </h2>
+      <div id="collapseLocation" class="accordion-collapse collapse" aria-labelledby="headingLocation" data-bs-parent="#incidentReportAccordion2">
+        <div class="accordion-body p-4" data-controller="address">
+          <%= f.simple_fields_for :address do |a| %>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <%= a.input :department_id,
+                           collection: Department.all.map { |d| [d.name, d.id] },
+                           prompt: "Select Department",
+                           input_html: {
+                             class: "form-select rounded-3 shadow-sm",
+                             data: { action: "change->address#loadArrondissements", address_target: "department" }
+                           },
+                           aria: { describedby: "departmentHelp" } %>
+                <small id="departmentHelp" class="form-text text-muted">Select the department where the incident occurred.</small>
+              </div>
+              <div class="col-md-6">
+                <%= a.input :arrondissement_id,
+                           collection: [],
+                           prompt: "Select Arrondissement",
+                           input_html: {
+                             class: "form-select rounded-3 shadow-sm",
+                             data: { action: "change->address#loadCommunes", address_target: "arrondissement" }
+                           },
+                           aria: { describedby: "arrondissementHelp" } %>
+                <small id="arrondissementHelp" class="form-text text-muted">Select the arrondissement.</small>
+              </div>
+              <div class="col-md-6">
+                <%= a.input :commune_id,
+                           collection: [],
+                           prompt: "Select Commune",
+                           input_html: {
+                             class: "form-select rounded-3 shadow-sm",
+                             data: { action: "change->address#loadCommunalSections", address_target: "commune" }
+                           },
+                           aria: { describedby: "communeHelp" } %>
+                <small id="communeHelp" class="form-text text-muted">Select the commune.</small>
+              </div>
+              <div class="col-md-6">
+                <%= a.input :communal_section_id,
+                           collection: [],
+                           prompt: "Select Section Communale",
+                           input_html: {
+                             class: "form-select rounded-3 shadow-sm",
+                             data: { action: "change->address#loadPostalCode", address_target: "section" }
+                           },
+                           aria: { describedby: "sectionHelp" } %>
+                <small id="sectionHelp" class="form-text text-muted">Select the communal section.</small>
+              </div>
+              <div class="col-md-6">
+                <%= a.input :postal_code,
+                           input_html: {
+                             class: "form-control rounded-3 shadow-sm",
+                             readonly: true,
+                             data: { address_target: "postalCode" },
+                             placeholder: "HT0000"
+                           },
+                           aria: { describedby: "postalCodeHelp" } %>
+                <small id="postalCodeHelp" class="form-text text-muted">Postal code will auto-populate.</small>
+              </div>
+              <div class="col-md-6">
+                <%= a.input :street_address,
+                           input_html: {
+                             class: "form-control rounded-3 shadow-sm",
+                             placeholder: "e.g., 123 Rue Principale"
+                           },
+                           aria: { describedby: "streetHelp" } %>
+                <small id="streetHelp" class="form-text text-muted">Enter the street address if applicable.</small>
+              </div>
+              <div class="col-md-6">
+                <%= a.input :locality,
+                           input_html: {
+                             class: "form-control rounded-3 shadow-sm",
+                             placeholder: "e.g., Quartier Morin"
+                           },
+                           aria: { describedby: "localityHelp" } %>
+                <small id="localityHelp" class="form-text text-muted">Enter the locality or neighborhood.</small>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Upload -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingMedia">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMedia" aria-expanded="false" aria-controls="collapseMedia">
+          <i class="ri-image-add-line me-2"></i> Media Upload
+        </button>
+      </h2>
+      <div id="collapseMedia" class="accordion-collapse collapse" aria-labelledby="headingMedia" data-bs-parent="#incidentReportAccordion2">
+        <div class="accordion-body p-4">
+          <%= f.label :media, "Upload Media (Optional)", class: "form-label fw-bold small" %>
+          <%= f.input :media,
+                     as: :file,
+                     input_html: {
+                       multiple: true,
+                       class: "form-control rounded-3 shadow-sm",
+                       accept: "image/*,video/*"
+                     },
+                     aria: { describedby: "mediaHelp" } %>
+          <small id="mediaHelp" class="form-text text-muted">Upload photos or videos related to the incident.</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingSubmit">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSubmit" aria-expanded="false" aria-controls="collapseSubmit">
+          <i class="ri-check-line me-2"></i> Submit Report
+        </button>
+      </h2>
+      <div id="collapseSubmit" class="accordion-collapse collapse" aria-labelledby="headingSubmit" data-bs-parent="#incidentReportAccordion2">
+        <div class="accordion-body p-4">
+          <div class="d-grid mt-4">
+            <%= f.button :submit, "Submit Report", class: "btn btn-primary rounded-pill px-4 py-2 fw-semibold" %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,66 @@
+<!-- app/views/main/start.html.erb -->
+<section class="container py-5" role="main">
+
+  <% if @partner %>
+    <!-- Partner Section -->
+    <div class="text-center mb-5">
+      <% if @partner.logo.attached? %>
+        <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3 mb-3">
+          <h2 class="h4 fw-bold text-primary mb-0">BonID +</h2>
+          <%= image_tag @partner.logo.variant(resize_to_limit: [180, 90]),
+                        class: "img-fluid object-fit-contain",
+                        alt: "#{@partner.name} logo" %>
+        </div>
+      <% end %>
+
+      <h1 class="display-5 fw-bold text-primary mb-2">Get Verified for <%= @partner.name %></h1>
+
+      <% if @partner.verified_at.present? %>
+        <span class="badge bg-success rounded-pill px-3 py-2 fs-6 mb-3">
+          <i class="ri-shield-check-line me-1"></i> Verified Partner
+        </span>
+      <% else %>
+        <div class="alert alert-warning rounded-3 py-2 px-3 mt-3 w-md-50 mx-auto" role="alert">
+          <i class="ri-alert-line me-1"></i>
+          This partner is not currently verified. Please proceed with caution or contact support.
+        </div>
+      <% end %>
+
+      <p class="lead text-muted mt-3">
+        <%= @partner.name %> requires <strong>BonID</strong> verification to access their services.<br>
+        Complete your identity check in minutes.
+      </p>
+
+      <div class="text-center mt-4">
+        <%= link_to "Sign In via #{@partner.name}",
+                    new_user_session_path(partner: @partner.slug),
+                    class: "btn btn-primary btn-lg rounded-pill px-5",
+                    aria_label: "Sign in for partner verification" %>
+      </div>
+    </div>
+
+  <% else %>
+    <!-- Organic Signup Section -->
+    <div class="text-center mb-5">
+      <h1 class="display-5 fw-bold text-primary mb-3">Get Your BonID</h1>
+      <p class="lead text-muted">
+        Secure your digital identity in Haiti.<br>
+        BonID is accepted by leading institutions across the country.
+      </p>
+
+      <div class="text-center mt-4">
+        <%= link_to "Get Verified",
+                    new_user_session_path,
+                    class: "btn btn-primary btn-lg rounded-pill px-5",
+                    aria_label: "Sign in for BonID" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Back to Home Link -->
+  <div class="text-center mt-5">
+    <%= link_to root_path, class: "text-decoration-none text-muted small" do %>
+      <i class="ri-arrow-left-line me-1"></i> Back to BonID Home
+    <% end %>
+  </div>
+</section>

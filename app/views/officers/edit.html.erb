@@ -1,0 +1,206 @@
+<%= render "shared/navbar" %>
+
+<div class="container officer-profile" data-controller="profile">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8">
+      <div class="card shadow-sm border-haiti-blue mb-4">
+        <div class="card-header bg-haiti-blue text-white text-center">
+          <h2 class="card-title mb-0">Edit Profile</h2>
+          <p class="card-subtitle mt-2 text-white-50">Update your information</p>
+        </div>
+        <div class="card-body">
+          <%= simple_form_for @officer,
+              url: officer_profile_path,
+              method: :patch,
+              html: {
+                data: {
+                  controller: "unit",
+                  unit_options_value: Officer.unit_options.to_json
+                }
+              } do |f| %>
+
+            <div class="mb-4">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <%= f.input :full_name, 
+                      required: true, 
+                      input_html: { class: "form-control rounded-3 border-haiti-blue" },
+                      label_html: { class: "text-haiti-blue fw-semibold" } %>
+                </div>
+
+                <div class="col-md-6">
+                  <%= f.input :badge_id, 
+                      required: true, 
+                      input_html: { class: "form-control rounded-3 border-haiti-blue" },
+                      label_html: { class: "text-haiti-blue fw-semibold" } %>
+                </div>
+
+                <div class="col-md-6">
+                  <%= f.input :rank,
+                      collection: pnh_ranks(format: :select_options),
+                      prompt: "Select Rank",
+                      selected: @officer.rank,
+                      input_html: { 
+                        class: "form-select rounded-3 border-haiti-blue",
+                        data: { action: "change->profile#updateRank" }
+                      },
+                      label_html: { class: "text-haiti-blue fw-semibold" } %>
+                </div>
+
+                <div class="col-md-6">
+                  <%= f.input :phone_number, 
+                      input_html: { class: "form-control rounded-3 border-haiti-blue" },
+                      label_html: { class: "text-haiti-blue fw-semibold" } %>
+                </div>
+
+                <div class="col-md-6">
+                  <%= f.input :unit_name,
+                      collection: Officer.unit_options.keys,
+                      prompt: "Select Unit",
+                      input_html: {
+                        class: "form-select rounded-3 border-haiti-blue",
+                        data: {
+                          action: "change->unit#updateTypes",
+                          unit_target: "name"
+                        }
+                      },
+                      label_html: { class: "text-haiti-blue fw-semibold" } %>
+                </div>
+
+                <div class="col-md-6">
+                  <%= f.input :unit_type,
+                      collection: Officer.unit_options.keys,
+                      prompt: "Select Unit Type",
+                      input_html: {
+                        class: "form-select rounded-3 border-haiti-blue",
+                        data: { unit_target: "type" }
+                      },
+                      label_html: { class: "text-haiti-blue fw-semibold" } %>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 text-center">
+              <%= f.button :submit, 
+                  "Save", 
+                  class: "btn btn-haiti-red text-white rounded-pill px-4 py-2 fw-semibold" do %>
+                <i class="ri-save-line ri-lg me-2"></i> Save
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+ /* Haitian Flag Colors */
+:root {
+  --haiti-blue: #00209F; /* Pantone 294, top half of flag */
+  --haiti-red: #D21034;  /* Pantone 186, bottom half of flag */
+  --haiti-white: #FFFFFF; /* White for text and accents */
+  --haiti-blue-light: #3354B5; /* Lighter blue for hover/focus */
+  --haiti-red-dark: #A00C28;  /* Darker red for hover */
+}
+
+/* Officer Profile Container */
+.officer-profile {
+  padding: 2rem 0;
+  background-color: var(--haiti-white);
+  min-height: 100vh;
+}
+
+/* Card Styling */
+.officer-profile .card {
+  border-radius: 12px;
+  border: 2px solid var(--haiti-blue);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.officer-profile .card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 32, 159, 0.2);
+}
+
+.officer-profile .card-header {
+  background-color: var(--haiti-blue);
+  padding: 1.5rem;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+}
+
+.officer-profile .card-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--haiti-white);
+}
+
+.officer-profile .card-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Form Styling */
+.officer-profile .card-body {
+  padding: 2rem;
+  background-color: var(--haiti-white);
+}
+
+.officer-profile .form-control,
+.officer-profile .form-select {
+  border-radius: 6px;
+  font-size: 1rem;
+  border: 1px solid var(--haiti-blue);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.officer-profile .form-control:focus,
+.officer-profile .form-select:focus {
+  border-color: var(--haiti-blue-light);
+  box-shadow: 0 0 0 0.2rem rgba(0, 32, 159, 0.25);
+  outline: none;
+}
+
+.officer-profile .form-label {
+  color: var(--haiti-blue);
+  font-weight: 500;
+}
+
+/* Button Styling */
+.officer-profile .btn-haiti-red {
+  background-color: var(--haiti-red);
+  border-color: var(--haiti-red);
+  color: var(--haiti-white);
+  font-size: 1.2rem;
+  padding: 0.75rem 1.5rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.officer-profile .btn-haiti-red:hover {
+  background-color: var(--haiti-red-dark);
+  border-color: var(--haiti-red-dark);
+}
+
+.officer-profile .btn i {
+  font-size: 1.25rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .officer-profile .card-title {
+    font-size: 1.5rem;
+  }
+  .officer-profile .btn-haiti-red {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    width: 100%;
+  }
+  .officer-profile .card {
+    border-radius: 8px;
+  }
+}
+  </style>

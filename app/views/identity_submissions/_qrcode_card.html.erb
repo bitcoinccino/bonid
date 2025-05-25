@@ -1,0 +1,102 @@
+<div class="col-lg-6 col-md-12">
+  <div class="card shadow-sm rounded-3 border-0 bg-white">
+    <div class="card-header header-bg text-white p-3 rounded-top d-flex align-items-center justify-content-between">
+      <h5 class="mb-0"><i class="ri-qr-code-line me-2"></i> BonID QR Code</h5>
+      <div class="dropdown">
+        <button class="btn btn-outline-light btn-sm rounded-circle" type="button" id="shareDropdown_<%= submission.id %>" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Share, Print, or Download BonID">
+          <i class="ri-share-line"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end rounded-3 shadow-sm" aria-labelledby="shareDropdown_<%= submission.id %>">
+          <li>
+            <a class="dropdown-item share-bonid" href="#" data-url="<%= verify_identity_submission_url(submission.verification_token) %>" data-title="My BonID Verification">
+              <i class="ri-share-line me-2"></i> Share
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item print-bonid" href="#" data-url="<%= verify_identity_submission_url(submission.verification_token) %>">
+              <i class="ri-printer-line me-2"></i> Print
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item" href="<%= verify_identity_submission_url(submission.verification_token) %>" download>
+              <i class="ri-download-line me-2"></i> Download
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card-body text-center p-4">
+      <% if submission&.approved? && submission.expires_at.present? && submission.expires_at.future? %>
+        <!-- ✅ QR code preview -->
+        <div class="qr-code-container mx-auto position-relative valid-qr mb-3" data-bs-toggle="modal" data-bs-target="#qrCodeModal_<%= submission.id %>" title="Click to enlarge QR code for scanning">
+          <%= image_tag "data:image/png;base64,#{submission.qr_png_base64}",
+                        alt: "BonID QR Code",
+                        class: "img-fluid rounded-3" %>
+          <div class="position-absolute top-50 start-50 translate-middle bg-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 32px; height: 32px;">
+            <%= image_tag "haiti_flag.png", alt: "Haiti flag", class: "img-fluid", size: "26x26" %>
+          </div>
+        </div>
+
+        <!-- ✅ Expiration notice -->
+        <div class="mb-3 d-flex justify-content-center align-items-center gap-2" data-controller="tooltip">
+          <span class="badge bg-light text-dark border border-secondary rounded-pill" data-bs-toggle="tooltip" title="This BonID QR code will expire on the date shown. You will need to request a new one after.">
+            Valid Until: <%= submission.expires_at.strftime("%b %d, %Y") %>
+          </span>
+        </div>
+
+        <!-- ✅ QR Code Modal -->
+        <div class="modal fade" id="qrCodeModal_<%= submission.id %>" tabindex="-1" aria-labelledby="qrCodeModalLabel_<%= submission.id %>" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-white shadow-lg rounded-3">
+              <div class="modal-header header-bg text-white">
+                <h5 class="modal-title" id="qrCodeModalLabel_<%= submission.id %>">
+                  <i class="ri-qr-code-line me-2"></i> BonID QR Code
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body p-4 text-center">
+                <div class="qr-hover-wrapper mx-auto">
+                  <div class="qr-gradient-wrapper" style="width: 300px; height: 300px;">
+                    <%= image_tag "data:image/png;base64,#{submission.qr_png_base64}",
+                                  alt: "Enlarged BonID QR Code",
+                                  class: "qr-dynamic img-fluid rounded-3",
+                                  style: "width: 100%; height: 100%;" %>
+                    <div class="position-absolute top-50 start-50 translate-middle bg-white rounded-circle d-flex align-items-center justify-content-center shadow" style="width: 36px; height: 36px;">
+                      <%= image_tag "haiti_flag.png", size: "26x26", alt: "Haiti Flag", class: "img-fluid" %>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-muted mt-3">Scan this QR code to verify the BonID.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <!-- ❌ Not approved or expired -->
+        <div class="alert alert-warning text-center mb-3">
+          <i class="ri-alert-line me-2"></i>
+          This BonID QR code is either not approved or has expired.
+        </div>
+      <% end %>
+
+      <!-- 📊 Scan logs alert -->
+      <% if submission&.approved? && submission.expires_at.present? && submission.expires_at.future? %>
+        <div class="alert alert-info d-flex align-items-center rounded-3 mt-4 shadow-sm small" id="qrcode-card-<%= submission.id %>" aria-live="polite">
+          <i class="ri-shield-check-line me-2 text-primary fs-5"></i>
+          <div>
+            <% if submission.qr_scan_logs.any? %>
+              This BonID was accessed and logged. For your protection, we store IP, timestamp, and browser info.
+              <a href="#qrScanHistory" class="text-primary fw-semibold text-decoration-none ms-1" data-bs-toggle="collapse" data-bs-target="#qrScanHistory" aria-controls="qrScanHistory" aria-label="View QR code scan history">View History</a>
+            <% else %>
+              This BonID QR code hasn’t been scanned yet.
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- ✅ Status alert at the bottom -->
+      <%= render "shared/qr_code_status_alert", submission: submission %>
+    </div>
+  </div>
+</div>

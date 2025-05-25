@@ -1,0 +1,806 @@
+<div class="container py-4 bg-light">
+  <div class="form-container mx-auto">
+    <!-- Header -->
+    <header class="bg-white border-bottom py-3 mb-4">
+      <div class="d-flex justify-content-between align-items-center px-4">
+        <% if current_user&.admin? %>
+          <%= link_to admin_identity_submissions_path,
+                      class: "btn btn-outline-primary rounded-pill",
+                      role: "button",
+                      aria_label: "Back to admin portal",
+                      data: { bs_toggle: "tooltip", bs_placement: "top" },
+                      title: "Return to admin portal" do %>
+            <i class="ri-arrow-left-line me-1"></i> Admin Portal
+          <% end %>
+        <% else %>
+          <%= link_to user_dashboard_path,
+                      class: "btn btn-outline-primary rounded-pill",
+                      role: "button",
+                      aria_label: "Back to dashboard",
+                      data: { bs_toggle: "tooltip", bs_placement: "top" },
+                      title: "Return to dashboard" do %>
+            <i class="ri-arrow-left-line me-1"></i> Dashboard
+          <% end %>
+        <% end %>
+        <h1 class="h4 mb-0 fw-bold text-primary">
+          <i class="ri-user-check-line me-2"></i> BonID Summary
+        </h1>
+        <div style="width: 40px;"></div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="row g-4">
+      <!-- Main Content Area -->
+      <div class="col-lg-8 col-12">
+        <!-- Status Card -->
+        <div class="card shadow-sm rounded-3 border-0 p-4 mb-4 bg-white">
+          <h5 class="text-primary fw-semibold mb-4">Submission Status</h5>
+          <% if params[:partner].present? %>
+            <div class="alert alert-info rounded-3 mb-4">
+              Verifying your BonID for <%= params[:partner].titleize %> services.
+            </div>
+          <% end %>
+          <div class="status-details">
+            <p class="mb-3">
+              <strong>Status:</strong>
+              <% if @submission.reset_request_status == "approved" %>
+                <span class="badge bg-success rounded-3">BONID Reissued ✅</span>
+              <% elsif @submission.reset_request_status == "rejected" %>
+                <span class="badge bg-danger rounded-3">Reset Rejected ❌</span>
+              <% elsif @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+                <span class="badge bg-info rounded-3">Reset Requested ⏳</span>
+              <% else %>
+                <span class="badge <%= badge_class(@submission.status) %> rounded-3">
+                  <%= @submission.status.to_s.titleize %>
+                </span>
+              <% end %>
+            </p>
+            <p class="mb-3"><strong>Submitted:</strong> <%= @submission.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+            <p class="mb-3"><strong>Verification Token:</strong> <%= @submission.verification_token.presence&.truncate(10) || "N/A" %></p>
+            <p class="mb-3"><strong>Expires:</strong> <%= @submission.expires_at.present? ? @submission.expires_at.strftime("%B %d, %Y") : "Not yet verified" %></p>
+          </div>
+
+          <% if @submission.reissued_at.present? %>
+            <div class="alert alert-success mt-4 rounded-3">
+              <strong>Reissued At:</strong> <%= @submission.reissued_at.strftime("%B %d, %Y at %I:%M %p") %>
+            </div>
+          <% end %>
+
+          <% if @submission.reset_request_status == "rejected" && @submission.reset_rejection_reason.present? %>
+            <div class="alert alert-warning mt-4 rounded-3">
+              <strong>Reset Rejection Reason:</strong><br>
+              <%= simple_format(@submission.reset_rejection_reason) %>
+            </div>
+          <% end %>
+
+          <% if @submission.rejected? && @submission.rejection_reason.present? %>
+            <div class="alert alert-warning mt-4 rounded-3">
+              <strong>Submission Rejection Reason:</strong><br>
+              <%= rejection_reason_description(@submission.rejection_reason) %>
+            </div>
+          <% end %>
+
+          <% if @submission.approved? %>
+            <div class="mt-4">
+              <%= link_to verify_identity_submission_url(@submission.verification_token),
+                          class: "btn btn-primary fw-semibold rounded-pill w-100",
+                          data: { bs_toggle: "tooltip", bs_placement: "top" },
+                          title: "View BonID",
+                          aria_label: "View BonID" do %>
+                <i class="ri-eye-line me-2"></i> View BonID
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <!-- Tabbed Navigation for Details and Documents -->
+        <ul class="nav nav-tabs mb-4" id="detailsTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab" aria-controls="personal" aria-selected="true">Personal Information</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab" aria-controls="documents" aria-selected="false">Documents</button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="detailsTabContent">
+          <!-- Personal Information Tab -->
+          <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+            <div class="card shadow-sm rounded-3 border-0 p-4 bg-white">
+              <% user = @submission.user %>
+              <div class="row g-4">
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Full Name:</strong><br>
+                  <%= [user.first_name, user.middle_name, user.last_name].compact.join(" ") %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Email:</strong><br>
+                  <%= user.email %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Phone:</strong><br>
+                  <%= user.phone.presence || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Sex:</strong><br>
+                  <%= user.sex&.upcase || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Date of Birth:</strong><br>
+                  <%= user.dob&.strftime("%B %d, %Y") || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Marital Status:</strong><br>
+                  <%= user.marital_status&.titleize || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">ID Type:</strong><br>
+                  <%= user.id_type&.upcase || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">ID Number:</strong><br>
+                  <%= user.id_number.presence || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Issue Date:</strong><br>
+                  <%= user.id_issued_on&.strftime("%B %d, %Y") || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Expiration Date:</strong><br>
+                  <%= user.id_expires_on&.strftime("%B %d, %Y") || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">Place of Birth:</strong><br>
+                  <%= user.place_of_birth.presence || "N/A" %>
+                </div>
+                <div class="col-md-6 col-12">
+                  <strong class="form-label fw-bold">BonID:</strong><br>
+                  <%= user.bonid || "N/A" %>
+                </div>
+                <div class="col-md-12 col-12">
+                  <strong class="form-label fw-bold">Address:</strong><br>
+                  <% address = user.address %>
+                  <% if address %>
+                    <%= address.communal_section.name %><br>
+                    <%= address.street_address %><br>
+                    <%= "#{address.postal_code}, #{address.commune&.name&.upcase}" %><br>
+                    <%= address.country&.upcase %>
+                  <% else %>
+                    <em>No address provided</em>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documents Tab -->
+          <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
+            <div class="card shadow-sm rounded-3 border-0 p-4 bg-white">
+              <ul class="nav nav-pills mb-3" id="docTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link active rounded-pill px-3 py-2" id="primary-doc-tab" data-bs-toggle="pill" data-bs-target="#primary-docs" type="button" role="tab" aria-controls="primary-docs" aria-selected="true">Primary</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="nav-link rounded-pill px-3 py-2" id="secondary-doc-tab" data-bs-toggle="pill" data-bs-target="#secondary-docs" type="button" role="tab" aria-controls="secondary-docs" aria-selected="false">Secondary</button>
+                </li>
+              </ul>
+              <div class="tab-content" id="docTabContent">
+                <!-- Primary Documents -->
+                <div class="tab-pane fade show active" id="primary-docs" role="tabpanel" aria-labelledby="primary-doc-tab">
+                  <div class="row g-4">
+                    <% {
+                      "CIN Front" => :cin_front,
+                      "CIN Back" => :cin_back,
+                      "Passport" => :passport,
+                      "Selfie" => :selfie
+                    }.each do |label, field| %>
+                      <% if @submission.send(field).attached? %>
+                        <% modal_id = "#{field}_Modal" %>
+                        <div class="col-md-4 col-6">
+                          <div class="card h-100 shadow-sm rounded-3 border-0 document-card bg-white">
+                            <% file = @submission.send(field) %>
+                            <% if file.content_type.starts_with?('image/') %>
+                              <%= image_tag file.variant(resize_to_limit: [200, 200]), class: "card-img-top rounded-top-3", style: "object-fit: contain; height: 150px;", alt: "#{label} thumbnail" %>
+                            <% else %>
+                              <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3" style="height: 150px;">
+                                <i class="ri-file-pdf-2-line fs-3 text-muted"></i>
+                              </div>
+                            <% end %>
+                            <div class="card-body text-center p-3">
+                              <button type="button" class="btn btn-outline-primary btn-sm rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>" aria-label="View <%= label %> document">
+                                <%= label %>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                              <div class="modal-content rounded-3 bg-white">
+                                <div class="modal-header bg-primary text-white">
+                                  <h5 class="modal-title" id="<%= modal_id %>Label"><%= label %></h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                  <% if file.content_type.starts_with?('image/') %>
+                                    <%= image_tag file.variant(resize_to_limit: [700, 500]), class: "img-fluid rounded shadow-sm", style: "max-height: 500px;", alt: "#{label} document" %>
+                                  <% elsif file.content_type == 'application/pdf' %>
+                                    <iframe src="<%= url_for(file) %>" class="w-100" style="height: 500px; border: none;"></iframe>
+                                  <% else %>
+                                    <p class="text-muted">Preview not available.</p>
+                                  <% end %>
+                                </div>
+                                <div class="modal-footer">
+                                  <%= link_to url_for(file),
+                                              class: "btn btn-success rounded-pill",
+                                              target: "_blank",
+                                              download: true,
+                                              role: "button",
+                                              aria_label: "Download #{label} document" do %>
+                                    <i class="ri-download-line me-1"></i> Download
+                                  <% end %>
+                                  <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      <% end %>
+                    <% end %>
+                  </div>
+                </div>
+                <!-- Secondary Documents -->
+                <div class="tab-pane fade" id="secondary-docs" role="tabpanel" aria-labelledby="secondary-doc-tab">
+                  <div class="row g-4">
+                    <% {
+                      "Proof of Address" => :proof_of_address,
+                      "Digicel Phone Bill" => :digicel_phone_bill,
+                      "Natcom Phone Bill" => :natcom_phone_bill,
+                      "Baptismal Certificate" => :baptismal_certificate,
+                      "Birth Certificate" => :birth_certificate,
+                      "Adoption Certificate" => :adoption_certificate,
+                      "Naturalization Copy" => :naturalization_monitor_copy,
+                      "Archives Extract" => :archives_extract,
+                      "PNH Record" => :pnh_record,
+                      "Bank Record" => :bank_record,
+                      "Western Union Record" => :western_union_record,
+                      "MoneyGram Record" => :moneygram_record,
+                      "SendWave Record" => :sendwave_record,
+                      "Unibank Transfer" => :unitransfer_record,
+                      "Taptap Receipt" => :taptap_record,
+                      "Car Registration" => :car_registration,
+                      "Other Supporting Document" => :additional_proof
+                    }.each do |label, field| %>
+                      <% if @submission.send(field).attached? %>
+                        <% modal_id = "#{field}_Modal" %>
+                        <div class="col-md-4 col-6">
+                          <div class="card h-100 shadow-sm rounded-3 border-0 document-card bg-white">
+                            <% file = @submission.send(field) %>
+                            <% if file.content_type.starts_with?('image/') %>
+                              <%= image_tag file.variant(resize_to_limit: [200, 200]), class: "card-img-top rounded-top-3", style: "object-fit: contain; height: 150px;", alt: "#{label} thumbnail" %>
+                            <% else %>
+                              <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3" style="height: 150px;">
+                                <i class="ri-file-pdf-2-line fs-3 text-muted"></i>
+                              </div>
+                            <% end %>
+                            <div class="card-body text-center p-3">
+                              <button type="button" class="btn btn-outline-primary btn-sm rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>" aria-label="View <%= label %> document">
+                                <%= label %>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                              <div class="modal-content rounded-3 bg-white">
+                                <div class="modal-header bg-primary text-white">
+                                  <h5 class="modal-title" id="<%= modal_id %>Label"><%= label %></h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                  <% if file.content_type.starts_with?('image/') %>
+                                    <%= image_tag file.variant(resize_to_limit: [700, 500]), class: "img-fluid rounded shadow-sm", style: "max-height: 500px;", alt: "#{label} document" %>
+                                  <% elsif file.content_type == 'application/pdf' %>
+                                    <iframe src="<%= url_for(file) %>" class="w-100" style="height: 500px; border: none;"></iframe>
+                                  <% else %>
+                                    <p class="text-muted">Preview not available.</p>
+                                  <% end %>
+                                </div>
+                                <div class="modal-footer">
+                                  <%= link_to url_for(file),
+                                              class: "btn btn-success rounded-pill",
+                                              target: "_blank",
+                                              download: true,
+                                              role: "button",
+                                              aria_label: "Download #{label} document" do %>
+                                    <i class="ri-download-line me-1"></i> Download
+                                  <% end %>
+                                  <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      <% end %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Actions Sidebar (Visible on Desktop) -->
+      <% if current_user&.admin? %>
+        <div class="col-lg-4 col-12 d-none d-lg-block">
+          <div class="card shadow-sm rounded-3 border-0 p-4 bg-white sticky-top" style="top: 20px;">
+            <h5 class="text-primary fw-semibold mb-4">Admin Actions</h5>
+            <div class="d-flex flex-column gap-2">
+              <% if @submission.pending? || @submission.rejection_reason == "bad_bin" %>
+                <%= button_to "Move to BonBin",
+                              approve_bin_admin_identity_submission_path(@submission),
+                              method: :patch,
+                              class: "btn btn-outline-success rounded-pill",
+                              data: { turbo: false, bs_toggle: "tooltip", bs_placement: "left" },
+                              title: "Move to BonBin for bulk approval" %>
+                <button class="btn btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#badBinModal">
+                  Move to BadBin
+                </button>
+              <% end %>
+              <% if @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+                <%= button_to "Approve Reset",
+                              approve_reset_admin_identity_submission_path(@submission),
+                              method: :patch,
+                              class: "btn btn-success rounded-pill",
+                              data: { bs_toggle: "tooltip", bs_placement: "left" },
+                              title: "Approve reset request" %>
+                <button class="btn btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#rejectResetModal">
+                  Reject Reset
+                </button>
+              <% elsif @submission.pending? %>
+                <%= button_to "Approve",
+                              admin_identity_submission_path(@submission, approve: true),
+                              method: :patch,
+                              class: "btn btn-success rounded-pill",
+                              data: { bs_toggle: "tooltip", bs_placement: "left" },
+                              title: "Approve submission" %>
+                <button class="btn btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                  Reject
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Admin Actions (Mobile Only) -->
+    <% if current_user&.admin? %>
+      <div class="d-lg-none mt-4">
+        <div class="card shadow-sm rounded-3 border-0 p-4 bg-white">
+          <h5 class="text-primary fw-semibold mb-4">Admin Actions</h5>
+          <div class="d-flex flex-column gap-2">
+            <% if @submission.pending? || @submission.rejection_reason == "bad_bin" %>
+              <%= button_to "Move to BonBin",
+                            approve_bin_admin_identity_submission_path(@submission),
+                            method: :patch,
+                            class: "btn btn-outline-success rounded-pill",
+                            data: { turbo: false, bs_toggle: "tooltip", bs_placement: "top" },
+                            title: "Move to BonBin for bulk approval" %>
+              <button class="btn btn-outline-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#badBinModal">
+                Move to BadBin
+              </button>
+            <% end %>
+            <% if @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+              <%= button_to "Approve Reset",
+                            approve_reset_admin_identity_submission_path(@submission),
+                            method: :patch,
+                            class: "btn btn-success rounded-pill",
+                            data: { bs_toggle: "tooltip", bs_placement: "top" },
+                            title: "Approve reset request" %>
+              <button class="btn btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#rejectResetModal">
+                Reject Reset
+              </button>
+            <% elsif @submission.pending? %>
+              <%= button_to "Approve",
+                            admin_identity_submission_path(@submission, approve: true),
+                            method: :patch,
+                            class: "btn btn-success rounded-pill",
+                            data: { bs_toggle: "tooltip", bs_placement: "top" },
+                            title: "Approve submission" %>
+              <button class="btn btn-danger rounded-pill" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                Reject
+              </button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Admin Modals -->
+<% if current_user&.admin? %>
+  <!-- Reject Submission Modal -->
+  <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-3 bg-white">
+        <%= form.select :rejection_reason, IdentitySubmission.rejection_reasons_options, prompt: "Select a reason" %>
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="rejectModalLabel">Reject Submission</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%= form.label :rejection_reason, "Reason for Rejection", class: "form-label fw-bold mb-2" %>
+            <%= form.select :rejection_reason,
+                            IdentitySubmission.rejection_reasons_options,
+                            { prompt: "Select a reason" },
+                            class: "form-select rounded-pill py-2",
+                            required: true,
+                            data: { admin_rejection_target: "reasonSelect", action: "change->admin-rejection#toggle" } %>
+            <div class="mt-3" data-admin_rejection_target="otherWrapper" style="display: none;">
+              <%= form.label :other_reason, "Additional Details", class: "form-label mb-2" %>
+              <%= form.text_area :other_reason, rows: 4, class: "form-control rounded-3", placeholder: "Provide more details if needed" %>
+            </div>
+            <%= hidden_field_tag :reject, true %>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            <%= form.submit "Confirm Rejection", class: "btn btn-danger rounded-pill" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Reset Modal -->
+  <div class="modal fade" id="rejectResetModal" tabindex="-1" aria-labelledby="rejectResetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-3 bg-white">
+        <%= form_with model: [:admin, @submission],
+                      url: reject_reset_admin_identity_submission_path(@submission),
+                      method: :patch,
+                      local: true,
+                      data: { controller: "admin-rejection" } do |form| %>
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="rejectResetModalLabel">Reject Reset Request</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%= form.label :reset_rejection_reason, "Reason for Rejection", class: "form-label fw-bold mb-2" %>
+            <%= form.select :reset_rejection_reason,
+                            [
+                              "Incomplete Documentation",
+                              "Invalid Request",
+                              "Insufficient Evidence",
+                              "Security Concerns",
+                              "Other (please specify below)"
+                            ],
+                            { prompt: "Select a reason" },
+                            class: "form-select rounded-pill py-2",
+                            required: true,
+                            data: { admin_rejection_target: "reasonSelect", action: "change->admin-rejection#toggle" } %>
+            <div class="mt-3" data-admin_rejection_target="otherWrapper" style="display: none;">
+              <%= form.label :reset_other_reason, "Additional Details", class: "form-label mb-2" %>
+              <%= form.text_area :reset_other_reason, rows: 4, class: "form-control rounded-3", placeholder: "Provide more details if needed" %>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            <%= form.submit "Confirm Rejection", class: "btn btn-danger rounded-pill" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- BadBin Modal -->
+  <div class="modal fade" id="badBinModal" tabindex="-1" aria-labelledby="badBinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-3 bg-white">
+        <%= form_with model: [:admin, @submission], url: reject_bin_admin_identity_submission_path(@submission), method: :patch, local: true do |form| %>
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="badBinModalLabel">Move to BadBin</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <%= form.label :rejection_reason, "Reason for Rejection", class: "form-label fw-bold mb-2" %>
+            <%= form.select :rejection_reason,
+                            IdentitySubmission.rejection_reasons_options,
+                            { prompt: "Select a reason" },
+                            class: "form-select rounded-pill py-2",
+                            required: true %>
+            <div class="mt-3">
+              <%= form.label :other_reason, "Additional Details (optional)", class: "form-label mb-2" %>
+              <%= form.text_area :other_reason, rows: 3, class: "form-control rounded-3", placeholder: "Provide more context if needed" %>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+            <%= form.submit "Move to BadBin", class: "btn btn-danger rounded-pill" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 1200px;
+    padding: 0 15px;
+  }
+
+  .form-container {
+    max-width: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Header */
+  header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .bg-primary {
+    background-color: #1e40af !important;
+  }
+
+  .text-primary {
+    color: #1e40af !important;
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: #1e40af;
+    border-color: #1e40af;
+  }
+
+  .btn-primary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+  }
+
+  .btn-success {
+    background: #059669;
+    border-color: #059669;
+  }
+
+  .btn-success:hover {
+    background: #047857;
+    border-color: #047857;
+  }
+
+  .btn-danger {
+    background: #dc2626;
+    border-color: #dc2626;
+  }
+
+  .btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+  }
+
+  .btn-outline-primary {
+    border-color: #1e40af;
+    color: #1e40af;
+  }
+
+  .btn-outline-primary:hover {
+    background: #1e40af;
+    color: #ffffff;
+  }
+
+  .btn-outline-success {
+    border-color: #059669;
+    color: #059669;
+  }
+
+  .btn-outline-success:hover {
+    background: #059669;
+    color: #ffffff;
+  }
+
+  .btn-outline-danger {
+    border-color: #dc2626;
+    color: #dc2626;
+  }
+
+  .btn-outline-danger:hover {
+    background: #dc2626;
+    color: #ffffff;
+  }
+
+  .btn-outline-secondary {
+    border-color: #6b7280;
+    color: #6b7280;
+  }
+
+  .btn-outline-secondary:hover {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
+  /* Cards */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Tabs */
+  .nav-tabs {
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    font-weight: 500;
+    padding: 12px 16px;
+  }
+
+  .nav-tabs .nav-link.active {
+    border-bottom: 2px solid #1e40af;
+    color: #1e40af;
+  }
+
+  .nav-tabs .nav-link:hover {
+    color: #1e40af;
+  }
+
+  .nav-pills .nav-link {
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .nav-pills .nav-link.active {
+    background: #1e40af;
+    color: #ffffff;
+  }
+
+  /* Badges */
+  .badge {
+    font-size: 0.875rem;
+    padding: 6px 12px;
+    border-radius: 12px;
+  }
+
+  .badge.bg-success { background: #059669; }
+  .badge.bg-danger { background: #dc2626; }
+  .badge.bg-info { background: #3b82f6; }
+  .badge.bg-pending { background: #f59e0b; color: #1f2937; }
+  .badge.bg-approved { background: #059669; }
+  .badge.bg-rejected { background: #dc2626; }
+
+  /* Alerts */
+  .alert {
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .alert-success {
+    background: #ecfdf5;
+    border-color: #059669;
+    color: #065f46;
+  }
+
+  .alert-warning {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+  }
+
+  .alert-info {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1e40af;
+  }
+
+  /* Modals */
+  .modal-content {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-header {
+    border-bottom: none;
+  }
+
+  .modal-footer {
+    border-top: none;
+  }
+
+  .btn-close-white {
+    filter: invert(1);
+  }
+
+  /* Document Cards */
+  .document-card {
+    transition: transform 0.2s ease;
+  }
+
+  .document-card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .container {
+      padding: 0 12px;
+    }
+    .form-container {
+      padding: 16px;
+    }
+    .btn {
+      font-size: 0.875rem;
+      padding: 6px 12px;
+    }
+    .card {
+      padding: 16px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .nav-tabs .nav-link {
+      font-size: 0.875rem;
+      padding: 8px 12px;
+    }
+    .nav-pills .nav-link {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+    }
+    .status-details p {
+      font-size: 0.875rem;
+    }
+    .card-img-top {
+      height: 120px;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips and Admin Rejection -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  // Stimulus controller for rejection modals
+  import { Controller } from "@hotwired/stimulus";
+  class AdminRejectionController extends Controller {
+    static targets = ["reasonSelect", "otherWrapper"];
+    toggle() {
+      const reason = this.reasonSelectTarget.value;
+      this.otherWrapperTarget.style.display = reason === "Other (please specify below)" ? "block" : "none";
+    }
+  }
+</script>

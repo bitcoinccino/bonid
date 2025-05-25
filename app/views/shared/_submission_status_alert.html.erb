@@ -1,0 +1,47 @@
+<% if local_assigns[:submission].present? %>
+  <% submission = local_assigns[:submission] %>
+  <% status_info = submission_status_info(submission) %>
+
+  <div class="alert alert-<%= status_alert_type(submission) %> rounded-3 certificate-font mt-3" role="alert">
+    <i class="<%= status_icon(submission) %> me-2"></i>
+
+    <strong>
+      <span class="badge <%= status_info[:badge_class] %> me-2">
+        <%= status_info[:text] %>
+      </span>
+      <%= status_message(submission) %>
+    </strong>
+
+    <div class="mt-2">
+      <%= submission_type_description(submission) %>
+    </div>
+
+    <% if submission.rejection_reason.present? && (submission.status == "rejected" || submission.reset_request_status == "rejected") %>
+      <div class="mt-2">
+        <span class="text-muted">Reason:</span>
+        <%= user_friendly_rejection_reason(submission.rejection_reason) %>.
+      </div>
+    <% end %>
+
+    <% if submission.reset_request_status == "rejected" %>
+      <%= link_to "Resubmit", edit_identity_submission_path(submission),
+                  class: "btn btn-sm btn-outline-danger fw-semibold ms-3 mt-2",
+                  role: "button",
+                  "aria-label" => "Resubmit identity submission" %>
+    <% end %>
+    
+        <% if submission.approved? && submission.reset_requested_at.blank? %>
+          <%= button_tag "Request New BonID",
+              type: "button",
+              class: "btn btn-sm btn-outline-warning fw-semibold ms-3 mt-2",
+              data: {
+                bs_toggle: "modal",
+                bs_target: "#requestNewBonIDModal",
+                submission_status: submission.status,
+                submission_type: submission.submission_type
+              },
+              "aria-label" => "Request a new BonID reissue" %>
+        <% end %>
+
+  </div>
+<% end %>

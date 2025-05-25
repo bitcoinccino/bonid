@@ -1,0 +1,194 @@
+<% identity_submission ||= @identity_submission %>
+<div style="padding-top: 70px;"></div>
+
+<div class="container py-4">
+  <div class="text-center">
+    <h2 class="mb-3 text-primary">
+      <i class="ri-user-check-line me-2"></i> Verify Your Identity
+    </h2>
+    <p class="text-muted mb-4 lead">
+      Get verified in a snap! Upload clear, accurate documents matching your personal details to avoid delays. Your data is securely reviewed for a fast, reliable process.
+    </p>
+    <div class="card shadow-sm p-3 mb-4 bg-light">
+      <p class="text-muted mb-2 fw-bold">Required Documents:</p>
+      <ul class="list-unstyled text-start ms-4">
+        <li><i class="ri-checkbox-circle-line text-success me-2"></i>Valid CIN (front & back) <em>or</em> Passport</li>
+        <li><i class="ri-checkbox-circle-line text-success me-2"></i>Clear selfie</li>
+        <li><i class="ri-checkbox-circle-line text-success me-2"></i>One supporting document (e.g., Birth Certificate, Digicel/Natcom Bill, Bank Record)</li>
+      </ul>
+      <p class="text-muted small mt-2">
+        <strong>Tip:</strong> Double-check that all documents match your info to speed up verification!
+      </p>
+    </div>
+    <p class="text-muted small mb-4">
+      <strong>Privacy Notice:</strong> Keep your documents private to protect your personal info.
+    </p>
+  </div>
+
+  <!-- Upload Trigger -->
+  <div class="text-center mb-4">
+    <button type="button" class="btn btn-primary fw-semibold d-flex align-items-center mx-auto" data-bs-toggle="modal" data-bs-target="#uploadModal" aria-label="Open document upload modal">
+      <i class="ri-upload-cloud-2-line me-2"></i> <%= @identity_submission.persisted? ? "Edit Verification" : "Start Verification" %>
+    </button>
+  </div>
+
+  <!-- Upload Modal -->
+  <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content rounded-4">
+        <div class="modal-header gradient-bg text-white">
+          <h5 class="modal-title fw-bold" id="uploadModalLabel">
+            <%= @identity_submission.persisted? ? "Edit Your Documents" : "Upload Your Documents" %>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <!-- Identity Submission Modal Body -->
+        <div data-controller="identity">
+          <%= form_with model: @identity_submission, local: true, html: { multipart: true, class: "verification-form" } do |f| %>
+            <div class="modal-body">
+              <% if @identity_submission&.errors&.any? %>
+                <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+                  <h6 class="fw-bold text-danger mb-2">Please fix the following:</h6>
+                  <ul class="mb-0">
+                    <% @identity_submission.errors.full_messages.each do |msg| %>
+                      <li><%= msg %></li>
+                    <% end %>
+                  </ul>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              <% end %>
+
+              <!-- Submission Type -->
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_submission_type">
+                  <i class="ri-repeat-line text-primary me-1"></i> Submission Type
+                </label>
+                <p class="text-muted small mb-2">Choose if this is a new, resubmitted, or reissued verification.</p>
+                <%= f.select :submission_type,
+                  [["Initial", "initial"], ["Resubmission", "resubmission"], ["Reissue", "reissue"]],
+                  { selected: @identity_submission&.submission_type || "initial" },
+                  class: "form-select", required: true %>
+              </div>
+
+              <!-- ID Type -->
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_id_type">
+                  <i class="ri-id-card-line text-primary me-1"></i> 1. ID Type
+                </label>
+                <p class="text-muted small mb-2">Select CIN or Passport for verification.</p>
+                <%= f.select :id_type,
+                  [["CIN (Front & Back)", "cin"], ["Passport", "passport"]],
+                  { selected: @identity_submission&.id_type || "cin" },
+                  class: "form-select rounded-3 shadow-sm",
+                  data: { identity_target: "idType", action: "change->identity#toggle" },
+                  "aria-label": "Select ID type" %>
+              </div>
+
+              <!-- CIN Upload -->
+              <div id="cin-fields" data-identity-target="cinFields" <%= @identity_submission&.id_type == "passport" ? 'style="display: none;"' : '' %>>
+                <div class="mb-4">
+                  <label class="form-label fw-bold" for="identity_submission_cin_front">
+                    <i class="ri-image-line text-primary me-1"></i> CIN Front
+                  </label>
+                  <p class="text-muted small mb-2">
+                    Upload a clear image of your CIN's front side.
+                    <% if @identity_submission.persisted? && @identity_submission.cin_front.attached? %>
+                      <span class="text-success">(Current file uploaded)</span>
+                    <% end %>
+                  </p>
+                  <%= f.file_field :cin_front, class: "form-control", accept: "image/*" %>
+                </div>
+
+                <div class="mb-4">
+                  <label class="form-label fw-bold" for="identity_submission_cin_back">
+                    <i class="ri-image-line text-primary me-1"></i> CIN Back
+                  </label>
+                  <p class="text-muted small mb-2">
+                    Upload a clear image of your CIN's back side.
+                    <% if @identity_submission.persisted? && @identity_submission.cin_back.attached? %>
+                      <span class="text-success">(Current file uploaded)</span>
+                    <% end %>
+                  </p>
+                  <%= f.file_field :cin_back, class: "form-control", accept: "image/*" %>
+                </div>
+              </div>
+
+              <!-- Passport Upload -->
+              <div id="passport-field" data-identity-target="passportField" <%= @identity_submission&.id_type == "cin" ? 'style="display: none;"' : '' %>>
+                <div class="mb-4">
+                  <label class="form-label fw-bold" for="identity_submission_passport">
+                    <i class="ri-passport-line text-primary me-1"></i> Passport
+                  </label>
+                  <p class="text-muted small mb-2">
+                    Upload a clear scan of your passport’s photo page.
+                    <% if @identity_submission.persisted? && @identity_submission.passport.attached? %>
+                      <span class="text-success">(Current file uploaded)</span>
+                    <% end %>
+                  </p>
+                  <%= f.file_field :passport, class: "form-control", accept: "image/*" %>
+                </div>
+              </div>
+
+              <!-- Selfie Upload -->
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_selfie">
+                  <i class="ri-camera-line text-primary me-1"></i> 2. Selfie
+                </label>
+                <p class="text-muted small mb-2">
+                  Take a clear selfie in good lighting (no hats or sunglasses).
+                  <% if @identity_submission.persisted? && @identity_submission.selfie.attached? %>
+                    <span class="text-success">(Current file uploaded)</span>
+                  <% end %>
+                </p>
+                <%= f.file_field :selfie, class: "form-control", accept: "image/*", required: true %>
+              </div>
+
+              <!-- Supporting Document -->
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_additional_proof_type">
+                  <i class="ri-file-text-line text-primary me-1"></i> 3. Supporting Document
+                </label>
+                <p class="text-muted small mb-2">Choose and upload one supporting document.</p>
+                <%= f.select :additional_proof_type,
+                  [
+                    ["Digicel Bill", "Digicel Bill"],
+                    ["Natcom Bill", "Natcom Bill"],
+                    ["Birth Certificate", "Birth Certificate"],
+                    ["Baptismal Certificate", "Baptismal Certificate"],
+                    ["PNH Record", "PNH Record"],
+                    ["Bank Record", "Bank Record"],
+                    ["Western Union", "Western Union"],
+                    ["MoneyGram", "MoneyGram"],
+                    ["Sendwave", "Sendwave"],
+                    ["Unitransfer", "Unitransfer"],
+                    ["Vehicle Registration", "Vehicle Registration"],
+                    ["Other", "Other"]
+                  ],
+                  { prompt: "Select document type", selected: @identity_submission&.additional_proof_type },
+                  class: "form-select rounded-3 shadow-sm mb-3" %>
+
+                <p class="text-muted small mb-2">
+                  <% if @identity_submission.persisted? && @identity_submission.additional_proof.attached? %>
+                    <span class="text-success">(Current file uploaded)</span>
+                  <% end %>
+                </p>
+                <%= f.file_field :additional_proof,
+                  class: "form-control rounded-3 shadow-sm",
+                  accept: "image/*,application/pdf" %>
+              </div>
+
+              <p class="text-muted small">
+                <strong>Privacy Notice:</strong> Do not share your documents publicly to protect your privacy.
+              </p>
+            </div>
+
+            <div class="modal-footer border-0">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <%= f.submit @identity_submission.persisted? ? "Update Documents" : "Submit Documents", class: "btn btn-success" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

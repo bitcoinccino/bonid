@@ -1,0 +1,463 @@
+
+
+<div style="padding-top: 70px;"></div>
+
+<div class="container py-4">
+  <div class="text-center">
+    <h2 class="mb-3 text-primary">
+      <i class="ri-user-check-line me-2"></i> Verify Your Identity
+    </h2>
+    <p class="text-muted mb-4 lead">
+      Get verified in a snap! Upload clear, accurate documents matching your personal details to avoid delays. Your data is securely reviewed for a fast, reliable process.
+    </p>
+    <div class="card shadow-sm p-3 mb-4 bg-light">
+      <p class="text-muted mb-2 fw-bold">Required Documents:</p>
+      <ul class="list-unstyled text-start ms-4">
+        <li><i class="ri-checkbox-circle-line text-success me-2"></i>Valid CIN (front & back) <em>or</em> Passport</li>
+        <li><i class="ri-checkbox-circle-line text-success me-2"></i>Clear selfie</li>
+        <li><i class="ri-checkbox-circle-line text-success me-2"></i>One supporting document (e.g., Birth Certificate, Digicel/Natcom Bill, Bank Record)</li>
+      </ul>
+      <p class="text-muted small mt-2">
+        <strong>Tip:</strong> Double-check that all documents match your info to speed up verification!
+      </p>
+    </div>
+    <p class="text-muted small mb-4">
+      <strong>Privacy Notice:</strong> Keep your documents private to protect your personal info.
+    </p>
+  </div>
+
+  <!-- Upload Trigger -->
+  <div class="text-center mb-4">
+    <button type="button" class="btn btn-primary fw-semibold d-flex align-items-center mx-auto" data-bs-toggle="modal" data-bs-target="#uploadModal" aria-label="Open document upload modal">
+      <i class="ri-upload-cloud-2-line me-2"></i> Start Verification
+    </button>
+  </div>
+
+  <!-- Upload Modal -->
+  <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content rounded-4">
+        <div class="modal-header gradient-bg text-white">
+          <h5 class="modal-title fw-bold" id="uploadModalLabel">Upload Your Documents</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <%= form_with model: @identity_submission, local: true, html: { multipart: true, class: "verification-form" } do |f| %>
+          <div class="modal-body">
+            <% if @identity_submission&.errors&.any? %>
+              <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+                <h6 class="fw-bold text-danger mb-2">Please fix the following:</h6>
+                <ul class="mb-0">
+                  <% @identity_submission.errors.full_messages.each do |msg| %>
+                    <li><%= msg %></li>
+                  <% end %>
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            <% end %>
+
+            <!-- Submission Type -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_submission_type">
+                <i class="ri-repeat-line text-primary me-1"></i> Submission Type
+              </label>
+              <p class="text-muted small mb-2">Choose if this is a new, resubmitted, or reissued verification.</p>
+                <%= f.select :submission_type,
+                [["Initial", "initial"], ["Resubmission", "resubmission"], ["Reissue", "reissue"]],
+                { selected: @identity_submission&.submission_type || "initial" },
+                class: "form-select", required: true %>
+
+            </div>
+
+            <!-- ID Type -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_id_type">
+                <i class="ri-id-card-line text-primary me-1"></i> 1. ID Type
+              </label>
+              <p class="text-muted small mb-2">Select CIN or Passport for verification.</p>
+              <%= f.select :id_type,
+                           [["CIN (Front & Back)", "cin"], ["Passport", "passport"]],
+                           { selected: "cin" },
+                           class: "form-select rounded-3 shadow-sm",
+                           id: "doc-type",
+                           "aria-label": "Select ID type" %>
+            </div>
+
+            <!-- CIN Upload -->
+            <div id="cin-fields">
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_cin_front">
+                  <i class="ri-image-line text-primary me-1"></i> CIN Front
+                </label>
+                <p class="text-muted small mb-2">Upload a clear image of your CIN's front side.</p>
+                <%= f.file_field :cin_front,
+                                 class: "form-control rounded-3 shadow-sm",
+                                 id: "identity_submission_cin_front",
+                                 accept: "image/*",
+                                 "aria-label": "Upload CIN front image" %>
+                <img id="preview-cin-front" class="img-thumbnail mt-2 d-none" alt="CIN front preview" style="max-width: 150px;" />
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_cin_back">
+                  <i class="ri-image-line text-primary me-1"></i> CIN Back
+                </label>
+                <p class="text-muted small mb-2">Upload a clear image of your CIN's back side.</p>
+                <%= f.file_field :cin_back,
+                                 class: "form-control rounded-3 shadow-sm",
+                                 id: "identity_submission_cin_back",
+                                 accept: "image/*",
+                                 "aria-label": "Upload CIN back image" %>
+                <img id="preview-cin-back" class="img-thumbnail mt-2 d-none" alt="CIN back preview" style="max-width: 150px;" />
+              </div>
+            </div>
+
+            <!-- Passport Upload -->
+            <div id="passport-field" style="display: none;">
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_passport">
+                  <i class="ri-passport-line text-primary me-1"></i> Passport
+                </label>
+                <p class="text-muted small mb-2">Upload a clear scan of your passport’s photo page.</p>
+                <%= f.file_field :passport,
+                                 class: "form-control rounded-3 shadow-sm",
+                                 id: "identity_submission_passport",
+                                 accept: "image/*",
+                                 "aria-label": "Upload passport image" %>
+                <img id="preview-passport" class="img-thumbnail mt-2 d-none" alt="Passport preview" style="max-width: 150px;" />
+              </div>
+            </div>
+
+            <!-- Selfie -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_selfie">
+                <i class="ri-camera-line text-primary me-1"></i> 2. Selfie
+              </label>
+              <p class="text-muted small mb-2">Take a clear selfie in good lighting (no hats or sunglasses).</p>
+              <%= f.file_field :selfie,
+                               class: "form-control rounded-3 shadow-sm",
+                               required: true,
+                               id: "identity_submission_selfie",
+                               accept: "image/*",
+                               "aria-label": "Upload selfie image" %>
+              <img id="preview-selfie" class="img-thumbnail mt-2 d-none" alt="Selfie preview" style="max-width: 150px;" />
+            </div>
+
+            <!-- Additional Proof -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_additional_proof_type">
+                <i class="ri-file-text-line text-primary me-1"></i> 3. Supporting Document
+              </label>
+              <p class="text-muted small mb-2">Choose and upload one supporting document.</p>
+              <%= f.select :additional_proof_type,
+                           [
+                             ["Digicel Bill", "Digicel Bill"],
+                             ["Natcom Bill", "Natcom Bill"],
+                             ["Birth Certificate", "Birth Certificate"],
+                             ["Baptismal Certificate", "Baptismal Certificate"],
+                             ["PNH Record", "PNH Record"],
+                             ["Bank Record", "Bank Record"],
+                             ["Western Union", "Western Union"],
+                             ["MoneyGram", "MoneyGram"],
+                             ["Sendwave", "Sendwave"],
+                             ["Unitransfer", "Unitransfer"],
+                             ["Vehicle Registration", "Vehicle Registration"],
+                             ["Other", "Other"]
+                           ],
+                           { prompt: "Select document type" },
+                           class: "form-select rounded-3 shadow-sm mb-3",
+                           id: "identity_submission_additional_proof_type",
+                           "aria-label": "Select additional proof type" %>
+              <%= f.file_field :additional_proof,
+                               class: "form-control rounded-3 shadow-sm",
+                               id: "identity_submission_additional_proof",
+                               accept: "image/*,application/pdf",
+                               "aria-label": "Upload additional proof document" %>
+              <img id="preview-additional-proof" class="img-thumbnail mt-2 d-none" alt="Additional proof preview" style="max-width: 150px;" />
+            </div>
+            <p class="text-muted small">
+              <strong>Privacy Notice:</strong> Do not share your documents publicly to protect your privacy.
+            </p>
+          </div>
+
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal" aria-label="Cancel document submission">Cancel</button>
+            <%= f.submit "Submit Documents", class: "btn btn-success rounded-3 d-flex align-items-center", "aria-label" => "Submit verification documents" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Custom CSS for Enhanced Styling and Mobile Optimization -->
+<style>
+  :root {
+    --primary: #0057D9; /* Vibrant Blue */
+    --success: #28A745; /* Green */
+    --secondary: #4B5563; /* Darker Gray for better readability */
+    --light: #F8F9FA; /* Light Gray */
+    --dark: #343A40; /* Dark Gray */
+    --danger: #DC3545; /* Red */
+    --white: #FFFFFF; /* White */
+    --gradient: linear-gradient(90deg, #0057D9 0%, #D21034 100%); /* Brand Gradient */
+  }
+
+  body {
+    background-color: var(--light);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .container {
+    max-width: 800px;
+    padding: 1.5rem;
+  }
+
+  .text-primary {
+    color: var(--primary) !important;
+  }
+
+  .text-muted {
+    color: var(--secondary) !important;
+    font-weight: 500; /* Slightly bolder for better legibility */
+  }
+
+  .text-danger {
+    color: var(--danger) !important;
+  }
+
+  .text-success {
+    color: var(--success) !important;
+  }
+
+  h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  .lead {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .card {
+    border: none;
+    border-radius: 0.75rem;
+    transition: transform 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .list-unstyled li {
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  .gradient-bg {
+    background: var(--gradient);
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--white);
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #0047B3;
+    border-color: #0047B3;
+    transform: translateY(-1px);
+  }
+
+  .btn-success {
+    background-color: var(--success);
+    border-color: var(--success);
+    color: var(--white);
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-success:hover {
+    background-color: #218838;
+    border-color: #218838;
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-secondary {
+    border-color: var(--secondary);
+    color: var(--secondary);
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: var(--secondary);
+    color: var(--white);
+    transform: translateY(-1px);
+  }
+
+  .form-control, .form-select {
+    height: 44px;
+    font-size: 0.95rem;
+    color: var(--dark);
+    background-color: var(--white);
+    border: 1px solid #CED4DA;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 87, 217, 0.25);
+  }
+
+  .form-control::placeholder,
+  .form-select:invalid {
+    color: var(--secondary);
+    opacity: 0.7;
+  }
+
+  .form-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .form-control[type="file"]::file-selector-button {
+    background-color: var(--light);
+    border: none;
+    padding: 0.5rem 1rem;
+    color: var(--dark);
+    border-radius: 0.25rem;
+    transition: background-color 0.3s ease;
+  }
+
+  .form-control[type="file"]::file-selector-button:hover {
+    background-color: #E9ECEF;
+  }
+
+  .img-thumbnail {
+    border-radius: 0.5rem;
+    border: 1px solid #CED4DA;
+    max-height: 100px;
+    object-fit: cover;
+  }
+
+  .alert-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-color: var(--danger);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .modal-content {
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+    border: none;
+  }
+
+  .modal-dialog-centered {
+    max-width: 90%;
+  }
+
+  .btn-close-white {
+    filter: invert(1);
+  }
+
+  @media (max-width: 576px) {
+    .container {
+      padding: 1rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    .lead {
+      font-size: 1rem;
+    }
+
+    .btn-primary, .btn-success, .btn-outline-secondary {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .form-control, .form-select {
+      height: 40px;
+      font-size: 0.9rem;
+    }
+
+    .form-label {
+      font-size: 0.85rem;
+    }
+
+    .modal-body {
+      padding: 1rem;
+    }
+
+    .modal-footer {
+      padding: 0.75rem;
+    }
+
+    .img-thumbnail {
+      max-width: 120px;
+    }
+  }
+</style>
+
+<!-- JavaScript for Dynamic Fields and Image Previews -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const docType = document.getElementById("doc-type");
+    const cinFields = document.getElementById("cin-fields");
+    const passportField = document.getElementById("passport-field");
+
+    if (docType) {
+      docType.addEventListener("change", function () {
+        cinFields.style.display = this.value === "passport" ? "none" : "block";
+        passportField.style.display = this.value === "passport" ? "block" : "none";
+      });
+    }
+
+    function previewImage(fieldName, imgId) {
+      const input = document.querySelector(`input[name="identity_submission[${fieldName}]"]`);
+      const preview = document.getElementById(`preview-${imgId}`);
+
+      if (input && preview) {
+        input.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+              preview.src = event.target.result;
+              preview.classList.remove("d-none");
+            };
+            reader.readAsDataURL(file);
+          } else {
+            preview.classList.add("d-none");
+          }
+        });
+      }
+    }
+
+    previewImage("cin_front", "cin-front");
+    previewImage("cin_back", "cin-back");
+    previewImage("passport", "passport");
+    previewImage("selfie", "selfie");
+    previewImage("additional_proof", "additional-proof");
+  });
+</script>

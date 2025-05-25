@@ -1,0 +1,222 @@
+<%=render "shared/navbar" %>
+<div class="container py-4 bg-light">
+  <h1 class="h4 fw-bold mb-4 text-primary">Verified Partners</h1>
+
+  <!-- Filter/Search Bar -->
+  <div class="mb-4 d-flex justify-content-between align-items-center">
+    <%= form_with url: admin_partners_path, method: :get, local: true, class: "d-flex gap-2" do |f| %>
+      <%= f.text_field :query, placeholder: "Search by name", class: "form-control rounded-3", value: params[:query] %>
+      <%= f.select :sector, options_for_select(Partner.distinct.pluck(:sector).compact.sort, params[:sector]), prompt: "All Sectors", class: "form-select rounded-3" %>
+      <%= f.submit "Filter", class: "btn btn-outline-primary rounded-pill" %>
+    <% end %>
+  </div>
+
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th scope="col">Logo</th>
+        <th scope="col">Name</th>
+        <th scope="col">Sector</th>
+        <th scope="col">Start Link</th>
+        <th scope="col">QR</th>
+        <th scope="col">Scans</th>
+        <th scope="col">Last Scan</th>
+        <th scope="col">Verified</th>
+        <th scope="col">Send Email</th>
+        <th scope="col">Actions</th> <!-- New column for View button -->
+      </tr>
+    </thead>
+    <tbody>
+      <% @partners.each do |partner| %>
+        <tr>
+          <td>
+            <% if partner.logo.attached? %>
+              <%= image_tag partner.logo.variant(resize_to_limit: [60, 60]), class: "rounded shadow-sm", alt: "#{partner.name} logo" %>
+            <% else %>
+              <span class="text-muted small">No Logo</span>
+            <% end %>
+          </td>
+          <td><strong><%= partner.name %></strong></td>
+          <td><%= partner.sector&.titleize || "N/A" %></td>
+          <td>
+            <code class="small text-primary d-block mb-1" id="link_<%= partner.id %>">
+              /start?partner=<%= partner.slug %>
+            </code>
+            <div class="d-flex gap-1">
+              <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="copyToClipboard('<%= partner.slug %>')" data-bs-toggle="tooltip" title="Copy start link">
+                Copy
+              </button>
+              <%= link_to "Visit", start_verification_url(partner: partner.slug), class: "btn btn-sm btn-outline-primary rounded-pill", target: "_blank", data: { turbo: false, bs_toggle: "tooltip" }, title: "Visit start link" %>
+            </div>
+          </td>
+          <td>
+            <%= image_tag url_for(RQRCode::QRCode.new(start_verification_url(partner: partner.slug)).as_png(size: 120).to_data_url), alt: "QR Code for #{partner.name}", class: "img-thumbnail", width: 60 %>
+          </td>
+          <td><%= partner.qr_scans.count %></td>
+          <td><%= partner.qr_scans.maximum(:scanned_at)&.strftime("%b %d, %Y %H:%M") || "—" %></td>
+          <td><%= partner.verified_at&.strftime("%b %d, %Y") || "Not verified" %></td>
+          <td>
+            <%= button_to "Resend Link",
+                          resend_verification_email_admin_partner_path(partner),
+                          method: :post,
+                          class: "btn btn-sm btn-outline-secondary rounded-pill",
+                          data: { turbo_confirm: "Resend verification email to #{partner.name}?" } %>
+          </td>
+          <td>
+            <%= link_to "View", admin_partner_path(partner), class: "btn btn-sm btn-outline-primary rounded-pill", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "View details for #{partner.name}", aria_label: "View details for #{partner.name}" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 1200px;
+    padding: 0 15px;
+  }
+
+  /* Colors */
+  .bg-primary { background-color: #1e40af !important; }
+  .text-primary { color: #1e40af !important; }
+  .bg-success { background-color: #059669 !important; }
+  .text-secondary { color: #6b7280 !important; }
+
+  /* Form Elements */
+  .form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: #1e40af;
+    border-color: #1e40af;
+  }
+
+  .btn-primary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+  }
+
+  .btn-outline-primary {
+    border-color: #1e40af;
+    color: #1e40af;
+  }
+
+  .btn-outline-primary:hover {
+    background: #1e40af;
+    color: #ffffff;
+  }
+
+  .btn-outline-secondary {
+    border-color: #6b7280;
+    color: #6b7280;
+  }
+
+  .btn-outline-secondary:hover {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
+  /* Table */
+  .table {
+    font-size: 0.875rem;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .img-thumbnail {
+    width: 60px;
+  }
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .container {
+      padding: 0 12px;
+    }
+    .btn {
+      font-size: 0.75rem;
+      padding: 6px 10px;
+    }
+    .table {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    h1.h4 {
+      font-size: 1.25rem;
+    }
+    .d-flex.gap-2 {
+      flex-direction: column;
+      gap: 8px;
+    }
+    .form-control, .form-select {
+      font-size: 0.75rem;
+    }
+    .img-thumbnail {
+      width: 40px;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips and Clipboard -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  function copyToClipboard(slug) {
+    const text = `${window.location.origin}/start?partner=${slug}`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Copied to clipboard: " + text);
+    });
+  }
+</script>
+
+
+
+

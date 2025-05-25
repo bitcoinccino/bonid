@@ -1,0 +1,44 @@
+<!-- app/views/admin/identity_submissions/_document_sections.html.erb -->
+<h4 class="text-primary text-center mb-4">Uploaded Documents</h4>
+<div class="accordion accordion-flush mb-4" id="documentsAccordion">
+  <% {
+    "Primary Documents" => {
+      "CIN Front" => :cin_front,
+      "CIN Back" => :cin_back,
+      "Passport" => :passport,
+      "Selfie" => :selfie
+    },
+    "Secondary Documents" => {
+      "Proof of Address" => :proof_of_address
+    }
+  }.each_with_index do |(group, docs), index| %>
+    <div class="accordion-item border rounded-3 mb-3">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_<%= index %>" aria-expanded="false">
+          <i class="ri-file-list-line me-2"></i> <%= group %>
+        </button>
+      </h2>
+      <div id="collapse_<%= index %>" class="accordion-collapse collapse" data-bs-parent="#documentsAccordion">
+        <div class="accordion-body p-4">
+          <div class="row g-3">
+            <% docs.each do |label, field| %>
+              <% if submission.send(field).attached? %>
+                <% modal_id = "#{field}_Modal" %>
+                <div class="col-md-6 col-12">
+                  <div class="card h-100 shadow-sm rounded-3 border-0 document-card bg-white">
+                    <div class="card-body text-center p-3">
+                      <button type="button" class="btn btn-outline-primary rounded-3 w-100 document-label" data-bs-toggle="modal" data-bs-target="#<%= modal_id %>">
+                        <%= label %>
+                      </button>
+                    </div>
+                  </div>
+                  <%= render partial: "admin/identity_submissions/modals/document_modal", locals: { submission: submission, field: field, label: label, modal_id: modal_id } %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

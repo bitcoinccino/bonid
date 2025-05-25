@@ -1,0 +1,58 @@
+<div class="card shadow-sm rounded-3 border-0 p-4 bg-white text-center">
+  <h5 class="text-primary fw-semibold mb-3">Submission Status</h5>
+  <p>
+    <strong>Status:</strong>
+    <% if @submission.reset_request_status == "approved" %>
+      <span class="badge bg-success rounded-3">BONID Reissued ✅</span>
+    <% elsif @submission.reset_request_status == "rejected" %>
+      <span class="badge bg-danger rounded-3">Reset Rejected ❌</span>
+    <% elsif @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+      <span class="badge bg-info rounded-3">Reset Requested ⏳</span>
+    <% else %>
+      <span class="badge <%= badge_class(@submission.status) %> rounded-3">
+        <%= @submission.status.to_s.titleize %>
+      </span>
+    <% end %>
+  </p>
+  <p><strong>Submitted:</strong> <%= @submission.created_at.strftime("%B %d, %Y at %I:%M %p") %></p>
+  <p><strong>Verification Token:</strong> <%= @submission.verification_token.presence&.truncate(10) || "N/A" %></p>
+  <p><strong>Expires:</strong> <%= @submission.expires_at.present? ? @submission.expires_at.strftime("%B %d, %Y") : "Not yet verified" %></p>
+  <% if @submission.reissued_at.present? %>
+    <div class="alert alert-success mt-3 rounded-3">
+      <strong>Reissued At:</strong> <%= @submission.reissued_at.strftime("%B %d, %Y at %I:%M %p") %>
+    </div>
+  <% end %>
+  <% if @submission.reset_request_status == "rejected" && @submission.reset_rejection_reason.present? %>
+    <div class="alert alert-warning mt-3 rounded-3">
+      <strong>Reset Rejection Reason:</strong><br>
+      <%= simple_format(@submission.reset_rejection_reason) %>
+    </div>
+  <% end %>
+  <% if @submission.rejected? && @submission.rejection_reason.present? %>
+    <div class="alert alert-warning mt-3 rounded-3">
+      <strong>Submission Rejection Reason:</strong><br>
+      <%= simple_format(@submission.rejection_reason) %>
+    </div>
+  <% end %>
+  <% if @submission.reset_requested_at.present? && @submission.reset_request_status.blank? %>
+    <div class="d-flex gap-2 mt-4">
+      <%= button_to "Approve Reset",
+                    approve_reset_admin_identity_submission_path(@submission),
+                    method: :patch,
+                    class: "btn btn-success fw-semibold rounded-3 flex-grow-1" %>
+      <button class="btn btn-danger fw-semibold rounded-3 flex-grow-1" data-bs-toggle="modal" data-bs-target="#rejectResetModal">
+        Reject Reset
+      </button>
+    </div>
+  <% elsif @submission.pending? %>
+    <div class="d-flex gap-2 mt-4">
+      <%= button_to "Approve",
+                    admin_identity_submission_path(@submission, approve: true),
+                    method: :patch,
+                    class: "btn btn-success fw-semibold rounded-3 flex-grow-1" %>
+      <button class="btn btn-danger fw-semibold rounded-3 flex-grow-1" data-bs-toggle="modal" data-bs-target="#rejectModal">
+        Reject
+      </button>
+    </div>
+  <% end %>
+</div>

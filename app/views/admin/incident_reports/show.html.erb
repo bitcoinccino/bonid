@@ -1,0 +1,104 @@
+<div class="container my-5">
+  <h1 class="fw-bold mb-4">Incident Report Details</h1>
+
+  <!-- Action Buttons -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <%= link_to "← Back to Reports", admin_incident_reports_path, class: "btn btn-outline-secondary rounded-pill" %>
+    </div>
+    <div class="btn-group mb-4" role="group" aria-label="Report actions">
+  <%= link_to "Download PDF",
+              request.path + ".pdf",
+              class: "btn btn-outline-primary",
+              target: "_blank",
+              rel: "noopener" %>
+
+  <%= button_tag "Print",
+                 type: "button",
+                 class: "btn btn-outline-success",
+                 onclick: "window.print(); return false;" %>
+
+  <% unless @incident_report.approved? %>
+    <%= link_to "Approve",
+                approve_admin_incident_report_path(@incident_report),
+                method: :post,
+                class: "btn btn-success",
+                data: { turbo_method: :post, turbo_confirm: "Are you sure you want to approve this report?" } %>
+  <% end %>
+
+  <% unless @incident_report.flagged? %>
+    <%= link_to "Flag",
+                flag_admin_incident_report_path(@incident_report),
+                method: :post,
+                class: "btn btn-danger",
+                data: { turbo_method: :post, turbo_confirm: "Flag this report for review?" } %>
+  <% end %>
+</div>
+
+  </div>
+
+  <!-- Officer Info -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-primary"><i class="ri-shield-user-line me-2"></i> Officer Information</h5>
+      <p><strong>Name:</strong> <%= @incident_report.officer&.full_name %></p>
+      <p><strong>Badge ID:</strong> <%= @incident_report.officer&.badge_id %></p>
+      <p><strong>Unit:</strong> <%= @incident_report.unit %></p>
+    </div>
+  </div>
+
+  <!-- Crime Details -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-danger"><i class="ri-police-line me-2"></i> Crime Details</h5>
+      <p><strong>Type:</strong> <%= @incident_report.crime_type %></p>
+      <p><strong>Description:</strong><br><%= simple_format(@incident_report.description) %></p>
+      <p><strong>Reported At:</strong> <%= l(@incident_report.created_at, format: :long) %></p>
+    </div>
+  </div>
+
+  <!-- Location Info -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-success"><i class="ri-map-pin-line me-2"></i> Location</h5>
+      <p><strong>Department:</strong> <%= @incident_report.department&.name %></p>
+      <p><strong>Commune:</strong> <%= @incident_report.commune&.name %></p>
+      <p><strong>Section Communale:</strong> <%= @incident_report.communal_section&.name %></p>
+      <p><strong>Street:</strong> <%= @incident_report.street_address %></p>
+      <p><strong>Locality:</strong> <%= @incident_report.locality %></p>
+      <p><strong>Postal Code:</strong> <%= @incident_report.postal_code %></p>
+      <p><strong>Coordinates:</strong> <%= @incident_report.latitude %>, <%= @incident_report.longitude %></p>
+
+      <% if @incident_report.latitude.present? && @incident_report.longitude.present? %>
+        <div id="map" style="height: 300px;" class="rounded mt-3"></div>
+        <script>
+          document.addEventListener("DOMContentLoaded", function () {
+            var map = L.map("map").setView([<%= @incident_report.latitude %>, <%= @incident_report.longitude %>], 14);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+            L.marker([<%= @incident_report.latitude %>, <%= @incident_report.longitude %>]).addTo(map);
+          });
+        </script>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Attached Media -->
+  <% if @incident_report.media.attached? %>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title"><i class="ri-image-line me-2"></i> Attached Media</h5>
+        <div class="row g-3">
+          <% @incident_report.media.each do |attachment| %>
+            <div class="col-md-4">
+              <% if attachment.image? %>
+                <%= image_tag attachment.variant(resize_to_limit: [600, 400]), class: "img-fluid rounded shadow" %>
+              <% else %>
+                <%= link_to attachment.filename, url_for(attachment), class: "btn btn-outline-secondary w-100", target: "_blank" %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

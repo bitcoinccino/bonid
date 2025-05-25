@@ -1,0 +1,120 @@
+<div class="container py-5" style="max-width: 800px;">
+  <section class="text-center mb-5" aria-labelledby="verifyTitle">
+    <% if @partner %>
+      <% if @partner.logo.attached? %>
+        <%= image_tag @partner.logo.variant(resize_to_limit: [150, 75]), class: "mb-3 img-fluid", alt: "#{@partner.name} logo" %>
+      <% else %>
+        <i class="ri-building-line ri-3x text-primary mb-3" aria-hidden="true"></i>
+      <% end %>
+      <h2 class="fw-bold text-primary h4 h-md-3" id="verifyTitle">Verification for <%= @partner.name || 'BonID' %></h2>
+    <% else %>
+      <h2 class="fw-bold text-primary h4 h-md-3" id="verifyTitle">
+        <i class="ri-user-check-line me-2"></i> BonID Verification
+      </h2>
+    <% end %>
+    <p class="text-muted small mb-0">
+      Upload your identity documents to complete verification. Ensure all documents match your profile’s personal information.
+    </p>
+  </section>
+
+  <%= simple_form_for @identity_submission, html: { multipart: true, class: "verification-form" } do |f| %>
+    <%= f.error_notification %>
+
+    <!-- Submission Section -->
+    <section class="card shadow-sm p-4 mb-4 bg-white rounded-4" aria-labelledby="submissionDetailsTitle">
+      <h3 class="text-primary fw-bold mb-3 h5" id="submissionDetailsTitle">
+        <i class="ri-file-list-3-line me-2"></i> Submission Details
+      </h3>
+      <p class="text-muted small mb-3">
+        <i class="ri-lightbulb-line me-2"></i>
+        Documents must match your profile’s name and date of birth.
+      </p>
+
+      <div class="mb-3">
+        <%= f.label :submission_type, "Submission Type", class: "form-label fw-bold small" %>
+        <%= f.select :submission_type, [["Initial", "initial"], ["Resubmission", "resubmission"], ["Reissue", "reissue"]], { prompt: "Select submission type" }, class: "form-select rounded-3 shadow-sm", required: true %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :id_type, "ID Type", class: "form-label fw-bold small" %>
+        <%= f.select :id_type, [["CIN (Front & Back)", "cin"], ["Passport", "passport"]], { prompt: "Select ID type" }, class: "form-select rounded-3 shadow-sm", id: "id_type_select", required: true %>
+      </div>
+
+      <div id="cin_fields">
+        <div class="mb-3">
+          <%= f.label :cin_front, "CIN Front", class: "form-label fw-bold small" %>
+          <%= f.file_field :cin_front, class: "form-control rounded-3 shadow-sm", accept: "image/*" %>
+        </div>
+        <div class="mb-3">
+          <%= f.label :cin_back, "CIN Back", class: "form-label fw-bold small" %>
+          <%= f.file_field :cin_back, class: "form-control rounded-3 shadow-sm", accept: "image/*" %>
+        </div>
+      </div>
+
+      <div id="passport_field" style="display: none;">
+        <div class="mb-3">
+          <%= f.label :passport, "Passport", class: "form-label fw-bold small" %>
+          <%= f.file_field :passport, class: "form-control rounded-3 shadow-sm", accept: "image/*" %>
+        </div>
+      </div>
+    </section>
+
+    <!-- Additional Documents Section -->
+    <section class="card shadow-sm p-4 bg-white rounded-4" aria-labelledby="additionalDocumentsTitle">
+      <h3 class="text-primary fw-bold mb-3 h5" id="additionalDocumentsTitle">
+        <i class="ri-image-add-line me-2"></i> Additional Documents
+      </h3>
+
+      <div class="mb-3">
+        <%= f.label :selfie, "Selfie", class: "form-label fw-bold small" %>
+        <p class="text-muted small mb-1">Take a clear selfie in good lighting (no hats or sunglasses).</p>
+        <%= f.file_field :selfie, class: "form-control rounded-3 shadow-sm", accept: "image/*" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :additional_proof_type, "Supporting Document", class: "form-label fw-bold small" %>
+        <%= f.select :additional_proof_type,
+                     [["Digicel Bill", "Digicel Bill"], ["Natcom Bill", "Natcom Bill"],
+                      ["Birth Certificate", "Birth Certificate"], ["Baptismal Certificate", "Baptismal Certificate"],
+                      ["Driver's License", "Driver's License"], ["Learner's Permit", "Learner's Permit"],
+                      ["PNH Record", "PNH Record"], ["Bank Record", "Bank Record"],
+                      ["Western Union", "Western Union"], ["MoneyGram", "MoneyGram"],
+                      ["Sendwave", "Sendwave"], ["Unitransfer", "Unitransfer"],
+                      ["Vehicle Registration", "Vehicle Registration"], ["Other", "Other"]],
+                     { prompt: "Select document type" },
+                     class: "form-select rounded-3 shadow-sm" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :additional_proof, "Upload Supporting Document", class: "form-label fw-bold small" %>
+        <%= f.file_field :additional_proof, class: "form-control rounded-3 shadow-sm", accept: "image/*,application/pdf" %>
+      </div>
+
+      <div class="d-grid mt-4">
+        <%= f.button :submit, "Submit for Verification", class: "btn btn-primary rounded-pill px-4 py-2 fw-semibold" %>
+      </div>
+    </section>
+  <% end %>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const idSelect = document.getElementById("id_type_select");
+    const cinFields = document.getElementById("cin_fields");
+    const passportField = document.getElementById("passport_field");
+
+    const toggleFields = () => {
+      if (idSelect.value === "passport") {
+        cinFields.style.display = "none";
+        passportField.style.display = "block";
+      } else {
+        cinFields.style.display = "block";
+        passportField.style.display = "none";
+      }
+    };
+
+    idSelect.addEventListener("change", toggleFields);
+    toggleFields();
+  });
+</script>
+

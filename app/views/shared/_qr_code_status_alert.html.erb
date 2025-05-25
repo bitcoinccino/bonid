@@ -1,0 +1,42 @@
+<% if local_assigns[:submission].present? %>
+  <% submission = local_assigns[:submission] %>
+
+  <% if submission.reset_request_status == "pending" %>
+    <div class="alert alert-info rounded-3 small mt-3">
+      <i class="ri-refresh-line me-2"></i>
+      You requested a BonID reissue. Your previous QR code is now invalid, and a new one will appear here once approved.
+    </div>
+
+  <% elsif submission.status == "invalidated" || (submission.expires_at.present? && Time.current >= submission.expires_at) %>
+    <div class="alert alert-danger rounded-3 small mt-3">
+      <i class="ri-shield-cross-line me-2"></i>
+      Your previous BonID QR code is <strong>no longer valid</strong>. Please wait for your new BonID to be approved.
+    </div>
+
+  <% elsif submission.approved? && submission.expires_at&.future? %>
+    <div class="alert alert-primary rounded-3 small mt-3">
+      <i class="ri-shield-check-line me-2"></i>
+      This BonID QR code is <strong>active and valid</strong>. Only share it with trusted authorities like <strong>PNH, banks, schools, or border officials</strong>.
+    </div>
+
+  <% elsif submission.pending? || submission.status.nil? %>
+    <div class="alert alert-warning rounded-3 small mt-3">
+      <i class="ri-time-line me-2"></i>
+      <strong>Your BonID QR code will appear here once your submission is approved.</strong><br>
+      Please check back later or monitor your email for updates.
+    </div>
+
+  <% else %>
+    <div class="alert alert-secondary rounded-3 small mt-3">
+      <i class="ri-information-line me-2"></i>
+      We’re unable to determine the status of your BonID QR code at this time.
+    </div>
+  <% end %>
+
+<% else %>
+  <div class="alert alert-warning rounded-3 small mt-3">
+    <i class="ri-time-line me-2"></i>
+    No BonID QR code has been generated yet. Submit a verification to get started.
+  </div>
+<% end %>
+

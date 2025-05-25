@@ -1,0 +1,299 @@
+<<%= render "shared/navbar" %>
+<div style="padding-top: 50px;"></div>
+<!-- app/views/partners/index.html.erb -->
+<section class="container py-5" role="main" aria-labelledby="partners-heading">
+  <div class="text-center mb-5">
+    <h2 id="partners-heading" class="h4 fw-bold text-primary">Verified BonID Partners</h2>
+    <p class="text-muted">Connect with trusted organizations for secure identity verification.</p>
+  </div>
+
+  <% if flash[:redirected_to_verified] %>
+    <div class="alert alert-warning text-center fw-semibold rounded-3">
+      <i class="ri-information-line me-2"></i>
+      Please start your verification by selecting a verified partner below.
+    </div>
+  <% end %>
+
+  <!-- Search and Filter -->
+  <%= form_with url: partners_path, method: :get, class: "mb-4" do |f| %>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <%= f.text_field :search, value: params[:search], placeholder: "Search by partner name...", class: "form-control", aria_label: "Search partners" %>
+      </div>
+      <div class="col-md-4">
+        <%= f.select :sector,
+                     options_for_select([["All Sectors", ""]] + PartnerApplication.department_sectors.map { |group, options| options.map { |name, value| [name, value] } }.flatten(1), params[:sector]),
+                     {},
+                     class: "form-select",
+                     onchange: "this.form.submit()",
+                     aria_label: "Filter by sector" %>
+      </div>
+      <div class="col-md-2">
+        <%= f.submit "Filter", class: "btn btn-primary w-100" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Partners Grid -->
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <% @partners.each do |partner| %>
+      <div class="col">
+        <div class="card shadow-sm border-0 h-100 hover-card">
+          <div class="card-img-top text-center p-3">
+            <% if partner.logo.attached? %>
+              <% if partner.logo.content_type == "image/svg+xml" %>
+                <%= image_tag url_for(partner.logo),
+                              class: "rounded-circle",
+                              style: "width: 100px; height: 100px; object-fit: contain; background: #F8F9FA;",
+                              alt: "#{partner.name} logo",
+                              loading: "lazy" %>
+              <% else %>
+                <%= image_tag partner.logo.variant(resize_to_fill: [100, 100]).processed,
+                              class: "rounded-circle",
+                              style: "width: 100px; height: 100px; object-fit: cover;",
+                              alt: "#{partner.name} logo",
+                              loading: "lazy" %>
+              <% end %>
+            <% else %>
+              <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                <i class="ri-image-line text-muted" style="font-size: 2rem;"></i>
+              </div>
+            <% end %>
+          </div>
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title fw-semibold text-primary text-center mb-3"><%= partner.name %></h5>
+            <p class="card-text text-muted small">
+              <span class="d-flex align-items-center mb-1">
+                <i class="ri-briefcase-line me-2"></i>
+                Sector: <strong class="ms-1"><%= partner.sector.humanize %></strong>
+              </span>
+              <span class="d-flex align-items-center mb-1">
+                <i class="ri-calendar-check-line me-2"></i>
+                Verified: <%= partner.verified_at&.strftime("%B %Y") || "N/A" %>
+              </span>
+              <% if partner.website.present? %>
+                <span class="d-flex align-items-center">
+                  <i class="ri-links-line me-2"></i>
+                  Website: <a href="<%= partner.website.starts_with?('http') ? partner.website : "https://#{partner.website}" %>"
+                              target="_blank"
+                              rel="noopener"
+                              class="text-decoration-none text-primary"><%= truncate(partner.website, length: 30) %></a>
+                </span>
+              <% end %>
+            </p>
+            <div class="mt-auto text-center">
+              <%= link_to "Get Verified via #{partner.name}",
+                          start_verification_path(partner: partner.slug),
+                          class: "btn btn-outline-primary btn-sm rounded-pill fw-semibold w-100",
+                          aria_label: "Start verification with #{partner.name}" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @partners.empty? %>
+    <div class="text-center text-muted mt-5">
+      <i class="ri-information-line display-4"></i>
+      <p class="mt-3">No verified partners yet.</p>
+      <p>Interested in becoming a BonID partner? <a href="<%= new_partner_application_path %>" class="text-primary text-decoration-none">Apply now</a>.</p>
+    </div>
+  <% end %>
+</section>
+
+<div style="padding-top: 50px;"></div>
+<%= render "shared/footer" %>
+<!-- Custom CSS -->
+<style>
+  /* Base Styles */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
+
+  .container {
+    max-width: 1200px;
+    padding: 0 15px;
+  }
+
+  /* Colors */
+  .bg-primary { background-color: #1e40af !important; }
+  .text-primary { color: #1e40af !important; }
+  .bg-success { background-color: #059669 !important; }
+  .text-secondary { color: #6b7280 !important; }
+
+  /* Hero Section */
+  .min-vh-50 {
+    min-height: 50vh;
+  }
+
+  .bg-light {
+    background-color: #f5f5f5 !important;
+  }
+
+  /* Cards */
+  .card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Accordion */
+  .accordion-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .accordion-button {
+    background: #ffffff;
+    color: #1e40af;
+    font-weight: 600;
+    border-radius: 8px !important;
+    padding: 16px;
+  }
+
+  .accordion-button:not(.collapsed) {
+    background: #eff6ff;
+    color: #1e40af;
+  }
+
+  .accordion-button:focus {
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .accordion-body {
+    padding: 24px;
+  }
+
+  /* Form Elements */
+  .form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+  }
+
+  .form-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  /* Buttons */
+  .btn {
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: #1e40af;
+    border-color: #1e40af;
+  }
+
+  .btn-primary:hover {
+    background: #1e3a8a;
+    border-color: #1e3a8a;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 12px;
+    }
+    .card {
+      padding: 16px;
+    }
+    .accordion-button {
+      font-size: 0.875rem;
+      padding: 12px;
+    }
+    .accordion-body {
+      padding: 16px;
+    }
+    .btn-lg {
+      font-size: 0.875rem;
+      padding: 10px 20px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    h1.display-5 {
+      font-size: 1.75rem;
+    }
+    .lead {
+      font-size: 1rem;
+    }
+    .form-control, .form-select {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips and Form Validation -->
+<script>
+  // Bootstrap Tooltips
+  document.addEventListener("DOMContentLoaded", function () {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+  // Stimulus Controller for Form Validation
+  import { Controller } from "@hotwired/stimulus";
+  class FormValidationController extends Controller {
+    static targets = ["honeypot", "input", "submit"];
+    connect() {
+      this.element.addEventListener("submit", this.validate.bind(this));
+    }
+    validate(event) {
+      if (this.honeypotTarget.value !== "") {
+        event.preventDefault();
+        return;
+      }
+      let isValid = true;
+      this.inputTargets.forEach(input => {
+        if (input.required && !input.value.trim()) {
+          input.classList.add("is-invalid");
+          isValid = false;
+        } else {
+          input.classList.remove("is-invalid");
+        }
+      });
+      if (!isValid) {
+        event.preventDefault();
+        this.submitTarget.disabled = false;
+      }
+    }
+  }
+</script>

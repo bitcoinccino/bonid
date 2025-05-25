@@ -1,0 +1,26 @@
+<%= render "shared/navbar" %>
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+  <div class="col-md-6 col-lg-5 bg-white p-5 rounded-4 shadow-sm">
+    <h2 class="fw-bold text-center mb-4">Reset Your Password</h2>
+
+    <%= simple_form_for(resource, as: :officer, url: officer_password_path, html: { method: :put }) do |f| %>
+      <%= f.error_notification %>
+      <%= hidden_field_tag :reset_password_token, params[:reset_password_token] %>
+
+      <div class="mb-3">
+        <%= f.input :password, required: true, label: "New Password", input_html: { class: "form-control rounded-3", autocomplete: "new-password" } %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.input :password_confirmation, required: true, label: "Confirm Password", input_html: { class: "form-control rounded-3", autocomplete: "new-password" } %>
+      </div>
+
+      <%= f.button :submit, "Reset Password", class: "btn btn-primary w-100 rounded-pill fw-semibold" %>
+    <% end %>
+
+    <div class="text-center mt-3">
+      <%= link_to "Back to login", new_officer_session_path, class: "text-muted small" %>
+    </div>
+  </div>
+</div>

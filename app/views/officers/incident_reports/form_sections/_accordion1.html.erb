@@ -1,0 +1,128 @@
+<!-- app/views/officers/incident_reports/_accordion1.html.erb -->
+<div class="container py-5" style="max-width: 800px;">
+  <section class="text-center mb-5" aria-labelledby="incidentReportTitle">
+    <h2 class="fw-bold text-primary h4 h-md-3" id="incidentReportTitle">
+      <i class="ri-file-list-3-line me-2"></i> Incident Report Details
+    </h2>
+    <p class="text-muted small mb-0">
+      Provide accurate details for the incident report. All fields marked with * are required.
+    </p>
+  </section>
+
+  <div class="accordion accordion-flush mb-3" id="incidentReportAccordion1">
+    <!-- QR Scanner Section -->
+  <div class="accordion-item border rounded-3 mb-3">
+    <h2 class="accordion-header" id="headingQrScanner">
+      <button class="accordion-button fw-semibold bg-primary text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseQrScanner" aria-expanded="true" aria-controls="collapseQrScanner">
+        <i class="ri-qr-scan-line me-2"></i> Scan BonID
+      </button>
+    </h2>
+    <div id="collapseQrScanner" class="accordion-collapse collapse show" aria-labelledby="headingQrScanner" data-bs-parent="#incidentReportAccordion1">
+    <div class="accordion-body" data-controller="qr-scanner">
+    <div id="qr-reader" class="mb-3 border rounded-3" style="max-width: 100%; height: auto;"></div>
+    <div data-qr-scanner-target="output" class="alert alert-info text-center small mt-2"></div>
+  </div>
+</div>
+  </div>
+
+    <!-- Suspect BonID -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingBonid">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBonid" aria-expanded="false" aria-controls="collapseBonid">
+          <i class="ri-user-search-line me-2"></i> Suspect BonID
+        </button>
+      </h2>
+      <div id="collapseBonid" class="accordion-collapse collapse" aria-labelledby="headingBonid" data-bs-parent="#incidentReportAccordion1">
+        <div class="accordion-body p-4">
+          <%= f.label :suspect_bonid, "Suspect BonID *", class: "form-label fw-bold small" %>
+          <%= f.text_field :suspect_bonid,
+                          class: "form-control rounded-3 shadow-sm",
+                          placeholder: "EX: AR-1964-M-OUEST-C-8980",
+                          required: true,
+                          data: { bonid_lookup_target: "input", action: "blur->bonid-lookup#fetch" },
+                          aria: { describedby: "bonidHelp" } %>
+          <small id="bonidHelp" class="form-text text-muted">Enter a valid BonID or scan above.</small>
+          <%= f.hidden_field :suspect_name, data: { bonid_lookup_target: "name" } %>
+          <%= f.hidden_field :suspect_user_id, data: { bonid_lookup_target: "userId" } %>
+          <div data-bonid-lookup-target="result" class="text-muted small mt-2"></div>
+          <button type="button" class="btn btn-sm btn-outline-secondary d-none mt-2" data-bonid-lookup-target="editBtn" data-action="bonid-lookup#edit" aria-label="Change BonID">
+            Change BonID
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crime Type -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingCrimeType">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCrimeType" aria-expanded="false" aria-controls="collapseCrimeType">
+          <i class="ri-alert-line me-2"></i> Crime Type
+        </button>
+      </h2>
+      <div id="collapseCrimeType" class="accordion-collapse collapse" aria-labelledby="headingCrimeType" data-bs-parent="#incidentReportAccordion1">
+        <div class="accordion-body p-4">
+          <%= f.label :crime_type, "Crime Type *", class: "form-label fw-bold small" %>
+          <%= f.select :crime_type,
+                      grouped_options_for_select(IncidentReport::CRIME_TYPES.transform_keys(&:to_s).transform_keys(&:titleize), @incident_report.crime_type),
+                      { prompt: "Select crime type" },
+                      class: "form-select rounded-3 shadow-sm",
+                      required: true,
+                      aria: { describedby: "crimeTypeHelp" } %>
+          <small id="crimeTypeHelp" class="form-text text-muted">Choose the category of the incident.</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incident Description -->
+    <div class="accordion-item card shadow-sm rounded-4 mb-3 bg-white">
+      <h2 class="accordion-header" id="headingDescription">
+        <button class="accordion-button fw-semibold collapsed rounded-top-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDescription" aria-expanded="false" aria-controls="collapseDescription">
+          <i class="ri-file-text-line me-2"></i> Incident Description
+        </button>
+      </h2>
+      <div id="collapseDescription" class="accordion-collapse collapse" aria-labelledby="headingDescription" data-bs-parent="#incidentReportAccordion1">
+        <div class="accordion-body p-4">
+          <%= f.label :description, "Incident Description *", class: "form-label fw-bold small" %>
+          <%= f.input :description,
+                     as: :text,
+                     rows: 5,
+                     input_html: {
+                       class: "form-control rounded-3 shadow-sm",
+                       placeholder: "Describe the incident in detail...",
+                       required: true,
+                       aria: { describedby: "descriptionHelp" }
+                     } %>
+          <small id="descriptionHelp" class="form-text text-muted">Provide a detailed account of the incident.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

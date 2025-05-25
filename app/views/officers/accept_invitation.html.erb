@@ -1,0 +1,102 @@
+
+<!-- app/views/officers/accept_invitation.html.erb -->
+<%= render "shared/navbar" %>
+<%= simple_form_for @officer, url: accept_officer_invitation_path(token: params[:token]), method: :put do |f| %>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <%= f.input :full_name, required: true, input_html: { class: "form-control rounded-3" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :badge_id, required: true, input_html: { class: "form-control rounded-3", readonly: true } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :password, required: true, input_html: { class: "form-control rounded-3", autocomplete: "new-password" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :password_confirmation, required: true, input_html: { class: "form-control rounded-3", autocomplete: "new-password" } %>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <%= f.button :submit, "Activate My Account", class: "btn btn-primary rounded-pill px-4 py-2 fw-semibold" %>
+  </div>
+<% end %>
+<div class="text-center mt-3">
+  <%= link_to "Back to login", new_officer_session_path, class: "text-muted small" %>
+
+<style>
+  /* app/assets/stylesheets/officer_invitation.css */
+.officer-invitation {
+  padding: 2rem 0;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.officer-invitation .card {
+  border-radius: 10px;
+  transition: transform 0.2s ease;
+}
+
+.officer-invitation .card:hover {
+  transform: translateY(-5px);
+}
+
+.officer-invitation .card-header {
+  padding: 1.5rem;
+  border-bottom: none;
+}
+
+.officer-invitation .card-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+.officer-invitation .card-subtitle {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.officer-invitation .card-body {
+  padding: 2rem;
+}
+
+.officer-invitation .form-control {
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.officer-invitation .btn {
+  font-size: 1.2rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.officer-invitation .btn i {
+  font-size: 1.25rem;
+}
+
+.officer-invitation .btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+.officer-invitation .btn-primary:hover {
+  background-color: #0052cc;
+  border-color: #0047ab;
+}
+
+@media (max-width: 576px) {
+  .officer-invitation .card-title {
+    font-size: 1.5rem;
+  }
+  .officer-invitation .btn {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    width: 100%;
+  }
+}
+</style>

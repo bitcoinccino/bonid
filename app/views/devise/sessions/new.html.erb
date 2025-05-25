@@ -1,0 +1,218 @@
+<%=render "shared/navbar" %>
+
+<div class="container d-flex align-items-center justify-content-center min-vh-100 bg-light">
+  <div class="form-container p-4 rounded-3 bg-white shadow-sm w-100" style="max-width: 500px;">
+    <!-- Header with Logo/Icon -->
+    <div class="text-center mb-4">
+      <div class="d-flex justify-content-center align-items-center mb-3">
+        <%# <%= image_tag "bonid_logo.png", alt: "BonID Logo", class: "logo-img me-2", style: "max-width: 40px;" if asset_exists?("bonid_logo.png") %> 
+        <h2 class="h4 text-primary mb-0"><i class="ri-login-box-line me-2"></i> Log In</h2>
+      </div>
+      <p class="text-muted small">Access your BonID account</p>
+    </div>
+
+    <!-- Flash Alert -->
+    <% if flash[:alert] %>
+      <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+        <%= flash[:alert] %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% end %>
+
+    <!-- Login Form -->
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
+      <div class="mb-3">
+        <%= f.label :email, class: "form-label fw-bold" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control rounded-3", placeholder: "Enter your email", aria_label: "Email address" %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :password, class: "form-label fw-bold" %>
+        <%= f.password_field :password, autocomplete: "current-password", class: "form-control rounded-3", placeholder: "Enter your password", aria_label: "Password" %>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+          <%= f.check_box :remember_me, class: "form-check-input", id: "rememberMe" %>
+          <%= f.label :remember_me, "Remember me", class: "form-check-label small", for: "rememberMe" %>
+        </div>
+        <%= link_to "Forgot your password?", new_password_path(resource_name), class: "text-decoration-none text-primary", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Reset your password", aria_label: "Forgot password" %>
+      </div>
+
+      <div class="d-grid">
+        <%= f.submit "Log In", class: "btn btn-primary fw-semibold rounded-3", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Log in to your BonID account", aria_label: "Log in" %>
+      </div>
+    <% end %>
+
+    <!-- Sign-Up Link -->
+    <div class="text-center mt-4 small">
+      <%= link_to "Don’t have an account? Sign up", new_registration_path(resource_name), class: "text-decoration-none text-primary", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Create a new account", aria_label: "Sign up" %>
+    </div>
+  </div>
+</div>
+
+<%= render "shared/footer" %>
+
+<!-- Custom CSS -->
+<style>
+  /* Reset browser defaults */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Sticky footer and full-width styles */
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #F8F9FA !important;
+  }
+
+  .main-content {
+    flex: 1 0 auto;
+    width: 100%;
+  }
+
+  .navbar, footer {
+    flex-shrink: 0;
+    width: 100vw;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .container-fluid {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+
+  .form-container {
+    max-width: 500px;
+    background-color: #FFFFFF; /* Pure White */
+    border: 1px solid #F8F9FA; /* Light Gray */
+    transition: all 0.3s ease;
+  }
+
+  .text-primary {
+    color: #3366CC !important; /* Ocean Blue */
+  }
+
+  .text-muted {
+    color: #6C757D !important; /* Mid Gray */
+  }
+
+  .btn-primary {
+    background-color: #00209F; /* Haitian Blue */
+    border-color: #00209F;
+    color: #FFFFFF;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #001A80; /* Darker Haitian Blue */
+    border-color: #001A80;
+  }
+
+  .form-control {
+    border: 1px solid #6C757D; /* Mid Gray */
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .form-control:focus {
+    border-color: #3366CC; /* Ocean Blue */
+    box-shadow: 0 0 0 0.2rem rgba(51, 102, 204, 0.25);
+  }
+
+  .form-check-input {
+    border-color: #6C757D; /* Mid Gray */
+    cursor: pointer;
+  }
+
+  .form-check-input:checked {
+    background-color: #3366CC; /* Ocean Blue */
+    border-color: #3366CC;
+  }
+
+  .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(51, 102, 204, 0.25);
+  }
+
+  .alert-danger {
+    background-color: rgba(230, 57, 70, 0.1); /* Coral Red with opacity */
+    border-color: #E63946; /* Coral Red */
+    color: #343A40; /* Dark Gray */
+    border-radius: 0.5rem;
+  }
+
+  .alert-danger .btn-close {
+    filter: invert(0.5);
+  }
+
+  .text-decoration-none:hover {
+    color: #00209F !important; /* Haitian Blue */
+  }
+
+  .logo-img {
+    max-width: 40px;
+    height: auto;
+  }
+
+  /* Tooltip styles */
+  .tooltip-inner {
+    background-color: #343A40; /* Dark Gray */
+    color: #FFFFFF;
+    border-radius: 0.5rem;
+  }
+
+  .tooltip.bs-tooltip-top .tooltip-arrow::before {
+    border-top-color: #343A40;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .form-container {
+      padding: 1rem;
+      max-width: 400px;
+    }
+    .btn {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.8rem;
+    }
+    .form-control {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.6rem;
+    }
+    h2 {
+      font-size: 1.5rem;
+    }
+    .logo-img {
+      max-width: 32px;
+    }
+    .text-muted {
+      font-size: 0.8rem;
+    }
+    .small {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+
+<!-- JavaScript for Tooltips -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+</script>

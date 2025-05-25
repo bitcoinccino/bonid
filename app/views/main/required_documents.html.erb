@@ -1,0 +1,212 @@
+
+<div style="padding-top: 70px;"></div>
+<div class="container py-4">
+  <div class="text-center">
+    <h2 class="mb-3 text-primary">
+      <i class="ri-user-check-line me-2"></i> Verify Your Identity
+    </h2>
+    <p class="text-muted mb-4">
+      To complete your BonID verification, you’ll need to upload official identity documents and a selfie. This process ensures your identity is legitimate and secure. Please follow the guidelines carefully to avoid delays.
+    </p>
+
+    <div class="card shadow-sm p-3 mb-4 bg-light">
+  <p class="text-muted mb-2 fw-bold">Required Documents:</p>
+
+  <ul class="list-unstyled text-start ms-4">
+    <li>
+      <i class="ri-checkbox-circle-line text-success me-2"></i>
+      <strong>Primary ID (choose one):</strong>
+      <ul class="ms-4">
+        <li>- Valid Carte d’Identité Nationale (CIN) – <strong>front & back</strong></li>
+        <li>- Valid Passport</li>
+      </ul>
+    </li>
+    <li>
+      <i class="ri-checkbox-circle-line text-success me-2"></i>
+      <strong>Alternative ID (if no CIN or Passport):</strong>
+      <ul class="ms-4">
+        <li>- Haitian Driver’s License – <strong>front & back</strong></li>
+        <li>- Government-issued Permit – <strong>front & back</strong></li>
+      </ul>
+    </li>
+    <li>
+      <i class="ri-checkbox-circle-line text-success me-2"></i>
+      <strong>Additional Requirements:</strong>
+      <ul class="ms-4">
+        <li>- A clear selfie (face fully visible)</li>
+        <li>- One supporting document: Birth Certificate, utility bill (Digicel/Natcom), or Bank Statement</li>
+      </ul>
+    </li>
+  </ul>
+
+  <p class="text-muted small mt-3">
+    <strong>Tip:</strong> Ensure all documents are readable and match your name and date of birth to speed up verification.
+  </p>
+</div>
+
+
+    <!-- Upload Trigger -->
+    <div class="text-center mb-4">
+      <%= link_to new_identity_submission_path(partner: params[:partner]),
+                  class: "btn btn-primary fw-semibold rounded-pill px-4 py-2 d-inline-flex align-items-center justify-content-center gap-2" do %>
+        <i class="ri-upload-cloud-2-line"></i> Start Verification
+      <% end %>
+    </div>
+  </div>
+</div>
+
+  <!-- Upload Modal -->
+  <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content rounded-4">
+        <div class="modal-header gradient-bg text-white">
+          <h5 class="modal-title fw-bold" id="uploadModalLabel">Upload Your Documents</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <%= form_with model: @identity_submission, local: true, html: { multipart: true, class: "verification-form" } do |f| %>
+          <div class="modal-body">
+            <% if @identity_submission&.errors&.any? %>
+              <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+                <h6 class="fw-bold text-danger mb-2">Please fix the following:</h6>
+                <ul class="mb-0">
+                  <% @identity_submission.errors.full_messages.each do |msg| %>
+                    <li><%= msg %></li>
+                  <% end %>
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            <% end %>
+
+            <!-- Submission Type -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_submission_type">
+                <i class="ri-repeat-line text-primary me-1"></i> Submission Type
+              </label>
+              <p class="text-muted small mb-2">Choose if this is a new, resubmitted, or reissued verification.</p>
+                <%= f.select :submission_type,
+                [["Initial", "initial"], ["Resubmission", "resubmission"], ["Reissue", "reissue"]],
+                { selected: @identity_submission&.submission_type || "initial" },
+                class: "form-select", required: true %>
+
+            </div>
+
+            <!-- ID Type -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_id_type">
+                <i class="ri-id-card-line text-primary me-1"></i> 1. ID Type
+              </label>
+              <p class="text-muted small mb-2">Select CIN or Passport for verification.</p>
+              <%= f.select :id_type,
+                           [["CIN (Front & Back)", "cin"], ["Passport", "passport"]],
+                           { selected: "cin" },
+                           class: "form-select rounded-3 shadow-sm",
+                           id: "doc-type",
+                           "aria-label": "Select ID type" %>
+            </div>
+
+            <!-- CIN Upload -->
+            <div id="cin-fields">
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_cin_front">
+                  <i class="ri-image-line text-primary me-1"></i> CIN Front
+                </label>
+                <p class="text-muted small mb-2">Upload a clear image of your CIN's front side.</p>
+                <%= f.file_field :cin_front,
+                                 class: "form-control rounded-3 shadow-sm",
+                                 id: "identity_submission_cin_front",
+                                 accept: "image/*",
+                                 "aria-label": "Upload CIN front image" %>
+                <img id="preview-cin-front" class="img-thumbnail mt-2 d-none" alt="CIN front preview" style="max-width: 150px;" />
+              </div>
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_cin_back">
+                  <i class="ri-image-line text-primary me-1"></i> CIN Back
+                </label>
+                <p class="text-muted small mb-2">Upload a clear image of your CIN's back side.</p>
+                <%= f.file_field :cin_back,
+                                 class: "form-control rounded-3 shadow-sm",
+                                 id: "identity_submission_cin_back",
+                                 accept: "image/*",
+                                 "aria-label": "Upload CIN back image" %>
+                <img id="preview-cin-back" class="img-thumbnail mt-2 d-none" alt="CIN back preview" style="max-width: 150px;" />
+              </div>
+            </div>
+
+            <!-- Passport Upload -->
+            <div id="passport-field" style="display: none;">
+              <div class="mb-4">
+                <label class="form-label fw-bold" for="identity_submission_passport">
+                  <i class="ri-passport-line text-primary me-1"></i> Passport
+                </label>
+                <p class="text-muted small mb-2">Upload a clear scan of your passport’s photo page.</p>
+                <%= f.file_field :passport,
+                                 class: "form-control rounded-3 shadow-sm",
+                                 id: "identity_submission_passport",
+                                 accept: "image/*",
+                                 "aria-label": "Upload passport image" %>
+                <img id="preview-passport" class="img-thumbnail mt-2 d-none" alt="Passport preview" style="max-width: 150px;" />
+              </div>
+            </div>
+
+            <!-- Selfie -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_selfie">
+                <i class="ri-camera-line text-primary me-1"></i> 2. Selfie
+              </label>
+              <p class="text-muted small mb-2">Take a clear selfie in good lighting (no hats or sunglasses).</p>
+              <%= f.file_field :selfie,
+                               class: "form-control rounded-3 shadow-sm",
+                               required: true,
+                               id: "identity_submission_selfie",
+                               accept: "image/*",
+                               "aria-label": "Upload selfie image" %>
+              <img id="preview-selfie" class="img-thumbnail mt-2 d-none" alt="Selfie preview" style="max-width: 150px;" />
+            </div>
+
+            <!-- Additional Proof -->
+            <div class="mb-4">
+              <label class="form-label fw-bold" for="identity_submission_additional_proof_type">
+                <i class="ri-file-text-line text-primary me-1"></i> 3. Supporting Document
+              </label>
+              <p class="text-muted small mb-2">Choose and upload one supporting document.</p>
+              <%= f.select :additional_proof_type,
+                           [
+                             ["Digicel Bill", "Digicel Bill"],
+                             ["Natcom Bill", "Natcom Bill"],
+                             ["Birth Certificate", "Birth Certificate"],
+                             ["Baptismal Certificate", "Baptismal Certificate"],
+                             ["PNH Record", "PNH Record"],
+                             ["Bank Record", "Bank Record"],
+                             ["Western Union", "Western Union"],
+                             ["MoneyGram", "MoneyGram"],
+                             ["Sendwave", "Sendwave"],
+                             ["Unitransfer", "Unitransfer"],
+                             ["Vehicle Registration", "Vehicle Registration"],
+                             ["Other", "Other"]
+                           ],
+                           { prompt: "Select document type" },
+                           class: "form-select rounded-3 shadow-sm mb-3",
+                           id: "identity_submission_additional_proof_type",
+                           "aria-label": "Select additional proof type" %>
+              <%= f.file_field :additional_proof,
+                               class: "form-control rounded-3 shadow-sm",
+                               id: "identity_submission_additional_proof",
+                               accept: "image/*,application/pdf",
+                               "aria-label": "Upload additional proof document" %>
+              <img id="preview-additional-proof" class="img-thumbnail mt-2 d-none" alt="Additional proof preview" style="max-width: 150px;" />
+            </div>
+            <p class="text-muted small">
+              <strong>Privacy Notice:</strong> Do not share your documents publicly to protect your privacy.
+            </p>
+          </div>
+
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal" aria-label="Cancel document submission">Cancel</button>
+            <%= f.submit "Submit Documents", class: "btn btn-success rounded-3 d-flex align-items-center", "aria-label" => "Submit verification documents" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

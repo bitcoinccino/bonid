@@ -1,0 +1,1 @@
+Rails.application.config.allow_public_signup = ENV.fetch("ALLOW_PUBLIC_SIGNUP", "false") == "true"

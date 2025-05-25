@@ -1,0 +1,45 @@
+ 
+<%= render "identity_submissions/form"%>
+
+<!-- JavaScript for Dynamic Fields and Image Previews -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const docType = document.getElementById("doc-type");
+    const cinFields = document.getElementById("cin-fields");
+    const passportField = document.getElementById("passport-field");
+
+    if (docType) {
+      docType.addEventListener("change", function () {
+        cinFields.style.display = this.value === "passport" ? "none" : "block";
+        passportField.style.display = this.value === "passport" ? "block" : "none";
+      });
+    }
+
+    function previewImage(fieldName, imgId) {
+      const input = document.querySelector(`input[name="identity_submission[${fieldName}]"]`);
+      const preview = document.getElementById(`preview-${imgId}`);
+
+      if (input && preview) {
+        input.addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+              preview.src = event.target.result;
+              preview.classList.remove("d-none");
+            };
+            reader.readAsDataURL(file);
+          } else {
+            preview.classList.add("d-none");
+          }
+        });
+      }
+    }
+
+    previewImage("cin_front", "cin-front");
+    previewImage("cin_back", "cin-back");
+    previewImage("passport", "passport");
+    previewImage("selfie", "selfie");
+    previewImage("additional_proof", "additional-proof");
+  });
+</script>

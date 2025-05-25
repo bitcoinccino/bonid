@@ -1,0 +1,81 @@
+<!-- Navbar -->
+<nav class="navbar navbar-vertical fixed-left gradient-bg" role="navigation">
+  <div class="container-fluid d-flex flex-column h-100">
+    <!-- BonID Text Logo -->
+    <%= link_to root_path, class: "navbar-brand bonid-text mb-4", aria_label: "Navigate to BonID Home Page" do %>
+      BonID
+    <% end %>
+
+    <!-- Navbar Links -->
+    <div class="navbar-nav flex-column flex-grow-1">
+      <ul class="nav flex-column">
+        <% if current_user.present? %>
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link text-white-75 d-flex align-items-center dropdown-toggle"
+               id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Profile menu">
+              <i class="ri-dashboard-line me-2"></i>
+              <%= current_user.admin? ? "Admin Portal" : "My Account" %>
+            </a>
+            <ul class="dropdown-menu shadow rounded-3" aria-labelledby="profileDropdown">
+              <% if current_user.admin? %>
+                <li class="dropdown-header text-muted small">Admin Tools</li>
+                <li>
+                  <%= link_to admin_identity_submissions_path, class: "dropdown-item" do %>
+                    <i class="ri-dashboard-line me-2"></i> Dashboard
+                  <% end %>
+                </li>
+                <li class="dropdown-header text-muted small mt-2">Application Partners</li>
+                <li>
+                  <%= link_to admin_partner_applications_path, class: "dropdown-item" do %>
+                    <i class="ri-shake-hands-line me-2"></i> Partners Who Apply
+                  <% end %>
+                </li> 
+                <% if @partner.present? %>
+                 <li>
+                  <%= link_to new_admin_partner_officer_path(@partners), class: "dropdown-item" do %>
+                    <i class="ri-database-2-line me-2"></i> Add Officers
+                  <% end %>
+                </li>
+                <% end %>
+                <li>
+                  <%= link_to admin_qr_scan_logs_path, class: "dropdown-item" do %>
+                    <i class="ri-database-2-line me-2"></i> Partner QR Scan Logs
+                  <% end %>
+                </li>
+                <li class="dropdown-header text-muted small mt-2">QR Activity Logs</li>
+                <li>
+                  <%= link_to admin_qr_scans_path, class: "dropdown-item" do %>
+                    <i class="ri-scan-line me-2"></i> General Scan Logs
+                  <% end %>
+                </li>
+              <% end %>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <%= link_to destroy_user_session_path,
+                            method: :delete,
+                            class: "dropdown-item text-danger",
+                            data: { turbo_method: :delete } do %>
+                  <i class="ri-logout-box-line me-2"></i> Log Out
+                <% end %>
+              </li>
+            </ul>
+          </li>
+        <% else %>
+          <li class="nav-item">
+            <%= link_to "About", "/about", class: "nav-link text-white-75" %>
+          </li>
+          <li class="nav-item">
+            <%= link_to "Services", "/services", class: "nav-link text-white-75" %>
+          </li>
+          <li class="nav-item">
+            <%= link_to "Contact", "/contact", class: "nav-link text-white-75" %>
+          </li>
+          <li class="nav-item">
+            <%= link_to "Become A Partner", partners_path, class: "btn btn-outline-light btn-sm rounded-pill nav-cta w-100 text-start" %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+</nav>
+
