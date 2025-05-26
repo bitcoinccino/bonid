@@ -1,7 +1,11 @@
 # syntax=docker/dockerfile:1
-# This Dockerfile is designed for production builds for Fly.io
+# check=error=true
 
-# === Stage 1: Base Ruby image with build dependencies ===
+# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
+# docker build -t bonid --secret id=rails_master_key,src=config/master.key .
+# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name bonid bonid
+
+# Stage 1: Base Ruby image with build dependencies
 FROM ruby:3.2.2 AS base
 
 ENV BUNDLER_VERSION=2.5.6 \
@@ -15,13 +19,13 @@ RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends $RUNTIME_DEPS $BUILD_DEPS && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
 
-# Install Node.js 18 and Yarn
+# Install Node.js 18.20.8 & Yarn
 RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs=18.20.8-1nodesource1 && \
     npm install --global yarn && \
     yarn config set registry https://registry.yarnpkg.com
 
-# === Stage 2: Install Ruby gems ===
+# Stage 2: Install Ruby gems
 FROM base AS build
 
 WORKDIR /app
@@ -30,32 +34,33 @@ RUN gem install bundler -v "$BUNDLER_VERSION" && \
     bundle config set --local without 'development test' && \
     bundle install --jobs 4
 
-# === Stage 3: Copy app, build JS, precompile assets ===
+# Stage 3: Copy app, build JS, precompile assets
 FROM build AS app
 
 WORKDIR /app
-
-# Copy JS dependencies
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
-# Install esbuild for bundling
-RUN yarn add esbuild && yarn esbuild --version
+# Install esbuild explicitly
+RUN yarn add esbuild && \
+    yarn esbuild --version
 
-# Copy rest of the app code
+# Copy the rest of the app
 COPY . .
 
-# Check if main JS entrypoint exists
+# Debug: List JavaScript files and verify entry point
 RUN ls -la app/javascript && \
-    test -f app/javascript/application.js || (echo "❌ ERROR: application.js not found" && exit 1)
+    test -f app/javascript/application.js || (echo "ERROR: app/javascript/application.js not found" && exit 1)
 
-# Build JS and CSS assets
-RUN yarn build && ls -la app/assets/builds
+# Run build and debug output
+RUN yarn build && \
+    ls -la app/assets/builds
 
-# Precompile Rails assets (RAILS_MASTER_KEY is injected by Fly secrets)
-RUN RAILS_ENV=production bundle exec rake assets:precompile --trace
+# Precompile assets with RAILS_MASTER_KEY as a secret
+RUN --mount=type=secret,id=rails_master_key \
+    RAILS_MASTER_KEY=$(cat /run/secrets/rails_master_key) bundle exec rake assets:precompile --trace
 
-# === Stage 4: Final lightweight runtime image ===
+# Stage 4: Runtime image
 FROM base
 
 WORKDIR /app
@@ -63,5 +68,4 @@ COPY --from=app /app /app
 COPY --from=build /usr/local/bundle /usr/local/bundle
 
 EXPOSE 3000
-
 CMD ["bundle", "exec", "puma", "-C", "config/puma.rb"]
