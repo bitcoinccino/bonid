@@ -5,8 +5,11 @@ services:
     plan: free
     branch: main
     region: oregon
-    buildCommand: "./bin/render-build.sh"
-    startCommand: bundle exec rails server 
+    buildCommand: |
+      bundle install --without development test
+      yarn install --frozen-lockfile
+      bundle exec rake assets:precompile
+    startCommand: bundle exec puma -C config/puma.rb
     envVars:
       - key: RAILS_MASTER_KEY
         sync: false  # You'll set this in the Render dashboard
