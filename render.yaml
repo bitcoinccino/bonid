@@ -3,16 +3,13 @@ services:
     name: bonid
     env: ruby
     plan: free
-    buildCommand: |
-      bundle install
-      yarn install
-      bundle exec rake assets:precompile
-    startCommand: bundle exec puma -C config/puma.rb
+    branch: main
+    region: oregon
+    buildCommand: "./bin/render-build.sh"
+    startCommand: bundle exec rails server 
     envVars:
       - key: RAILS_MASTER_KEY
-        sync: false
+        sync: false  # You'll set this in the Render dashboard
       - key: RAILS_ENV
         value: production
     autoDeploy: true
-    branch: main
-    region: oregon
