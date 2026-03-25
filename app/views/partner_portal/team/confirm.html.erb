@@ -1,0 +1,117 @@
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="mb-4">
+        <a href="<%= new_partner_portal_team_path %>" class="text-decoration-none text-muted">
+          <i class="ri-arrow-left-line me-1"></i> Chèche yon lòt moun
+        </a>
+      </div>
+
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-header bg-primary border-0 rounded-top-4 px-4 py-3">
+          <h4 class="fw-bold text-white mb-0">
+            <i class="ri-user-add-line me-2"></i> Konfime Envitasyon
+          </h4>
+        </div>
+
+        <div class="card-body p-4">
+          <%# === PERSON PREVIEW CARD === %>
+          <div class="card border rounded-3 mb-4">
+            <div class="card-body d-flex align-items-center p-3">
+              <div class="me-3">
+                <% if @person[:photo_url] %>
+                  <img src="<%= @person[:photo_url] %>"
+                       alt="<%= @person[:full_name] %>"
+                       class="rounded-circle"
+                       style="width: 64px; height: 64px; object-fit: cover;">
+                <% else %>
+                  <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
+                       style="width: 64px; height: 64px;">
+                    <i class="ri-user-line ri-2x text-primary"></i>
+                  </div>
+                <% end %>
+              </div>
+              <div>
+                <h5 class="fw-bold mb-1"><%= @person[:full_name] %></h5>
+                <div class="text-muted small">
+                  <i class="ri-mail-line me-1"></i> <%= @person[:email] %>
+                </div>
+                <div class="mt-1">
+                  <code class="text-primary"><%= @person[:bonid] %></code>
+                  <span class="badge bg-success-subtle text-success ms-2">
+                    <i class="ri-checkbox-circle-line me-1"></i> Verifye
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%# === INVITATION FORM === %>
+          <%= form_tag partner_portal_team_index_path, method: :post do %>
+            <%= hidden_field_tag :bonid, @person[:bonid] %>
+
+            <%# === ROLE SELECTION === %>
+            <div class="mb-4">
+              <label class="form-label fw-semibold">Chwazi Wòl</label>
+              <% @role_options.each_with_index do |(label, value), i| %>
+                <div class="form-check mb-2 p-3 border rounded-3 <%= i == 1 ? 'border-primary bg-primary-subtle' : '' %>"
+                     onclick="this.querySelector('input').checked = true; document.querySelectorAll('.role-option').forEach(el => { el.classList.remove('border-primary', 'bg-primary-subtle'); }); this.classList.add('border-primary', 'bg-primary-subtle');"
+                     style="cursor: pointer;">
+                  <input class="form-check-input" type="radio" name="role"
+                         id="role_<%= value %>" value="<%= value %>"
+                         <%= "checked" if i == 1 %>
+                         required>
+                  <label class="form-check-label w-100" for="role_<%= value %>" style="cursor: pointer;">
+                    <strong><%= label.split(" — ").first %></strong>
+                    <% if label.include?(" — ") %>
+                      <br><small class="text-muted"><%= label.split(" — ").last %></small>
+                    <% end %>
+                  </label>
+                </div>
+              <% end %>
+            </div>
+
+            <%# === EMPLOYEE ID (optional — partner admin provides) === %>
+            <div class="mb-3">
+              <label for="employee_id" class="form-label fw-semibold">ID Anplwaye <small class="text-muted fw-normal">(opsyonèl)</small></label>
+              <%= text_field_tag :employee_id, nil,
+                  class: "form-control",
+                  placeholder: "Ex: DGI-EMP-0042",
+                  style: "font-size: 16px; min-height: 44px;" %>
+            </div>
+
+            <%# === OFFICE CODE (optional — partner admin provides) === %>
+            <div class="mb-4">
+              <label for="office_code" class="form-label fw-semibold">Kòd Biwo <small class="text-muted fw-normal">(opsyonèl)</small></label>
+              <%= text_field_tag :office_code, nil,
+                  class: "form-control",
+                  placeholder: "Ex: Bureau Central PAP",
+                  style: "font-size: 16px; min-height: 44px;" %>
+            </div>
+
+            <%# === SECURITY NOTICE === %>
+            <div class="alert alert-light border rounded-3 mb-4" role="alert">
+              <div class="d-flex align-items-start">
+                <i class="ri-lock-line me-2 mt-1 text-muted"></i>
+                <small class="text-muted">
+                  Envitasyon an pral voye nan imèl verifye moun nan.
+                  Yo dwe aksepte envitasyon an pou jwenn aksè nan pòtay patnè a.
+                </small>
+              </div>
+            </div>
+
+            <%# === SUBMIT === %>
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg" style="min-height: 48px;">
+                <i class="ri-send-plane-line me-1"></i> Voye Envitasyon
+              </button>
+              <a href="<%= new_partner_portal_team_path %>" class="btn btn-outline-secondary">
+                Anile
+              </a>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,180 @@
+<%# app/views/partner_portal/law_enforcement/officer_invitations/confirm.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2">
+          <li class="breadcrumb-item">
+            <%= link_to "Ofisye", partner_portal_law_enforcement_officers_path %>
+          </li>
+          <li class="breadcrumb-item">
+            <%= link_to "Envite", new_partner_portal_law_enforcement_officer_invitation_path %>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Konfime</li>
+        </ol>
+      </nav>
+      <h1 class="h3 fw-bold text-dark mb-1">Konfime Envitasyon Ofisye</h1>
+      <p class="text-muted mb-0">Asiyen grad, inite, ak espesyalite anvan ou voye envitasyon an</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <%# === PERSON PREVIEW CARD === %>
+      <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body d-flex align-items-center p-4">
+          <div class="me-3">
+            <% if @person[:photo_url] %>
+              <img src="<%= @person[:photo_url] %>"
+                   alt="<%= @person[:full_name] %>"
+                   class="rounded-circle border border-2 border-primary"
+                   style="width: 80px; height: 80px; object-fit: cover;">
+            <% else %>
+              <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
+                   style="width: 80px; height: 80px;">
+                <i class="ri-user-line ri-2x text-primary"></i>
+              </div>
+            <% end %>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-1"><%= @person[:full_name] %></h4>
+            <div class="text-muted">
+              <i class="ri-mail-line me-1"></i> <%= @person[:email] %>
+            </div>
+            <div class="mt-1">
+              <code class="text-primary fs-6"><%= @person[:bonid] %></code>
+              <span class="badge bg-success-subtle text-success ms-2">
+                <i class="ri-checkbox-circle-line me-1"></i> BonID Verifye
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# === ASSIGNMENT FORM === %>
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-shield-star-line text-primary me-2"></i>Asiyasyon Ofisye
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <%= form_tag partner_portal_law_enforcement_officer_invitations_path, method: :post do %>
+            <%= hidden_field_tag :bonid, @person[:bonid] %>
+
+            <%# === RANK === %>
+            <div class="mb-4">
+              <label for="rank" class="form-label fw-semibold">Grad</label>
+              <select name="rank" id="rank" class="form-select form-select-lg" required
+                      style="font-size: 16px; min-height: 48px;">
+                <option value="">— Chwazi yon grad —</option>
+                <% @ranks.each do |rank| %>
+                  <option value="<%= rank %>"><%= rank %></option>
+                <% end %>
+              </select>
+            </div>
+
+            <%# === UNIT NAME === %>
+            <div class="mb-4">
+              <label for="unit_name" class="form-label fw-semibold">Inite</label>
+              <select name="unit_name" id="unit_name" class="form-select form-select-lg" required
+                      style="font-size: 16px; min-height: 48px;"
+                      onchange="updateUnitTypes()">
+                <option value="">— Chwazi yon inite —</option>
+                <% @units.each do |unit_name, _| %>
+                  <option value="<%= unit_name %>"><%= unit_name %></option>
+                <% end %>
+              </select>
+            </div>
+
+            <%# === UNIT TYPE (specialty — cascades from unit) === %>
+            <div class="mb-4">
+              <label for="unit_type" class="form-label fw-semibold">Espesyalite</label>
+              <select name="unit_type" id="unit_type" class="form-select form-select-lg" required
+                      style="font-size: 16px; min-height: 48px;">
+                <option value="">— Chwazi yon inite anvan —</option>
+              </select>
+            </div>
+
+            <%# === BADGE ID (optional — auto-generated if blank) === %>
+            <div class="mb-4">
+              <label for="badge_id" class="form-label fw-semibold">
+                Nimewo Badj <small class="text-muted fw-normal">(opsyonèl — otomatik si vid)</small>
+              </label>
+              <%= text_field_tag :badge_id, nil,
+                  class: "form-control font-monospace",
+                  placeholder: "PNH-XXXX",
+                  style: "font-size: 16px; min-height: 48px; text-transform: uppercase;" %>
+            </div>
+
+            <%# === SUBMIT === %>
+            <div class="d-flex gap-3">
+              <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4" style="min-height: 48px;">
+                <i class="ri-send-plane-line me-1"></i> Voye Envitasyon
+              </button>
+              <%= link_to new_partner_portal_law_enforcement_officer_invitation_path,
+                          class: "btn btn-outline-secondary rounded-pill px-4" do %>
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# === SIDEBAR: Rank Groups === %>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-3 bg-light">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3">
+            <i class="ri-medal-line text-primary me-2"></i>Nivo Aksè pa Grad
+          </h6>
+          <div class="mb-3">
+            <span class="badge bg-danger-subtle text-danger mb-1">Estratejik</span>
+            <div class="small text-muted">
+              Commissaire, Inspecteur Général, Directeur Général
+            </div>
+          </div>
+          <div class="mb-3">
+            <span class="badge bg-warning-subtle text-warning mb-1">Sipèvizè</span>
+            <div class="small text-muted">
+              Inspecteur de Police → Sous-Commissaire
+            </div>
+          </div>
+          <div>
+            <span class="badge bg-info-subtle text-info mb-1">Teren</span>
+            <div class="small text-muted">
+              Agent I → Agent Principal
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# === JS: Cascade unit_name → unit_type === %>
+<script>
+  const unitOptions = <%= raw @units.to_json %>;
+
+  function updateUnitTypes() {
+    const unitSelect = document.getElementById('unit_name');
+    const typeSelect = document.getElementById('unit_type');
+    const selectedUnit = unitSelect.value;
+
+    typeSelect.innerHTML = '';
+
+    if (!selectedUnit || !unitOptions[selectedUnit]) {
+      typeSelect.innerHTML = '<option value="">— Chwazi yon inite anvan —</option>';
+      return;
+    }
+
+    unitOptions[selectedUnit].forEach(function(type) {
+      const opt = document.createElement('option');
+      opt.value = type;
+      opt.textContent = type;
+      typeSelect.appendChild(opt);
+    });
+  }
+</script>

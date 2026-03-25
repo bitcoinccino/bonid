@@ -95,6 +95,35 @@ Rails.application.routes.draw do
   get "/terms.pdf",   to: "pdfs#terms",   as: :terms_pdf
   get "/privacy.pdf", to: "pdfs#privacy", as: :privacy_pdf
 
+  # === Partner Portal ===
+  namespace :partner_portal do
+    get "/", to: "dashboard#index", as: :dashboard
+
+    # Unified team management (all sectors except law enforcement)
+    resources :team, only: [:index, :new, :create, :destroy] do
+      collection do
+        post :lookup
+      end
+    end
+
+    # Law enforcement namespace
+    namespace :law_enforcement do
+      get "/", to: "dashboard#index", as: :dashboard
+      resources :officers, only: [:index, :show]
+      resources :officer_invitations, only: [:new, :create] do
+        collection do
+          post :lookup
+          get  :bulk_new
+          post :bulk_create
+        end
+      end
+    end
+  end
+
+  # === Team Invitation Acceptance (public — no auth required) ===
+  get  "/team/invitation/accept", to: "partner_portal/team_invitations#show",   as: :accept_team_invitation
+  put  "/team/invitation/accept", to: "partner_portal/team_invitations#update"
+
   # === Health Check ===
   get "up", to: "rails/health#show", as: :rails_health_check
 end

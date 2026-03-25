@@ -1,16 +1,174 @@
 <div class="container-fluid py-4">
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-      <h1 class="h3 fw-bold mb-1">Team</h1>
-      <p class="text-muted mb-0">Manage your team members and staff</p>
+      <h1 class="h3 fw-bold mb-1">Ekip</h1>
+      <p class="text-muted mb-0">Jere manm ekip ou yo</p>
+    </div>
+    <a href="<%= new_partner_portal_team_path %>" class="btn btn-primary">
+      <i class="ri-user-add-line me-1"></i> Envite Manm
+    </a>
+  </div>
+
+  <%# === PENDING INVITATIONS === %>
+  <% if @pending.any? %>
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+      <div class="card-header bg-warning-subtle border-0 rounded-top-4 px-4 py-3">
+        <h5 class="fw-semibold mb-0">
+          <i class="ri-time-line me-1"></i> Envitasyon an Atant (<%= @pending.size %>)
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Non</th>
+                <th>Imèl</th>
+                <th>BonID</th>
+                <th>Wòl</th>
+                <th>Envite</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @pending.each do |member| %>
+                <tr>
+                  <td class="fw-medium"><%= member.full_name %></td>
+                  <td><%= member.email %></td>
+                  <td><code class="text-primary"><%= member.bonid %></code></td>
+                  <td>
+                    <% if member.has_role?(:partner_admin) %>
+                      <span class="badge bg-primary-subtle text-primary">Administratè</span>
+                    <% else %>
+                      <span class="badge bg-secondary-subtle text-secondary">Ajan</span>
+                    <% end %>
+                  </td>
+                  <td class="text-muted"><%= time_ago_in_words(member.invitation_sent_at) %> de sa</td>
+                  <td>
+                    <%= button_to partner_portal_team_path(member),
+                        method: :delete,
+                        class: "btn btn-sm btn-outline-danger",
+                        data: { turbo_confirm: "Retire #{member.full_name} nan ekip la?" } do %>
+                      <i class="ri-close-line"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# === ADMINISTRATORS === %>
+  <div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-header bg-primary-subtle border-0 rounded-top-4 px-4 py-3">
+      <h5 class="fw-semibold mb-0">
+        <i class="ri-shield-user-line me-1"></i> Administratè (<%= @admins.size %>)
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <% if @admins.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Non</th>
+                <th>Imèl</th>
+                <th>BonID</th>
+                <th>Estati</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @admins.each do |admin| %>
+                <tr>
+                  <td class="fw-medium"><%= admin.full_name %></td>
+                  <td><%= admin.email %></td>
+                  <td><code class="text-primary"><%= admin.bonid %></code></td>
+                  <td>
+                    <% if admin.invitation_accepted_at.present? %>
+                      <span class="badge bg-success-subtle text-success">Aktif</span>
+                    <% else %>
+                      <span class="badge bg-warning-subtle text-warning">An Atant</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% unless admin == current_user %>
+                      <%= button_to partner_portal_team_path(admin),
+                          method: :delete,
+                          class: "btn btn-sm btn-outline-danger",
+                          data: { turbo_confirm: "Retire #{admin.full_name}?" } do %>
+                        <i class="ri-delete-bin-line"></i>
+                      <% end %>
+                    <% else %>
+                      <span class="badge bg-info-subtle text-info">Ou</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-4 text-muted">Pa gen administratè.</div>
+      <% end %>
     </div>
   </div>
 
-  <div class="card shadow-sm border-0 rounded-4 p-4">
-    <div class="text-center py-5">
-      <i class="ri-team-line ri-3x text-muted mb-3"></i>
-      <h5 class="fw-semibold text-dark">Team Members</h5>
-      <p class="text-muted">Your team members will appear here.</p>
+  <%# === AGENTS === %>
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-header bg-secondary-subtle border-0 rounded-top-4 px-4 py-3">
+      <h5 class="fw-semibold mb-0">
+        <i class="ri-user-line me-1"></i> Ajan (<%= @agents.size %>)
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <% if @agents.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Non</th>
+                <th>Imèl</th>
+                <th>BonID</th>
+                <th>Estati</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @agents.each do |agent| %>
+                <tr>
+                  <td class="fw-medium"><%= agent.full_name %></td>
+                  <td><%= agent.email %></td>
+                  <td><code class="text-primary"><%= agent.bonid %></code></td>
+                  <td>
+                    <% if agent.invitation_accepted_at.present? %>
+                      <span class="badge bg-success-subtle text-success">Aktif</span>
+                    <% else %>
+                      <span class="badge bg-warning-subtle text-warning">An Atant</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= button_to partner_portal_team_path(agent),
+                        method: :delete,
+                        class: "btn btn-sm btn-outline-danger",
+                        data: { turbo_confirm: "Retire #{agent.full_name} nan ekip la?" } do %>
+                      <i class="ri-delete-bin-line"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-4 text-muted">
+          <i class="ri-user-add-line ri-2x mb-2 d-block"></i>
+          Pa gen ajan. <a href="<%= new_partner_portal_team_path %>">Envite premye ajan ou a</a>.
+        </div>
+      <% end %>
     </div>
   </div>
 </div>

@@ -1,79 +1,82 @@
 <%# app/views/partner_portal/law_enforcement/officer_invitations/new.html.erb %>
 
 <div class="container-fluid py-4">
-  <%# Header %>
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
     <div>
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-2">
           <li class="breadcrumb-item">
-            <%= link_to "Officers", partner_portal_law_enforcement_officers_path %>
+            <%= link_to "Ofisye", partner_portal_law_enforcement_officers_path %>
           </li>
-          <li class="breadcrumb-item active" aria-current="page">Invite Officer</li>
+          <li class="breadcrumb-item active" aria-current="page">Envite Ofisye</li>
         </ol>
       </nav>
-      <h1 class="h3 fw-bold text-dark mb-1">Invite Officer</h1>
-      <p class="text-muted mb-0">Invite a verified BonID holder to join the force</p>
+      <h1 class="h3 fw-bold text-dark mb-1">Envite Ofisye</h1>
+      <p class="text-muted mb-0">Envite yon sitwayen ki gen BonID verifye pou rantre nan fòs la</p>
     </div>
     <div class="mt-3 mt-md-0">
       <%= link_to partner_portal_law_enforcement_officers_path, class: "btn btn-outline-secondary rounded-pill" do %>
-        <i class="ri-arrow-left-line me-1"></i> Back to Officers
+        <i class="ri-arrow-left-line me-1"></i> Retounen
       <% end %>
     </div>
   </div>
 
   <div class="row">
     <div class="col-lg-8">
-      <%# Important Notice %>
+      <%# BonID Requirement Notice %>
       <div class="alert alert-info border-0 shadow-sm rounded-3 mb-4">
         <div class="d-flex">
           <div class="flex-shrink-0">
             <i class="ri-shield-check-line fs-4 text-info"></i>
           </div>
           <div class="ms-3">
-            <h6 class="fw-semibold mb-1">BonID Verification Required</h6>
+            <h6 class="fw-semibold mb-1">BonID Verifye Obligatwa</h6>
             <p class="mb-0 small">
-              Only citizens with a <strong>verified BonID</strong> can be invited as officers.
-              The person must first register on BonID and have their identity approved before receiving an invitation.
+              Antre <strong>6 dènye karaktè</strong> BonID moun nan. Non, foto, ak imèl yo pral chaje
+              otomatikman depi sou dosye verifye yo.
             </p>
           </div>
         </div>
       </div>
 
-      <%# Single Invite Form %>
+      <%# BonID Lookup Form %>
       <div class="card border-0 shadow-sm rounded-3">
         <div class="card-header bg-white border-0 py-3">
           <h5 class="mb-0 fw-semibold">
-            <i class="ri-user-add-line text-primary me-2"></i>Single Officer Invitation
+            <i class="ri-user-add-line text-primary me-2"></i>Envitasyon Ofisye
           </h5>
         </div>
         <div class="card-body p-4">
-          <%= form_with model: @officer,
-                        url: partner_portal_law_enforcement_officer_invitations_path,
-                        method: :post,
-                        local: true,
-                        html: { class: "needs-validation", novalidate: true } do |f| %>
+          <%= form_tag lookup_partner_portal_law_enforcement_officer_invitations_path,
+                       method: :post,
+                       class: "needs-validation",
+                       novalidate: true do %>
 
             <div class="mb-4">
-              <%= f.label :email, class: "form-label fw-semibold" %>
+              <label for="bonid" class="form-label fw-semibold">6 Dènye Karaktè BonID</label>
               <div class="input-group">
                 <span class="input-group-text bg-light border-end-0">
-                  <i class="ri-mail-line text-muted"></i>
+                  <i class="ri-fingerprint-line text-muted"></i>
                 </span>
-                <%= f.email_field :email,
-                                  class: "form-control border-start-0 ps-0",
-                                  placeholder: "officer@example.com",
-                                  required: true,
-                                  autofocus: true %>
+                <%= text_field_tag :bonid, params[:bonid],
+                    class: "form-control border-start-0 ps-0 font-monospace text-center",
+                    placeholder: "A3FB2C",
+                    required: true,
+                    autofocus: true,
+                    autocomplete: "off",
+                    maxlength: 6,
+                    style: "font-size: 20px; min-height: 48px; letter-spacing: 2px; text-transform: uppercase;" %>
               </div>
               <div class="form-text text-muted">
-                Enter the email address of the citizen you want to invite. They must already have a verified BonID.
+                Mande sitwayen an 6 dènye karaktè BonID yo, oswa eskane kòd QR yo.
               </div>
             </div>
 
             <div class="d-flex gap-3">
-              <%= f.submit "Send Invitation", class: "btn btn-primary rounded-pill px-4" %>
-              <%= link_to "Cancel", partner_portal_law_enforcement_officers_path, class: "btn btn-outline-secondary rounded-pill px-4" %>
+              <button type="submit" class="btn btn-primary rounded-pill px-4">
+                <i class="ri-search-line me-1"></i> Chèche Moun Nan
+              </button>
+              <%= link_to "Anile", partner_portal_law_enforcement_officers_path, class: "btn btn-outline-secondary rounded-pill px-4" %>
             </div>
           <% end %>
         </div>
@@ -83,16 +86,16 @@
       <div class="card border-0 shadow-sm rounded-3 mt-4">
         <div class="card-header bg-white border-0 py-3">
           <h5 class="mb-0 fw-semibold">
-            <i class="ri-group-line text-success me-2"></i>Bulk Officer Invitation
+            <i class="ri-group-line text-success me-2"></i>Envitasyon an Mas
           </h5>
         </div>
         <div class="card-body p-4">
           <p class="text-muted mb-3">
-            Need to invite multiple officers at once? Upload a CSV file with email addresses.
+            Bezwen envite plizyè ofisye alafwa? Telechaje yon fichye CSV ak adrès imèl.
           </p>
           <%= link_to bulk_new_partner_portal_law_enforcement_officer_invitations_path,
                       class: "btn btn-outline-success rounded-pill" do %>
-            <i class="ri-upload-2-line me-2"></i>Upload CSV
+            <i class="ri-upload-2-line me-2"></i>Telechaje CSV
           <% end %>
         </div>
       </div>
@@ -103,27 +106,15 @@
       <div class="card border-0 shadow-sm rounded-3 bg-light">
         <div class="card-body p-4">
           <h6 class="fw-semibold mb-3">
-            <i class="ri-information-line text-primary me-2"></i>How It Works
+            <i class="ri-information-line text-primary me-2"></i>Kijan sa mache
           </h6>
           <ol class="ps-3 mb-0 small text-muted">
-            <li class="mb-2">Enter the email of the citizen you want to invite</li>
-            <li class="mb-2">We verify they have an approved BonID</li>
-            <li class="mb-2">If verified, they receive an invitation email</li>
-            <li class="mb-2">They click the link to accept and set their password</li>
-            <li>Once accepted, they can access the officer portal</li>
+            <li class="mb-2">Antre 6 dènye karaktè BonID sitwayen an</li>
+            <li class="mb-2">Nou verifye yo gen yon BonID apwouve</li>
+            <li class="mb-2">Chwazi grad, inite, ak espesyalite</li>
+            <li class="mb-2">Yo resevwa yon imèl envitasyon</li>
+            <li>Yo klike sou lyen an pou aksepte epi konfigire kont yo</li>
           </ol>
-        </div>
-      </div>
-
-      <div class="card border-0 shadow-sm rounded-3 mt-3">
-        <div class="card-body p-4">
-          <h6 class="fw-semibold mb-3">
-            <i class="ri-shield-user-line text-warning me-2"></i>Why BonID Required?
-          </h6>
-          <p class="small text-muted mb-0">
-            BonID verification ensures that only verified Haitian citizens can serve as officers.
-            This maintains the integrity and trustworthiness of the Police Nationale d'Haiti.
-          </p>
         </div>
       </div>
     </div>

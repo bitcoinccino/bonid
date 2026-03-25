@@ -1,0 +1,55 @@
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-5">
+      <div class="text-center mb-4">
+        <h2 class="fw-bold">Aksepte Envitasyon</h2>
+        <p class="text-muted">
+          Ou envite pou rantre nan ekip
+          <strong><%= @user.partner&.name %></strong>
+        </p>
+      </div>
+
+      <div class="card shadow-sm border-0 rounded-4">
+        <div class="card-body p-4">
+          <%= form_for @user, url: accept_team_invitation_path(invitation_token: @raw_token), method: :put do |f| %>
+
+            <% if @user.encrypted_password.blank? %>
+              <%# === NEW USER: SET PASSWORD === %>
+              <p class="text-muted small mb-3">
+                Kreye yon modpas pou kont ou:
+              </p>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Modpas</label>
+                <%= f.password_field :password,
+                    class: "form-control form-control-lg",
+                    required: true,
+                    autofocus: true,
+                    style: "font-size: 16px; min-height: 48px;" %>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Konfime Modpas</label>
+                <%= f.password_field :password_confirmation,
+                    class: "form-control form-control-lg",
+                    required: true,
+                    style: "font-size: 16px; min-height: 48px;" %>
+              </div>
+            <% else %>
+              <%# === EXISTING USER: JUST ACCEPT === %>
+              <p class="text-muted mb-4">
+                Ou gen deja yon kont BonID. Klike anba a pou aksepte envitasyon an.
+              </p>
+            <% end %>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary btn-lg" style="min-height: 48px;">
+                <i class="ri-check-line me-1"></i> Aksepte Envitasyon
+              </button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
