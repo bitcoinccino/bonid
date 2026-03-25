@@ -1,0 +1,164 @@
+<%# app/views/partner_portal/shared/sidebars/_sidebar_law_enforcement.html.erb %>
+
+<%# Mobile backdrop %>
+<div class="partner-sidebar-backdrop d-lg-none"
+     data-action="click->partner-sidebar#close"
+     id="partnerSidebarBackdrop"></div>
+
+<%# Sidebar %>
+<div class="partner-sidebar" id="partnerSidebar" data-controller="partner-sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          data-action="click->partner-sidebar#close"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
+
+  <%# Partner logo and name %>
+  <div class="partner-logo-section">
+    <div class="partner-logo-wrapper">
+      <% if @current_partner&.logo&.attached? %>
+        <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [120, 120])),
+                      class: "partner-logo-img",
+                      alt: "#{@current_partner.name || 'Law Enforcement'} logo" %>
+      <% else %>
+        <div class="partner-logo-placeholder">
+          <i class="ri-shield-user-line"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="partner-name"><%= @current_partner&.name || "Police Nationale d'Haiti" %></div>
+    <div class="partner-sector">Law Enforcement</div>
+  </div>
+
+  <%# Navigation links %>
+  <ul class="nav flex-column sidebar-nav">
+
+    <%# ── OPERATIONS ────────────────────────────── %>
+    <li class="sidebar-section-label">Operations</li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_law_enforcement_dashboard_path,
+                  class: "nav-link #{'active' if current_page?(partner_portal_law_enforcement_dashboard_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to "#", class: "nav-link" do %>
+        <i class="ri-qr-scan-2-line"></i>
+        <span>Scan BonID</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path,
+                  class: "nav-link #{'active' if request.path.include?('incident_reports')}" do %>
+        <i class="ri-file-list-3-line"></i>
+        <span>Reports</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_law_enforcement_officers_path,
+                  class: "nav-link #{'active' if request.path.include?('officers') && !request.path.include?('invitation')}" do %>
+        <i class="ri-police-badge-line"></i>
+        <span>Officers</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item dropdown">
+      <a class="nav-link sidebar-dropdown-toggle"
+         href="#"
+         role="button"
+         data-bs-toggle="dropdown"
+         aria-expanded="false">
+        <i class="ri-user-add-line"></i>
+        <span>Invite</span>
+        <i class="ri-arrow-down-s-line ms-auto dropdown-arrow"></i>
+      </a>
+      <ul class="dropdown-menu">
+        <li>
+          <%= link_to new_partner_portal_law_enforcement_officer_invitation_path, class: "dropdown-item" do %>
+            <i class="ri-user-line me-2"></i> Single Officer
+          <% end %>
+        </li>
+        <li>
+          <%= link_to bulk_new_partner_portal_law_enforcement_officer_invitations_path, class: "dropdown-item" do %>
+            <i class="ri-group-line me-2"></i> Many Officers
+          <% end %>
+        </li>
+      </ul>
+    </li>
+
+    <%# ── INTELLIGENCE ──────────────────────────── %>
+    <li class="sidebar-section-label">Intelligence</li>
+
+    <li class="nav-item">
+      <%= link_to "#", class: "nav-link" do %>
+        <i class="ri-bar-chart-box-line"></i>
+        <span>Analytics</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to "#", class: "nav-link" do %>
+        <i class="ri-file-text-line"></i>
+        <span>Audit Logs</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-ticket-line"></i>
+        <span>Tickets</span>
+        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Soon</span>
+      </a>
+    </li>
+
+    <%# ── API & BILLING ─────────────────────────── %>
+    <li class="sidebar-section-label">API & Billing</li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_law_enforcement_api_keys_path,
+                  class: "nav-link #{'active' if request.path.include?('api_keys')}" do %>
+        <i class="ri-code-s-slash-line"></i>
+        <span>API Keys</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_credits_path,
+                  class: "nav-link #{'active' if request.path.include?('credits')}" do %>
+        <i class="ri-coin-line"></i>
+        <span>Credits</span>
+        <% if @current_partner&.credit_balance.to_d > 0 %>
+          <span class="badge bg-success rounded-pill ms-auto" style="font-size: 0.65rem;">
+            $<%= number_with_precision(@current_partner.credit_balance, precision: 2) %>
+          </span>
+        <% end %>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_billing_path,
+                  class: "nav-link #{'active' if request.path.include?('billing')}" do %>
+        <i class="ri-money-dollar-circle-line"></i>
+        <span>Faktirasyon</span>
+      <% end %>
+    </li>
+
+  </ul>
+
+  <%# Logout button %>
+  <div class="sidebar-logout">
+    <%= button_to destroy_partner_admin_session_path,
+                  method: :delete,
+                  class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Log Out</span>
+    <% end %>
+  </div>
+</div>
