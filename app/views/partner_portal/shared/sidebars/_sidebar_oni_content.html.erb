@@ -1,0 +1,164 @@
+<%# app/views/partner_portal/shared/sidebars/_sidebar_oni_content.html.erb %>
+<%# Sidebar for Office National d'Identification (ONI) %>
+
+<%# Mobile backdrop %>
+<div class="partner-sidebar-backdrop d-lg-none"
+     data-action="click->partner-sidebar#close"
+     id="partnerSidebarBackdrop"></div>
+
+<%# Sidebar %>
+<div class="partner-sidebar" id="partnerSidebar" data-controller="partner-sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          data-action="click->partner-sidebar#close"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
+
+  <%# Partner logo and name %>
+  <div class="partner-logo-section">
+    <div class="partner-logo-wrapper">
+      <% if @current_partner&.logo&.attached? %>
+        <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [120, 120])),
+                      class: "partner-logo-img",
+                      alt: "#{@current_partner.name || 'ONI'} logo" %>
+      <% else %>
+        <div class="partner-logo-placeholder">
+          <i class="ri-id-card-line"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="partner-name"><%= @current_partner&.name || "Office National d'Identification" %></div>
+    <div class="partner-sector">Idantifikasyon Nasyonal</div>
+  </div>
+
+  <%# Navigation links %>
+  <ul class="nav flex-column sidebar-nav">
+
+    <%# ── OPERATIONS ────────────────────────────── %>
+    <li class="sidebar-section-label">Operasyon</li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_dashboard_path,
+                  class: "nav-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_scans_path,
+                  class: "nav-link #{'active' if request.path.include?('scans')}" do %>
+        <i class="ri-qr-scan-2-line"></i>
+        <span>Scan BonID</span>
+      <% end %>
+    </li>
+
+    <%# CIN Requests — placeholder %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-id-card-line"></i>
+        <span>Demann CIN</span>
+        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_verifications_path,
+                  class: "nav-link #{'active' if request.path.include?('verifications')}" do %>
+        <i class="ri-user-search-line"></i>
+        <span>Verifikasyon</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_team_path,
+                  class: "nav-link #{'active' if request.path.include?('team')}" do %>
+        <i class="ri-team-line"></i>
+        <span>Ekip</span>
+      <% end %>
+    </li>
+
+    <%# ── IDENTITY ──────────────────────────────── %>
+    <li class="sidebar-section-label">Idantite</li>
+
+    <%# NIF Registry — placeholder %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-file-user-line"></i>
+        <span>Rejis NIF</span>
+        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# Biometric Logs — placeholder %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-fingerprint-line"></i>
+        <span>Anprent Dijital</span>
+        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path,
+                  class: "nav-link #{'active' if request.path.include?('analytics')}" do %>
+        <i class="ri-bar-chart-box-line"></i>
+        <span>Analitik</span>
+      <% end %>
+    </li>
+
+    <%# ── API & BILLING ─────────────────────────── %>
+    <li class="sidebar-section-label">API & Faktirasyon</li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_api_keys_path,
+                  class: "nav-link #{'active' if request.path.include?('api_keys')}" do %>
+        <i class="ri-code-s-slash-line"></i>
+        <span>API</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_settings_path,
+                  class: "nav-link #{'active' if request.path.include?('settings')}" do %>
+        <i class="ri-settings-3-line"></i>
+        <span>Paramèt</span>
+      <% end %>
+    </li>
+
+    <li class="sidebar-divider"></li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_credits_path,
+                  class: "nav-link #{'active' if request.path.include?('credits')}" do %>
+        <i class="ri-coin-line"></i>
+        <span>Kredi</span>
+        <% if @current_partner&.credit_balance.to_d > 0 %>
+          <span class="badge bg-success rounded-pill ms-auto" style="font-size: 0.65rem;">
+            $<%= number_with_precision(@current_partner.credit_balance, precision: 2) %>
+          </span>
+        <% end %>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to partner_portal_billing_path,
+                  class: "nav-link #{'active' if request.path.include?('billing')}" do %>
+        <i class="ri-money-dollar-circle-line"></i>
+        <span>Faktirasyon</span>
+      <% end %>
+    </li>
+  </ul>
+
+  <%# Logout button %>
+  <div class="sidebar-logout">
+    <%= button_to destroy_partner_admin_session_path,
+                  method: :delete,
+                  class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Dekonekte</span>
+    <% end %>
+  </div>
+</div>

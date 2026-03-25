@@ -1,0 +1,31 @@
+<%# app/views/partner_portal/shared/_sidebar.html.erb %>
+<%# Dynamically renders sector-specific sidebar, with government fallback %>
+
+<%
+  # Sectors with dedicated sidebars
+  custom_sidebar_sectors = %w[law_enforcement dgi immigration oni onaca cep]
+
+  sidebar_sector = if sector.in?(custom_sidebar_sectors)
+    sector
+  elsif sector.in?(%w[archives_nationales mairie municipality ministry customs])
+    "government"
+  else
+    "default"
+  end
+%>
+
+<!-- Desktop Sidebar -->
+<aside class="partner-sidebar d-none d-lg-block">
+  <%= render "partner_portal/shared/sidebars/sidebar_#{sidebar_sector}_content" %>
+</aside>
+
+<!-- Mobile Offcanvas Sidebar -->
+<div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="partnerSidebar">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title"><%= @current_partner&.name || sector.titleize %></h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body p-0">
+    <%= render "partner_portal/shared/sidebars/sidebar_#{sidebar_sector}_content" %>
+  </div>
+</div>
