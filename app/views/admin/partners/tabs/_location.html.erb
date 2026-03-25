@@ -1,0 +1,45 @@
+<div class="card rounded-3 shadow-sm border-0 h-100">
+  <div class="card-header bg-light border-0 py-3">
+    <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+      Full Address & Map
+    </h5>
+  </div>
+
+  <div class="card-body p-4">
+
+    <!-- Full Address -->
+    <div class="mb-4">
+      <h6 class="text-muted small text-uppercase fw-semibold mb-2 tracking-wider">
+        Registered Address
+      </h6>
+      <p class="fs-5 fw-semibold text-dark mb-0">
+        <%= partner.full_address.presence || "—" %>
+      </p>
+    </div>
+
+    <!-- Map or Empty State -->
+    <% if partner.address&.latitude.present? && partner.address&.longitude.present? %>
+      <div class="rounded-3 overflow-hidden shadow-sm border"
+           data-controller="map"
+           data-map-latitude-value="<%= partner.address.latitude %>"
+           data-map-longitude-value="<%= partner.address.longitude %>"
+           data-map-zoom-value="16"
+           data-map-marker-title-value="<%= partner.name %>"
+           style="height: 380px;">
+      </div>
+
+      <p class="text-muted small text-center mt-3 mb-0">
+        Coordinates: <%= partner.address.latitude.round(6) %>, <%= partner.address.longitude.round(6) %>
+      </p>
+    <% else %>
+      <div class="text-center py-5 my-4 bg-light bg-opacity-50 rounded-3">
+        <i class="ri-map-pin-off-line display-4 text-muted opacity-50 mb-3"></i>
+        <p class="text-muted mb-0">
+          <strong>No geolocation available</strong><br>
+          <small>This partner has not provided coordinates.</small>
+        </p>
+      </div>
+    <% end %>
+
+  </div>
+</div>

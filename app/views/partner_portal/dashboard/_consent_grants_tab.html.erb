@@ -1,0 +1,62 @@
+<%# Consent Grants Tab — Citizens who authorized this partner %>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-0 py-3">
+    <h6 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 600; color: #00209F;">
+      <i class="ri-user-heart-line me-1" style="font-weight: 400;"></i>Citizen Consent Grants
+    </h6>
+  </div>
+  <div class="card-body p-0">
+    <% if @consent_grants.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+          <thead>
+            <tr class="text-muted" style="font-size: 0.75rem;">
+              <th class="border-0 ps-3">Citizen</th>
+              <th class="border-0">Status</th>
+              <th class="border-0 pe-3">Granted</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @consent_grants.each do |grant| %>
+              <tr>
+                <td class="ps-3">
+                  <div class="d-flex align-items-center gap-2">
+                    <% user = grant.citizen %>
+                    <% if user&.photo&.attached? %>
+                      <%= image_tag user.photo.variant(resize_to_fill: [32, 32]),
+                                    class: "rounded-circle",
+                                    style: "width: 32px; height: 32px; object-fit: cover;" %>
+                    <% else %>
+                      <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                           style="width: 32px; height: 32px;">
+                        <i class="ri-user-line text-muted" style="font-size: 0.9rem;"></i>
+                      </div>
+                    <% end %>
+                    <span class="fw-medium"><%= user&.full_name || "Unknown" %></span>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge bg-success">
+                    <i class="ri-check-line me-1"></i>Approved
+                  </span>
+                </td>
+                <td class="pe-3 text-muted">
+                  <%= grant.created_at.strftime("%b %d, %Y") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="text-center py-5">
+        <i class="ri-user-heart-line" style="font-size: 3rem; color: #dee2e6;"></i>
+        <p class="text-muted mt-2 mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem;">
+          No consent grants yet.
+        </p>
+        <p class="text-muted small">Citizens can grant your organization permission to verify their identity.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

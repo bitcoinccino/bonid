@@ -1,0 +1,211 @@
+<!-- app/views/layouts/partner_portal/partner_admin.html.erb -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for(:title).presence || "Verifyem – Partner Portal" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="turbo-cache-control" content="no-cache" />
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <!-- Styles -->
+  <%= stylesheet_link_tag "application", media: "all", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+
+  <!-- Fonts & Icons -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css"
+        crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600..900&family=Montserrat:wght@400;600&display=swap"
+        rel="stylesheet" />
+
+  <style>
+    :root {
+      --haitian-blue: #00209F;
+      --haitian-gold: #FFD700;
+      --haitian-green: #1A936F;
+    }
+
+    body.partners-layout {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f9fafc;
+    }
+
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--haitian-blue);
+    }
+
+    header.hero-banner {
+      background: linear-gradient(135deg, var(--haitian-blue), #0037C0);
+      color: white;
+      padding: 4rem 1rem;
+      text-align: center;
+    }
+
+    header.hero-banner h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 800;
+      font-size: 2.25rem;
+    }
+
+    header.hero-banner p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    footer.verifyem-footer {
+      background: #00209F;
+      color: #fff;
+      text-align: center;
+      padding: 1rem 0;
+      margin-top: auto;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body class="partners-layout d-flex flex-column min-vh-100" data-controller="tooltip bootstrap global-loading">
+  <%= render "shared/global_loading" %>
+  <turbo-frame id="turbo-redirect"></turbo-frame>
+
+  <!-- Optional sidebar for authenticated partner admins -->
+  <% if defined?(current_partner_admin) && current_partner_admin.present? && @current_partner.present? %>
+    <%= render "partner_portal/shared/sidebar", sector: @current_partner.sector %>
+  <% end %>
+
+  <!-- Main content region -->
+  <main class="flex-grow-1 w-100">
+    <!-- Shared navbar (visible both to guests and admins) -->
+    <%= render "partner_portal/shared/navbar", sector: @current_partner&.sector %>
+
+    <!-- Flash messages -->
+    <div id="flash-messages" class="container mt-3">
+      <% unless controller.devise_controller? %>
+        <%= render "shared/flash" %>
+      <% end %>
+    </div>
+
+    <!-- Hero header for public pages like pricing -->
+    <% unless defined?(current_partner_admin) && current_partner_admin.present? %>
+      <header class="hero-banner">
+        <h1>Partner with Verifyem</h1>
+        <p>Secure, compliant, and scalable digital identity verification for every sector.</p>
+      </header>
+    <% end %>
+
+    <!-- Page body -->
+    <section class="container py-5">
+      <%= yield %>
+    </section>
+  </main>
+
+  <footer class="verifyem-footer">
+    © <%= Time.current.year %> Verifyem · Empowering Trusted Identity in Haiti
+  </footer>
+</body>
+</html>
+
+  <!-- Officer Invite Modal (only for law_enforcement partners) -->
+  <% if sector == "law_enforcement" %>
+    <%= render "partner_portal/shared/invite_officers_modal", officer: @officer || User.new %>
+  <% end %>
+
+  <!-- Scripts -->
+  <%= javascript_include_tag "application",
+                             type: "module",
+                             "data-turbo-track": "reload",
+                             defer: true %>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+          crossorigin="anonymous" defer></script>
+
+  <!-- Embedded Styles -->
+  <style>
+    :root {
+      --navbar-height: 70px;
+      --sidebar-width: 260px;
+      --officer-blue: #092C73;
+      --officer-green: #1A936F;
+      --coral-red: #B50322;
+      --white: #F9FBFD;
+      --mid-gray: #5C677D;
+      --dark-gray: #333;
+      --border: #E8F1FF;
+      --golden-yellow: #FFC107;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      background-color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .partner-sidebar {
+      padding: 0 1rem 1rem;
+      overflow-y: auto;
+      background-color: var(--white);
+      border-right: 1px solid rgba(9, 44, 115, 0.2);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .partner-sidebar .nav-item .btn {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      background-color: transparent;
+      color: var(--dark-gray);
+    }
+
+    .partner-sidebar .nav-item .btn:hover:not(.disabled) {
+      background-color: rgba(9, 44, 115, 0.08);
+    }
+
+    .partner-sidebar .nav-item .btn.active {
+      background-color: rgba(9, 44, 115, 0.1);
+      color: var(--officer-blue);
+      font-weight: 700;
+    }
+
+    .partner-navbar {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1050;
+      background-color: var(--officer-blue);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .partner-scroll-region {
+      overflow-y: auto;
+      max-width: 100%;
+      min-height: calc(100vh - var(--navbar-height));
+    }
+
+    @media (min-width: 992px) {
+      .partner-sidebar {
+        position: fixed;
+        top: var(--navbar-height);
+        left: 0;
+        height: calc(100vh - var(--navbar-height));
+        width: var(--sidebar-width);
+        display: block !important;
+      }
+      main {
+        margin-left: var(--sidebar-width);
+        margin-top: var(--navbar-height);
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .partner-sidebar { display: none !important; }
+      main { margin-top: var(--navbar-height); }
+    }
+  </style>
+</body>
+</html>

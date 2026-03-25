@@ -1,0 +1,73 @@
+<section class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h2 class="h5 fw-bold text-primary mb-1">
+        <i class="ri-history-line me-2"></i>
+        Partner Access Logs
+      </h2>
+      <p class="text-muted small mb-0">
+        Recent actions performed by your organization’s administrators and agents.
+      </p>
+    </div>
+    <%= link_to partner_portal_banking_agents_path,
+                class: "btn btn-outline-primary rounded-pill d-flex align-items-center gap-1" do %>
+      <i class="ri-arrow-left-line"></i> Back to Agents
+    <% end %>
+  </div>
+
+  <% if @logs.any? %>
+    <div class="table-responsive shadow-sm rounded-4 bg-white">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-4 text-muted small fw-semibold">Timestamp</th>
+            <th class="text-muted small fw-semibold">Action</th>
+            <th class="text-muted small fw-semibold">Performed By</th>
+            <th class="text-muted small fw-semibold">Reason</th>
+            <th class="text-muted small fw-semibold">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @logs.each do |log| %>
+            <tr>
+              <td class="ps-4 text-muted">
+                <%= l(log.created_at, format: :short) %>
+              </td>
+              <td class="fw-semibold text-primary"><%= log.action.titleize %></td>
+              <td>
+                <% if log.admin_user.present? %>
+                  <%= log.admin_user.email %>
+                <% elsif log.metadata&.dig("actor_email") %>
+                  <%= log.metadata["actor_email"] %>
+                <% else %>
+                  <span class="text-muted">System</span>
+                <% end %>
+              </td>
+              <td><%= log.reason.presence || "—" %></td>
+              <td>
+                <% if log.metadata.present? %>
+                  <pre class="small bg-light rounded-3 p-2 mb-0"><%= JSON.pretty_generate(log.metadata) %></pre>
+                <% else %>
+                  <span class="text-muted">—</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="text-center text-muted py-5">
+      <i class="ri-inbox-2-line ri-2x mb-2"></i>
+      <p>No recent actions logged for your partner organization.</p>
+    </div>
+  <% end %>
+</section>
+
+<style>
+  pre {
+    font-size: 0.75rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>

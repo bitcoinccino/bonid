@@ -1,0 +1,53 @@
+<%# ===============================================================
+  BonID — New / Edit Verification Record (Turbo-Enabled Universal Loader)
+  ---------------------------------------------------------------
+  ✅ Works for both New and Edit actions
+  ✅ Dynamically loads the correct type-specific form partial
+  ✅ Falls back to generic form if no specific partial exists
+  ✅ Turbo Frame safe (no nested frames)
+  ✅ Consistent header and back button
+================================================================ %>
+
+<div class="container-fluid px-0 px-md-3 py-3">
+  <!-- 🧭 Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+      <i class="ri-edit-2-line text-primary"></i>
+      <%= @record.persisted? ? "Edit Verification Record" : "New Verification Record" %>
+    </h5>
+
+    <%= link_to citizens_verification_records_path,
+                class: "btn btn-sm btn-outline-secondary rounded-3 d-flex align-items-center gap-1 fw-semibold" do %>
+      <i class="ri-arrow-go-back-line"></i>
+      Back to Records
+    <% end %>
+  </div>
+
+  <!-- 🧩 Dynamic Form Loader -->
+  <%# Prevent nested Turbo Frames — render directly if already inside one %>
+  <% if turbo_frame_request? %>
+    <%= render_dynamic_form(@record) %>
+  <% else %>
+    <%= turbo_frame_tag "record_form_frame" do %>
+      <%= render_dynamic_form(@record) %>
+    <% end %>
+  <% end %>
+</div>
+
+<%# ===============================================================
+  Helper to render the correct form partial based on record_type
+================================================================ %>
+<% content_for :dynamic_form_helper do %>
+  <% helper_method :render_dynamic_form %>
+
+  <% def render_dynamic_form(record) %>
+    <% type = record.record_type.presence || "generic" %>
+    <% form_partial = "citizens/verification_records/#{type}/#{type}_form" %>
+
+    <% if lookup_context.exists?(form_partial, [], true) %>
+      <%= render partial: form_partial, locals: { record: record } %>
+    <% else %>
+      <%= render partial: "citizens/verification_records/form", locals: { record: record } %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -1,0 +1,102 @@
+<%# app/views/citizens/passwords/new.html.erb %>
+
+<% content_for :auth_left do %>
+  <div class="auth-left-inner d-flex flex-column justify-content-between h-100 py-4 py-lg-5 w-100">
+
+    <!-- INTRO -->
+    <div class="text-center mb-4 mb-lg-5">
+      <h2 class="display-5 fw-bold mb-3 font-heading">
+        Forgot your password?
+      </h2>
+      <p class="lead opacity-90 mx-auto max-w-text">
+        No worries. Enter your email and we'll send you a secure link to get back in.
+      </p>
+    </div>
+
+    <!-- STEPS -->
+    <div class="row g-4 justify-content-center mb-4 mb-lg-5">
+      <% [
+        { icon: "ri-mail-send-line",    title: "Enter your email",  desc: "Use the email linked to your BonID account." },
+        { icon: "ri-inbox-line",        title: "Check your inbox",  desc: "A reset link will arrive within minutes." },
+        { icon: "ri-lock-password-line", title: "Set new password", desc: "Click the link and choose a new password." }
+      ].each do |item| %>
+        <div class="col-12 col-md-4 text-center">
+          <i class="<%= item[:icon] %> ri-2x text-haitian-cyan mb-2"></i>
+          <div class="fw-semibold small mb-1"><%= item[:title] %></div>
+          <div class="small opacity-80"><%= item[:desc] %></div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- FOOTER NOTE -->
+    <p class="small opacity-75 fst-italic text-center">
+      Reset links are encrypted and expire after 24 hours for your security.
+    </p>
+
+  </div>
+<% end %>
+
+
+<div class="login-card">
+  <%# Icon badge %>
+  <div class="text-center mb-4">
+    <div class="auth-icon-badge">
+      <i class="ri-key-line"></i>
+    </div>
+  </div>
+
+  <%# Flash rendered by citizen_auth layout %>
+
+  <%# Reset Form %>
+  <%= form_with url: citizen_password_path,
+                scope: :citizen,
+                local: true,
+                html: { data: { turbo: false } } do |f| %>
+
+    <div class="form-floating mb-3">
+      <%= f.email_field :email,
+            autofocus: true,
+            autocomplete: "email",
+            required: true,
+            placeholder: "you@email.com",
+            class: "form-control" %>
+      <%= f.label :email, "Email Address" %>
+    </div>
+
+    <%= f.submit "Send Reset Link",
+          class: "btn btn-haitian-primary w-100 mt-2",
+          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Sending…' } %>
+
+    <div class="trust-badge">
+      <i class="ri-shield-check-line"></i>
+      <span>Secure &amp; encrypted</span>
+    </div>
+
+    <div class="auth-privacy-note">
+      <i class="ri-lock-line"></i>We'll never share your email with third parties.
+    </div>
+  <% end %>
+
+  <%# Divider %>
+  <div class="login-divider my-4">
+    <span>or</span>
+  </div>
+
+  <%# Back to sign in %>
+  <div class="mb-3">
+    <%= link_to new_citizen_session_path, class: "btn btn-ghost-haitian w-100" do %>
+      <i class="ri-arrow-left-line me-2"></i>Back to sign in
+    <% end %>
+  </div>
+
+  <%# OTP option %>
+  <div class="mb-3">
+    <%= link_to citizens_otp_sign_in_path, class: "btn btn-ghost-haitian w-100" do %>
+      <i class="ri-mail-send-line me-2"></i>Log in with one time code
+    <% end %>
+  </div>
+
+  <div class="auth-help-link">
+    <a href="mailto:support@bonid.app">Need help?</a>
+  </div>
+</div>

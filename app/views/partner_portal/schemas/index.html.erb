@@ -1,0 +1,102 @@
+<!-- app/views/partner_portal/schemas/index.html.erb -->
+<div class="container mt-4">
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <a class="nav-link active" id="my-schemas-tab" data-bs-toggle="tab" data-bs-target="#my-schemas" type="button" role="tab">My Schemas</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab">Templates</a>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- My Schemas Tab -->
+    <div class="tab-pane fade show active" id="my-schemas" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold">My Schemas</h3>
+        <%= link_to "New Schema", new_partner_portal_schema_path, class: "btn btn-primary" %>
+      </div>
+
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Record Type</th>
+            <th>Version</th>
+            <th>Status</th>
+            <th>Visibility</th>
+            <th>Last Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @schemas.each do |schema| %>
+            <tr>
+              <td><%= link_to schema.name, partner_portal_schema_path(schema) %></td>
+              <td><%= schema.record_type.titleize %></td>
+              <td><%= schema.version %></td>
+              <td>
+                <% if schema.active? %>
+                  <span class="badge bg-success">Active</span>
+                <% elsif schema.approved_at.nil? %>
+                  <span class="badge bg-warning text-dark">Pending Approval</span>
+                <% else %>
+                  <span class="badge bg-secondary">Inactive</span>
+                <% end %>
+              </td>
+              <td><%= schema.visibility.titleize %></td>
+              <td><%= l(schema.updated_at, format: :short) %></td>
+              <td>
+                <%= link_to "Preview", preview_partner_portal_schema_path(schema), class: "btn btn-sm btn-outline-primary me-1" %>
+                <%= link_to "Edit", edit_partner_portal_schema_path(schema), class: "btn btn-sm btn-outline-secondary me-1" %>
+                <%= link_to "Delete", partner_portal_schema_path(schema), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-sm btn-outline-danger" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <% if @schemas.empty? %>
+        <div class="text-center py-5">
+          <i class="ri-file-line text-muted mb-3" style="font-size: 3rem;"></i>
+          <p class="text-muted">No schemas yet. Create your first one to get started!</p>
+        </div>
+      <% end %>
+
+      <%= paginate @schemas %>
+    </div>
+
+    <!-- Templates Tab -->
+    <div class="tab-pane fade" id="templates" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold">Available Templates</h3>
+        <%= link_to "Back to My Schemas", "#my-schemas", data: { bs_toggle: "tab" }, class: "btn btn-outline-secondary" %>
+      </div>
+
+      <% if PartnerSchema.admin_templates.by_sector(@partner.sector).any? %>
+        <div class="row g-3">
+          <% PartnerSchema.admin_templates.by_sector(@partner.sector).each do |template| %>
+            <div class="col-md-6 col-lg-4">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title"><%= template.name %></h6>
+                  <p class="card-text text-muted small">
+                    Type: <%= template.record_type.titleize %><br>
+                    Version: <%= template.version %><br>
+                    Description: <%= template.description.truncate(100) %>
+                  </p>
+                  <%= link_to "Use This Template", partner_portal_schema_fork_template_path(template), method: :post, class: "btn btn-primary w-100 mt-2" %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-file-search-line text-muted mb-3" style="font-size: 3rem;"></i>
+          <p class="text-muted">No templates available for your sector yet. Check back soon or create your own!</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

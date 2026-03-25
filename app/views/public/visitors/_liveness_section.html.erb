@@ -1,0 +1,69 @@
+<%# Liveness verification for visitor biometric identity %>
+<% liveness_region = Rails.application.credentials.dig(:aws, :rekognition, :region) || "us-east-1" %>
+<% cognito_pool_id = Rails.application.credentials.dig(:aws, :cognito, :identity_pool_id) || "" %>
+
+<div class="card rounded-4 mb-4 border-2 visitor-liveness-card">
+
+  <!-- Header -->
+  <div class="card-header border-bottom pb-3 pt-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="liveness-icon-circle">
+        <i class="ri-shield-check-line"></i>
+      </div>
+      <div>
+        <h5 class="fw-bold mb-0" style="font-size: 1.05rem;">
+          <%= t("bon_touris.wizard.liveness.title") %>
+        </h5>
+        <p class="small text-muted mb-0 mt-1">
+          <%= t("bon_touris.wizard.liveness.subtitle") %>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liveness Body -->
+  <div class="card-body px-3 px-md-4 py-3">
+    <div data-controller="liveness-detector"
+         data-liveness-detector-region-value="<%= liveness_region %>"
+         data-liveness-detector-identity-pool-id-value="<%= cognito_pool_id %>"
+         data-liveness-detector-create-session-url-value="<%= liveness_session_public_visitors_path %>"
+         data-liveness-detector-results-url-value="<%= liveness_results_public_visitors_path %>"
+         data-liveness-detector-status-url-value="<%= liveness_status_public_visitors_path %>"
+         data-liveness-detector-manual-selfie-url-value="<%= manual_selfie_public_visitors_path %>"
+         data-liveness-detector-face-compare-url-value="<%= face_compare_public_visitors_path %>"
+         class="liveness-wrapper visitor-liveness-wrapper">
+
+      <!-- React mount point -->
+      <div data-liveness-detector-target="mountPoint"
+           class="liveness-mount-point visitor-liveness-mount"></div>
+
+      <!-- Status messages (comparing / success / mismatch) -->
+      <div data-liveness-detector-target="statusMessage"
+           class="liveness-status visitor-liveness-status"></div>
+
+      <%= f.hidden_field :selfie,
+            value: "",
+            data: { liveness_detector_target: "file" } %>
+
+      <!-- Retry button (shown on face mismatch) -->
+      <div class="text-center mt-3">
+        <button type="button"
+                class="btn btn-outline-primary rounded-pill px-4 bt-touch-target d-none"
+                data-liveness-detector-target="retryBtn"
+                data-action="liveness-detector#retry">
+          <i class="ri-refresh-line me-1"></i> <%= t("bon_touris.wizard.liveness.retry") %>
+        </button>
+      </div>
+    </div>
+
+    <!-- Privacy footer -->
+    <div class="liveness-privacy-footer">
+      <i class="ri-lock-2-line"></i>
+      <span><%= t("bon_touris.wizard.liveness.privacy_note", default: "Your face data is encrypted and never stored permanently") %></span>
+    </div>
+  </div>
+</div>
+
+<%# Load liveness CSS + JS bundle (React + Amplify) %>
+<%= stylesheet_link_tag "liveness", "data-turbo-track": "reload" %>
+<%= javascript_include_tag "liveness", type: "module", defer: true %>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for(:title) || "PNH IDPol - Officer Portal" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body class="officers-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-law-enforcement-layout"
+      data-controller="tooltip bootstrap global-loading">
+
+  <%# Global Loading Overlay %>
+  <%= render "shared/global_loading" %>
+
+  <turbo-frame id="turbo-redirect"></turbo-frame>
+
+  <!-- Sidebar -->
+  <%= render "officers/shared/officer_sidebar" %>
+
+  <!-- Main Content -->
+  <main class="flex-grow-1 w-100 position-relative">
+    <%= render "officers/shared/officer_navbar" %>
+
+    <div id="flash-messages">
+      <% unless controller.devise_controller? %>
+        <%= render "shared/flash" %>
+      <% end %>
+    </div>
+
+    <div class="p-4 partner-scroll-region">
+      <%= yield %>
+    </div>
+  </main>
+</body>
+</html>

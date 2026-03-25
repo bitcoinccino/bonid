@@ -1,0 +1,45 @@
+<!-- app/views/partner_portal/embassy/dashboard/_welcome_card.html.erb -->
+<div id="embassy-welcome-card" class="card rounded-4 border shadow-sm mb-4">
+  <div class="card-body p-4 d-flex justify-content-between align-items-center">
+    
+    <!-- Left: Embassy Info -->
+    <div>
+      <h5 class="fw-bold text-haitian-blue mb-1">
+        <i class="ri-government-line me-2"></i>
+        Welcome, <%= current_partner_admin.first_name.presence || "Embassy Admin" %>
+      </h5>
+      <p class="small text-muted mb-1">
+        <%= current_partner_admin.partner&.name || "Embassy Partner" %> Portal
+      </p>
+      <p class="small text-muted">
+        <i class="ri-time-line me-1"></i>
+        <strong>Last Login:</strong>
+        <%= current_partner_admin&.last_sign_in_at&.strftime("%b %d, %Y %I:%M%p") || "N/A" %>
+      </p>
+    </div>
+
+    <!-- Right: Logo -->
+    <div class="flex-shrink-0">
+      <% if current_partner_admin.partner&.logo&.attached? %>
+        <%= image_tag current_partner_admin.partner.logo.variant(resize_to_limit: [80, 80]),
+                      class: "rounded-circle border border-2 border-haitian-blue shadow-sm",
+                      alt: "#{current_partner_admin.partner.name} Logo" %>
+      <% else %>
+        <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center"
+             style="width:80px; height:80px;">
+          <i class="ri-government-line ri-xl text-white"></i>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Embassy Actions -->
+  <div class="card-footer bg-light border-top d-flex justify-content-between align-items-center">
+    <span class="small text-muted">
+      Embassy Verified: <%= current_partner_admin.partner.verified_at&.strftime("%b %d, %Y") || "Pending" %>
+    </span>
+    <%= link_to "Verify Visa Applicant",
+                new_partner_portal_embassy_scan_path,
+                class: "btn btn-haitian-blue rounded-pill px-4" %>
+  </div>
+</div>

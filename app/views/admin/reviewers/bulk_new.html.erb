@@ -1,0 +1,22 @@
+<h2 class="fw-bold mb-4 text-haitian-blue">Bulk Invite Reviewers</h2>
+
+<div class="card shadow-sm rounded-4 p-4 p-md-5">
+  <%= form_with url: bulk_create_admin_reviewers_path,
+    method: :post,
+    local: true,
+    html: { multipart: true } do |f| %>
+
+    <div class="mb-4">
+      <%= f.label :csv, "Upload CSV", class: "form-label fw-semibold" %>
+      <%= f.file_field :csv, accept: ".csv", class: "form-control", required: true %>
+      <p class="form-text">One email per line.</p>
+    </div>
+
+    <%= f.submit "Send Invitations",
+      class: "btn btn-success rounded-pill px-4" %>
+
+    <%= link_to "Cancel", admin_reviewers_path,
+      class: "btn btn-outline-secondary rounded-pill px-4 ms-3" %>
+
+  <% end %>
+</div>

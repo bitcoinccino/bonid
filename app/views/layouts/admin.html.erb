@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title><%= content_for(:title).presence || "BonID – Admin Dashboard" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" crossorigin="anonymous" />
+
+  <!-- Styles & Scripts -->
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+</head>
+
+<body class="admin-layout" style="font-family: 'Montserrat', sans-serif;"
+      data-controller="global-loading">
+
+  <%= render "shared/global_loading" %>
+
+  <%# Fixed Topbar (70px) %>
+  <%= render "shared/admin_topbar" %>
+
+  <%# Main Layout Wrapper %>
+  <div class="admin-main-wrapper d-flex">
+
+    <%# Sidebar (Desktop: fixed 260px | Mobile: off-canvas) %>
+    <%= render "shared/admin_sidebar" %>
+
+    <%# Main Content Area %>
+    <main class="admin-main-content">
+      <div class="container-fluid px-4 py-4">
+
+        <%# Flash Messages %>
+        <div id="flash" class="mb-4">
+          <%= render "shared/flash" %>
+        </div>
+
+        <%# Page Content %>
+        <%= yield %>
+      </div>
+    </main>
+  </div>
+
+  <%# Modals %>
+  <%= yield :modals %>
+
+</body>
+</html>

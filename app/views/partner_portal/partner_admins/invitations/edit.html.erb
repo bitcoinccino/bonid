@@ -1,0 +1,89 @@
+<div class="partner-page-wrapper">
+  <div class="partner-container">
+    <div class="partner-grid">
+      <!-- LEFT: HEADING -->
+      <div class="partner-heading-column">
+        <h1 class="partner-main-title">Welcome to BonID</h1>
+        <p class="partner-main-subtitle">
+          You've been invited to join as a Partner Admin. Complete your account setup to get started.
+        </p>
+
+        <ul class="partner-benefits-list">
+          <li>Manage partner operations</li>
+          <li>Access verification tools</li>
+          <li>View analytics and reports</li>
+          <li>Invite team members</li>
+          <li>API access and integration</li>
+        </ul>
+      </div>
+
+      <!-- RIGHT: FORM -->
+      <div class="partner-form-column">
+        <h2 class="h5 fw-bold text-center mb-4">Activate Your Account</h2>
+
+        <%= form_for(resource,
+                     as: resource_name,
+                     url: invitation_path(resource_name),
+                     html: {
+                       method: :put,
+                       data: {
+                         controller: "form-handler",
+                         action: "turbo:submit-start->form-handler#submitStart turbo:submit-end->form-handler#submitEnd"
+                       }
+                     }) do |f| %>
+          <%= f.hidden_field :invitation_token, readonly: true %>
+
+          <!-- Error Display -->
+          <div data-form-handler-target="error" class="alert alert-danger d-none mb-3" role="alert"></div>
+
+          <% if resource.errors.any? %>
+            <div class="alert alert-danger mb-3">
+              <% resource.errors.full_messages.each do |message| %>
+                <div><%= message %></div>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div class="mb-3">
+            <%= f.label :password, "Create Password", class: "form-label fw-semibold" %>
+            <%= f.password_field :password,
+                  autofocus: true,
+                  autocomplete: "new-password",
+                  class: "form-control",
+                  placeholder: "Choose a strong password",
+                  required: true %>
+            <small class="form-text text-muted">Must be at least 8 characters</small>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :password_confirmation, "Confirm Password", class: "form-label fw-semibold" %>
+            <%= f.password_field :password_confirmation,
+                  autocomplete: "new-password",
+                  class: "form-control",
+                  placeholder: "Re-enter your password",
+                  required: true %>
+          </div>
+
+          <div class="text-center mt-5">
+            <button type="submit"
+                    class="btn-partner-submit"
+                    data-form-handler-target="submit">
+              <span data-form-handler-target="spinner"
+                    class="spinner-border spinner-border-sm me-2 d-none"
+                    role="status"
+                    aria-hidden="true"></span>
+              <span data-form-handler-target="submitText">Activate Account</span>
+            </button>
+          </div>
+        <% end %>
+
+        <hr class="my-4">
+
+        <div class="text-center small text-muted">
+          Need help? Contact BonID Support<br>
+          <a href="mailto:support@bonid.ht" class="text-decoration-none fw-semibold">support@bonid.ht</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

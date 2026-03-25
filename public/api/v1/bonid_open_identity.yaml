@@ -1,0 +1,2124 @@
+openapi: 3.1.0
+info:
+  title: BonID Open Identity & Partner API
+  version: "1.5.0"
+  description: |
+    The BonID API provides secure digital identity verification, citizen consent flows,
+    crime status checks, and certificate verification for partners in Haiti.
+
+    ---
+
+    ### Authentication
+
+    | Method | Header | Used By |
+    |--------|--------|---------|
+    | **API Key** | `X-Partner-Api-Key` | All partner endpoints |
+    | **Bearer Token** | `Authorization: Bearer <token>` | OAuth-protected endpoints |
+    | **Dual Auth** | Both API Key + Bearer | Identity, Crime, Certificates |
+
+    ### Rate Limits
+    Rate limit headers are returned on applicable endpoints:
+    `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+externalDocs:
+  description: BonID Developer Portal
+  url: https://partners.bonid.ht/docs
+
+servers:
+  - url: https://api.bonid.ht/api/v1
+    description: Production
+  - url: https://sandbox.bonid.ht/api/v1
+    description: Sandbox
+  - url: http://localhost:3100/api/v1
+    description: Local Development
+
+security:
+  - PartnerApiKeyAuth: []
+
+tags:
+  - name: Identity
+    description: Verify citizen identity and check BonID status
+  - name: Crime & Incident Reports
+    description: Crime status, incident reports, and certificate verification
+  - name: OAuth & Consent
+    description: Citizen consent flows, token management, and OpenID discovery
+  - name: Transaction Consent
+    description: "Per-transaction citizen consent with OTP + biometric liveness. 25+ transaction types supported."
+  - name: Partners
+    description: Partner account, metrics, and webhook management
+  - name: Public
+    description: Unauthenticated public endpoints
+
+# ====================================================================
+#  PATHS
+# ====================================================================
+paths:
+
+  # ------------------------------------------------------------------
+  #  IDENTITY VERIFICATION
+  # ------------------------------------------------------------------
+
+  /identity/{bonid}:
+    get:
+      tags: [Identity]
+      summary: Get full identity details
+      description: |
+        Returns complete verified identity data for a BonID or BonTouris.
+        Includes biometrics, address, photo, and QR code.
+      operationId: getIdentity
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: bonid
+          in: path
+          required: true
+          description: BonID (e.g. `JM-1968-M-OUEST-P2334-217`) or BonTouris ID
+          schema:
+            type: string
+            example: "JM-1968-M-OUEST-P2334-217"
+        - name: consent_token
+          in: query
+          required: false
+          description: |
+            Transaction consent token (from POST /transaction_consents).
+            **Double-Lock flow:** Without this token, the response only contains
+            verification status (verified: true/false) — no personal data.
+            With a valid, approved consent_token, the response includes identity
+            data filtered to the consented scopes only.
+          schema:
+            type: string
+            example: "txn_abc123xyz"
+      responses:
+        "200":
+          description: Verified identity details (scope-filtered by consent_token if provided)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FullIdentityResponse"
+              example:
+                status: "success"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                id_type: "citizen"
+                verified: true
+                identity:
+                  bonid: "JM-1968-M-OUEST-P2334-217"
+                  first_name: "Jean"
+                  last_name: "Louis"
+                  full_name: "Jean Louis"
+                  dob: "1990-05-21"
+                  age: 35
+                  sex: "M"
+                  nationality: "Haitian"
+                  address:
+                    street_address: "Rue Chavannes, Saint-Martin"
+                    commune: "Delmas"
+                    department: "Ouest"
+                    country: "Haiti"
+                  verification:
+                    verified: true
+                    verified_at: "2026-03-09T23:05:00Z"
+                    verified_by: "Officer Jean Pierre"
+                    expires_at: "2027-03-09T23:05:00Z"
+                    document_type: "passport"
+                  biometrics:
+                    liveness_confidence: 96.96
+                    face_match_similarity: 98.7
+                    face_match_threshold: 80.0
+                    audit_status: "passed"
+                    challenge_type: "FaceMovementAndLightChallenge"
+                    verified_with_review: false
+                    biometrics_reused: false
+                    liveness_checked_at: "2026-03-09T23:03:48Z"
+                    face_matched_at: "2026-03-09T23:03:50Z"
+                  photo_url: "data:image/png;base64,iVBORw0KG..."
+                  qr_code: "data:image/png;base64,iVBORw0KG..."
+                partner: "Unibank Haiti"
+                timestamp: "2026-03-11T15:30:00Z"
+                api_version: "1.4.0"
+        "400": { description: Missing BonID parameter }
+        "401": { description: Invalid API key or expired token }
+        "403": { description: Insufficient scope (requires `identity:verify`) }
+        "404": { description: BonID not found or not verified }
+        "410": { description: "Consent expired or consumed (burn-after-read). Request a new consent." }
+        "429": { description: Rate limit exceeded (100 req/15min) }
+
+  /identity/{bonid}/status:
+    get:
+      tags: [Identity]
+      summary: Quick verification status check
+      description: Lightweight check if a BonID exists and is verified, without returning full identity data.
+      operationId: getIdentityStatus
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: bonid
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "JM-1968-M-OUEST-P2334-217"
+      responses:
+        "200":
+          description: Verification status
+          content:
+            application/json:
+              example:
+                status: "success"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                verification:
+                  found: true
+                  id_type: "BonID"
+                  verified: true
+                  status: "verified"
+                  expires_at: "2027-02-22T10:30:00Z"
+                  nationality: "Haitian"
+                timestamp: "2026-03-11T15:30:00Z"
+        "404": { description: BonID not found }
+
+  /verify_identity:
+    post:
+      tags: [Identity]
+      summary: Verify identity (legacy)
+      description: |
+        Legacy endpoint. Validates a BonID and returns citizen summary + verification metadata.
+        Prefer `/identity/{bonid}` for new integrations.
+      operationId: verifyIdentityLegacy
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bonid]
+              properties:
+                bonid:
+                  type: string
+                  example: "JM-1968-M-OUEST-P2334-217"
+      responses:
+        "200":
+          description: Verified identity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifiedIdentityResponse"
+        "400": { description: Missing BonID }
+        "401": { description: Invalid API key }
+        "404": { description: BonID not found }
+        "429": { description: Rate limit exceeded }
+
+  /bonid_status:
+    get:
+      tags: [Identity]
+      summary: Simple BonID status lookup
+      description: Checks whether a BonID exists and is verified. Returns citizen summary.
+      operationId: getBonidStatus
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: bonid
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "JM-1968-M-OUEST-P2334-217"
+      responses:
+        "200":
+          description: BonID status with citizen summary
+          content:
+            application/json:
+              example:
+                status: "verified"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                citizen:
+                  first_name: "Jean"
+                  last_name: "Louis"
+                  dob: "1990-05-21"
+                  sex: "M"
+                  nationality: "Haitian"
+                verification:
+                  verified_on: "2025-10-21T22:15:09Z"
+                  verified_by: "Officer Jean Pierre"
+                timestamp: "2026-03-11T15:30:00Z"
+        "400": { description: Missing BonID parameter }
+        "404": { description: BonID not found or not verified }
+
+  # ------------------------------------------------------------------
+  #  CRIME STATUS & INCIDENT REPORTS
+  # ------------------------------------------------------------------
+
+  /crime_status/{bonid}:
+    get:
+      tags: [Crime & Incident Reports]
+      summary: Check crime involvement status
+      description: |
+        Returns crime involvement summary for a BonID. Requires dual authentication
+        and `crime:status` scope. Rate limited to 50 req/15min.
+      operationId: getCrimeStatus
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: bonid
+          in: path
+          required: true
+          description: BonID, BonTouris, or 6-digit suffix
+          schema:
+            type: string
+            example: "JM-1968-M-OUEST-P2334-217"
+      responses:
+        "200":
+          description: Crime involvement summary
+          content:
+            application/json:
+              example:
+                status: "success"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                crime_status:
+                  has_record: true
+                  involvement_type: "suspect"
+                  severity_level: "medium"
+                  total_incidents: 3
+                  active_incidents: 1
+                  breakdown_by_role:
+                    suspect: 2
+                    victim: 1
+                    witness: 0
+                timestamp: "2026-03-11T15:30:00Z"
+        "400": { description: Missing or invalid BonID }
+        "401": { description: Invalid API key or expired token }
+        "403": { description: "Insufficient scope (requires `crime:status`)" }
+        "429": { description: Rate limit exceeded (50 req/15min) }
+
+  /incident_reports:
+    get:
+      tags: [Crime & Incident Reports]
+      summary: Search incident reports by BonID
+      description: |
+        Returns paginated incident reports for a citizen. Supports filtering by role,
+        status, and date range. Requires `crime:reports` scope.
+      operationId: searchIncidentReports
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: bonid
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "JM-1968-M-OUEST-P2334-217"
+        - name: role
+          in: query
+          required: false
+          description: Filter by involvement role
+          schema:
+            type: string
+            enum: [suspect, victim, witness]
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, closed, resolved]
+        - name: from_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: to_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+      responses:
+        "200":
+          description: Paginated incident reports
+          content:
+            application/json:
+              example:
+                status: "success"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                reports:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    report_id: "PNH-DDO-HOMO-20260222-4BF813-RYO"
+                    crime_type: "Assault"
+                    severity: "high"
+                    occurred_at: "2026-02-20T14:30:00Z"
+                    status: "submitted"
+                    involvement:
+                      role: "victim"
+                      status: "active"
+                    location:
+                      commune: "Port-au-Prince"
+                      department: "Ouest"
+                pagination:
+                  page: 1
+                  per_page: 20
+                  total_count: 3
+                  total_pages: 1
+        "400": { description: Missing BonID parameter }
+        "403": { description: "Insufficient scope (requires `crime:reports`)" }
+        "429": { description: Rate limit exceeded (30 req/15min) }
+
+  /incident_reports/{id}/certificate:
+    get:
+      tags: [Crime & Incident Reports]
+      summary: Get incident report certificate
+      description: |
+        Returns a digitally signed certificate for an incident report.
+        Supports JSON and PDF formats. Requires `crime:certificate` scope.
+      operationId: getIncidentCertificate
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Incident report UUID
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: false
+          description: Response format
+          schema:
+            type: string
+            enum: [json, pdf]
+            default: json
+      responses:
+        "200":
+          description: Digitally signed certificate
+          content:
+            application/json:
+              example:
+                status: "success"
+                certificate:
+                  certificate_id: "A3F8B2C1D4E5F607"
+                  report_id: "PNH-DDO-HOMO-20260222-4BF813-RYO"
+                  issued_at: "2026-02-22T10:30:00Z"
+                  digital_signature:
+                    algorithm: "RSASSA-PSS"
+                    signature_value: "..."
+                    public_key_url: "https://bonid.ht/api/v1/certificates/public_key"
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "404": { description: Report not found }
+        "422": { description: Certificate unavailable (draft report) }
+
+  /certificates/verify:
+    post:
+      tags: [Crime & Incident Reports]
+      summary: Verify certificate signature
+      description: |
+        Public endpoint (no auth required). Verifies the digital signature on
+        an incident report certificate. Rate limited to 200 req/15min by IP.
+      operationId: verifyCertificate
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [certificate_id, report_id, issued_at, algorithm, signature_value]
+              properties:
+                certificate_id:
+                  type: string
+                  example: "A3F8B2C1D4E5F607"
+                report_id:
+                  type: string
+                  example: "PNH-DDO-HOMO-20260222-4BF813-RYO"
+                issued_at:
+                  type: string
+                  format: date-time
+                  example: "2026-02-22T10:30:00Z"
+                partner_id:
+                  type: integer
+                  example: 42
+                algorithm:
+                  type: string
+                  enum: [RSASSA-PSS, HMAC-SHA256]
+                  example: "RSASSA-PSS"
+                signature_value:
+                  type: string
+                  description: Base64-encoded signature
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              example:
+                valid: true
+                algorithm: "RSASSA-PSS"
+                certificate_id: "A3F8B2C1D4E5F607"
+                report_found: true
+                verified_at: "2026-03-11T15:30:00Z"
+                message: "Certificate signature is valid."
+                issuer: "Police Nationale d'Haiti (PNH)"
+        "400": { description: Invalid JSON }
+        "422": { description: Missing required fields or unsupported algorithm }
+        "429": { description: Rate limit exceeded }
+
+  /certificates/public_key:
+    get:
+      tags: [Crime & Incident Reports]
+      summary: Get RSA public key for offline verification
+      description: Returns the PEM-encoded RSA-2048 public key used to sign certificates.
+      operationId: getCertificatePublicKey
+      security: []
+      responses:
+        "200":
+          description: PEM-encoded RSA public key
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhki...\n-----END PUBLIC KEY-----"
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                example: "public, max-age=86400"
+            X-Key-Algorithm:
+              schema:
+                type: string
+                example: "RSA-2048"
+        "404": { description: RSA public key not configured }
+
+  /officers/{badge_id}/complaints/summary:
+    get:
+      tags: [Crime & Incident Reports]
+      summary: Get officer complaint summary
+      description: |
+        Returns misconduct complaint summary for a PNH officer.
+        Response detail varies by partner access tier (Tier 1/2/3).
+        Requires `officer:complaints` scope.
+      operationId: getOfficerComplaintSummary
+      security:
+        - PartnerApiKeyAuth: []
+          BearerAuth: []
+      parameters:
+        - name: badge_id
+          in: path
+          required: true
+          description: PNH badge ID
+          schema:
+            type: string
+            example: "PNH03456"
+      responses:
+        "200":
+          description: Officer complaint summary
+          content:
+            application/json:
+              example:
+                status: "ok"
+                badge_id: "PNH03456"
+                complaint_summary:
+                  total: 3
+                  has_sustained_complaint: true
+                  risk_flag: "high"
+                  risk_label: "High - sustained complaint or repeated misconduct"
+                queried_at: "2026-03-11T15:30:00Z"
+        "401": { description: Invalid API key or token }
+        "403": { description: "Insufficient scope (requires `officer:complaints`)" }
+        "404": { description: Officer not found }
+        "429": { description: Rate limit exceeded (30 req/15min) }
+
+  # ------------------------------------------------------------------
+  #  OAUTH & CONSENT
+  # ------------------------------------------------------------------
+
+  /oauth/token:
+    post:
+      tags: [OAuth & Consent]
+      summary: Exchange authorization code for access token
+      description: |
+        OAuth 2.0 token endpoint. Supports `authorization_code` and `refresh_token` grant types.
+      operationId: exchangeToken
+      security:
+        - PartnerApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [authorization_code, refresh_token]
+                  example: "authorization_code"
+                code:
+                  type: string
+                  description: Authorization code (for authorization_code grant)
+                refresh_token:
+                  type: string
+                  description: Refresh token (for refresh_token grant)
+                client_id:
+                  type: string
+                redirect_uri:
+                  type: string
+                  format: uri
+      responses:
+        "200":
+          description: Access token issued
+          content:
+            application/json:
+              example:
+                access_token: "eyJhbGciOiJIUzI1NiJ9..."
+                token_type: "Bearer"
+                expires_in: 3600
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2g..."
+                scope: ["identity:verify", "crime:status"]
+                partner: "unibank"
+        "400": { description: Invalid client_id }
+        "401": { description: Invalid code or credentials }
+
+  /oauth/revoke:
+    post:
+      tags: [OAuth & Consent]
+      summary: Revoke an access token
+      description: Revokes the specified or current Bearer token.
+      operationId: revokeToken
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: Token to revoke (defaults to current Bearer token)
+      responses:
+        "200":
+          description: Token revoked
+          content:
+            application/json:
+              example:
+                status: "revoked"
+                revoked_at: "2026-03-11T15:30:00Z"
+
+  /request_consent:
+    post:
+      tags: [OAuth & Consent]
+      summary: Request citizen consent (partner-initiated)
+      description: |
+        Partner requests access to a citizen's BonID data. Creates a consent grant
+        that the citizen must approve via the consent approval endpoint.
+      operationId: requestConsent
+      security:
+        - PartnerApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bonid, scopes]
+              properties:
+                bonid:
+                  type: string
+                  example: "JM-1968-M-OUEST-P2334-217"
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                  example: ["identity:verify", "crime:status"]
+      responses:
+        "200":
+          description: Consent request created
+          content:
+            application/json:
+              example:
+                message: "Consent request created successfully"
+                grant_token: "abc123xyz"
+                citizen:
+                  bonid: "JM-1968-M-OUEST-P2334-217"
+                  first_name: "Jean"
+                  last_name: "Louis"
+                partner:
+                  name: "Unibank"
+                  sector: "banking"
+                scopes: ["identity:verify", "crime:status"]
+        "401": { description: Unauthorized partner }
+        "404": { description: Citizen not found }
+        "422": { description: Missing scopes }
+
+  /citizen/approve_consent:
+    get:
+      tags: [OAuth & Consent]
+      summary: Approve or reject consent (citizen flow)
+      description: |
+        Stateless endpoint called by citizen to approve or reject a consent request.
+        The grant_token validates the request. No authentication required.
+      operationId: approveConsent
+      security: []
+      parameters:
+        - name: grant_token
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: decision
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [approve, reject]
+        - name: scopes
+          in: query
+          required: false
+          description: Override requested scopes
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Consent decision processed
+          content:
+            application/json:
+              example:
+                message: "Consent approved successfully"
+                status: "granted"
+                partner: "Unibank"
+                approved_scopes: ["identity:verify"]
+                granted_at: "2026-03-11T15:30:00Z"
+        "404": { description: Invalid or expired grant token }
+        "422": { description: Invalid decision }
+
+  /userinfo:
+    get:
+      tags: [OAuth & Consent]
+      summary: Get authenticated user info (OpenID)
+      description: Returns profile data for the citizen associated with the Bearer token.
+      operationId: getUserInfo
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              example:
+                sub: 123
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                first_name: "Jean"
+                last_name: "Louis"
+                name: "Jean Louis"
+                email: "jean@example.ht"
+                phone: "+50944121212"
+                dob: "1990-05-21"
+                scopes: ["identity:verify"]
+        "401": { description: Invalid or expired token }
+
+  /.well-known/openid-configuration:
+    get:
+      tags: [OAuth & Consent]
+      summary: OpenID Connect discovery
+      description: Returns OpenID Connect configuration metadata.
+      operationId: openidDiscovery
+      security: []
+      responses:
+        "200":
+          description: OpenID configuration
+          content:
+            application/json:
+              example:
+                issuer: "https://bonid.ht"
+                authorization_endpoint: "https://bonid.ht/oauth/authorize"
+                token_endpoint: "https://bonid.ht/api/v1/oauth/token"
+                userinfo_endpoint: "https://bonid.ht/api/v1/userinfo"
+                scopes_supported: ["openid", "email", "profile", "address"]
+                response_types_supported: ["code", "token"]
+                grant_types_supported: ["authorization_code", "refresh_token"]
+
+  # ------------------------------------------------------------------
+  #  TRANSACTION CONSENT (Financial Partners)
+  # ------------------------------------------------------------------
+
+  /transaction_consents:
+    post:
+      tags: [Transaction Consent]
+      summary: Create a per-transaction consent request
+      description: |
+        Request citizen consent for a specific transaction. The citizen receives a
+        6-digit OTP via email (and SMS if phone is on file) and must approve via the
+        decide endpoint. Provide a `callback_url` to receive the result via webhook.
+
+        ---
+
+        ### How It Works
+
+        1. **Partner creates** a consent request with the citizen's BonID, transaction type, and optional amount.
+        2. **Citizen receives** a 6-digit OTP via email (and SMS if phone is on file), plus a real-time push notification in their BonID dashboard.
+        3. **Citizen decides** — approves (with OTP or face liveness) or denies via `POST /transaction_consents/{token}/decide`.
+        4. **Partner receives** the result via webhook callback to your `callback_url`, including an HMAC-SHA256 signature for non-repudiation.
+
+        ---
+
+        ### Transaction Types & TTLs
+
+        Each type has a time-to-live (TTL). Shorter TTLs reduce fraud windows.
+
+        | Category | Type | TTL | Use Case |
+        |----------|------|-----|----------|
+        | **Financial** | `account_opening` | 15 min | Open a new bank or fintech account |
+        | | `wire_transfer` | 5 min | Domestic or international wire transfer |
+        | | `p2p_transfer` | 5 min | Person-to-person mobile money send |
+        | | `remittance` | 10 min | Diaspora remittance (Western Union, CAM, etc.) |
+        | | `bill_payment` | 5 min | Utility bills, tuition, rent |
+        | | `merchant_payment` | 5 min | Purchase at a merchant or point of sale |
+        | | `cash_out` | 5 min | Agent-based mobile money withdrawal |
+        | | `cash_in` | 5 min | Agent-based deposit |
+        | | `mobile_topup` | 5 min | Phone credit recharge |
+        | | `loan_application` | 15 min | Microfinance or bank loan identity check |
+        | **Identity** | `kyc_check` | 10 min | Know Your Customer verification |
+        | | `balance_inquiry` | 5 min | Confirm account ownership |
+        | | `age_verification` | 10 min | Confirm citizen is 18+ |
+        | **Documents** | `card_issuance` | 15 min | Issue a debit or credit card |
+        | | `insurance_claim` | 15 min | Verify claimant identity |
+        | | `document_signing` | 15 min | Digitally sign a document |
+        | **Government (Haiti)** | `civil_registry` | 15 min | Archives Nationales — birth, marriage, death certificates |
+        | | `tax_service` | 15 min | DGI — Matricule Fiscale, property taxes |
+        | | `identity_issuance` | 15 min | ONI / Passport — CIN renewal, passport status |
+        | | `land_registry` | 15 min | ONACA — property ownership verification |
+        | | `voter_status` | 10 min | CEP — voter identity verification |
+        | | `judicial_record` | 15 min | Tribunals — Casier Judiciaire (police record) |
+        | **Crypto / Blockchain** | `crypto_buy` | 5 min | Fiat-to-crypto on-ramp — full KYC + source of funds |
+        | | `crypto_sell` | 5 min | Crypto-to-fiat off-ramp — AML reporting required |
+        | | `crypto_transfer` | 10 min | Peer-to-peer on-chain — Travel Rule for > $1000 |
+        | | `crypto_swap` | 10 min | Token-to-token exchange — no fiat, lower risk |
+        | | `crypto_kyc` | 30 min | Exchange onboarding — enhanced due diligence (EDD) |
+
+        ---
+
+        ### Webhook Callbacks
+
+        When a citizen decides, BonID sends a `POST` to your `callback_url`:
+
+        **Headers:** `Content-Type: application/json` and `X-BonID-Event: transaction_consent.approved` (or `.denied`, `.expired`)
+
+        **Payload:**
+        ```json
+        {
+          "consent_token": "a1b2c3d4e5f6...",
+          "bonid": "JM-1968-M-OUEST-P2334-217",
+          "transaction_type": "wire_transfer",
+          "status": "approved",
+          "reference_id": "txn_12345",
+          "amount": "5000.00",
+          "currency": "HTG",
+          "signature": "a8f3b2c1d4e5...",
+          "decided_at": "2026-03-17T15:33:00Z",
+          "expires_at": "2026-03-17T15:35:00Z",
+          "timestamp": "2026-03-17T15:33:01Z"
+        }
+        ```
+
+        **Retry policy:** 3 retries with exponential backoff (2 s, 4 s, 8 s).
+
+        ---
+
+        ### Signature Verification (HMAC-SHA256)
+
+        The `signature` field provides non-repudiation — cryptographic proof the citizen approved.
+
+        1. Reconstruct the proof: `{ consent_token, bonid, partner_id, transaction_type, reference_id, amount, currency, status, decided_at, scopes }`
+        2. Compute `HMAC-SHA256(proof_json, your_api_key_digest)`
+        3. Compare with the `signature` field — match = authentic.
+      operationId: createTransactionConsent
+      security:
+        - PartnerApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bonid, transaction_type, scopes]
+              properties:
+                bonid:
+                  type: string
+                  description: The citizen's BonID or BonTouris ID.
+                  example: "JM-1968-M-OUEST-P2334-217"
+                transaction_type:
+                  $ref: "#/components/schemas/TransactionType"
+                scopes:
+                  type: array
+                  items:
+                    type: string
+                  description: |
+                    Permission scopes to request. Common scopes:
+                    `identity:verify`, `identity:details`, `crime:status`, `crime:reports`, `crime:certificate`.
+                  example: ["identity:verify"]
+                amount:
+                  type: number
+                  description: Transaction amount. Optional for non-financial types like `kyc_check` or `age_verification`.
+                  example: 5000
+                currency:
+                  type: string
+                  description: ISO 4217 currency code. Defaults to `HTG` if omitted.
+                  default: "HTG"
+                  example: "HTG"
+                description:
+                  type: string
+                  description: Human-readable description shown to the citizen in the OTP email and dashboard.
+                  example: "Transfer to savings account"
+                reference_id:
+                  type: string
+                  description: |
+                    Your internal transaction reference. Must be unique per citizen + partner pair.
+                    Use this to correlate BonID consent with your internal records.
+                  example: "txn_12345"
+                callback_url:
+                  type: string
+                  format: uri
+                  description: |
+                    Webhook URL where BonID will POST the consent decision (approved, denied, or expired).
+                    See the tag description above for the full webhook payload format.
+                  example: "https://api.yourbank.ht/webhooks/bonid"
+            example:
+              bonid: "JM-1968-M-OUEST-P2334-217"
+              transaction_type: "wire_transfer"
+              scopes: ["identity:verify"]
+              amount: 5000
+              currency: "HTG"
+              description: "Transfer to savings account"
+              reference_id: "txn_12345"
+              callback_url: "https://api.yourbank.ht/webhooks/bonid"
+      responses:
+        "201":
+          description: Consent request created and OTP sent to citizen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "pending"
+                  consent_token:
+                    type: string
+                    description: Unique token to track this consent. Use it with GET and decide endpoints.
+                  transaction_type:
+                    $ref: "#/components/schemas/TransactionType"
+                  expires_at:
+                    type: string
+                    format: date-time
+                    description: When this consent expires (based on transaction type TTL).
+                  ttl_seconds:
+                    type: integer
+                    description: Time-to-live in seconds.
+                  message:
+                    type: string
+              example:
+                status: "pending"
+                consent_token: "a1b2c3d4e5f67890"
+                transaction_type: "wire_transfer"
+                expires_at: "2026-03-17T15:35:00Z"
+                ttl_seconds: 300
+                message: "Consent request sent to citizen. Awaiting approval."
+        "401":
+          description: Invalid or missing API key
+        "404":
+          description: Citizen not found for provided BonID
+        "422":
+          description: |
+            Validation error. Possible causes:
+            - Invalid `transaction_type` (not in the allowed enum)
+            - Missing `scopes` array
+            - Duplicate `reference_id` (already used for this citizen + partner)
+
+  /transaction_consents/{consent_token}:
+    get:
+      tags: [Transaction Consent]
+      summary: Get transaction consent status
+      description: |
+        Check the current status of a consent request. Use this to poll for results
+        if you didn't provide a `callback_url`, or as a fallback if your webhook failed.
+      operationId: getTransactionConsent
+      security:
+        - PartnerApiKeyAuth: []
+      parameters:
+        - name: consent_token
+          in: path
+          required: true
+          description: The `consent_token` returned from the create endpoint.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Consent details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentSummary"
+              example:
+                consent_token: "a1b2c3d4e5f67890"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                partner: "Unibank"
+                transaction_type: "wire_transfer"
+                status: "approved"
+                amount: "5000.00"
+                currency: "HTG"
+                reference_id: "txn_12345"
+                signature: "a8f3b2c1d4e5f607..."
+                decided_at: "2026-03-17T15:33:00Z"
+                expires_at: "2026-03-17T15:35:00Z"
+                created_at: "2026-03-17T15:30:00Z"
+        "404":
+          description: Consent not found or does not belong to this partner
+
+  /transaction_consents/{consent_token}/decide:
+    post:
+      tags: [Transaction Consent]
+      summary: Citizen decides on transaction consent
+      description: |
+        Citizen approves or denies the consent using their 6-digit OTP code.
+        No API key required — the OTP itself authenticates the citizen.
+        Maximum 5 OTP attempts before lockout.
+      operationId: decideTransactionConsent
+      security: []
+      parameters:
+        - name: consent_token
+          in: path
+          required: true
+          description: The consent token from the OTP email or dashboard.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, otp]
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, deny]
+                  description: Citizen's decision.
+                  example: "approve"
+                otp:
+                  type: string
+                  description: The 6-digit OTP code sent to the citizen's email/phone.
+                  example: "482917"
+      responses:
+        "200":
+          description: Decision recorded. Returns full consent summary with HMAC signature.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsentSummary"
+              example:
+                consent_token: "a1b2c3d4e5f67890"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                partner: "Unibank"
+                transaction_type: "wire_transfer"
+                status: "approved"
+                amount: "5000.00"
+                currency: "HTG"
+                reference_id: "txn_12345"
+                signature: "a8f3b2c1d4e5f607..."
+                decided_at: "2026-03-17T15:33:00Z"
+                expires_at: "2026-03-17T15:35:00Z"
+                created_at: "2026-03-17T15:30:00Z"
+        "401":
+          description: Invalid OTP code
+        "404":
+          description: Consent not found
+        "410":
+          description: Consent expired — TTL exceeded without a decision
+        "422":
+          description: |
+            Validation error. Possible causes:
+            - Consent already decided (approved or denied)
+            - Invalid `decision` value (must be `approve` or `deny`)
+            - Missing `otp` field
+        "429":
+          description: OTP locked — maximum 5 attempts exceeded
+
+  # ------------------------------------------------------------------
+  #  PARTNERS
+  # ------------------------------------------------------------------
+
+  /partner/metrics:
+    get:
+      tags: [Partners]
+      summary: Get partner API usage metrics
+      description: Returns API usage metrics for the authenticated partner over the last 24 hours.
+      operationId: getPartnerMetrics
+      security:
+        - PartnerApiKeyAuth: []
+      responses:
+        "200":
+          description: Partner metrics
+          content:
+            application/json:
+              example:
+                partner:
+                  id: 24
+                  name: "Unibank Haiti"
+                  sector: "banking"
+                period: "last_24h"
+                metrics:
+                  total_requests: 157
+                  successful_requests: 152
+                  failed_requests: 5
+                  avg_latency_ms: 212.4
+                rate_limit:
+                  limit: 1000
+                  remaining: 843
+        "401": { description: Unauthorized }
+
+  /webhooks:
+    post:
+      tags: [Partners]
+      summary: Receive webhook event
+      description: Endpoint for BonID to push events to partner webhook URLs.
+      operationId: receiveWebhook
+      security:
+        - PartnerApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event, bonid]
+              properties:
+                event:
+                  type: string
+                  enum: [identity.verified, identity.rejected, crime.record.added, consent.granted, consent.revoked]
+                  example: "identity.verified"
+                bonid:
+                  type: string
+                  example: "JM-1968-M-OUEST-P2334-217"
+                status:
+                  type: string
+                  example: "success"
+                metadata:
+                  type: object
+      responses:
+        "200":
+          description: Webhook received
+          content:
+            application/json:
+              example:
+                message: "Webhook received"
+                event: "identity.verified"
+                status: "success"
+        "400": { description: Missing required fields }
+
+  /qr_scan:
+    post:
+      tags: [Partners]
+      summary: Scan a BonID QR code
+      description: Validates a scanned QR code and returns the associated BonID status.
+      operationId: scanQrCode
+      security:
+        - PartnerApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qr_data]
+              properties:
+                qr_data:
+                  type: string
+                  description: Base64-encoded QR code payload
+      responses:
+        "200":
+          description: QR scan result
+          content:
+            application/json:
+              example:
+                status: "verified"
+                bonid: "JM-1968-M-OUEST-P2334-217"
+        "400": { description: Missing QR data }
+        "404": { description: BonID not verified or invalid }
+        "422": { description: Malformed QR payload }
+
+  # ------------------------------------------------------------------
+  #  PUBLIC ENDPOINTS
+  # ------------------------------------------------------------------
+
+  /public/bonid_lookup:
+    get:
+      tags: [Public]
+      summary: Public BonID lookup
+      description: Unauthenticated lookup returning limited public information about a BonID.
+      operationId: publicBonidLookup
+      security: []
+      parameters:
+        - name: bonid
+          in: query
+          required: true
+          schema:
+            type: string
+            example: "JM-1968-M-OUEST-P2334-217"
+      responses:
+        "200":
+          description: Public BonID info
+          content:
+            application/json:
+              example:
+                bonid: "JM-1968-M-OUEST-P2334-217"
+                status: "verified"
+                id_type: "BonID"
+        "404": { description: BonID not found }
+
+  # ==================================================================
+  # ELECTION API — Diaspora Voting System
+  # ==================================================================
+
+  /election/{election_id}/eligibility:
+    get:
+      tags: [Election]
+      summary: Check voter eligibility
+      description: |
+        Checks if the authenticated voter is on the CEP voter roll and hasn't voted yet.
+        Returns a challenge nonce for the Schnorr ZKP proof.
+        Includes geolocation validation (BonID country code vs IP country).
+      operationId: checkEligibility
+      security:
+        - voterToken: []
+        - appAttestation: []
+      parameters:
+        - name: election_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "2026-presidential-round1"
+      responses:
+        "200":
+          description: Voter is eligible
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  eligible: { type: boolean, example: true }
+                  election_id: { type: string, example: "2026-presidential-round1" }
+                  bonid: { type: string, example: "VP-1970-M-US-P2334-4EC" }
+                  country: { type: string, example: "US" }
+                  challenge_nonce: { type: string, example: "a1b2c3d4..." }
+                  expires_in: { type: integer, example: 600 }
+                  location:
+                    type: object
+                    properties:
+                      bonid_country: { type: string, example: "US" }
+                      ip_country: { type: string, example: "US" }
+                      match: { type: boolean, example: true }
+                      flagged: { type: boolean, example: false }
+        "403":
+          description: Not eligible (already voted, not on roll, or unverified BonID)
+          content:
+            application/json:
+              example:
+                eligible: false
+                reason: "already_voted"
+                message: "Ou deja vote nan eleksyon sa a."
+
+  /election/{election_id}/cast:
+    post:
+      tags: [Election]
+      summary: Cast a vote (idempotent)
+      description: |
+        Casts an encrypted vote with ZKP proof. The server NEVER sees the vote choice —
+        only the encrypted payload that only the CEP can decrypt after multi-sig ceremony.
+
+        **Idempotent**: If the same nullifier is sent twice (e.g., network retry),
+        the server returns the existing receipt without double-counting.
+
+        **Payload must be < 1KB** for 2G/3G network compatibility.
+      operationId: castVote
+      security:
+        - voterToken: []
+        - appAttestation: []
+      parameters:
+        - name: election_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "2026-presidential-round1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nullifier, encrypted_choice, zkp_commitment, zkp_proof, liveness_session_id, biometric_hash]
+              properties:
+                nullifier:
+                  type: string
+                  description: "HMAC-SHA256 nullifier — deterministic per voter+election. Prevents double-voting."
+                  example: "e3b0c44298fc1c14..."
+                encrypted_choice:
+                  type: object
+                  description: "AES-256-GCM encrypted vote choice. Only CEP's private key can decrypt."
+                  properties:
+                    encrypted_choice: { type: string }
+                    encrypted_key: { type: string }
+                    iv: { type: string }
+                    auth_tag: { type: string }
+                zkp_commitment:
+                  type: string
+                  description: "Pedersen commitment — hides the vote choice cryptographically."
+                  example: "a8f3b2c1..."
+                zkp_proof:
+                  type: object
+                  description: "Schnorr NIZK proof of voter eligibility without revealing identity."
+                  properties:
+                    challenge: { type: string }
+                    response: { type: string }
+                    public_commitment: { type: string }
+                liveness_session_id:
+                  type: string
+                  description: "AWS Rekognition liveness session ID from biometric verification."
+                  example: "6e183b42-a256-45b1-af0c-1b7d4c5761ae"
+                biometric_hash:
+                  type: string
+                  description: "SHA256 of face comparison result."
+                  example: "d4e5f607..."
+      responses:
+        "201":
+          description: Vote cast successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "success" }
+                  message: { type: string, example: "Vòt ou anrejistre ak siksè!" }
+                  ballot_hash: { type: string, example: "sha256..." }
+                  receipt_id: { type: string, example: "uuid..." }
+                  timestamp: { type: string, format: date-time }
+                  payload_size: { type: integer, example: 987 }
+                  source: { type: string, enum: [remote, kiosk], example: "remote" }
+        "200":
+          description: Idempotent retry — vote already recorded
+          content:
+            application/json:
+              example:
+                status: "success"
+                message: "Vòt ou te deja anrejistre."
+                ballot_hash: "sha256..."
+                receipt_id: "uuid..."
+                idempotent: true
+        "409":
+          description: Already voted (different device/session)
+        "403":
+          description: Election closed or voter ineligible
+
+  /election/{election_id}/verify/{hash}:
+    get:
+      tags: [Election]
+      summary: Public ballot verification ("Vòt ou konte")
+      description: |
+        Public endpoint — no authentication required.
+        Allows any person to verify a ballot hash exists in the public ledger.
+        Powers the "Vòt ou konte" (Your vote counts) verification page.
+        No PII is exposed — only the hash, timestamp, and ledger position.
+      operationId: verifyBallot
+      security: []
+      parameters:
+        - name: election_id
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "2026-presidential-round1"
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "a8f3b2c1d4e5f607..."
+      responses:
+        "200":
+          description: Ballot found in the public ledger
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  verified: { type: boolean, example: true }
+                  message: { type: string, example: "Vòt ou konte" }
+                  election_id: { type: string }
+                  timestamp: { type: string, format: date-time }
+                  position: { type: integer, example: 4523, description: "Ledger position (Vote #4,523)" }
+        "404":
+          description: Ballot hash not found
+
+  /election/{election_id}/kiosk/register:
+    post:
+      tags: [Election Kiosk]
+      summary: Register a consulate kiosk station
+      description: |
+        Called once when a tablet is set up at a consulate on election day.
+        GPS coordinates are verified against registered consulate locations.
+        Returns a kiosk session token valid for 18 hours.
+      operationId: registerKiosk
+      security:
+        - kioskSecret: []
+      parameters:
+        - name: election_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [consulate_id, station_id, latitude, longitude]
+              properties:
+                consulate_id: { type: string, example: "HT-CONS-MIAMI" }
+                station_id: { type: string, example: "KIOSK-01" }
+                latitude: { type: number, example: 25.7617 }
+                longitude: { type: number, example: -80.1918 }
+      responses:
+        "201":
+          description: Kiosk registered successfully
+          content:
+            application/json:
+              example:
+                status: "registered"
+                consulate_id: "HT-CONS-MIAMI"
+                kiosk_token: "signed_token..."
+                expires_in: 64800
+
+  /election/{election_id}/kiosk/scan:
+    post:
+      tags: [Election Kiosk]
+      summary: Scan voter BonID at consulate kiosk
+      description: |
+        Scans a voter's BonID QR code at the kiosk. Returns masked voter info
+        and eligibility status. Issues a short-lived voter token (15 min)
+        for the biometric verification + voting flow.
+      operationId: kioskScan
+      security:
+        - kioskToken: []
+      parameters:
+        - name: election_id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bonid]
+              properties:
+                bonid: { type: string, example: "VP-1970-M-US-P2334-4EC" }
+      responses:
+        "200":
+          description: Voter eligible — proceed to biometric verification
+          content:
+            application/json:
+              example:
+                status: "eligible"
+                display:
+                  title: "Elektè Elijib"
+                  subtitle: "Vladimir P."
+                  icon: "success"
+                  color: "green"
+                voter_token: "signed_token..."
+        "404":
+          description: BonID not found or not verified
+        "409":
+          description: Voter already voted
+
+# ====================================================================
+#  COMPONENTS
+# ====================================================================
+components:
+  securitySchemes:
+    PartnerApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Partner-Api-Key
+      description: Partner API key for authentication
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: "OAuth2 Access Token"
+      description: OAuth 2.0 Bearer token
+    voterToken:
+      type: apiKey
+      in: header
+      name: X-BonID-Voter-Token
+      description: |
+        Signed biometric session token issued after liveness + face match.
+        Expires in 15 minutes. Proves the voter is biometrically verified.
+    appAttestation:
+      type: apiKey
+      in: header
+      name: X-BonID-Attestation
+      description: |
+        HMAC-SHA256 app attestation proving the request comes from a genuine BonID app.
+        Must include X-BonID-Timestamp and X-BonID-Device headers.
+        Timestamp must be within 5 minutes (anti-replay).
+    kioskSecret:
+      type: apiKey
+      in: header
+      name: X-BonID-Kiosk-Secret
+      description: Consulate kiosk registration secret. Used only during station setup.
+    kioskToken:
+      type: apiKey
+      in: header
+      name: X-BonID-Kiosk-Token
+      description: Signed kiosk session token. Valid for 18 hours (election day).
+
+  schemas:
+    FullIdentityResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "success"
+        bonid:
+          type: string
+          example: "JM-1968-M-OUEST-P2334-217"
+        id_type:
+          type: string
+          enum: [citizen, tourist]
+        verified:
+          type: boolean
+          example: true
+        identity:
+          $ref: "#/components/schemas/CitizenVerifiedProfile"
+        partner:
+          type: string
+          example: "Unibank Haiti"
+        timestamp:
+          type: string
+          format: date-time
+        api_version:
+          type: string
+          example: "1.4.0"
+
+    CitizenVerifiedProfile:
+      type: object
+      description: Full verified BonID citizen attributes
+      properties:
+        bonid:
+          type: string
+          example: "JM-1968-M-OUEST-P2334-217"
+        first_name:
+          type: string
+          example: "Jean"
+        last_name:
+          type: string
+          example: "Louis"
+        full_name:
+          type: string
+          example: "Jean Louis"
+        dob:
+          type: string
+          format: date
+          example: "1990-05-21"
+        age:
+          type: integer
+          example: 35
+        sex:
+          type: string
+          enum: [M, F, X]
+          example: "M"
+        nationality:
+          type: string
+          example: "Haitian"
+        marital_status:
+          type: string
+          example: "Single"
+        id_type:
+          type: string
+          example: "CIN"
+        phone:
+          type: string
+          example: "+50944121212"
+        email:
+          type: string
+          example: "jean.louis@example.ht"
+        address:
+          type: object
+          properties:
+            street_address:
+              type: string
+              example: "Rue Chavannes, Saint-Martin"
+            commune:
+              type: string
+              example: "Delmas"
+            department:
+              type: string
+              example: "Ouest"
+            postal_code:
+              type: string
+              example: "HT6120"
+            country:
+              type: string
+              example: "Haiti"
+        verification:
+          type: object
+          properties:
+            verified:
+              type: boolean
+            verified_at:
+              type: string
+              format: date-time
+            verified_by:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+            document_type:
+              type: string
+              enum: [passport, cin]
+        biometrics:
+          type: object
+          description: |
+            Raw biometric confidence scores for partner risk engines.
+            Partners can apply their own thresholds (e.g., bank processing $10k
+            transfer requires liveness_confidence > 90; NGO distributing aid
+            accepts > 70).
+          properties:
+            liveness_confidence:
+              type: number
+              description: AWS Rekognition liveness confidence (0-100%)
+              example: 96.96
+            face_match_similarity:
+              type: number
+              description: AWS Rekognition face compare similarity (0-100%)
+              example: 98.7
+            face_match_threshold:
+              type: number
+              description: Minimum similarity BonID required for a match
+              example: 80.0
+            audit_status:
+              type: string
+              description: Overall biometric verdict
+              enum: [passed, failed, not_performed]
+              example: "passed"
+            challenge_type:
+              type: string
+              description: AWS liveness challenge type used
+              example: "FaceMovementAndLightChallenge"
+            verified_with_review:
+              type: boolean
+              description: True if liveness was in gray zone (65-74%) and a human admin approved
+              example: false
+            biometrics_reused:
+              type: boolean
+              description: True if liveness was carried forward from a prior submission (doc-only resubmit)
+              example: false
+            liveness_checked_at:
+              type: string
+              format: date-time
+              description: Timestamp of liveness session
+              example: "2026-03-09T23:03:48Z"
+            face_matched_at:
+              type: string
+              format: date-time
+              description: Timestamp of face comparison
+              example: "2026-03-09T23:03:50Z"
+        photo_url:
+          type: string
+        qr_code:
+          type: string
+        status:
+          type: string
+          example: "verified"
+
+    VerifiedIdentityResponse:
+      type: object
+      description: Legacy verified identity response
+      properties:
+        status:
+          type: string
+          example: "verified"
+        bonid:
+          type: string
+          example: "JM-1968-M-OUEST-P2334-217"
+        citizen:
+          type: object
+          properties:
+            first_name:
+              type: string
+              example: "Jean"
+            last_name:
+              type: string
+              example: "Louis"
+            dob:
+              type: string
+              format: date
+              example: "1990-05-21"
+            sex:
+              type: string
+              example: "M"
+            nationality:
+              type: string
+              example: "Haitian"
+        verification:
+          type: object
+          properties:
+            verified_on:
+              type: string
+              format: date-time
+            verified_by:
+              type: string
+            qr_url:
+              type: string
+            photo_url:
+              type: string
+
+    # ------------------------------------------------------------------
+    #  TRANSACTION CONSENT SCHEMAS
+    # ------------------------------------------------------------------
+
+    TransactionType:
+      type: string
+      description: |
+        The type of transaction. Determines the consent TTL (time-to-live).
+        Financial transactions use shorter TTLs (5 min) to limit fraud windows.
+        Document and service transactions use longer TTLs (15 min).
+      enum:
+        - account_opening
+        - wire_transfer
+        - p2p_transfer
+        - remittance
+        - bill_payment
+        - merchant_payment
+        - cash_out
+        - cash_in
+        - mobile_topup
+        - loan_application
+        - kyc_check
+        - balance_inquiry
+        - age_verification
+        - card_issuance
+        - insurance_claim
+        - document_signing
+        - civil_registry
+        - tax_service
+        - identity_issuance
+        - land_registry
+        - voter_status
+        - judicial_record
+        - crypto_buy
+        - crypto_sell
+        - crypto_transfer
+        - crypto_swap
+        - crypto_kyc
+      example: "wire_transfer"
+
+    ConsentStatus:
+      type: string
+      description: Current state of a transaction consent.
+      enum:
+        - pending
+        - approved
+        - denied
+        - expired
+      example: "approved"
+
+    ConsentSummary:
+      type: object
+      description: |
+        Full consent record returned by GET and decide endpoints.
+        The `signature` field is only present after the citizen has made a decision.
+      properties:
+        consent_token:
+          type: string
+          description: Unique consent identifier.
+          example: "a1b2c3d4e5f67890"
+        bonid:
+          type: string
+          description: Citizen's BonID.
+          example: "JM-1968-M-OUEST-P2334-217"
+        partner:
+          type: string
+          description: Partner name.
+          example: "Unibank"
+        transaction_type:
+          $ref: "#/components/schemas/TransactionType"
+        status:
+          $ref: "#/components/schemas/ConsentStatus"
+        amount:
+          type: string
+          description: Transaction amount (string for precision).
+          example: "5000.00"
+        currency:
+          type: string
+          description: ISO 4217 currency code.
+          example: "HTG"
+        reference_id:
+          type: string
+          nullable: true
+          description: Partner's internal transaction reference.
+          example: "txn_12345"
+        signature:
+          type: string
+          nullable: true
+          description: |
+            HMAC-SHA256 non-repudiation signature. Present only after citizen decides.
+            Verify this against your API key digest to confirm authenticity.
+          example: "a8f3b2c1d4e5f607..."
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the citizen approved or denied. Null if still pending.
+          example: "2026-03-17T15:33:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          description: When this consent expires based on the transaction type TTL.
+          example: "2026-03-17T15:35:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: When the consent request was created.
+          example: "2026-03-17T15:30:00Z"
+
+    WebhookPayload:
+      type: object
+      description: |
+        Payload sent to your `callback_url` when a consent decision is made.
+        Delivered as a POST with header `X-BonID-Event: transaction_consent.{status}`.
+        Retried 3 times with exponential backoff (2 s, 4 s, 8 s) on failure.
+      properties:
+        consent_token:
+          type: string
+          example: "a1b2c3d4e5f67890"
+        bonid:
+          type: string
+          example: "JM-1968-M-OUEST-P2334-217"
+        transaction_type:
+          $ref: "#/components/schemas/TransactionType"
+        status:
+          type: string
+          enum: [approved, denied, expired]
+          description: The citizen's decision (or `expired` if TTL exceeded).
+          example: "approved"
+        reference_id:
+          type: string
+          nullable: true
+          example: "txn_12345"
+        amount:
+          type: string
+          example: "5000.00"
+        currency:
+          type: string
+          example: "HTG"
+        signature:
+          type: string
+          description: HMAC-SHA256 non-repudiation proof. Verify with your API key digest.
+          example: "a8f3b2c1d4e5f607..."
+        decided_at:
+          type: string
+          format: date-time
+          example: "2026-03-17T15:33:00Z"
+        expires_at:
+          type: string
+          format: date-time
+          example: "2026-03-17T15:35:00Z"
+        timestamp:
+          type: string
+          format: date-time
+          description: When this webhook was sent.
+          example: "2026-03-17T15:33:01Z"
+
+    # ==================================================================
+    # ELECTION SCHEMAS
+    # ==================================================================
+    EligibilityResponse:
+      type: object
+      description: Voter eligibility check response
+      properties:
+        eligible:
+          type: boolean
+          example: true
+        election_id:
+          type: string
+          example: "2026-presidential-round1"
+        bonid:
+          type: string
+          example: "VP-1970-M-US-P2334-4EC"
+        country:
+          type: string
+          description: "ISO 3166-1 country code from voter's BonID"
+          example: "US"
+        challenge_nonce:
+          type: string
+          description: "Random nonce for Schnorr ZKP proof generation"
+          example: "a1b2c3d4e5f6..."
+        expires_in:
+          type: integer
+          description: "Seconds until the challenge expires (default 600)"
+          example: 600
+        location:
+          type: object
+          description: "Geolocation validation — BonID country vs IP country"
+          properties:
+            bonid_country:
+              type: string
+              example: "US"
+            ip_country:
+              type: string
+              example: "US"
+            match:
+              type: boolean
+              example: true
+            flagged:
+              type: boolean
+              description: "true if location mismatch detected (logged for CEP review)"
+              example: false
+
+    VoteCastRequest:
+      type: object
+      description: "Encrypted vote payload (< 1KB for 2G/3G compatibility)"
+      required:
+        - nullifier
+        - encrypted_choice
+        - zkp_commitment
+        - zkp_proof
+        - liveness_session_id
+        - biometric_hash
+      properties:
+        nullifier:
+          type: string
+          description: "HMAC-SHA256 — deterministic per voter+election. Same person = same nullifier = rejected on retry."
+          example: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        encrypted_choice:
+          $ref: "#/components/schemas/EncryptedChoice"
+        zkp_commitment:
+          type: string
+          description: "Pedersen commitment — cryptographically hides the vote choice"
+          example: "a8f3b2c1d4e5f607..."
+        zkp_proof:
+          $ref: "#/components/schemas/SchnorrProof"
+        liveness_session_id:
+          type: string
+          format: uuid
+          description: "AWS Rekognition liveness session from biometric verification"
+          example: "6e183b42-a256-45b1-af0c-1b7d4c5761ae"
+        biometric_hash:
+          type: string
+          description: "SHA256 hash of face comparison result"
+          example: "d4e5f607a8b3c2d1..."
+
+    EncryptedChoice:
+      type: object
+      description: "AES-256-GCM encrypted vote. Only the CEP's private key can decrypt."
+      properties:
+        encrypted_choice:
+          type: string
+          format: base64
+          description: "The encrypted ballot choice"
+        encrypted_key:
+          type: string
+          format: base64
+          description: "AES key encrypted with CEP's RSA public key"
+        iv:
+          type: string
+          format: base64
+          description: "Initialization vector"
+        auth_tag:
+          type: string
+          format: base64
+          description: "GCM authentication tag (tamper detection)"
+
+    SchnorrProof:
+      type: object
+      description: "Non-Interactive Zero-Knowledge proof of voter eligibility without revealing identity"
+      properties:
+        challenge:
+          type: string
+          description: "Fiat-Shamir challenge hash"
+          example: "HEX..."
+        response:
+          type: string
+          description: "Schnorr response proving knowledge of private key"
+          example: "HEX..."
+        public_commitment:
+          type: string
+          description: "Random public commitment for the proof"
+          example: "HEX..."
+
+    VoteCastResponse:
+      type: object
+      description: "Vote receipt — the voter's proof their ballot was recorded"
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+          example: "success"
+        message:
+          type: string
+          example: "Vòt ou anrejistre ak siksè!"
+        ballot_hash:
+          type: string
+          description: "SHA256 hash — the voter's receipt code for public verification"
+          example: "sha256..."
+        receipt_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        timestamp:
+          type: string
+          format: date-time
+        payload_size:
+          type: integer
+          description: "Ballot payload size in bytes (target < 1024)"
+          example: 987
+        source:
+          type: string
+          enum: [remote, kiosk]
+          description: "Vote channel — phone app or consulate tablet"
+          example: "remote"
+        idempotent:
+          type: boolean
+          description: "true if this was a retry and the original receipt was returned"
+          example: false
+
+    BallotVerifyResponse:
+      type: object
+      description: "Public ballot verification — 'Vòt ou konte' (Your vote counts)"
+      properties:
+        verified:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Vòt ou konte"
+        election_id:
+          type: string
+          example: "2026-presidential-round1"
+        timestamp:
+          type: string
+          format: date-time
+        position:
+          type: integer
+          description: "Ledger position (e.g., Vote #4,523 of 500,000)"
+          example: 4523
+
+    KioskRegistrationResponse:
+      type: object
+      description: "Consulate kiosk registration confirmation"
+      properties:
+        status:
+          type: string
+          example: "registered"
+        consulate_id:
+          type: string
+          example: "HT-CONS-MIAMI"
+        station_id:
+          type: string
+          example: "KIOSK-01"
+        kiosk_token:
+          type: string
+          description: "Signed session token valid for 18 hours (election day)"
+        expires_in:
+          type: integer
+          description: "Token TTL in seconds"
+          example: 64800
+
+    KioskScanResponse:
+      type: object
+      description: "Voter scan result at consulate kiosk"
+      properties:
+        status:
+          type: string
+          enum: [eligible, error]
+          example: "eligible"
+        display:
+          type: object
+          description: "UI display data for kiosk screen (masked — no full PII)"
+          properties:
+            title:
+              type: string
+              example: "Elektè Elijib"
+            subtitle:
+              type: string
+              description: "First name + last initial only"
+              example: "Vladimir P."
+            country:
+              type: string
+              example: "US"
+            icon:
+              type: string
+              enum: [success, error, warning]
+            color:
+              type: string
+              enum: [green, red, orange]
+        voter_token:
+          type: string
+          description: "Short-lived token (15 min) for biometric verification + voting"
+
+    BiometricVerification:
+      type: object
+      description: "Biometric verification details included in identity and consent responses"
+      properties:
+        liveness_passed:
+          type: boolean
+          example: true
+        liveness_confidence:
+          type: number
+          format: float
+          description: "AWS Rekognition liveness confidence (0-100)"
+          example: 99.65
+        face_matched:
+          type: boolean
+          example: true
+        face_similarity:
+          type: number
+          format: float
+          description: "Face comparison similarity score (0-100)"
+          example: 100.0
+        compared_against:
+          type: string
+          enum: [cin_front, passport, bonid_selfie]
+          description: "Which document the face was compared against"
+          example: "passport"
+        threshold:
+          type: number
+          description: "Minimum similarity threshold"
+          example: 80.0
+        verified_at:
+          type: string
+          format: date-time

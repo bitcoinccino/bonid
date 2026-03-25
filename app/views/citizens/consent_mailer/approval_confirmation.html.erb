@@ -1,0 +1,60 @@
+<% content_for :title, t("mailers.consent.approval_confirmation.page_title") %>
+
+<div style="font-family:'Inter',Arial,sans-serif; color:#101828;">
+  <div style="margin:0 0 10px;">
+    <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-weight:800; font-size:20px; color:#00209F; margin:0;">
+      <%= t("mailers.consent.approval_confirmation.heading") %>
+    </div>
+    <div style="margin-top:6px; font-size:13px; color:#475467; line-height:1.6;">
+      <%= t("mailers.consent.approval_confirmation.subtitle") %>
+    </div>
+  </div>
+
+  <div style="margin:14px 0 12px; font-size:14px; line-height:1.75;">
+    <p style="margin:0 0 10px;">
+      <%= t("mailers.consent.approval_confirmation.greeting", first_name: @grant.citizen.first_name) %>
+    </p>
+
+    <p style="margin:0 0 10px;">
+      <%= t("mailers.consent.approval_confirmation.body", partner_name: @grant.partner.name) %>
+    </p>
+  </div>
+
+  <!-- APPROVED SCOPES -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="margin:12px 0 14px; background:#ffffff; border-radius:14px;
+                border:1px solid rgba(0,32,159,0.18); overflow:hidden;">
+    <tr>
+      <td style="padding:14px; background:#f7f9ff;">
+        <div style="font-size:12px; letter-spacing:0.6px; color:#344054; text-transform:uppercase;">
+          <%= t("mailers.consent.approval_confirmation.approved_scopes") %>
+        </div>
+
+        <div style="margin-top:10px;">
+          <% @grant.requested_scopes.each do |scope| %>
+            <div style="display:inline-block; margin:0 8px 8px 0; padding:8px 12px;
+                        background:#eef2ff; border:1px solid rgba(0,32,159,0.16);
+                        border-radius:999px; color:#00209F; font-weight:700; font-size:12px;">
+              <%= scope.to_s.humanize %>
+            </div>
+          <% end %>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:14px; line-height:1.75; color:#101828;">
+    <p style="margin:0 0 10px;">
+      <%= t("mailers.consent.approval_confirmation.dashboard_text") %>
+    </p>
+
+    <p style="margin:0;">
+      <%= t("mailers.consent.approval_confirmation.need_help") %>
+      <a href="mailto:support@verifyem.ht" style="color:#00209F; text-decoration:none; font-weight:700;">support@verifyem.ht</a>.
+    </p>
+  </div>
+
+  <div style="margin-top:14px; font-size:13px; color:#475467;">
+    <%= t("mailers.consent.approval_confirmation.signature") %>
+  </div>
+</div>

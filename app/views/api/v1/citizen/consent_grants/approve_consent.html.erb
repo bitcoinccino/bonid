@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>BonID Consent Confirmation</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+      :root {
+        --haitian-blue: #00209F;
+        --palm-green: #1A936F;
+        --haitian-gold: #FFD700;
+        --danger-red: #E53E3E;
+        --warning-orange: #ED8936;
+      }
+
+      body {
+        font-family: 'Montserrat', sans-serif;
+        background: linear-gradient(135deg, var(--haitian-blue), #041C74);
+        color: #fff;
+        margin: 0;
+        padding: 60px 20px;
+        text-align: center;
+      }
+
+      .card {
+        background: #fff;
+        color: #222;
+        border-radius: 20px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        max-width: 520px;
+        margin: auto;
+        padding: 40px 30px;
+        animation: fadeIn 0.6s ease-in-out;
+      }
+
+      .icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+        animation: popIn 0.4s ease-out;
+      }
+
+      h1 {
+        font-weight: 700;
+        color: var(--haitian-blue);
+        margin-bottom: 12px;
+      }
+
+      p {
+        color: #444;
+        line-height: 1.6;
+        font-size: 15px;
+      }
+
+      .footer {
+        margin-top: 40px;
+        font-size: 13px;
+        color: #666;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes popIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to   { transform: scale(1); opacity: 1; }
+      }
+    </style>
+    <script>
+      // ✅ Auto-redirect after 3 seconds
+      document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(() => { window.location.href = "https://bonid.ht"; }, 3000);
+      });
+    </script>
+  </head>
+
+  <body>
+    <div class="card">
+      <% if @grant&.approved? %>
+        <i class="ri-check-line icon" style="color:var(--palm-green);"></i>
+        <h1>Consent Approved</h1>
+        <p>You have approved <strong><%= @grant.partner.name %></strong> to access your BonID-verified data.</p>
+      <% elsif @grant&.revoked? %>
+        <i class="ri-close-line icon" style="color:var(--danger-red);"></i>
+        <h1>Consent Rejected</h1>
+        <p>You have denied <strong><%= @grant.partner.name %></strong> access to your BonID information.</p>
+      <% elsif @grant&.expired? %>
+        <i class="ri-error-warning-line icon" style="color:var(--warning-orange);"></i>
+        <h1>Link Expired</h1>
+        <p>This consent request is no longer valid or has expired.</p>
+      <% else %>
+        <i class="ri-question-line icon" style="color:var(--haitian-blue);"></i>
+        <h1>Invalid Link</h1>
+        <p>We couldn’t verify this consent request. Please contact BonID support.</p>
+      <% end %>
+
+      <p class="footer">
+        Redirecting to BonID...<br>
+        &copy; <%= Time.current.year %> BonID — All rights reserved.
+      </p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,147 @@
+<!-- =========================================================
+     Section 4: Travel & Entry Details
+========================================================= -->
+<div class="card rounded-4 mb-4 border-2"
+     data-controller="entry-mode">
+
+  <!-- Header -->
+  <div class="card-header bg-white border-0 pb-0">
+    <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+      <i class="ri-plane-line text-haitian-blue"></i>
+      <%= t("bon_touris.pages.travel_details.title") %>
+    </h5>
+
+    <p class="small text-muted mb-0">
+      <%= t("bon_touris.pages.travel_details.subtitle") %>
+    </p>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body pt-3">
+    <div class="row g-4">
+
+      <!-- Entry Mode -->
+      <div class="col-md-6">
+        <%= f.label :entry_mode, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.travel_details.entry_mode.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :entry_mode,
+              VisitorSubmission.entry_modes.keys.map { |m|
+                [t("bon_touris.enums.entry_mode.#{m}"), m]
+              },
+              { prompt: t("bon_touris.pages.travel_details.entry_mode.prompt") },
+              class: "form-select",
+              required: true,
+              aria: { describedby: "entry-mode-help entry-mode-error" },
+              data: {
+                entry_mode_target: "entryMode",
+                action: "change->entry-mode#updateOptions"
+              } %>
+
+        <div id="entry-mode-error" class="invalid-feedback">
+          <%= t("bon_touris.pages.travel_details.entry_mode.error") %>
+        </div>
+
+        <div id="entry-mode-help" class="form-text">
+          <%= t("bon_touris.pages.travel_details.entry_mode.help") %>
+        </div>
+      </div>
+
+      <!-- Port of Entry -->
+      <div class="col-md-6">
+        <%= f.label :port_of_entry, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.travel_details.port_of_entry.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <select name="visitor_submission[port_of_entry]"
+                id="visitor_submission_port_of_entry"
+                class="form-select"
+                required
+                aria-describedby="port-help port-error"
+                data-entry-mode-target="port">
+          <option value="">
+            <%= t("bon_touris.pages.travel_details.port_of_entry.prompt") %>
+          </option>
+        </select>
+
+        <div id="port-error" class="invalid-feedback">
+          <%= t("bon_touris.pages.travel_details.port_of_entry.error") %>
+        </div>
+
+        <div id="port-help" class="form-text">
+          <%= t("bon_touris.pages.travel_details.port_of_entry.help") %>
+        </div>
+      </div>
+
+      <!-- Entry Date -->
+      <div class="col-md-6">
+        <%= f.label :entry_date, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.travel_details.entry_date.label", default: "Entry Date") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.date_field :entry_date,
+              class: "form-control",
+              required: true,
+              max: Date.current.to_s,
+              aria: { describedby: "entry-date-help entry-date-error" } %>
+
+        <div id="entry-date-error" class="invalid-feedback">
+          <%= t("bon_touris.pages.travel_details.entry_date.error", default: "Please enter your entry date.") %>
+        </div>
+
+        <div id="entry-date-help" class="form-text">
+          <%= t("bon_touris.pages.travel_details.entry_date.help", default: "The date you arrive in Haiti.") %>
+        </div>
+      </div>
+
+      <!-- Transport Provider -->
+      <div class="col-md-6">
+        <%= f.label :transport_provider, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.travel_details.transport_provider.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <select name="visitor_submission[transport_provider]"
+                id="visitor_submission_transport_provider"
+                class="form-select"
+                required
+                aria-describedby="transport-help transport-error"
+                data-entry-mode-target="transport">
+          <option value="">
+            <%= t("bon_touris.pages.travel_details.transport_provider.prompt") %>
+          </option>
+        </select>
+
+        <div id="transport-error" class="invalid-feedback">
+          <%= t("bon_touris.pages.travel_details.transport_provider.error") %>
+        </div>
+
+        <div id="transport-help" class="form-text">
+          <%= t("bon_touris.pages.travel_details.transport_provider.help") %>
+        </div>
+      </div>
+
+      <!-- Transport Reference -->
+      <div class="col-md-6">
+        <%= f.label :transport_reference,
+              t("bon_touris.pages.travel_details.transport_reference.label"),
+              class: "form-label fw-semibold" %>
+
+        <%= f.text_field :transport_reference,
+              class: "form-control",
+              autocomplete: "off",
+              placeholder: t("bon_touris.pages.travel_details.transport_reference.placeholder"),
+              aria: { describedby: "transport-ref-help" } %>
+
+        <div id="transport-ref-help" class="form-text">
+          <%= t("bon_touris.pages.travel_details.transport_reference.help") %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,273 @@
+<%# Single bank profile entry for modal %>
+<%# Shows clean card display for existing accounts, form for new entries %>
+<% profile = f.object %>
+<% is_new = profile.new_record? %>
+
+<% if is_new %>
+  <%# === NEW ACCOUNT: Show full form === %>
+
+  <div class="nested-fields border rounded-3 p-3 mb-3 bg-light" data-controller="bank-selector">
+    <%= f.hidden_field :id if profile.persisted? %>
+
+    <div class="row g-3">
+      <%# ========================================== %>
+      <%# ACCOUNT SOURCE (Bank / Mobile / Crypto) %>
+      <%# ========================================== %>
+      <div class="col-md-6">
+        <%= f.input :account_source,
+              collection: [
+                ["Traditional Bank", "bank"],
+                ["Mobile Wallet (MonCash, NatCash)", "mobile_wallet"],
+                ["Crypto Wallet", "crypto_wallet"]
+              ],
+              label: "Account Type",
+              prompt: "Select Account Type",
+              valid_class: nil,
+              input_html: {
+                class: "form-select",
+                data: { action: "change->bank-selector#toggleBankFields" }
+              } %>
+      </div>
+
+      <%# Currency (shown for all types) %>
+      <div class="col-md-6">
+        <%= f.input :currency,
+              collection: BankProfile::CURRENCIES.map { |k, v| [k, v.downcase] },
+              label: "Currency",
+              prompt: "Select Currency",
+              valid_class: nil,
+              input_html: { class: "form-select" } %>
+      </div>
+
+      <%# ========================================== %>
+      <%# TRADITIONAL BANK FIELDS (hidden by default) %>
+      <%# ========================================== %>
+
+      <%# Bank Name - triggers SWIFT auto-fill %>
+      <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
+        <% banks = Bank.order(:name).pluck(:name, :name) rescue [] %>
+        <% if banks.any? %>
+          <%= f.input :bank_name,
+                collection: banks + [["Other", "other"]],
+                label: "Bank",
+                prompt: "Select Bank",
+                valid_class: nil,
+                input_html: {
+                  class: "form-select",
+                  data: { action: "change->bank-selector#updateSwift" }
+                } %>
+        <% else %>
+          <%= f.input :bank_name,
+                collection: BankProfile::BANKS,
+                label: "Bank",
+                prompt: "Select Bank",
+                valid_class: nil,
+                input_html: {
+                  class: "form-select",
+                  data: { action: "change->bank-selector#updateSwift" }
+                } %>
+        <% end %>
+      </div>
+
+      <%# SWIFT Code - auto-populated when bank is selected %>
+      <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
+        <%= f.input :swift_code,
+              label: "SWIFT Code",
+              placeholder: "Auto-filled when bank is selected",
+              hint: "Automatically filled when you select a bank",
+              valid_class: nil,
+              input_html: {
+                class: "form-control text-uppercase bg-light",
+                maxlength: 11,
+                data: { "bank-selector-target": "swift" }
+              } %>
+      </div>
+
+      <%# Account Number %>
+      <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
+        <%= f.input :account_number,
+              label: "Account Number",
+              placeholder: "e.g., 175-1021-1750802",
+              valid_class: nil,
+              input_html: { class: "form-control" } %>
+      </div>
+
+      <%# Account Type (checking/savings/business) - ONLY for banks %>
+      <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
+        <%= f.input :account_type,
+              collection: [
+                ["Checking", "checking"],
+                ["Savings", "savings"],
+                ["Business", "business"]
+              ],
+              label: "Account Category",
+              prompt: "Select Category",
+              valid_class: nil,
+              input_html: { class: "form-select" } %>
+      </div>
+
+      <%# ========================================== %>
+      <%# MOBILE WALLET FIELDS (hidden by default) %>
+      <%# ========================================== %>
+
+      <%# Mobile Wallet Provider %>
+      <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields">
+        <%= f.input :wallet_provider,
+              collection: BankProfile::MOBILE_WALLET_PROVIDERS,
+              label: "Wallet Provider",
+              prompt: "Select Provider",
+              valid_class: nil,
+              input_html: { class: "form-select" } %>
+      </div>
+
+      <%# Phone Number (wallet address for mobile wallets) %>
+      <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields">
+        <%= f.input :wallet_address,
+              label: "Phone Number",
+              placeholder: "e.g., +509 3456 7890",
+              valid_class: nil,
+              input_html: { class: "form-control", type: "tel" } %>
+      </div>
+
+      <%# ========================================== %>
+      <%# CRYPTO WALLET FIELDS (hidden by default) %>
+      <%# ========================================== %>
+
+      <%# Crypto Wallet Provider %>
+      <div class="col-md-4 d-none" data-bank-selector-target="cryptoWalletFields">
+        <%= f.input :wallet_provider,
+              collection: BankProfile::CRYPTO_WALLET_PROVIDERS,
+              label: "Wallet Provider",
+              prompt: "Select Provider",
+              valid_class: nil,
+              input_html: { class: "form-select" } %>
+      </div>
+
+      <%# Blockchain Network / Chain %>
+      <div class="col-md-4 d-none" data-bank-selector-target="cryptoWalletFields">
+        <%= f.input :chain,
+              collection: BankProfile::CRYPTO_CHAINS,
+              label: "Network / Chain",
+              prompt: "Select Chain",
+              valid_class: nil,
+              input_html: { class: "form-select" } %>
+      </div>
+
+      <%# Public Wallet Address %>
+      <div class="col-md-4 d-none" data-bank-selector-target="cryptoWalletFields">
+        <%= f.input :wallet_address,
+              label: "Public Address",
+              placeholder: "e.g., 9F9jYt...xZmE",
+              valid_class: nil,
+              input_html: { class: "form-control font-monospace", style: "font-size: 0.85rem;" } %>
+      </div>
+    </div>
+
+    <%# Remove Button %>
+    <div class="text-end mt-3">
+      <%= f.hidden_field :_destroy, class: "destroy-flag" %>
+      <button type="button"
+              class="btn btn-outline-danger btn-sm rounded-pill px-3"
+              data-action="click->nested-form#removeAssociation">
+        <i class="ri-delete-bin-line me-1"></i> Remove
+      </button>
+    </div>
+  </div>
+
+<% else %>
+  <%# === EXISTING ACCOUNT: Show clean card display === %>
+  <div class="nested-fields border rounded-3 p-3 mb-3 bg-white">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <%# Account Icon %>
+        <div class="account-icon rounded-circle d-flex align-items-center justify-content-center"
+             style="width: 48px; height: 48px;
+                    background: <%= profile.account_source_bank? ? '#e3f2fd' : profile.account_source_mobile_wallet? ? '#fff3e0' : '#f3e5f5' %>;">
+          <% if profile.account_source_bank? %>
+            <i class="ri-bank-line fs-4" style="color: #1976d2;"></i>
+          <% elsif profile.account_source_mobile_wallet? %>
+            <i class="ri-smartphone-line fs-4" style="color: #f57c00;"></i>
+          <% else %>
+            <i class="ri-bit-coin-line fs-4" style="color: #7b1fa2;"></i>
+          <% end %>
+        </div>
+
+        <div>
+          <%# Account Name / Title %>
+          <h6 class="mb-0 fw-bold">
+            <% if profile.account_source_bank? %>
+              <%= profile.bank_name || "Bank Account" %>
+            <% elsif profile.account_source_mobile_wallet? %>
+              <%= profile.wallet_provider&.titleize || "Mobile Wallet" %>
+            <% else %>
+              <%= profile.wallet_provider&.titleize || "Crypto Wallet" %>
+            <% end %>
+          </h6>
+
+          <%# Account Type Badge %>
+          <small class="text-muted">
+            <% if profile.account_source_bank? %>
+              <span class="badge bg-primary-subtle text-primary me-1"><%= profile.account_type&.titleize || "Account" %></span>
+            <% elsif profile.account_source_mobile_wallet? %>
+              <span class="badge bg-warning-subtle text-warning me-1">Mobile Wallet</span>
+            <% else %>
+              <span class="badge bg-info-subtle text-info me-1"><%= profile.chain&.titleize || "Crypto" %></span>
+            <% end %>
+            <span class="badge bg-secondary-subtle text-secondary"><%= profile.currency&.upcase || "HTG" %></span>
+          </small>
+
+          <%# Account Details - Masked %>
+          <div class="mt-1">
+            <% if profile.account_source_bank? && profile.account_number.present? %>
+              <%# Mask account number - show only last 4 characters %>
+              <% masked = "••••••" + profile.account_number.gsub(/[^0-9A-Za-z]/, "").last(4).to_s %>
+              <small class="text-muted font-monospace">
+                <i class="ri-bank-card-line me-1"></i><%= masked %>
+              </small>
+              <% if profile.swift_code.present? %>
+                <small class="text-muted ms-3">
+                  <i class="ri-global-line me-1"></i>SWIFT: <%= profile.swift_code %>
+                </small>
+              <% end %>
+            <% elsif profile.account_source_mobile_wallet? && profile.wallet_address.present? %>
+              <%# Mask phone - show only last 4 digits %>
+              <% masked = "••••••" + profile.wallet_address.gsub(/[^0-9]/, "").last(4).to_s %>
+              <small class="text-muted font-monospace">
+                <i class="ri-phone-line me-1"></i><%= masked %>
+              </small>
+            <% elsif profile.account_source_crypto_wallet? && profile.wallet_address.present? %>
+              <%# Mask wallet address - show first 4 and last 4 characters %>
+              <% addr = profile.wallet_address.to_s %>
+              <% masked = addr.length > 8 ? "#{addr.first(4)}...#{addr.last(4)}" : addr %>
+              <small class="text-muted font-monospace">
+                <i class="ri-wallet-3-line me-1"></i><%= masked %>
+              </small>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%# Hidden fields for form submission %>
+        <%= f.hidden_field :id %>
+        <%= f.hidden_field :account_source %>
+        <%= f.hidden_field :currency %>
+        <%= f.hidden_field :bank_name %>
+        <%= f.hidden_field :swift_code %>
+        <%= f.hidden_field :account_number %>
+        <%= f.hidden_field :account_type %>
+        <%= f.hidden_field :wallet_provider %>
+        <%= f.hidden_field :wallet_address %>
+        <%= f.hidden_field :chain %>
+        <%= f.hidden_field :_destroy, class: "destroy-flag" %>
+
+        <%# Remove Button %>
+        <button type="button"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                data-action="click->nested-form#removeAssociation">
+          <i class="ri-delete-bin-line me-1"></i> Remove
+        </button>
+      </div>
+    </div>
+  </div>
+<% end %>

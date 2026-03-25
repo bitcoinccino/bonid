@@ -1,0 +1,441 @@
+<%# ================================================================
+  BonID — Business Verification Form (Clean UTF-8, Production-Ready)
+  ---------------------------------------------------------------
+  ✅ Clean, UTF-8 safe (no BOM)
+  ✅ No raw JSON blob visible
+  ✅ Auto-syncs fields → record.data via Stimulus json-sync
+  ✅ Works for both new and edit
+================================================================== %>
+
+<%# ================================================================
+  BUSINESS VERIFICATION RECORD FORM — BonID Citizen Portal
+  ---------------------------------------------------------------
+  ✅ Fully production-ready
+  ✅ Uses data_* fields for structured JSON serialization
+  ✅ Includes PartnerSectorConstants::SECTORS (dynamic taxonomy)
+  ✅ Mobile-friendly + Tailwind-safe + Turbo-compatible
+================================================================== %>
+<!-- ===============================================================
+  BonID — Business Verification Form
+  ---------------------------------------------------------------
+  Share your verified business profile to access funding, 
+  build trust with banks, and strengthen your reputation 
+  with partners, investors, and government agencies.
+================================================================ -->
+<%# ================================================================
+  BonID — Business Verification Form
+  ---------------------------------------------------------------
+  Includes: Business identity, registration, compliance, payroll,
+  and contact details.
+  - Auto-prefills address from BonID if available.
+  - Fully grouped UI with guidance.
+================================================================ %>
+<%# ================================================================
+  BonID — Business Verification Form (Final Locked Edition)
+  ---------------------------------------------------------------
+  ✅ Auto-prefills verified BonID fields (address, BonID, email, phone)
+  ✅ Locks verified fields with tooltip “Managed via BonID Profile”
+  ✅ Safe ERB syntax (no stray else), Bootstrap 5 clean layout
+================================================================ %>
+<!-- =============================================================== -->
+<!-- 🇭🇹 BonID Business Verification Form -->
+<!-- =============================================================== -->
+
+<!-- =============================================================== -->
+<!-- 🇭🇹 BonID Business Verification Form -->
+<!-- =============================================================== -->
+
+<%
+  # === Safe BonID context ===
+  user ||= defined?(current_citizen) ? current_citizen : (defined?(current_user) ? current_user : record.user rescue nil)
+  bonid_verified = user&.bonid.present?
+  formatted_address = nil
+
+  if bonid_verified && user.respond_to?(:address) && user.address.present?
+    begin
+      addr = user.address
+      formatted_address = addr.respond_to?(:full_address) ? addr.full_address : addr.to_s
+    rescue => e
+      Rails.logger.error("⚠️ BonID prefill error: #{e.class} — #{e.message}")
+      formatted_address = nil
+    end
+  end
+%>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500&display=swap');
+
+  .business-form-container {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .card {
+    margin-bottom: 1.75rem; /* adds consistent space between each section */
+  }
+
+  .card-header,
+  .form-label.fw-semibold {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+  }
+
+  .small.text-muted {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+  }
+
+  .btn-primary {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+  }
+</style>
+
+<div class="alert alert-dismissible fade show alert-info shadow-sm rounded-3 mb-4 p-4">
+  <div class="d-flex align-items-start">
+    <i class="ri-building-4-line me-3 fs-3 text-primary flex-shrink-0" style="margin-top: 0.125rem;"></i>
+    <div>
+      <strong class="d-block mb-2 fs-5">Why verify your business with BonID?</strong>
+      <p class="mb-3 small text-dark">
+        BonID helps Haitian entrepreneurs and organizations prove their legitimacy, access digital services, 
+        and grow with confidence. Verified businesses gain exclusive tools and opportunities to expand locally and internationally.
+      </p>
+      <ul class="mb-0 list-unstyled small">
+        <li class="mb-2 d-flex align-items-center">
+          <i class="ri-bank-line text-primary me-2"></i>
+          <span><strong>Access credit and investment</strong> — unlock business accounts, microloans, and partner financing faster.</span>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="ri-hand-coin-line text-success me-2"></i>
+          <span><strong>Get listed in Haiti’s official digital business directory</strong> — be discoverable by clients and institutions worldwide.</span>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="ri-eye-line text-info me-2"></i>
+          <span><strong>See who views your business profile</strong> — gain insight into investors, banks, and agencies that check your BonID page.</span>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="ri-bar-chart-box-line text-warning me-2"></i>
+          <span><strong>Track business performance analytics</strong> — monitor views, verifications, and partner engagement statistics.</span>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="ri-shield-check-line text-success me-2"></i>
+          <span><strong>Earn trust and compliance status</strong> — verified NIF, CNSS, and BonID data improve your credibility across sectors.</span>
+        </li>
+        <li class="mb-2 d-flex align-items-center">
+          <i class="ri-global-line text-primary me-2"></i>
+          <span><strong>Connect with the diaspora and embassies</strong> — attract partnerships and recognition beyond Haiti’s borders.</span>
+        </li>
+        <li class="d-flex align-items-center">
+          <i class="ri-lock-star-line text-danger me-2"></i>
+          <span><strong>Protect your brand identity</strong> — prevent fraudulent use of your business name in financial or legal documents.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<%= turbo_frame_tag "record_form_frame" do %>
+<div class="business-form-container">
+  <%= form_with model: record,
+                url: form_url,
+                local: true,
+                data: { controller: "form-autosave" },
+                class: "pb-3" do |f| %>
+
+    <%= f.hidden_field :record_type, value: "business" %>
+
+    <!-- 🧩 Business Identity -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <div class="card-header bg-primary text-white fw-semibold py-3">
+        <i class="ri-id-card-line me-2"></i>Business Identity
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-6">
+          <%= f.label :data_business_name, "Business Name", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_business_name, value: record.data["business_name"], class: "form-control", required: true %>
+          <small class="text-muted d-block mt-1">Your official registered business name.</small>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_trade_name, "Trade Name (Optional)", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_trade_name, value: record.data["trade_name"], class: "form-control" %>
+          <small class="text-muted d-block mt-1">The public or brand name you operate under.</small>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_business_type, "Business Type", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_business_type, value: record.data["business_type"], placeholder: "e.g., Food Delivery Platform", class: "form-control", required: true %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_sector, "Sector", class: "form-label fw-semibold" %>
+          <%= f.select :data_sector,
+                options_for_select(PartnerSectorConstants::MODEL_MAP.keys.map { |k| [k.titleize, k] }, record.data["sector"]),
+                { prompt: "Select sector" },
+                class: "form-select", required: true %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🧾 Registration & Structure -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <div class="card-header bg-success text-white fw-semibold py-3">
+        <i class="ri-file-list-3-line me-2"></i>Registration & Structure
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-6">
+          <%= f.label :data_registration_number, "Registration Number", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_registration_number, value: record.data["registration_number"], class: "form-control", required: true %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_registration_authority, "Registration Authority", class: "form-label fw-semibold" %>
+          <%= f.select :data_registration_authority,
+                options_for_select([["MICT", "MICT"], ["DGI", "DGI"], ["MCI", "MCI"], ["CNSS", "CNSS"], ["BRH", "BRH"]], record.data["registration_authority"]),
+                { prompt: "Select authority" },
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_legal_structure, "Legal Structure", class: "form-label fw-semibold" %>
+          <%= f.select :data_legal_structure,
+                options_for_select([
+                  ["SARL (Limited Liability Company)", "SARL"],
+                  ["SA (Joint Stock Company)", "SA"],
+                  ["SNC (General Partnership)", "SNC"],
+                  ["SCS (Limited Partnership)", "SCS"],
+                  ["Entreprise Individuelle (Sole Proprietorship)", "Entreprise Individuelle"]
+                ], record.data["legal_structure"]),
+                { prompt: "Select structure" },
+                class: "form-select", required: true %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_nif, "NIF (Fiscal ID)", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_nif, value: record.data["nif"], placeholder: "NIF-HT-XXXXXXXXX", class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_cnss_employer_number, "CNSS Employer Number", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_cnss_employer_number, value: record.data["cnss_employer_number"], placeholder: "CNSS-BIZ-YYYY-NNN", class: "form-control" %>
+        </div>
+
+        <% if bonid_verified && formatted_address.present? %>
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <%= f.label :data_business_address, "Business Address (from BonID)", class: "form-label fw-semibold mb-0" %>
+              <span class="badge bg-success-subtle text-success border border-success rounded-pill small">
+                <i class="ri-shield-check-line me-1"></i> Verified via BonID
+              </span>
+            </div>
+            <%= f.text_area :data_business_address, value: formatted_address, readonly: true, class: "form-control-plaintext border p-2 rounded bg-light text-muted", rows: 2 %>
+          </div>
+        <% else %>
+          <div class="col-md-6">
+            <%= f.label :data_business_address, "Business Address", class: "form-label fw-semibold" %>
+            <%= f.text_area :data_business_address, value: record.data["business_address"], class: "form-control", rows: 2 %>
+          </div>
+        <% end %>
+
+        <div class="col-md-6">
+          <%= f.label :data_incorporation_date, "Incorporation Date", class: "form-label fw-semibold" %>
+          <%= f.date_field :data_incorporation_date, value: record.data["incorporation_date"], class: "form-control" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚖️ Compliance & Licensing -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <div class="card-header bg-warning text-dark fw-semibold py-3">
+        <i class="ri-shield-check-line me-2"></i>Compliance & Licensing
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-6">
+          <%= f.label :data_tax_status, "Tax Status", class: "form-label fw-semibold" %>
+          <%= f.select :data_tax_status,
+                options_for_select([
+                  ["Active (Compliant - Current Filings)", "Active"],
+                  ["Inactive (Dormant - No Activity)", "Inactive"],
+                  ["Suspended (Arrears or Audit)", "Suspended"],
+                  ["Exempt (Free Zone or NGO)", "Exempt"]
+                ], record.data["tax_status"]),
+                { prompt: "Select status" },
+                class: "form-select", required: true %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_vat_registered, "VAT Registered?", class: "form-label fw-semibold" %>
+          <%= f.select :data_vat_registered,
+                options_for_select([["Yes", true], ["No", false]], record.data["vat_registered"]),
+                { prompt: "Select" },
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_license_expiration_date, "License Expiration", class: "form-label fw-semibold" %>
+          <%= f.date_field :data_license_expiration_date, value: record.data["license_expiration_date"], class: "form-control" %>
+        </div>
+      </div>
+    </div>
+
+   <!-- ☎️ Contact & Ownership -->
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+  <div class="card-header bg-secondary text-white fw-semibold py-3">
+    <i class="ri-user-3-line me-2"></i>Contact & Ownership
+  </div>
+
+  <div class="card-body row g-3 p-4">
+    <p class="text-muted small mb-4">
+      This section identifies the individual or legal representative connected to your business.
+      Having an <strong>Owner verified via BonID</strong> enhances trust with banks, partners, and government agencies.
+    </p>
+  </div>
+
+  <div class="card-body row g-3 p-4">
+
+    <!-- 🧑 Owner / Representative -->
+    <div class="col-md-6">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <%= f.label :data_owner_name, "Owner / Representative", class: "form-label fw-semibold mb-0" %>
+        <% if bonid_verified %>
+          <span class="badge bg-success-subtle text-success border border-success rounded-pill small">
+            <i class="ri-shield-check-line me-1"></i> Verified via BonID
+          </span>
+        <% end %>
+      </div>
+
+      <% verified_name = nil %>
+      <% if bonid_verified && user.present? %>
+        <% full_name_parts = [user.try(:first_name), user.try(:middle_name), user.try(:last_name)].compact %>
+        <% verified_name = full_name_parts.join(" ") if full_name_parts.any? %>
+      <% end %>
+
+      <%= f.text_field :data_owner_name,
+            value: verified_name.presence || record.data["owner_name"],
+            class: "form-control#{' bg-light text-muted' if bonid_verified}",
+            readonly: bonid_verified,
+            placeholder: "Full legal name" %>
+
+      <% if bonid_verified %>
+        <small class="text-muted d-block mt-1">
+          <i class="ri-lock-line me-1"></i> Name auto-filled from your verified BonID profile.
+        </small>
+      <% else %>
+        <small class="text-muted d-block mt-1">
+          Enter the full name of the authorized business representative.
+        </small>
+      <% end %>
+    </div>
+
+    <!-- 👔 Owner Role -->
+    <div class="col-md-6">
+      <%= f.label :data_owner_role, "Owner Role (Fonction)", class: "form-label fw-semibold" %>
+      <%= f.select :data_owner_role,
+            options_for_select([
+              ["Owner (Propriétaire)", "Owner"],
+              ["Manager (Gérant)", "Manager"],
+              ["CEO / PDG (Directeur Général)", "CEO"],
+              ["Director (Administrateur)", "Director"],
+              ["President (Président du Conseil)", "President"],
+              ["Representative (Représentant Légal)", "Representative"],
+              ["Other (Autre rôle spécifique)", "Other"]
+            ], record.data["owner_role"]),
+            { prompt: "Select role" },
+            class: "form-select", required: true %>
+
+      <small class="text-muted d-block mt-1">
+        Select your position or function within the business.
+      </small>
+    </div>
+
+    <!-- 🪪 Owner BonID -->
+    <div class="col-md-6">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <%= f.label :data_owner_bonid, "Owner BonID", class: "form-label fw-semibold mb-0" %>
+        <% if bonid_verified %>
+          <span class="badge bg-success-subtle text-success border border-success rounded-pill small">
+            <i class="ri-shield-check-line me-1"></i> Verified via BonID
+          </span>
+        <% end %>
+      </div>
+      <%= f.text_field :data_owner_bonid,
+            value: (user&.bonid || record.data["owner_bonid"]),
+            placeholder: "HT-ID-XXXXXXXXX",
+            class: "form-control#{' bg-light text-muted' if bonid_verified}",
+            readonly: bonid_verified %>
+
+      <% if bonid_verified %>
+        <small class="text-muted d-block mt-1">
+          This BonID number is cryptographically linked to your verified profile.
+        </small>
+      <% else %>
+        <small class="text-muted d-block mt-1">
+          Enter your BonID number for verification (format: HT-ID-XXXXXXXXX).
+        </small>
+      <% end %>
+    </div>
+
+    <!-- 📧 Contact Email -->
+    <div class="col-md-6">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <%= f.label :data_contact_email, "Contact Email", class: "form-label fw-semibold mb-0" %>
+        <% if user&.email.present? %>
+          <span class="badge bg-success-subtle text-success border border-success rounded-pill small">
+            <i class="ri-shield-check-line me-1"></i> Verified via BonID
+          </span>
+        <% end %>
+      </div>
+      <%= f.email_field :data_contact_email,
+            value: (user&.email || record.data["contact_email"]),
+            class: "form-control#{' bg-light text-muted' if user&.email.present?}",
+            readonly: user&.email.present?,
+            placeholder: "example@business.ht" %>
+      <small class="text-muted d-block mt-1">
+        <%= user&.email.present? ? "This email is verified and linked to your BonID account." : "Provide a valid business email for correspondence." %>
+      </small>
+    </div>
+
+    <!-- 📞 Contact Phone -->
+    <div class="col-md-6">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <%= f.label :data_contact_phone, "Contact Phone", class: "form-label fw-semibold mb-0" %>
+        <% if user&.phone.present? %>
+          <span class="badge bg-success-subtle text-success border border-success rounded-pill small">
+            <i class="ri-shield-check-line me-1"></i> Verified via BonID
+          </span>
+        <% end %>
+      </div>
+      <%= f.text_field :data_contact_phone,
+            value: (user&.phone || record.data["contact_phone"]),
+            class: "form-control#{' bg-light text-muted' if user&.phone.present?}",
+            readonly: user&.phone.present?,
+            placeholder: "+509 3XX XX XX XX" %>
+      <small class="text-muted d-block mt-1">
+        <%= user&.phone.present? ? "Phone verified and protected under BonID." : "Enter a valid Haitian phone number for contact." %>
+      </small>
+    </div>
+
+    <!-- 🌐 Website -->
+    <div class="col-md-6">
+      <%= f.label :data_website, "Website", class: "form-label fw-semibold" %>
+      <%= f.url_field :data_website,
+            value: record.data["website"],
+            class: "form-control",
+            placeholder: "https://yourbusiness.ht" %>
+      <small class="text-muted d-block mt-1">Your public business website (optional).</small>
+    </div>
+
+  </div>
+  </div>
+
+
+    <!-- 💾 Submit -->
+    <div class="text-end pt-3 mt-4 border-top">
+      <%= f.submit "Save Business Record", class: "btn btn-primary fw-semibold px-5 py-3 rounded-3 text-white shadow-sm" %>
+    </div>
+  <% end %>
+</div>
+<% end %>

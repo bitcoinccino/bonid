@@ -1,0 +1,2 @@
+module Officers::TicketsHelper
+end

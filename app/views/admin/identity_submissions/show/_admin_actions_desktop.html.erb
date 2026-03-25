@@ -1,0 +1,75 @@
+<!-- app/views/admin/identity_submissions/show/_admin_actions_desktop.html.erb -->
+
+<div class="col-lg-4 col-12 d-none d-lg-block">
+  <div class="card rounded-3 border-0 shadow-sm sticky-top bg-white p-4" style="top: 90px;">
+    <!-- Header -->
+    <div class="d-flex align-items-center mb-3">
+      <i class="ri-shield-user-line text-primary fs-5 me-2"></i>
+      <h6 class="mb-0 fw-semibold text-dark">Admin Actions</h6>
+    </div>
+
+    <p class="text-muted small mb-4">
+      Use these actions to approve, reject, or move this identity submission
+      based on your review. Options adapt dynamically to the submission’s status.
+    </p>
+
+    <div class="d-flex flex-column gap-3">
+      <%# === BonBin / BadBin Actions === %>
+      <% if submission.status_pending? || submission.rejection_reason == "bad_bin" %>
+        <%= button_to approve_bin_admin_identity_submission_path(submission.uuid),
+                      method: :patch,
+                      class: "btn btn-outline-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2",
+                      data: { turbo: false, bs_toggle: "tooltip", bs_placement: "left", bs_title: "Move to BonBin for bulk approval" } do %>
+          <i class="ri-checkbox-circle-line"></i>
+          Move to BonBin
+        <% end %>
+
+        <button class="btn btn-outline-danger rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                data-bs-toggle="modal"
+                data-bs-target="#badBinModal"
+                aria-label="Move to BadBin">
+          <i class="ri-delete-bin-5-line"></i>
+          Move to BadBin
+        </button>
+      <% end %>
+
+      <%# === Reset Request Approval Flow === %>
+      <% if submission.reset_requested? && submission.reset_request_status.blank? %>
+        <%= button_to approve_reset_admin_identity_submission_path(submission.uuid),
+                      method: :patch,
+                      class: "btn btn-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2",
+                      data: { bs_toggle: "tooltip", bs_placement: "left", bs_title: "Approve reset request" } do %>
+          <i class="ri-refresh-line"></i>
+          Approve Reset
+        <% end %>
+
+        <button class="btn btn-danger rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                data-bs-toggle="modal"
+                data-bs-target="#rejectResetModal"
+                aria-label="Reject Reset">
+          <i class="ri-close-circle-line"></i>
+          Reject Reset
+        </button>
+
+      <%# === Standard Pending Approval Flow === %>
+      <% elsif submission.status_pending? %>
+        <%= button_to admin_identity_submission_path(submission.uuid, approve: true),
+                      method: :patch,
+                      class: "btn btn-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2",
+                      data: { bs_toggle: "tooltip", bs_placement: "left", bs_title: "Approve submission" } do %>
+          <i class="ri-checkbox-circle-line"></i>
+          Approve
+        <% end %>
+
+        <button class="btn btn-danger rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                data-bs-toggle="modal"
+                data-bs-target="#rejectModal"
+                aria-label="Reject Submission">
+          <i class="ri-close-circle-line"></i>
+          Reject
+        </button>
+      <% end %>
+    </div>
+  </div>
+</div>
+

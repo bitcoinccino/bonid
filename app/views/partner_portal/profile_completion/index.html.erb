@@ -1,0 +1,233 @@
+<%# app/views/partner_portal/profile_completion/index.html.erb %>
+
+<div class="profile-completion-wrapper py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+
+        <%# Header %>
+        <div class="text-center mb-5">
+          <div class="mb-3">
+            <i class="ri-checkbox-circle-line ri-3x text-success"></i>
+          </div>
+          <h1 class="h2 fw-bold text-haitian-blue mb-3">
+            Welcome to BonID, <%= @partner.name %>!
+          </h1>
+          <p class="lead text-muted">
+            Complete your organization profile to access the Partner Portal.
+          </p>
+        </div>
+
+        <%# Profile Completion Form %>
+        <%= simple_form_for @partner,
+              url: partner_portal_profile_completion_path,
+              method: :patch,
+              html: {
+                multipart: true,
+                class: "profile-completion-form"
+              } do |f| %>
+
+          <div class="bg-white rounded-4 shadow-sm p-4 p-lg-5">
+
+            <%# Progress Alert %>
+            <div class="alert alert-info rounded-4 mb-5 d-flex align-items-start">
+              <i class="ri-information-line ri-xl me-3 mt-1"></i>
+              <div>
+                <strong>Complete Your Profile</strong><br>
+                <small>Fields marked with <span class="text-danger">*</span> are required to access the Partner Portal.</small>
+              </div>
+            </div>
+
+            <%# ================================================================
+                SECTION 1: Organization Logo & Basic Info
+            ================================================================ %>
+            <div class="mb-5">
+              <div class="row">
+                <%# Logo Upload %>
+                <div class="col-md-4 mb-4">
+                  <label class="form-label fw-bold">Organization Logo</label>
+                  <div class="logo-upload-container text-center p-4 border rounded-3 bg-light">
+                    <% if @partner.logo.attached? %>
+                      <%= image_tag @partner.logo.variant(resize_to_limit: [120, 120]),
+                                    class: "rounded-circle mb-3 shadow-sm",
+                                    style: "width: 100px; height: 100px; object-fit: cover;" %>
+                    <% else %>
+                      <div class="logo-placeholder rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+                           style="width: 100px; height: 100px;">
+                        <i class="ri-image-add-line ri-2x"></i>
+                      </div>
+                    <% end %>
+                    <%= f.file_field :logo,
+                        accept: "image/png,image/jpeg,image/jpg,image/webp",
+                        class: "form-control form-control-sm" %>
+                    <small class="text-muted d-block mt-2">PNG, JPG (max 2MB)</small>
+                  </div>
+                </div>
+
+                <%# Contact & Phone %>
+                <div class="col-md-8">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <%= f.input :contact_person,
+                          label: "Contact Person",
+                          required: true,
+                          input_html: {
+                            placeholder: "Full name of primary contact",
+                            class: "form-control rounded-3"
+                          } %>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <%= f.input :phone_number,
+                          label: "Phone Number",
+                          required: true,
+                          input_html: {
+                            placeholder: "+509 1234 5678",
+                            class: "form-control rounded-3"
+                          } %>
+                    </div>
+                  </div>
+
+                  <%= f.input :website,
+                      label: "Website (Optional)",
+                      required: false,
+                      input_html: {
+                        placeholder: "https://your-organization.gov.ht",
+                        class: "form-control rounded-3"
+                      },
+                      wrapper_html: { class: "mb-3" } %>
+                </div>
+              </div>
+
+              <%# Description %>
+              <div class="mt-3">
+                <%= f.label :description, class: "form-label fw-bold" %>
+                <span class="text-danger">*</span>
+                <%= f.text_area :description,
+                    rows: 4,
+                    required: true,
+                    class: "form-control rounded-3",
+                    placeholder: "Describe your organization's mission and how you plan to use BonID for identity verification..." %>
+                <small class="form-text text-muted">
+                  This description helps citizens understand who you are when they see verification requests.
+                </small>
+              </div>
+            </div>
+
+            <%# ================================================================
+                SECTION 2: Address Information
+            ================================================================ %>
+            <div class="mb-5">
+              <%= render "partner_portal/shared/components/address_info", f: f %>
+            </div>
+
+            <%# ================================================================
+                SECTION 3: Unit Information (for Law Enforcement)
+            ================================================================ %>
+            <% if @partner.sector == "law_enforcement" %>
+              <div class="mb-5">
+                <h2 class="h5 fw-bold text-primary mb-4">
+                  <i class="ri-shield-user-line me-2"></i> Unit Information
+                </h2>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :unit_type,
+                        label: "Unit Type",
+                        as: :select,
+                        collection: [
+                          ["UDMO - Patrouille Urbaine", "UDMO"],
+                          ["POLIFRONT - Securite Frontaliere", "POLIFRONT"],
+                          ["DCPJ - Police Judiciaire", "DCPJ"],
+                          ["USGPN - Garde Presidentielle", "USGPN"],
+                          ["BRI - Brigade d'Intervention", "BRI"],
+                          ["CIMO - Intervention Mobile", "CIMO"],
+                          ["Other", "other"]
+                        ],
+                        prompt: "Select unit type",
+                        input_html: { class: "form-select rounded-3" } %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :unit_name,
+                        label: "Unit Name",
+                        required: false,
+                        input_html: {
+                          placeholder: "e.g., UDMO Delmas 33",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                </div>
+
+                <%= f.input :department_sector,
+                    label: "Department/Sector",
+                    as: :select,
+                    collection: [
+                      ["PNH - Police Nationale d'Haïti", "pnh"],
+                      ["DCPJ - Direction Centrale de la Police Judiciaire", "dcpj"],
+                      ["FAd'H - Forces Armées d'Haïti", "fadh"],
+                      ["Other", "other"]
+                    ],
+                    prompt: "Select department",
+                    input_html: { class: "form-select rounded-3" },
+                    wrapper_html: { class: "mb-3" } %>
+              </div>
+            <% end %>
+
+            <%# Submit Button %>
+            <div class="text-center mt-5 pt-4 border-top">
+              <%= f.button :submit, class: "btn btn-primary btn-lg rounded-pill px-5 fw-semibold shadow-sm" do %>
+                <i class="ri-check-line me-2"></i> Complete Profile & Access Dashboard
+              <% end %>
+            </div>
+
+          </div>
+        <% end %>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .profile-completion-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  }
+
+  .text-haitian-blue {
+    color: #00209F;
+  }
+
+  .text-primary {
+    color: #00209F !important;
+  }
+
+  .btn-primary {
+    background-color: #00209F;
+    border-color: #00209F;
+  }
+
+  .btn-primary:hover {
+    background-color: #032B77;
+    border-color: #032B77;
+  }
+
+  .logo-upload-container {
+    border: 2px dashed #dee2e6 !important;
+    transition: border-color 0.2s ease;
+  }
+
+  .logo-upload-container:hover {
+    border-color: #00209F !important;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #00209F;
+    box-shadow: 0 0 0 0.2rem rgba(4, 50, 140, 0.15);
+  }
+
+  h2.h5 {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.75rem;
+  }
+</style>

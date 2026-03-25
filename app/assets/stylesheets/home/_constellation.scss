@@ -1,0 +1,212 @@
+/* ======================================================
+   SECTION 3 — DATA CONSTELLATION (PURE CIRCLES)
+   - Two rings (inner + outer) as guides
+   - Nodes orbit in perfect circles (JS sets positions)
+====================================================== */
+
+.hero-section-constellation {
+  position: relative;
+  min-height: 85vh;
+  padding: 6rem 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #001b7a, #000b2d);
+}
+
+/* Force white text color */
+.hero-section-constellation h2,
+.hero-section-constellation h3,
+.hero-section-constellation p,
+.hero-section-constellation .lead {
+  color: #ffffff !important;
+}
+
+/* Canvas not used */
+#constellationCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+/* Depth overlay */
+.hero-section-constellation::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center,
+    rgba(0, 255, 255, 0.05),
+    rgba(0, 0, 0, 0.42)
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Content above effects */
+.hero-section-constellation > .container {
+  position: relative;
+  z-index: 3;
+}
+
+/* Orbit container */
+.data-nodes {
+  position: relative;
+  width: 100%;
+  height: 560px;
+  margin: 0 auto;
+  isolation: isolate;
+}
+
+/* Orbit ring wrapper */
+.orbit-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.orbit-ring .data-node {
+  pointer-events: auto;
+}
+
+/* Inner + Outer ring guides */
+.data-nodes::before,
+.data-nodes::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.data-nodes::before {
+  width: 320px;
+  height: 320px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 0 26px rgba(0, 255, 255, 0.08),
+    inset 0 0 18px rgba(0, 255, 255, 0.04);
+}
+
+.data-nodes::after {
+  width: 480px;
+  height: 480px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 34px rgba(0, 255, 255, 0.07),
+    inset 0 0 22px rgba(0, 255, 255, 0.03);
+  opacity: 0.95;
+}
+
+/* Orbiting nodes */
+.data-node {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    0 0 18px rgba(0, 255, 255, 0.26),
+    inset 0 0 14px rgba(255, 255, 255, 0.16);
+
+  overflow: hidden;
+  animation: none;
+  transition: box-shadow 0.35s ease, filter 0.35s ease;
+  will-change: left, top;
+}
+
+.data-node:hover {
+  box-shadow:
+    0 0 38px rgba(0, 255, 255, 0.55),
+    inset 0 0 18px rgba(255, 255, 255, 0.22);
+  filter: brightness(1.08);
+}
+
+.data-node img {
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+
+/* Center hub = Verifyem text */
+.center-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+
+  display: grid;
+  place-items: center;
+
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  box-shadow:
+    0 0 60px rgba(0, 255, 255, 0.25),
+    0 25px 70px rgba(0, 0, 0, 0.45),
+    inset 0 0 22px rgba(255, 255, 255, 0.16);
+}
+
+.verifyem-word {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 1.35rem;
+  color: #ffffff;
+  text-shadow:
+    0 0 18px rgba(0, 255, 255, 0.30),
+    0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .data-nodes { height: 480px; }
+
+  .data-node { width: 70px; height: 70px; }
+  .data-node img { width: 74%; height: 74%; }
+
+  .center-hub { width: 150px; height: 150px; }
+  .verifyem-word { font-size: 1.2rem; }
+
+  .data-nodes::before { width: 270px; height: 270px; }
+  .data-nodes::after  { width: 400px; height: 400px; }
+}
+
+@media (max-width: 576px) {
+  .hero-section-constellation { padding: 3rem 0; }
+
+  .data-nodes { height: 400px; overflow: hidden; }
+
+  .data-node { width: 60px; height: 60px; }
+  .data-node img { width: 70%; height: 70%; }
+
+  .center-hub { width: 120px; height: 120px; }
+  .verifyem-word { font-size: 1.05rem; }
+
+  .data-nodes::before { width: 210px; height: 210px; }
+  .data-nodes::after  { width: 310px; height: 310px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-node { transition: none; }
+  .data-node:hover { filter: none; }
+}

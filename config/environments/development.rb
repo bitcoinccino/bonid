@@ -1,101 +1,100 @@
+# frozen_string_literal: true
+
+# config/environments/development.rb
+puts ">>> DEVELOPMENT.RB LOADED <<<"
+
+# =======================================================
+# FORCE LOCAL STORAGE FIRST — THIS WINS OVER EVERYTHING
+# =======================================================
+Rails.application.config.active_storage.service = :local
+
 require "active_support/core_ext/integer/time"
+require "socket"
 
 Rails.application.configure do
-  # Settings specified here will take precedence over those in config/application.rb.
-  
-  # Allow usrers to sign up without a verified partner.
-  Rails.application.config.allow_public_signup = true
+  # =======================================================
+  # I18n — STRICT, EXPLICIT, PRODUCTION-SAFE
+  # =======================================================
+  config.i18n.available_locales = %i[en fr ht]
+  config.i18n.default_locale    = :en
+  config.i18n.fallbacks = false
+  config.i18n.raise_on_missing_translations = true
+  config.i18n.load_path += Dir[Rails.root.join("config/locales/**/*.yml")]
 
-  # Make code changes take effect immediately without server restart.
+  # === Core Development Settings ===
   config.enable_reloading = true
-# config/environments/development.rb
-config.assets.debug = true
-  # Do not eager load code on boot.
   config.eager_load = false
-
-  # Show full error reports.
   config.consider_all_requests_local = true
-
-  # Enable server timing.
   config.server_timing = true
 
-  # Enable/disable Action Controller caching. By default Action Controller caching is disabled.
-  # Run rails dev:cache to toggle Action Controller caching.
-  if Rails.root.join("tmp/caching-dev.txt").exist?
-    config.action_controller.perform_caching = true
-    config.action_controller.enable_fragment_cache_logging = true
-    config.public_file_server.headers = { "cache-control" => "public, max-age=#{2.days.to_i}" }
-  else
-    config.action_controller.perform_caching = false
-  end
+  # Skip ETag (helps with Turbo/Devise streaming)
+  config.middleware.delete Rack::ETag
 
-  # Change to :null_store to avoid any caching.
+  # Sessions
+  config.session_store :cookie_store,
+                       key: "_bonid_session",
+                       expire_after: 1.week
+
+  # Cache & Jobs
   config.cache_store = :memory_store
+  # Use :async (thread-pool) instead of :inline to prevent heavy jobs
+  # (e.g. WatermarkEvidenceJob) from blocking HTTP responses.
+  # Production uses :solid_queue.
+  config.active_job.queue_adapter = :async
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
-
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
-
-  # Make template changes take effect immediately.
-  config.action_mailer.perform_caching = false
-  # Use letter_opener gem to preview emails in the browser instead of sending them.
-  config.action_mailer.delivery_method = :letter_opener
-
-  
+  # Mailer — Letter Opener Web
+  config.action_mailer.delivery_method = :letter_opener_web
   config.action_mailer.perform_deliveries = true
-  # Set localhost to be used by links generated in mailer templates.
-  #  
-  # config/environments/development.rb
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_caching = false
 
-  Rails.application.configure do
-    # ✅ Email preview settings
-    config.action_mailer.delivery_method = :letter_opener
-    config.action_mailer.perform_deliveries = true
-    config.action_mailer.default_url_options = {
-      host: ENV.fetch("NGROK_HOST", "localhost"),
-      protocol: "https"
-    }
-  
-    # ✅ Allow NGROK host through the firewall
-    if ENV["NGROK_HOST"].present?
-      ngrok_host = ENV["NGROK_HOST"].sub(%r{https?://}, "") # Remove protocol
-      config.hosts << ngrok_host
+  # =======================================================
+  # AUTO-DETECT LOCAL NETWORK IP (SAFE & ACCURATE)
+  # =======================================================
+  local_ip = Socket.ip_address_list
+                   .select { |addr| addr.ipv4? && !addr.ipv4_loopback? && addr.ipv4_private? }
+                   .map(&:ip_address)
+                   .first || "localhost"
+
+  # =======================================================
+  # URL OPTIONS — NGROK WINS IF PRESENT (FIXES EMAIL LINKS)
+  # =======================================================
+  app_host     = ENV["APP_HOST"].presence
+  app_protocol = ENV.fetch("APP_PROTOCOL", app_host.present? ? "https" : "http")
+  app_port     = ENV["APP_PORT"].presence
+
+  default_host =
+    if app_host.present?
+      # ✅ NGROK / Public host
+      { host: app_host, protocol: app_protocol }.tap do |h|
+        # only include port if explicitly set (ngrok should not have port)
+        h[:port] = app_port.to_i if app_port.present?
+      end
+    else
+      # ✅ Local fallback (use localhost for email links; local_ip still allowed via config.hosts)
+      { host: "localhost", port: 3000, protocol: "http" }
     end
-  end
-  
 
-  
+  # Apply to mailer + routes (Devise uses these)
+  config.action_mailer.default_url_options = default_host
+  Rails.application.routes.default_url_options = default_host
 
+  # Your app-level base URL helper
+  port_part = default_host[:port].present? ? ":#{default_host[:port]}" : ""
+  config.bonid_base_url = "#{default_host[:protocol]}://#{default_host[:host]}#{port_part}"
 
-  # Print deprecation notices to the Rails logger.
+  # =======================================================
+  # HOST AUTHORIZATION (ALLOW LOCAL + NGROK)
+  # =======================================================
+  config.hosts << "localhost"
+  config.hosts << local_ip
+  config.hosts << /.*\.ngrok-free\.dev/
+  config.hosts << ".loca.lt"
+
+  # =======================================================
+  # LOGGING & DEPRECATIONS
+  # =======================================================
+  config.log_level = :debug
   config.active_support.deprecation = :log
-
-  # Raise an error on page load if there are pending migrations.
-  config.active_record.migration_error = :page_load
-
-  # Highlight code that triggered database queries in logs.
-  config.active_record.verbose_query_logs = true
-
-  # Append comments with runtime information tags to SQL queries in logs.
-  config.active_record.query_log_tags_enabled = true
-
-  # Highlight code that enqueued background job in logs.
-  config.active_job.verbose_enqueue_logs = true
-
-  # Raises error for missing translations.
-  # config.i18n.raise_on_missing_translations = true
-
-  # Annotate rendered view with file names.
-  config.action_view.annotate_rendered_view_with_filenames = true
-
-  # Uncomment if you wish to allow Action Cable access from any origin.
-  # config.action_cable.disable_request_forgery_protection = true
-
-  # Raise error when a before_action's only/except options reference missing actions.
-  config.action_controller.raise_on_missing_callback_actions = true
-
-  # Apply autocorrection by RuboCop to files generated by `bin/rails generate`.
-  # config.generators.apply_rubocop_autocorrect_after_generate!
+  config.active_support.disallowed_deprecation = :raise
 end

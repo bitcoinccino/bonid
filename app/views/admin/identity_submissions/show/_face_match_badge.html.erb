@@ -1,0 +1,108 @@
+<%# app/views/admin/identity_submissions/show/_face_match_badge.html.erb %>
+<% face_match = submission.face_match_result %>
+
+<% if face_match.present? %>
+  <%
+    badge_bg, badge_icon, badge_text = case face_match["status"]
+      when "match"
+        ["#2F855A", "ri-checkbox-circle-line", "Face Match — #{face_match['similarity']}%"]
+      when "no_match"
+        ["#E53E3E", "ri-close-circle-line", "No Match — #{face_match['similarity']}%"]
+      when "no_face_detected"
+        ["#ED8936", "ri-question-line", "No Face Detected"]
+      else
+        ["#4A5568", "ri-error-warning-line", "Face Check Error"]
+    end
+  %>
+
+  <div class="card border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-header d-flex align-items-center rounded-top-4"
+         style="background-color: <%= badge_bg %>; color: #FFFFFF;">
+      <i class="<%= badge_icon %> fs-5 me-2"></i>
+      <h6 class="mb-0 fw-semibold">Face Verification</h6>
+    </div>
+
+    <div class="card-body">
+      <div class="row g-3">
+        <%# Status Badge %>
+        <div class="col-12">
+          <%
+            status_class = case face_match["status"]
+              when "match"            then "bg-success text-white"
+              when "no_match"         then "bg-danger text-white"
+              when "no_face_detected" then "bg-warning text-dark"
+              else "bg-secondary text-white"
+            end
+          %>
+
+          <span class="badge <%= status_class %> px-3 py-2 fs-6">
+            <i class="<%= badge_icon %> me-1"></i> <%= badge_text %>
+          </span>
+
+          <% if face_match["status"] == "no_match" %>
+            <div class="alert alert-danger small mt-3 mb-0 rounded-3">
+              <i class="ri-alert-line me-1"></i>
+              <strong>Flagged:</strong> The selfie does not match the face on the
+              <%= face_match["target_image"]&.humanize || "ID document" %>.
+              Please verify manually before approving.
+            </div>
+          <% elsif face_match["status"] == "no_face_detected" %>
+            <div class="alert alert-warning small mt-3 mb-0 rounded-3">
+              <i class="ri-alert-line me-1"></i>
+              <strong>Warning:</strong> <%= face_match["error_message"] || "Could not detect a face in one of the images." %>
+              Manual visual comparison required.
+            </div>
+          <% elsif face_match["status"] == "error" %>
+            <div class="alert alert-secondary small mt-3 mb-0 rounded-3">
+              <i class="ri-error-warning-line me-1"></i>
+              <strong>System Error:</strong> <%= face_match["error_message"]&.truncate(150) || "Face matching failed." %>
+              Please compare documents manually.
+            </div>
+            <div class="mt-3">
+              <%= button_to retry_face_match_admin_identity_submission_path(submission.uuid),
+                    method: :post,
+                    class: "btn btn-sm btn-outline-primary rounded-pill px-3",
+                    data: { turbo_confirm: "Clear the error and re-run face matching?" } do %>
+                <i class="ri-refresh-line me-1"></i> Retry Face Match
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Confidence Scores %>
+        <% if face_match["source_face_confidence"] || face_match["target_face_confidence"] %>
+          <div class="col-md-6">
+            <small class="text-muted d-block">Selfie Face Confidence</small>
+            <strong><%= face_match["source_face_confidence"] ? "#{face_match['source_face_confidence']}%" : "N/A" %></strong>
+          </div>
+          <div class="col-md-6">
+            <small class="text-muted d-block"><%= face_match["target_image"]&.humanize || "ID" %> Face Confidence</small>
+            <strong><%= face_match["target_face_confidence"] ? "#{face_match['target_face_confidence']}%" : "N/A" %></strong>
+          </div>
+        <% end %>
+
+        <%# Threshold & Timestamp %>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Threshold</small>
+          <strong><%= face_match["threshold"] || 80.0 %>%</strong>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Checked At</small>
+          <strong><%= face_match["matched_at"] ? Time.parse(face_match["matched_at"]).strftime("%b %d, %Y %I:%M %p") : "N/A" %></strong>
+        </div>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <div class="card border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-body text-center py-4">
+      <i class="ri-scan-2-line fs-2 text-muted"></i>
+      <p class="text-muted small mt-2 mb-0">
+        Face verification has not been performed yet.
+        <% unless submission.selfie.attached? && (submission.cin_front.attached? || submission.passport.attached?) %>
+          <br><em>Missing selfie or ID document.</em>
+        <% end %>
+      </p>
+    </div>
+  </div>
+<% end %>

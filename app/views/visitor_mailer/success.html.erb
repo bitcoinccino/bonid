@@ -1,0 +1,41 @@
+app/views/visitor_mailer/success.html.erb
+<div class="container py-5 text-center">
+  <h1 class="fw-bold mb-3 text-haitian-blue">Visitor BonID Issued</h1>
+  <p class="lead mb-4">Welcome to Haiti, <%= @visitor_submission.first_name %>!</p>
+
+  <div class="card shadow-sm mx-auto mb-4" style="max-width:420px;">
+    <div class="card-body">
+      <h5 class="fw-bold mb-3">Your Visitor BonID</h5>
+      <h3 class="fw-semibold text-primary"><%= @visitor_submission.bonid %></h3>
+
+      <div class="my-4">
+        <% if @visitor_submission.respond_to?(:secure_qr_png_base64) && @visitor_submission.secure_qr_png_base64.present? %>
+          <img src="data:image/png;base64,<%= @visitor_submission.secure_qr_png_base64 %>"
+               alt="Visitor QR Code"
+               class="img-fluid shadow-sm border rounded"
+               style="max-width: 220px;">
+        <% else %>
+          <p class="text-muted">QR code not available</p>
+        <% end %>
+      </div>
+
+      <p><strong>Valid Until:</strong> <%= @visitor_submission.expires_at&.strftime("%B %d, %Y") || "30 days after entry" %></p>
+      <p><strong>Purpose:</strong> <%= @visitor_submission.purpose_of_visit %></p>
+      <p><strong>Port of Entry:</strong> <%= @visitor_submission.port_of_entry %></p>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-center gap-3">
+  <%= link_to "Back to Home", root_path, class: "btn btn-outline-secondary rounded-pill px-4" %>
+  <%= link_to "Print", "#", onclick: "window.print()", class: "btn btn-outline-primary rounded-pill px-4" %>
+  <%= link_to "Share", "#", onclick: "navigator.share({ title: 'Visitor BonID', text: 'My Visitor BonID', url: window.location.href })", class: "btn btn-outline-success rounded-pill px-4" %>
+  <%= link_to "Download PDF", download_pdf_public_visitor_path(@visitor_submission),
+      class: "btn btn-outline-dark rounded-pill px-4", target: "_blank" %>
+</div>
+
+
+  <p class="mt-5 text-muted small">
+    You’ll also receive an email confirmation with your BonID QR code.<br>
+    Keep it handy for airport or border checks.
+  </p>
+</div>

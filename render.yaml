@@ -2,7 +2,7 @@ services:
   - type: web
     name: bonid
     env: ruby
-    plan: free
+    plan: standard
     region: oregon
     branch: main
     buildCommand: |
@@ -12,7 +12,32 @@ services:
     startCommand: bundle exec puma -C config/puma.rb
     envVars:
       - key: RAILS_MASTER_KEY
-        sync: false  # You must set this manually in the Render dashboard
+        sync: false
+      - key: RAILS_ENV
+        value: production
+      - key: WEB_CONCURRENCY
+        value: "4"
+      - key: RAILS_MAX_THREADS
+        value: "5"
+      - key: SOLID_QUEUE_IN_PUMA
+        value: "1"
+    autoDeploy: true
+    scaling:
+      minInstances: 1
+      maxInstances: 10
+      targetCPUPercent: 70
+
+  - type: worker
+    name: bonid-worker
+    env: ruby
+    plan: standard
+    region: oregon
+    branch: main
+    buildCommand: bundle install --without development test
+    startCommand: bundle exec rake solid_queue:start
+    envVars:
+      - key: RAILS_MASTER_KEY
+        sync: false
       - key: RAILS_ENV
         value: production
     autoDeploy: true

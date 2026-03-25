@@ -1,0 +1,62 @@
+<!-- app/views/partner_portal/schemas/preview.html.erb -->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="fw-bold mb-1">Preview: <%= @schema.name %></h3>
+      <p class="text-muted mb-0">
+        <small>Record Type: <%= @schema.record_type.titleize %> | Version: <%= @schema.version || '1.0' %> | Status: <%= @schema.active? ? 'Active' : 'Pending' %></small>
+      </p>
+    </div>
+    <div class="btn-group">
+      <%= link_to "Edit Schema", edit_partner_portal_schema_path(@schema), class: "btn btn-outline-secondary btn-sm" %>
+      <%= link_to "Generate JSON", preview_json_partner_portal_schema_path(@schema), class: "btn btn-outline-primary btn-sm", method: :post, data: { turbo_method: :post } %>
+    </div>
+  </div>
+  <hr>
+
+  <%# Flash rendered by partner portal layout %>
+
+  <%= form_with url: validate_sample_partner_portal_schema_path(@schema), local: true, class: "needs-validation" do |f| %>
+    <div class="row g-3">
+      <% @fields.each_with_index do |field, index| %>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <%= label_tag "sample[#{field['key']}]", (field['label'] || field['key'].titleize), class: "form-label fw-semibold" %>
+            <%= render 'shared/field_input', field: field %>
+            <% if field['required'] %>
+              <div class="form-text text-danger"><i class="ri-error-warning-line me-1"></i>Required</div>
+            <% end %>
+            <% if field['hint'] %>
+              <div class="form-text text-muted"><%= field['hint'] %></div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="mt-4 d-flex justify-content-end">
+      <%= f.submit "Validate Sample", class: "btn btn-primary me-2", data: { disable_with: "Validating..." } %>
+      <%= link_to "Back to Schemas", partner_portal_schemas_path, class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+
+  <!-- JSON Preview Section (Hidden until generated) -->
+  <div id="json-preview" class="mt-4 d-none">
+    <h5 class="fw-bold mb-2">Generated JSON</h5>
+    <pre class="p-3 bg-light rounded-3" style="white-space: pre-wrap; font-size: 0.875rem;"><code id="json-output"></code></pre>
+  </div>
+</div>
+
+<script>
+  // Optional JS for JSON preview (on validate success)
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.querySelector('form');
+    form.addEventListener('ajax:success', (event) => {
+      const [data, status, xhr] = event.detail;
+      if (status === 200) {
+        document.getElementById('json-preview').classList.remove('d-none');
+        document.getElementById('json-output').textContent = JSON.stringify(data, null, 2);
+      }
+    });
+  });
+</script>

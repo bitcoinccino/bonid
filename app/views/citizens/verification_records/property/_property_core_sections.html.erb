@@ -1,0 +1,101 @@
+<%
+  data       = record.data || {}
+  property   = data["property"] || {}
+  valuation  = data["valuation"] || {}
+  legal      = data["legal"] || {}
+  coords     = data["coordinates"] || {}
+  buyer      = data["buyer"] || {}
+  seller     = data["seller"] || {}
+%>
+
+<div class="row g-3">
+  <!-- 🏠 Core Property Details -->
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Title Number</div>
+    <div><%= property["title_number"] || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Cadastral Ref</div>
+    <div><%= property["cadastral_ref"] || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Commune</div>
+    <div><%= property["commune"] || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Section Communale</div>
+    <div><%= property["section_communal"] || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Property Type</div>
+    <div><%= property["property_type"]&.titleize || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Zoning Use</div>
+    <div><%= property["zoning_use"] || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Area (m²)</div>
+    <div><%= property["area_m2"] || "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Owner Since</div>
+    <div><%= property["owner_since"] || "—" %></div>
+  </div>
+
+  <!-- 💰 Valuation -->
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Market Value (HTG)</div>
+    <div><%= valuation["market_value_htg"] ? number_with_delimiter(valuation["market_value_htg"].to_i, delimiter: ",") : "—" %></div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="small text-muted text-uppercase fw-semibold mb-1">Last Appraisal</div>
+    <div><%= valuation["last_appraisal_date"] || "—" %></div>
+  </div>
+
+  <!-- ⚖️ Legal -->
+  <% if legal.present? %>
+    <div class="col-md-6">
+      <div class="small text-muted text-uppercase fw-semibold mb-1">Notary</div>
+      <div><%= legal["notary_name"] || "—" %></div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="small text-muted text-uppercase fw-semibold mb-1">Registration Ref</div>
+      <div><%= legal["registration_ref"] || "—" %></div>
+    </div>
+  <% end %>
+
+  <!-- 🤝 Transaction Parties -->
+  <% if buyer.present? || seller.present? %>
+    <div class="col-md-6">
+      <div class="small text-muted text-uppercase fw-semibold mb-1">Buyer</div>
+      <div><%= buyer["name"] || "—" %></div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="small text-muted text-uppercase fw-semibold mb-1">Seller</div>
+      <div><%= seller["name"] || "—" %></div>
+    </div>
+  <% end %>
+
+  <!-- 🗺️ Coordinates -->
+  <% if coords.present? %>
+    <div class="col-md-6">
+      <div class="small text-muted text-uppercase fw-semibold mb-1">Coordinates</div>
+      <div>Lat: <%= coords["lat"] || "?" %>, Lng: <%= coords["lng"] || "?" %></div>
+    </div>
+  <% end %>
+</div>
+
+
+
+

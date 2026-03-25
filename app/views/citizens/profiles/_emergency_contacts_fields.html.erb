@@ -1,0 +1,33 @@
+<%# Emergency Contacts Section %>
+<div class="card profile-card"
+     data-controller="emergency-contacts"
+     data-emergency-contacts-user-bonid-value="<%= current_citizen&.bonid %>">
+  <div class="card-header">
+    <h5><i class="ri-contacts-book-2-line"></i>Emergency Contacts</h5>
+  </div>
+  <div class="card-body">
+    <%# Info Banner %>
+    <div class="alert alert-info d-flex align-items-start">
+      <i class="ri-2x ri-shield-user-line me-3"></i>
+      <div>
+        <strong>Your emergency contacts help responders reach someone you trust.</strong><br>
+        This information is <strong>securely stored</strong> and shared only with authorized responders in emergencies.
+      </div>
+    </div>
+
+    <%# Container for contacts - REQUIRED for Stimulus controller %>
+    <div data-emergency-contacts-target="contacts">
+      <%= f.fields_for :emergency_contacts do |ec_form| %>
+        <%= render "citizens/profiles/emergency_contact", ec_form: ec_form %>
+      <% end %>
+    </div>
+
+    <%= render "citizens/profiles/emergency_contact_template" %>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-line me-1"></i>
+      Emergency contact data is encrypted and visible only to verified emergency responders.
+    </div>
+  </div>
+</div>

@@ -1,0 +1,71 @@
+<% if current_admin_user %>
+  <% if submission.status_pending? %>
+    <!-- Normal approve / reject -->
+    <li>
+      <%= button_to admin_identity_submission_path(submission.uuid, approve: true),
+                    method: :patch,
+                    class: "dropdown-item d-flex align-items-center gap-2" do %>
+        <i class="ri-check-line text-success"></i>
+        Approve
+      <% end %>
+    </li>
+    <li>
+      <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#rejectModal">
+        <i class="ri-close-circle-line"></i>
+        Reject (with reason)
+      </button>
+    </li>
+
+    <!-- Stage to bins -->
+    <li>
+      <%= button_to approve_bin_admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    class: "dropdown-item d-flex align-items-center gap-2" do %>
+        <i class="ri-verified-badge-line text-success"></i>
+        Move to BonBin
+      <% end %>
+    </li>
+    <li>
+      <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#badBinModal">
+        <i class="ri-delete-bin-line"></i>
+        Move to BadBin (with reason)
+      </button>
+    </li>
+  <% elsif submission.status_approved? %>
+    <!-- Regenerate QR if expired or on-demand -->
+    <li>
+      <%= button_to regenerate_qr_admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    class: "dropdown-item d-flex align-items-center gap-2",
+                    data: { turbo_confirm: "Regenerate QR code for this BonID?" } do %>
+        <i class="ri-qr-code-line text-primary"></i>
+        Regenerate QR Code
+        <% if submission.qr_expired? %>
+          <span class="badge bg-danger ms-1">Expired</span>
+        <% end %>
+      <% end %>
+    </li>
+  <% elsif submission.reset_requested_at.present? && submission.reset_request_status.blank? %>
+    <!-- Reset approval/rejection -->
+    <li>
+      <%= button_to approve_reset_admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    class: "dropdown-item d-flex align-items-center gap-2" do %>
+        <i class="ri-refresh-line text-primary"></i>
+        Approve Reset
+      <% end %>
+    </li>
+    <li>
+      <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#rejectResetModal">
+        <i class="ri-close-circle-line"></i>
+        Reject Reset (with reason)
+      </button>
+    </li>
+  <% end %>
+<% end %>

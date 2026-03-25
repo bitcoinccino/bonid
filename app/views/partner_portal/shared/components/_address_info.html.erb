@@ -1,0 +1,144 @@
+<!-- app/views/partner_portal/shared/components/_address_info.html.erb -->
+<div class="mb-5">
+  <h2 class="h5 fw-bold text-primary mb-3">
+    <i class="ri-map-pin-line me-2"></i> Address Information
+  </h2>
+
+  <%= f.simple_fields_for :address do |a| %>
+    <% address = a.object %>
+    <% selected_department = address.department_id %>
+    <% selected_arrondissement = address.arrondissement_id %>
+    <% selected_commune = address.commune_id %>
+    <% selected_section = address.communal_section_id %>
+
+    <div class="row g-3" data-controller="address">
+      <!-- Department -->
+      <div class="col-md-6">
+        <%= a.input :department_id,
+          collection: Department.all.map { |d| [d.name, d.id] },
+          selected: selected_department,
+          prompt: "Select Department",
+          label: "Department",
+          input_html: {
+            class: "form-select rounded-3",
+            data: {
+              action: "change->address#loadArrondissements",
+              address_target: "department",
+              slug_map: Department.all.index_by(&:id).transform_values(&:slug).to_json,
+              form_progress_target: "input"
+            }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Arrondissement -->
+      <div class="col-md-6">
+        <%= a.input :arrondissement_id,
+          collection: selected_department ? Arrondissement.where(department_id: selected_department).map { |r| [r.name, r.id] } : [],
+          selected: selected_arrondissement,
+          prompt: "Select Arrondissement",
+          label: "Arrondissement",
+          input_html: {
+            class: "form-select rounded-3",
+            data: {
+              action: "change->address#loadCommunes",
+              address_target: "arrondissement",
+              form_progress_target: "input"
+            }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Commune -->
+      <div class="col-md-6">
+        <%= a.input :commune_id,
+          collection: selected_arrondissement ? Commune.where(arrondissement_id: selected_arrondissement).map { |c| [c.name, c.id] } : [],
+          selected: selected_commune,
+          prompt: "Select Commune",
+          label: "Commune",
+          input_html: {
+            class: "form-select rounded-3",
+            data: {
+              action: "change->address#loadCommunalSections",
+              address_target: "commune",
+              form_progress_target: "input"
+            }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Communal Section -->
+      <div class="col-md-6">
+        <%= a.input :communal_section_id,
+          collection: selected_commune ? CommunalSection.where(commune_id: selected_commune).map { |s| [s.name, s.id] } : [],
+          selected: selected_section,
+          prompt: "Select Communal Section",
+          label: "Communal Section",
+          input_html: {
+            class: "form-select rounded-3",
+            data: {
+              action: "change->address#loadPostalCode",
+              address_target: "section",
+              form_progress_target: "input"
+            }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Postal Code -->
+      <div class="col-md-6">
+        <%= a.input :postal_code,
+          label: "Postal Code",
+          input_html: {
+            value: address.postal_code,
+            class: "form-control rounded-3",
+            readonly: true,
+            placeholder: "HT0000",
+            data: { address_target: "postalCode", form_progress_target: "input" }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Street Address -->
+      <div class="col-md-6">
+        <%= a.input :street_address,
+          label: "Street Address",
+          input_html: {
+            value: address.street_address,
+            class: "form-control rounded-3",
+            placeholder: "e.g., 123 Rue Principale",
+            data: { form_progress_target: "input" }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Locality -->
+      <div class="col-md-6">
+        <%= a.input :locality,
+          label: "Locality / Neighborhood",
+          input_html: {
+            value: address.locality,
+            class: "form-control rounded-3",
+            placeholder: "e.g., Quartier Morin",
+            data: { form_progress_target: "input" }
+          },
+          wrapper_html: { class: "mb-3" } %>
+      </div>
+
+      <!-- Country -->
+      <div class="col-md-6">
+        <%= a.input :country,
+          as: :select,
+          collection: ["Haiti", "Dominican Republic", "USA", "Canada", "France", "Brazil", "Chile", "Mexico"],
+          selected: address.country || "Haiti",
+          prompt: "Select Country",
+          label: "Country",
+          input_html: {
+            class: "form-select rounded-3",
+            data: { form_progress_target: "input" }
+          },
+          wrapper_html: { class: "mb-0" } %>
+      </div>
+    </div>
+  <% end %>
+</div>

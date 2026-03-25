@@ -1,0 +1,68 @@
+<!-- app/views/citizens/dashboard/_bank_profiles_modal.html.erb -->
+<div class="modal fade" id="bankModal" tabindex="-1" aria-labelledby="bankModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-haitian-blue text-white">
+        <h5 class="modal-title" id="bankModalLabel">
+          <i class="ri-bank-line me-2"></i>
+          <%= current_citizen.bank_profiles.any? ? "Edit" : "Add" %> Financial Accounts
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= simple_form_for current_citizen,
+            as: :user,
+            url: citizens_profile_path,
+            method: :patch,
+            html: { data: { turbo: false }, class: "needs-validation", novalidate: true },
+            wrapper: :vertical_form do |f| %>
+
+        <div class="modal-body" data-controller="nested-form" data-nested-form-wrapper-class="bank-profile-wrapper">
+          <%# Info Banner %>
+          <div class="alert alert-info d-flex align-items-start mb-4 rounded-3">
+            <i class="ri-2x ri-shield-check-line me-3 text-info"></i>
+            <div>
+              <strong>Your financial information is encrypted and secure.</strong><br>
+              Link your bank accounts or crypto wallets for <strong>faster identity verification</strong> with financial partners.
+              BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
+            </div>
+          </div>
+
+          <div data-nested-form-target="wrapper" class="bank-profile-wrapper">
+            <% if current_citizen.bank_profiles.any? %>
+              <%= f.simple_fields_for :bank_profiles do |bp| %>
+                <%= render "citizens/dashboard/bank_profile_entry", f: bp %>
+              <% end %>
+            <% else %>
+              <% empty_profile = current_citizen.bank_profiles.build(account_source: nil, currency: nil) %>
+              <%= f.simple_fields_for :bank_profiles, empty_profile do |bp| %>
+                <%= render "citizens/dashboard/bank_profile_entry", f: bp %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <div class="text-center mt-3">
+            <button type="button"
+                    class="btn btn-outline-primary btn-sm rounded-pill px-4"
+                    data-action="click->nested-form#addAssociation">
+              <i class="ri-add-line me-1"></i> Add Another Account
+            </button>
+          </div>
+
+          <!-- Template for new entries -->
+          <template data-nested-form-target="template">
+            <% new_profile = BankProfile.new(account_source: nil, currency: nil) %>
+            <%= f.simple_fields_for :bank_profiles, new_profile, child_index: "NEW_RECORD" do |bp| %>
+              <%= render "citizens/dashboard/bank_profile_entry", f: bp %>
+            <% end %>
+          </template>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Save", class: "btn btn-haitian-primary fw-semibold rounded-pill text-white" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

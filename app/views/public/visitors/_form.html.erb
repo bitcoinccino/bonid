@@ -1,0 +1,80 @@
+<%# app/views/public/visitors/_form.html.erb %>
+
+<%= form_with model: @visitor_submission,
+              url: public_visitors_path,
+              method: :post,
+              local: true,
+              data: { turbo: false, controller: "wizard form-handler", action: "submit->form-handler#handleSubmit" },
+              class: "needs-validation",
+              novalidate: true do |f| %>
+
+  <% if @visitor_submission.errors.any? %>
+    <div class="alert alert-danger border-2 rounded-3">
+      <h6 class="fw-bold mb-2">
+        <%= t("bon_touris.forms.errors.title") %>
+      </h6>
+      <ul class="mb-0">
+        <% @visitor_submission.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <!-- STEP 1: Identity & Verification -->
+  <div data-wizard-target="step" class="wizard-step"
+       data-controller="passport-scan"
+       data-passport-scan-scan-url-value="<%= scan_passport_public_visitors_path %>">
+    <%= render "personal_information", f: f %>
+    <%= render "contact_information", f: f %>
+    <%= render "passport_purpose", f: f %>
+    <%= render "liveness_section", f: f %>
+
+    <div class="d-grid mt-4">
+      <button type="button" class="btn btn-haitian-primary btn-lg bt-touch-target fw-bold"
+              data-action="click->wizard#next">
+        <%= t("bon_touris.wizard.next") %> <i class="ri-arrow-right-line ms-2"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Travel & Stay -->
+  <div data-wizard-target="step" class="wizard-step d-none">
+    <%= render "travel_details", f: f %>
+    <%= render "accommodation", f: f %>
+
+    <div class="d-flex gap-3 mt-4">
+      <button type="button" class="btn btn-outline-secondary btn-lg bt-touch-target fw-semibold flex-fill"
+              data-action="click->wizard#previous">
+        <i class="ri-arrow-left-line me-2"></i> <%= t("bon_touris.wizard.back") %>
+      </button>
+      <button type="button" class="btn btn-haitian-primary btn-lg bt-touch-target fw-bold flex-fill"
+              data-action="click->wizard#next">
+        <%= t("bon_touris.wizard.next") %> <i class="ri-arrow-right-line ms-2"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Local Contact -->
+  <div data-wizard-target="step" class="wizard-step d-none">
+    <%= render "local_contact", f: f %>
+
+    <div class="d-flex gap-3 mt-4">
+      <button type="button" class="btn btn-outline-secondary btn-lg bt-touch-target fw-semibold flex-fill"
+              data-action="click->wizard#previous">
+        <i class="ri-arrow-left-line me-2"></i> <%= t("bon_touris.wizard.back") %>
+      </button>
+      <%= f.submit t("bon_touris.forms.submit.primary"),
+                   class: "btn btn-success btn-lg bt-touch-target fw-bold flex-fill",
+                   data: { disable_with: t("bon_touris.forms.submit.processing") } %>
+    </div>
+
+    <p class="small text-muted mt-3 text-center">
+      <%= t("bon_touris.forms.legal.text_html",
+            privacy: link_to(t("bon_touris.forms.legal.privacy"), "#", class: "text-primary"),
+            terms: link_to(t("bon_touris.forms.legal.terms"), "#", class: "text-primary")
+          ).html_safe %>
+    </p>
+  </div>
+
+<% end %>

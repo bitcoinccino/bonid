@@ -1,0 +1,24 @@
+<%# Determine which sidebar partial to render %>
+<%
+  sidebar_partial = "partner_portal/shared/sidebars/sidebar_#{sector}_content"
+  sidebar_exists = lookup_context.template_exists?(sidebar_partial, [], true)
+  actual_partial = sidebar_exists ? sidebar_partial : "partner_portal/shared/sidebars/sidebar_default_content"
+%>
+
+<!-- Desktop Sidebar -->
+<aside class="partner-sidebar d-none d-lg-block bg-white border-end px-3"
+       style="width: var(--sidebar-width); height: calc(100vh - var(--navbar-height)); top: var(--navbar-height); z-index: 1040;">
+  <%= render actual_partial %>
+</aside>
+
+<!-- Mobile Offcanvas Sidebar -->
+<div class="offcanvas offcanvas-start d-lg-none" tabindex="-1" id="partnerSidebar"
+     style="width: var(--sidebar-width);">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title"><%= @current_partner&.name || sector.titleize %></h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body p-0">
+    <%= render actual_partial %>
+  </div>
+</div>

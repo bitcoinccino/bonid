@@ -1,0 +1,175 @@
+<%# Personal Information Section %>
+<% locked = @identity_verified %>
+<div class="card profile-card" data-controller="id-switcher">
+  <div class="card-body">
+    <%# Info Banner %>
+    <div class="alert alert-info d-flex align-items-start">
+      <i class="ri-2x ri-shield-check-line me-3"></i>
+      <div>
+        <strong>Your identity is protected.</strong><br>
+        All personal data is <strong>encrypted at rest and in transit</strong>. Only approved Haitian institutions can verify you — never see your full file without consent.
+      </div>
+    </div>
+
+    <% if locked %>
+      <div class="alert alert-warning d-flex align-items-center small mb-4 rounded-3">
+        <i class="ri-lock-line me-2"></i>
+        <span>
+          Your name, sex, date of birth, and nationality are locked because your identity has been verified.
+          <%= link_to "Request a name change", new_citizens_name_change_request_path, class: "fw-semibold ms-1" %>
+        </span>
+      </div>
+    <% end %>
+
+    <div class="row g-4">
+      <%# Prefix — always editable (honorific, not on gov ID) %>
+      <div class="col-md-2">
+        <%= f.input :prefix,
+          collection: User::PREFIXES,
+          include_blank: "Prefix",
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">Optional — e.g., Mr, Ms, Dr, Me</small>
+      </div>
+
+      <%# First Name (Required) — LOCKED when verified %>
+      <div class="col-md-5">
+        <%= f.input :first_name, required: true,
+          disabled: locked,
+          input_html: {
+            placeholder: "e.g. Marie",
+            class: "form-control #{'bg-light' if locked}",
+            autocomplete: "given-name"
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted"><%= locked ? "Locked — verified identity" : "As it appears on your national ID card (CIN/NIF)" %></small>
+      </div>
+
+      <%# Middle Name (Optional) — LOCKED when verified %>
+      <div class="col-md-3">
+        <%= f.input :middle_name,
+          disabled: locked,
+          input_html: {
+            placeholder: "e.g. Claudette (optional)",
+            class: "form-control #{'bg-light' if locked}",
+            autocomplete: "additional-name"
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted"><%= locked ? "Locked — verified identity" : "Leave blank if you have none" %></small>
+      </div>
+
+      <%# Suffix — always editable (honorific, not on gov ID) %>
+      <div class="col-md-2">
+        <%= f.input :suffix,
+          collection: User::SUFFIXES,
+          include_blank: "Suffix",
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">e.g., Jr, Sr, II</small>
+      </div>
+
+      <%# Last Name (Required) — LOCKED when verified %>
+      <div class="col-md-6">
+        <%= f.input :last_name, required: true,
+          disabled: locked,
+          input_html: {
+            placeholder: "e.g. Pierre",
+            class: "form-control #{'bg-light' if locked}",
+            autocomplete: "family-name"
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted"><%= locked ? "Locked — verified identity" : "Your family name / surname" %></small>
+      </div>
+
+      <%# Sex — LOCKED when verified %>
+      <div class="col-md-3">
+        <%= f.input :sex,
+          collection: User.sexes.keys.map { |k| [k.titleize, k] },
+          include_blank: "Select Sex",
+          disabled: locked,
+          input_html: {
+            class: "form-select #{'bg-light' if locked}",
+            data: locked ? {} : {
+              id_switcher_target: "sex",
+              action: "change->id-switcher#updateNationality"
+            }
+          },
+          label_html: { class: "form-label" } %>
+      </div>
+
+      <%# Nationality — LOCKED when verified %>
+      <div class="col-md-3">
+        <%= f.input :nationality,
+          disabled: locked,
+          input_html: {
+            class: "form-control bg-light",
+            readonly: true,
+            data: locked ? {} : { id_switcher_target: "nationality" }
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted"><%= locked ? "Locked — verified identity" : "Auto-filled from Sex selection" %></small>
+      </div>
+
+      <%# Date of Birth — LOCKED when verified %>
+      <div class="col-md-4">
+        <label class="form-label">Date of birth</label>
+        <% if locked %>
+          <input type="text" class="form-control bg-light"
+                 value="<%= @citizen.dob&.strftime('%d / %m / %Y') %>"
+                 disabled readonly />
+          <small class="text-muted">Locked — verified identity</small>
+        <% else %>
+          <input type="date"
+                 name="user[dob]"
+                 id="citizen_dob"
+                 class="form-control"
+                 value="<%= @citizen.dob&.strftime('%Y-%m-%d') %>"
+                 min="1920-01-01"
+                 max="<%= (Date.today - 18.years).strftime('%Y-%m-%d') %>" />
+          <small class="text-muted">You must be 18+ to register</small>
+        <% end %>
+      </div>
+
+      <%# Phone Number — always editable, Haiti +509 locked %>
+      <div class="col-md-4">
+        <label class="form-label">Phone</label>
+        <%
+          raw_phone = @citizen.phone.to_s
+          local_phone = raw_phone.sub(/^\+?509\s*/, '')
+          haiti = ISO3166::Country.new('HT')
+          haiti_label = "#{haiti.emoji_flag} +#{haiti.country_code}"
+        %>
+        <div class="input-group">
+          <select class="form-select" style="max-width: 180px; font-size: 0.875rem; background-color: #f8f9fa;" disabled>
+            <option selected><%= haiti_label %></option>
+          </select>
+          <input type="tel"
+                 name="user[phone]"
+                 id="citizen_phone"
+                 class="form-control"
+                 placeholder="37 12 3456"
+                 autocomplete="tel"
+                 value="<%= local_phone %>"
+                 data-country-code="+509" />
+        </div>
+        <small class="text-muted">Used for 2FA and verification alerts</small>
+      </div>
+
+      <%# Marital Status — always editable %>
+      <div class="col-md-4">
+        <%= f.input :marital_status,
+          collection: User.marital_statuses.keys.map { |k| [k.titleize, k] },
+          include_blank: "Select Status",
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+      </div>
+    </div>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-2-fill text-success me-2"></i>
+      <strong>Encrypted • Audited • Haiti Government Compliant</strong><br>
+      Your data is never sold. Only verified institutions can confirm your identity.
+    </div>
+  </div>
+</div>

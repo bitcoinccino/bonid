@@ -1,0 +1,582 @@
+<%# Incident Reports - BonTouris (Tourists) Analytics %>
+<%# Unified Law Enforcement Styling with Rich Charts %>
+
+<div class="container-fluid py-4">
+  <%# Header with gradient %>
+  <div class="card border-0 analytics-header mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center">
+        <%= link_to officers_analytics_path, class: "btn btn-sm analytics-back-btn me-3" do %>
+          <i class="ri-arrow-left-line"></i>
+        <% end %>
+        <div class="text-white">
+          <h2 class="mb-1 analytics-header-title"><i class="ri-passport-line me-2"></i>BonTouris Incident Reports</h2>
+          <p class="mb-0 analytics-header-subtitle">Reports involving tourists (BonTouris holders)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Summary Stats %>
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-green mx-auto mb-2">
+            <i class="ri-passport-line fs-4 text-law-green"></i>
+          </div>
+          <div class="stat-value text-law-green"><%= @total_count %></div>
+          <div class="stat-label">Total Reports</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-blue mx-auto mb-2">
+            <i class="ri-global-line fs-4 text-law-blue"></i>
+          </div>
+          <div class="stat-value text-law-blue"><%= @by_nationality.keys.count %></div>
+          <div class="stat-label">Nationalities</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-tan mx-auto mb-2">
+            <i class="ri-pie-chart-line fs-4" style="color: var(--law-tan);"></i>
+          </div>
+          <div class="stat-value" style="color: var(--law-tan);"><%= @by_crime_type.keys.count %></div>
+          <div class="stat-label">Crime Types</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-red mx-auto mb-2">
+            <i class="ri-alert-line fs-4 text-law-red"></i>
+          </div>
+          <div class="stat-value text-law-red"><%= @by_severity&.values&.sum || 0 %></div>
+          <div class="stat-label">All Severities</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# Nationality Distribution Doughnut %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-global-line me-2 text-law-green"></i>By Nationality</h5>
+        </div>
+        <div class="card-body">
+          <% if @by_nationality.any? %>
+            <div class="chart-container" style="height: 220px;">
+              <canvas id="nationalityChart"></canvas>
+            </div>
+            <div class="mt-3">
+              <% @by_nationality.first(5).each do |nationality, count| %>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="small fw-semibold"><%= nationality || "Unknown" %></span>
+                  <strong><%= count %></strong>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-global-line"></i>
+              <p>No nationality data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Crime Type Doughnut Chart %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-pie-chart-line me-2 text-law-red"></i>By Crime Type</h5>
+        </div>
+        <div class="card-body">
+          <% if @by_crime_type.any? %>
+            <div class="chart-container" style="height: 220px;">
+              <canvas id="crimeTypeChart"></canvas>
+            </div>
+            <div class="mt-3">
+              <% @by_crime_type.first(5).each do |crime, count| %>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="small fw-semibold text-truncate" style="max-width: 150px;"><%= crime.to_s.titleize %></span>
+                  <strong><%= count %></strong>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-pie-chart-line"></i>
+              <p>No crime data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Severity Distribution %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-alert-line me-2 text-law-tan"></i>By Severity</h5>
+        </div>
+        <div class="card-body">
+          <% if @by_severity&.any? %>
+            <div class="chart-container" style="height: 220px;">
+              <canvas id="severityChart"></canvas>
+            </div>
+            <div class="mt-3">
+              <% severity_colors = { "Low" => "law-green", "Medium" => "law-blue", "High" => "warning", "Severe" => "law-red", "Critical" => "dark" } %>
+              <% @by_severity.each do |level, count| %>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-<%= severity_colors[level] || 'secondary' %>"><%= level %></span>
+                  <strong><%= count %></strong>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-alert-line"></i>
+              <p>No severity data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Monthly Trend Line Chart %>
+    <div class="col-lg-8">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-line-chart-line me-2 text-law-green"></i>Monthly Trend</h5>
+        </div>
+        <div class="card-body">
+          <% if @monthly_trend.any? %>
+            <div class="chart-container" style="height: 280px;">
+              <canvas id="monthlyTrendChart"></canvas>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-line-chart-line"></i>
+              <p>No trend data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Top Nationalities Bar Chart %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-bar-chart-horizontal-line me-2 text-law-blue"></i>Top Nationalities</h5>
+        </div>
+        <div class="card-body">
+          <% if @by_nationality.any? %>
+            <div class="chart-container" style="height: 280px;">
+              <canvas id="topNationalitiesChart"></canvas>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-bar-chart-horizontal-line"></i>
+              <p>No nationality data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Status Distribution %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-donut-chart-line me-2 text-law-blue"></i>Status Distribution</h5>
+        </div>
+        <div class="card-body">
+          <% if @by_status&.any? %>
+            <div class="row align-items-center">
+              <div class="col-6">
+                <div class="chart-container" style="height: 200px;">
+                  <canvas id="statusChart"></canvas>
+                </div>
+              </div>
+              <div class="col-6">
+                <% status_colors = { "approved" => "law-green", "submitted" => "warning", "rejected" => "law-red", "draft" => "secondary" } %>
+                <% @by_status.each do |status, count| %>
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-<%= status_colors[status] || 'secondary' %>" style="min-width: 80px;"><%= status&.titleize %></span>
+                    <strong class="fs-5"><%= count %></strong>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-donut-chart-line"></i>
+              <p>No status data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Crime vs Nationality Heatmap Style %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-bar-chart-grouped-line me-2 text-law-tan"></i>Top Crimes by Tourist Type</h5>
+        </div>
+        <div class="card-body">
+          <% if @by_crime_type.any? %>
+            <div class="chart-container" style="height: 200px;">
+              <canvas id="crimeBarChart"></canvas>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-bar-chart-grouped-line"></i>
+              <p>No crime data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Recent Reports List %>
+    <div class="col-12">
+      <div class="card analytics-chart-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5><i class="ri-passport-line me-2 text-law-green"></i>Recent Tourist Reports</h5>
+          <%= link_to officers_incident_reports_path, class: "btn btn-sm", style: "background: var(--law-green); color: white;" do %>
+            View All <i class="ri-arrow-right-s-line"></i>
+          <% end %>
+        </div>
+        <div class="card-body p-0">
+          <% if @reports.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover analytics-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Crime Type</th>
+                    <th>Severity</th>
+                    <th>Tourist</th>
+                    <th>Nationality</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @reports.limit(10).each do |report| %>
+                    <% tourist = report.person_involvements.find { |pi| pi.visitor_submission_id.present? } %>
+                    <tr>
+                      <td><%= report.occurred_at&.strftime("%b %d, %Y") %></td>
+                      <td><%= report.crime_type&.titleize %></td>
+                      <td>
+                        <% severity_badge = case report.crime_severity_level
+                           when 1 then ["Low", "bg-success"]
+                           when 2 then ["Medium", "bg-primary"]
+                           when 3 then ["High", "bg-warning text-dark"]
+                           when 4 then ["Severe", "bg-danger"]
+                           when 5 then ["Critical", "bg-dark"]
+                           else ["N/A", "bg-secondary"]
+                           end %>
+                        <span class="badge <%= severity_badge[1] %>"><%= severity_badge[0] %></span>
+                      </td>
+                      <td>
+                        <% if tourist %>
+                          <i class="ri-passport-line me-1 text-law-green"></i>
+                          <%= tourist.name || [tourist.first_name, tourist.last_name].compact.join(" ") %>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% if tourist&.nationality.present? %>
+                          <span class="badge bg-secondary"><%= tourist.nationality %></span>
+                        <% else %>
+                          <span class="text-muted">-</span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <% status_class = case report.status
+                           when "approved" then "bg-success"
+                           when "submitted" then "bg-warning text-dark"
+                           when "rejected" then "bg-danger"
+                           else "bg-secondary"
+                           end %>
+                        <span class="badge <%= status_class %>"><%= report.status&.titleize %></span>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-passport-line"></i>
+              <p>No reports involving tourists found</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Law enforcement color palette
+  const lawColors = {
+    blue: '#092C73',
+    red: '#D90718',
+    green: '#49A64F',
+    tan: '#BF8360',
+    dark: '#111827'
+  };
+
+  const chartColors = [
+    lawColors.green,
+    lawColors.blue,
+    lawColors.tan,
+    lawColors.red,
+    lawColors.dark,
+    '#6366F1',
+    '#EC4899',
+    '#14B8A6',
+    '#F59E0B',
+    '#8B5CF6'
+  ];
+
+  // Nationality Distribution Doughnut Chart
+  <% if @by_nationality.any? %>
+  const nationalityData = <%= raw @by_nationality.first(8).to_json %>;
+  new Chart(document.getElementById('nationalityChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(nationalityData).map(n => n || 'Unknown'),
+      datasets: [{
+        data: Object.values(nationalityData),
+        backgroundColor: chartColors.slice(0, Object.keys(nationalityData).length),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+  <% end %>
+
+  // Crime Type Doughnut Chart
+  <% if @by_crime_type.any? %>
+  const crimeTypeData = <%= raw @by_crime_type.first(8).to_json %>;
+  new Chart(document.getElementById('crimeTypeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(crimeTypeData).map(c => c.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')),
+      datasets: [{
+        data: Object.values(crimeTypeData),
+        backgroundColor: [lawColors.red, lawColors.tan, lawColors.blue, lawColors.green, lawColors.dark, '#6366F1', '#EC4899', '#14B8A6'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+  <% end %>
+
+  // Severity Doughnut Chart
+  <% if @by_severity&.any? %>
+  const severityData = <%= raw @by_severity.to_json %>;
+  const severityColors = {
+    'Low': lawColors.green,
+    'Medium': lawColors.blue,
+    'High': '#F59E0B',
+    'Severe': lawColors.red,
+    'Critical': lawColors.dark
+  };
+  new Chart(document.getElementById('severityChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(severityData),
+      datasets: [{
+        data: Object.values(severityData),
+        backgroundColor: Object.keys(severityData).map(k => severityColors[k] || '#6B7280'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+  <% end %>
+
+  // Monthly Trend Line Chart
+  <% if @monthly_trend.any? %>
+  const trendCtx = document.getElementById('monthlyTrendChart');
+  if (trendCtx) {
+    new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: <%= raw @monthly_trend.keys.to_json %>,
+        datasets: [{
+          label: 'Reports',
+          data: <%= raw @monthly_trend.values.to_json %>,
+          borderColor: lawColors.green,
+          backgroundColor: 'rgba(73, 166, 79, 0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: lawColors.green,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+  <% end %>
+
+  // Top Nationalities Horizontal Bar Chart
+  <% if @by_nationality.any? %>
+  const topNationalitiesData = <%= raw @by_nationality.first(7).to_json %>;
+  new Chart(document.getElementById('topNationalitiesChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(topNationalitiesData).map(n => {
+        const name = n || 'Unknown';
+        return name.length > 12 ? name.substring(0, 12) + '...' : name;
+      }),
+      datasets: [{
+        data: Object.values(topNationalitiesData),
+        backgroundColor: chartColors.slice(0, Object.keys(topNationalitiesData).length),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        y: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  <% end %>
+
+  // Status Distribution Doughnut Chart
+  <% if @by_status&.any? %>
+  const statusData = <%= raw @by_status.to_json %>;
+  const statusColors = {
+    'approved': lawColors.green,
+    'submitted': '#F59E0B',
+    'rejected': lawColors.red,
+    'draft': '#6B7280'
+  };
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(statusData).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+      datasets: [{
+        data: Object.values(statusData),
+        backgroundColor: Object.keys(statusData).map(k => statusColors[k] || '#6B7280'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+  <% end %>
+
+  // Crime Bar Chart
+  <% if @by_crime_type.any? %>
+  const crimeBarData = <%= raw @by_crime_type.first(6).to_json %>;
+  new Chart(document.getElementById('crimeBarChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(crimeBarData).map(c => {
+        const words = c.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        return words.length > 12 ? words.substring(0, 12) + '...' : words;
+      }),
+      datasets: [{
+        label: 'Incidents',
+        data: Object.values(crimeBarData),
+        backgroundColor: [lawColors.red, lawColors.tan, lawColors.blue, lawColors.green, lawColors.dark, '#6366F1'],
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+  <% end %>
+});
+</script>

@@ -1,0 +1,73 @@
+<%# Photo Enlargement Modal - Partner Portal version %>
+
+<div class="modal fade" id="photoEnlargeModal" tabindex="-1" aria-labelledby="photoEnlargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0" style="background: rgba(0,0,0,0.95); border-radius: 16px;">
+      <div class="modal-header border-0 pb-2">
+        <h5 class="modal-title text-white w-100 text-center" id="photoEnlargeModalLabel" style="font-family: 'Montserrat', sans-serif; font-weight: 600;">
+          <i class="ri-user-line me-2"></i><span id="photoModalName"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white position-absolute" style="right: 1rem; top: 1rem;" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4 d-flex flex-column align-items-center justify-content-center">
+        <div class="mb-3">
+          <img id="photoModalImage" src="" alt="Enlarged photo"
+               style="max-width: 100%; max-height: 55vh; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+        </div>
+
+        <%# Status Badge - simplified for partners (no crime info) %>
+        <div id="photoModalCrimeInfo" class="d-none mt-3 w-100" style="max-width: 550px;">
+          <div class="d-flex justify-content-center gap-2 flex-wrap">
+            <div id="photoModalStatusContainer" class="d-none">
+              <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill" style="background: rgba(255,255,255,0.1);">
+                <i class="ri-shield-check-line" id="photoModalStatusIcon"></i>
+                <span class="text-white-50 small">Status:</span>
+                <span id="photoModalStatus" class="badge"></span>
+              </div>
+            </div>
+            <%# Crime type/severity containers kept for JS compatibility but won't be populated %>
+            <div id="photoModalCrimeTypeContainer" class="d-none">
+              <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill" style="background: rgba(255,255,255,0.1);">
+                <i class="ri-alert-line text-warning"></i>
+                <span class="text-white-50 small">Type:</span>
+                <span id="photoModalCrimeType" class="text-white fw-semibold"></span>
+              </div>
+            </div>
+            <div id="photoModalSeverityContainer" class="d-none">
+              <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill" style="background: rgba(255,255,255,0.1);">
+                <i class="ri-bar-chart-fill" id="photoModalSeverityIcon"></i>
+                <span class="text-white-50 small">Level:</span>
+                <span id="photoModalSeverity" class="badge"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 justify-content-center">
+        <small class="text-white-50">
+          <i class="ri-information-line me-1"></i>Click outside or press ESC to close
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  [data-photo-enlarge] {
+    cursor: zoom-in;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  [data-photo-enlarge]:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  #photoEnlargeModal .modal-content {
+    backdrop-filter: blur(10px);
+  }
+
+  #photoEnlargeModal .modal-body {
+    min-height: 300px;
+  }
+</style>

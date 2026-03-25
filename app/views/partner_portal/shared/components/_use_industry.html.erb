@@ -1,0 +1,128 @@
+<div class="mb-5" data-controller="sector">
+  <h2 class="h5 fw-bold text-primary mb-3" style="font-family:'Montserrat',sans-serif;">
+    <i class="ri-briefcase-line me-2 text-primary"></i>
+    Sector & Use Cases
+  </h2>
+
+  <!-- === Sector Selection === -->
+  <%= f.input :department_sector,
+  collection: Partner::SECTOR_OPTIONS,
+  prompt: "Select a sector",
+  label: "Sector",
+  input_html: {
+    class: "form-select rounded-3 shadow-sm",
+    style: "height:46px;padding:0.625rem 1rem;font-family:'Inter',sans-serif;",
+    data: {
+      sector_target: "sectorSelect",
+      action: "change->sector#toggleUnitFields",
+      form_progress_target: "input"
+    }
+  },
+  wrapper_html: { class: "mb-4" } %>
+
+
+  <!-- === Law Enforcement Fields === -->
+  <div data-sector-target="unitFieldsWrapper" class="d-none fade-transition">
+    <div class="mb-4">
+      <%= f.input :unit_type,
+        collection: OfficerConstants::UNIT_OPTIONS.keys,
+        prompt: "Select Unit Type",
+        label: "Unit Type",
+        input_html: {
+          class: "form-select rounded-3 shadow-sm",
+          style: "height:46px;padding:0.625rem 1rem;font-family:'Inter',sans-serif;",
+          data: {
+            action: "change->sector#populateUnitNames",
+            sector_target: "unitTypeSelect"
+          }
+        } %>
+    </div>
+
+    <div class="mb-4">
+      <%= f.input :unit_name,
+        as: :select,
+        collection: [],
+        prompt: "Select Unit Name",
+        label: "Unit Name",
+        input_html: {
+          class: "form-select rounded-3 shadow-sm",
+          style: "height:46px;padding:0.625rem 1rem;font-family:'Inter',sans-serif;",
+          data: { sector_target: "unitNameSelect", form_progress_target: "input" }
+        } %>
+    </div>
+  </div>
+
+  <!-- === Use Cases === -->
+  <% allowed_categories = %w[Finance Government Healthcare Infrastructure Education Business NGOs\ &\ Social] %>
+  <% filtered_use_cases = Partner.department_sectors
+                        .select { |category, _| allowed_categories.include?(category) } %>
+
+  <%= f.input :use_cases,
+    as: :grouped_select,
+    collection: filtered_use_cases,
+    group_method: :last,
+    group_label_method: :first,
+    label_method: :first,
+    value_method: :last,
+    label: "Planned Use Cases",
+    input_html: {
+      multiple: true,
+      class: "form-select rounded-3 shadow-sm",
+      style: "min-height:160px;font-family:'Inter',sans-serif;",
+      data: { form_validation_target: "input", form_progress_target: "input" }
+    },
+    wrapper_html: { class: "mb-2" } %>
+
+  <small class="form-text text-muted fst-italic" style="font-family:'Inter',sans-serif;">
+    Select one or more ways you plan to use BonID (e.g., banking KYC, embassy verification,
+    patient onboarding, SIM registration, property contracts, student enrollment, hotel check-in).
+  </small>
+</div>
+
+<!-- === Pass Officer Unit Options as JSON === -->
+<%= tag.script id: "unit-options-json", type: "application/json" do %>
+  <%= OfficerConstants::UNIT_OPTIONS.to_json.html_safe %>
+<% end %>
+
+<style>
+  /* === Haitian Theme Focus States === */
+  .form-select:focus, .form-control:focus {
+    border-color: #00209F; /* Haitian Blue */
+    box-shadow: 0 0 0 0.25rem rgba(4,50,140,0.25);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .form-label {
+    color: #00209F;
+    font-weight: 600;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .text-primary {
+    color: #00209F !important;
+  }
+
+  /* === Button Theme === */
+  .btn-primary {
+    background-color: #00209F;
+    border-color: #00209F;
+  }
+
+  .btn-primary:hover {
+    background-color: #1A936F; /* Palm Green hover */
+    border-color: #1A936F;
+  }
+
+  /* === Fade Transition for Conditional Fields === */
+  .fade-transition {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.35s ease-in-out;
+  }
+
+  .fade-transition.show {
+    opacity: 1;
+    max-height: 400px;
+  }
+</style>

@@ -1,0 +1,332 @@
+<%# Step 1: ID Type, Upload & Supporting Document %>
+
+<%# ── Country of Residence ── %>
+<div class="mb-3">
+  <%= f.input :country_of_residence,
+        required: true,
+        label: "Ki peyi ou ap viv kounye a?",
+        collection: grouped_country_options.flat_map { |group, countries| countries.map { |name, code| [name, code] } }.sort_by(&:first).unshift(["Haiti", "HT"]),
+        selected: submission.country_of_residence || "HT",
+        input_html: {
+          id: "country_of_residence_select",
+          class: "form-select",
+          data: { action: "change->id-switcher#toggleDiaspora", "id-switcher-target": "countrySelect" }
+        } %>
+</div>
+
+<%# ── Diaspora Document Section (hidden when Haiti is selected) ── %>
+<div id="diaspora_fields"
+     data-id-switcher-target="diasporaFields"
+     class="p-3 rounded-3 mb-3"
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1); display: none;">
+  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
+      class="mb-3">
+    <i class="ri-global-line me-1"></i> Dokiman Rezidans (Diaspora)
+  </h6>
+  <p style="font-size: 0.78rem; color: #666; margin-bottom: 1rem; line-height: 1.5;">
+    Kòm ou ap viv aletranje, tanpri telechaje yon dokiman idantite gouvènman peyi kote ou ap viv la.
+  </p>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <%= f.input :host_country_id_type,
+            label: "Ki kalite dokiman ou genyen?",
+            collection: [
+              ["Green Card / Permanent Resident Card", "green_card"],
+              ["State ID / Government ID", "state_id"],
+              ["Driver's License", "drivers_license"],
+              ["Cédula / National ID", "cedula"],
+              ["PR Card (Canada)", "pr_card"],
+              ["Residence Permit", "residence_permit"],
+              ["Lòt / Other", "other"]
+            ],
+            prompt: "Chwazi kalite dokiman",
+            input_html: { class: "form-select" },
+            label_html: { class: "form-label" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :host_country_id,
+            as: :file,
+            label: "Telechaje dokiman an",
+            input_html: { accept: "image/*,application/pdf", class: "form-control" },
+            label_html: { class: "form-label" } %>
+      <% if submission.persisted? && submission.host_country_id.attached? %>
+        <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── Diaspora Proof of Address (hidden when Haiti is selected) ── %>
+<div id="diaspora_proof_fields"
+     data-id-switcher-target="diasporaProofFields"
+     class="p-3 rounded-3 mb-3"
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1); display: none;">
+  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
+      class="mb-3">
+    <i class="ri-home-4-line me-1"></i> Prèv Adrès (Peyi Rezidans)
+  </h6>
+  <p style="font-size: 0.78rem; color: #666; margin-bottom: 1rem; line-height: 1.5;">
+    Telechaje yon dokiman ki montre non ou ak adrès kote ou ap viv la (pa plis pase 3 mwa).
+  </p>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <%= f.input :diaspora_proof_type,
+            label: "Ki kalite prèv adrès?",
+            collection: [
+              ["Utility Bill (Elektrik, Gaz, Dlo)", "utility_bill"],
+              ["Phone Bill (Fakti Telefòn)", "phone_bill"],
+              ["Bank Statement (Relve Bank)", "bank_statement"],
+              ["Rent Agreement / Lease (Kontra Lwaye)", "rent_agreement"],
+              ["Government Letter (Lèt Gouvènman)", "government_letter"],
+              ["Lòt / Other", "other"]
+            ],
+            prompt: "Chwazi kalite dokiman",
+            input_html: { class: "form-select" },
+            label_html: { class: "form-label" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :diaspora_proof_of_address,
+            as: :file,
+            label: "Telechaje prèv adrès ou",
+            input_html: { accept: "image/*,application/pdf", class: "form-control" },
+            label_html: { class: "form-label" } %>
+    </div>
+  </div>
+</div>
+
+<%# Diaspora toggle handled by id-switcher Stimulus controller %>
+
+<div class="mb-3">
+  <%= f.input :id_type,
+        required: true,
+        label: "Select an identification type",
+        collection: [["CIN", "cin"], ["Passport", "passport"]],
+        prompt: "Select ID Type",
+        input_html: {
+          id: "id_type_select",
+          class: "form-select",
+          data: {
+            action: "change->id-switcher#toggle",
+            "id-switcher-target": "idType"
+          }
+        } %>
+</div>
+
+<%# CIN Uploads %>
+<div id="cin_fields"
+     data-id-switcher-target="cinFields"
+     class="p-3 rounded-3 mb-3"
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);">
+  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
+      class="mb-3">
+    <i class="ri-contacts-book-line me-1"></i> Upload Your CIN (Both Sides)
+  </h6>
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <%= f.input :cin_front,
+            as: :file,
+            label: "CIN Front",
+            input_html: { accept: "image/*", class: "form-control" },
+            label_html: { class: "form-label" } %>
+      <% if submission.persisted? && submission.cin_front.attached? %>
+        <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+      <% end %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :cin_back,
+            as: :file,
+            label: "CIN Back",
+            input_html: { accept: "image/*", class: "form-control" },
+            label_html: { class: "form-label" } %>
+      <% if submission.persisted? && submission.cin_back.attached? %>
+        <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+      <% end %>
+    </div>
+  </div>
+
+
+</div>
+
+<%# Passport Upload %>
+<div id="passport_field"
+     data-id-switcher-target="passportField"
+     class="p-3 rounded-3 mb-3"
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1); display: none;">
+  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
+      class="mb-3">
+    <i class="ri-passport-line me-1"></i> Upload Your Passport
+  </h6>
+
+  <%= f.input :passport,
+        as: :file,
+        label: "Passport Photo Page",
+        input_html: { accept: "image/*", class: "form-control" },
+        label_html: { class: "form-label" } %>
+  <% if submission.persisted? && submission.passport.attached? %>
+    <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+  <% end %>
+
+
+</div>
+
+<%# ── Document Number & Dates (single set, label changes based on ID type) ── %>
+<div id="document_details_fields"
+     data-id-switcher-target="documentFields"
+     class="p-3 rounded-3 mb-3"
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);">
+  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
+      class="mb-3">
+    <i class="ri-file-text-line me-1"></i> Document Details
+  </h6>
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <%= f.input :document_number,
+            required: true,
+            label: "Document Number",
+            placeholder: "Ex: 1234567890",
+            input_html: {
+              class: "form-control",
+              id: "document_number_input",
+              maxlength: 20,
+              autocomplete: "off"
+            },
+            hint: "Enter your CIN or Passport number",
+            label_html: { class: "form-label", id: "document_number_label" } %>
+    </div>
+    <div class="col-6 col-md-4">
+      <%= f.input :document_issue_date,
+            as: :string,
+            required: true,
+            label: "Issue Date",
+            input_html: { class: "form-control", type: "date", max: Date.current.iso8601 },
+            label_html: { class: "form-label" } %>
+    </div>
+    <div class="col-6 col-md-4">
+      <%= f.input :document_expiry_date,
+            as: :string,
+            required: true,
+            label: "Expiry Date",
+            input_html: { class: "form-control", type: "date", min: Date.current.iso8601 },
+            label_html: { class: "form-label" } %>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var idSelect = document.getElementById("id_type_select");
+    if (!idSelect) return;
+
+    function updateDocFields() {
+      var label = document.getElementById("document_number_label");
+      var input = document.getElementById("document_number_input");
+      var hint = input ? input.closest(".form-group, .mb-3")?.querySelector(".form-text") : null;
+
+      if (idSelect.value === "cin") {
+        if (label) label.textContent = "CIN Number *";
+        if (input) { input.placeholder = "Ex: 1234567890"; input.inputMode = "numeric"; input.maxLength = 20; input.style.textTransform = ""; }
+        if (hint) hint.textContent = "10 digits (new NINU), 14 or 17 digits (old CIN)";
+      } else if (idSelect.value === "passport") {
+        if (label) label.textContent = "Passport Number *";
+        if (input) { input.placeholder = "Ex: AB123456"; input.inputMode = "text"; input.maxLength = 9; input.style.textTransform = "uppercase"; }
+        if (hint) hint.textContent = "6–9 alphanumeric characters";
+      }
+    }
+
+    idSelect.addEventListener("change", updateDocFields);
+    updateDocFields();
+  });
+</script>
+
+<%# ── Supporting Document ── %>
+<div class="mb-3">
+  <%= f.input :additional_proof_type,
+        required: true,
+        label: "Select one document to validate your address or identity",
+        collection: ["Digicel Bill", "Natcom Bill", "DINEPA Bill", "EDH Bill", "Internet Bill",
+                     "Birth Certificate", "Baptismal Certificate",
+                     "Driver's License", "PNH Record", "Bank Record", "Western Union", "MoneyGram",
+                     "Sendwave", "Unitransfer", "Car Registration", "Car Rental Receipt", "Other"],
+        prompt: "Select document type",
+        input_html: { class: "form-select", id: "additional_proof_type_select" },
+        label_html: { class: "form-label" } %>
+  <div class="small mt-2 mb-0 d-flex align-items-start p-2 rounded-2"
+       style="background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+    <i class="ri-alert-line me-2 mt-1" style="color: #D97706;"></i>
+    <span>Ensure your document is original and authentic. All submissions are verified by reviewers and AI tools. Fake or altered documents will be flagged and rejected.</span>
+  </div>
+</div>
+
+<%# Birth Certificate authenticity warning %>
+<div id="birth-certificate-warning" class="alert alert-warning small rounded-3 mb-3 d-none d-flex align-items-start">
+  <i class="ri-error-warning-line me-2 mt-1"></i>
+  <div>
+    <strong>Extrait de Naissance:</strong> Please ensure you upload the authentic, blue-colored
+    Birth Certificate issued by the <strong>National Archives</strong> (Archives Nationales d'Haiti).
+    Local town hall (mairie) copies are not accepted.
+  </div>
+</div>
+
+<div class="mb-3">
+  <%= f.input :additional_proof,
+        as: :file,
+        required: true,
+        label: "Upload Document",
+        input_html: { accept: "image/*,application/pdf", class: "form-control" },
+        label_html: { class: "form-label" } %>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var sel = document.getElementById("additional_proof_type_select");
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      var warning = document.getElementById("birth-certificate-warning");
+      warning.classList.toggle("d-none", sel.value !== "Birth Certificate");
+    });
+  });
+</script>
+
+<%# ── ID Photo Blob Cache (Layer 1 of 3-Layer Validation) ──
+  Caches the ID photo as a DataURL in sessionStorage the MOMENT the user
+  selects it in Step 1. This ensures the liveness-detector controller in
+  Step 2 can always retrieve it for face comparison, even when:
+    - iOS Safari clears file inputs on hidden elements (d-none)
+    - The liveness controller connects after the file was already selected
+    - DOM state changes between wizard steps
+%>
+<script>
+  (function() {
+    function cacheIdPhoto(input) {
+      if (!input || !input.files || input.files.length === 0) return;
+      var file = input.files[0];
+      var reader = new FileReader();
+      reader.onload = function() {
+        try {
+          sessionStorage.setItem("bonid_id_photo_data", reader.result);
+          sessionStorage.setItem("bonid_id_photo_name", file.name);
+          sessionStorage.setItem("bonid_id_photo_type", file.type);
+          console.info("[id-upload] Cached ID photo to sessionStorage:", file.name);
+        } catch(e) {
+          console.warn("[id-upload] sessionStorage cache failed:", e.message);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      var cinInput = document.querySelector("input[name='identity_submission[cin_front]']");
+      var passportInput = document.querySelector("input[name='identity_submission[passport]']");
+
+      if (cinInput) {
+        cinInput.addEventListener("change", function() { cacheIdPhoto(cinInput); });
+      }
+      if (passportInput) {
+        passportInput.addEventListener("change", function() { cacheIdPhoto(passportInput); });
+      }
+    });
+  })();
+</script>

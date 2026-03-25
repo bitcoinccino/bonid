@@ -1,0 +1,247 @@
+<%# app/views/partner_portal/law_enforcement/officers/index.html.erb %>
+
+<div class="container-fluid py-4">
+
+  <%# Header — always a row, title left, button right %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Officers</h1>
+      <p class="text-muted mb-0">Manage officers in your unit</p>
+    </div>
+    <%= link_to new_partner_portal_law_enforcement_officer_invitation_path,
+                style: "background-color: var(--law-blue); border-color: var(--law-blue);",
+                class: "btn text-white rounded-pill px-4" do %>
+      <i class="ri-user-add-line me-2"></i>Invite Officer
+    <% end %>
+  </div>
+
+  <%# Stats Row %>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                 style="width: 48px; height: 48px; background: rgba(9,44,115,0.1);">
+              <i class="ri-police-badge-line fs-5" style="color: var(--law-blue);"></i>
+            </div>
+            <div>
+              <h3 class="mb-0 fw-bold"><%= @officers.count %></h3>
+              <small class="text-muted">Total Officers</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                 style="width: 48px; height: 48px; background: rgba(73,166,79,0.1);">
+              <i class="ri-shield-check-line fs-5" style="color: var(--law-green);"></i>
+            </div>
+            <div>
+              <% active_count = @officers.joins(user: :identity_submissions).where(identity_submissions: { status: :approved }).distinct.count rescue 0 %>
+              <h3 class="mb-0 fw-bold"><%= active_count %></h3>
+              <small class="text-muted">Verified BonID</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                 style="width: 48px; height: 48px; background: rgba(245,158,11,0.1);">
+              <i class="ri-time-line fs-5" style="color: #F59E0B;"></i>
+            </div>
+            <div>
+              <% pending_count = @officers.where(invitation_accepted_at: nil).where.not(invitation_token: nil).count %>
+              <h3 class="mb-0 fw-bold"><%= pending_count %></h3>
+              <small class="text-muted">Pending Invitation</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0"
+                 style="width: 48px; height: 48px; background: rgba(217,7,24,0.1);">
+              <i class="ri-forbid-line fs-5" style="color: var(--law-red);"></i>
+            </div>
+            <div>
+              <% revoked_count = @officers.revoked.count %>
+              <h3 class="mb-0 fw-bold"><%= revoked_count %></h3>
+              <small class="text-muted">Revoked</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Officers Table %>
+  <div class="card border-0 shadow-sm">
+    <div class="card-header py-3 text-white"
+         style="background-color: var(--law-blue);">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-semibold text-white">
+          <i class="ri-team-line me-2"></i>All Officers
+        </h5>
+        <%= link_to bulk_new_partner_portal_law_enforcement_officer_invitations_path,
+                    class: "btn btn-sm btn-outline-light rounded-pill" do %>
+          <i class="ri-upload-2-line me-1"></i>Bulk Invite
+        <% end %>
+      </div>
+    </div>
+
+    <div class="card-body p-0">
+      <% if @officers.any? %>
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr style="background-color: var(--law-gray);">
+              <th class="border-0 ps-3 py-3">Officer</th>
+              <th class="border-0 py-3">Badge ID</th>
+              <th class="border-0 py-3">BonID</th>
+              <th class="border-0 py-3">Account Status</th>
+              <th class="border-0 py-3">Joined</th>
+              <th class="border-0 pe-3 py-3 text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @officers.each do |officer| %>
+              <% submission = officer.user&.identity_submissions&.approved&.last %>
+              <tr style="<%= 'background-color: rgba(217,7,24,0.04);' if officer.revoked? %>">
+                <td class="ps-3 align-middle py-3">
+                  <div class="d-flex align-items-center">
+                    <% officer_photo = officer.user&.photo %>
+                    <% if officer_photo&.attached? %>
+                      <%= image_tag officer_photo.variant(resize_to_limit: [40, 40]),
+                                    class: "rounded-circle me-2 flex-shrink-0",
+                                    style: "width:40px;height:40px;object-fit:cover;#{'opacity:0.5;' if officer.revoked?}" %>
+                    <% else %>
+                      <div class="rounded-circle d-flex align-items-center justify-content-center me-2 flex-shrink-0"
+                           style="width:40px;height:40px;background:<%= officer.revoked? ? 'rgba(217,7,24,0.1)' : 'rgba(9,44,115,0.1)' %>;">
+                        <i class="<%= officer.revoked? ? 'ri-forbid-line' : 'ri-user-line' %>"
+                           style="color:<%= officer.revoked? ? 'var(--law-red)' : 'var(--law-blue)' %>;"></i>
+                      </div>
+                    <% end %>
+                    <div>
+                      <div class="fw-medium <%= 'text-muted' if officer.revoked? %>">
+                        <%= officer.full_name.presence || "—" %>
+                      </div>
+                      <% if officer.rank.present? %>
+                        <small class="text-muted"><%= officer.rank %></small>
+                      <% end %>
+                    </div>
+                  </div>
+                </td>
+                <td class="align-middle py-3">
+                  <code><%= officer.badge_id || "—" %></code>
+                </td>
+                <td class="align-middle py-3">
+                  <% if submission %>
+                    <span class="badge text-white" style="background-color: var(--law-green);">
+                      <i class="ri-shield-check-line me-1"></i>Verified
+                    </span>
+                  <% else %>
+                    <span class="badge text-dark" style="background-color: #F59E0B;">
+                      <i class="ri-time-line me-1"></i>Pending
+                    </span>
+                  <% end %>
+                </td>
+                <td class="align-middle py-3">
+                  <% if officer.revoked? %>
+                    <span class="badge text-white" style="background-color: var(--law-red);">
+                      <i class="ri-forbid-line me-1"></i>Révoqué
+                    </span>
+                  <% elsif officer.active? %>
+                    <span class="badge text-white" style="background-color: var(--law-green);">
+                      <i class="ri-checkbox-circle-line me-1"></i>Actif
+                    </span>
+                  <% else %>
+                    <span class="badge bg-secondary">
+                      <i class="ri-mail-line me-1"></i>Invité
+                    </span>
+                  <% end %>
+                </td>
+                <td class="text-muted small align-middle py-3">
+                  <%= officer.created_at.strftime("%b %d, %Y") %>
+                </td>
+                <td class="pe-3 text-end align-middle py-3">
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      <i class="ri-more-fill"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                      <li>
+                        <%= link_to partner_portal_law_enforcement_officer_path(officer),
+                                    class: "dropdown-item" do %>
+                          <i class="ri-eye-line me-2"></i>Voir le profil
+                        <% end %>
+                      </li>
+
+                      <% if officer.invitation_token.present? && officer.invitation_accepted_at.nil? && !officer.revoked? %>
+                        <li>
+                          <%= button_to partner_portal_law_enforcement_officer_invitations_path(user: { email: officer.email }),
+                                        method: :post,
+                                        class: "dropdown-item border-0 bg-transparent w-100 text-start",
+                                        data: { turbo_confirm: "Resend invitation to #{officer.email}?" } do %>
+                            <i class="ri-mail-send-line me-2"></i>Resend Invite
+                          <% end %>
+                        </li>
+                      <% end %>
+
+                      <li><hr class="dropdown-divider my-1"></li>
+
+                      <% if officer.revoked? %>
+                        <li>
+                          <%= button_to reactivate_partner_portal_law_enforcement_officer_path(officer),
+                                        method: :post,
+                                        class: "dropdown-item border-0 bg-transparent w-100 text-start",
+                                        style: "color: var(--law-green);",
+                                        data: { turbo_confirm: "Rétablir l'accès de #{officer.full_name.presence || officer.email} ?" } do %>
+                            <i class="ri-user-follow-line me-2"></i>Rétablir l'accès
+                          <% end %>
+                        </li>
+                      <% else %>
+                        <li>
+                          <%= button_to revoke_partner_portal_law_enforcement_officer_path(officer),
+                                        method: :post,
+                                        class: "dropdown-item border-0 bg-transparent w-100 text-start",
+                                        style: "color: var(--law-red);",
+                                        data: { turbo_confirm: "⚠️ Révoquer l'accès de #{officer.full_name.presence || officer.email} (#{officer.badge_id}) ?\n\nCet agent ne pourra plus se connecter ni soumettre de rapports." } do %>
+                            <i class="ri-forbid-line me-2"></i>Révoquer l'accès
+                          <% end %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-team-line text-muted" style="font-size: 4rem;"></i>
+          <h5 class="mt-3">No Officers Yet</h5>
+          <p class="text-muted mb-4">Start by inviting officers who have verified BonIDs.</p>
+          <%= link_to new_partner_portal_law_enforcement_officer_invitation_path,
+                      class: "btn text-white rounded-pill px-4",
+                      style: "background-color: var(--law-blue);" do %>
+            <i class="ri-user-add-line me-2"></i>Invite Your First Officer
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+</div>

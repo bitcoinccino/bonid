@@ -1,0 +1,39 @@
+<%= turbo_frame_tag "record_form_frame" do %>
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-light fw-semibold">
+      <i class="ri-graduation-cap-line me-1 text-primary"></i>
+      Education Record
+    </div>
+
+    <div class="card-body">
+      <%= form_with model: record,
+                    url: record.persisted? ? citizens_verification_record_path(record) : citizens_verification_records_path,
+                    method: record.persisted? ? :patch : :post,
+                    data: { turbo_frame: "record_form_frame" },
+                    class: "needs-validation",
+                    local: true do |f| %>
+
+        <div class="mb-3">
+          <%= f.label :data_institution, "Institution", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_institution, class: "form-control rounded-3 shadow-sm" %>
+        </div>
+
+        <div class="mb-3">
+          <%= f.label :data_degree, "Degree", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_degree, class: "form-control rounded-3 shadow-sm" %>
+        </div>
+
+        <div class="mb-3">
+          <%= f.label :data_graduation_year, "Graduation Year", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_graduation_year, class: "form-control rounded-3 shadow-sm" %>
+        </div>
+
+        <div class="text-end">
+          <%= f.submit record.persisted? ? "Update Record" : "Save Record",
+                       class: "btn btn-primary fw-semibold rounded-3 px-4" %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+<% end %>

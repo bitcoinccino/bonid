@@ -1,0 +1,139 @@
+<section class="certificate-font py-2" role="main">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          <i class="ri-bar-chart-line me-2"></i> Partner API Logs
+        </h2>
+        <p class="text-muted small mb-0">
+          View and analyze API usage logs, filter by partner, status, endpoint, and date range.
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to "Export CSV", admin_api_usage_index_path(format: :csv, **params.to_unsafe_h), class: "btn btn-outline-primary btn-sm" %>
+      </div>
+    </div>
+
+    <%# Flash rendered by admin layout %>
+
+    <!-- Filters -->
+    <%= form_with url: admin_api_usage_index_path, method: :get, local: true, class: "mb-4" do |f| %>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <%= f.label :partner_id, "Partner" %>
+          <%= f.select :partner_id, options_from_collection_for_select(@partner_options, :id, :name, @partner_id), include_blank: "All", class: "form-select form-select-sm" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :status, "Status" %>
+          <%= f.select :status, options_for_select(@status_options, @status), include_blank: "All", class: "form-select form-select-sm" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :endpoint, "Endpoint" %>
+          <%= f.text_field :endpoint, value: @endpoint, class: "form-control form-control-sm" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :from, "From Date" %>
+          <%= f.date_field :from, value: @from, class: "form-control form-control-sm" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :to, "To Date" %>
+          <%= f.date_field :to, value: @to, class: "form-control form-control-sm" %>
+        </div>
+
+        <div class="col-md-2 align-self-end">
+          <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
+        </div>
+
+        <div class="col-md-2 align-self-end">
+          <%= link_to "Reset", admin_api_usage_index_path, class: "btn btn-secondary btn-sm w-100" %>
+        </div>
+      </div>
+    <% end %>
+
+    <!-- Metrics -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Total Requests</h5>
+            <p class="card-text h4"><%= @metrics[:total_requests] %></p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Success Rate</h5>
+            <p class="card-text h4"><%= @metrics[:success_rate] %> %</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-center shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">Top Endpoints</h5>
+            <% @metrics[:top_endpoints].each do |endpoint, count| %>
+              <p class="mb-1 small"><%= truncate(endpoint, length: 40) %> — <strong><%= count %></strong></p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logs Table -->
+    <% if @logs.any? %>
+      <div class="table-responsive rounded-3 shadow-sm">
+        <table class="table table-bordered table-hover table-sm align-middle mb-0">
+          <thead class="table-light text-center">
+            <tr>
+              <th>Timestamp</th>
+              <th>Partner</th>
+              <th>Endpoint</th>
+              <th>Method</th>
+              <th>Status Code</th>
+              <th>Status</th>
+              <th>Response Time (ms)</th>
+              <th>IP</th>
+              <th>User Agent</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @logs.each do |log| %>
+              <tr>
+                <td><%= log.requested_at.strftime("%Y-%m-%d %H:%M:%S") %></td>
+                <td><%= log.partner&.name || "Unknown" %></td>
+                <td><%= truncate_endpoint(log.endpoint, length: 50) %></td>
+                <td><%= log.request_method %></td>
+                <td><%= log.status_code %></td>
+                <td>
+                  <span class="<%= status_badge_class(log.log_status) %>">
+                    <%= log.log_status %>
+                  </span>
+                </td>
+                <td><%= log.response_time_ms&.round(2) %></td>
+                <td><%= log.ip_address %></td>
+                <td><%= truncate(log.user_agent.to_s, length: 60) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="d-flex justify-content-center mt-3">
+        <%= paginate @logs %>
+      </div>
+    <% else %>
+      <div class="text-center text-muted mt-5">
+        <i class="ri-information-line display-4"></i>
+        <p class="mt-3 fst-italic">No API logs found.</p>
+      </div>
+    <% end %>
+
+  </div>
+</section>

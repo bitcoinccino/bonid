@@ -1,0 +1,113 @@
+<%# app/views/officers/incident_reports/index.html.erb %>
+
+<div class="container-fluid py-4">
+  <%# Page Header %>
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h2 class="mb-1 fw-bold">My Incident Reports</h2>
+          <p class="text-muted mb-0">View and manage your submitted incident reports</p>
+        </div>
+        <%= link_to new_officers_incident_report_path, class: "btn btn-primary" do %>
+          <i class="ri-add-line me-1"></i> New Report
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Reports Table %>
+  <div class="row">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          <% if @incident_reports.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="ps-4">Report ID</th>
+                    <th>Crime Type</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Persons</th>
+                    <th class="text-end pe-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @incident_reports.each do |report| %>
+                    <tr>
+                      <td class="ps-4">
+                        <span class="fw-semibold font-monospace text-primary"><%= report.report_id %></span>
+                      </td>
+                      <td><%= report.crime_type %></td>
+                      <td><%= report.occurred_at&.strftime("%b %d, %Y %H:%M") %></td>
+                      <td>
+                        <% status_class = case report.status
+                           when "submitted" then "bg-primary"
+                           when "under_review" then "bg-warning text-dark"
+                           when "approved" then "bg-success"
+                           when "rejected" then "bg-danger"
+                           when "escalated" then "bg-dark"
+                           when "archived" then "bg-secondary"
+                           else "bg-primary"
+                           end %>
+                        <span class="badge <%= status_class %>"><%= report.status&.titleize || "Submitted" %></span>
+
+                        <%# Show review status indicator %>
+                        <% if report.current_review&.overdue? %>
+                          <span class="badge bg-danger ms-1" title="Review deadline passed">
+                            <i class="ri-alarm-warning-line"></i> Overdue
+                          </span>
+                        <% elsif report.current_review&.decision_pending? %>
+                          <span class="badge bg-info ms-1" title="Awaiting supervisor review (deadline: <%= report.current_review.deadline_at&.strftime('%b %d, %H:%M') %>)">
+                            <i class="ri-time-line"></i> Pending Review
+                          </span>
+                        <% end %>
+                      </td>
+                      <td>
+                        <span class="badge bg-light text-dark">
+                          <i class="ri-user-line me-1"></i><%= report.person_involvements.count %>
+                        </span>
+                      </td>
+                      <td class="text-end pe-4">
+                        <%= link_to officers_incident_report_path(report), class: "btn btn-sm btn-outline-primary me-1", title: "View Report" do %>
+                          <i class="ri-eye-line"></i>
+                        <% end %>
+                        <% if report.status_draft? %>
+                          <%# Draft: go straight to preview/signature step %>
+                          <%= link_to preview_officers_incident_report_path(report),
+                                      class: "btn btn-sm me-1",
+                                      style: "background:var(--law-blue);color:white;",
+                                      title: "Aperçu & Signature" do %>
+                            <i class="ri-quill-pen-line"></i>
+                          <% end %>
+                          <%= link_to edit_officers_incident_report_path(report), class: "btn btn-sm btn-outline-secondary", title: "Modifier le brouillon" do %>
+                            <i class="ri-edit-line"></i>
+                          <% end %>
+                        <% elsif report.status_submitted? || report.status_rejected? %>
+                          <%# Submitted (pending) or rejected: allow edit (re-signs on save) %>
+                          <%= link_to edit_officers_incident_report_path(report), class: "btn btn-sm btn-outline-warning", title: "Modifier" do %>
+                            <i class="ri-edit-line"></i>
+                          <% end %>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-file-list-3-line text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-3 mb-4">You haven't submitted any incident reports yet.</p>
+              <%= link_to new_officers_incident_report_path, class: "btn btn-primary" do %>
+                <i class="ri-add-line me-1"></i> Create Your First Report
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

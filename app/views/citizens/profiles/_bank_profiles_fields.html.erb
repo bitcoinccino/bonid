@@ -1,0 +1,171 @@
+<%# Linked Financial Profiles Section %>
+<div class="card profile-card"
+     data-controller="nested-form bank-selector"
+     data-nested-form-wrapper-class="bank-profile-fields-wrapper">
+  <div class="card-header">
+    <h5><i class="ri-bank-line"></i>Linked Financial Profiles</h5>
+  </div>
+  <div class="card-body">
+    <% if f.object.errors[:bank_profiles].present? %>
+      <div class="alert alert-danger small mb-3 d-flex align-items-center">
+        <i class="ri-error-warning-line me-2"></i>
+        <%= f.object.errors[:bank_profiles].to_sentence %>
+      </div>
+    <% end %>
+
+    <div data-nested-form-target="wrapper" class="bank-profile-fields-wrapper">
+      <%= f.fields_for :bank_profiles do |bp| %>
+        <% profile = bp.object %>
+        <% next unless profile %>
+
+        <div class="border rounded-3 p-3 mb-3 nested-fields bg-light <%= 'border-danger' if profile.errors.any? %>"
+             data-new-record="<%= profile.new_record? %>">
+          <%= bp.hidden_field :id if profile.persisted? %>
+
+          <% if profile.errors.any? %>
+            <div class="alert alert-warning small mb-3">
+              <i class="ri-alert-line me-2"></i>
+              <%= profile.errors.full_messages.to_sentence %>
+            </div>
+          <% end %>
+
+          <%# Account Source Selector %>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <%= bp.input :account_source,
+                    collection: BankProfile.account_sources.keys.map { |key| [key.titleize.gsub('_', ' '), key] },
+                    label: "Account Source",
+                    prompt: "Select Type",
+                    input_html: {
+                      class: "form-select",
+                      data: { action: "change->bank-selector#toggleBankFields" }
+                    },
+                    label_html: { class: "form-label" } %>
+            </div>
+          </div>
+
+          <%# Bank Fields %>
+          <div data-bank-selector-target="bankFields">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <%= bp.input :bank_name,
+                      collection: Bank.order(:name).pluck(:name, :id),
+                      label: "Bank",
+                      prompt: "Select Bank",
+                      input_html: {
+                        class: "form-select",
+                        data: { action: "change->bank-selector#updateSwift" }
+                      },
+                      label_html: { class: "form-label" } %>
+              </div>
+
+              <div class="col-md-4">
+                <%= bp.input :account_number,
+                      label: "Account Number",
+                      placeholder: "e.g., 00390244",
+                      input_html: { class: "form-control" },
+                      label_html: { class: "form-label" } %>
+              </div>
+
+              <div class="col-md-4">
+                <%= bp.input :account_type,
+                      collection: BankProfile.account_types.keys.map { |k| [k.titleize, k] },
+                      prompt: "Select Type",
+                      input_html: { class: "form-select" },
+                      label_html: { class: "form-label" } %>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+              <div class="col-md-4">
+                <%= bp.input :currency,
+                      collection: (BankProfile.const_defined?(:CURRENCIES) ? BankProfile::CURRENCIES.map { |k, v| [v, k] } : [['HTG','htg'],['USD','usd']]),
+                      prompt: "Currency",
+                      input_html: { class: "form-select" },
+                      label_html: { class: "form-label" } %>
+              </div>
+
+              <div class="col-md-4">
+                <%= bp.input :access_level,
+                      collection: BankProfile.access_levels.keys.map { |k| [k.to_s.titleize.gsub('_', ' '), k] },
+                      prompt: "Access Level",
+                      input_html: { class: "form-select" },
+                      label_html: { class: "form-label" } %>
+              </div>
+
+              <div class="col-md-4">
+                <%= bp.input :branch_name,
+                      label: "Branch Name",
+                      input_html: { class: "form-control", placeholder: "e.g., Delmas 33" },
+                      label_html: { class: "form-label" } %>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2 align-items-center">
+              <div class="col-md-6">
+                <%= bp.label :swift_code, "SWIFT Code", class: "form-label" %>
+                <div class="input-group">
+                  <%= bp.text_field :swift_code,
+                        readonly: true,
+                        class: "form-control bg-light",
+                        data: { bank_selector_target: "swift" },
+                        placeholder: "Auto-filled when bank is selected" %>
+                  <span class="input-group-text bg-white border-start-0">
+                    <i class="ri-barcode-line text-secondary"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%# Wallet Fields %>
+          <div data-bank-selector-target="walletFields" class="d-none">
+            <div class="row g-3 mt-2">
+              <div class="col-md-6">
+                <%= bp.input :wallet_provider,
+                      label: "Wallet Provider",
+                      placeholder: "e.g., Coinbase, MetaMask, Solana",
+                      input_html: { class: "form-control" },
+                      label_html: { class: "form-label" } %>
+              </div>
+
+              <div class="col-md-6">
+                <%= bp.input :wallet_address,
+                      label: "Wallet Address",
+                      placeholder: "e.g., 9F9jYt...xZmE",
+                      input_html: { class: "form-control font-monospace" },
+                      label_html: { class: "form-label" } %>
+              </div>
+            </div>
+          </div>
+
+          <%# Remove Button %>
+          <div class="text-end mt-3">
+            <%= bp.hidden_field :_destroy, class: "destroy-flag" %>
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                    data-action="click->nested-form#removeAssociation">
+              <i class="ri-delete-bin-line me-1"></i> Remove
+            </button>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="text-center mt-4">
+      <button type="button"
+              class="btn btn-outline-primary rounded-pill px-4 py-2"
+              data-action="click->nested-form#addAssociation">
+        <i class="ri-add-line me-1"></i> Add Another Account
+      </button>
+    </div>
+
+    <%= render "citizens/profiles/bank_profile_template", f: f %>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-line me-1"></i>
+      Your account details remain private and visible only to authorized partners.
+    </div>
+  </div>
+</div>

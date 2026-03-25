@@ -1,0 +1,255 @@
+<!-- =========================================================
+     Section 5: Stay in Haiti
+========================================================= -->
+<div class="card rounded-4 mb-4 border-2">
+
+  <!-- Header -->
+  <div class="card-header bg-white border-0 pb-0">
+    <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+      <i class="ri-home-line text-haitian-blue"></i>
+      <%= t("bon_touris.pages.accommodation.title") %>
+    </h5>
+
+    <p class="small text-muted mb-0">
+      <%= t("bon_touris.pages.accommodation.subtitle") %>
+    </p>
+  </div>
+
+  <div class="card-body pt-3" data-controller="address">
+
+    <!-- =====================================================
+         Visit Context (Purpose & Duration)
+    ====================================================== -->
+    <div class="row g-4 mb-4">
+
+      <!-- Purpose of Visit -->
+      <div class="col-md-6">
+        <%= f.label :purpose_of_visit, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.accommodation.purpose.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :purpose_of_visit,
+              VisitorSubmission::PURPOSES.map { |p| [p.humanize, p] },
+              { prompt: t("bon_touris.pages.accommodation.purpose.prompt") },
+              class: "form-select",
+              required: true %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.pages.accommodation.purpose.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.accommodation.purpose.help") %>
+        </div>
+      </div>
+
+      <!-- Expected Stay -->
+      <div class="col-md-6">
+        <%= f.label :stay_duration_days, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.accommodation.duration.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.number_field :stay_duration_days,
+              class: "form-control",
+              min: 1,
+              max: 365,
+              step: 1,
+              placeholder: t("bon_touris.pages.accommodation.duration.placeholder"),
+              required: true %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.pages.accommodation.duration.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.accommodation.duration.help") %>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =====================================================
+         Accommodation Details
+    ====================================================== -->
+    <div class="row g-4">
+
+      <!-- Accommodation Name -->
+      <div class="col-md-6">
+        <%= f.label :accommodation_name, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.accommodation.place_name.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.text_field :accommodation_name,
+              class: "form-control",
+              placeholder: t("bon_touris.pages.accommodation.place_name.placeholder"),
+              required: true %>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.accommodation.place_name.help") %>
+        </div>
+      </div>
+
+      <!-- Accommodation Type -->
+      <div class="col-md-6">
+        <%= f.label :accommodation_type, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.accommodation.type.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :accommodation_type,
+              [
+                [t("bon_touris.pages.accommodation.type.options.hotel"), "hotel"],
+                [t("bon_touris.pages.accommodation.type.options.guesthouse"), "guesthouse"],
+                [t("bon_touris.pages.accommodation.type.options.airbnb"), "airbnb"],
+                [t("bon_touris.pages.accommodation.type.options.family"), "family"],
+                [t("bon_touris.pages.accommodation.type.options.other"), "other"]
+              ],
+              { prompt: t("bon_touris.pages.accommodation.type.prompt") },
+              class: "form-select",
+              required: true %>
+      </div>
+
+    </div>
+
+    <!-- =====================================================
+         Address in Haiti
+    ====================================================== -->
+    <%= f.fields_for :address do |a| %>
+      <div class="row g-4 mt-3">
+
+        <!-- Street Address -->
+        <div class="col-md-12">
+          <%= a.label :street_address,
+                t("bon_touris.pages.accommodation.address.street.label"),
+                class: "form-label fw-semibold" %>
+
+          <%= a.text_field :street_address,
+                class: "form-control",
+                placeholder: t("bon_touris.pages.accommodation.address.street.placeholder") %>
+
+          <div class="form-text">
+            <%= t("bon_touris.pages.accommodation.address.street.help") %>
+          </div>
+        </div>
+
+        <!-- Department -->
+        <div class="col-md-4">
+          <%= a.label :department_id, class: "form-label fw-semibold" do %>
+            <%= t("bon_touris.pages.accommodation.address.department.label") %>
+            <span class="text-danger">*</span>
+          <% end %>
+
+          <%= a.collection_select :department_id,
+                Department.all,
+                :id,
+                :name,
+                { prompt: t("bon_touris.pages.accommodation.address.department.prompt") },
+                class: "form-select",
+                required: true,
+                data: {
+                  address_target: "department",
+                  slug_map_value: Department.slug_map.to_json,
+                  action: "change->address#loadArrondissements"
+                } %>
+
+          <div class="form-text">
+            <%= t("bon_touris.pages.accommodation.address.department.help") %>
+          </div>
+        </div>
+
+        <!-- Arrondissement -->
+        <div class="col-md-4">
+          <%= a.label :arrondissement_id,
+                t("bon_touris.pages.accommodation.address.arrondissement.label"),
+                class: "form-label fw-semibold" %>
+
+          <%= a.collection_select :arrondissement_id,
+                [],
+                :id,
+                :name,
+                { prompt: t("bon_touris.pages.accommodation.address.arrondissement.prompt") },
+                class: "form-select",
+                data: {
+                  address_target: "arrondissement",
+                  action: "change->address#loadCommunes"
+                } %>
+        </div>
+
+        <!-- Commune -->
+        <div class="col-md-4">
+          <%= a.label :commune_id,
+                t("bon_touris.pages.accommodation.address.commune.label"),
+                class: "form-label fw-semibold" %>
+
+          <%= a.collection_select :commune_id,
+                [],
+                :id,
+                :name,
+                { prompt: t("bon_touris.pages.accommodation.address.commune.prompt") },
+                class: "form-select",
+                data: {
+                  address_target: "commune",
+                  action: "change->address#loadCommunalSections"
+                } %>
+        </div>
+
+        <!-- Communal Section -->
+        <div class="col-md-6">
+          <%= a.label :communal_section_id,
+                t("bon_touris.pages.accommodation.address.section.label"),
+                class: "form-label fw-semibold" %>
+
+          <%= a.collection_select :communal_section_id,
+                [],
+                :id,
+                :name,
+                { prompt: t("bon_touris.pages.accommodation.address.section.prompt") },
+                class: "form-select",
+                data: {
+                  address_target: "section",
+                  action: "change->address#loadPostalCode"
+                } %>
+        </div>
+
+        <!-- Postal Code -->
+        <div class="col-md-6">
+          <%= a.label :postal_code,
+                t("bon_touris.pages.accommodation.address.postal_code.label"),
+                class: "form-label fw-semibold" %>
+
+          <%= a.text_field :postal_code,
+                class: "form-control",
+                placeholder: t("bon_touris.pages.accommodation.address.postal_code.placeholder"),
+                readonly: true,
+                data: { address_target: "postalCode" } %>
+        </div>
+
+        <%= a.hidden_field :country, value: "Haiti" %>
+      </div>
+    <% end %>
+
+    <!-- =====================================================
+         Address Loader / Error
+    ====================================================== -->
+    <div class="mt-3">
+      <div data-address-target="spinner" class="d-none text-center">
+        <div class="spinner-border text-haitian-blue" role="status"></div>
+      </div>
+
+      <div data-address-target="error"
+           class="d-none alert alert-danger mt-3"
+           role="alert">
+        <%= t("bon_touris.pages.accommodation.address.error") %>
+        <button type="button"
+                class="btn btn-sm btn-outline-light ms-2"
+                data-action="click->address#retry">
+          <%= t("bon_touris.actions.retry", default: "Retry") %>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

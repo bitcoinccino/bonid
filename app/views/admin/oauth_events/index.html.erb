@@ -1,0 +1,91 @@
+<div class="container-fluid mt-4">
+  <h1 class="mb-4 fw-semibold text-haitian-blue">OAuth Events</h1>
+
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-body">
+      <%= form_with url: admin_oauth_events_path, method: :get, local: true, class: "row g-3 mb-4" do %>
+        <div class="col-md-4">
+          <%= label_tag :oauth_application_id, "Application", class: "form-label fw-medium" %>
+          <%= select_tag :oauth_application_id,
+                options_from_collection_for_select(OauthApplication.all, :id, :name, params[:oauth_application_id]),
+                include_blank: "All Apps",
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= label_tag :event_type, "Event Type", class: "form-label fw-medium" %>
+          <%= select_tag :event_type,
+                options_for_select(OauthEvent.distinct.pluck(:event_type).map { |e| [human_event_type(OpenStruct.new(event_type: e)), e] }, params[:event_type]),
+                include_blank: "All Types",
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-2">
+          <%= label_tag :status, "Status", class: "form-label fw-medium" %>
+          <%= select_tag :status, options_for_select([["All", ""], ["Success", "success"], ["Failed", "failed"], ["Replay Successful", "replayed"], ["Replay Failed", "replay_failed"]], params[:status]), class: "form-select" %>
+        </div>
+
+        <div class="col-md-2 align-self-end">
+          <%= submit_tag "Filter", class: "btn btn-primary w-100" %>
+        </div>
+      <% end %>
+
+      <% if @events.any? %>
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr class="table-light">
+              <th>Application</th>
+              <th>User</th>
+              <th>Event Type</th>
+              <th>Status</th>
+              <th>Occurred</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @events.each do |event| %>
+              <tr>
+                <td><%= event.oauth_application&.name || "—" %></td>
+                <td><%= event.user&.email || "—" %></td>
+                <td><%= human_event_type(event) %></td>
+                <td>
+                  <% status_class = case event.status
+                                    when "replayed", "success" then "text-success fw-semibold"
+                                    when "replay_failed", "failed" then "text-danger fw-semibold"
+                                    else "text-dark"
+                                    end %>
+                  <span class="<%= status_class %>"><%= human_event_status(event) %></span>
+                </td>
+                <td><%= time_ago_in_words(event.created_at) %> ago</td>
+                <td>
+                  <button class="btn btn-outline-primary btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#payloadModal-<%= event.id %>"
+                          data-payload="<%= JSON.pretty_generate(event.payload || {}) %>"
+                          data-event="<%= human_event_type(event) %>"
+                          data-app="<%= event.oauth_application&.name %>"
+                          data-user="<%= event.user&.email %>">
+                    View Payload
+                  </button>
+
+                  <%= button_to "Replay", replay_admin_oauth_event_path(event),
+                        method: :post,
+                        form: { data: { turbo_confirm: "Are you sure you want to replay this OAuth event?" } },
+                        class: "btn btn-outline-warning btn-sm ms-1" %>
+                </td>
+              </tr>
+
+              <%= render "admin/shared/payload_modal", event: event %>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="mt-3">
+          <%= paginate @events, theme: 'bootstrap-4' %>
+        </div>
+      <% else %>
+        <div class="alert alert-dismissible fade show alert-info">No OAuth events recorded yet.</div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,195 @@
+<%# ================================================================
+  BonID — Property Record Form (Base)
+  ---------------------------------------------------------------
+  Used when record_type: "property", category: "base" or blank
+================================================================== %>
+
+<%# ================================================================
+  BonID — Property Record Form (Hybrid Prefill)
+  ---------------------------------------------------------------
+  record_type: "property", category: "base" or "land_transaction"
+  ✅ Auto-prefills from BonID citizen address
+  ✅ Allows manual override or selection from multiple addresses
+================================================================== %>
+<%# ================================================================
+  BonID — Property Record Form (Hybrid Prefill + Safe Fallback)
+  ---------------------------------------------------------------
+  record_type: "property", category: "base" or "land_transaction"
+  ✅ Auto-prefills from BonID citizen address
+  ✅ Allows manual override or linking to another address
+  ✅ Gracefully handles users with no saved addresses
+================================================================== %>
+<%# ================================================================
+  BonID — Property Record Form (with Address Modal)
+  ---------------------------------------------------------------
+  ✅ Linked Address selector (from BonID addresses)
+  ✅ Inline “Add New Address” modal (Bootstrap)
+  ✅ Uses citizens/profiles/_address_fields partial
+  ✅ Works with record_form_frame (Turbo Frame safe)
+=
+<%= turbo_frame_tag "record_form_frame" do %>
+  <%= form_with model: record,
+                url: record.persisted? ? citizens_verification_record_path(record) : citizens_verification_records_path,
+                method: record.persisted? ? :patch : :post,
+                data: { turbo_frame: "record_form_frame" },
+                class: "property-form needs-validation",
+                local: true do |f| %>
+
+    <!-- 🏠 Property Record -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-header bg-light text-primary fw-semibold">
+        <i class="ri-home-4-line me-1"></i>
+        Property Record
+      </div>
+
+      <div class="card-body">
+        <div class="row g-3">
+
+          <!-- 🔗 Linked BonID Address -->
+          <% if current_citizen.respond_to?(:addresses) && current_citizen.addresses.any? %>
+            <div class="col-12">
+              <%= f.label :address_id, "Linked Address", class: "form-label fw-semibold" %>
+              <%= f.collection_select :address_id,
+                  current_citizen.addresses,
+                  :id,
+                  lambda { |address| [address.street_address, address.locality, address.postal_code, address.country].compact.join(', ') },
+                  { prompt: "Select linked address" },
+                  class: "form-select rounded-3 shadow-sm" %>
+
+              <small class="text-muted d-block mt-1">
+                Prefilled from your BonID verified address.
+                <%= link_to "#", class: "text-primary fw-semibold ms-1",
+                                data: { bs_toggle: "modal", bs_target: "#addAddressModal" } do %>
+                  <i class="ri-add-line me-1"></i> Add New Address
+                <% end %>
+              </small>
+            </div>
+          <% else %>
+            <div class="col-12">
+              <div class="alert alert-dismissible fade show alert-warning d-flex align-items-center gap-2 py-2 px-3 rounded-3">
+                <i class="ri-map-pin-line text-warning"></i>
+                <div>
+                  No saved addresses found.
+                  <%= link_to "#", class: "fw-semibold text-primary ms-1",
+                                  data: { bs_toggle: "modal", bs_target: "#addAddressModal" } do %>
+                    Add one now
+                  <% end %>.
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+          <!-- 🏷 Title & Registry Info -->
+          <div class="col-md-6">
+            <%= f.label :data_property_title_number, "Title Number", class: "form-label fw-semibold" %>
+            <%= f.text_field :data_property_title_number,
+                  value: record.data.dig("property", "title_number"),
+                  class: "form-control rounded-3 shadow-sm", required: true %>
+          </div>
+
+          <div class="col-md-6">
+            <%= f.label :data_property_cadastral_ref, "Cadastral Reference", class: "form-label fw-semibold" %>
+            <%= f.text_field :data_property_cadastral_ref,
+                  value: record.data.dig("property", "cadastral_ref"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <!-- 🌍 Address Details -->
+          <div class="col-md-6">
+            <%= f.label :data_property_commune, "Commune", class: "form-label fw-semibold" %>
+            <%= f.text_field :data_property_commune,
+                  value: record.data.dig("property", "commune"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= f.label :data_property_section_communal, "Section Communale", class: "form-label fw-semibold" %>
+            <%= f.text_field :data_property_section_communal,
+                  value: record.data.dig("property", "section_communal"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <div class="col-12">
+            <%= f.label :data_property_location, "Address / Location", class: "form-label fw-semibold" %>
+            <%= f.text_field :data_property_location,
+                  value: record.data.dig("property", "location"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <!-- 🏠 Property Characteristics -->
+          <div class="col-md-6">
+            <%= f.label :data_property_property_type, "Property Type", class: "form-label fw-semibold" %>
+            <%= f.select :data_property_property_type,
+                  [["Land", "land"], ["Building", "building"], ["Mixed Use", "mixed_use"]],
+                  { prompt: "Select" },
+                  class: "form-select rounded-3 shadow-sm",
+                  selected: record.data.dig("property", "property_type") %>
+          </div>
+
+          <div class="col-md-3">
+            <%= f.label :data_property_area_m2, "Area (m²)", class: "form-label fw-semibold" %>
+            <%= f.number_field :data_property_area_m2,
+                  value: record.data.dig("property", "area_m2"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <div class="col-md-3">
+            <%= f.label :data_property_owner_since, "Owner Since", class: "form-label fw-semibold" %>
+            <%= f.date_field :data_property_owner_since,
+                  value: record.data.dig("property", "owner_since"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <!-- 💰 Valuation -->
+          <div class="col-md-6">
+            <%= f.label :data_valuation_market_value_htg, "Market Value (HTG)", class: "form-label fw-semibold" %>
+            <%= f.number_field :data_valuation_market_value_htg,
+                  value: record.data.dig("valuation", "market_value_htg"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= f.label :data_valuation_last_appraisal_date, "Last Appraisal Date", class: "form-label fw-semibold" %>
+            <%= f.date_field :data_valuation_last_appraisal_date,
+                  value: record.data.dig("valuation", "last_appraisal_date"),
+                  class: "form-control rounded-3 shadow-sm" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer bg-light text-end">
+        <%= f.submit record.persisted? ? "Update Property" : "Save Property",
+                     class: "btn btn-primary fw-semibold rounded-3 px-4" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- 🌍 Add Address Modal -->
+  <div class="modal fade" id="addAddressModal" tabindex="-1" aria-labelledby="addAddressLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-semibold" id="addAddressLabel">
+            <i class="ri-map-pin-line me-2"></i>Add New Address
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body bg-light p-4">
+          <%= form_with model: Address.new,
+                        url: citizens_addresses_path,
+                        method: :post,
+                        data: { turbo_frame: "_top" },
+                        local: true do |a| %>
+            <%= render "shared/address_form_fields", f: a %>
+
+            <div class="text-end mt-3">
+              <%= a.submit "Save Address",
+                           class: "btn btn-primary fw-semibold rounded-3 px-4" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+

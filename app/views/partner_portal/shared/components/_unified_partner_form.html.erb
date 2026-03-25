@@ -1,0 +1,159 @@
+<!-- app/views/partner_portal/shared/components/_unified_partner_form.html.erb -->
+<!-- Single unified form that adapts based on sector selection -->
+
+<div data-controller="sector">
+
+  <%= f.input :name,
+      label: "Organization/Unit Name",
+      required: true,
+      input_html: {
+        placeholder: "e.g., UDMO Port-au-Prince or Unibank",
+        class: "form-control"
+      },
+      wrapper_html: { class: "mb-3" } %>
+
+  <%= f.input :contact_person,
+    label: "Contact Person",
+    required: true,
+    input_html: {
+      placeholder: "e.g., Jean Doe",
+      class: "form-control"
+    },
+    wrapper_html: { class: "mb-3" } %>
+
+  <%= f.input :email,
+    label: "Email Address",
+    required: true,
+    input_html: {
+      placeholder: "e.g., contact@organization.ht",
+      class: "form-control"
+    },
+    wrapper_html: { class: "mb-3" } %>
+
+  <%= f.input :phone_number,
+    label: "Phone Number",
+    required: true,
+    as: :tel,
+    input_html: {
+      placeholder: "+509 3456 7890",
+      class: "form-control"
+    },
+    wrapper_html: { class: "mb-3" } %>
+
+  <%= f.input :department_sector,
+      as: :grouped_select,
+      collection: Partner.department_sectors,
+      group_method: :last,
+      group_label_method: :first,
+      label_method: :first,
+      value_method: :last,
+      prompt: "Select your sector",
+      label: "Sector",
+      required: true,
+      input_html: {
+        class: "form-select",
+        data: {
+          sector_target: "sectorSelect",
+          action: "change->sector#toggleUnitFields change->sector#populateUseCases"
+        }
+      },
+      wrapper_html: { class: "mb-3" } %>
+
+  <!-- PNH Unit Fields (shown only when sector = pnh) -->
+  <div data-sector-target="unitTypeWrapper" class="d-none mb-3">
+    <%= f.input :unit_type,
+      collection: OfficerConstants::UNIT_OPTIONS.keys,
+      prompt: "Select Unit Type",
+      label: "Unit Type",
+      input_html: {
+        class: "form-select",
+        data: {
+          action: "change->sector#populateUnitNames",
+          sector_target: "unitTypeSelect"
+        }
+      } %>
+  </div>
+
+  <div data-sector-target="unitNameWrapper" class="d-none mb-3">
+    <%= f.input :unit_name,
+      as: :select,
+      collection: [],
+      prompt: "Select Unit Name",
+      label: "Unit Name",
+      input_html: {
+        class: "form-select",
+        data: { sector_target: "unitNameSelect" }
+      } %>
+  </div>
+
+  <!-- Description & Website (hidden for PNH on signup, shown after approval) -->
+  <div data-sector-target="additionalFieldsWrapper" class="mb-3">
+    <%= f.input :description,
+        label: "Organization Description",
+        as: :text,
+        input_html: {
+          rows: 3,
+          class: "form-control",
+          placeholder: "Briefly describe your organization and how you plan to use BonID"
+        },
+        hint: "This helps us understand your mission and why you want to join BonID.",
+        wrapper_html: { class: "mb-3" } %>
+
+    <%= f.input :website,
+        label: "Website (Optional)",
+        input_html: {
+          placeholder: "e.g., https://yourorganization.ht",
+          class: "form-control"
+        },
+        wrapper_html: { class: "mb-3" } %>
+  </div>
+
+  <!-- Use Cases (hidden for PNH) -->
+  <div data-sector-target="useCaseWrapper" class="mb-3">
+    <%= f.input :use_cases,
+      as: :select,
+      collection: [],
+      label: "Primary Use Case",
+      prompt: "Select your primary use case",
+      input_html: {
+        class: "form-select",
+        data: {
+          sector_target: "useCaseSelect",
+          action: "change->sector#showOrHideOtherUseCase"
+        }
+      },
+      hint: "Use cases will update based on your selected sector.",
+      wrapper_html: { class: "mb-3" } %>
+  </div>
+
+  <!-- Other Use Case Input (hidden by default) -->
+  <div data-sector-target="otherUseCaseWrapper" class="d-none mb-3">
+    <%= f.input :other_use_case,
+      label: "Please specify your use case",
+      input_html: {
+        class: "form-control",
+        placeholder: "Describe your specific use case...",
+        data: { sector_target: "otherUseCaseInput" }
+      },
+      wrapper_html: { class: "mb-3" } %>
+  </div>
+
+  <!-- PNH Info Notice -->
+  <div data-sector-target="pnhNotice" class="alert alert-info mb-3 d-none">
+    <i class="ri-information-line me-2"></i>
+    <strong>Quick Registration for PNH</strong><br>
+    <small>
+      Additional details (address, description) can be completed after your account is approved.
+    </small>
+  </div>
+
+  <!-- JSON Data -->
+  <%= tag.script id: "unit-options-json", type: "application/json" do %>
+    <%= OfficerConstants::UNIT_OPTIONS.to_json.html_safe %>
+  <% end %>
+
+  <%= tag.script id: "use-cases-json", type: "application/json" do %>
+    <%= PartnerUseCases::USE_CASES.to_json.html_safe %>
+  <% end %>
+
+</div> <%# close data-controller="sector" %>

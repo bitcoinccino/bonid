@@ -1,0 +1,322 @@
+/* ======================================================
+   HERO SECTION — FACE SCAN (FINAL)
+====================================================== */
+
+/* Utility */
+.min-vh-80 {
+    min-height: 80vh;
+  }
+  
+  /* ------------------------------------------------------
+     HERO WRAPPER (NAVBAR SAFE)
+  ------------------------------------------------------ */
+  .hero-section {
+    position: relative;
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+
+    background: linear-gradient(135deg, #00209f 0%, #001b7a 75%);
+
+    /* Prevent navbar overlap */
+    padding-top: 96px;
+    padding-bottom: 4rem;
+  }
+
+  @media (max-width: 992px) {
+    .hero-section {
+      padding-top: 100px;
+      padding-bottom: 3rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .hero-section {
+      padding-top: 100px;
+      padding-bottom: 2.5rem;
+      min-height: auto;
+    }
+  }
+  
+  /* Background layer */
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+  /* Content layer */
+  .hero-section > .container {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Force white text color on hero */
+  .hero-section h1,
+  .hero-section h2,
+  .hero-section h3,
+  .hero-section p,
+  .hero-section .lead {
+    color: #ffffff !important;
+  }
+
+  /* Hero CTA Button */
+  .hero-cta-btn {
+    padding: 1rem 3rem !important;
+    font-size: 1.125rem;
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .hero-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(248, 249, 250, 0.2);
+  }
+
+  /* Ensure button respects flex alignment on desktop */
+  @media (min-width: 992px) {
+    .hero-section .d-flex.justify-content-lg-start {
+      justify-content: flex-start !important;
+    }
+  }
+  
+  /* ------------------------------------------------------
+     ROTATING RING
+  ------------------------------------------------------ */
+  .outer-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 620px;
+    height: 620px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+  
+    background: conic-gradient(
+      #e53e3e,
+      #00209f,
+      #ffffff,
+      #e53e3e
+    );
+  
+    mask: radial-gradient(circle, transparent 84%, black 86%);
+    animation: rotateRing 12s linear infinite;
+  
+    box-shadow:
+      0 0 80px rgba(255,255,255,0.3),
+      0 0 140px rgba(0,32,159,0.45);
+  }
+  
+  .outer-ring-dashed {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px dashed rgba(255,255,255,0.45);
+    animation: pulseRing 4s ease-in-out infinite;
+  }
+  
+  @keyframes rotateRing {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+  
+  @keyframes pulseRing {
+    0%,100% { opacity: 0.4; transform: scale(0.98); }
+    50%     { opacity: 0.9; transform: scale(1.04); }
+  }
+  
+  /* ------------------------------------------------------
+     FACE SCAN STACK (ENLARGED)
+  ------------------------------------------------------ */
+  .stacked-scan-cards {
+    width: 380px;
+    height: 460px;
+    position: relative;
+    perspective: 1000px;
+  }
+  
+  /* Individual card */
+  .scan-card {
+    position: absolute;
+    inset: 0;
+    padding: 1.75rem;
+    border-radius: 22px;
+
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 10px 36px rgba(0,0,0,0.28);
+
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+    animation: stackPop 12s infinite ease-in-out;
+    animation-delay: calc(var(--index) * 4s);
+
+    /* Prevent blurry scaling on mobile */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+  }
+
+  @keyframes stackPop {
+    0%,10%   { opacity: 0; transform: translateY(60px) scale(0.95) translateZ(0); }
+    15%,30%  { opacity: 1; transform: translateY(0) scale(1) translateZ(0); }
+    35%,100% { opacity: 0; transform: translateY(-60px) scale(0.95) translateZ(0); }
+  }
+  
+  /* ------------------------------------------------------
+     SCAN FRAME
+  ------------------------------------------------------ */
+  .scan-frame {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 3px solid rgba(255,255,255,0.35);
+  }
+  
+  .face-image {
+    width: 100%;
+    display: block;
+    border-radius: 16px;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  /* Scan line */
+  .scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 4px;
+  
+    background: linear-gradient(
+      90deg,
+      transparent,
+      #ffffff,
+      transparent
+    );
+  
+    animation: scanMove 3s linear infinite;
+  }
+  
+  @keyframes scanMove {
+    0%   { top: 0; }
+    50%  { top: 100%; }
+    100% { top: 0; }
+  }
+  
+  /* Verification badge */
+  .verification-badge {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.5rem;
+    color: #ffffff;
+    background: rgba(0,0,0,0.45);
+    border-radius: 50%;
+
+    box-shadow: 0 0 12px rgba(0,255,255,0.6);
+  }
+
+  .verification-badge i {
+    display: block;
+    line-height: 1;
+  }
+  
+  /* ------------------------------------------------------
+     SCAN META (NAME + AUTHORITY)
+  ------------------------------------------------------ */
+  .scan-meta {
+    color: #ffffff;
+    line-height: 1.35;
+  }
+  
+  .scan-name {
+    font-family: var(--font-brand);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  
+  .scan-verified {
+    font-size: 0.8rem;
+    opacity: 0.75;
+  }
+  
+  /* ------------------------------------------------------
+     RESPONSIVE
+  ------------------------------------------------------ */
+  @media (max-width: 992px) {
+    .outer-ring {
+      width: 420px;
+      height: 420px;
+    }
+
+    .stacked-scan-cards {
+      width: 330px;
+      height: 420px;
+    }
+
+    /* Add spacing between text and scan cards on tablet */
+    .hero-section .col-lg-6.mb-5 {
+      margin-bottom: 3rem !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .hero-section h1 {
+      font-size: 2.25rem;
+      margin-bottom: 1.5rem !important;
+    }
+
+    .hero-section .lead {
+      margin-bottom: 2rem !important;
+    }
+
+    .stacked-scan-cards {
+      width: 320px;
+      height: 390px;
+      margin-bottom: 0;
+    }
+
+    .scan-card {
+      padding: 1.5rem;
+    }
+
+    .face-image {
+      /* Force sharp rendering on mobile */
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
+
+    .scan-name {
+      font-size: 0.9rem;
+    }
+
+    .scan-verified {
+      font-size: 0.75rem;
+    }
+
+    /* Increase spacing between hero content and scan cards */
+    .hero-section .col-lg-6.mb-5 {
+      margin-bottom: 3rem !important;
+    }
+
+    /* Add bottom margin to scan cards column on mobile */
+    .hero-section .col-lg-6:last-child {
+      margin-bottom: 0;
+    }
+  }
+  

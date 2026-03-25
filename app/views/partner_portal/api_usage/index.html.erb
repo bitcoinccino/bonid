@@ -1,0 +1,40 @@
+<h2 class="fw-bold mb-3">My API Usage</h2>
+
+<div class="row mb-4 text-center">
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow-sm">
+      <h4><%= @metrics[:total_requests] %></h4>
+      <p class="text-muted mb-0">Total Requests</p>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow-sm">
+      <h4><%= @metrics[:success_rate] %>%</h4>
+      <p class="text-muted mb-0">Success Rate</p>
+    </div>
+  </div>
+</div>
+
+<h5 class="fw-semibold mt-4 mb-2">Recent API Calls</h5>
+<table class="table table-sm table-striped align-middle">
+  <thead>
+    <tr>
+      <th>Endpoint</th>
+      <th>Method</th>
+      <th>Status</th>
+      <th>Time (ms)</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @logs.each do |log| %>
+      <tr>
+        <td><%= log.endpoint %></td>
+        <td><%= log.request_method %></td>
+        <td><%= log.status_code %></td>
+        <td><%= log.response_time_ms&.round(2) %></td>
+        <td><%= log.requested_at.strftime("%Y-%m-%d %H:%M") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -1,0 +1,198 @@
+<%# Address Information Section %>
+<div class="card profile-card" data-controller="address">
+  <div class="card-body">
+    <%# Info Banner %>
+    <div class="alert alert-info d-flex align-items-start">
+      <i class="ri-2x ri-home-4-line me-3"></i>
+      <div>
+        <strong>Your address helps verify your residency.</strong><br>
+        BonID uses this data to confirm your identity and location for partner institutions such as
+        <strong>banks</strong>, <strong>hospitals</strong>, and <strong>law enforcement</strong>.
+      </div>
+    </div>
+
+    <%# Spinner + Error placeholders %>
+    <div data-address-target="spinner" class="text-center mb-3 d-none">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="small text-muted mt-2 mb-0">Loading address data…</p>
+    </div>
+
+    <div data-address-target="error"
+         class="alert alert-danger small d-none text-center">
+      <i class="ri-alert-line me-1"></i>
+      Failed to load address data.
+      <a href="#" data-action="click->address#retry" class="fw-semibold">Retry</a>
+    </div>
+
+    <%= f.simple_fields_for :address do |a| %>
+      <%# Country selector — controls which fields appear below %>
+      <div class="row g-4 mb-3">
+        <div class="col-md-6">
+          <%= a.input :country, as: :select,
+            collection: ISO3166::Country.all.map { |c| [c.translations[I18n.locale.to_s] || c.common_name.presence || c.name, c.common_name.presence || c.name] }.sort_by(&:first).unshift(["Haiti", "Haiti"]).uniq { |c| c[1] },
+            selected: a.object.country || "Haiti",
+            prompt: "Chwazi Peyi",
+            input_html: { class: "form-select", id: "address_country" },
+            label_html: { class: "form-label" } %>
+        </div>
+      </div>
+
+      <%# Diaspora notice (hidden by default) %>
+      <div id="diaspora_address_notice" style="display: none;">
+        <div class="alert d-flex align-items-start mb-0" style="font-size: 0.82rem; background: rgba(0, 32, 159, 0.05); border: 1px solid rgba(0, 32, 159, 0.12); color: #1a1a2e;">
+          <i class="ri-global-line ri-lg me-2 mt-1" style="color: #00209F;"></i>
+          <div>
+            <strong>Ou ap viv aletranje.</strong><br>
+            Adrès ou ap verifye atravè dokiman prèv adrès ou telechaje nan paj verifikasyon idantite a (fakti, relve bank, oswa kontra lwaye).
+          </div>
+        </div>
+      </div>
+
+      <%# Haiti cascade fields %>
+      <div id="haiti_address_fields" class="row g-4">
+        <%# Department %>
+        <div class="col-md-6">
+          <%= a.input :department_id,
+            collection: @departments.map { |d| [d.name, d.id] },
+            prompt: "Select Department",
+            input_html: {
+              class: "form-select",
+              "data-address-target": "department",
+              "data-action": "change->address#loadArrondissements",
+              "data-slug-map-value": @departments.index_by(&:id).transform_values(&:slug).to_json,
+              "data-prompt": "Select Department",
+              "data-selected": a.object.department_id.to_s,
+              id: "address_department_id"
+            },
+            label_html: { class: "form-label" } %>
+          <small class="text-muted">Select your department (e.g., Ouest).</small>
+        </div>
+
+        <%# Arrondissement %>
+        <div class="col-md-6">
+          <%= a.input :arrondissement_id,
+            collection: [],
+            prompt: "Select Arrondissement",
+            input_html: {
+              class: "form-select",
+              "data-address-target": "arrondissement",
+              "data-action": "change->address#loadCommunes",
+              "data-prompt": "Select Arrondissement",
+              "data-selected": a.object.arrondissement_id.to_s,
+              id: "address_arrondissement_id",
+              disabled: true
+            },
+            label_html: { class: "form-label" } %>
+          <small class="text-muted">Select your arrondissement.</small>
+        </div>
+
+        <%# Commune %>
+        <div class="col-md-6">
+          <%= a.input :commune_id,
+            collection: [],
+            prompt: "Select Commune",
+            input_html: {
+              class: "form-select",
+              "data-address-target": "commune",
+              "data-action": "change->address#loadCommunalSections",
+              "data-prompt": "Select Commune",
+              "data-selected": a.object.commune_id.to_s,
+              id: "address_commune_id",
+              disabled: true
+            },
+            label_html: { class: "form-label" } %>
+          <small class="text-muted">Select your commune.</small>
+        </div>
+
+        <%# Section Communale %>
+        <div class="col-md-6">
+          <%= a.input :communal_section_id,
+            collection: [],
+            prompt: "Select Section Communale",
+            input_html: {
+              class: "form-select",
+              "data-address-target": "section",
+              "data-action": "change->address#loadPostalCode",
+              "data-prompt": "Select Section Communale",
+              "data-selected": a.object.communal_section_id.to_s,
+              id: "address_communal_section_id",
+              disabled: true
+            },
+            label_html: { class: "form-label" } %>
+          <small class="text-muted">Select your communal section.</small>
+        </div>
+
+        <%# Postal Code %>
+        <div class="col-md-6">
+          <%= a.input :postal_code,
+            input_html: {
+              class: "form-control bg-light",
+              readonly: true,
+              placeholder: "e.g. HT6110",
+              "data-address-target": "postalCode",
+              value: a.object.postal_code
+            },
+            label_html: { class: "form-label" } %>
+        </div>
+
+        <%# Street Address %>
+        <div class="col-md-6">
+          <%= a.input :street_address,
+            input_html: {
+              class: "form-control",
+              placeholder: "e.g. 123 Rue Principale"
+            },
+            label_html: { class: "form-label" } %>
+        </div>
+
+        <%# Locality %>
+        <div class="col-md-6">
+          <%= a.input :locality,
+            input_html: {
+              class: "form-control",
+              placeholder: "e.g. Jacmel"
+            },
+            label_html: { class: "form-label" } %>
+        </div>
+      </div>
+
+      <%# Diaspora notice (hidden by default) %>
+      <div id="diaspora_address_notice" style="display: none;">
+        <div class="alert d-flex align-items-start mb-0" style="font-size: 0.82rem; background: rgba(0, 32, 159, 0.05); border: 1px solid rgba(0, 32, 159, 0.12); color: #1a1a2e;">
+          <i class="ri-global-line ri-lg me-2 mt-1" style="color: #00209F;"></i>
+          <div>
+            <strong>Ou ap viv aletranje.</strong><br>
+            Adrès ou ap verifye atravè dokiman prèv adrès ou telechaje nan paj verifikasyon idantite a (fakti, relve bank, oswa kontra lwaye).
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-line me-1"></i>
+      Your address information is encrypted and only shared with verified institutions when required.
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    var sel = document.getElementById("address_country");
+    if (!sel) return;
+
+    function toggle() {
+      var haiti = document.getElementById("haiti_address_fields");
+      var notice = document.getElementById("diaspora_address_notice");
+      if (!haiti || !notice) return;
+      var isHaiti = sel.value === "Haiti" || sel.value === "HT" || sel.value === "";
+      haiti.style.display = isHaiti ? "" : "none";
+      notice.style.display = isHaiti ? "none" : "";
+    }
+
+    sel.addEventListener("change", toggle);
+    toggle();
+  })();
+</script>

@@ -1,0 +1,349 @@
+<%# app/views/election/admin/tally.html.erb %>
+<%# CEP Admin Tally Dashboard — "Official Legitimacy"
+    Shows real-time vote counts, integrity verification, and
+    allows CEP to trigger the final decryption of the total.
+
+    Access: CEP administrators only (role-gated).
+    No individual votes are visible — only aggregates. %>
+
+<div style="min-height: 100vh; background: #0a0f1f; padding: 1.5rem;
+            font-family: 'Montserrat', 'Inter', sans-serif; color: #ffffff;">
+
+  <%# ── Header ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.7rem;
+                    font-weight: 800; color: #00209F; letter-spacing: 2px; margin-bottom: 4px;">
+          BONID &middot; CEP ADMIN
+        </div>
+        <h1 style="font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 800; margin: 0;">
+          Tablo Elektoral
+        </h1>
+        <p style="font-size: 0.82rem; color: rgba(255,255,255,0.5); margin: 4px 0 0;">
+          <%= @election_id || "2026-presidential-round1" %> &middot; Diaspora
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <div style="padding: 6px 14px; background: rgba(52,211,153,0.15); border-radius: 20px;
+                    font-size: 0.72rem; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 4px;">
+          <span style="width: 8px; height: 8px; background: #34d399; border-radius: 50%; display: inline-block;
+                       animation: blink 1.5s infinite;"></span>
+          AN DIRÈK
+        </div>
+        <div style="padding: 6px 14px; background: rgba(255,255,255,0.08); border-radius: 20px;
+                    font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.7);">
+          Dènye aktualizasyon: <%= Time.current.strftime("%H:%M:%S") %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Stats Cards ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;
+              display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+
+    <%# Total Votes %>
+    <div style="background: linear-gradient(135deg, #00209F 0%, #001466 100%); border-radius: 1rem;
+                padding: 1.5rem; position: relative; overflow: hidden;">
+      <div style="font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase;
+                  letter-spacing: 0.08em; margin-bottom: 0.5rem;">Total Vòt</div>
+      <div style="font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 800; color: #fff;">
+        <%= number_with_delimiter(@stats[:total_votes] || 0) %>
+      </div>
+      <div style="position: absolute; right: -10px; bottom: -10px; font-size: 4rem; opacity: 0.08;">
+        <i class="ri-checkbox-circle-fill"></i>
+      </div>
+    </div>
+
+    <%# Remote Votes %>
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase;
+                  letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+        <i class="ri-smartphone-line" style="margin-right: 4px;"></i> Vòt Remòt
+      </div>
+      <div style="font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; color: #34d399;">
+        <%= number_with_delimiter(@stats[:remote_votes] || 0) %>
+      </div>
+      <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 4px;">
+        <%= @stats[:total_votes].to_i > 0 ? "#{((@stats[:remote_votes].to_f / @stats[:total_votes]) * 100).round(1)}%" : "0%" %> total
+      </div>
+    </div>
+
+    <%# Consulate Votes %>
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase;
+                  letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+        <i class="ri-building-line" style="margin-right: 4px;"></i> Vòt Konsila
+      </div>
+      <div style="font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; color: #7b8fff;">
+        <%= number_with_delimiter(@stats[:consulate_votes] || 0) %>
+      </div>
+      <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 4px;">
+        <%= @stats[:total_votes].to_i > 0 ? "#{((@stats[:consulate_votes].to_f / @stats[:total_votes]) * 100).round(1)}%" : "0%" %> total
+      </div>
+    </div>
+
+    <%# Rejected / Double-votes %>
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase;
+                  letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+        <i class="ri-spam-line" style="margin-right: 4px;"></i> Rejte
+      </div>
+      <div style="font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; color: #f87171;">
+        <%= number_with_delimiter(@stats[:rejected] || 0) %>
+      </div>
+      <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 4px;">
+        Doub vòt detekte + ZKP echwe
+      </div>
+    </div>
+  </div>
+
+  <%# ── Integrity Verification Panel ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;">
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-shield-check-line" style="color: #34d399;"></i>
+        Entegrite Rejis la
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+        <%# Merkle Root %>
+        <div style="background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 1rem;
+                    border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.5);
+                      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+            Merkle Root
+          </div>
+          <div style="font-family: 'Courier New', monospace; font-size: 0.7rem; color: #7b8fff;
+                      word-break: break-all; line-height: 1.5;">
+            <%= @integrity[:merkle_root] || "N/A — pa gen vòt anko" %>
+          </div>
+        </div>
+
+        <%# Aggregated Commitment %>
+        <div style="background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 1rem;
+                    border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.5);
+                      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+            Commitment Agreje (Homomorphic)
+          </div>
+          <div style="font-family: 'Courier New', monospace; font-size: 0.7rem; color: #34d399;
+                      word-break: break-all; line-height: 1.5;">
+            <%= @integrity[:aggregated_commitment] || "N/A" %>
+          </div>
+        </div>
+      </div>
+
+      <%# Verification Status %>
+      <div style="margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem;">
+          <% if @integrity[:valid] != false %>
+            <span style="width: 10px; height: 10px; background: #34d399; border-radius: 50%;"></span>
+            <span style="color: #34d399; font-weight: 600;">Ledger entèg — okenn manipilasyon detekte</span>
+          <% else %>
+            <span style="width: 10px; height: 10px; background: #f87171; border-radius: 50%;"></span>
+            <span style="color: #f87171; font-weight: 600;">ALÈT: Pwoblèm entegrite detekte</span>
+          <% end %>
+        </div>
+
+        <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4);">
+          Dènye verifikasyon: <%= @integrity[:verified_at] || Time.current.strftime("%d %b %Y %H:%M") %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Votes by Country ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;">
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-global-line" style="color: #7b8fff;"></i>
+        Vòt pa Peyi
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.75rem;">
+        <% (@stats[:by_country] || { "US" => 0, "DO" => 0, "CA" => 0, "FR" => 0, "CL" => 0, "BR" => 0 }).sort_by { |_, v| -v }.each do |code, count| %>
+          <% country_name = ISO3166::Country[code]&.translations&.dig("en") || code rescue code %>
+          <div style="background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 0.85rem;
+                      border: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 0.78rem; font-weight: 600; color: #fff;"><%= country_name %></div>
+              <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4);"><%= code %></div>
+            </div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: #7b8fff;">
+              <%= number_with_delimiter(count) %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Consulate Stations ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;">
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-building-line" style="color: #EDB95E;"></i>
+        Estasyon Konsila
+      </h2>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <th style="text-align: left; padding: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">Konsila</th>
+              <th style="text-align: left; padding: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.7rem; text-transform: uppercase;">Peyi</th>
+              <th style="text-align: right; padding: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.7rem; text-transform: uppercase;">Vòt</th>
+              <th style="text-align: right; padding: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; font-size: 0.7rem; text-transform: uppercase;">Estati</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% (@stats[:consulates] || [
+              { id: "HT-CONS-MIAMI", name: "Miami, FL", country: "US", votes: 0, status: "active" },
+              { id: "HT-CONS-NYC", name: "New York, NY", country: "US", votes: 0, status: "active" },
+              { id: "HT-CONS-MTL", name: "Montréal, QC", country: "CA", votes: 0, status: "active" },
+              { id: "HT-CONS-PAR", name: "Paris", country: "FR", votes: 0, status: "active" },
+              { id: "HT-CONS-SDQ", name: "Santo Domingo", country: "DO", votes: 0, status: "active" },
+              { id: "HT-CONS-SCL", name: "Santiago", country: "CL", votes: 0, status: "active" },
+              { id: "HT-CONS-BSB", name: "Brasília", country: "BR", votes: 0, status: "standby" },
+              { id: "HT-CONS-NAS", name: "Nassau", country: "BS", votes: 0, status: "standby" }
+            ]).each do |consulate| %>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding: 0.75rem; color: #fff; font-weight: 600;">
+                  <%= consulate[:name] %>
+                  <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4); font-weight: 400; font-family: monospace;">
+                    <%= consulate[:id] %>
+                  </div>
+                </td>
+                <td style="padding: 0.75rem; color: rgba(255,255,255,0.7);"><%= consulate[:country] %></td>
+                <td style="padding: 0.75rem; text-align: right; font-weight: 800; color: #7b8fff;">
+                  <%= number_with_delimiter(consulate[:votes]) %>
+                </td>
+                <td style="padding: 0.75rem; text-align: right;">
+                  <% if consulate[:status] == "active" %>
+                    <span style="font-size: 0.68rem; font-weight: 700; background: rgba(52,211,153,0.15); color: #34d399;
+                                 padding: 3px 10px; border-radius: 20px;">Aktif</span>
+                  <% else %>
+                    <span style="font-size: 0.68rem; font-weight: 700; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5);
+                                 padding: 3px 10px; border-radius: 20px;">Standby</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Final Decryption Panel ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;">
+    <div style="background: linear-gradient(135deg, #1a0a2e 0%, #0a0f1f 100%);
+                border: 2px solid rgba(123,143,255,0.2); border-radius: 1rem; padding: 2rem;">
+      <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-key-2-line" style="color: #EDB95E;"></i>
+        Dechifraj Final — Rezilta Ofisyèl
+      </h2>
+      <p style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin: 0 0 1.5rem; line-height: 1.5;">
+        Lè vòt fèmen, CEP ka dechifre total agreje a san li pa wè vòt endividyèl yo.
+        Sa a mande kle prive CEP a ak akò 3 nan 5 manm komisyon an (multi-sig).
+      </p>
+
+      <% if @election_closed %>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 0.75rem; padding: 1.5rem;
+                    border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 1rem;">
+            Pou dechifre rezilta ofisyèl yo, antre kle prive CEP a:
+          </div>
+          <form action="<%= election_admin_decrypt_path %>" method="post" style="max-width: 400px; margin: 0 auto;">
+            <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+            <%= hidden_field_tag :election_id, @election_id %>
+            <textarea name="cep_private_key" rows="4"
+                      placeholder="-----BEGIN RSA PRIVATE KEY-----"
+                      style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05);
+                             border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem;
+                             color: #fff; font-family: 'Courier New', monospace; font-size: 0.72rem;
+                             resize: none; margin-bottom: 1rem;"></textarea>
+            <button type="submit"
+                    style="padding: 0.85rem 2rem; background: #EDB95E; color: #0a0f1f;
+                           border: none; border-radius: 0.75rem; font-weight: 800; font-size: 0.9rem;
+                           cursor: pointer; font-family: 'Montserrat', sans-serif;
+                           box-shadow: 0 4px 12px rgba(237,185,94,0.3);">
+              <i class="ri-lock-unlock-line" style="margin-right: 6px;"></i>
+              Dechifre Rezilta Yo
+            </button>
+          </form>
+        </div>
+      <% else %>
+        <div style="text-align: center; padding: 1rem;">
+          <div style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+                      background: rgba(255,255,255,0.05); border-radius: 0.5rem;
+                      font-size: 0.82rem; color: rgba(255,255,255,0.5);">
+            <i class="ri-lock-line"></i>
+            Vòt toujou ouvè — dechifraj bloke jiskaske vòt fèmen
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Observer Access ── %>
+  <div style="max-width: 1200px; margin: 0 auto 2rem;">
+    <div style="background: #111730; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; padding: 1.5rem;">
+      <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-eye-line" style="color: #00E4FF;"></i>
+        Aksè Obsèvatè Entènasyonal
+      </h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+        <div style="background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 1rem;
+                    border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">API Verifikasyon</div>
+          <code style="font-size: 0.68rem; color: #7b8fff; display: block; word-break: break-all;">
+            GET /api/v1/election/audit?election_id=<%= @election_id %>
+          </code>
+          <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4); margin-top: 6px;">
+            Retounen: merkle_root, total_votes, snapshot dènye jou a
+          </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 1rem;
+                    border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Telechaje Rejis Konplè</div>
+          <code style="font-size: 0.68rem; color: #7b8fff; display: block; word-break: break-all;">
+            GET /api/v1/election/ledger.csv?election_id=<%= @election_id %>
+          </code>
+          <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4); margin-top: 6px;">
+            CSV ak tout hash — obsèvatè ka verifye endepandaman
+          </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border-radius: 0.75rem; padding: 1rem;
+                    border: 1px solid rgba(255,255,255,0.06);">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Snapshot Jounal</div>
+          <code style="font-size: 0.68rem; color: #7b8fff; display: block; word-break: break-all;">
+            GET /api/v1/election/snapshot?date=<%= Date.current.iso8601 %>
+          </code>
+          <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4); margin-top: 6px;">
+            Snapshot chak jou pou pibliye sou sit piblik la
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Footer ── %>
+  <div style="max-width: 1200px; margin: 0 auto; text-align: center; padding: 1rem 0;">
+    <p style="font-size: 0.65rem; color: rgba(255,255,255,0.25); line-height: 1.6;">
+      <i class="ri-shield-check-line" style="margin-right: 2px;"></i>
+      Sistèm elektoral BonID — Pedersen Commitment + Schnorr ZKP + AES-256-GCM<br>
+      Vòt endividyèl yo pa janm vizib. Sèlman total agreje a dechifrab pa CEP.<br>
+      &copy; 2026 BonID / Verifyem &middot; Conseil &Eacute;lectoral Provisoire
+    </p>
+  </div>
+</div>
+
+<style>
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+</style>

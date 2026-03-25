@@ -1,0 +1,21 @@
+<%# Critical Incident Alert Banner — shown when @partner.critical_incident_active? %>
+<% if @partner.critical_incident_active? %>
+  <div class="le-critical-banner mb-3" style="border-radius: var(--radius-md, 0.75rem);">
+    <div class="d-flex align-items-center justify-content-between px-3 py-2">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-alarm-warning-line le-critical-icon-pulse" style="font-size: 1.1rem;"></i>
+        <span class="fw-bold" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; letter-spacing: 0.5px;">
+          CRITICAL INCIDENT ACTIVE
+        </span>
+        <% if @partner.critical_incident_message.present? %>
+          <span style="font-size: 0.8rem; opacity: 0.9;">
+            &mdash; <%= @partner.critical_incident_message %>
+          </span>
+        <% end %>
+      </div>
+      <span style="font-size: 0.65rem; opacity: 0.75;">
+        Since <%= @partner.critical_incident_activated_at&.strftime("%H:%M") %>
+      </span>
+    </div>
+  </div>
+<% end %>

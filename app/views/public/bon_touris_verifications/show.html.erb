@@ -1,0 +1,405 @@
+<!-- ================================
+     BONTOURIS VERIFICATION RESULT
+     app/views/public/bon_touris_verifications/show.html.erb
+=================================== -->
+
+<style>
+  .verification-result-container {
+    min-height: 60vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    display: flex;
+    align-items: center;
+    padding: 3rem 0;
+  }
+
+  .verification-card {
+    background: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .verification-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+  }
+
+  .verification-card.valid::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+  }
+
+  .verification-card.invalid::before,
+  .verification-card.expired::before,
+  .verification-card.revoked::before {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+  }
+
+  .verification-card.under-review::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  }
+
+  .verification-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+  }
+
+  .verification-card.valid .verification-icon {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+  }
+
+  .verification-card.invalid .verification-icon,
+  .verification-card.expired .verification-icon,
+  .verification-card.revoked .verification-icon {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    color: white;
+  }
+
+  .verification-card.under-review .verification-icon {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: white;
+  }
+
+  .verification-headline {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .verification-card.valid .verification-headline {
+    color: #059669;
+  }
+
+  .verification-card.invalid .verification-headline,
+  .verification-card.expired .verification-headline,
+  .verification-card.revoked .verification-headline {
+    color: #dc2626;
+  }
+
+  .verification-card.under-review .verification-headline {
+    color: #d97706;
+  }
+
+  .verification-details {
+    margin-top: 2rem;
+  }
+
+  .verification-label {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #374151;
+    margin-bottom: 2rem;
+  }
+
+  .info-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-item {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .info-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #111827;
+    font-family: 'Orbitron', monospace;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    letter-spacing: 1px;
+    margin-top: 1.5rem;
+  }
+
+  .status-badge.valid {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+  }
+
+  .status-badge.invalid,
+  .status-badge.expired,
+  .status-badge.revoked {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    color: white;
+  }
+
+  .status-badge.under-review {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: white;
+  }
+
+  .status-badge i {
+    font-size: 1.25rem;
+  }
+
+  .error-message {
+    font-size: 1rem;
+    color: #374151;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+
+  .alert-warning {
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    text-align: left;
+    margin-top: 1.5rem;
+  }
+
+  .alert-danger {
+    background: #fee2e2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    text-align: left;
+    margin-top: 1.5rem;
+  }
+
+  .alert-info {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    text-align: left;
+    margin-top: 1.5rem;
+  }
+
+  .alert-warning i {
+    font-size: 1.5rem;
+    color: #d97706;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .alert-danger i {
+    font-size: 1.5rem;
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .alert-info i {
+    font-size: 1.5rem;
+    color: #2563eb;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
+  .alert-warning ul,
+  .alert-danger ul,
+  .alert-info ul {
+    padding-left: 1.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+  }
+
+  .alert-warning li,
+  .alert-danger li,
+  .alert-info li {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .alert-warning li {
+    color: #78350f;
+  }
+
+  .alert-danger li {
+    color: #7f1d1d;
+  }
+
+  .alert-info li {
+    color: #1e3a8a;
+  }
+
+  .text-muted {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+  }
+
+  .verification-code {
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    word-break: break-all;
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: #f9fafb;
+    border-radius: 4px;
+  }
+
+  @media (max-width: 768px) {
+    .verification-card {
+      padding: 2rem 1.5rem;
+    }
+
+    .verification-headline {
+      font-size: 1.5rem;
+    }
+
+    .verification-icon {
+      width: 64px;
+      height: 64px;
+      font-size: 2rem;
+    }
+
+    .info-value {
+      font-size: 1rem;
+    }
+  }
+</style>
+<div class="verification-result-container">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10">
+
+        <div class="verification-card <%= @result[:ok] ? 'valid' : @result[:status].to_s %>">
+
+          <!-- ICON -->
+          <div class="verification-icon">
+            <% if @result[:ok] %>
+              <i class="ri-shield-check-line"></i>
+            <% elsif @result[:status] == :not_verified %>
+              <i class="ri-time-line"></i>
+            <% elsif @result[:status] == :expired %>
+              <i class="ri-calendar-close-line"></i>
+            <% elsif @result[:status] == :revoked %>
+              <i class="ri-forbid-line"></i>
+            <% else %>
+              <i class="ri-error-warning-line"></i>
+            <% end %>
+          </div>
+
+          <!-- HEADLINE -->
+          <h1 class="verification-headline">
+            <%= @result[:headline] %>
+          </h1>
+
+          <div class="verification-details">
+
+            <% if @result[:ok] %>
+
+              <!-- VALID -->
+              <p class="verification-label">
+                <%= @result[:verification_label] %>
+              </p>
+
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">BonTouris ID</div>
+                  <div class="info-value"><%= @result[:bon_touris_id] %></div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-label">Document Type</div>
+                  <div class="info-value"><%= @result[:type] %></div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-label">Valid Until</div>
+                  <div class="info-value"><%= @result[:expires].strftime("%B %d, %Y") %></div>
+                </div>
+              </div>
+
+              <div class="status-badge valid">
+                <i class="ri-checkbox-circle-line"></i>
+                VERIFIED & VALID
+              </div>
+
+              <div class="alert-info mt-4">
+                <i class="ri-shield-keyhole-line"></i>
+                <div>
+                  <strong>Cryptographically Verified</strong>
+                  <p class="mb-0 mt-1 small">
+                    Verified using Ed25519 digital signatures.  
+                    No personal data is embedded in the QR code.
+                  </p>
+                </div>
+              </div>
+
+              <div class="verification-code mt-3">
+                <strong>Signature:</strong>
+                <code><%= @result[:verification_code][0..40] %>…</code>
+              </div>
+
+            <% else %>
+
+              <!-- INVALID / ERROR -->
+              <p class="error-message">
+                <%= @result[:message] %>
+              </p>
+
+              <% if @result[:status] == :expired %>
+                <div class="status-badge expired">EXPIRED</div>
+              <% elsif @result[:status] == :revoked %>
+                <div class="status-badge revoked">REVOKED</div>
+              <% elsif @result[:status] == :not_verified %>
+                <div class="status-badge under-review">UNDER REVIEW</div>
+              <% elsif @result[:status] == :invalid_signature %>
+                <div class="status-badge invalid">INVALID SIGNATURE</div>
+              <% else %>
+                <div class="status-badge invalid">VERIFICATION FAILED</div>
+              <% end %>
+
+              <p class="text-muted mt-4 small">
+                Need help? Contact <strong>support@verifyem.ht</strong>
+              </p>
+
+            <% end %>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

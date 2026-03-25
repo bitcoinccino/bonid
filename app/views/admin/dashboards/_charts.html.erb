@@ -1,0 +1,220 @@
+<div class="charts-wrapper">
+
+  <!-- =========================== -->
+  <!-- EXPORT ACTIONS (GLOBAL)     -->
+  <!-- =========================== -->
+  <div class="d-flex justify-content-end gap-2 mb-4">
+
+    <%= link_to "Export Users CSV",
+        "#",
+        class:"btn btn-sm btn-outline-primary" %>
+
+    <%= link_to "Export Users PDF",
+        "#",
+        class:"btn btn-sm btn-outline-danger",
+        target:"_blank" %>
+
+  </div>
+
+
+  <!-- ========================================================= -->
+  <!--                VERIFICATION ANALYTICS                    -->
+  <!-- ========================================================= -->
+  <section class="mb-5">
+    <h4 class="fw-bold text-haitian-blue mb-3">
+      <i class="ri-check-double-line me-1"></i>
+      Verification Analytics
+    </h4>
+
+    <div class="row g-4">
+
+      <!-- DAILY -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Daily Verifications",
+          subtitle: "Last 14 Days",
+          icon: "ri-bar-chart-2-line",
+          chart: line_chart(@submissions_daily, colors: ["#04328C"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- WEEKLY -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Weekly Verifications",
+          subtitle: "Last 12 Weeks",
+          icon: "ri-timeline-view",
+          chart: line_chart(@submissions_weekly, colors: ["#1A936F"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- MONTHLY -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Monthly Verifications",
+          subtitle: "Last 12 Months",
+          icon: "ri-calendar-2-line",
+          chart: line_chart(@submissions_monthly, colors: ["#FFD700"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- YEARLY -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Yearly Verifications",
+          subtitle: "Last 5 Years",
+          icon: "ri-bar-chart-fill",
+          chart: column_chart(@submissions_yearly, colors: ["#04328C", "#1A936F"], library: { height: "260px" })
+        %>
+      </div>
+
+    </div>
+  </section>
+
+
+
+  <!-- ========================================================= -->
+  <!--                USER DEMOGRAPHICS                           -->
+  <!-- ========================================================= -->
+  <section class="mb-5">
+    <h4 class="fw-bold text-haitian-blue mb-3">
+      <i class="ri-user-line me-1"></i>
+      User Demographics
+    </h4>
+
+    <div class="row g-4">
+
+      <!-- GENDER -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Gender Breakdown",
+          subtitle: "Male vs Female",
+          icon: "ri-team-line",
+          chart: pie_chart(@gender_breakdown, colors: ["#04328C", "#E53E3E"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- AGE GROUPS -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Age Groups",
+          subtitle: "Under 18 / 18–65 / Over 65",
+          icon: "ri-user-3-line",
+          chart: bar_chart(@age_groups, colors: ["#3182CE", "#1A936F", "#E53E3E"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- DEPARTMENTS -->
+      <div class="col-md-12">
+        <%= render "chart_card",
+          title: "Users by Department",
+          subtitle: "Distribution across Haiti",
+          icon: "ri-map-pin-line",
+          chart: column_chart(@users_by_department, colors: ["#04328C"], library: { height: "260px" })
+        %>
+      </div>
+
+    </div>
+  </section>
+
+
+
+  <!-- ========================================================= -->
+  <!--                PARTNER ANALYTICS                           -->
+  <!-- ========================================================= -->
+  <section class="mb-5">
+    <h4 class="fw-bold text-haitian-blue mb-3">
+      <i class="ri-building-line me-1"></i>
+      Partner Analytics
+    </h4>
+
+    <div class="row g-4">
+
+      <!-- PARTNER SUBMISSIONS -->
+      <div class="col-md-12">
+        <%= render "chart_card",
+          title: "Verification Volume per Partner",
+          subtitle: "Partner Activity Breakdown",
+          icon: "ri-bar-chart-horizontal-line",
+          chart: bar_chart(@submissions_by_partner, colors: ["#1A936F"], library: { height: "300px" })
+        %>
+
+        <div class="mt-3 d-flex flex-wrap gap-4">
+          <% @partners_with_logo.each do |p| %>
+            <div class="d-flex flex-column align-items-center">
+              <%= image_tag p.logo,
+                  class: "rounded shadow-sm",
+                  style: "height:50px;width:50px;object-fit:contain;" %>
+              <small class="text-muted mt-1"><%= p.name %></small>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+
+  <!-- ========================================================= -->
+  <!--                OFFICER ANALYTICS (PNH)                     -->
+  <!-- ========================================================= -->
+  <section class="mb-5">
+    <h4 class="fw-bold text-haitian-blue mb-3">
+      <i class="ri-shield-user-line me-1"></i>
+      Officer Analytics (PNH)
+    </h4>
+
+    <div class="row g-4">
+
+      <!-- VERIFIED VS UNVERIFIED -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Verified BonID Status",
+          subtitle: "Verified vs Unverified Officers",
+          icon: "ri-shield-check-line",
+          chart: pie_chart(
+            { "Verified" => @officers_verified, "Unverified" => @officers_unverified },
+            colors: ["#1A936F", "#E53E3E"],
+            library: { height: "260px" }
+          )
+        %>
+      </div>
+
+      <!-- OFFICERS BY DEPARTMENT -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Officers by Department",
+          subtitle: "Deployment Heatmap Incoming",
+          icon: "ri-map-pin-user-line",
+          chart: column_chart(@officers_by_department, colors: ["#04328C"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- OFFICERS BY SEX -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Officers by Sex",
+          subtitle: "Male / Female",
+          icon: "ri-men-line",
+          chart: pie_chart(@officers_by_sex, colors: ["#04328C", "#E53E3E"], library: { height: "260px" })
+        %>
+      </div>
+
+      <!-- OFFICER AGE GROUPS -->
+      <div class="col-md-6">
+        <%= render "chart_card",
+          title: "Officer Age Groups",
+          subtitle: "Under 35 / Over 54",
+          icon: "ri-user-settings-line",
+          chart: bar_chart(
+            { "Under 35" => @officers_under_35, "Over 54" => @officers_over_54 },
+            colors: ["#3182CE", "#E53E3E"],
+            library: { height: "260px" })
+        %>
+      </div>
+
+    </div>
+  </section>
+
+</div>

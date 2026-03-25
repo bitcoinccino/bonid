@@ -1,5 +1,5 @@
 // app/javascript/controllers/modal_confirmation_controller.js
-import { Controller } from "@hotwired/stimulus"
+import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
   static values = {
@@ -10,22 +10,36 @@ export default class extends Controller {
   }
 
   connect() {
-    console.log("✅ modal-confirmation connected")
-    this.modal = new bootstrap.Modal(document.getElementById("confirmationModal"))
+    setTimeout(() => {
+      const modalEl = document.getElementById("confirmationModal");
+      if (modalEl) {
+        this.modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      } else {
+        console.warn("⚠️ confirmationModal element not found.");
+      }
+    }, 50);
   }
 
   open(event) {
-    event.preventDefault()
-    console.log("✅ modal-confirmation#open fired")
+    event.preventDefault();
+    console.log("✅ modal-confirmation#open");
 
-    document.getElementById("confirmationModalTitle").textContent = this.titleValue
-    document.getElementById("confirmationModalBody").textContent = this.bodyValue
+    const titleEl = document.getElementById("confirmationModalTitle");
+    const bodyEl = document.getElementById("confirmationModalBody");
+    const formEl = document.getElementById("confirmationModalForm");
+    const methodInput = document.getElementById("confirmationModalMethodInput");
 
-    const form = document.getElementById("confirmationModalForm")
-    form.action = this.actionValue
-    form.method = this.methodValue.toLowerCase() === "get" ? "get" : "post"
-    document.getElementById("confirmationModalMethodInput").value = this.methodValue.toUpperCase()
+    if (!titleEl || !bodyEl || !formEl || !methodInput || !this.modal) {
+      console.error("❌ Missing modal elements or modal not initialized.");
+      return;
+    }
 
-    this.modal.show()
+    titleEl.textContent = this.titleValue;
+    bodyEl.textContent = this.bodyValue;
+    formEl.action = this.actionValue;
+    formEl.method = this.methodValue.toLowerCase() === "get" ? "get" : "post";
+    methodInput.value = this.methodValue.toUpperCase();
+
+    this.modal.show();
   }
 }

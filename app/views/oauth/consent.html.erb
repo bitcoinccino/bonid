@@ -1,0 +1,791 @@
+<% content_for :body_class, "oauth-consent-page" %>
+<!-- app/views/oauth/consent.html.erb -->
+<section class="container py-5 text-center" role="main" aria-labelledby="consent-heading">
+  <div class="card rounded-4 mx-auto bg-white"
+       style="max-width:640px;overflow:hidden;border:1px solid #e5e7eb;">
+    <div class="card-body p-4 p-md-5">
+
+      <%# Resolve approved submission once at top for reuse throughout %>
+      <% approved_submission = @current_user&.identity_submissions&.approved&.first %>
+
+      <!-- ── WHO IS GRANTING: citizen identity bar — very top ── -->
+      <% if approved_submission %>
+        <%
+          bonid_raw   = approved_submission.bonid.to_s
+          bonid_parts = bonid_raw.split("-")
+          bonid_masked = if bonid_parts.length >= 5
+            tail = bonid_parts.last
+            "#{bonid_parts.first}-****-*-**-#{tail[0]}****#{tail[-3..]}"
+          else
+            bonid_raw
+          end
+        %>
+        <div class="d-flex align-items-center gap-3 rounded-3 px-3 py-3 mb-4 text-start"
+             style="background:#f0f4ff; border:1px solid rgba(0,32,159,0.12);">
+          <%
+            # Prefer user's profile photo over the raw liveness selfie
+            consent_photo = if @current_user&.photo&.attached?
+                              @current_user.photo
+                            elsif approved_submission.photo&.attached?
+                              approved_submission.photo
+                            elsif approved_submission.selfie&.attached?
+                              approved_submission.selfie
+                            end
+          %>
+          <% if consent_photo %>
+            <%= image_tag consent_photo.variant(resize_to_limit: [64,64]),
+                  class: "rounded-circle flex-shrink-0",
+                  style: "width:56px;height:56px;object-fit:cover;" %>
+          <% else %>
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:56px;height:56px;background:var(--haitian-blue);">
+              <i class="ri-user-line text-white fs-5"></i>
+            </div>
+          <% end %>
+          <div class="flex-grow-1 overflow-hidden">
+            <div class="small text-muted lh-1 mb-1">You're granting access as</div>
+            <div class="fw-bold text-dark lh-1 mb-1 fs-6">
+              <%= [approved_submission.first_name, approved_submission.middle_name, approved_submission.last_name].compact.join(' ').presence || @current_user&.email %>
+            </div>
+            <small class="text-muted d-block" style="font-size:0.68rem; font-family: monospace; letter-spacing:0.02em;">
+              BonID: <%= bonid_masked %>
+            </small>
+          </div>
+          <i class="ri-shield-check-line text-success flex-shrink-0 fs-4"></i>
+        </div>
+      <% end %>
+
+      <!-- ── Trust Bridge: BonID → Partner ── -->
+      <% if approved_submission %>
+        <div class="d-flex align-items-center justify-content-center gap-0 my-3 mx-auto rounded-pill px-3 py-2"
+             style="background:#f8f9fa; border:1px solid #e5e7eb; max-width:260px;">
+          <%# BonID shield %>
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:32px;height:32px;background:#00209F;">
+            <i class="ri-shield-check-line text-white" style="font-size:0.85rem;"></i>
+          </div>
+          <%# Dotted connector %>
+          <div style="flex:1;max-width:40px;border-top:2px dotted #cbd5e1;margin:0 4px;"></div>
+          <%# Lock icon — secure link %>
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:24px;height:24px;background:#e5e7eb;">
+            <i class="ri-lock-line" style="font-size:0.65rem;color:#6c757d;"></i>
+          </div>
+          <%# Dotted connector %>
+          <div style="flex:1;max-width:40px;border-top:2px dotted #cbd5e1;margin:0 4px;"></div>
+          <%# Partner icon %>
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 overflow-hidden"
+               style="width:32px;height:32px;background:#fff;border:1px solid #e5e7eb;">
+            <% if @partner.logo.attached? %>
+              <%= image_tag @partner.logo.variant(resize_to_fill: [64,64]),
+                    style: "width:100%;height:100%;object-fit:cover;",
+                    alt: @partner.name %>
+            <% else %>
+              <i class="ri-building-4-line text-muted" style="font-size:0.8rem;"></i>
+            <% end %>
+          </div>
+        </div>
+        <div class="text-center mb-2">
+          <small class="text-muted" style="font-size:0.65rem;">Secure connection</small>
+        </div>
+      <% end %>
+
+      <!-- Partner Logo -->
+      <div class="mb-2 d-flex justify-content-center">
+        <% if @partner.logo.attached? %>
+          <%= image_tag @partner.logo.variant(resize_to_limit: [120,120]),
+                alt: "#{@partner.name} logo",
+                class: "rounded-circle",
+                style: "width:72px;height:72px;object-fit:cover;background:#f8f9fa;border:1px solid #e5e7eb;" %>
+        <% else %>
+          <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center"
+               style="width:72px;height:72px;border:1px solid #e5e7eb;">
+            <i class="ri-building-4-line text-muted fs-2"></i>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Partner name + verified badge -->
+      <h3 id="consent-heading" class="fw-bold mb-1" style="color:var(--haitian-blue);">
+        <%= @partner.name %>
+      </h3>
+      <p class="text-muted mb-3 small">
+        <%= @partner.sector&.titleize || "Verified Partner" %> &bull;
+        <span class="badge rounded-pill bg-success-subtle text-success px-2 py-1" style="font-size:0.75rem;">
+          <i class="ri-shield-check-line me-1"></i>Verified Partner
+        </span>
+      </p>
+
+      <% if @is_scope_upgrade %>
+        <div class="alert alert-info border-0 rounded-3 text-start mb-3 py-2 px-3" style="background:#eef2ff;">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-shield-check-line text-success flex-shrink-0"></i>
+            <p class="mb-0 small">
+              You've already granted <strong><%= @partner.name %></strong> access to
+              <strong><%= @already_granted_scopes.reject { |s| s == 'openid' }.map { |s| scope_label(s) }.join(', ') %></strong>.
+              They're now requesting additional permissions:
+            </p>
+          </div>
+        </div>
+      <% else %>
+        <p class="text-muted small mb-3">
+          <strong><%= @partner.name %></strong> is requesting access to your BonID:
+        </p>
+      <% end %>
+
+      <%# ── Open approval form BEFORE scope toggles so checkboxes submit inside the form ── %>
+      <% if approved_submission %>
+        <form action="<%= decision_oauth_index_path(decision: 'approve') %>" method="post"
+              class="approval-form" data-turbo="false">
+          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+          <%= hidden_field_tag :state, @state %>
+          <% if @scopes.map(&:to_s).include?('openid') %>
+            <input type="hidden" name="granted_scopes[]" value="openid">
+          <% end %>
+      <% end %>
+
+      <!-- Scopes: categorized field groups -->
+      <% if @scopes.present? %>
+        <%
+          # Category definitions — unified brand blue for all categories
+          cat_color = '#00209F'
+          scope_categories = [
+            { key: 'identity',     label: 'Identity',        icon: 'ri-user-line',
+              purpose: 'Used to confirm your legal identity',
+              scopes: ['profile'],
+              fields: ['First Name', 'Last Name', 'Date of Birth', 'Sex', 'Nationality'] },
+            { key: 'contact',      label: 'Contact',         icon: 'ri-contacts-line',
+              purpose: 'Used to reach you about your account',
+              scopes: ['email', 'phone'],
+              fields: { 'email' => ['Email Address'], 'phone' => ['Phone Number'] } },
+            { key: 'address',      label: 'Address',         icon: 'ri-map-pin-line',
+              purpose: 'Used to verify your residential location',
+              scopes: ['address'],
+              fields: ['Street Address', 'Commune', 'Department', 'Postal Code', 'Country'] },
+            { key: 'physical',     label: 'Physical',        icon: 'ri-body-scan-line',
+              purpose: 'Used to match your physical description',
+              scopes: ['physical'],
+              fields: ['Height', 'Weight', 'Eye Color', 'Hair Color', 'Body Type', 'Skin Tone'] },
+            { key: 'health',       label: 'Health',          icon: 'ri-heart-pulse-line',
+              purpose: 'Used to share medical info with authorized providers',
+              scopes: ['health'],
+              fields: ['Blood Type', 'Allergies', 'Chronic Conditions', 'Organ Donor'] },
+            { key: 'verification', label: 'Verification',    icon: 'ri-fingerprint-line',
+              purpose: 'Used to confirm you are a verified citizen',
+              scopes: ['identity:verify'],
+              fields: ['BonID Verification Status'] },
+            { key: 'criminal',     label: 'Criminal Record', icon: 'ri-shield-user-line',
+              purpose: 'Used for background eligibility checks',
+              scopes: ['crime:status'],
+              fields: ['Criminal Record Status', 'Severity Level'] }
+          ].map { |cat| cat.merge(color: cat_color) }
+
+          scope_modal_ids = {
+            'profile'          => 'scope-modal-profile',
+            'email'            => 'scope-modal-email',
+            'phone'            => 'scope-modal-phone',
+            'address'          => 'scope-modal-address',
+            'physical'         => 'scope-modal-physical',
+            'health'           => 'scope-modal-health',
+            'identity:verify'  => 'scope-modal-identity-verify',
+            'crime:status'     => 'scope-modal-crime-status'
+          }
+
+          visible_scopes = (@scopes || []).reject { |s| s == 'openid' }
+
+          # Filter categories to only those with at least one matching scope
+          active_categories = scope_categories.select do |cat|
+            (cat[:scopes] & visible_scopes).any?
+          end
+        %>
+
+        <div class="vstack gap-2 px-1 mb-3 text-start">
+          <% active_categories.each_with_index do |cat, idx| %>
+            <%
+              # Resolve fields — handle both flat arrays and scope-keyed hashes
+              matching_scopes = cat[:scopes] & visible_scopes
+              cat_fields = if cat[:fields].is_a?(Hash)
+                matching_scopes.flat_map { |s| cat[:fields][s] || [] }
+              else
+                cat[:fields]
+              end
+              collapse_id = "scope-cat-#{cat[:key]}"
+              detail_scope = matching_scopes.detect { |s| scope_modal_ids[s] }
+
+              # Determine if this category contains NEW scopes (for upgrade UI)
+              is_new_category = @is_scope_upgrade && (matching_scopes & (@new_scopes || [])).any?
+              is_already_granted = @is_scope_upgrade && !is_new_category
+            %>
+            <div class="rounded-3 overflow-hidden" data-scope-key="<%= cat[:key] %>"
+                 style="background: <%= cat[:color] %>0F; border: 1px solid <%= cat[:color] %>25;<%= ' border-style: dashed;' if is_already_granted %><%= ' opacity: 0.5;' if is_already_granted %>">
+
+              <%# Hidden inputs — submit all scopes for this category %>
+              <% if approved_submission %>
+                <% matching_scopes.each do |s| %>
+                  <input type="hidden" name="granted_scopes[]" value="<%= s %>">
+                <% end %>
+              <% end %>
+
+              <%# Clickable category header — expands field list %>
+              <div class="scope-cat-toggle d-flex align-items-center gap-2 px-3 py-2"
+                   role="button"
+                   data-bs-toggle="collapse"
+                   data-bs-target="#<%= collapse_id %>"
+                   aria-expanded="false"
+                   aria-controls="<%= collapse_id %>"
+                   style="cursor:pointer;">
+                <i class="ri-arrow-down-s-line scope-cat-chevron flex-shrink-0"
+                   style="color:<%= cat[:color] %>; font-size:1rem;"></i>
+                <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:26px; height:26px; background:<%= cat[:color] %>18;">
+                  <i class="<%= cat[:icon] %>" style="color:<%= cat[:color] %>; font-size:0.85rem;"></i>
+                </div>
+                <span class="fw-bold small" style="color:<%= cat[:color] %>;"><%= cat[:label] %></span>
+                <% if is_new_category %>
+                  <span class="badge rounded-pill ms-auto bg-warning text-dark" style="font-size:0.65rem;">
+                    NEW
+                  </span>
+                <% elsif is_already_granted %>
+                  <span class="badge rounded-pill ms-auto" style="background:#e8f5e9; color:#2e7d32; font-size:0.65rem;">
+                    <i class="ri-check-line"></i> Granted
+                  </span>
+                <% else %>
+                  <span class="badge rounded-pill ms-auto" style="background:<%= cat[:color] %>18; color:<%= cat[:color] %>; font-size:0.65rem;">
+                    <%= cat_fields.length %> <%= cat_fields.length == 1 ? 'field' : 'fields' %>
+                  </span>
+                <% end %>
+                <% if detail_scope %>
+                  <span data-bs-toggle="tooltip" data-bs-placement="top" title="<%= cat[:purpose] %>"
+                        class="flex-shrink-0" onclick="event.stopPropagation();">
+                    <a href="#" class="scope-details-link-pill"
+                       data-bs-toggle="modal"
+                       data-bs-target="#<%= scope_modal_ids[detail_scope] %>"
+                       style="font-size:0.6rem; padding:0.1rem 0.45rem;">
+                      <i class="ri-information-line"></i>
+                    </a>
+                  </span>
+                <% end %>
+                <%# Static checkmark — replaces toggle switch %>
+                <i class="ri-checkbox-circle-line text-success flex-shrink-0 ms-1" style="font-size:1.1rem;"></i>
+              </div>
+
+              <%# Collapsible fields list %>
+              <div class="collapse" id="<%= collapse_id %>">
+                <div class="px-3 pb-2 pt-1">
+                  <% if matching_scopes.length > 1 %>
+                    <%# Multi-scope: show scope labels with checkmarks (e.g. Contact → Email + Phone) %>
+                    <% matching_scopes.each do |scope| %>
+                      <div class="d-flex align-items-center gap-2 ps-3 py-1 rounded-2 mb-1"
+                           style="background: <%= cat[:color] %>08;">
+                        <i class="ri-checkbox-circle-line text-success flex-shrink-0" style="font-size:0.85rem;"></i>
+                        <span class="small fw-semibold" style="color: <%= cat[:color] %>;">
+                          <%= scope_label(scope) %>
+                        </span>
+                      </div>
+                    <% end %>
+                    <hr class="my-1 opacity-25">
+                  <% end %>
+                  <% cat_fields.each do |field| %>
+                    <div class="d-flex align-items-center gap-2 ps-4 py-1">
+                      <i class="ri-checkbox-circle-line text-success flex-shrink-0" style="font-size:0.8rem;"></i>
+                      <span class="small text-dark"><%= field %></span>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+      <% else %>
+        <p class="text-muted small">No specific data requested.</p>
+      <% end %>
+
+      <!-- Privacy one-liner -->
+      <p class="text-muted small mb-4">
+        <i class="ri-shield-check-line text-success me-1"></i>
+        Encrypted &amp; revocable anytime from your
+        <%= link_to "BonID dashboard", citizens_consents_path, class: "text-decoration-none fw-medium" %>.
+      </p>
+
+      <!-- ================ VERIFIED USER PATH ================ -->
+      <% if approved_submission %>
+
+        <%# ── Data Summary Box ── %>
+        <div class="rounded-3 p-3 mb-3 text-start"
+             style="background:#f8f9fa; border:1px solid #e5e7eb;">
+          <div class="small fw-semibold text-muted mb-2">You are sharing:</div>
+          <div class="d-flex flex-wrap gap-1">
+            <% active_categories.each do |cat| %>
+              <span class="badge rounded-pill px-2 py-1"
+                    style="background:#f1f3f5; color:#495057; font-size:0.7rem; border:1px solid #dee2e6;">
+                <i class="<%= cat[:icon] %> me-1" style="color:#6c757d;"></i><%= cat[:label] %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Submit button (inside the approval form opened above) -->
+        <div class="d-grid gap-2 mb-2">
+          <button type="submit" id="consent-submit-btn"
+                  class="btn btn-lg text-white rounded-pill fw-semibold w-100"
+                  style="background-color:var(--haitian-blue);border:none;">
+            <i class="ri-check-line me-2"></i>Allow <%= @partner.name %> to use this info
+          </button>
+        </div>
+
+        <small class="text-muted d-block text-center mb-3" style="font-size:0.72rem;">
+          <i class="ri-lock-line me-1"></i>Secure connection &bull; Data is encrypted
+        </small>
+
+        </form>
+        <%# End of approval form %>
+
+        <div class="d-grid gap-2 mb-3">
+          <%# Hidden deny form — submitted only from inside the confirmation modal %>
+          <%= form_with url: decision_oauth_index_path(decision: 'deny'), method: :post,
+                        id: "deny-form", data: { turbo: false } do %>
+            <%= hidden_field_tag :state, @state %>
+          <% end %>
+
+          <%# "Don't Allow" opens confirmation modal — does NOT submit directly %>
+          <button type="button"
+                  class="consent-ghost-btn btn btn-lg rounded-pill fw-semibold w-100"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deny-confirm-modal">
+            Don't Allow
+          </button>
+        </div>
+
+      <!-- ================ UNVERIFIED USER PATH ================ -->
+      <% else %>
+        <div class="alert alert-warning rounded-3 border-warning-subtle text-start">
+          <div class="d-flex align-items-start">
+            <i class="ri-error-warning-line fs-4 me-2 mt-1"></i>
+            <div>
+              <strong class="d-block mb-1">BonID Verification Required</strong>
+              <p class="mb-2 small">
+                You must complete identity verification before granting data access to partners.
+                This protects both you and <%= @partner.name %>.
+              </p>
+              <small class="text-muted">
+                <i class="ri-time-line me-1"></i> Verification typically takes 2–5 minutes
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 mt-4">
+          <%= link_to citizens_identity_submissions_path,
+                class: "btn btn-warning btn-lg rounded-pill fw-semibold shadow-sm" do %>
+            <i class="ri-fingerprint-line me-2"></i> Verify My BonID Now
+          <% end %>
+          <%= link_to root_path,
+                class: "btn btn-outline-secondary btn-lg rounded-pill fw-semibold" do %>
+            <i class="ri-arrow-left-line me-2"></i> Go Back
+          <% end %>
+        </div>
+      <% end %>
+
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Cancel Request Modal ──────────────────────────────────────────────── -->
+<div class="modal fade" id="deny-confirm-modal" tabindex="-1"
+     aria-labelledby="deny-modal-label" aria-hidden="true"
+     data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+    <div class="modal-content rounded-4 overflow-hidden"
+         style="border:1px solid #e5e7eb;">
+
+      <%# Close X button — universal safe exit %>
+      <button type="button" class="btn-close position-absolute"
+              data-bs-dismiss="modal" aria-label="Close"
+              style="top:14px;right:14px;z-index:1;"></button>
+
+      <div class="modal-body text-center px-4 pt-4 pb-2">
+        <%# Neutral info icon — no alarm %>
+        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:56px;height:56px;background:#f1f5f9;">
+          <i class="ri-information-line fs-3" style="color:#64748b;"></i>
+        </div>
+
+        <h5 class="fw-bold mb-1" id="deny-modal-label">
+          Exit without signing in?
+        </h5>
+        <p class="text-muted small mb-3">
+          You can always come back to connect with
+          <strong><%= @partner.name %></strong> later.
+        </p>
+
+        <%# Consequences — concise, focus on friction %>
+        <div class="rounded-3 text-start p-3 mb-3"
+             style="background:#f8fafc; border:1px solid #e2e8f0;">
+          <ul class="small text-muted mb-0 ps-3" style="line-height:1.7;">
+            <li>You won't be able to log in to <strong><%= @partner.name %></strong></li>
+            <li>Identity verification will be paused</li>
+            <li class="text-success fw-medium"><i class="ri-shield-check-line me-1"></i>Your BonID remains private and secure</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4 pt-1 d-grid gap-2">
+        <%# Primary: stay on BonID (blue — nudges reconsideration) %>
+        <button type="button"
+                class="btn rounded-pill fw-semibold py-2 text-white"
+                style="background-color:var(--haitian-blue);border:none;"
+                data-bs-dismiss="modal">
+          <i class="ri-arrow-left-line me-2"></i>Return to Permissions
+        </button>
+        <%# Secondary: confirm cancel (dark gray outline — de-emphasized) %>
+        <button type="button"
+                class="btn rounded-pill fw-semibold py-2"
+                style="background:transparent;border:1px solid #cbd5e1;color:#64748b;"
+                onclick="document.getElementById('deny-form').requestSubmit();">
+          Yes, Cancel Request
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%# ── Scope Breakdown Modals (one per visible scope) ──────────────────────── %>
+<%
+  # Unified brand blue for all scope modals
+  modal_color = '#00209F'
+  scope_breakdown = {
+    'profile' => {
+      icon:   'ri-user-smile-line',
+      color:  modal_color,
+      label:  'Identity',
+      intro:  'The Identity scope gives %{partner} read-only access to your verified personal details exactly as recorded on your BonID.',
+      fields: [
+        { icon: 'ri-user-3-line',       label: 'First Name',      example: 'As on your national ID' },
+        { icon: 'ri-user-3-line',       label: 'Last Name',       example: 'As on your national ID' },
+        { icon: 'ri-cake-line',         label: 'Date of Birth',   example: 'Verified date of birth' },
+        { icon: 'ri-user-line',         label: 'Sex',             example: 'As registered' },
+        { icon: 'ri-global-line',       label: 'Nationality',     example: 'Haitian / Dual national' }
+      ],
+      not_shared: ['Middle name', 'Photo ID scan', 'Passport number', 'NIF / Tax ID', 'BonID number']
+    },
+    'email' => {
+      icon:   'ri-mail-check-line',
+      color:  modal_color,
+      label:  'Email Address',
+      intro:  'The Email scope allows %{partner} to see the verified email address linked to your BonID account.',
+      fields: [
+        { icon: 'ri-mail-line', label: 'Verified Email Address', example: 'e.g. you@example.com' }
+      ],
+      not_shared: ['Password or login credentials', 'Email inbox or messages', 'Other contact info']
+    },
+    'phone' => {
+      icon:   'ri-phone-line',
+      color:  modal_color,
+      label:  'Phone Number',
+      intro:  'The Phone scope lets %{partner} verify your mobile number as confirmed by BonID.',
+      fields: [
+        { icon: 'ri-phone-line',           label: 'Verified Mobile Number', example: 'Country code + number' },
+        { icon: 'ri-checkbox-circle-line', label: 'Verification Status',    example: 'Confirmed by BonID' }
+      ],
+      not_shared: ['SMS messages', 'Call history', 'Carrier information']
+    },
+    'address' => {
+      icon:   'ri-map-pin-2-line',
+      color:  modal_color,
+      label:  'Address',
+      intro:  'The Address scope shares your verified residential address with %{partner}.',
+      fields: [
+        { icon: 'ri-road-map-line',  label: 'Street Address', example: 'House / apartment number & street' },
+        { icon: 'ri-community-line', label: 'Commune',        example: 'e.g. Pétion-Ville' },
+        { icon: 'ri-map-2-line',     label: 'Department',     example: 'e.g. Ouest' },
+        { icon: 'ri-mail-send-line', label: 'Postal Code',    example: 'If available' },
+        { icon: 'ri-global-line',    label: 'Country',        example: 'Haiti' }
+      ],
+      not_shared: ['GPS coordinates', 'Property records', 'Utility data']
+    },
+    'physical' => {
+      icon:   'ri-body-scan-line',
+      color:  modal_color,
+      label:  'Physical Profile',
+      intro:  'The Physical scope shares your physical characteristics with %{partner}.',
+      fields: [
+        { icon: 'ri-ruler-line',           label: 'Height',     example: 'Height in centimeters' },
+        { icon: 'ri-scales-3-line',        label: 'Weight',     example: 'Weight in kilograms' },
+        { icon: 'ri-eye-line',             label: 'Eye Color',  example: 'e.g. Brown, Black' },
+        { icon: 'ri-scissors-line',        label: 'Hair Color', example: 'e.g. Black, Dark Brown' },
+        { icon: 'ri-user-line',            label: 'Body Type',  example: 'e.g. Average, Athletic' },
+        { icon: 'ri-contrast-line',        label: 'Skin Tone',  example: 'e.g. Medium, Brown' }
+      ],
+      not_shared: ['Facial hair details', 'Handedness', 'Tattoos or markings', 'Scars', 'Birthmarks']
+    },
+    'health' => {
+      icon:   'ri-heart-pulse-line',
+      color:  modal_color,
+      label:  'Health Profile',
+      intro:  'The Health scope shares your medical information with %{partner}. This data is treated with the highest level of confidentiality.',
+      fields: [
+        { icon: 'ri-drop-line',            label: 'Blood Type',          example: 'e.g. O+, A-, AB+' },
+        { icon: 'ri-alert-line',           label: 'Allergies',           example: 'Known allergies on file' },
+        { icon: 'ri-stethoscope-line',     label: 'Chronic Conditions',  example: 'Ongoing medical conditions' },
+        { icon: 'ri-medicine-bottle-line', label: 'Medications',         example: 'Current medications' },
+        { icon: 'ri-hand-heart-line',      label: 'Organ Donor Status',  example: 'Yes / No' }
+      ],
+      not_shared: ['Medical history or records', 'Doctor or hospital information', 'Insurance data', 'Test results or lab work', 'Mental health records']
+    },
+    'identity:verify' => {
+      icon:   'ri-fingerprint-line',
+      color:  modal_color,
+      label:  'Identity Verification',
+      intro:  'The Identity Verification scope allows %{partner} to confirm your BonID verification status.',
+      fields: [
+        { icon: 'ri-shield-check-line',    label: 'BonID Verification Status', example: 'Verified / Pending / Unverified' },
+        { icon: 'ri-calendar-check-line',  label: 'Verified Date',             example: 'When your BonID was approved' }
+      ],
+      not_shared: ['Full BonID number', 'Personal documents', 'Photo ID scan', 'Passport number', 'NIF / Tax ID']
+    },
+    'crime:status' => {
+      icon:   'ri-shield-user-line',
+      color:  modal_color,
+      label:  'Crime Status',
+      intro:  'The Crime Status scope allows %{partner} to check whether you have any criminal record involvement on file with BonID.',
+      fields: [
+        { icon: 'ri-checkbox-circle-line', label: 'Criminal Record Status',  example: 'Yes / No involvement on file' },
+        { icon: 'ri-bar-chart-line',       label: 'Severity Level',          example: 'General severity classification' }
+      ],
+      not_shared: ['Incident details or descriptions', 'Case numbers or report IDs', 'Officer information', 'Witness information', 'Full crime reports', 'Location of incidents']
+    }
+  }
+%>
+
+<% visible_scopes.each do |scope| %>
+  <% breakdown = scope_breakdown[scope] %>
+  <% next unless breakdown %>
+
+  <!-- Scope Breakdown Modal: <%= scope %> -->
+  <div class="modal fade" id="scope-modal-<%= scope %>" tabindex="-1"
+       aria-labelledby="scope-modal-<%= scope %>-label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 420px;">
+      <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
+
+        <!-- Modal Header -->
+        <div class="modal-header border-0 pb-0 pt-4 px-4">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-3 p-2 flex-shrink-0"
+                 style="background: <%= breakdown[:color] %>18;">
+              <i class="<%= breakdown[:icon] %> fs-4" style="color: <%= breakdown[:color] %>;"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="scope-modal-<%= scope %>-label">
+                <%= breakdown[:label] %> Scope
+              </h5>
+              <p class="text-muted mb-0" style="font-size: 0.75rem;">Exactly what will be shared</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body px-4 pt-3 pb-2">
+
+          <!-- Intro -->
+          <p class="small text-muted mb-3">
+            <%= breakdown[:intro] % { partner: @partner.name } %>
+          </p>
+
+          <!-- Fields Included -->
+          <div class="mb-1 small fw-bold text-uppercase text-muted" style="letter-spacing: 0.05em;">
+            <i class="ri-checkbox-circle-line me-1 text-success"></i>Fields Shared
+          </div>
+          <div class="vstack gap-2 mb-4">
+            <% breakdown[:fields].each do |field| %>
+              <div class="d-flex align-items-center gap-3 rounded-3 p-2"
+                   style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                <div class="rounded-2 p-2 flex-shrink-0"
+                     style="background: <%= breakdown[:color] %>15; color: <%= breakdown[:color] %>;">
+                  <i class="<%= field[:icon] %>"></i>
+                </div>
+                <div class="text-start">
+                  <div class="fw-semibold small mb-0"><%= field[:label] %></div>
+                  <div class="text-muted" style="font-size: 0.68rem;"><%= field[:example] %></div>
+                </div>
+                <i class="ri-checkbox-circle-line text-success ms-auto flex-shrink-0"></i>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Fields NOT Shared -->
+          <div class="mb-1 small fw-bold text-uppercase text-muted" style="letter-spacing: 0.05em;">
+            <i class="ri-close-circle-line me-1 text-danger"></i>Not Shared
+          </div>
+          <div class="rounded-3 p-3 mb-3" style="background: #fff5f5; border: 1px solid #fce8e8;">
+            <% breakdown[:not_shared].each do |item| %>
+              <div class="d-flex align-items-center gap-2 small text-muted mb-1">
+                <i class="ri-close-line text-danger flex-shrink-0"></i>
+                <%= item %>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Trust note -->
+          <div class="d-flex align-items-start gap-2 rounded-3 p-2 mb-1"
+               style="background: #eef9f0; border: 1px solid #d1f0da;">
+            <i class="ri-shield-check-line text-success flex-shrink-0 mt-1"></i>
+            <p class="small text-muted mb-0">
+              This is <strong>read-only</strong>. <%= @partner.name %> cannot edit or store your data beyond what is required for verification.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer border-0 pt-2 pb-4 px-4">
+          <button type="button"
+                  class="btn btn-sm w-100 rounded-pill fw-semibold py-2"
+                  style="background: <%= breakdown[:color] %>; color: #fff; border: none;"
+                  data-bs-dismiss="modal">
+            <i class="ri-check-line me-1"></i>Got it
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<!-- Processing Overlay -->
+<div id="processing-overlay"
+     style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;">
+  <div class="text-center text-white">
+    <div class="spinner-border mb-3" role="status">
+      <span class="visually-hidden">Processing...</span>
+    </div>
+    <h5>Processing your decision...</h5>
+  </div>
+</div>
+
+<script data-turbo-eval="false">
+  document.addEventListener("DOMContentLoaded", () => {
+    const approvalForm = document.querySelector(".approval-form");
+    const denyForm     = document.getElementById("deny-form");
+    const overlay      = document.getElementById("processing-overlay");
+
+    function showOverlay() {
+      if (overlay) overlay.style.display = "flex";
+    }
+
+    if (approvalForm) {
+      approvalForm.addEventListener("submit", () => showOverlay());
+    }
+
+    if (denyForm) {
+      denyForm.addEventListener("submit", () => showOverlay());
+    }
+
+    // ── Initialize Bootstrap tooltips ──
+    const tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipEls.forEach(el => new bootstrap.Tooltip(el));
+  });
+</script>
+
+<style>
+  :root { --haitian-blue: #00209F; }
+  .btn-primary { background-color: var(--haitian-blue); border: none; }
+  .btn-primary:hover { background-color: #001a80; }
+  .text-primary { color: var(--haitian-blue) !important; }
+  .bg-primary-subtle { background-color: #eef2ff !important; }
+
+  /* Scope "details" pill links below the field grid */
+  .scope-details-link-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--haitian-blue) !important;
+    text-decoration: none !important;
+    background: #eef2ff;
+    border: 1px solid rgba(0,32,159,0.15);
+    border-radius: 999px;
+    padding: 0.25rem 0.75rem;
+    transition: background 0.15s ease;
+  }
+  .scope-details-link-pill:hover {
+    background: #dce4ff;
+  }
+
+  /* Collapsible category chevron rotation */
+  .scope-cat-chevron {
+    transition: transform 0.25s ease;
+  }
+  .scope-cat-toggle[aria-expanded="true"] .scope-cat-chevron {
+    transform: rotate(180deg);
+  }
+  .scope-cat-toggle:hover {
+    opacity: 0.85;
+  }
+
+  /* Modal backdrop blur */
+  .modal-backdrop.show {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    background-color: rgba(0,0,0,0.5);
+  }
+
+  /* Ghost deny button */
+  .consent-ghost-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #6c757d;
+    font-size: 0.88rem;
+    min-height: 48px;
+    transition: background 0.15s ease;
+  }
+  .consent-ghost-btn:hover {
+    background: rgba(108,117,125,0.06);
+    color: #495057;
+  }
+
+  /* Scope ⓘ icon link (used inside breakdown modal trigger rows) */
+  .scope-details-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 1rem;
+    color: #6c757d !important;
+    text-decoration: none !important;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .scope-details-link:hover {
+    background: #eef2ff;
+    color: var(--haitian-blue) !important;
+  }
+
+  /* ── Consent page: hide the blue left panel, go full-width ── */
+  .oauth-consent-page .auth-left {
+    display: none !important;
+  }
+  .oauth-consent-page .auth-right {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    background: #f4f6fb !important;
+    padding: 3rem 1.5rem !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+  }
+  .oauth-consent-page .auth-right-inner {
+    max-width: 660px !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+  }
+  @media (max-width: 992px) {
+    .oauth-consent-page .auth-right {
+      background: #f4f6fb !important;
+      padding: 2rem 1rem !important;
+    }
+  }
+</style>

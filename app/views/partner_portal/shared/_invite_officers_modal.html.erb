@@ -1,0 +1,53 @@
+app/views/partner_portal/shared/_invite_officers_modal.html.erb
+<!-- Single Invite Tab -->
+app/views/partner_portal/shared/_invite_officers_modal.html.erb
+
+<div class="tab-pane fade show active" id="single" role="tabpanel">
+  <div class="card shadow-sm border-0 rounded-3 p-4 bg-white mb-4">
+    <%= form_with model: officer,
+                  url: partner_portal_officer_invitations_path,
+                  method: :post,
+                  data: { turbo_frame: "invite_form_frame", turbo_stream: true },
+                  html: { id: "single-invite-form", autocomplete: "off", class: "mb-0" } do |f| %>
+
+      <div class="mb-4">
+        <%= f.label :email, "Officer Email", class: "form-label fw-semibold" %>
+        <%= f.email_field :email, class: "form-control rounded-3", placeholder: "officer@example.com", required: true, autofocus: true %>
+        <div class="form-text text-muted mt-1">
+          The officer will receive an email invitation to register and complete their BonID.
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <%= f.submit "Send Invite", class: "btn btn-primary rounded-pill px-4" %>
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Bulk Invite Tab -->
+<div class="tab-pane fade" id="bulk" role="tabpanel">
+  <div class="card shadow-sm border-0 rounded-3 p-4 bg-white">
+    <%= form_with url: bulk_create_partner_portal_officer_invitations_path,
+                  method: :post,
+                  multipart: true,
+                  data: { turbo_frame: "invite_form_frame", turbo_stream: true },
+                  html: { id: "bulk-invite-form" } do |f| %>
+
+      <div class="mb-4">
+        <%= f.label :file, "Upload CSV File", class: "form-label fw-semibold" %>
+        <%= f.file_field :file, accept: ".csv", class: "form-control rounded-3", required: true %>
+        <div class="form-text text-muted mt-1">
+          Format: one email per line, <strong>no column header</strong>. Max 1000 emails.
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <%= f.submit "Send Bulk Invites", class: "btn btn-success rounded-pill px-4" %>
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    <% end %>
+  </div>
+</div>
+

@@ -1,0 +1,91 @@
+<div class="row g-3" data-controller="address">
+
+  <!-- Department -->
+  <div class="col-md-6">
+    <%= f.label :department_id, "Department", class: "form-label fw-semibold" %>
+    <%= f.select :department_id,
+      @departments.map { |d| [d.name, d.id] },
+      { prompt: "Select Department" },
+      class: "form-select rounded-3 shadow-sm",
+      data: {
+        action: "change->address#loadArrondissements",
+        address_target: "department",
+        slug_map: @departments.index_by(&:id).transform_values(&:slug).to_json
+      } %>
+  </div>
+
+  <!-- Arrondissement -->
+  <div class="col-md-6">
+    <%= f.label :arrondissement_id, "Arrondissement", class: "form-label fw-semibold" %>
+    <%= f.select :arrondissement_id, [],
+      { prompt: "Select Arrondissement" },
+      class: "form-select rounded-3 shadow-sm",
+      disabled: true,
+      data: {
+        action: "change->address#loadCommunes",
+        address_target: "arrondissement"
+      } %>
+  </div>
+
+  <!-- Commune -->
+  <div class="col-md-6">
+    <%= f.label :commune_id, "Commune", class: "form-label fw-semibold" %>
+    <%= f.select :commune_id, [],
+      { prompt: "Select Commune" },
+      class: "form-select rounded-3 shadow-sm",
+      disabled: true,
+      data: {
+        action: "change->address#loadCommunalSections",
+        address_target: "commune"
+      } %>
+  </div>
+
+  <!-- Communal Section -->
+  <div class="col-md-6">
+    <%= f.label :communal_section_id, "Communal Section", class: "form-label fw-semibold" %>
+    <%= f.select :communal_section_id, [],
+      { prompt: "Select Communal Section" },
+      class: "form-select rounded-3 shadow-sm",
+      disabled: true,
+      data: {
+        action: "change->address#loadPostalCode",
+        address_target: "section"
+      } %>
+  </div>
+
+  <!-- Postal Code -->
+  <div class="col-md-6">
+    <%= f.label :postal_code, "Postal Code", class: "form-label fw-semibold" %>
+    <%= f.text_field :postal_code,
+      class: "form-control rounded-3 shadow-sm",
+      readonly: true,
+      placeholder: "HT0000",
+      data: { address_target: "postalCode" } %>
+  </div>
+
+  <!-- Street Address -->
+  <div class="col-md-6">
+    <%= f.label :street_address, "Street Address", class: "form-label fw-semibold" %>
+    <%= f.text_field :street_address,
+      class: "form-control rounded-3 shadow-sm",
+      placeholder: "e.g. 123 Rue Principale" %>
+  </div>
+
+  <!-- Locality -->
+  <div class="col-md-6">
+    <%= f.label :locality, "Locality", class: "form-label fw-semibold" %>
+    <%= f.text_field :locality,
+      class: "form-control rounded-3 shadow-sm",
+      placeholder: "e.g. Delmas" %>
+  </div>
+
+  <!-- Country -->
+  <div class="col-md-6">
+    <%= f.label :country, "Country", class: "form-label fw-semibold" %>
+    <%= f.select :country,
+      ["Haiti", "Dominican Republic", "USA", "Canada", "France"],
+      {},
+      class: "form-select rounded-3 shadow-sm" %>
+  </div>
+
+</div>

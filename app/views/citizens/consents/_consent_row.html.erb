@@ -1,0 +1,46 @@
+<!-- app/views/citizens/consents/_consent_row.html.erb -->
+<tr id="<%= dom_id(grant) %>">
+  <td class="fw-semibold">
+    <%= grant.partner.name %>
+  </td>
+
+  <td>
+    <small class="text-muted">
+      <%= (grant.granted_scopes.presence || grant.requested_scopes).join(", ").titleize %>
+    </small>
+  </td>
+
+  <td>
+    <% if grant.active? %>
+      <span class="badge bg-success rounded-pill px-3">Active</span>
+    <% elsif grant.revoked? %>
+      <span class="badge bg-danger rounded-pill px-3">Revoked</span>
+    <% elsif grant.pending? %>
+      <span class="badge bg-warning text-dark rounded-pill px-3">Pending</span>
+    <% else %>
+      <span class="badge bg-secondary rounded-pill px-3">Expired</span>
+    <% end %>
+  </td>
+
+  <td class="text-center">
+    <% if grant.active? %>
+      <%= button_to "Revoke",
+            citizens_consent_path(grant),
+            method: :delete,
+            data: { turbo_stream: true, turbo_confirm: "Revoke access for #{grant.partner.name}?" },
+            class: "btn btn-outline-danger btn-sm rounded-pill px-3" %>
+    <% elsif grant.revoked? %>
+      <%= button_to "Regrant",
+            citizens_consent_path(grant),
+            method: :post,
+            data: { turbo_stream: true, turbo_confirm: "Regrant access to #{grant.partner.name}?" },
+            class: "btn btn-outline-success btn-sm rounded-pill px-3" %>
+    <% else %>
+      <%= button_to "Approve",
+            citizens_consent_path(grant),
+            method: :post,
+            data: { turbo_stream: true, turbo_confirm: "Approve access for #{grant.partner.name}?" },
+            class: "btn btn-haitian-primary btn-sm rounded-pill px-3" %>
+    <% end %>
+  </td>
+</tr>

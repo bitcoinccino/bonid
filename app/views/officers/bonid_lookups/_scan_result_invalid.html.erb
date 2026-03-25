@@ -1,0 +1,108 @@
+<%# Invalid/Failed BonID lookup result %>
+<%
+  is_self_scan = (status == :self_lookup_prohibited)
+  is_expired   = (status == :expired)
+  is_blocked   = (status == :too_many_failures)
+
+  # Amber for self-scan & expired, Red for actual failures
+  header_bg    = (is_self_scan || is_expired) ? "#E5A100" : "var(--law-red)"
+  header_icon  = is_self_scan ? "ri-user-forbid-line" : (is_expired ? "ri-time-line" : "ri-shield-cross-line")
+  icon_bg      = is_self_scan ? "rgba(229, 161, 0, 0.12)" : (is_expired ? "rgba(229, 161, 0, 0.12)" : "rgba(217, 7, 24, 0.08)")
+  icon_color   = (is_self_scan || is_expired) ? "#E5A100" : "var(--law-red)"
+  border_color = (is_self_scan || is_expired) ? "#E5A100" : "var(--law-red)"
+
+  title = case status
+          when :self_lookup_prohibited then "Self-Verification Not Permitted"
+          when :not_found              then "BonID Not Found"
+          when :expired                then "BonID Expired"
+          when :invalid_format         then "Invalid Format"
+          when :too_many_failures      then "Temporarily Blocked"
+          when :no_valid_submission    then "No Approved BonID"
+          else                              "Verification Failed"
+          end
+
+  center_icon = case status
+                when :self_lookup_prohibited then "ri-user-forbid-line"
+                when :not_found              then "ri-search-line"
+                when :expired                then "ri-calendar-close-line"
+                when :invalid_format         then "ri-error-warning-line"
+                when :too_many_failures      then "ri-lock-line"
+                when :no_valid_submission    then "ri-file-unknow-line"
+                else                              "ri-close-circle-line"
+                end
+%>
+
+<div class="card border-0" data-result-type="invalid" style="border-left: 4px solid <%= border_color %> !important;">
+  <%# Header %>
+  <div class="card-header text-white py-2 border-0" style="background: <%= header_bg %>;">
+    <div class="d-flex align-items-center">
+      <i class="<%= header_icon %> me-2" style="font-size: 1.25rem;"></i>
+      <span style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.9rem;">
+        <%= title %>
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body py-4">
+    <%# Status Icon %>
+    <div class="text-center mb-3">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle"
+           style="width: 72px; height: 72px; background: <%= icon_bg %>;">
+        <i class="<%= center_icon %>" style="font-size: 2.5rem; color: <%= icon_color %>;"></i>
+      </div>
+    </div>
+
+    <%# Message %>
+    <p class="text-center mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 500; color: var(--dark-gray);">
+      <%= error || "Unable to verify the provided BonID." %>
+    </p>
+
+    <% if bonid.present? %>
+      <div class="text-center mb-3">
+        <span class="d-inline-block px-3 py-1 rounded-pill" style="background: #f0f2f5; font-size: 0.8rem;">
+          <i class="ri-search-line me-1" style="color: var(--mid-gray);"></i>
+          Searched: <code style="font-size: 0.8rem;"><%= bonid %></code>
+        </span>
+      </div>
+    <% end %>
+
+    <%# Context-specific guidance — concise chips, not paragraphs %>
+    <% if is_self_scan %>
+      <div class="alert py-2 mb-3 border-0" style="background: rgba(229, 161, 0, 0.08); font-size: 0.85rem;">
+        <i class="ri-information-line me-1" style="color: #E5A100;"></i>
+        Officers cannot verify their own identity. Ask a colleague to scan your BonID.
+      </div>
+    <% elsif is_blocked %>
+      <div class="alert py-2 mb-3 border-0" style="background: rgba(217, 7, 24, 0.06); font-size: 0.85rem;">
+        <i class="ri-lock-line me-1" style="color: var(--law-red);"></i>
+        Too many failed attempts. Wait 10 minutes or contact your supervisor.
+      </div>
+    <% end %>
+
+    <%# Action Chips — prominent, tap-friendly buttons %>
+    <div class="d-flex flex-wrap gap-2 justify-content-center">
+      <button type="button" class="btn px-3"
+              data-action="click->qr-scanner#rescan"
+              style="font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;
+                     background: var(--law-green-10); color: var(--law-green-dark); border: 1px solid var(--law-green);">
+        <i class="ri-qr-scan-2-line me-1"></i>Scan QR Code
+      </button>
+
+      <button type="button" class="btn px-3"
+              data-action="click->qr-scanner#showManualSection"
+              style="font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;
+                     background: var(--law-blue-10); color: var(--law-blue); border: 1px solid var(--law-blue);">
+        <i class="ri-keyboard-line me-1"></i>Manual Entry
+      </button>
+
+      <% unless is_self_scan || is_blocked %>
+        <%= link_to new_officers_incident_report_path(suspected_fraud: true),
+                    class: "btn px-3",
+                    style: "font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;
+                           background: var(--law-red-10); color: var(--law-red); border: 1px solid var(--law-red);" do %>
+          <i class="ri-alarm-warning-line me-1"></i>Report Issue
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

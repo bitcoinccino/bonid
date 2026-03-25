@@ -1,0 +1,87 @@
+<%# app/views/partner_portal/shared/navbars/_navbar_law_enforcement.html.erb %>
+<nav class="navbar navbar-expand-lg partner-navbar fixed-top shadow-sm">
+  <div class="container-fluid px-3 justify-content-between align-items-center">
+    <%# Brand + Mobile Toggle %>
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn d-lg-none text-white sidebar-toggle-btn"
+              type="button"
+              onclick="document.dispatchEvent(new CustomEvent('partner-sidebar:toggle'))"
+              aria-label="Toggle sidebar">
+        <i class="ri-menu-line ri-xl"></i>
+      </button>
+      <span class="navbar-brand mb-0 text-white fw-bold fs-5 font-heading">IDPol</span>
+    </div>
+
+    <%# Smart Search Bar (Desktop only) %>
+    <div class="d-none d-lg-flex mx-auto position-relative" style="width: 480px;"
+         data-controller="le-search"
+         data-le-search-url-value="<%= partner_portal_law_enforcement_search_path %>">
+      <div class="input-group rounded-pill overflow-hidden bg-white" style="border: 1px solid rgba(255,255,255,0.3);">
+        <span class="input-group-text border-0 bg-transparent ps-3">
+          <i class="ri-search-line text-muted"></i>
+        </span>
+        <input type="search"
+               class="form-control border-0 ps-0 bg-transparent"
+               placeholder="Search BonID, officer, or case #"
+               aria-label="Search"
+               data-le-search-target="input"
+               data-action="input->le-search#search keydown.escape->le-search#clear"
+               autocomplete="off"
+               style="color: var(--dark-gray); font-size: 0.85rem;">
+      </div>
+      <div class="le-search-results d-none"
+           data-le-search-target="results">
+      </div>
+    </div>
+
+    <%# Partner Admin Avatar & Dropdown %>
+    <% if current_partner_admin %>
+      <div class="dropdown partner-admin-dropdown">
+        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+           href="#"
+           id="partnerAdminDropdown"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <% if @current_partner&.logo&.attached? %>
+            <%= image_tag(
+              url_for(@current_partner.logo),
+              class: "rounded-circle",
+              style: "width: 36px; height: 36px; object-fit: cover; border: 2px solid var(--white);",
+              alt: "#{@current_partner.name || 'Partner'} logo",
+              loading: "lazy"
+            ) %>
+          <% else %>
+            <div class="bg-light rounded-circle d-flex justify-content-center align-items-center shadow-sm"
+                 style="width: 36px; height: 36px; border: 2px solid var(--white); background-color: rgba(255,255,255,0.2) !important;">
+              <i class="ri-building-line ri-lg text-white"></i>
+            </div>
+          <% end %>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm partner-admin-menu" aria-labelledby="partnerAdminDropdown">
+          <li>
+            <%= link_to partner_portal_root_path, class: "dropdown-item" do %>
+              <i class="ri-dashboard-line me-2"></i> Dashboard
+            <% end %>
+          </li>
+          <li>
+            <%= link_to edit_partner_portal_partner_admin_profile_path, class: "dropdown-item" do %>
+              <i class="ri-user-line me-2"></i> Profile
+            <% end %>
+          </li>
+          <li>
+            <%= link_to partner_portal_settings_path, class: "dropdown-item" do %>
+              <i class="ri-settings-3-line me-2"></i> Settings
+            <% end %>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <%= button_to destroy_partner_admin_session_path, method: :delete, class: "dropdown-item text-danger" do %>
+              <i class="ri-logout-box-r-line me-2"></i> Log Out
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</nav>

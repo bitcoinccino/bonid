@@ -1,0 +1,313 @@
+<%# Partner Portal — Law Enforcement: Incident Reports Tactical Dashboard %>
+
+<div class="container-fluid py-4">
+  <%# Page Header %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h2 class="mb-1 fw-bold" style="font-family: 'Montserrat', sans-serif; color: var(--law-blue);">
+        Incident Reports
+      </h2>
+      <p class="text-muted mb-0 small">Review and manage incident reports from your officers</p>
+    </div>
+  </div>
+
+  <%# ── Tactical Status Cards (color-coded urgency) ────────── %>
+  <div class="row g-3 mb-4">
+    <%# Total Reports — Law Blue %>
+    <div class="col">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path(filter: "all"),
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100 <%= 'border-2' if @filter == 'all' %>"
+             style="<%= 'border-color: var(--law-blue);' if @filter == 'all' %>">
+          <div class="le-report-card__body text-center py-3">
+            <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-blue);"><%= @stats[:total] %></div>
+            <div class="text-muted" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+              Total Reports
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Pending Review — Amber %>
+    <div class="col">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path(filter: "pending_review"),
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100 <%= 'border-2' if @filter == 'pending_review' %>"
+             style="border-left: 4px solid #D97706; <%= 'border-color: #D97706;' if @filter == 'pending_review' %>">
+          <div class="le-report-card__body text-center py-3">
+            <div class="fw-bold" style="font-size: 1.75rem; color: #D97706;"><%= @stats[:pending_review] %></div>
+            <div class="text-muted" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+              Pending Review
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Overdue — Bright Red %>
+    <div class="col">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path(filter: "overdue"),
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100 <%= 'border-2' if @filter == 'overdue' %>"
+             style="border-left: 4px solid var(--law-red, #D90718); <%= 'border-color: var(--law-red);' if @filter == 'overdue' %>">
+          <div class="le-report-card__body text-center py-3">
+            <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-red);"><%= @stats[:overdue] %></div>
+            <div class="text-muted" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+              Overdue
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Approved — Green %>
+    <div class="col">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path(filter: "approved"),
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100 <%= 'border-2' if @filter == 'approved' %>"
+             style="border-left: 4px solid var(--law-green, #49A64F); <%= 'border-color: var(--law-green);' if @filter == 'approved' %>">
+          <div class="le-report-card__body text-center py-3">
+            <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-green);"><%= @stats[:approved] %></div>
+            <div class="text-muted" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+              Approved
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Rejected — Dark %>
+    <div class="col">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path(filter: "rejected"),
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100 <%= 'border-2' if @filter == 'rejected' %>"
+             style="border-left: 4px solid var(--mid-gray, #6C757D); <%= 'border-color: var(--mid-gray);' if @filter == 'rejected' %>">
+          <div class="le-report-card__body text-center py-3">
+            <div class="fw-bold" style="font-size: 1.75rem; color: var(--mid-gray);"><%= @stats[:rejected] %></div>
+            <div class="text-muted" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+              Rejected
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Reports Table ──────────────────────────────────────── %>
+  <div class="le-report-card">
+    <div class="le-report-card__header d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <% case @filter
+           when "pending_review" %>
+          <i class="ri-time-line" style="color: #D97706;"></i>
+          <span>Pending Review</span>
+        <% when "overdue" %>
+          <i class="ri-alarm-warning-line" style="color: var(--law-red);"></i>
+          <span>Overdue Reports</span>
+        <% when "approved" %>
+          <i class="ri-check-line" style="color: var(--law-green);"></i>
+          <span>Approved Reports</span>
+        <% when "rejected" %>
+          <i class="ri-close-line" style="color: var(--law-red);"></i>
+          <span>Rejected Reports</span>
+        <% else %>
+          <i class="ri-file-list-3-line"></i>
+          <span>All Reports</span>
+        <% end %>
+      </div>
+      <span class="badge bg-light text-dark" style="font-size: 0.7rem;">
+        <%= @incident_reports.size %> report<%= @incident_reports.size == 1 ? "" : "s" %>
+      </span>
+    </div>
+
+    <div class="le-report-card__body p-0">
+      <% if @incident_reports.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size: 0.85rem;">
+            <thead>
+              <tr style="background: rgba(9, 44, 115, 0.04);">
+                <th class="ps-3 py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Report ID</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Crime</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Officer</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Location</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Date</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Status</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Review</th>
+                <th class="py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Persons</th>
+                <th class="text-end pe-3 py-2" style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @incident_reports.each do |report| %>
+                <%
+                  review = report.incident_reviews.max_by(&:created_at)
+                  is_overdue = review&.overdue?
+                  severity = report.crime_severity_level
+                  severity_css = case severity
+                                 when 5 then "le-severity--critical"
+                                 when 4 then "le-severity--severe"
+                                 when 3 then "le-severity--high"
+                                 else ""
+                                 end
+                %>
+                <tr class="<%= 'table-danger' if is_overdue %>" style="vertical-align: middle;">
+                  <%# Report ID %>
+                  <td class="ps-3">
+                    <%= link_to partner_portal_law_enforcement_incident_report_path(report),
+                                class: "fw-semibold font-monospace text-decoration-none",
+                                style: "color: var(--law-blue); font-size: 0.75rem;" do %>
+                      <%= report.report_id.to_s.truncate(28) %>
+                    <% end %>
+                  </td>
+
+                  <%# Crime Type + Severity %>
+                  <td>
+                    <div class="fw-medium small"><%= report.crime_type&.humanize %></div>
+                    <% if severity >= 3 %>
+                      <span class="badge <%= severity_css %>" style="font-size: 0.55rem; padding: 1px 5px;">
+                        Sev. <%= severity %>
+                      </span>
+                    <% end %>
+                  </td>
+
+                  <%# Officer with BonID Photo %>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <%
+                        officer = report.officer
+                        bonid_submission = officer&.user&.identity_submissions&.approved&.last
+                        officer_photo = bonid_submission&.photo if bonid_submission&.photo&.attached?
+                        officer_photo ||= officer.photo if officer&.photo&.attached?
+                      %>
+                      <% if officer_photo %>
+                        <%= image_tag url_for(officer_photo),
+                                      class: "rounded-circle me-2",
+                                      style: "width: 32px; height: 32px; object-fit: cover; border: 1px solid rgba(9,44,115,0.15);",
+                                      loading: "lazy" %>
+                      <% else %>
+                        <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                             style="width: 32px; height: 32px; font-size: 0.65rem; background: var(--law-blue); color: #fff;">
+                          <%= officer&.first_name&.first %><%= officer&.last_name&.first %>
+                        </div>
+                      <% end %>
+                      <div>
+                        <div class="fw-semibold" style="font-size: 0.8rem;"><%= officer&.full_name || "Unknown" %></div>
+                        <div class="text-muted" style="font-size: 0.7rem;"><%= officer&.badge_id %></div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <%# Location Badge %>
+                  <td>
+                    <% commune_name = report.address&.commune&.name %>
+                    <% if commune_name.present? %>
+                      <span class="badge bg-light text-dark" style="font-size: 0.7rem; border: 1px solid rgba(9,44,115,0.1);">
+                        <i class="ri-map-pin-line me-1"></i><%= commune_name %>
+                      </span>
+                    <% else %>
+                      <span class="text-muted small">—</span>
+                    <% end %>
+                  </td>
+
+                  <%# Date %>
+                  <td>
+                    <div class="small"><%= report.occurred_at&.strftime("%b %d, %Y") %></div>
+                    <div class="text-muted" style="font-size: 0.7rem;"><%= report.occurred_at&.strftime("%H:%M") %></div>
+                  </td>
+
+                  <%# Status %>
+                  <td>
+                    <% status_class = case report.status
+                       when "submitted" then "bg-primary"
+                       when "under_review" then "bg-warning text-dark"
+                       when "approved" then "bg-success"
+                       when "rejected" then "bg-danger"
+                       when "escalated" then "bg-dark"
+                       else "bg-secondary"
+                       end %>
+                    <span class="badge <%= status_class %>" style="font-size: 0.65rem;">
+                      <%= report.status&.titleize || "Submitted" %>
+                    </span>
+                  </td>
+
+                  <%# Review Status %>
+                  <td>
+                    <% if review %>
+                      <% if review.overdue? %>
+                        <span class="badge bg-danger" style="font-size: 0.6rem;">
+                          <i class="ri-alarm-warning-line me-1"></i>Overdue
+                        </span>
+                      <% elsif review.decision_pending? %>
+                        <span class="badge bg-warning text-dark" style="font-size: 0.6rem;">
+                          <i class="ri-time-line me-1"></i>Pending
+                        </span>
+                      <% else %>
+                        <span class="badge bg-secondary" style="font-size: 0.6rem;">
+                          <%= review.decision&.titleize %>
+                        </span>
+                      <% end %>
+                    <% elsif report.status_submitted? %>
+                      <span class="badge" style="font-size: 0.6rem; background: rgba(9,44,115,0.1); color: var(--law-blue);">
+                        <i class="ri-inbox-line me-1"></i>Awaiting Review
+                      </span>
+                    <% else %>
+                      <span class="text-muted" style="font-size: 0.7rem;">—</span>
+                    <% end %>
+                  </td>
+
+                  <%# Persons — show suspect avatar if available %>
+                  <td>
+                    <%
+                      suspect = report.person_involvements.detect { |pi| pi.role == "suspect" }
+                      suspect_photo = nil
+                      if suspect
+                        suspect_photo = suspect.user&.photo if suspect&.user&.photo&.attached?
+                        suspect_photo ||= suspect.visitor_submission&.selfie if suspect&.visitor_submission&.selfie&.attached?
+                      end
+                    %>
+                    <div class="d-flex align-items-center gap-1">
+                      <% if suspect_photo %>
+                        <%= image_tag url_for(suspect_photo),
+                                      class: "rounded-circle",
+                                      style: "width: 24px; height: 24px; object-fit: cover; border: 2px solid var(--law-red);",
+                                      loading: "lazy",
+                                      title: "Suspect" %>
+                      <% end %>
+                      <span class="badge bg-light text-dark" style="font-size: 0.7rem;">
+                        <i class="ri-user-line me-1"></i><%= report.person_involvements.size %>
+                      </span>
+                    </div>
+                  </td>
+
+                  <%# Actions %>
+                  <td class="text-end pe-3">
+                    <%= link_to partner_portal_law_enforcement_incident_report_path(report),
+                                class: "btn btn-sm",
+                                style: "background: var(--law-blue); color: #fff; font-size: 0.75rem; padding: 0.25rem 0.75rem;" do %>
+                      <i class="ri-eye-line me-1"></i>Review
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-file-list-3-line" style="font-size: 3rem; color: rgba(9,44,115,0.2);"></i>
+          <p class="text-muted mt-3 mb-0">
+            <% case @filter
+               when "pending_review" %>
+              No reports pending review.
+            <% when "overdue" %>
+              No overdue reports. Great job staying on top of reviews!
+            <% else %>
+              No incident reports found.
+            <% end %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

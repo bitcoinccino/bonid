@@ -1,0 +1,42 @@
+
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : "BonID – Citizen Portal" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%# AWS Rekognition Liveness — required for face verification in transaction consents %>
+  <meta name="aws-region" content="<%= Rails.application.credentials.dig(:aws, :rekognition, :region) || 'us-east-1' %>">
+  <meta name="aws-identity-pool-id" content="<%= Rails.application.credentials.dig(:aws, :cognito, :identity_pool_id) || '' %>">
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= stylesheet_link_tag "citizen", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body class="citizen-app" data-controller="global-loading">
+  <%= render "shared/global_loading" %>
+  <turbo-frame id="turbo-redirect"></turbo-frame>
+
+  <!-- TOPBAR -->
+  <%= render "citizens/shared/topbar" %>
+
+  <!-- MOBILE OFFCANVAS SIDEBAR -->
+  <%= render "citizens/shared/sidebar" %> <!-- This contains the offcanvas and desktop sidebar -->
+
+  <!-- MAIN CONTENT -->
+  <main class="citizen-content">
+    <div id="flash_messages">
+      <%= render "shared/flash" if flash.any? %>
+    </div>
+    <%= yield %>
+  </main>
+
+</body>
+</html>

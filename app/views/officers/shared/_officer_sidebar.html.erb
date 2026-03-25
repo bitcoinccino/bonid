@@ -1,0 +1,162 @@
+<%# app/views/officers/shared/_officer_sidebar.html.erb %>
+
+<%# Mobile backdrop %>
+<div class="partner-sidebar-backdrop d-lg-none"
+     data-action="click->partner-sidebar#close"
+     id="officerSidebarBackdrop"></div>
+
+<%# Sidebar %>
+<div class="partner-sidebar" id="officerSidebar" data-controller="partner-sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          data-action="click->partner-sidebar#close"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
+
+  <%# Officer photo and info - centered vertically %>
+  <% verified_submission = current_officer&.user&.identity_submissions&.approved&.last %>
+  <div class="partner-logo-section">
+    <div class="partner-logo-wrapper">
+      <% if verified_submission&.photo&.attached? %>
+        <%= image_tag verified_submission.photo.variant(resize_to_limit: [120, 120]),
+                      class: "partner-logo-img",
+                      alt: "#{current_officer&.full_name} photo" %>
+      <% elsif current_officer&.user&.photo&.attached? %>
+        <%= image_tag current_officer.user.photo.variant(resize_to_limit: [120, 120]),
+                      class: "partner-logo-img",
+                      alt: "#{current_officer&.full_name} photo" %>
+      <% elsif current_officer&.photo&.attached? %>
+        <%= image_tag current_officer.photo.variant(resize_to_limit: [120, 120]),
+                      class: "partner-logo-img",
+                      alt: "#{current_officer&.full_name} photo" %>
+      <% else %>
+        <div class="partner-logo-placeholder">
+          <i class="ri-user-line"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="partner-name"><%= current_officer&.full_name || "Officer" %></div>
+    <div class="partner-sector"><%= current_officer&.rank %> - <%= current_officer&.badge_id %></div>
+  </div>
+
+  <%# Navigation links %>
+  <ul class="nav flex-column sidebar-nav">
+    <%# 1. Dashboard %>
+    <li class="nav-item">
+      <%= link_to officers_dashboard_path,
+                  class: "nav-link #{'active' if current_page?(officers_dashboard_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <%# 2. Scan %>
+    <li class="nav-item">
+      <%= link_to officers_scan_path,
+                  class: "nav-link #{'active' if current_page?(officers_scan_path)}" do %>
+        <i class="ri-qr-scan-2-line"></i>
+        <span>Scan</span>
+      <% end %>
+    </li>
+
+    <%# 3. Analytics Dashboard %>
+    <li class="nav-item dropdown">
+      <a class="nav-link sidebar-dropdown-toggle d-flex justify-content-between align-items-center <%= 'active' if request.path.include?('analytics') %>"
+         href="#"
+         data-bs-toggle="dropdown"
+         aria-expanded="false">
+        <span class="d-flex align-items-center gap-2">
+          <i class="ri-bar-chart-box-line"></i>
+          <span>Analytics</span>
+        </span>
+        <i class="ri-arrow-down-s-line dropdown-arrow"></i>
+      </a>
+      <ul class="dropdown-menu">
+        <%# Incident Report - Collapsible Submenu %>
+        <li>
+          <a href="#incidentReportSubmenu"
+             class="dropdown-item d-flex justify-content-between align-items-center"
+             data-bs-toggle="collapse"
+             role="button"
+             aria-expanded="false">
+            <span>
+              <i class="ri-file-chart-line me-2"></i>Incident Report
+            </span>
+            <i class="ri-arrow-down-s-line rotate-icon"></i>
+          </a>
+          <ul class="collapse list-unstyled ps-3" id="incidentReportSubmenu">
+            <li>
+              <%= link_to officers_analytics_incident_reports_bonid_path, class: "dropdown-item #{'active' if request.path.include?('incident_reports/bonid')}" do %>
+                <i class="ri-id-card-line me-2"></i>BonID
+              <% end %>
+            </li>
+            <li>
+              <%= link_to officers_analytics_incident_reports_bontouris_path, class: "dropdown-item #{'active' if request.path.include?('incident_reports/bontouris')}" do %>
+                <i class="ri-passport-line me-2"></i>BonTouris
+              <% end %>
+            </li>
+          </ul>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <%= link_to officers_analytics_temporal_path, class: "dropdown-item #{'active' if request.path.include?('temporal')}" do %>
+            <i class="ri-line-chart-line me-2"></i>Trends
+          <% end %>
+        </li>
+        <li>
+          <%= link_to officers_analytics_seasonal_path, class: "dropdown-item #{'active' if request.path.include?('seasonal')}" do %>
+            <i class="ri-leaf-line me-2"></i>Seasonal
+          <% end %>
+        </li>
+        <li>
+          <%= link_to officers_analytics_demographics_path, class: "dropdown-item #{'active' if request.path.include?('demographics')}" do %>
+            <i class="ri-group-line me-2"></i>Demographic
+          <% end %>
+        </li>
+        <li>
+          <%= link_to officers_analytics_geographic_path, class: "dropdown-item #{'active' if request.path.include?('geographic')}" do %>
+            <i class="ri-map-pin-line me-2"></i>Geographic
+          <% end %>
+        </li>
+        <li>
+          <%= link_to officers_analytics_crime_breakdown_path, class: "dropdown-item #{'active' if request.path.include?('crime_breakdown')}" do %>
+            <i class="ri-pie-chart-line me-2"></i>Crime Breakdown
+          <% end %>
+        </li>
+        <li>
+          <%= link_to officers_analytics_crime_location_path, class: "dropdown-item #{'active' if request.path.include?('crime_location')}" do %>
+            <i class="ri-map-2-line me-2"></i>Crime Location
+          <% end %>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <%= link_to officers_analytics_performance_path, class: "dropdown-item #{'active' if request.path.include?('performance')}" do %>
+            <i class="ri-medal-line me-2"></i>My Performance
+          <% end %>
+        </li>
+      </ul>
+    </li>
+
+    <%# 4. Tickets (Disabled - Soon) %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled">
+        <i class="ri-ticket-line"></i>
+        <span>Tickets</span>
+        <span class="badge bg-secondary ms-auto">Soon</span>
+      </a>
+    </li>
+  </ul>
+
+  <%# Logout button %>
+  <div class="sidebar-logout">
+    <%= button_to destroy_officer_session_path,
+                  method: :delete,
+                  form: { data: { turbo: false } },
+                  class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Log Out</span>
+    <% end %>
+  </div>
+</div>

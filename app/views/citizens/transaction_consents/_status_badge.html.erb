@@ -1,0 +1,25 @@
+<%# app/views/citizens/transaction_consents/_status_badge.html.erb %>
+<%
+  # Treat pending consents past their expires_at as expired (DB may not be updated yet)
+  effective_status = if consent.pending? && consent.expires_at <= Time.current
+                       "expired"
+                     else
+                       consent.status
+                     end
+
+  theme = case effective_status
+          when "pending"
+            { css: "pending", icon: "ri-time-line", label: "Pending" }
+          when "approved"
+            { css: "approved", icon: "ri-check-double-line", label: "Approved" }
+          when "denied"
+            { css: "denied", icon: "ri-close-circle-line", label: "Denied" }
+          when "expired"
+            { css: "expired", icon: "ri-timer-line", label: "Expired" }
+          else
+            { css: "expired", icon: "ri-question-line", label: consent.status.capitalize }
+          end
+%>
+<span class="consent-badge consent-badge--<%= theme[:css] %>">
+  <i class="<%= theme[:icon] %> me-1"></i><%= theme[:label] %>
+</span>

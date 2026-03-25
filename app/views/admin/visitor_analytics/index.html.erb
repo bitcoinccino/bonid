@@ -1,0 +1,56 @@
+<main class="container-fluid py-4">
+  <div class="mx-auto" style="max-width: 1200px;" role="main">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h4 fw-bold mb-0">
+        <i class="ri-bar-chart-line me-2"></i>
+        Visitor Analytics
+      </h1>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4">
+      <div class="col-md-4">
+        <input type="date"
+               name="from"
+               value="<%= params[:from] %>"
+               class="form-control">
+      </div>
+
+      <div class="col-md-4">
+        <input type="date"
+               name="to"
+               value="<%= params[:to] %>"
+               class="form-control">
+      </div>
+
+      <div class="col-md-4 d-flex gap-2">
+        <button class="btn btn-primary w-100">
+          Apply
+        </button>
+
+        <%= link_to "Export CSV",
+              admin_visitor_analytics_path(
+                format: :csv,
+                **params.permit(:from, :to).to_h
+              ),
+              class: "btn btn-outline-secondary w-100" %>
+      </div>
+    </form>
+
+    <!-- Charts -->
+    <div class="row g-4">
+      <%= render "chart_card", title: "By Department",      data: @by_department    || {} %>
+      <%= render "chart_card", title: "Accommodation Type", data: @by_accommodation || {} %>
+      <%= render "chart_card", title: "Entry Mode",         data: @by_entry_mode    || {} %>
+      <%= render "chart_card", title: "Nationality",        data: @by_nationality   || {} %>
+      <%= render "chart_card", title: "Gender",             data: @by_gender        || {} %>
+      <%= render "chart_card", title: "Age Groups",         data: @by_age_group     || {} %>
+      <%= render "chart_card", title: "Season",             data: @by_season        || {} %>
+      <%= render "chart_card", title: "Arrival Airlines",   data: @by_airline       || {} %>
+      <%= render "chart_card", title: "Monthly Trends",     data: @by_month         || {} %>
+    </div>
+
+  </div>
+</main>

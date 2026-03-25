@@ -1,0 +1,160 @@
+<!-- Sidebar Offcanvas for Mobile -->
+<div class="offcanvas offcanvas-start d-lg-none partner-sidebar"
+     tabindex="-1"
+     id="partnerSidebar"
+     aria-labelledby="partnerSidebarLabel"
+     style="width: 260px;">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title font-heading"
+        id="partnerSidebarLabel"
+        style="color: var(--haitian-blue);">
+      Menu
+    </h5>
+    <button type="button" class="btn-close text-reset"
+            data-bs-dismiss="offcanvas"
+            aria-label="Close"></button>
+  </div>
+
+  <div class="offcanvas-body p-0 bg-white h-100 d-flex flex-column">
+    <!-- User Avatar -->
+    <div class="text-center mb-4 sticky-profile p-3 border-bottom">
+      <div class="avatar-glow-wrapper mx-auto"
+           style="width:72px; height:72px; border-radius:50%; overflow:hidden;">
+        <% if @current_partner&.logo&.attached? %>
+          <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [72, 72])),
+                        alt: "Partner logo",
+                        class: "avatar-photo rounded-circle",
+                        style: "width: 72px; height: 72px; object-fit: cover;" %>
+        <% else %>
+          <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center"
+               style="width: 72px; height: 72px;">
+            <i class="ri-building-line ri-2x text-white"></i>
+          </div>
+        <% end %>
+      </div>
+      <div class="fw-semibold text-dark small mt-2" style="color: var(--dark-gray);">
+        <%= @current_partner&.name || "Partner" %>
+      </div>
+      <div class="text-muted small fst-italic">
+        <%= @current_partner&.sector&.titleize || "Sector" %>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="flex-grow-1 px-3">
+      <ul class="nav flex-column gap-1">
+        <li class="nav-item">
+          <%= link_to partner_portal_dashboard_path,
+                      class: "btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-semibold font-heading sidebar-home-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
+            <i class="ri-home-4-line ri-lg" style="color: var(--dark-gray);"></i>
+            Dashboard
+          <% end %>
+        </li>
+
+        <li class="nav-item">
+          <%= link_to partner_portal_banking_settings_path,
+                      class: "btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-semibold font-heading #{'active' if current_page?(partner_portal_banking_settings_path)}" do %>
+            <i class="ri-settings-3-line ri-lg" style="color: var(--dark-gray);"></i>
+            Settings
+          <% end %>
+        </li>
+
+        <li class="nav-item">
+          <%= link_to partner_portal_access_logs_path,
+                      class: "btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-semibold font-heading #{'active' if current_page?(partner_portal_access_logs_path)}" do %>
+            <i class="ri-history-line ri-lg" style="color: var(--dark-gray);"></i>
+            Access Logs
+          <% end %>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Footer -->
+    <div class="mt-auto p-3 border-top">
+      <%= button_to destroy_partner_admin_session_path,
+                    method: :delete,
+                    class: "btn w-100 d-flex align-items-center gap-2 px-3 py-2 pulse-glow",
+                    style: "border: 1px solid var(--coral-red);" do %>
+        <i class="ri-logout-box-r-line ri-lg" style="color: var(--coral-red);"></i>
+        <span class="fw-semibold font-heading" style="color: var(--coral-red);">Log Out</span>
+      <% end %>
+
+      <div class="text-center mt-3 small" style="color: var(--mid-gray);">
+        <div>v1.0.0</div>
+        <div class="fst-italic">Powered by <strong>Verifyem</strong></div>
+        <div class="fst-italic">Logged in as: <%= current_resource&.email || "Guest" %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Desktop Sidebar -->
+<aside class="partner-sidebar d-none d-lg-flex flex-column px-3 py-4 bg-white border-end"
+       style="width: 260px; height: calc(100vh - 70px); position: fixed; top: 70px; left: 0; z-index: 1040; border-color: var(--mid-gray);">
+  <!-- User Avatar -->
+  <div class="text-center mb-4 sticky-profile">
+    <% if @current_partner&.logo&.attached? %>
+      <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [72, 72])),
+                    alt: "Partner logo",
+                    class: "avatar-photo rounded-circle mx-auto",
+                    style: "width: 72px; height: 72px; object-fit: cover;" %>
+    <% else %>
+      <div class="bg-secondary rounded-circle d-flex justify-content-center align-items-center mx-auto"
+           style="width: 72px; height: 72px;">
+        <i class="ri-building-line ri-2x text-white"></i>
+      </div>
+    <% end %>
+    <div class="fw-semibold text-dark small mt-2" style="color: var(--dark-gray);">
+      <%= @current_partner&.name || "Partner" %>
+    </div>
+    <div class="text-muted small fst-italic">
+      <%= @current_partner&.sector&.titleize || "Sector" %>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-grow-1">
+    <ul class="nav flex-column gap-1">
+      <li class="nav-item">
+        <%= link_to partner_portal_dashboard_path,
+                    class: "btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-semibold font-heading sidebar-home-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
+          <i class="ri-home-4-line ri-lg" style="color: var(--dark-gray);"></i>
+          Dashboard
+        <% end %>
+      </li>
+
+      <li class="nav-item">
+        <%= link_to partner_portal_banking_settings_path,
+                    class: "btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-semibold font-heading #{'active' if current_page?(partner_portal_banking_settings_path)}" do %>
+          <i class="ri-settings-3-line ri-lg" style="color: var(--dark-gray);"></i>
+          Settings
+        <% end %>
+      </li>
+
+      <li class="nav-item">
+        <%= link_to partner_portal_access_logs_path,
+                    class: "btn w-100 text-start d-flex align-items-center gap-2 px-3 py-2 fw-semibold font-heading #{'active' if current_page?(partner_portal_access_logs_path)}" do %>
+          <i class="ri-history-line ri-lg" style="color: var(--dark-gray);"></i>
+          Access Logs
+        <% end %>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Footer -->
+  <div class="mt-4">
+    <%= button_to destroy_partner_admin_session_path,
+                  method: :delete,
+                  class: "btn w-100 d-flex align-items-center gap-2 px-3 py-2 pulse-glow",
+                  style: "border: 1px solid var(--coral-red);" do %>
+      <i class="ri-logout-box-r-line ri-lg" style="color: var(--coral-red);"></i>
+      <span class="fw-semibold font-heading" style="color: var(--coral-red);">Log Out</span>
+    <% end %>
+
+    <div class="text-center mt-3 small" style="color: var(--mid-gray);">
+      <div>v1.0.0</div>
+      <div class="fst-italic">Powered by <strong>Verifyem</strong></div>
+      <div class="fst-italic">Logged in as: <%= current_resource&.email || "Guest" %></div>
+    </div>
+  </div>
+</aside>

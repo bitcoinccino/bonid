@@ -1,0 +1,59 @@
+<% content_for :title, "You’re invited — BonID" %>
+
+<div style="font-family:'Inter',Arial,sans-serif; color:#101828;">
+  <div style="margin:0 0 10px;">
+    <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-weight:800; font-size:18px; color:#00209F; margin:0;">
+      You’re invited ✉️
+    </div>
+    <div style="margin-top:6px; font-size:13px; color:#475467; line-height:1.6;">
+      Accept your invitation and set your password to continue.
+    </div>
+  </div>
+
+  <div style="margin:14px 0 12px; font-size:14px; line-height:1.75;">
+    <p style="margin:0 0 10px;">
+      Bonjour <strong><%= @resource.try(:first_name).presence || "there" %></strong>,
+    </p>
+
+    <p style="margin:0 0 10px;">
+      You’ve been invited to join the
+      <strong style="color:#00209F;">
+        <%= @resource.try(:role_names)&.first&.titleize || "BonID" %>
+      </strong>
+      portal.
+    </p>
+
+    <p style="margin:0 0 10px;">
+      Click below to accept your invitation:
+    </p>
+  </div>
+
+  <% path =
+       if @resource.is_a?(BankingAgent) || @resource.try(:role_names)&.include?("banking_agent")
+         accept_banking_agent_invitation_url(invitation_token: @token)
+       elsif @resource.try(:role_names)&.include?("partner_admin")
+         accept_partner_admin_invitation_url(invitation_token: @token)
+       elsif @resource.try(:role_names)&.include?("teller")
+         accept_partner_portal_banking_teller_invitation_url(invitation_token: @token)
+       else
+         @redirect_url.presence || invitation_url_for(@resource, @token)
+       end
+  %>
+
+  <div style="margin:10px 0 14px;">
+    <a href="<%= path %>"
+       style="display:inline-block; padding:12px 18px; background:#00209F; color:#ffffff;
+              text-decoration:none; font-weight:900; border-radius:999px;
+              font-family:'Montserrat','Inter',Arial,sans-serif; font-size:14px;">
+      Accept Invitation
+    </a>
+  </div>
+
+  <div style="margin-top:8px; font-size:12px; color:#475467; line-height:1.6;">
+    ⚠️ If you didn’t expect this invitation, you can safely ignore this email.
+  </div>
+
+  <div style="margin-top:12px; font-size:13px; color:#475467;">
+    — Verifyem Team
+  </div>
+</div>

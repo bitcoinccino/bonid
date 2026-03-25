@@ -1,0 +1,155 @@
+<%# app/views/citizens/transaction_consents/_consent_card.html.erb %>
+<%# Vertical card for card-grid layout. Mirrors Partner Consents card design. %>
+
+<% effective_status = (consent.pending? && consent.expires_at <= Time.current) ? "expired" : consent.status %>
+<% is_pending = effective_status == "pending" && consent.expires_at > Time.current %>
+
+<%= turbo_frame_tag "consent-#{consent.consent_token}" do %>
+  <div class="card consent-tx-card h-100 border-0 rounded-4 overflow-hidden"
+       style="border:1px solid #e9ecef !important; border-left: 4px solid <%= {
+         'pending' => '#D97706', 'approved' => '#065F46',
+         'denied' => '#991B1B', 'expired' => '#adb5bd'
+       }[effective_status] || '#dee2e6' %> !important;"
+       <% if is_pending %>
+         data-controller="consent-focus"
+         data-consent-focus-target="focusCard"
+         data-consent-focus-expires-at-value="<%= consent.expires_at.iso8601 %>"
+         data-consent-focus-sound-url-value=""
+       <% end %>>
+
+    <%# ── Card Header: logo + name + status ── %>
+    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+      <div class="d-flex justify-content-between align-items-start">
+        <div class="d-flex align-items-center gap-3">
+          <% if consent.partner.logo.attached? %>
+            <%= image_tag url_for(consent.partner.logo),
+                  class: "rounded-3 flex-shrink-0",
+                  style: "width:48px;height:48px;object-fit:cover;" %>
+          <% else %>
+            <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3"
+                 style="width:48px;height:48px;background:#f8f9fa;border:1px solid #dee2e6;">
+              <i class="ri-building-2-line fs-4 text-muted"></i>
+            </div>
+          <% end %>
+          <div>
+            <h6 class="mb-1 fw-bold lh-1"><%= consent.partner.name %></h6>
+            <%= render "citizens/transaction_consents/status_badge", consent: consent %>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-2 mb-1 d-flex align-items-center gap-3">
+        <span class="small text-muted">
+          <i class="ri-exchange-funds-line me-1"></i><%= t("transaction_consents.types.#{consent.transaction_type}", default: consent.transaction_type.titleize) %>
+        </span>
+        <span class="small text-muted">
+          <i class="ri-building-4-line me-1"></i><%= consent.partner.sector&.titleize || "Partner" %>
+        </span>
+      </div>
+    </div>
+
+    <%# ── Card Body ── %>
+    <div class="card-body px-4 pt-3 pb-2">
+
+      <%# Amount %>
+      <% if consent.amount.present? && consent.amount > 0 %>
+        <div class="text-center mb-2">
+          <div style="font-family:'Montserrat',sans-serif; font-size:1.5rem; font-weight:800; color:#00209f; line-height:1.1;">
+            <%= number_to_currency(consent.amount, unit: consent.currency == "HTG" ? "G " : "$ ", precision: 0) %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Description %>
+      <% if consent.description.present? %>
+        <p class="text-muted small text-center mb-2 text-truncate"><%= consent.description %></p>
+      <% end %>
+
+      <%# Scopes %>
+      <% scopes = Array(consent.scopes).reject(&:blank?) %>
+      <% if scopes.any? %>
+        <div class="mb-3">
+          <div class="small text-uppercase fw-bold text-muted mb-2"><%= t("transaction_consents.scopes_label") %></div>
+          <div class="d-flex flex-wrap gap-1">
+            <% scopes.each do |scope| %>
+              <span class="badge rounded-pill consent-scope-badge px-2 py-1">
+                <i class="ri-check-line me-1"></i><%= scope.titleize %>
+              </span>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Countdown bar (pending only) %>
+      <% if is_pending %>
+        <div class="mb-2">
+          <div class="consent-countdown-bar">
+            <div class="consent-countdown-bar__fill" data-consent-focus-target="progressBar"></div>
+          </div>
+          <div class="text-center mt-1">
+            <span data-consent-focus-target="countdown" class="small fw-bold text-muted"></span>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Time info %>
+      <div class="small text-muted">
+        <i class="ri-time-line me-1"></i>
+        <% if is_pending %>
+          Expires <%= time_ago_in_words(consent.expires_at) %>
+        <% elsif consent.decided_at.present? %>
+          <%= time_ago_in_words(consent.decided_at) %> ago
+        <% else %>
+          <%= time_ago_in_words(consent.created_at) %> ago
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Card Footer ── %>
+    <div class="card-footer border-0 bg-white px-4 pb-4 pt-2">
+      <% if is_pending && consent.citizen.bonid_verified? %>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-approve-lg"
+                  data-controller="consent-liveness"
+                  data-consent-liveness-consent-token-value="<%= consent.consent_token %>"
+                  data-consent-liveness-decide-url-value="<%= liveness_decide_citizens_transaction_consent_path(consent.consent_token) %>"
+                  data-action="click->consent-liveness#startLiveness">
+            <i class="ri-shield-check-line me-2"></i><%= t("transaction_consents.verify_to_approve") %>
+          </button>
+          <div class="text-center">
+            <a href="#" class="small text-muted text-decoration-underline"
+               data-bs-toggle="modal" data-bs-target="#otpModal-<%= consent.consent_token %>" data-approve="true">
+              <i class="ri-key-2-line me-1"></i><%= t("transaction_consents.use_code_instead") %>
+            </a>
+          </div>
+          <button type="button" class="btn btn-deny-lg"
+                  data-bs-toggle="modal" data-bs-target="#otpModal-<%= consent.consent_token %>" data-deny="true">
+            <i class="ri-close-line me-2"></i><%= t("transaction_consents.deny") %>
+          </button>
+        </div>
+
+      <% elsif is_pending && !consent.citizen.bonid_verified? %>
+        <div class="text-center small text-warning">
+          <i class="ri-shield-check-line me-1"></i>
+          <%= link_to "Verify your BonID", citizens_identity_submissions_path, class: "text-warning text-decoration-underline fw-bold" %> first.
+        </div>
+
+      <% elsif effective_status == "approved" %>
+        <div class="text-center small text-success py-1">
+          <i class="ri-check-double-line me-1"></i>Approved <%= consent.decided_at&.strftime("%b %d at %I:%M %p") %>
+        </div>
+
+      <% elsif effective_status == "denied" %>
+        <div class="text-center small text-danger py-1">
+          <i class="ri-close-circle-line me-1"></i>Denied <%= consent.decided_at&.strftime("%b %d at %I:%M %p") %>
+        </div>
+
+      <% else %>
+        <div class="text-center small text-muted py-1">
+          <i class="ri-timer-line me-1"></i>Expired without response
+        </div>
+      <% end %>
+    </div>
+
+  </div>
+<% end %>

@@ -1,0 +1,49 @@
+
+<%= simple_form_for @partner,
+      url: partner_portal_banking_settings_path,
+      method: :patch,
+      html: { multipart: true, class: "needs-validation", novalidate: true } do |f| %>
+
+<%= render "partner_portal/shared/components/logo", f: f %>
+<%= render "partner_portal/shared/components/organization_info", f: f %>
+<%= render "partner_portal/shared/components/address_info", f: f %>
+<%= render "partner_portal/shared/components/contact_info", f: f %>
+<%= render "partner_portal/shared/components/use_industry", f: f %>
+
+
+  <!-- Compliance (Law Enforcement Only) -->
+  <%= f.input :compliance_cert_upload,
+      as: :file,
+      label: "Compliance Certificate (PDF)",
+      hint: "Required for law enforcement sector only" %>
+
+  <!-- Integration Preference -->
+  <%= f.input :preferred_integration,
+      collection: ["Webhook", "OAuth"],
+      prompt: "Select Integration",
+      label: "Preferred Integration" %>
+
+  <!-- Team Size -->
+  <%= f.input :estimated_team_size,
+      collection: ["1-5", "6-20", "21-50", "51+"],
+      prompt: "Select Team Size",
+      label: "Team Size" %>
+
+  <!-- Referral -->
+  <%= f.input :how_did_you_hear,
+      collection: ["Digicel", "Embassy", "Other"],
+      as: :check_boxes,
+      label: "How did you hear about BonID?" %>
+
+  <!-- Expected Users -->
+  <%= f.input :intended_users_to_verify,
+    label: "Expected Users to Verify",
+    input_html: {
+      placeholder: "e.g., 100-500",
+      class: "form-control rounded-3",
+      style: "height:46px;padding:0.625rem 1rem;"
+    } %>
+
+  <!-- Submit -->
+  <%= f.button :submit, "Save Profile", class: "btn btn-primary fw-semibold rounded-pill py-3" %>
+<% end %>

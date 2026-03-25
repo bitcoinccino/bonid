@@ -1,0 +1,70 @@
+<%# ── Signature (Step 3) ── %>
+
+<% if @skip_signature %>
+  <%# ── Signature Already Provided — Skip ── %>
+  <div style="text-align:center; padding: clamp(2rem, 6vw, 3rem) 1rem; font-family: 'Montserrat', sans-serif;">
+    <div style="width:60px; height:60px; border-radius:50%; background:#e8f5e9;
+                display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+      <i class="ri-ball-pen-fill" style="font-size:1.6rem; color:#198754;"></i>
+    </div>
+    <p style="font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight:700; color:#198754; margin-bottom:0.3rem;">
+      Signature Already on File
+    </p>
+    <p style="font-size: clamp(0.78rem, 2.3vw, 0.85rem); color:#666; margin-bottom:0; line-height:1.5;">
+      Your signature was saved from your previous submission.<br>
+      It will be carried forward automatically.
+    </p>
+  </div>
+
+  <%# Hidden flags for controller to verify on create %>
+  <input type="hidden" name="skip_signature" value="true">
+  <input type="hidden" name="previous_signature_signed_id" value="<%= @previous_signature_signed_id %>">
+
+<% else %>
+  <%# ── Normal Signature Flow ── %>
+  <div data-controller="signature-pad">
+
+    <%# Upload %>
+    <div class="mb-4">
+      <label class="form-label">Upload Signature</label>
+      <%= f.file_field :signature,
+            accept: "image/*",
+            include_hidden: false,
+            class: "form-control",
+            data: { signature_pad_target: "fileInput" } %>
+      <small class="text-muted">Optional if you draw below.</small>
+    </div>
+
+    <%# Draw %>
+    <label class="form-label">Or Draw Here</label>
+    <div class="rounded position-relative"
+         style="width: 100%; height: 160px; border: 1px solid rgba(0, 32, 159, 0.15); background: #fff;"
+         aria-label="Signature drawing area">
+      <canvas tabindex="0"
+              data-signature-pad-target="canvas"
+              class="w-100 rounded"
+              style="height: 100%;
+                     background: #fff;
+                     cursor: crosshair;
+                     pointer-events: auto;
+                     touch-action: none;"></canvas>
+
+      <button type="button"
+              class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+              style="font-size: 0.75rem;"
+              data-action="signature-pad#clear"
+              aria-label="Clear drawn signature">
+        <i class="ri-eraser-line"></i> Clear
+      </button>
+    </div>
+
+    <%# Preview %>
+    <div class="text-center mt-3" data-signature-pad-target="previewWrapper" style="display: none;">
+      <img data-signature-pad-target="previewImage"
+           src=""
+           alt="Signature preview"
+           class="rounded"
+           style="max-width: 280px; height: auto; border: 1px solid rgba(0, 32, 159, 0.1);">
+    </div>
+  </div>
+<% end %>

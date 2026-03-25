@@ -1,0 +1,104 @@
+<% content_for :title, "Emergency Alert: Incident Notification" %>
+
+<div style="font-family:'Inter',Arial,sans-serif; color:#101828;">
+  <div style="margin:0 0 10px;">
+    <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-weight:700; font-size:20px; color:#D92D20; margin:0;">
+      Emergency Incident Alert
+    </div>
+    <div style="margin-top:6px; font-size:13px; color:#475467; line-height:1.6;">
+      Someone you are listed as an emergency contact for has been involved in an incident.
+    </div>
+  </div>
+
+  <!-- ALERT CARD -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="margin:14px 0 16px; background:#ffffff; border-radius:14px;
+                border:1px solid rgba(217,45,32,0.25); overflow:hidden;">
+    <tr>
+      <td style="padding:14px 14px; background:#fef3f2;">
+        <div style="font-size:12px; letter-spacing:0.6px; color:#7A271A; text-transform:uppercase;">
+          Person Involved
+        </div>
+        <div style="margin-top:8px; font-family:'Montserrat',Arial,sans-serif;
+                    font-size:18px; font-weight:700; color:#D92D20;">
+          <%= @user.full_name %>
+        </div>
+        <div style="margin-top:4px; font-size:14px; color:#7A271A;">
+          Role: <strong><%= @role&.titleize %></strong>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- INCIDENT DETAILS -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="margin:0 0 16px; background:#ffffff; border-radius:14px;
+                border:1px solid rgba(0,0,0,0.08); overflow:hidden;">
+    <tr>
+      <td style="padding:14px 14px; background:#f9fafb;">
+        <div style="font-size:12px; letter-spacing:0.6px; color:#344054; text-transform:uppercase; margin-bottom:10px;">
+          Incident Details
+        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:6px 0; font-size:14px; color:#475467; width:100px;">Date:</td>
+            <td style="padding:6px 0; font-size:14px; color:#101828; font-weight:600;">
+              <%= @report.occurred_at&.strftime("%B %d, %Y at %I:%M %p") || "Not specified" %>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:14px; color:#475467;">Location:</td>
+            <td style="padding:6px 0; font-size:14px; color:#101828; font-weight:600;">
+              <%= @report.address&.commune&.name || "Location not specified" %><% if @report.address&.department %>, <%= @report.address.department.name %><% end %>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:14px; color:#475467;">Type:</td>
+            <td style="padding:6px 0; font-size:14px; color:#101828; font-weight:600;">
+              <%= @report.crime_type&.titleize || "Not specified" %>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:14px; line-height:1.75; color:#101828;">
+    <p style="margin:0 0 10px;">
+      Dear <strong><%= @contact.name %></strong>,
+    </p>
+
+    <p style="margin:0 0 10px;">
+      We are contacting you because you are listed as an emergency contact for
+      <strong><%= @user.full_name %></strong>.
+    </p>
+
+    <p style="margin:0 0 10px; padding:12px; background:#fef3f2; border-radius:8px; border-left:4px solid #D92D20;">
+      <strong><%= @user.first_name %></strong> was reported as a <strong><%= @role %></strong>
+      in an incident that occurred on <%= @report.occurred_at&.strftime("%B %d, %Y") || "an unknown date" %>.
+    </p>
+
+    <p style="margin:0 0 10px;">
+      <strong>What you should do:</strong>
+    </p>
+    <ul style="margin:0 0 10px; padding-left:20px;">
+      <li>Try to contact <%= @user.first_name %> to check on their wellbeing</li>
+      <li>If you cannot reach them, contact local authorities</li>
+      <li>Keep this notification for your records</li>
+    </ul>
+
+    <p style="margin:0 0 10px; padding:12px; background:#ecfdf3; border-radius:8px; border-left:4px solid #12B76A;">
+      <strong>Note:</strong> This is an automated alert from the BonID Emergency Contact System.
+      For more information about the incident, please contact the reporting officer or local police station.
+    </p>
+
+    <p style="margin:0 0 10px;">
+      If you have questions or need assistance, please contact
+      <a href="mailto:support@verifyem.ht" style="color:#00209F; text-decoration:none; font-weight:600;">support@verifyem.ht</a>.
+    </p>
+
+    <p style="margin:14px 0 0; color:#475467;">
+      — BonID Emergency Alert System
+    </p>
+  </div>
+</div>

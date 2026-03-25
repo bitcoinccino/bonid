@@ -1,222 +1,184 @@
-<%=render "shared/navbar" %>
-<div class="container py-4 bg-light">
-  <h1 class="h4 fw-bold mb-4 text-primary">Verified Partners</h1>
+<%# Flash rendered by admin layout %>
 
-  <!-- Filter/Search Bar -->
-  <div class="mb-4 d-flex justify-content-between align-items-center">
-    <%= form_with url: admin_partners_path, method: :get, local: true, class: "d-flex gap-2" do |f| %>
-      <%= f.text_field :query, placeholder: "Search by name", class: "form-control rounded-3", value: params[:query] %>
-      <%= f.select :sector, options_for_select(Partner.distinct.pluck(:sector).compact.sort, params[:sector]), prompt: "All Sectors", class: "form-select rounded-3" %>
-      <%= f.submit "Filter", class: "btn btn-outline-primary rounded-pill" %>
-    <% end %>
-  </div>
+<section class="certificate-font py-5" role="main">
+  <div class="container">
 
-  <table class="table table-hover align-middle">
-    <thead>
-      <tr>
-        <th scope="col">Logo</th>
-        <th scope="col">Name</th>
-        <th scope="col">Sector</th>
-        <th scope="col">Start Link</th>
-        <th scope="col">QR</th>
-        <th scope="col">Scans</th>
-        <th scope="col">Last Scan</th>
-        <th scope="col">Verified</th>
-        <th scope="col">Send Email</th>
-        <th scope="col">Actions</th> <!-- New column for View button -->
-      </tr>
-    </thead>
-    <tbody>
-      <% @partners.each do |partner| %>
-        <tr>
-          <td>
-            <% if partner.logo.attached? %>
-              <%= image_tag partner.logo.variant(resize_to_limit: [60, 60]), class: "rounded shadow-sm", alt: "#{partner.name} logo" %>
-            <% else %>
-              <span class="text-muted small">No Logo</span>
-            <% end %>
-          </td>
-          <td><strong><%= partner.name %></strong></td>
-          <td><%= partner.sector&.titleize || "N/A" %></td>
-          <td>
-            <code class="small text-primary d-block mb-1" id="link_<%= partner.id %>">
-              /start?partner=<%= partner.slug %>
-            </code>
-            <div class="d-flex gap-1">
-              <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="copyToClipboard('<%= partner.slug %>')" data-bs-toggle="tooltip" title="Copy start link">
-                Copy
-              </button>
-              <%= link_to "Visit", start_verification_url(partner: partner.slug), class: "btn btn-sm btn-outline-primary rounded-pill", target: "_blank", data: { turbo: false, bs_toggle: "tooltip" }, title: "Visit start link" %>
-            </div>
-          </td>
-          <td>
-            <%= image_tag url_for(RQRCode::QRCode.new(start_verification_url(partner: partner.slug)).as_png(size: 120).to_data_url), alt: "QR Code for #{partner.name}", class: "img-thumbnail", width: 60 %>
-          </td>
-          <td><%= partner.qr_scans.count %></td>
-          <td><%= partner.qr_scans.maximum(:scanned_at)&.strftime("%b %d, %Y %H:%M") || "—" %></td>
-          <td><%= partner.verified_at&.strftime("%b %d, %Y") || "Not verified" %></td>
-          <td>
-            <%= button_to "Resend Link",
-                          resend_verification_email_admin_partner_path(partner),
-                          method: :post,
-                          class: "btn btn-sm btn-outline-secondary rounded-pill",
-                          data: { turbo_confirm: "Resend verification email to #{partner.name}?" } %>
-          </td>
-          <td>
-            <%= link_to "View", admin_partner_path(partner), class: "btn btn-sm btn-outline-primary rounded-pill", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "View details for #{partner.name}", aria_label: "View details for #{partner.name}" %>
-          </td>
-        </tr>
+    <!-- Header + Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          Partner Directory
+        </h2>
+        <p class="text-muted small mb-0">
+          Manage verification, onboarding, API usage & security status.
+        </p>
+      </div>
+
+      <div class="d-flex gap-2">
+        <%= link_to admin_partners_path(format: :csv, **request.query_parameters.except(:format, :page)),
+                    class: "btn btn-outline-success btn-sm rounded-pill" do %>
+          Export CSV
+        <% end %>
+
+        <button class="btn btn-primary btn-sm rounded-pill"
+                data-bs-toggle="modal"
+                data-bs-target="#newPartnerModal">
+          New Partner
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter Tabs + Search -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+
+      <!-- Status Tabs -->
+      <div class="d-flex flex-wrap gap-2">
+        <%= link_to "All", admin_partners_path(search: params[:search]),
+                    class: "btn btn-sm rounded-pill #{params[:filter].blank? ? 'btn-primary' : 'btn-outline-primary'}" %>
+
+        <%= link_to "Verified", admin_partners_path(filter: "verified", search: params[:search]),
+                    class: "btn btn-sm rounded-pill #{params[:filter] == 'verified' ? 'btn-success' : 'btn-outline-success'}" %>
+
+        <%= link_to "Pending", admin_partners_path(filter: "pending", search: params[:search]),
+                    class: "btn btn-sm rounded-pill #{params[:filter] == 'pending' ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'}" %>
+
+        <%= link_to "Rejected", admin_partners_path(filter: "rejected", search: params[:search]),
+                    class: "btn btn-sm rounded-pill #{params[:filter] == 'rejected' ? 'btn-danger' : 'btn-outline-danger'}" %>
+      </div>
+
+      <!-- Search -->
+      <%= form_with url: admin_partners_path, method: :get, local: true, class: "d-flex" do %>
+        <%= text_field_tag :search, params[:search],
+                           placeholder: "Search partners...",
+                           class: "form-control form-control-sm rounded-pill",
+                           style: "width: 240px;" %>
       <% end %>
-    </tbody>
-  </table>
-</div>
+    </div>
 
-<!-- Custom CSS -->
-<style>
-  /* Base Styles */
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    overflow-x: hidden;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-  }
+    <!-- Partners Table -->
+    <% if @partners.any? %>
+      <div class="table-responsive rounded-3 shadow-sm overflow-hidden">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light text-center text-uppercase small">
+            <tr>
+              <th>Name</th>
+              <th>Sector</th>
+              <th>Start Link</th>
+              <th>QR</th>
+              <th>API Calls</th>
+              <th>Last Scan</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @partners.each do |partner| %>
+              <tr class="small">
+                <td>
+                  <div class="d-flex align-items-center">
+                    <% if partner.logo.attached? %>
+                      <%= image_tag partner.logo.variant(resize_to_limit: [32, 32]).processed,
+                                    class: "rounded-circle me-2 shadow-sm", width: 32, height: 32 %>
+                    <% else %>
+                      <div class="bg-light rounded-circle d-flex align-items-center justify-content-center me-2"
+                           style="width:32px;height:32px;">
+                        <i class="ri-building-line text-muted"></i>
+                      </div>
+                    <% end %>
+                    <%= link_to partner.name, admin_partner_path(partner.uuid),
+                                class: "text-decoration-none text-primary fw-semibold" %>
+                  </div>
+                </td>
 
-  body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    background-color: #f5f5f5;
-  }
+                <td class="text-center">
+                  <span class="badge bg-secondary-subtle text-dark rounded-pill px-3">
+                    <%= partner.sector&.titleize || "—" %>
+                  </span>
+                </td>
 
-  .container {
-    max-width: 1200px;
-    padding: 0 15px;
-  }
+                <td class="text-center text-nowrap">
+                  <code class="text-muted small">/start?partner=<%= partner.slug %></code>
+                  <button class="btn btn-sm btn-outline-secondary ms-1 border-0"
+                          onclick="copyToClipboard('<%= partner.slug %>')"
+                          data-bs-toggle="tooltip" title="Copy link">
+                  </button>
+                </td>
 
-  /* Colors */
-  .bg-primary { background-color: #1e40af !important; }
-  .text-primary { color: #1e40af !important; }
-  .bg-success { background-color: #059669 !important; }
-  .text-secondary { color: #6b7280 !important; }
+                <td class="text-center">
+                  <% if (qr = partner.qr_code_data_url(200, 4)).present? %>
+                    <%= image_tag qr, width: 36, class: "rounded shadow-sm" %>
+                  <% else %>
+                    <span class="text-muted small">—</span>
+                  <% end %>
+                </td>
 
-  /* Form Elements */
-  .form-control, .form-select {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.875rem;
-    transition: border-color 0.2s ease;
-  }
+                <td class="text-center fw-bold text-primary">
+                  <%= number_with_delimiter(partner.api_access_logs.count) %>
+                </td>
 
-  .form-control:focus, .form-select:focus {
-    border-color: #1e40af;
-    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
-  }
+                <td class="text-center text-muted small text-nowrap">
+                  <%= partner.last_scan_at&.strftime("%b %d, %Y %H:%M") || "—" %>
+                </td>
 
-  /* Buttons */
-  .btn {
-    font-weight: 500;
-    border-radius: 8px;
-    padding: 8px 12px;
-    transition: all 0.2s ease;
-  }
+               <td class="text-center">
+                <% status_label, status_color =
+                  case partner.status
+                  when "approved"  then ["Approved",  "bg-success"]
+                  when "rejected"  then ["Rejected",  "bg-danger"]
+                  when "suspended" then ["Suspended", "bg-secondary"]
+                  else                  ["Pending Review", "bg-warning text-dark"]
+                  end
+                %>
+                <span class="badge <%= status_color %> rounded-pill px-3">
+                  <%= status_label %>
+                </span>
+              </td>
 
-  .btn-primary {
-    background: #1e40af;
-    border-color: #1e40af;
-  }
 
-  .btn-primary:hover {
-    background: #1e3a8a;
-    border-color: #1e3a8a;
-  }
+                <td class="text-center">
+                  <%= link_to admin_partner_path(partner.uuid),
+                              class: "btn btn-sm btn-primary rounded-pill" do %>
+                    View
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
 
-  .btn-outline-primary {
-    border-color: #1e40af;
-    color: #1e40af;
-  }
+      <!-- Pagination - Works with your current Kaminari setup -->
+      <div class="mt-4 text-center">
+        <%= paginate @partners %>
+      </div>
 
-  .btn-outline-primary:hover {
-    background: #1e40af;
-    color: #ffffff;
-  }
+    <% else %>
+      <div class="text-center text-muted py-5 mt-5">
+        <i class="ri-user-search-line display-4 mb-3 opacity-50"></i>
+        <h5>No partners found</h5>
+        <p class="mb-0">Try adjusting your filters or search term.</p>
+      </div>
+    <% end %>
 
-  .btn-outline-secondary {
-    border-color: #6b7280;
-    color: #6b7280;
-  }
+  </div>
+</section>
 
-  .btn-outline-secondary:hover {
-    background: #6b7280;
-    color: #ffffff;
-  }
-
-  /* Table */
-  .table {
-    font-size: 0.875rem;
-    background: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  }
-
-  .table-hover tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-
-  .img-thumbnail {
-    width: 60px;
-  }
-
-  /* Responsive */
-  @media (max-width: 992px) {
-    .container {
-      padding: 0 12px;
-    }
-    .btn {
-      font-size: 0.75rem;
-      padding: 6px 10px;
-    }
-    .table {
-      font-size: 0.75rem;
-    }
-  }
-
-  @media (max-width: 576px) {
-    h1.h4 {
-      font-size: 1.25rem;
-    }
-    .d-flex.gap-2 {
-      flex-direction: column;
-      gap: 8px;
-    }
-    .form-control, .form-select {
-      font-size: 0.75rem;
-    }
-    .img-thumbnail {
-      width: 40px;
-    }
-  }
-</style>
-
-<!-- JavaScript for Tooltips and Clipboard -->
+<!-- Copy to Clipboard + Tooltips -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-      new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-  });
-
   function copyToClipboard(slug) {
-    const text = `${window.location.origin}/start?partner=${slug}`;
-    navigator.clipboard.writeText(text).then(() => {
-      alert("Copied to clipboard: " + text);
+    const url = `${window.location.origin}/start?partner=${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const toast = document.createElement("div");
+      toast.textContent = "Link copied!";
+      toast.className = "position-fixed bottom-0 end-0 m-4 p-3 bg-primary text-white rounded-pill shadow-lg";
+      toast.style.zIndex = "9999";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2000);
     });
   }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+  });
 </script>
-
-
-
-

@@ -1,0 +1,124 @@
+<%# ================================================================
+  UNIVERSAL VERIFICATION RECORD FORM LOADER — BonID Production
+  ---------------------------------------------------------------
+  ✅ Auto-detects record_type + category (e.g. property → land_transaction)
+  ✅ Loads correct partial dynamically if it exists
+  ✅ Falls back to record type selector form if none found
+  ✅ Works with Turbo Frames and modal-safe rendering
+================================================================== %>
+<%# ================================================================
+  UNIVERSAL VERIFICATION RECORD FORM LOADER — BonID Production
+  ---------------------------------------------------------------
+  ✅ Auto-detects record_type + category (e.g. property → land_transaction)
+  ✅ Loads correct partial dynamically if it exists
+  ✅ Works with Turbo Frames and inline index frame rendering
+================================================================== %>
+<%# 
+<% record ||= @record %>
+
+<%# --- Normalize keys --- %>
+<%# ================================================================
+  UNIVERSAL VERIFICATION RECORD FORM LOADER — BonID Production
+  ---------------------------------------------------------------
+  ✅ Auto-detects record_type + category (e.g. property → land_transaction)
+  ✅ Loads correct partial dynamically if it exists
+  ✅ Searches within subfolders (education/, business/, property/, etc.)
+  ✅ Falls back to record type selector form if none found
+================================================================== %>
+<%# ===============================================================
+  BonID — Universal Record Form Loader
+  Dynamically loads the correct form partial per record_type
+================================================================ %>
+<%# ===============================================================
+  BonID — Universal Verification Record Form Loader
+  ---------------------------------------------------------------
+  ✅ Loads correct partial from new structured folders
+  ✅ Works safely inside Turbo Frames
+  ✅ Falls back to Record Type selector if partial missing
+================================================================ %>
+<<%# ===============================================================
+  BonID — Verification Record Form Loader (Universal)
+  ---------------------------------------------------------------
+  ✅ Detects correct record_type folder (e.g. business, property)
+  ✅ Renders subform dynamically
+  ✅ Works for both new and edit
+================================================================ %>
+
+<%# ===============================================================
+  BonID — Universal Verification Record Form Loader
+  ---------------------------------------------------------------
+  ✅ Works for both New + Edit
+  ✅ Auto-loads correct subform (business, property, etc.)
+  ✅ Never crashes if partial missing
+================================================================ %>
+<%= turbo_frame_tag "record_form_frame" do %>
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-light d-flex align-items-center justify-content-between">
+      <h6 class="mb-0 fw-semibold text-dark">
+        <i class="ri-edit-2-line text-primary me-2"></i>
+        <%= @record.persisted? ? "Edit Record" : "New Verification Record" %>
+      </h6>
+
+      <!-- ✖️ Close -->
+      <%= link_to citizens_verification_records_path,
+                  class: "btn btn-sm btn-outline-secondary",
+                  data: { turbo_frame: "_top" } do %>
+        <i class="ri-close-line"></i>
+        Close
+      <% end %>
+    </div>
+
+    <div class="card-body">
+      <%= form_with model: @record,
+                    url: @record.persisted? ? citizens_verification_record_path(@record) : citizens_verification_records_path,
+                    data: { turbo_frame: "record_form_frame" },
+                    class: "needs-validation",
+                    local: false do |f| %>
+
+        <!-- ⚙️ Record Type -->
+        <div class="mb-3">
+          <%= f.label :record_type, "Record Type", class: "form-label fw-semibold" %>
+          <%= f.text_field :record_type, class: "form-control", readonly: true %>
+        </div>
+
+        <!-- 🏷️ Category -->
+        <div class="mb-3">
+          <%= f.label :category, "Category", class: "form-label fw-semibold" %>
+          <%= f.text_field :category, class: "form-control" %>
+        </div>
+
+        <!-- 🔓 Access Level -->
+        <div class="mb-3">
+          <%= f.label :access_level, "Visibility", class: "form-label fw-semibold" %>
+          <%= f.select :access_level,
+                [["Private", "private_access"], ["Partner", "partner_access"], ["Public", "public_access"]],
+                {}, class: "form-select" %>
+        </div>
+
+        <!-- 🧾 Generic Data Fields -->
+        <% (@record.data || {}).each do |key, value| %>
+          <div class="mb-3">
+            <%= label_tag "verification_record[data][#{key}]", key.titleize, class: "form-label fw-semibold" %>
+            <%= text_field_tag "verification_record[data][#{key}]", value, class: "form-control" %>
+          </div>
+        <% end %>
+
+        <!-- ➕ Add New Custom Field -->
+        <div class="mb-3">
+          <%= f.label :custom_field, "Add Custom Field (optional)", class: "form-label fw-semibold" %>
+          <input type="text"
+                 name="verification_record[data][custom_field]"
+                 class="form-control"
+                 placeholder="Example: Notes, ID Number, etc.">
+        </div>
+
+        <!-- ✅ Submit -->
+        <div class="text-end">
+          <%= f.submit (@record.persisted? ? "Update Record" : "Create Record"),
+                       class: "btn btn-primary px-4" %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+<% end %>

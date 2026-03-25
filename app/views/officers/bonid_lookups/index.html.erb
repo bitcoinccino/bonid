@@ -1,0 +1,138 @@
+<%# Officer BonID Lookups Index - Recent Scans %>
+
+<div class="container-fluid py-4">
+  <%# Page Header %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; color: var(--law-blue);">
+      <i class="ri-history-line me-2" style="font-size: 1.125rem; font-weight: 400;"></i>Recent Lookups
+    </h4>
+    <div class="d-flex gap-2">
+      <%= link_to officers_scan_path, class: "btn text-white", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; background: var(--law-green);" do %>
+        <i class="ri-qr-scan-2-line me-1" style="font-size: 1rem; font-weight: 400;"></i>New Scan
+      <% end %>
+      <%= link_to officers_dashboard_path, class: "btn btn-outline-secondary", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
+        <i class="ri-arrow-left-line me-1" style="font-size: 1rem; font-weight: 400;"></i>Dashboard
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row">
+    <%# Recent Scans %>
+    <div class="col-lg-8 mb-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--law-blue);">
+            <i class="ri-checkbox-circle-line me-2" style="color: var(--law-green);"></i>Successful Verifications
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <% if @recent_scans.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="font-size: 0.8rem;">Date</th>
+                    <th style="font-size: 0.8rem;">BonID</th>
+                    <th style="font-size: 0.8rem;">Name</th>
+                    <th style="font-size: 0.8rem;">Method</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_scans.each do |scan| %>
+                    <tr>
+                      <td style="font-size: 0.85rem;"><%= scan.scanned_at&.strftime("%b %d, %Y %H:%M") %></td>
+                      <td style="font-size: 0.85rem;">
+                        <code><%= scan.identity_submission&.bonid&.split("-")&.last(2)&.join("-") || "N/A" %></code>
+                      </td>
+                      <td style="font-size: 0.85rem;">
+                        <%= scan.identity_submission&.user&.full_name || "Unknown" %>
+                      </td>
+                      <td style="font-size: 0.85rem;">
+                        <% if scan.manual? %>
+                          <span class="badge bg-secondary">Manual</span>
+                        <% else %>
+                          <span class="badge" style="background: var(--law-green);">QR Scan</span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-scan-line" style="font-size: 3rem; color: var(--law-blue-10);"></i>
+              <p class="text-muted mt-2 mb-0" style="font-size: 0.9rem;">No recent scans found.</p>
+              <p class="text-muted" style="font-size: 0.8rem;">Start by scanning a BonID or entering digits manually.</p>
+              <%= link_to officers_scan_path, class: "btn btn-sm mt-2 text-white", style: "background: var(--law-green);" do %>
+                <i class="ri-qr-scan-2-line me-1"></i>Start Scanning
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Quick Actions Sidebar %>
+    <div class="col-lg-4">
+      <%# Quick Actions Card %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-0 py-3">
+          <h6 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--law-blue);">
+            <i class="ri-flashlight-line me-1" style="font-weight: 400;"></i>Quick Actions
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <%= link_to officers_scan_path, class: "d-flex align-items-center p-3 border-bottom text-decoration-none" do %>
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: var(--law-green-10);">
+              <i class="ri-qr-scan-2-line" style="font-size: 1.1rem; color: var(--law-green); font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                Scan BonID
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                Scan QR code or enter 6 digits
+              </div>
+            </div>
+          <% end %>
+
+          <%= link_to failed_officers_bonid_lookups_path, class: "d-flex align-items-center p-3 text-decoration-none" do %>
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: var(--law-red-10);">
+              <i class="ri-error-warning-line" style="font-size: 1.1rem; color: var(--law-red); font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                Failed Lookups
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                View failed verification attempts
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Stats Card %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h6 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--law-blue);">
+            <i class="ri-bar-chart-line me-1" style="font-weight: 400;"></i>Your Stats
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted" style="font-size: 0.8rem;">Today's Scans</span>
+            <strong style="color: var(--law-green);"><%= @recent_scans.select { |s| s.scanned_at&.today? }.count %></strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted" style="font-size: 0.8rem;">Total Scans</span>
+            <strong style="color: var(--law-blue);"><%= @recent_scans.count %></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

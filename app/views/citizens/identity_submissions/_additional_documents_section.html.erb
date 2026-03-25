@@ -1,0 +1,75 @@
+<%# ── Face Liveness Verification (Step 2) ── %>
+
+<% if @skip_liveness %>
+  <%# ── Biometrics Already Verified — Skip Liveness ── %>
+  <div class="liveness-wrapper">
+    <div class="liveness-mount-point" style="min-height: auto; background: transparent; border: none;">
+      <div style="text-align:center; padding: clamp(2rem, 6vw, 3rem) 1rem; font-family: 'Montserrat', sans-serif;">
+        <div style="width:60px; height:60px; border-radius:50%; background:#e8f5e9;
+                    display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+          <i class="ri-checkbox-circle-fill" style="font-size:1.6rem; color:#198754;"></i>
+        </div>
+        <p style="font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight:700; color:#198754; margin-bottom:0.3rem;">
+          Byometrik Deja Verifye
+        </p>
+        <p style="font-size: clamp(0.78rem, 2.3vw, 0.85rem); color:#666; margin-bottom:0; line-height:1.5;">
+          Figi ou te deja verifye nan soumisyon anvan ou.<br>
+          Jis telechaje dokiman korije ou yo.
+        </p>
+      </div>
+    </div>
+
+    <%# Hidden selfie field — pre-populated with previous selfie blob %>
+    <%= f.hidden_field :selfie,
+          value: @previous_selfie_signed_id,
+          required: true %>
+
+    <%# Hidden flags for controller to verify on create %>
+    <input type="hidden" name="skip_liveness" value="true">
+    <input type="hidden" name="previous_selfie_signed_id" value="<%= @previous_selfie_signed_id %>">
+  </div>
+
+<% else %>
+  <%# ── Normal Liveness Flow ── %>
+  <% liveness_region = Rails.application.credentials.dig(:aws, :rekognition, :region) || "us-east-1" %>
+  <% cognito_pool_id = Rails.application.credentials.dig(:aws, :cognito, :identity_pool_id) || "" %>
+
+  <div data-controller="liveness-detector"
+       data-liveness-detector-region-value="<%= liveness_region %>"
+       data-liveness-detector-identity-pool-id-value="<%= cognito_pool_id %>"
+       class="consent-liveness-overlay">
+    <div class="consent-liveness-container">
+      <%# Header bar — same as transaction consent %>
+      <div class="consent-liveness-header">
+        <span class="consent-liveness-title">
+          <i class="ri-shield-check-line me-1"></i> Verifikasyon Idantite
+        </span>
+      </div>
+
+      <%# Liveness detector — same dark wrapper as transaction consent %>
+      <div class="liveness-wrapper consent-liveness-dark" style="width: 100%; height: calc(100vh - 120px); min-height: 500px; display: flex; flex-direction: column;">
+        <div data-liveness-detector-target="mountPoint"
+             class="liveness-mount-point"
+             style="width: 100%; height: 100%; flex: 1 1 auto; position: relative;">
+        </div>
+        <div data-liveness-detector-target="statusMessage" class="liveness-status"></div>
+      </div>
+
+      <%# Hidden field for selfie signed_id (populated after liveness pass) %>
+      <%= f.hidden_field :selfie,
+            value: "",
+            required: true,
+            data: { liveness_detector_target: "file" } %>
+
+      <%# Retry button (hidden by default) %>
+      <div class="text-center mt-2 mt-md-3">
+        <button type="button"
+                class="btn btn-outline-primary btn-sm rounded-pill px-4 d-none"
+                data-liveness-detector-target="retryBtn"
+                data-action="liveness-detector#retry">
+          <i class="ri-refresh-line me-1"></i> Eseye ankò
+        </button>
+      </div>
+    </div>
+  </div>
+<% end %>

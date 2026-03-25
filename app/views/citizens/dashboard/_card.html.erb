@@ -1,0 +1,44 @@
+<%# app/views/citizens/dashboard/_card.html.erb %>
+<div class="col-md-6 col-lg-3">
+  <div class="card border-0 shadow-sm text-center rounded-4 p-4 h-100 hover-lift transition">
+    <div class="mb-3">
+      <i class="<%= icon %> fs-2 text-haitian-blue"></i>
+    </div>
+    
+    <h5 class="fw-semibold mb-2"><%= title %></h5>
+    
+    <!-- Status Badge -->
+    <% if status %>
+      <span class="badge bg-success-subtle text-success fw-semibold mb-3 px-3 py-2 rounded-pill">
+        <i class="ri-checkbox-circle-line me-1"></i>
+        Completed
+      </span>
+    <% else %>
+      <span class="badge bg-warning-subtle text-warning fw-semibold mb-3 px-3 py-2 rounded-pill">
+        <i class="ri-time-line me-1"></i>
+        Incomplete
+      </span>
+    <% end %>
+    
+    <!-- Modal Trigger Button -->
+    <button type="button"
+            class="btn <%= status ? 'btn-outline-primary' : 'btn-haitian-primary' %> btn-sm rounded-pill fw-semibold px-4"
+            data-bs-toggle="modal"
+            data-bs-target="#<%= modal_id %>"
+            aria-label="<%= status ? 'Edit' : 'Add' %> <%= title.downcase %>">
+      <i class="<%= status ? 'ri-edit-line' : 'ri-add-line' %> me-1"></i>
+      <%= button_text || (status ? "Edit" : "Add") %>
+    </button>
+  </div>
+</div>
+
+<style>
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+  }
+</style>

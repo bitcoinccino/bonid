@@ -1,0 +1,98 @@
+app/views/citizens/verification_records/_contact_ownership.html.erb
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+  <div class="card-header bg-secondary text-white fw-semibold py-3">
+    <i class="ri-user-3-line me-2"></i>Contact & Ownership
+  </div>
+
+  <div class="card-body row g-3 p-4">
+    <div class="col-md-6">
+      <%= f.label :data_owner_name, "Owner / Representative", class: "form-label fw-semibold" %>
+      <%= f.text_field :data_owner_name, value: record.data["owner_name"], class: "form-control" %>
+      <small class="text-muted d-block mt-1">
+        Name of the person legally representing this business.
+      </small>
+    </div>
+
+    <!-- 🧑‍💼 Owner Role -->
+    <div class="col-md-6">
+      <%= f.label :data_owner_role, "Owner Role (Fonction)", class: "form-label fw-semibold" %>
+      <%= f.select :data_owner_role,
+            options_for_select([
+              ["Owner (Propriétaire)", "Owner"],
+              ["Manager (Gérant)", "Manager"],
+              ["CEO / PDG (Directeur Général)", "CEO"],
+              ["Director (Administrateur)", "Director"],
+              ["President (Président du Conseil)", "President"],
+              ["Representative (Représentant Légal)", "Representative"],
+              ["Other (Autre rôle spécifique)", "Other"]
+            ], record.data["owner_role"]),
+            { prompt: "Select role" },
+            class: "form-select",
+            data: { action: "change->toggle-field#toggle" },
+            required: true %>
+
+      <% case record.data["owner_role"] %>
+      <% when "Owner" %>
+        <small class="text-muted d-block mt-1"><i class="ri-user-line me-1 text-primary"></i>Sole proprietor — full liability (Entreprise Individuelle).</small>
+      <% when "Manager" %>
+        <small class="text-muted d-block mt-1"><i class="ri-user-settings-line me-1 text-primary"></i>Gérant — manages SARL operations and represents company.</small>
+      <% when "CEO" %>
+        <small class="text-muted d-block mt-1"><i class="ri-briefcase-line me-1 text-primary"></i>Directeur Général — leads strategy, appointed by shareholders.</small>
+      <% when "Director" %>
+        <small class="text-muted d-block mt-1"><i class="ri-group-line me-1 text-primary"></i>Administrateur — member of SA board overseeing governance.</small>
+      <% when "President" %>
+        <small class="text-muted d-block mt-1"><i class="ri-vip-crown-line me-1 text-primary"></i>Président du Conseil — chairs board and ensures oversight.</small>
+      <% when "Representative" %>
+        <small class="text-muted d-block mt-1"><i class="ri-passport-line me-1 text-primary"></i>Représentant Légal — authorized signer for legal documents.</small>
+      <% when "Other" %>
+        <small class="text-muted d-block mt-1"><i class="ri-user-star-line me-1 text-primary"></i>Custom or special executive role, specify below.</small>
+      <% else %>
+        <small class="text-muted d-block mt-1"><i class="ri-organization-chart me-1 text-primary"></i>Select your legal function in the company.</small>
+      <% end %>
+    </div>
+
+    <!-- Custom Role -->
+    <div class="col-md-6 d-none" data-controller="toggle-field" data-toggle-field-target="container">
+      <%= f.label :data_owner_role_custom, "Custom Role (if Other)", class: "form-label fw-semibold" %>
+      <%= f.text_field :data_owner_role_custom, value: record.data["owner_role_custom"], class: "form-control" %>
+      <small class="text-muted d-block mt-1">Specify if your role doesn’t fit standard options.</small>
+    </div>
+
+    <% if bonid_verified %>
+      <div class="col-md-6">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <%= f.label :data_owner_bonid, "Owner BonID", class: "form-label fw-semibold mb-0" %>
+          <span class="badge bg-success-subtle text-success border border-success rounded-pill small">
+            <i class="ri-shield-check-line me-1"></i> Verified via BonID
+          </span>
+        </div>
+        <%= f.text_field :data_owner_bonid,
+              value: user&.bonid,
+              readonly: true,
+              class: "form-control-plaintext border p-2 rounded bg-light text-muted" %>
+      </div>
+    <% else %>
+      <div class="col-md-6">
+        <%= f.label :data_owner_bonid, "Owner BonID", class: "form-label fw-semibold" %>
+        <%= f.text_field :data_owner_bonid, value: record.data["owner_bonid"], placeholder: "HT-ID-XXXXXXXXX", class: "form-control" %>
+      </div>
+    <% end %>
+
+    <% email_val = user&.email || record.data["contact_email"] %>
+    <div class="col-md-4">
+      <%= f.label :data_contact_email, "Contact Email", class: "form-label fw-semibold" %>
+      <%= f.email_field :data_contact_email, value: email_val, readonly: user&.email.present?, class: "form-control#{' bg-light text-muted' if user&.email.present?}" %>
+    </div>
+
+    <% phone_val = user&.phone || record.data["contact_phone"] %>
+    <div class="col-md-4">
+      <%= f.label :data_contact_phone, "Contact Phone", class: "form-label fw-semibold" %>
+      <%= f.text_field :data_contact_phone, value: phone_val, readonly: user&.phone.present?, class: "form-control#{' bg-light text-muted' if user&.phone.present?}" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :data_website, "Website", class: "form-label fw-semibold" %>
+      <%= f.url_field :data_website, value: record.data["website"], class: "form-control" %>
+    </div>
+  </div>
+</div>

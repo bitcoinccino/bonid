@@ -1,0 +1,247 @@
+<!-- ============================= -->
+<!-- 🇭🇹 VERIFIED BUSINESS DETAILS -->
+<!-- ============================= -->
+<%# ============================= %>
+<%# 🇭🇹 VERIFIED BUSINESS DETAILS %>
+<%# ============================= %>
+<%
+  # === BonID / Verification Context ===
+  bonid_user     = record.user || (defined?(current_user) ? current_user : nil)
+  bonid_verified = bonid_user&.bonid.present?
+
+  verified_full_name =
+    if bonid_verified
+      [bonid_user.first_name, bonid_user.middle_name, bonid_user.last_name].compact.join(" ")
+    else
+      record.data["owner_name"].presence
+    end
+
+  verified_photo_url =
+    if bonid_verified && bonid_user.respond_to?(:photo) && bonid_user.photo.attached?
+      url_for(bonid_user.photo)
+    else
+      asset_path("default-avatar.png") rescue "https://cdn-icons-png.flaticon.com/512/847/847969.png"
+    end
+
+  bonid_qr_png =
+    if bonid_verified && bonid_user.respond_to?(:qr_png_base64) && bonid_user.qr_png_base64.present?
+      "data:image/png;base64,#{bonid_user.qr_png_base64}"
+    end
+
+  bonid_profile_url = bonid_verified ? "/verify/#{bonid_user.bonid}" : nil
+%>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <h5 class="mb-0 fw-semibold text-primary">
+      <i class="ri-building-4-line me-2 text-primary"></i>
+      Business Profile
+    </h5>
+
+    <% if record.status == "verified" %>
+      <span class="badge bg-success-subtle text-success border border-success rounded-pill">
+        <i class="ri-shield-check-line me-1"></i> Verified via BonID
+      </span>
+    <% else %>
+      <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill">
+        <i class="ri-time-line me-1"></i> Pending Review
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-4">
+
+      <!-- 🧩 BASIC INFO -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-store-2-line me-1 text-primary"></i> Business Name</h6>
+        <p class="mb-0"><%= record.data["business_name"].presence || "—" %></p>
+        <% if record.data["trade_name"].present? %>
+          <small class="text-muted">Trade Name: <%= record.data["trade_name"] %></small>
+        <% end %>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-briefcase-line me-1 text-primary"></i> Business Type</h6>
+        <p class="mb-0"><%= record.data["business_type"].presence || "—" %></p>
+        <small class="text-muted"><%= record.data["sector"]&.titleize.presence || "—" %> Sector</small>
+      </div>
+
+      <!-- 🏛️ REGISTRATION -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-government-line me-1 text-primary"></i> Registration</h6>
+        <p class="mb-0 fw-semibold"><%= record.data["registration_number"].presence || "—" %></p>
+        <small class="text-muted">Issued by <%= record.data["registration_authority"].presence || "—" %></small>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-bank-line me-1 text-primary"></i> Legal Structure</h6>
+        <p class="mb-0"><%= record.data["legal_structure"].presence || "—" %></p>
+        <small class="text-muted">Recognized under Haitian Commercial Code</small>
+      </div>
+
+      <!-- 💳 NIF & CNSS -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-fingerprint-line me-1 text-primary"></i> Fiscal ID (NIF)</h6>
+        <p class="mb-0"><%= record.decrypted_data["nif"] rescue record.data["nif"].presence || "—" %></p>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-id-card-line me-1 text-primary"></i> CNSS Employer No.</h6>
+        <p class="mb-0"><%= record.data["cnss_employer_number"].presence || "—" %></p>
+      </div>
+
+      <!-- 🏠 ADDRESS -->
+      <div class="col-md-12">
+        <h6 class="fw-bold mb-1"><i class="ri-map-pin-2-line me-1 text-primary"></i> Business Address</h6>
+        <p class="mb-0"><%= record.decrypted_data["business_address"] rescue record.data["business_address"].presence || "—" %></p>
+      </div>
+
+      <!-- 📅 DATES -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-calendar-line me-1 text-primary"></i> Incorporation Date</h6>
+        <p class="mb-0"><%= record.data["incorporation_date"].presence || "—" %></p>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-calendar-check-line me-1 text-primary"></i> License Expiration</h6>
+        <p class="mb-0"><%= record.data["license_expiration_date"].presence || "—" %></p>
+      </div>
+
+      <!-- ⚖️ TAX & COMPLIANCE -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-money-dollar-circle-line me-1 text-primary"></i> Tax Status</h6>
+        <p class="mb-0"><%= record.data["tax_status"].presence || "—" %></p>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-percent-line me-1 text-primary"></i> VAT Registered</h6>
+        <p class="mb-0"><%= record.data["vat_registered"] ? "Yes" : "No" %></p>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-shield-check-line me-1 text-primary"></i> Compliance Status</h6>
+        <p class="mb-0"><%= record.data["compliance_status"].presence || "Pending" %></p>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-alert-line me-1 text-primary"></i> Risk Rating</h6>
+        <p class="mb-0"><%= record.data["risk_rating"].presence || "Unrated" %></p>
+      </div>
+
+      <% if record.data["verified_by_partner"].present? %>
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-1"><i class="ri-bank-card-line me-1 text-primary"></i> Verified By Partner</h6>
+          <p class="mb-0"><%= record.data["verified_by_partner"] %></p>
+          <small class="text-muted">Trusted partner or institution that verified this record</small>
+        </div>
+      <% end %>
+
+      <% if record.data["compliance_notes"].present? %>
+        <div class="col-md-12">
+          <h6 class="fw-bold mb-1"><i class="ri-file-text-line me-1 text-primary"></i> Compliance Notes</h6>
+          <p class="mb-0"><%= record.data["compliance_notes"] %></p>
+        </div>
+      <% end %>
+
+      <!-- 👥 EMPLOYMENT -->
+      <div class="col-md-4">
+        <h6 class="fw-bold mb-1"><i class="ri-team-line me-1 text-primary"></i> Employees</h6>
+        <p class="mb-0"><%= record.data["employees_count"].presence || "—" %></p>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="fw-bold mb-1"><i class="ri-cash-line me-1 text-primary"></i> Avg. Monthly Salary (HTG)</h6>
+        <p class="mb-0"><%= record.data["average_monthly_salary_htg"].presence || "—" %></p>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="fw-bold mb-1"><i class="ri-bar-chart-box-line me-1 text-primary"></i> Annual Revenue (HTG)</h6>
+        <p class="mb-0"><%= record.data["annual_revenue_htg"].presence || "—" %></p>
+      </div>
+
+      <!-- 💼 OWNER / REPRESENTATIVE -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-user-3-line me-1 text-primary"></i> Owner / Representative</h6>
+
+        <div class="d-flex align-items-center gap-3 mt-2">
+          <img src="<%= verified_photo_url %>" alt="Owner photo"
+               class="rounded-circle border shadow-sm"
+               style="width:60px; height:60px; object-fit:cover;">
+
+          <div>
+            <p class="mb-0 fw-semibold">
+              <%= verified_full_name.presence || "—" %>
+              <% if bonid_verified %>
+                <i class="ri-shield-check-line text-success ms-1" title="Verified via BonID"></i>
+              <% end %>
+            </p>
+            <small class="text-muted">BonID: <%= bonid_user&.bonid || record.data["owner_bonid"] %></small>
+          </div>
+
+          <% if bonid_verified && bonid_qr_png %>
+            <div class="position-relative ms-auto">
+              <%= link_to bonid_profile_url, target: "_blank", rel: "noopener" do %>
+                <img src="<%= bonid_qr_png %>" alt="BonID QR"
+                     class="border rounded-2 shadow-sm"
+                     style="width:70px; height:70px; object-fit:contain;">
+                <img src="<%= asset_path('haiti-flag.png') rescue 'https://flagcdn.com/w40/ht.png' %>"
+                     alt="HT flag"
+                     class="position-absolute bottom-0 end-0 rounded-circle border border-light"
+                     style="width:20px; height:20px;">
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- 👔 OWNER ROLE -->
+      <div class="col-md-6">
+        <% role = record.data["owner_role"] %>
+        <h6 class="fw-bold mb-1"><i class="ri-organization-chart me-1 text-primary"></i> Owner Role</h6>
+        <p class="mb-1"><%= role == "Other" ? record.data["owner_role_custom"] : role.presence || "—" %></p>
+
+        <% case role %>
+        <% when "Owner" %>
+          <small class="text-muted"><i class="ri-lightbulb-flash-line me-1"></i>Sole proprietor with full liability (Entreprise Individuelle).</small>
+        <% when "Manager" %>
+          <small class="text-muted"><i class="ri-user-settings-line me-1"></i>Gérant — legally represents SARL in daily operations.</small>
+        <% when "CEO" %>
+          <small class="text-muted"><i class="ri-medal-line me-1"></i>Directeur Général — leads company strategy under SA structure.</small>
+        <% when "Director" %>
+          <small class="text-muted"><i class="ri-group-line me-1"></i>Administrateur — oversees board governance.</small>
+        <% when "President" %>
+          <small class="text-muted"><i class="ri-vip-crown-line me-1"></i>Président du Conseil — heads the board of directors.</small>
+        <% when "Representative" %>
+          <small class="text-muted"><i class="ri-passport-line me-1"></i>Représentant Légal — official contract signer.</small>
+        <% when "Other" %>
+          <small class="text-muted"><i class="ri-user-star-line me-1"></i>Custom executive or specialized position.</small>
+        <% else %>
+          <small class="text-muted">—</small>
+        <% end %>
+      </div>
+
+      <!-- ☎️ CONTACT -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-mail-line me-1 text-primary"></i> Contact Email</h6>
+        <p class="mb-0"><%= bonid_user&.email || record.data["contact_email"].presence || "—" %></p>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-1"><i class="ri-phone-line me-1 text-primary"></i> Contact Phone</h6>
+        <p class="mb-0"><%= bonid_user&.phone || record.data["contact_phone"].presence || "—" %></p>
+      </div>
+
+      <!-- 🌐 WEBSITE -->
+      <% if record.data["website"].present? %>
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-1"><i class="ri-global-line me-1 text-primary"></i> Website</h6>
+          <a href="<%= record.data["website"] %>" target="_blank" class="text-decoration-none">
+            <%= record.data["website"] %>
+          </a>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

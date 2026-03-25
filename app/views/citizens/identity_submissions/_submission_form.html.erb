@@ -1,0 +1,313 @@
+<% identity_submission ||= @identity_submission %>
+
+<div class="alert alert-dismissible fade show alert-info alert-dismissible fade show small" role="status" aria-live="polite">
+  Submitting as Citizen
+  <strong><%= current_citizen.full_name %></strong>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<div class="container py-4" style="max-width: 800px;">
+
+  <%# ── Header Section ── %>
+  <section class="text-center mb-4" aria-labelledby="verifyTitle">
+    <% if partner %>
+      <% if partner.logo.attached? %>
+        <div class="d-flex justify-content-center mb-3">
+          <%= image_tag partner.logo.variant(resize_to_limit: [150, 75]),
+                        class: "img-fluid",
+                        alt: "#{partner.name} logo",
+                        style: "max-height: 75px; object-fit: contain;" %>
+        </div>
+      <% end %>
+
+      <% if partner.name.downcase.include?("police") || partner.name.downcase.include?("pnh") %>
+        <h2 class="page-title mb-2" id="verifyTitle">
+          <i class="ri-police-badge-line me-1"></i> Verification for Police Nationale d'Haiti
+        </h2>
+        <p class="text-muted small mt-2 mb-0">
+          Submit valid identity documents, including your signature. These will be verified directly by the
+          <strong>Police Nationale d'Haiti (PNH)</strong> for law enforcement purposes.
+        </p>
+      <% else %>
+        <h2 class="page-title mb-2" id="verifyTitle">
+          <i class="ri-shield-user-line me-1"></i> Verification for <%= partner.name %>
+        </h2>
+        <p class="text-muted small mt-2 mb-0">
+          Submit valid identity documents, including your signature. These will be verified for institutions like embassies, hospitals, and banks.
+        </p>
+      <% end %>
+    <% else %>
+      <h2 class="page-title mb-2" id="verifyTitle">
+        <i class="ri-user-check-line me-2"></i> BonID Verification
+      </h2>
+      <p class="text-muted small mt-2 mb-0">
+        Submit valid identity documents, including your signature. These will be verified for institutions like embassies, hospitals, and banks.
+      </p>
+    <% end %>
+  </section>
+
+  <%# ── Required Documents Card ── %>
+  <div class="card profile-card mb-4">
+    <div class="card-body">
+      <div class="alert alert-info d-flex align-items-start mb-0">
+        <i class="ri-2x ri-file-list-3-line me-3"></i>
+        <div>
+          <strong>Required Documents:</strong>
+          <ul class="list-unstyled mt-2 mb-0">
+            <li class="mb-1"><i class="ri-checkbox-circle-line text-success me-2"></i>Valid CIN (front & back) <em>or</em> Passport</li>
+            <li class="mb-1"><i class="ri-checkbox-circle-line text-success me-2"></i>Clear selfie</li>
+            <li class="mb-1"><i class="ri-checkbox-circle-line text-success me-2"></i>One supporting document (e.g., Birth Certificate, Digicel/Natcom Bill, Bank Record)</li>
+          </ul>
+          <small class="text-muted d-block mt-2">
+            <i class="ri-information-line me-1"></i>Double-check that all documents match your info to speed up verification.
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Form ── %>
+  <%= simple_form_for [:citizens, submission],
+        html: {
+          multipart: true,
+          class: "verification-form",
+          data: {
+            controller: "form-handler id-switcher",
+            action: "turbo:submit-start->form-handler#submitStart
+                     turbo:submit-end->form-handler#submitEnd
+                     turbo:submit-error->form-handler#submitError"
+          }
+        } do |f| %>
+
+    <%# Error placeholder %>
+    <div data-form-handler-target="error"
+         class="alert alert-dismissible fade show alert-danger d-none text-center small fw-semibold"
+         role="alert"
+         aria-live="assertive"></div>
+
+    <%# ── Submission Details Card ── %>
+    <div class="card profile-card mb-4">
+      <div class="card-header border-0 py-3 px-4"
+           style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
+        <h6 class="mb-0 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600;">
+          <i class="ri-file-list-3-line me-2"></i>Submission Details
+          <span style="font-size: 0.7rem; opacity: 0.8; margin-left: 6px;">/ Detay Soumisyon</span>
+        </h6>
+      </div>
+      <div class="card-body">
+
+        <%= f.hidden_field :submission_type,
+              value: submission.submission_type.presence || IdentitySubmission.assign_submission_type_for(current_citizen) %>
+        <%= f.hidden_field :partner_id, value: session[:bonid_partner_id] if session[:bonid_partner_id].present? %>
+
+        <% case submission.submission_type %>
+        <% when "initial" %>
+          <div class="alert alert-info small rounded-3 d-flex align-items-start mb-3">
+            <i class="ri-information-line me-2 mt-1"></i>
+            <div>
+              <strong>Welcome!</strong> This is your first submission. Please ensure your documents are clear and valid.
+            </div>
+          </div>
+        <% when "resubmission" %>
+          <div class="alert alert-warning small rounded-3 d-flex align-items-start mb-3">
+            <i class="ri-refresh-line me-2 mt-1"></i>
+            <div>
+              <strong>Resubmission:</strong> You're resubmitting after a rejection. Double-check your documents carefully.
+            </div>
+          </div>
+        <% when "reissue" %>
+          <div class="alert alert-warning small rounded-3 d-flex align-items-start mb-3">
+            <i class="ri-restart-line me-2 mt-1"></i>
+            <div>
+              <strong>Reissue:</strong> You are requesting a new BonID. Provide a reason below.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <%= f.input :reason,
+                  label: raw("<i class='ri-refresh-line me-1'></i> Reason for Reissue"),
+                  collection: reissue_reasons_grouped_options,
+                  as: :grouped_select,
+                  group_method: :last,
+                  group_label_method: :first,
+                  prompt: "Select a reason",
+                  input_html: {
+                    class: "form-select",
+                    required: true,
+                    data: {
+                      controller: "reason",
+                      reasonTarget: "select",
+                      action: "change->reason#toggle"
+                    }
+                  },
+                  hint: "Choose the most accurate reason for requesting a new BonID.",
+                  label_html: { class: "form-label" } %>
+          </div>
+
+          <div class="mt-2" style="display:none;" data-reason-target="textareaWrapper">
+            <%= f.input :other_reason,
+                  label: raw("<i class='ri-edit-2-line me-1'></i> Other (please specify)"),
+                  as: :text,
+                  input_html: {
+                    rows: 2,
+                    placeholder: "Provide details if 'Other' was selected",
+                    class: "form-control",
+                    data: { reasonTarget: "textarea" }
+                  },
+                  label_html: { class: "form-label" } %>
+          </div>
+        <% end %>
+
+        <%# ID Type %>
+        <div class="mb-3">
+          <%= f.input :id_type,
+                label: raw("<i class='ri-id-card-line me-1'></i> ID Type"),
+                collection: [["CIN (Front & Back)", "cin"], ["Passport", "passport"]],
+                prompt: "Select ID type",
+                input_html: {
+                  id: "id_type_select",
+                  class: "form-select",
+                  data: { action: "change->id-switcher#toggle" }
+                },
+                label_html: { class: "form-label" } %>
+          <small class="text-muted">Choose which identity document you'll upload.</small>
+        </div>
+
+        <%# CIN Fields %>
+        <div id="cin_fields" data-id-switcher-target="cinFields">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.input :cin_front, as: :file,
+                    label: raw("<i class='ri-contacts-book-line me-1'></i> CIN Front"),
+                    input_html: { accept: "image/*", class: "form-control" },
+                    label_html: { class: "form-label" } %>
+              <% if submission.persisted? && submission.cin_front.attached? %>
+                <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Current file uploaded</small>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <%= f.input :cin_back, as: :file,
+                    label: raw("<i class='ri-contacts-book-2-line me-1'></i> CIN Back"),
+                    input_html: { accept: "image/*", class: "form-control" },
+                    label_html: { class: "form-label" } %>
+              <% if submission.persisted? && submission.cin_back.attached? %>
+                <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Current file uploaded</small>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# Passport Field %>
+        <div id="passport_field" data-id-switcher-target="passportField" style="display: none;">
+          <%= f.input :passport, as: :file,
+                label: raw("<i class='ri-passport-line me-1'></i> Passport"),
+                input_html: { accept: "image/*", class: "form-control" },
+                label_html: { class: "form-label" } %>
+          <% if submission.persisted? && submission.passport.attached? %>
+            <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Current file uploaded</small>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+
+    <%# ── Additional Documents Card ── %>
+    <div class="card profile-card mb-4">
+      <div class="card-header border-0 py-3 px-4"
+           style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
+        <h6 class="mb-0 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600;">
+          <i class="ri-image-add-line me-2"></i>Additional Documents
+          <span style="font-size: 0.7rem; opacity: 0.8; margin-left: 6px;">/ Dokiman Siplemante</span>
+        </h6>
+      </div>
+      <div class="card-body">
+
+        <%# Selfie %>
+        <div class="mb-3">
+          <%= f.input :selfie, as: :file,
+                label: raw("<i class='ri-camera-line me-1'></i> Selfie"),
+                input_html: { accept: "image/*", class: "form-control" },
+                label_html: { class: "form-label" } %>
+          <small class="text-muted">A recent, clear selfie for facial match with your ID.</small>
+          <% if submission.persisted? && submission.selfie.attached? %>
+            <br><small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Current file uploaded</small>
+          <% end %>
+        </div>
+
+        <hr class="my-3">
+
+        <%# Supporting Document Type %>
+        <div class="mb-3">
+          <%= f.input :additional_proof_type,
+                label: raw("<i class='ri-file-text-line me-1'></i> Supporting Document"),
+                collection: ["Digicel Bill", "Natcom Bill", "Birth Certificate", "Baptismal Certificate", "Driver's License", "PNH Record", "Bank Record", "Western Union", "MoneyGram", "Sendwave", "Unitransfer", "Vehicle Registration", "Other"],
+                prompt: "Select document type",
+                input_html: { class: "form-select" },
+                label_html: { class: "form-label" } %>
+          <small class="text-muted">Used to validate your address or identity.</small>
+        </div>
+
+        <%# Supporting Document Upload %>
+        <div class="mb-3">
+          <%= f.input :additional_proof,
+                as: :file,
+                label: raw("<i class='ri-upload-2-line me-1'></i> Upload Supporting Document"),
+                input_html: { accept: "image/*,application/pdf", class: "form-control" },
+                label_html: { class: "form-label" } %>
+          <% if submission.persisted? && submission.additional_proof.attached? %>
+            <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Current file uploaded</small>
+          <% end %>
+        </div>
+
+        <hr class="my-3">
+
+        <%# Signature %>
+        <div class="mb-3" data-controller="signature-pad">
+          <%= f.label :signature, raw("<i class='ri-ball-pen-line me-1'></i> Signature"), class: "form-label" %>
+
+          <%# Upload option %>
+          <%= f.file_field :signature, accept: "image/*", class: "form-control mb-2" %>
+          <small class="text-muted d-block mb-2">Or draw your signature below.</small>
+
+          <%# Draw option %>
+          <div class="border rounded position-relative" style="width: 100%; height: 150px; border-color: rgba(0, 32, 159, 0.15) !important;">
+            <canvas tabindex="0" data-signature-pad-target="canvas" class="w-100" style="height: 100%; cursor: crosshair;"></canvas>
+            <input type="hidden" name="identity_submission[signature_drawn]" data-signature-pad-target="input" />
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-2"
+                    style="font-size: 0.75rem;"
+                    data-action="signature-pad#clear">
+              <i class="ri-eraser-line"></i> Clear
+            </button>
+          </div>
+          <small class="text-muted d-block mt-2">
+            Draw your signature with a finger, stylus, or mouse. Required for legal, embassy, or hospital use.
+          </small>
+        </div>
+
+        <%# Privacy Footer %>
+        <div class="privacy-footer">
+          <i class="ri-lock-2-fill text-success me-2"></i>
+          <strong>Encrypted • Audited • DIE-Compliant</strong><br>
+          Fully aligned with Haitian identity verification regulations.
+        </div>
+      </div>
+    </div>
+
+    <%# ── Submit Button ── %>
+    <div class="d-grid mb-4">
+      <button type="submit"
+              class="btn btn-haitian-blue d-flex justify-content-center align-items-center gap-2"
+              data-form-handler-target="submit">
+        <span data-form-handler-target="spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+        <i class="ri-check-line"></i>
+        <span data-form-handler-target="submitText">Submit for Verification</span>
+      </button>
+    </div>
+
+    <p class="text-center text-muted small mb-0">
+      <i class="ri-shield-keyhole-line me-1"></i>
+      Your documents are securely reviewed and never shared without your consent.
+    </p>
+  <% end %>
+</div>

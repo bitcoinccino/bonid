@@ -1,0 +1,271 @@
+<%# app/views/partner_portal/dashboard/default.html.erb %>
+<%# Default dashboard for non-law enforcement partners %>
+
+<div class="container-fluid py-3">
+  <%# Page Header %>
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div>
+      <h1 class="h3 fw-bold text-dark mb-1">Dashboard</h1>
+      <p class="text-muted mb-0">Welcome back, <%= current_partner_admin&.email&.split("@")&.first || "Partner" %></p>
+    </div>
+    <div class="mt-3 mt-md-0">
+      <%= link_to partner_portal_scans_path, class: "btn btn-primary rounded-pill px-4" do %>
+        <i class="ri-qr-scan-2-line me-2"></i>Scan BonID
+      <% end %>
+    </div>
+  </div>
+
+  <%# Stats Cards Row %>
+  <div class="row g-3 mb-4">
+    <%# QR Scans %>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3"
+                 style="width: 48px; height: 48px;">
+              <i class="ri-qr-scan-2-line text-primary fs-5"></i>
+            </div>
+            <div>
+              <h3 class="mb-0 fw-bold"><%= @stats[:qr_scans] %></h3>
+              <small class="text-muted">Total Scans</small>
+            </div>
+          </div>
+          <div class="mt-2">
+            <span class="badge bg-success bg-opacity-10 text-success">
+              <i class="ri-arrow-up-line"></i> <%= @stats[:qr_scans_today] %> today
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Verifications %>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3"
+                 style="width: 48px; height: 48px;">
+              <i class="ri-shield-check-line text-success fs-5"></i>
+            </div>
+            <div>
+              <h3 class="mb-0 fw-bold"><%= @stats[:verifications] %></h3>
+              <small class="text-muted">Verifications</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Consent Grants %>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3"
+                 style="width: 48px; height: 48px;">
+              <i class="ri-user-follow-line text-info fs-5"></i>
+            </div>
+            <div>
+              <h3 class="mb-0 fw-bold"><%= @stats[:consent_grants] %></h3>
+              <small class="text-muted">Authorized Citizens</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# API Calls %>
+    <div class="col-6 col-lg-3">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="bg-warning bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3"
+                 style="width: 48px; height: 48px;">
+              <i class="ri-code-s-slash-line text-warning fs-5"></i>
+            </div>
+            <div>
+              <h3 class="mb-0 fw-bold"><%= @api_stats[:total] %></h3>
+              <small class="text-muted">API Requests</small>
+            </div>
+          </div>
+          <div class="mt-2">
+            <span class="badge bg-primary bg-opacity-10 text-primary">
+              <%= @api_stats[:today] %> today
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# API Stats Bar %>
+  <% if @api_stats[:total] > 0 %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body py-3">
+        <div class="row align-items-center">
+          <div class="col-md-3 mb-2 mb-md-0">
+            <span class="fw-semibold text-dark">API Usage</span>
+          </div>
+          <div class="col-md-9">
+            <div class="d-flex flex-wrap gap-4">
+              <div class="d-flex align-items-center">
+                <span class="badge bg-success me-2">Success</span>
+                <span class="fw-semibold"><%= @api_stats[:success] %></span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="badge bg-danger me-2">Failed</span>
+                <span class="fw-semibold"><%= @api_stats[:failed] %></span>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="badge bg-primary me-2">Today</span>
+                <span class="fw-semibold"><%= @api_stats[:today] %></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="row g-4">
+    <%# Recent BonID Scans %>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+              <i class="ri-qr-scan-2-line text-primary me-2"></i>Recent BonID Scans
+            </h5>
+            <%= link_to "View All", partner_portal_scans_path, class: "btn btn-sm btn-outline-primary rounded-pill" %>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <% if @recent_scans.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="border-0 ps-3">Citizen</th>
+                    <th class="border-0">BonID</th>
+                    <th class="border-0">Status</th>
+                    <th class="border-0 pe-3">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_scans.each do |scan| %>
+                    <% user = scan.identity_submission&.user %>
+                    <tr>
+                      <td class="ps-3">
+                        <div class="d-flex align-items-center">
+                          <% if user&.profile_photo&.attached? %>
+                            <%= image_tag user.profile_photo.variant(resize_to_limit: [32, 32]),
+                                          class: "rounded-circle me-2",
+                                          style: "width: 32px; height: 32px; object-fit: cover;" %>
+                          <% else %>
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2"
+                                 style="width: 32px; height: 32px;">
+                              <i class="ri-user-line text-primary small"></i>
+                            </div>
+                          <% end %>
+                          <span class="fw-medium"><%= user&.full_name || "Unknown" %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <code class="bg-light px-2 py-1 rounded small">
+                          <%= scan.identity_submission&.bonid.present? ? mask_bonid(scan.identity_submission.bonid) : "N/A" %>
+                        </code>
+                      </td>
+                      <td>
+                        <span class="badge bg-success bg-opacity-10 text-success">Verified</span>
+                      </td>
+                      <td class="pe-3 text-muted small">
+                        <%= time_ago_in_words(scan.created_at) %> ago
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-qr-code-line text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-3 mb-0">No scans yet. Start scanning BonIDs to see activity here.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Authorized Citizens %>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0 py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+              <i class="ri-user-follow-line text-info me-2"></i>Authorized Citizens
+            </h5>
+            <%= link_to "View All", partner_portal_api_keys_path, class: "btn btn-sm btn-outline-info rounded-pill" %>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <% if @consent_grants.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="border-0 ps-3">Citizen</th>
+                    <th class="border-0">Scopes</th>
+                    <th class="border-0 pe-3">Granted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @consent_grants.each do |grant| %>
+                    <% user = grant.citizen %>
+                    <tr>
+                      <td class="ps-3">
+                        <div class="d-flex align-items-center">
+                          <% if user&.profile_photo&.attached? %>
+                            <%= image_tag user.profile_photo.variant(resize_to_limit: [32, 32]),
+                                          class: "rounded-circle me-2",
+                                          style: "width: 32px; height: 32px; object-fit: cover;" %>
+                          <% else %>
+                            <div class="bg-info bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2"
+                                 style="width: 32px; height: 32px;">
+                              <i class="ri-user-line text-info small"></i>
+                            </div>
+                          <% end %>
+                          <span class="fw-medium"><%= user&.full_name || "Unknown" %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <% scopes = grant.granted_scopes || [] %>
+                        <% scopes.first(2).each do |scope| %>
+                          <span class="badge bg-light text-dark me-1"><%= scope %></span>
+                        <% end %>
+                        <% if scopes.size > 2 %>
+                          <span class="badge bg-secondary">+<%= scopes.size - 2 %></span>
+                        <% end %>
+                      </td>
+                      <td class="pe-3 text-muted small">
+                        <%= time_ago_in_words(grant.created_at) %> ago
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-user-add-line text-muted" style="font-size: 3rem;"></i>
+              <p class="text-muted mt-3 mb-0">No citizens have authorized your partner yet.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</div>

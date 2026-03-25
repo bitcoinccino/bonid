@@ -1,0 +1,112 @@
+<%= render "admin/shared/admin_topbar" %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><%= link_to "Analytics", admin_incident_analytics_path %></li>
+          <li class="breadcrumb-item active">Crime Types</li>
+        </ol>
+      </nav>
+      <h1 class="h3 mb-0">Crime Type Statistics</h1>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Crime Stats Table -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0">
+          <h5 class="mb-0">Crime Incidents by Type</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Rank</th>
+                  <th>Crime Type</th>
+                  <th class="text-end">Count</th>
+                  <th class="text-end">Percentage</th>
+                  <th>Visual</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% total = @crime_stats.values.sum.to_f %>
+                <% max_count = @crime_stats.values.max.to_f %>
+                <% @crime_stats.each_with_index do |(type, count), index| %>
+                  <tr>
+                    <td>
+                      <span class="badge <%= index < 5 ? 'bg-danger' : 'bg-secondary' %>">
+                        #<%= index + 1 %>
+                      </span>
+                    </td>
+                    <td><%= type %></td>
+                    <td class="text-end fw-semibold"><%= number_with_delimiter(count) %></td>
+                    <td class="text-end"><%= total > 0 ? (count / total * 100).round(1) : 0 %>%</td>
+                    <td style="width: 200px;">
+                      <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary" role="progressbar"
+                             style="width: <%= max_count > 0 ? (count / max_count * 100).round : 0 %>%">
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories Overview -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0">
+          <h5 class="mb-0">Crime Categories</h5>
+        </div>
+        <div class="card-body">
+          <% @categories.each do |category| %>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-semibold"><%= category.name %></span>
+                <span class="badge bg-primary"><%= category.crime_types.where(active: true).count %> types</span>
+              </div>
+              <p class="text-muted small mb-0"><%= category.description %></p>
+            </div>
+            <% unless category == @categories.last %>
+              <hr class="my-2">
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-transparent border-0">
+          <h5 class="mb-0">Quick Stats</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Total Categories</span>
+            <strong><%= @categories.count %></strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Total Crime Types</span>
+            <strong><%= CrimeType.where(active: true).count %></strong>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Unique Types in Period</span>
+            <strong><%= @crime_stats.keys.count %></strong>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Total Incidents</span>
+            <strong><%= number_with_delimiter(@crime_stats.values.sum) %></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

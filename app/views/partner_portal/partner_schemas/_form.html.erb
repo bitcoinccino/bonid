@@ -1,0 +1,69 @@
+<%# app/views/partner_portal/partner_schemas/_form.html.erb %>
+<%= simple_form_for([:partner_portal, @schema]) do |f| %>
+  <div class="row">
+    <div class="col-md-6">
+      <%= f.input :name, label: "Schema Name",
+            input_html: { class: "form-control", placeholder: "e.g., Mortgage Application" } %>
+      <%= f.input :record_type, collection: ["property", "health", "business", "education", "mortgage", "incident_report"],
+            label: "Record Type",
+            input_html: { class: "form-select" } %>
+      <%= f.input :visibility, collection: [["Partner Only", "partner"], ["Public", "public"], ["Internal", "internal"]],
+            label: "Visibility",
+            input_html: { class: "form-select" } %>
+      <%= f.input :active, as: :boolean, label: "Active?",
+            input_html: { class: "form-check-input" } %>
+    </div>
+    <div class="col-md-6">
+      <%= f.input :version, label: "Version",
+            input_html: { class: "form-control", value: @schema.version || "1.0" } %>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <h5>JSON Structure</h5>
+      <%= f.text_area :structure, rows: 15,
+            value: JSON.pretty_generate(@schema.structure || { "fields" => [] }),
+            class: "form-control code-editor",
+            placeholder: '{"fields": [{"key": "name", "label": "Name", "type": "text", "required": true}]}',
+            data: { controller: "json-editor" } %>
+      <small class="text-muted">Define fields as JSON array, e.g., {"key": "loan_amount", "label": "Amount", "type": "number", "required": true}</small>
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-12">
+      <h5>Validation Rules</h5>
+      <%= f.text_area :validation_rules, rows: 10,
+            value: JSON.pretty_generate(@schema.validation_rules || {}),
+            class: "form-control code-editor",
+            placeholder: '{"loan_amount": {"min": 0, "max": 1000000}}',
+            data: { controller: "json-validator" } %>
+      <small class="text-muted">Optional rules, e.g., min/max for numbers, email format</small>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <%= f.submit "Save Schema", class: "btn btn-primary" %>
+      <%= link_to "Cancel", partner_portal_schemas_path, class: "btn btn-outline-secondary ms-2" %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+  // Optional JS for JSON editing (using CodeMirror for syntax highlighting)
+  document.addEventListener('DOMContentLoaded', () => {
+    const editors = document.querySelectorAll('.code-editor');
+    editors.forEach(editor => {
+      // Basic JSON validation on blur
+      editor.addEventListener('blur', () => {
+        try {
+          JSON.parse(editor.value);
+        } catch (e) {
+          editor.classList.add('is-invalid');
+        }
+      });
+    });
+  });
+</script>

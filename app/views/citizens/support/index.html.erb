@@ -1,0 +1,138 @@
+<%# app/views/citizens/support/index.html.erb %>
+<div class="faq-page" data-controller="faq">
+
+  <%# ── Hero Header ── %>
+  <div class="faq-hero">
+    <div class="faq-hero-icon">
+      <i class="ri-customer-service-2-line"></i>
+    </div>
+    <h2 class="faq-hero-title"><%= t("citizens.support.title") %></h2>
+    <p class="faq-hero-subtitle"><%= t("citizens.support.subtitle") %></p>
+
+    <%# ── Sticky Search Bar ── %>
+    <div class="faq-search">
+      <i class="ri-search-line faq-search-icon"></i>
+      <input type="text"
+             class="faq-search-input"
+             placeholder="<%= t('citizens.support.search_placeholder') %>"
+             data-faq-target="searchInput"
+             data-action="input->faq#search"
+             autocomplete="off" />
+      <button type="button"
+              class="faq-search-clear d-none"
+              data-faq-target="clearBtn"
+              data-action="click->faq#clearSearch">
+        <i class="ri-close-circle-line"></i>
+      </button>
+    </div>
+  </div>
+
+  <%# ── Trending Questions ── %>
+  <div class="faq-trending">
+    <h6 class="faq-section-label">
+      <i class="ri-fire-line me-1"></i>
+      <%= t("citizens.support.trending_title") %>
+    </h6>
+    <div class="faq-trending-list">
+      <% @trending_keys.each do |key| %>
+        <% item = @faq_items[key.to_sym] %>
+        <% next unless item %>
+        <button type="button"
+                class="faq-trending-chip"
+                data-action="click->faq#searchTrending"
+                data-query="<%= strip_tags(item[:q]).truncate(40) %>">
+          <i class="ri-arrow-right-s-line"></i>
+          <%= strip_tags(item[:q]).truncate(50) %>
+        </button>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Category Bento Grid ── %>
+  <div class="faq-categories">
+    <button type="button"
+            class="faq-category-card active"
+            data-faq-target="categoryBtn"
+            data-category="all"
+            data-action="click->faq#filterByCategory">
+      <i class="ri-apps-line"></i>
+      <span><%= t("citizens.support.all_questions") %></span>
+    </button>
+
+    <% @faq_categories.each do |cat| %>
+      <button type="button"
+              class="faq-category-card"
+              data-faq-target="categoryBtn"
+              data-category="<%= cat[:key] %>"
+              data-action="click->faq#filterByCategory">
+        <i class="<%= cat[:icon] %>"></i>
+        <span><%= cat[:label] %></span>
+      </button>
+    <% end %>
+  </div>
+
+  <%# ── Toolbar (counter + expand/collapse) ── %>
+  <div class="faq-toolbar">
+    <span class="faq-counter" data-faq-target="counter"></span>
+    <button type="button"
+            class="faq-expand-btn"
+            data-faq-target="expandToggle"
+            data-expand-text="<%= t('citizens.support.expand_all') %>"
+            data-collapse-text="<%= t('citizens.support.collapse_all') %>"
+            data-action="click->faq#toggleAll">
+      <i class="ri-expand-up-down-line me-1"></i>
+      <span data-label><%= t("citizens.support.expand_all") %></span>
+    </button>
+  </div>
+
+  <%# ── FAQ Accordion List ── %>
+  <div class="faq-list">
+    <% @faq_categories.each do |cat| %>
+      <% cat[:questions].each_with_index do |qkey, idx| %>
+        <% item = @faq_items[qkey.to_sym] %>
+        <% next unless item %>
+        <details class="faq-item"
+                 data-faq-target="faqItem"
+                 data-category="<%= cat[:key] %>"
+                 <%= 'open' if cat[:key] == "getting_started" && idx.zero? %>>
+          <summary class="faq-question">
+            <span class="faq-question-text"><%= item[:q].html_safe %></span>
+            <i class="ri-arrow-down-s-line faq-chevron"></i>
+          </summary>
+          <div class="faq-answer"><%= item[:a_html].html_safe %></div>
+        </details>
+      <% end %>
+    <% end %>
+
+    <%# ── No Results ── %>
+    <div class="faq-no-results" data-faq-target="noResults" style="display: none;">
+      <i class="ri-search-eye-line"></i>
+      <p><%= t("citizens.support.no_results") %></p>
+    </div>
+  </div>
+
+  <%# ── Contact Support Footer ── %>
+  <div class="faq-contact">
+    <div class="faq-contact-inner">
+      <i class="ri-headphone-line faq-contact-icon"></i>
+      <h5 class="faq-contact-title"><%= t("citizens.support.contact_title") %></h5>
+      <p class="faq-contact-subtitle"><%= t("citizens.support.contact_subtitle") %></p>
+
+      <div class="faq-contact-channels">
+        <a href="sms:+50940000000" class="faq-contact-btn">
+          <i class="ri-message-2-line"></i>
+          <span><%= t("citizens.support.contact_sms") %></span>
+        </a>
+        <a href="https://wa.me/50940000000" class="faq-contact-btn" target="_blank" rel="noopener">
+          <i class="ri-whatsapp-line"></i>
+          <span><%= t("citizens.support.contact_whatsapp") %></span>
+        </a>
+        <a href="tel:+50940000000" class="faq-contact-btn">
+          <i class="ri-phone-line"></i>
+          <span><%= t("citizens.support.contact_phone") %></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>

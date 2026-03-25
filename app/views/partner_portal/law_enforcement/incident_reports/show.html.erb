@@ -1,0 +1,560 @@
+<%# Partner Portal — Law Enforcement: Incident Report Command & Control Review %>
+<%
+  officer = @officer
+  bonid_sub = @bonid_submission
+  address = @address
+  severity = @incident_report.crime_severity_level
+  severity_label = case severity
+                   when 5 then "Critical"
+                   when 4 then "Severe"
+                   when 3 then "High"
+                   when 2 then "Moderate"
+                   else "Low"
+                   end
+  severity_css = case severity
+                 when 5 then "le-severity--critical"
+                 when 4 then "le-severity--severe"
+                 when 3 then "le-severity--high"
+                 when 2 then "le-severity--moderate"
+                 else "le-severity--low"
+                 end
+%>
+
+<%# ════════════════════════════════════════════════════════════════ %>
+<%# CASE HEADER BAR (sticky)                                       %>
+<%# ════════════════════════════════════════════════════════════════ %>
+<div class="le-report-header d-flex align-items-center flex-wrap gap-2">
+  <%= link_to partner_portal_law_enforcement_incident_reports_path, class: "le-back-btn" do %>
+    <i class="ri-arrow-left-line"></i>
+  <% end %>
+
+  <div class="flex-grow-1">
+    <div class="le-report-id font-monospace"><%= @incident_report.report_id %></div>
+    <div class="le-crime-type">
+      <i class="ri-alert-line me-1"></i><%= @incident_report.crime_type&.humanize %>
+      <% if @incident_report.penal_code_articles.present? %>
+        <span class="ms-2" style="opacity: 0.7;">Art. <%= @incident_report.penal_code_articles %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Status Badge %>
+  <% status_class = case @incident_report.status
+     when "submitted" then "bg-primary"
+     when "under_review" then "bg-warning text-dark"
+     when "approved" then "bg-success"
+     when "rejected" then "bg-danger"
+     when "escalated" then "bg-dark"
+     else "bg-secondary"
+     end %>
+  <span class="badge <%= status_class %> px-3 py-2" style="font-size: 0.75rem;">
+    <%= @incident_report.status&.titleize || "Submitted" %>
+  </span>
+
+  <%# Severity Badge %>
+  <span class="badge <%= severity_css %> px-2 py-1" style="font-size: 0.7rem;">
+    <i class="ri-shield-line me-1"></i><%= severity_label %>
+  </span>
+
+  <%# Priority Badge (from review) %>
+  <% if @review %>
+    <span class="badge bg-<%= @review.priority_color %> px-2 py-1" style="font-size: 0.7rem;">
+      <i class="ri-flag-line me-1"></i><%= @review.priority_label %>
+    </span>
+    <% if @review.overdue? %>
+      <span class="badge bg-danger px-2 py-1" style="font-size: 0.7rem; animation: pulse 1.5s infinite;">
+        <i class="ri-alarm-warning-line me-1"></i>OVERDUE
+      </span>
+    <% end %>
+  <% end %>
+</div>
+
+<%# ════════════════════════════════════════════════════════════════ %>
+<%# TWO-COLUMN LAYOUT                                              %>
+<%# ════════════════════════════════════════════════════════════════ %>
+<div class="row g-3">
+  <%# ── LEFT COLUMN (Evidence & Details) ────────────────────── %>
+  <div class="col-lg-8">
+
+    <%# ── PERSONS INVOLVED ──────────────────────────────────── %>
+    <% if @person_involvements.any? %>
+      <div class="le-report-card">
+        <div class="le-report-card__header">
+          <i class="ri-group-line"></i>
+          Persons Involved (<%= @person_involvements.count %>)
+        </div>
+        <div class="le-report-card__body">
+          <% @person_involvements.each do |pi| %>
+            <%
+              is_tourist = pi.visitor_submission.present?
+              person_name = if pi.user.present?
+                [pi.user.first_name, pi.user.last_name].compact.join(" ")
+              elsif pi.visitor_submission.present?
+                [pi.visitor_submission.first_name, pi.visitor_submission.last_name].compact.join(" ")
+              else
+                pi.name || "Inconnu"
+              end
+
+              person_bonid = if is_tourist
+                pi.visitor_submission&.bonid || pi.bonid
+              else
+                pi.bonid || pi.user&.bonid
+              end
+
+              photo_attached = (pi.user&.photo&.attached?) || (pi.visitor_submission&.selfie&.attached?)
+              role_css = "le-person-card--#{pi.role}" if pi.role.present?
+            %>
+            <div class="le-person-card <%= role_css %>">
+              <div class="d-flex align-items-center gap-3">
+                <%# Mugshot — large for identity verification %>
+                <% if pi.user&.photo&.attached? %>
+                  <%= image_tag url_for(pi.user.photo),
+                                class: "le-person-photo",
+                                loading: "lazy" %>
+                <% elsif pi.visitor_submission&.selfie&.attached? %>
+                  <%= image_tag url_for(pi.visitor_submission.selfie),
+                                class: "le-person-photo",
+                                loading: "lazy" %>
+                <% else %>
+                  <div class="le-person-photo-placeholder">
+                    <i class="ri-user-line"></i>
+                  </div>
+                <% end %>
+
+                <%# Person Info %>
+                <div class="flex-grow-1">
+                  <div class="le-person-name"><%= person_name %></div>
+
+                  <% if person_bonid.present? %>
+                    <div class="le-person-bonid mb-1">
+                      <i class="ri-fingerprint-line me-1"></i><%= person_bonid %>
+                    </div>
+                  <% elsif pi.no_bonid %>
+                    <div class="small text-muted mb-1">
+                      <i class="ri-close-circle-line me-1"></i>No BonID
+                    </div>
+                  <% end %>
+
+                  <div class="d-flex flex-wrap gap-1">
+                    <%# Citizen / Tourist %>
+                    <% if is_tourist %>
+                      <span class="le-pill" style="background: var(--law-tan); color: #fff;">
+                        <i class="ri-plane-line"></i>Tourist
+                        <% if pi.visitor_submission&.nationality.present? %>
+                          · <%= pi.visitor_submission.nationality %>
+                        <% end %>
+                      </span>
+                    <% end %>
+
+                    <%# Role Pill %>
+                    <% if pi.role.present? %>
+                      <span class="le-pill le-pill--<%= pi.role %>">
+                        <%= pi.role.titleize %>
+                      </span>
+                    <% end %>
+
+                    <%# Status Pill %>
+                    <% if pi.status.present? %>
+                      <span class="le-pill le-pill--<%= pi.status %>">
+                        <%= pi.status.titleize %>
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── INCIDENT DETAILS ──────────────────────────────────── %>
+    <div class="le-report-card">
+      <div class="le-report-card__header">
+        <i class="ri-file-text-line"></i>
+        Incident Details
+      </div>
+      <div class="le-report-card__body">
+        <div class="row g-0">
+          <%# Date %>
+          <div class="col-md-6">
+            <div class="le-detail-row">
+              <div class="le-detail-icon"><i class="ri-time-line"></i></div>
+              <div>
+                <div class="le-detail-label">Occurred At</div>
+                <div class="le-detail-value"><%= @incident_report.occurred_at&.strftime("%b %d, %Y at %H:%M") || "Not specified" %></div>
+              </div>
+            </div>
+          </div>
+
+          <%# Location %>
+          <div class="col-md-6">
+            <div class="le-detail-row">
+              <div class="le-detail-icon"><i class="ri-map-pin-line"></i></div>
+              <div>
+                <div class="le-detail-label">Location</div>
+                <div class="le-detail-value">
+                  <%= address&.street_address %>
+                  <% if address&.commune&.name.present? %>
+                    <span class="badge bg-light text-dark ms-1" style="font-size: 0.65rem;"><%= address.commune.name %></span>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%# Case Number %>
+          <div class="col-md-6">
+            <div class="le-detail-row">
+              <div class="le-detail-icon"><i class="ri-folder-line"></i></div>
+              <div>
+                <div class="le-detail-label">Case Number</div>
+                <div class="le-detail-value font-monospace"><%= @incident_report.bonid_case_number || "—" %></div>
+              </div>
+            </div>
+          </div>
+
+          <%# Penal Code %>
+          <% if @incident_report.penal_code_articles.present? %>
+            <div class="col-md-6">
+              <div class="le-detail-row">
+                <div class="le-detail-icon"><i class="ri-scales-3-line"></i></div>
+                <div>
+                  <div class="le-detail-label">Penal Code</div>
+                  <div class="le-detail-value">Articles <%= @incident_report.penal_code_articles %></div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Description %>
+        <% if @incident_report.description.present? %>
+          <div class="mt-3 p-3 rounded" style="background: rgba(9, 44, 115, 0.03); border: 1px solid rgba(9, 44, 115, 0.08); line-height: 1.8;">
+            <%= simple_format(@incident_report.description, class: "mb-0", style: "font-size: 0.88rem;") %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── LOCATION MAP ──────────────────────────────────────── %>
+    <% if address&.latitude.present? && address&.longitude.present? %>
+      <div class="le-report-card">
+        <div class="le-report-card__header">
+          <i class="ri-map-pin-line"></i>
+          Incident Location
+        </div>
+        <div class="le-report-card__body p-0">
+          <div class="le-map-container"
+               data-controller="map"
+               data-map-latitude-value="<%= address.latitude %>"
+               data-map-longitude-value="<%= address.longitude %>"
+               data-map-label-value="<%= @incident_report.crime_type %> — <%= address.commune&.name %>"
+               data-map-severity-value="<%= severity_label.downcase %>"
+               data-map-target="element">
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── EVIDENCE & MEDIA ──────────────────────────────────── %>
+    <% if @incident_report.media.attached? %>
+      <div class="le-report-card">
+        <div class="le-report-card__header">
+          <i class="ri-camera-line"></i>
+          Evidence & Media (<%= @incident_report.media.count %>)
+        </div>
+        <div class="le-report-card__body">
+          <div class="row g-2">
+            <% @incident_report.media.each do |file| %>
+              <div class="col-4 col-md-3">
+                <% if file.content_type.start_with?("image/") %>
+                  <div class="le-evidence-thumb">
+                    <%= link_to rails_blob_path(file, disposition: "inline"), target: "_blank" do %>
+                      <%= image_tag url_for(file), loading: "lazy" %>
+                    <% end %>
+                    <% if file.blob.metadata&.dig("watermarked") %>
+                      <span class="le-watermark-badge">
+                        <i class="ri-shield-check-line"></i> WM
+                      </span>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <div class="le-evidence-thumb">
+                    <%= link_to rails_blob_path(file, disposition: "inline"), target: "_blank",
+                                class: "d-flex align-items-center justify-content-center",
+                                style: "height: 120px; background: rgba(9,44,115,0.04);" do %>
+                      <i class="ri-video-line fs-3" style="color: var(--law-blue);"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+                <div class="text-muted mt-1" style="font-size: 0.65rem;"><%= file.filename.to_s.truncate(18) %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+
+  <%# ── RIGHT COLUMN (Sticky Sidebar) ──────────────────────── %>
+  <div class="col-lg-4">
+    <div class="le-report-sidebar">
+
+      <%# ── REPORTING OFFICER ─────────────────────────────── %>
+      <div class="le-report-card">
+        <div class="le-report-card__header">
+          <i class="ri-police-car-line"></i>
+          Reporting Officer
+        </div>
+        <div class="le-report-card__body">
+          <div class="d-flex align-items-center gap-3">
+            <% officer_photo = bonid_sub&.photo if bonid_sub&.photo&.attached? %>
+            <% officer_photo ||= officer.photo if officer&.photo&.attached? %>
+            <% if officer_photo %>
+              <%= image_tag url_for(officer_photo),
+                            class: "le-officer-photo",
+                            loading: "lazy" %>
+            <% else %>
+              <div class="le-officer-photo-placeholder">
+                <%= officer&.first_name&.first %><%= officer&.last_name&.first %>
+              </div>
+            <% end %>
+            <div>
+              <div class="fw-semibold" style="font-size: 0.9rem;"><%= officer&.full_name || "Unknown" %></div>
+              <div class="text-muted small">
+                <i class="ri-shield-star-line me-1"></i>Badge: <%= officer&.badge_id %>
+              </div>
+              <div class="text-muted small">
+                <i class="ri-medal-line me-1"></i><%= officer&.rank || "Officer" %>
+              </div>
+              <% if officer&.unit_type.present? %>
+                <div class="text-muted small">
+                  <i class="ri-building-line me-1"></i><%= officer.unit_type %>
+                  <% if officer.unit_name.present? %>
+                    — <%= officer.unit_name %>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="text-muted mt-2" style="font-size: 0.7rem;">
+            <i class="ri-calendar-line me-1"></i>Submitted: <%= @incident_report.submitted_at&.strftime("%b %d, %Y at %H:%M") || @incident_report.created_at&.strftime("%b %d, %Y at %H:%M") %>
+          </div>
+        </div>
+      </div>
+
+      <%# ── REVIEW STATUS ─────────────────────────────────── %>
+      <% if @review %>
+        <div class="le-report-card" <% if @review.overdue? %>style="border-color: var(--law-red);"<% end %>>
+          <div class="le-report-card__header" <% if @review.overdue? %>style="color: var(--law-red);"<% end %>>
+            <i class="ri-time-line"></i>
+            Review Status
+            <% if @review.overdue? %>
+              <span class="badge bg-danger ms-auto" style="font-size: 0.6rem;">OVERDUE</span>
+            <% end %>
+          </div>
+          <div class="le-report-card__body">
+            <div class="d-flex flex-column gap-2">
+              <% if @review.deadline_at.present? %>
+                <div>
+                  <div class="le-detail-label">Deadline</div>
+                  <div class="fw-semibold small <%= 'text-danger' if @review.overdue? %>">
+                    <%= @review.deadline_at.strftime("%b %d, %Y at %H:%M") %>
+                  </div>
+                </div>
+              <% end %>
+              <div class="d-flex gap-3">
+                <div>
+                  <div class="le-detail-label">Priority</div>
+                  <span class="badge bg-<%= @review.priority_color %>" style="font-size: 0.7rem;">
+                    <%= @review.priority_label %>
+                  </span>
+                </div>
+                <div>
+                  <div class="le-detail-label">Decision</div>
+                  <div class="fw-semibold small"><%= @review.decision&.titleize || "Pending" %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── REVIEW ACTIONS ────────────────────────────────── %>
+      <% if @review&.decision_pending? || @incident_report.status_submitted? %>
+        <div class="le-report-card">
+          <div class="le-report-card__header">
+            <i class="ri-checkbox-circle-line"></i>
+            Review Actions
+          </div>
+          <div class="le-report-card__body">
+            <%# APPROVE — always visible, prominent %>
+            <%= form_with url: approve_partner_portal_law_enforcement_incident_report_path(@incident_report),
+                          method: :post, local: true, class: "mb-3" do %>
+              <button type="submit" class="le-action-approve">
+                <i class="ri-check-line me-2"></i>Approve Report
+              </button>
+            <% end %>
+
+            <%# REJECT — collapsed by default %>
+            <button class="le-action-toggle le-action-toggle--reject mb-2"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#reject-form"
+                    aria-expanded="false"
+                    aria-controls="reject-form">
+              <i class="ri-close-circle-line"></i>
+              Reject Report
+              <i class="ri-arrow-down-s-line le-toggle-chevron"></i>
+            </button>
+            <div class="collapse mb-3" id="reject-form">
+              <%= form_with url: reject_partner_portal_law_enforcement_incident_report_path(@incident_report),
+                            method: :post, local: true do %>
+                <%= text_area_tag :summary, nil,
+                                  class: "form-control form-control-sm mb-2",
+                                  placeholder: "Reason for rejection (required)...",
+                                  rows: 2,
+                                  style: "font-size: 0.8rem;" %>
+                <button type="submit" class="btn btn-sm w-100 text-white" style="background: var(--law-red);">
+                  <i class="ri-close-line me-1"></i>Confirm Rejection
+                </button>
+              <% end %>
+            </div>
+
+            <%# REQUEST INFO — collapsed by default %>
+            <button class="le-action-toggle le-action-toggle--info mb-2"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#info-form"
+                    aria-expanded="false"
+                    aria-controls="info-form">
+              <i class="ri-question-line"></i>
+              Request More Info
+              <i class="ri-arrow-down-s-line le-toggle-chevron"></i>
+            </button>
+            <div class="collapse mb-3" id="info-form">
+              <%= form_with url: request_info_partner_portal_law_enforcement_incident_report_path(@incident_report),
+                            method: :post, local: true do %>
+                <%= text_area_tag :summary, nil,
+                                  class: "form-control form-control-sm mb-2",
+                                  placeholder: "What information is needed?",
+                                  rows: 2,
+                                  style: "font-size: 0.8rem;" %>
+                <button type="submit" class="btn btn-sm btn-warning w-100">
+                  <i class="ri-question-line me-1"></i>Send Request
+                </button>
+              <% end %>
+            </div>
+
+            <%# ESCALATE — collapsed by default %>
+            <button class="le-action-toggle le-action-toggle--escalate"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#escalate-form"
+                    aria-expanded="false"
+                    aria-controls="escalate-form">
+              <i class="ri-arrow-up-circle-line"></i>
+              Escalate to Higher Authority
+              <i class="ri-arrow-down-s-line le-toggle-chevron"></i>
+            </button>
+            <div class="collapse mt-2" id="escalate-form">
+              <%= form_with url: escalate_partner_portal_law_enforcement_incident_report_path(@incident_report),
+                            method: :post, local: true do %>
+                <%= text_area_tag :summary, nil,
+                                  class: "form-control form-control-sm mb-2",
+                                  placeholder: "Reason for escalation (optional)...",
+                                  rows: 2,
+                                  style: "font-size: 0.8rem;" %>
+                <button type="submit" class="btn btn-sm btn-dark w-100">
+                  <i class="ri-arrow-up-circle-line me-1"></i>Confirm Escalation
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+      <% elsif @review %>
+        <%# ── ALREADY REVIEWED ────────────────────────────── %>
+        <div class="le-report-card">
+          <div class="le-report-card__header">
+            <i class="ri-checkbox-circle-line"></i>
+            Review Complete
+          </div>
+          <div class="le-report-card__body">
+            <div class="mb-2">
+              <div class="le-detail-label">Decision</div>
+              <div class="fw-semibold"><%= @review.decision&.titleize %></div>
+            </div>
+            <% if @review.summary.present? %>
+              <div class="mb-2">
+                <div class="le-detail-label">Notes</div>
+                <div class="p-2 rounded small" style="background: rgba(9,44,115,0.03); line-height: 1.6;">
+                  <%= @review.summary %>
+                </div>
+              </div>
+            <% end %>
+            <% if @review.completed_at.present? %>
+              <div>
+                <div class="le-detail-label">Completed</div>
+                <div class="small"><%= @review.completed_at.strftime("%b %d, %Y at %H:%M") %></div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── QR / INTEGRITY (compact) ─────────────────────── %>
+      <% qr_b64 = @incident_report.report_qr_png_base64 %>
+      <% if qr_b64.present? || @incident_report.report_checksum.present? %>
+        <div class="le-report-card">
+          <div class="le-report-card__header">
+            <i class="ri-shield-check-line"></i>
+            Integrity & Verification
+          </div>
+          <div class="le-report-card__body le-integrity">
+            <div class="d-flex align-items-start gap-3">
+              <% if qr_b64.present? %>
+                <img src="data:image/png;base64,<%= qr_b64 %>"
+                     style="width: 64px; height: 64px; flex-shrink: 0; border: 1px solid #e2e8f0; border-radius: 4px;"
+                     alt="QR Verify" />
+              <% end %>
+              <div>
+                <% if @incident_report.report_checksum.present? %>
+                  <div class="mb-1">
+                    HMAC-SHA256: <span class="le-checksum"><%= @incident_report.report_checksum %></span>
+                  </div>
+                <% end %>
+                <% if @incident_report.report_signed_at %>
+                  <div>Signed: <%= @incident_report.report_signed_at.strftime("%b %d, %Y %H:%M UTC") %></div>
+                <% end %>
+                <% if @incident_report.report_valid? %>
+                  <span class="badge bg-success mt-1" style="font-size: 0.6rem;">
+                    <i class="ri-shield-check-line me-1"></i>Integrity Verified
+                  </span>
+                <% else %>
+                  <span class="badge bg-danger mt-1" style="font-size: 0.6rem;">
+                    <i class="ri-alarm-warning-line me-1"></i>Signature Invalid
+                  </span>
+                <% end %>
+              </div>
+            </div>
+
+            <%# Print / Share Actions %>
+            <div class="d-flex gap-2 mt-3 pt-2" style="border-top: 1px solid rgba(9,44,115,0.08);">
+              <button class="btn btn-sm btn-outline-secondary flex-grow-1" onclick="window.print()">
+                <i class="ri-printer-line me-1"></i>Print
+              </button>
+              <%= link_to download_pdf_officers_incident_report_path(@incident_report),
+                          class: "btn btn-sm btn-outline-secondary flex-grow-1" do %>
+                <i class="ri-file-pdf-line me-1"></i>PDF
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

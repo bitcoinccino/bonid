@@ -1,0 +1,46 @@
+<!-- app/views/admin/partner_schemas/index.html.erb -->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 fw-bold">Partner Schemas</h1>
+    <%= link_to "New Schema", new_admin_partner_schema_path, class: "btn btn-primary" %>
+  </div>
+
+  <div class="alert alert-dismissible fade show alert-info mb-3">
+    <p class="mb-0"><strong>What are schemas?</strong> Schemas let partners create custom form templates for verification workflows (e.g., KYC or applications), with built-in validation, preview, and JSON output for API integration. Approve them here to enable for partners.</p>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Pending Approval</h5>
+      <div class="card">
+        <div class="card-body">
+          <% @pending.each do |schema| %>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span><%= schema.name %> (<%= schema.record_type %>)</span>
+              <%= link_to "View", admin_partner_schema_path(schema), class: "btn btn-sm btn-outline-primary" %>
+            </div>
+          <% end %>
+          <% if @pending.empty? %>
+            <p class="text-muted">No pending schemas.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <h5>Active Schemas</h5>
+      <div class="card">
+        <div class="card-body">
+          <% @active.each do |schema| %>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span><%= schema.name %> (<%= schema.record_type %>)</span>
+              <%= link_to "View", admin_partner_schema_path(schema), class: "btn btn-sm btn-outline-secondary" %>
+            </div>
+          <% end %>
+          <% if @active.empty? %>
+            <p class="text-muted">No active schemas.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

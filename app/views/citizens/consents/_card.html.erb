@@ -1,0 +1,86 @@
+<!-- app/views/citizens/consents/_card.html.erb -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" id="consents-card">
+  <div class="card-header bg-haitian-blue text-white d-flex justify-content-between align-items-center py-3">
+    <h6 class="mb-0 fw-semibold">
+      <i class="ri-shield-keyhole-line me-2"></i>
+      BonID Data Sharing & Partner Access
+    </h6>
+
+    <% if @consent_grants.any? %>
+      <button class="btn btn-light btn-sm rounded-pill fw-semibold px-3 shadow-sm"
+              data-bs-toggle="modal"
+              data-bs-target="#manageConsentsModal">
+        <i class="ri-settings-3-line me-1"></i> Manage
+      </button>
+    <% end %>
+  </div>
+
+  <div class="card-body small bg-light-subtle px-4 py-4">
+    <% if @consent_grants.any? %>
+      <div class="list-group list-group-flush">
+        <% @consent_grants.each do |consent| %>
+          <div class="list-group-item px-0 py-3 border-bottom" id="<%= dom_id(consent) %>">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="flex-grow-1 me-3">
+                <div class="fw-semibold text-dark mb-1">
+                  <i class="ri-building-line me-1 text-primary"></i>
+                  <%= consent.partner&.name || "Unknown Partner" %>
+                </div>
+
+                <div class="text-muted small mb-1">
+                  <% if consent.granted_scopes.present? %>
+                    Shares: <%= consent.granted_scopes.join(", ").titleize %>
+                  <% else %>
+                    Shares: <%= consent.requested_scopes.join(", ").titleize %>
+                  <% end %>
+                </div>
+
+                <div class="text-muted small">
+                    <% if consent.granted_at.present? %>
+                      Granted <%= distance_of_time_in_words(consent.granted_at) %> ago
+                    <% end %>
+                    <% if consent.expires_at.present? %>
+                      • Expires <%= distance_of_time_in_words(Time.current, consent.expires_at) %> from now
+                    <% end %>
+                  </div>
+                </div>
+
+              <div class="text-end">
+                <% case consent.status.to_sym %>
+                <% when :approved %>
+                  <% if consent.active? %>
+                    <span class="badge bg-success rounded-pill px-3 py-2">
+                      <i class="ri-checkbox-circle-line me-1"></i> Active
+                    </span>
+                  <% else %>
+                    <span class="badge bg-secondary rounded-pill px-3 py-2">
+                      <i class="ri-time-line me-1"></i> Expired
+                    </span>
+                  <% end %>
+                <% when :revoked %>
+                  <span class="badge bg-danger rounded-pill px-3 py-2">
+                    <i class="ri-close-circle-line me-1"></i> Revoked
+                  </span>
+                <% when :pending %>
+                  <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+                    <i class="ri-hourglass-line me-1"></i> Pending
+                  </span>
+                <% else %>
+                  <span class="badge bg-secondary rounded-pill px-3 py-2">
+                    Unknown
+                  </span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center py-5 text-muted">
+        <i class="ri-inbox-line fs-1 mb-3 d-block"></i>
+        <p class="mb-2">No data sharing consents yet.</p>
+        <small>Partners will appear here when they request access to your verified BonID data.</small>
+      </div>
+    <% end %>
+  </div>
+</div>

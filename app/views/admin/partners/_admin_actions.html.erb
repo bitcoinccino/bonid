@@ -1,0 +1,165 @@
+<div class="card rounded-4 shadow-sm border-0">
+  <div class="card-header bg-light border-bottom">
+    <h5 class="fw-bold text-haitian-blue mb-0">
+      <i class="ri-settings-3-line me-1"></i>
+      Admin Actions
+    </h5>
+  </div>
+
+  <div class="card-body p-4">
+
+    <!-- ====================================================== -->
+    <!-- STATUS PANEL                                            -->
+    <!-- ====================================================== -->
+    <div class="mb-4">
+      <% if @partner.verified_at.present? %>
+        <span class="badge bg-palm-green px-3 py-2 fs-6 d-inline-flex align-items-center gap-1">
+          <i class="ri-checkbox-circle-line"></i> Approved
+        </span>
+        <p class="text-muted mt-2 mb-0">
+          Approved on <%= @partner.verified_at.strftime("%B %d, %Y") %>
+        </p>
+
+      <% elsif @partner.status == "rejected" %>
+        <span class="badge bg-danger px-3 py-2 fs-6 d-inline-flex align-items-center gap-1">
+          <i class="ri-close-circle-line"></i> Rejected
+        </span>
+        <p class="text-muted mt-2 mb-0">
+          Reason: <%= @partner.rejection_reason.presence || "No reason provided" %>
+        </p>
+
+      <% else %>
+        <span class="badge bg-warning text-dark px-3 py-2 fs-6 d-inline-flex align-items-center gap-1">
+          <i class="ri-time-line"></i> Pending Review
+        </span>
+      <% end %>
+    </div>
+
+
+    <!-- ====================================================== -->
+    <!-- ACTION BUTTONS                                          -->
+    <!-- ====================================================== -->
+    <div class="row gy-3">
+
+      <!-- APPROVE -->
+      <% unless @partner.verified_at.present? || @partner.status == "rejected" %>
+        <div class="col-md-4">
+          <%= button_to admin_partner_path(@partner.uuid, approve: true),
+                method: :patch,
+                class: "btn btn-success w-100 rounded-pill fw-semibold",
+                data: { turbo_confirm: "Approve #{@partner.name}?" } do %>
+            <i class="ri-check-line me-1"></i> Approve
+          <% end %>
+        </div>
+      <% end %>
+
+
+      <!-- REJECT -->
+      <% unless @partner.verified_at.present? || @partner.status == "rejected" %>
+        <div class="col-md-4">
+          <button class="btn btn-danger w-100 rounded-pill fw-semibold"
+                  data-bs-toggle="modal"
+                  data-bs-target="#rejectPartnerModal">
+            <i class="ri-close-line me-1"></i>
+            Reject
+          </button>
+        </div>
+      <% end %>
+
+
+      <!-- RESEND VERIFICATION EMAIL (pre-approval) -->
+      <% unless @partner.email_verified? %>
+        <div class="col-md-4">
+          <%= button_to resend_verification_email_admin_partner_path(@partner.uuid),
+                method: :post,
+                class: "btn btn-outline-primary w-100 rounded-pill fw-semibold" do %>
+            <i class="ri-mail-send-line me-1"></i>
+            Resend Verification
+          <% end %>
+        </div>
+      <% end %>
+
+      <!-- RESEND INVITATION (post-approval password setup link) -->
+      <% if @partner.verified_at.present? %>
+        <div class="col-md-4">
+          <%= button_to resend_invitation_admin_partner_path(@partner.uuid),
+                method: :post,
+                class: "btn btn-outline-warning w-100 rounded-pill fw-semibold",
+                data: { turbo_confirm: "Resend the password setup link to the partner admin?" } do %>
+            <i class="ri-mail-send-line me-1"></i>
+            Resend Invitation
+          <% end %>
+        </div>
+      <% end %>
+
+
+      <!-- DEACTIVATE (always available except deleted) -->
+      <div class="col-md-12">
+        <%= button_to admin_partner_path(@partner.uuid),
+              method: :delete,
+              class: "btn btn-outline-danger w-100 rounded-pill fw-semibold",
+              data: { turbo_confirm: "Deactivate this partner? They will lose all access." } do %>
+          <i class="ri-forbid-line me-1"></i>
+          Deactivate
+        <% end %>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ====================================================== -->
+<!-- REJECT MODAL                                            -->
+<!-- ====================================================== -->
+<div class="modal fade" id="rejectPartnerModal" tabindex="-1" aria-labelledby="rejectPartnerLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow">
+
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold text-danger" id="rejectPartnerLabel">
+          <i class="ri-close-circle-line me-1"></i>
+          Reject
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <%= form_with url: admin_partner_path(@partner.uuid),
+                    method: :patch,
+                    local: true do |f| %>
+
+        <div class="modal-body">
+
+          <div class="mb-3">
+            <%= f.label :rejection_reason, "Reason", class: "form-label fw-semibold" %>
+            <%= f.text_field :rejection_reason,
+                  class: "form-control rounded-3",
+                  placeholder: "Example: Missing business documents" %>
+          </div>
+
+          <div class="mb-3">
+            <%= f.label :rejection_comment, "Additional Comments", class: "form-label fw-semibold" %>
+            <%= f.text_area :rejection_comment,
+                  rows: 4,
+                  class: "form-control rounded-3",
+                  placeholder: "Optional message…" %>
+          </div>
+
+        </div>
+
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">
+            Cancel
+          </button>
+
+          <%= f.submit "Reject Partner",
+                name: "reject",
+                class: "btn btn-danger rounded-pill fw-semibold" %>
+        </div>
+
+      <% end %>
+
+    </div>
+  </div>
+</div>

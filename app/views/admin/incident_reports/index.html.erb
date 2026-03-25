@@ -1,110 +1,147 @@
-<!-- app/views/admin/incident_reports/index.html.erb -->
-<div class="container my-5">
-  <h1 class="mb-4 fw-bold">Incident Reports</h1>
+<%# Flash rendered by admin layout %>
 
+<section class="certificate-font py-5" role="main">
+  <div class="container">
 
-  <%= search_form_for @q, url: admin_incident_reports_path, method: :get, class: "row g-3 mb-4" do |f| %>
-  <div class="col-md-3">
-    <%= f.label :unit_cont, "Unit" %>
-    <%= f.search_field :unit_cont, class: "form-control" %>
-  </div>
+    <!-- Header + Export -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          Incident Reports
+        </h2>
+        <p class="text-muted small mb-0">
+          Complete list of all submitted incident reports across departments and units.
+        </p>
+      </div>
 
-  <div class="col-md-3">
-    <%= f.label :department_id_eq, "Department" %>
-    <%= f.select :department_id_eq, Department.all.collect { |d| [d.name, d.id] }, include_blank: "All", class: "form-select" %>
-  </div>
-
-  <div class="col-md-3">
-    <%= f.label :created_at_gteq, "From Date" %>
-    <%= f.date_field :created_at_gteq, class: "form-control" %>
-  </div>
-
-  <div class="col-md-3">
-    <%= f.label :created_at_lteq, "To Date" %>
-    <%= f.date_field :created_at_lteq, class: "form-control" %>
-  </div>
-
-  <div class="col-md-3">
-    <%= f.submit "Filter", class: "btn btn-primary mt-2" %>
-  </div>
-<% end %>
-
-
-  <!-- Filters -->
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <%= form_with url: admin_incident_reports_path, method: :get, local: true do |f| %>
-        <%= f.label :crime_type, "Filter by Crime Type", class: "form-label fw-semibold" %>
-        <%= f.select :crime_type, IncidentReport.distinct.pluck(:crime_type).compact.sort, { prompt: "All Types" }, class: "form-select" %>
-        <%= f.submit "Filter", class: "btn btn-outline-primary mt-2" %>
-      <% end %>
+      <div>
+        <%= link_to admin_incident_reports_path(format: :csv, **request.query_parameters.except(:format, :page)),
+                    class: "btn btn-outline-success btn-sm" do %>
+          Export CSV
+        <% end %>
+      </div>
     </div>
-  </div>
 
-  <!-- Incident Reports Table -->
-<table class="table table-hover border shadow-sm">
-  <thead class="table-light">
-    <tr>
-      <th>ID</th>
-      <th>Crime Type</th>
-      <th>Unit</th>
-      <th>Officer</th>
-      <th>Department</th>
-      <th>Submitted</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @incident_reports.each do |report| %>
-      <tr>
-        <td><%= report.id %></td>
-        <td><%= report.crime_type %></td>
-        <td><%= report.unit %></td>
-        <td><%= report.officer&.full_name || "N/A" %></td>
-        <td><%= report.department&.name || "N/A" %></td>
-        <td><%= report.created_at.strftime("%b %d, %Y") %></td>
-        <td>
-          <%= link_to "View", admin_incident_report_path(report), class: "btn btn-sm btn-outline-primary" %>
-        </td>
-      </tr>
+    <!-- Filters (kept exactly as you had it, just restyled) -->
+    <%= search_form_for @q, url: admin_incident_reports_path, method: :get, class: "mb-4" do |f| %>
+      <div class="row g-3">
+
+        <div class="col-md-3">
+          <%= f.search_field :officer_unit_name_cont,
+                              class: "form-control form-control-sm",
+                              placeholder: "Search unit..." %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.select :officer_department_id_eq,
+                       Department.all.map { |d| [d.name, d.id] },
+                       { include_blank: "All" },
+                       class: "form-select form-select-sm" %>
+        </div>
+
+        <div class="col-md-2">
+          <%= f.date_field :created_at_gteq,
+                           class: "form-control form-control-sm",
+                           placeholder: "From Date" %>
+        </div>
+
+        <div class="col-md-2">
+          <%= f.date_field :created_at_lteq,
+                           class: "form-control form-control-sm",
+                           placeholder: "To Date" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.select :crime_type_eq,
+                       IncidentReport::CRIME_TYPES.sort,
+                       { include_blank: "All Types" },
+                       class: "form-select form-select-sm" %>
+        </div>
+
+        <div class="col-md-2 align-self-end">
+          <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
+        </div>
+
+        <% if params[:q].present? %>
+          <div class="col-md-2 align-self-end">
+            <%= link_to "Clear", admin_incident_reports_path, class: "btn btn-outline-secondary btn-sm w-100" %>
+          </div>
+        <% end %>
+
+      </div>
     <% end %>
-  </tbody>
-</table>
 
-<div class="d-flex justify-content-center">
-  <%= paginate @incident_reports %>
-</div>
+    <!-- Table (now matches qr_scan_logs exactly) -->
+    <div class="table-responsive rounded-3 shadow-sm">
+      <table class="table table-bordered table-hover table-sm align-middle mb-0">
+        <thead class="table-light text-center">
+          <tr>
+            <th>ID</th>
+            <th>Crime Type</th>
+            <th>Level</th>
+            <th>Status</th>
+            <th>Officer</th>
+            <th>Unit</th>
+            <th>Department</th>
+            <th>Commune</th>
+            <th>Submitted</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @incident_reports.each do |report| %>
+            <tr>
+              <td class="text-center small fw-semibold"><%= report.id %></td>
+              <td class="small"><%= report.crime_type.presence || "—" %></td>
+              <td class="small text-center"><%= report.crime_level&.titleize || "—" %></td>
+              <td class="text-center">
+                <% status_class = {
+                  "draft" => "secondary", "submitted" => "primary",
+                  "approved" => "success", "flagged" => "danger"
+                }[report.status] || "secondary" %>
+                <span class="badge bg-<%= status_class %> text-uppercase small"><%= report.status %></span>
+              </td>
+              <td class="small"><%= report.officer&.full_name || "—" %></td>
+              <td class="small text-center"><%= report.officer&.unit_name || "—" %></td>
+              <td class="small"><%= report.officer&.department&.name || "—" %></td>
+              <td class="small text-center"><%= report.address&.commune&.name || "—" %></td>
+              <td class="small text-nowrap text-center"><%= l(report.created_at, format: :short) %></td>
+              <td class="text-center">
+                <%= link_to admin_incident_report_path(report),
+                            class: "btn btn-sm btn-outline-primary", title: "View" do %>
+                  View
+                <% end %>
+                <%= link_to download_pdf_admin_incident_report_path(report),
+                            class: "btn btn-sm btn-outline-secondary", target: "_blank", title: "PDF" do %>
+                  PDF
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
 
+    <!-- Pagination + Counter -->
+    <% if @incident_reports.present? %>
+      <div class="mt-4 text-center">
+        <%= paginate @incident_reports, theme: "bootstrap4" %>
+        <p class="small text-muted mt-2">
+          Showing <%= @incident_reports.offset_value + 1 %> –
+          <%= [@incident_reports.offset_value + @incident_reports.limit_value, @incident_reports.total_count].min %>
+          of <%= number_with_delimiter(@incident_reports.total_count) %> reports
+        </p>
+      </div>
+    <% end %>
 
-  <!-- Table of Reports -->
-  <!-- Table of Reports -->
-<div class="table-responsive">
-  <table class="table table-hover align-middle shadow-sm">
-    <thead class="table-light">
-      <tr>
-        <th scope="col">Crime Type</th>
-        <th scope="col">Officer Badge</th>
-        <th scope="col">Department</th>
-        <th scope="col">Commune</th>
-        <th scope="col">Reported At</th>
-        <th scope="col">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @incident_reports.each do |report| %>
-        <tr>
-          <td><%= report.crime_type.presence || "—" %></td>
-          <td><%= report.officer&.badge_id || "—" %></td>
-          <td><%= report.department&.name || "—" %></td>
-          <td><%= report.commune&.name || "—" %></td>
-          <td><%= l(report.created_at, format: :short) %></td>
-          <td>
-            <%= link_to "View", admin_incident_report_path(report), class: "btn btn-sm btn-outline-secondary" %>
-            <%= link_to "Download CSV", admin_incident_reports_path(format: :csv), class: "btn btn-outline-success mb-3" %>
+    <!-- Empty State -->
+    <% if @incident_reports.blank? %>
+      <div class="text-center text-muted mt-5 py-5">
+        <i class="ri-file-warning-line display-4 mb-3 opacity-50"></i>
+        <h5>No incident reports found</h5>
+        <p class="mb-0">Try adjusting your filters or search criteria.</p>
+      </div>
+    <% end %>
 
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+  </div>
+</section>

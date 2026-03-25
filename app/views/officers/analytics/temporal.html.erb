@@ -1,0 +1,232 @@
+<%# Temporal Analysis - Time-based Crime Patterns %>
+<%# Unified Law Enforcement Styling %>
+
+<div class="container-fluid py-4">
+  <%# Header with gradient %>
+  <div class="card border-0 analytics-header mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center">
+        <%= link_to officers_analytics_path, class: "btn btn-sm analytics-back-btn me-3" do %>
+          <i class="ri-arrow-left-line"></i>
+        <% end %>
+        <div class="text-white">
+          <h2 class="mb-1 analytics-header-title"><i class="ri-time-line me-2"></i>Temporal Analysis</h2>
+          <p class="mb-0 analytics-header-subtitle">Seasonal and time-based crime patterns for shift planning</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# Monthly Trend %>
+    <div class="col-12">
+      <div class="card analytics-chart-card">
+        <div class="card-header">
+          <h5><i class="ri-line-chart-line me-2 text-law-blue"></i>Monthly Trend</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Day of Week Pattern %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-calendar-line me-2 text-law-tan"></i>Day of Week Pattern</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="dailyChart"></canvas>
+          </div>
+          <% if @daily_pattern.any? %>
+            <div class="mt-3">
+              <% max_day = @daily_pattern.max_by { |_, v| v } %>
+              <% min_day = @daily_pattern.min_by { |_, v| v } %>
+              <div class="row text-center">
+                <div class="col-6">
+                  <div class="text-law-red">
+                    <i class="ri-arrow-up-line"></i> Highest: <strong><%= max_day&.first %></strong>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="text-law-green">
+                    <i class="ri-arrow-down-line"></i> Lowest: <strong><%= min_day&.first %></strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Hour of Day Distribution %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-time-line me-2 text-law-red"></i>Hour of Day</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="hourlyChart"></canvas>
+          </div>
+          <% if @hourly_distribution.any? %>
+            <div class="mt-3 text-center">
+              <% peak_hour = @hourly_distribution.max_by { |_, v| v }&.first.to_i rescue 0 %>
+              <span class="badge bg-law-red">
+                <i class="ri-alarm-warning-line me-1"></i>
+                Peak Hour: <%= peak_hour %>:00 - <%= peak_hour + 1 %>:00
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Shift Recommendations %>
+    <div class="col-12">
+      <div class="card analytics-chart-card" style="background: var(--law-gray-light, #F8F8F8);">
+        <div class="card-body">
+          <h6 class="mb-3"><i class="ri-lightbulb-flash-line me-2 text-law-tan"></i>Shift Planning Insights</h6>
+          <div class="row g-3">
+            <%
+              night_hours = (22..23).to_a + (0..5).to_a
+              day_hours = (6..13).to_a
+              evening_hours = (14..21).to_a
+
+              night_count = @hourly_distribution.select { |h, _| night_hours.include?(h.to_i) }.values.sum rescue 0
+              day_count = @hourly_distribution.select { |h, _| day_hours.include?(h.to_i) }.values.sum rescue 0
+              evening_count = @hourly_distribution.select { |h, _| evening_hours.include?(h.to_i) }.values.sum rescue 0
+              total = night_count + day_count + evening_count
+              total = 1 if total == 0
+            %>
+            <div class="col-md-4">
+              <div class="analytics-insight-card">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <i class="ri-sun-line text-law-tan fs-3"></i>
+                    <div class="insight-title mt-2">Day Shift (6am-2pm)</div>
+                  </div>
+                  <div class="text-end">
+                    <div class="insight-value"><%= day_count %></div>
+                    <div class="small text-muted"><%= (day_count.to_f / total * 100).round %>%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="analytics-insight-card">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <i class="ri-moon-cloudy-line text-law-blue fs-3"></i>
+                    <div class="insight-title mt-2">Evening Shift (2pm-10pm)</div>
+                  </div>
+                  <div class="text-end">
+                    <div class="insight-value"><%= evening_count %></div>
+                    <div class="small text-muted"><%= (evening_count.to_f / total * 100).round %>%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="analytics-insight-card">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <i class="ri-moon-line text-dark fs-3"></i>
+                    <div class="insight-title mt-2">Night Shift (10pm-6am)</div>
+                  </div>
+                  <div class="text-end">
+                    <div class="insight-value"><%= night_count %></div>
+                    <div class="small text-muted"><%= (night_count.to_f / total * 100).round %>%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Law enforcement color palette
+  const lawColors = {
+    blue: '#092C73',
+    blueLight: '#0A3A9E',
+    red: '#D90718',
+    green: '#49A64F',
+    tan: '#BF8360',
+    dark: '#111827'
+  };
+
+  // Monthly Trend
+  const monthlyData = <%= raw @monthly_trend.to_json %>;
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'line',
+    data: {
+      labels: Object.keys(monthlyData),
+      datasets: [{
+        label: 'Reports',
+        data: Object.values(monthlyData),
+        borderColor: lawColors.blue,
+        backgroundColor: 'rgba(9, 44, 115, 0.1)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Daily Pattern
+  const dailyData = <%= raw @daily_pattern.to_json %>;
+  const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+      labels: dayOrder,
+      datasets: [{
+        data: dayOrder.map(d => dailyData[d] || 0),
+        backgroundColor: dayOrder.map((_, i) => i === 0 || i === 6 ? lawColors.tan : lawColors.blue)
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Hourly Distribution
+  const hourlyData = <%= raw @hourly_distribution.to_json %>;
+  const hours = Array.from({length: 24}, (_, i) => i);
+  new Chart(document.getElementById('hourlyChart'), {
+    type: 'bar',
+    data: {
+      labels: hours.map(h => `${h}:00`),
+      datasets: [{
+        data: hours.map(h => hourlyData[h] || hourlyData[h.toString()] || 0),
+        backgroundColor: hours.map(h => (h >= 22 || h < 6) ? lawColors.dark : (h >= 14 ? lawColors.blue : lawColors.tan))
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 45 } } }
+    }
+  });
+});
+</script>

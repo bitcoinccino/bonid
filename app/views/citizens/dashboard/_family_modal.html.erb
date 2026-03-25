@@ -1,0 +1,322 @@
+<div class="modal fade" id="familyModal" tabindex="-1" aria-labelledby="familyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down">
+    <div class="modal-content">
+      <%= simple_form_for current_citizen,
+            as: :user,
+            url: citizens_profile_path,
+            method: :patch,
+            html: { data: { turbo: false, controller: "family-form" }, "data-family-form-user-bonid-value" => current_citizen&.bonid } do |f| %>
+        <div class="modal-header bg-haitian-blue text-white py-2">
+          <h5 class="modal-title" id="familyModalLabel">
+            <i class="ri-parent-line me-2"></i>Fanmi
+          </h5>
+          <button type="button" class="btn p-0 text-white border-0" data-bs-dismiss="modal" aria-label="Close">
+            <i class="ri-close-line ri-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body p-2 p-md-3">
+          <div class="alert alert-info d-flex align-items-start mb-3">
+            <i class="ri-2x ri-shield-user-line me-3"></i>
+            <div>
+              <strong>Enfòmasyon fanmi ou ede verifye idantite ou pou sèvis sivil, anbasad, ak tribinal.</strong><br>
+              <small class="text-muted">Opsyonèl. Done yo an sekirite epi pataje sèlman ak sèvis otorize.</small>
+            </div>
+          </div>
+
+          <div class="accordion" id="familyAccordion">
+
+            <%# ══════════════ MANMAN ══════════════ %>
+            <% mother = current_citizen.family_members.find { |fm| fm.relationship == "mother" } || current_citizen.family_members.build(relationship: :mother) %>
+            <div class="accordion-item border-0 mb-2">
+              <h2 class="accordion-header">
+                <button class="accordion-button rounded-3 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#motherSection">
+                  <i class="ri-women-line me-2 text-primary"></i>
+                  <strong>Manman</strong>
+                  <% if mother.persisted? && mother.first_name.present? %>
+                    <span class="badge bg-success ms-2 rounded-pill"><i class="ri-check-line"></i> <%= mother.first_name %></span>
+                    <% if mother.link_verified? %><span class="badge bg-primary ms-1 rounded-pill"><i class="ri-shield-check-fill"></i></span><% end %>
+                  <% end %>
+                </button>
+              </h2>
+              <div id="motherSection" class="accordion-collapse collapse show" data-bs-parent="#familyAccordion">
+                <div class="accordion-body px-2 pt-2 pb-3 family-section">
+                  <%= f.fields_for :family_members, [mother] do |fm| %>
+                    <%= fm.hidden_field :relationship, value: "mother" %>
+                    <%= fm.hidden_field :id if fm.object.persisted? %>
+
+                    <%# Èske li vivan? — FIRST so it controls BonID visibility %>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                      <span class="small fw-semibold">Èske li vivan?</span>
+                      <div class="form-check form-check-inline mb-0">
+                        <%= fm.radio_button :alive, true, class: "form-check-input", id: "m_alive_y",
+                            data: { action: "change->family-form#toggleAlive" } %>
+                        <label class="form-check-label small" for="m_alive_y">Wi</label>
+                      </div>
+                      <div class="form-check form-check-inline mb-0">
+                        <%= fm.radio_button :alive, false, class: "form-check-input", id: "m_alive_n",
+                            data: { action: "change->family-form#toggleAlive" } %>
+                        <label class="form-check-label small" for="m_alive_n">Non</label>
+                      </div>
+                    </div>
+
+                    <%# BonID — visible only when alive %>
+                    <div data-alive="bonid" class="mb-2 <%= 'd-none' if mother.deceased? %>">
+                      <label class="form-label small fw-semibold mb-1">BonID Manman</label>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="ri-fingerprint-line"></i></span>
+                        <%= fm.input_field :linked_bonid, class: "form-control form-control-sm rounded-end-3",
+                            placeholder: "Dènye 6 chif (ex: 23344E)",
+                            data: { action: "input->family-form#lookupBonid blur->family-form#lookupBonid" } %>
+                      </div>
+                      <div data-role="verify-badge" class="d-none mt-1"></div>
+                    </div>
+
+                    <%# Death date — visible only when deceased %>
+                    <div data-alive="death" class="mb-2 <%= 'd-none' if mother.alive? %>">
+                      <label class="form-label small fw-semibold mb-1">Dat li desede</label>
+                      <%= fm.input :date_of_death, as: :string, label: false,
+                          input_html: { class: "form-control form-control-sm rounded-3", type: "date" } %>
+                    </div>
+
+                    <%# Name fields with labels %>
+                    <div class="row g-2">
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Prenon</label>
+                        <%= fm.input :first_name, label: false, placeholder: "Marie",
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name" } } %>
+                      </div>
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Dezyèm non</label>
+                        <%= fm.input :middle_name, label: false, placeholder: "Josette",
+                            input_html: { class: "form-control form-control-sm rounded-3" } %>
+                      </div>
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Non fanmi</label>
+                        <%= fm.input :last_name, label: false, placeholder: "Louis",
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name" } } %>
+                      </div>
+                    </div>
+
+                    <%# Extra details %>
+                    <details class="mt-2">
+                      <summary class="small text-primary fw-semibold" style="list-style:none;"><i class="ri-arrow-right-s-line me-1"></i>Plis detay</summary>
+                      <div class="row g-2 mt-1">
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Nasyonalite</label>
+                          <%= fm.input :nationality, label: false,
+                              input_html: { class: "form-control form-control-sm rounded-3", value: fm.object.nationality || "Haitian" } %>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Dat nesans</label>
+                          <%= fm.input :date_of_birth, as: :string, label: false,
+                              input_html: { class: "form-control form-control-sm rounded-3", type: "date" } %>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Depatman nesans</label>
+                          <%= fm.association :birth_department, label: false, prompt: "Chwazi depatman",
+                              input_html: { class: "form-select form-select-sm rounded-3",
+                                            data: { action: "change->family-form#filterCommunes", field: "department" } } %>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Komin nesans</label>
+                          <%= fm.association :birth_commune, label: false, prompt: "Chwazi komin",
+                              collection: fm.object.birth_department ? Commune.where(department: fm.object.birth_department).order(:name) : [],
+                              input_html: { class: "form-select form-select-sm rounded-3", data: { field: "commune" } } %>
+                        </div>
+                      </div>
+                    </details>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <%# ══════════════ PAPA ══════════════ %>
+            <% father = current_citizen.family_members.find { |fm| fm.relationship == "father" } || current_citizen.family_members.build(relationship: :father) %>
+            <div class="accordion-item border-0 mb-2">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed rounded-3 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#fatherSection">
+                  <i class="ri-men-line me-2 text-primary"></i>
+                  <strong>Papa</strong>
+                  <% if father.persisted? && father.first_name.present? %>
+                    <span class="badge bg-success ms-2 rounded-pill"><i class="ri-check-line"></i> <%= father.first_name %></span>
+                    <% if father.link_verified? %><span class="badge bg-primary ms-1 rounded-pill"><i class="ri-shield-check-fill"></i></span><% end %>
+                  <% end %>
+                </button>
+              </h2>
+              <div id="fatherSection" class="accordion-collapse collapse" data-bs-parent="#familyAccordion">
+                <div class="accordion-body px-2 pt-2 pb-3 family-section">
+                  <%= f.fields_for :family_members, [father] do |fm| %>
+                    <%= fm.hidden_field :relationship, value: "father" %>
+                    <%= fm.hidden_field :id if fm.object.persisted? %>
+
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                      <span class="small fw-semibold">Èske li vivan?</span>
+                      <div class="form-check form-check-inline mb-0">
+                        <%= fm.radio_button :alive, true, class: "form-check-input", id: "f_alive_y",
+                            data: { action: "change->family-form#toggleAlive" } %>
+                        <label class="form-check-label small" for="f_alive_y">Wi</label>
+                      </div>
+                      <div class="form-check form-check-inline mb-0">
+                        <%= fm.radio_button :alive, false, class: "form-check-input", id: "f_alive_n",
+                            data: { action: "change->family-form#toggleAlive" } %>
+                        <label class="form-check-label small" for="f_alive_n">Non</label>
+                      </div>
+                    </div>
+
+                    <div data-alive="bonid" class="mb-2 <%= 'd-none' if father.deceased? %>">
+                      <label class="form-label small fw-semibold mb-1">BonID Papa</label>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="ri-fingerprint-line"></i></span>
+                        <%= fm.input_field :linked_bonid, class: "form-control form-control-sm rounded-end-3",
+                            placeholder: "Dènye 6 chif (ex: 5678AB)",
+                            data: { action: "input->family-form#lookupBonid blur->family-form#lookupBonid" } %>
+                      </div>
+                      <div data-role="verify-badge" class="d-none mt-1"></div>
+                    </div>
+
+                    <div data-alive="death" class="mb-2 <%= 'd-none' if father.alive? %>">
+                      <label class="form-label small fw-semibold mb-1">Dat li desede</label>
+                      <%= fm.input :date_of_death, as: :string, label: false,
+                          input_html: { class: "form-control form-control-sm rounded-3", type: "date" } %>
+                    </div>
+
+                    <div class="row g-2">
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Prenon</label>
+                        <%= fm.input :first_name, label: false, placeholder: "Jean",
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name" } } %>
+                      </div>
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Dezyèm non</label>
+                        <%= fm.input :middle_name, label: false, placeholder: "Pierre",
+                            input_html: { class: "form-control form-control-sm rounded-3" } %>
+                      </div>
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Non fanmi</label>
+                        <%= fm.input :last_name, label: false, placeholder: "Louis",
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name" } } %>
+                      </div>
+                    </div>
+
+                    <details class="mt-2">
+                      <summary class="small text-primary fw-semibold" style="list-style:none;"><i class="ri-arrow-right-s-line me-1"></i>Plis detay</summary>
+                      <div class="row g-2 mt-1">
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Nasyonalite</label>
+                          <%= fm.input :nationality, label: false,
+                              input_html: { class: "form-control form-control-sm rounded-3", value: fm.object.nationality || "Haitian" } %>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Dat nesans</label>
+                          <%= fm.input :date_of_birth, as: :string, label: false,
+                              input_html: { class: "form-control form-control-sm rounded-3", type: "date" } %>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Depatman nesans</label>
+                          <%= fm.association :birth_department, label: false, prompt: "Chwazi depatman",
+                              input_html: { class: "form-select form-select-sm rounded-3",
+                                            data: { action: "change->family-form#filterCommunes", field: "department" } } %>
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-semibold mb-1">Komin nesans</label>
+                          <%= fm.association :birth_commune, label: false, prompt: "Chwazi komin",
+                              collection: fm.object.birth_department ? Commune.where(department: fm.object.birth_department).order(:name) : [],
+                              input_html: { class: "form-select form-select-sm rounded-3", data: { field: "commune" } } %>
+                        </div>
+                      </div>
+                    </details>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <%# ══════════════ GADYEN ══════════════ %>
+            <% guardian = current_citizen.family_members.find { |fm| fm.relationship == "guardian" } || current_citizen.family_members.build(relationship: :guardian) %>
+            <div class="accordion-item border-0">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed rounded-3 py-2" type="button" data-bs-toggle="collapse" data-bs-target="#guardianSection">
+                  <i class="ri-user-heart-line me-2 text-primary"></i>
+                  <strong>Gadyen</strong>
+                  <span class="badge bg-light text-muted ms-2 rounded-pill small">opsyonèl</span>
+                  <% if guardian.persisted? && guardian.first_name.present? %>
+                    <span class="badge bg-success ms-1 rounded-pill"><i class="ri-check-line"></i> <%= guardian.first_name %></span>
+                  <% end %>
+                </button>
+              </h2>
+              <div id="guardianSection" class="accordion-collapse collapse" data-bs-parent="#familyAccordion">
+                <div class="accordion-body px-2 pt-2 pb-3 family-section">
+                  <%= f.fields_for :family_members, [guardian] do |fm| %>
+                    <%= fm.hidden_field :relationship, value: "guardian" %>
+                    <%= fm.hidden_field :id if fm.object.persisted? %>
+
+                    <div class="mb-2">
+                      <label class="form-label small fw-semibold mb-1">Tip Gadyen</label>
+                      <%= fm.input :guardian_type, as: :select, label: false,
+                          collection: FamilyMember::GUARDIAN_TYPES.map { |t| [FamilyMember::GUARDIAN_TYPE_LABELS[t], t] },
+                          prompt: "Chwazi tip gadyen",
+                          input_html: { class: "form-select form-select-sm rounded-3" } %>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                      <span class="small fw-semibold">Èske li vivan?</span>
+                      <div class="form-check form-check-inline mb-0">
+                        <%= fm.radio_button :alive, true, class: "form-check-input", id: "g_alive_y",
+                            data: { action: "change->family-form#toggleAlive" } %>
+                        <label class="form-check-label small" for="g_alive_y">Wi</label>
+                      </div>
+                      <div class="form-check form-check-inline mb-0">
+                        <%= fm.radio_button :alive, false, class: "form-check-input", id: "g_alive_n",
+                            data: { action: "change->family-form#toggleAlive" } %>
+                        <label class="form-check-label small" for="g_alive_n">Non</label>
+                      </div>
+                    </div>
+
+                    <div data-alive="bonid" class="mb-2 <%= 'd-none' if guardian.deceased? %>">
+                      <label class="form-label small fw-semibold mb-1">BonID Gadyen</label>
+                      <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="ri-fingerprint-line"></i></span>
+                        <%= fm.input_field :linked_bonid, class: "form-control form-control-sm rounded-end-3",
+                            placeholder: "Dènye 6 chif (ex: 1234CD)",
+                            data: { action: "input->family-form#lookupBonid blur->family-form#lookupBonid" } %>
+                      </div>
+                      <div data-role="verify-badge" class="d-none mt-1"></div>
+                    </div>
+
+                    <div data-alive="death" class="mb-2 <%= 'd-none' if guardian.alive? %>">
+                      <label class="form-label small fw-semibold mb-1">Dat li desede</label>
+                      <%= fm.input :date_of_death, as: :string, label: false,
+                          input_html: { class: "form-control form-control-sm rounded-3", type: "date" } %>
+                    </div>
+
+                    <div class="row g-2">
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Prenon</label>
+                        <%= fm.input :first_name, label: false, placeholder: "Tante Marie",
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name" } } %>
+                      </div>
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Dezyèm non</label>
+                        <%= fm.input :middle_name, label: false,
+                            input_html: { class: "form-control form-control-sm rounded-3" } %>
+                      </div>
+                      <div class="col-4">
+                        <label class="form-label small fw-semibold mb-1">Non fanmi</label>
+                        <%= fm.input :last_name, label: false,
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name" } } %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-secondary rounded-pill" data-bs-dismiss="modal">Anile</button>
+          <%= f.submit "Anrejistre", class: "btn btn-sm btn-haitian-primary fw-semibold rounded-pill text-white" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

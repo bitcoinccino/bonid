@@ -1,0 +1,32 @@
+<li class="nav-item dropdown">
+  <a
+    class="nav-link dropdown-toggle fw-semibold d-flex align-items-center gap-2"
+    href="#"
+    role="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+    aria-label="Language"
+  >
+    <i class="ri-translate-2 text-haitian-blue"></i>
+    <span class="text-uppercase"><%= I18n.locale.to_s %></span>
+  </a>
+
+  <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+    <% [
+      ["Kreyòl (HT)", :ht],
+      ["Français (FR)", :fr],
+      ["English (EN)", :en]
+    ].each do |label, locale| %>
+
+      <li>
+        <%= link_to(
+          label,
+          url_for(request.query_parameters.merge(lang: locale)),
+          class: "dropdown-item d-flex align-items-center justify-content-between #{'active' if I18n.locale.to_s == locale.to_s}"
+        ) %>
+        <span class="text-uppercase small fw-semibold"><%= locale %></span>
+      </li>
+
+    <% end %>
+  </ul>
+</li>

@@ -1,0 +1,459 @@
+<%# Partner Portal — Law Enforcement: Digital Identity Hub %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Command Header ──────────────────────────────────────── %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h2 class="mb-1 fw-bold" style="font-family: 'Montserrat', sans-serif; color: var(--law-blue);">
+        Digital Identity Hub
+      </h2>
+      <p class="text-muted mb-0 small">
+        <i class="ri-shield-check-line me-1"></i>
+        Citizen identity verification operations — <%= Time.current.strftime("%B %d, %Y") %>
+      </p>
+    </div>
+  </div>
+
+  <%# ── Identity KPI Cards (urgency-coded) ──────────────────── %>
+  <div class="row g-3 mb-4">
+    <%# Total Verifications — Law Blue %>
+    <div class="col-6 col-lg-3">
+      <div class="le-report-card h-100" style="border-left: 4px solid var(--law-blue);">
+        <div class="le-report-card__body py-3 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-blue);"><%= @api_stats[:total] %></div>
+              <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                Total Verifications
+              </div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(9, 44, 115, 0.08); display: flex; align-items: center; justify-content: center;">
+              <i class="ri-fingerprint-line" style="color: var(--law-blue); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Verification Rate — Law Green %>
+    <div class="col-6 col-lg-3">
+      <div class="le-report-card h-100" style="border-left: 4px solid var(--law-green);">
+        <div class="le-report-card__body py-3 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-green);"><%= @api_stats[:success_rate] %>%</div>
+              <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                Verification Rate
+              </div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(73, 166, 79, 0.08); display: flex; align-items: center; justify-content: center;">
+              <i class="ri-shield-check-line" style="color: var(--law-green); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Identities Authenticated — Law Green %>
+    <div class="col-6 col-lg-3">
+      <div class="le-report-card h-100" style="border-left: 4px solid var(--law-green);">
+        <div class="le-report-card__body py-3 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-green);"><%= @api_stats[:success] %></div>
+              <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                Identities Authenticated
+              </div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(73, 166, 79, 0.08); display: flex; align-items: center; justify-content: center;">
+              <i class="ri-user-follow-line" style="color: var(--law-green); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Potential Identity Mismatches — Law Red %>
+    <div class="col-6 col-lg-3">
+      <div class="le-report-card h-100" style="border-left: 4px solid var(--law-red);">
+        <div class="le-report-card__body py-3 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-red);"><%= @api_stats[:failed] %></div>
+              <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                Identity Mismatches
+              </div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(217, 7, 24, 0.08); display: flex; align-items: center; justify-content: center;">
+              <i class="ri-error-warning-line" style="color: var(--law-red); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+          <% if @api_stats[:failed] > 0 %>
+            <div class="mt-2">
+              <span class="badge" style="background: var(--law-red); color: #fff; font-size: 0.6rem;">
+                <i class="ri-alarm-warning-line me-1"></i>Requires review
+              </span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Flash for New API Key ────────────────────────────────── %>
+  <% if @new_api_key_token.present? %>
+    <div class="le-report-card mb-4" style="border-left: 4px solid var(--law-green);">
+      <div class="le-report-card__body">
+        <div class="d-flex align-items-start gap-2">
+          <i class="ri-key-2-line" style="color: var(--law-green); font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;"></i>
+          <div>
+            <div class="fw-bold small" style="color: var(--law-green);">API Key Regenerated!</div>
+            <p class="text-muted mb-2" style="font-size: 0.8rem;">Copy it now — it will not be shown again.</p>
+            <code style="display: inline-block; padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-family: 'Courier New', monospace; background: rgba(9, 44, 115, 0.06); border: 1px solid rgba(9, 44, 115, 0.12); color: var(--law-blue); user-select: all;">
+              <%= @new_api_key_token %>
+            </code>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Secure API Credential ────────────────────────────────── %>
+  <div class="le-report-card mb-4" style="border-left: 4px solid var(--law-blue);">
+    <div class="le-report-card__header">
+      <i class="ri-key-2-line"></i>
+      <span>Secure API Credential</span>
+    </div>
+    <div class="le-report-card__body">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <% if @partner.api_key_digest.present? %>
+            <div class="d-flex align-items-center gap-3">
+              <div>
+                <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                  API Key (first 10 characters)
+                </div>
+                <code style="font-size: 1rem; font-family: 'Courier New', monospace; color: var(--law-blue); font-weight: 600;">
+                  <%= @partner.api_key_digest.first(10) %>...
+                </code>
+              </div>
+              <div class="text-muted small">
+                <% if @partner.api_key_rotated_at.present? %>
+                  Last rotated: <%= @partner.api_key_rotated_at.strftime("%b %d, %Y at %H:%M") %>
+                <% else %>
+                  Created with account
+                <% end %>
+              </div>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">No API key generated yet.</p>
+          <% end %>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <%= button_to partner_portal_law_enforcement_api_keys_path,
+                        method: :post,
+                        class: "btn btn-sm",
+                        style: "background: var(--law-red); color: #fff; font-size: 0.8rem;",
+                        form: { data: { turbo_confirm: "Regenerate your API key? The current key will stop working immediately." } } do %>
+            <i class="ri-refresh-line me-1"></i> Regenerate Key
+          <% end %>
+        </div>
+      </div>
+
+      <hr class="my-3" style="border-color: rgba(9, 44, 115, 0.08);">
+
+      <div class="row">
+        <div class="col-md-6 mb-2 mb-md-0">
+          <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray); margin-bottom: 0.35rem;">
+            API Endpoint
+          </div>
+          <code style="display: block; padding: 0.5rem; border-radius: 4px; font-size: 0.8rem; font-family: 'Courier New', monospace; background: rgba(9, 44, 115, 0.04); border: 1px solid rgba(9, 44, 115, 0.08); color: var(--law-blue);">
+            POST <%= request.base_url %>/api/v1/verify_identity
+          </code>
+        </div>
+        <div class="col-md-6">
+          <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray); margin-bottom: 0.35rem;">
+            Authentication Header
+          </div>
+          <code style="display: block; padding: 0.5rem; border-radius: 4px; font-size: 0.8rem; font-family: 'Courier New', monospace; background: rgba(9, 44, 115, 0.04); border: 1px solid rgba(9, 44, 115, 0.08); color: var(--law-blue);">
+            Authorization: Bearer YOUR_API_KEY
+          </code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Citizens Who Granted Access ──────────────────────────── %>
+  <div class="le-report-card mb-4">
+    <div class="le-report-card__header d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-shield-user-line"></i>
+        <span>Citizens Who Granted Access</span>
+      </div>
+      <div class="d-flex gap-2">
+        <span class="badge" style="background: var(--law-green); color: #fff; font-size: 0.6rem;">
+          <%= @consent_stats[:active] %> Active
+        </span>
+        <span class="badge" style="background: #D97706; color: #fff; font-size: 0.6rem;">
+          <%= @consent_stats[:pending] %> Pending
+        </span>
+        <span class="badge" style="background: rgba(9,44,115,0.1); color: var(--law-blue); font-size: 0.6rem;">
+          <%= @consent_stats[:total] %> Total
+        </span>
+      </div>
+    </div>
+    <div class="le-report-card__body p-0">
+      <% if @consent_grants&.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size: 0.82rem;">
+            <thead>
+              <tr style="background: rgba(9, 44, 115, 0.04);">
+                <th class="ps-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Citizen</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">BonID</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Scopes</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Status</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Granted</th>
+                <th class="text-end pe-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Expires</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @consent_grants.limit(15).each do |grant| %>
+                <% citizen = grant.citizen %>
+                <%
+                  is_suspect = citizen.present? && @suspect_user_ids.include?(citizen.id)
+                  submission = citizen&.identity_submissions&.select { |s| s.status == "approved" }&.last
+                  citizen_photo = submission&.photo if submission&.photo&.attached?
+                %>
+                <tr style="vertical-align: middle;<%= ' background: rgba(217, 7, 24, 0.04);' if is_suspect %>">
+                  <td class="ps-3">
+                    <% if citizen.present? %>
+                      <div class="d-flex align-items-center">
+                        <% if citizen_photo %>
+                          <%= image_tag url_for(citizen_photo),
+                                        class: "rounded-circle me-2",
+                                        style: "width: 40px; height: 40px; object-fit: cover; object-position: center top; border: 1px solid rgba(9,44,115,0.15);",
+                                        loading: "lazy" %>
+                        <% else %>
+                          <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                               style="width: 40px; height: 40px; background: rgba(9,44,115,0.08);">
+                            <i class="ri-user-line" style="font-size: 0.9rem; color: var(--law-blue);"></i>
+                          </div>
+                        <% end %>
+                        <div>
+                          <div class="fw-medium" style="font-size: 0.85rem;"><%= citizen.full_name %></div>
+                          <div class="text-muted" style="font-size: 0.7rem;"><%= mask_email(citizen.email) %></div>
+                        </div>
+                        <% if is_suspect %>
+                          <span class="badge le-critical-icon-pulse ms-2" style="background: var(--law-red); color: #fff; font-size: 0.5rem;">
+                            <i class="ri-alarm-warning-line me-1"></i>ALERT
+                          </span>
+                        <% end %>
+                      </div>
+                    <% else %>
+                      <span class="text-muted">Unknown</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if submission&.bonid.present? %>
+                      <code style="font-size: 0.7rem; font-weight: 600; color: var(--law-blue);"><%= mask_bonid(submission.bonid) %></code>
+                    <% else %>
+                      <span class="badge" style="background: var(--law-red); color: #fff; font-weight: 700; font-size: 0.6rem;">
+                        <i class="ri-error-warning-line me-1"></i>Not Verified
+                      </span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% Array(grant.granted_scopes).each do |scope| %>
+                      <span class="badge me-1" style="font-size: 0.6rem; background: rgba(9,44,115,0.06); color: var(--dark-gray); border: 1px solid rgba(9,44,115,0.1);">
+                        <%= scope %>
+                      </span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% case grant.status %>
+                    <% when "approved" %>
+                      <% if grant.expires_at && grant.expires_at > Time.current %>
+                        <span class="badge" style="font-size: 0.6rem; background: rgba(73,166,79,0.1); color: var(--law-green);">
+                          <i class="ri-checkbox-circle-line me-1"></i>Active
+                        </span>
+                      <% else %>
+                        <span class="badge" style="font-size: 0.6rem; background: rgba(9,44,115,0.06); color: var(--mid-gray);">Expired</span>
+                      <% end %>
+                    <% when "pending" %>
+                      <span class="badge" style="font-size: 0.6rem; background: rgba(217,119,6,0.1); color: #D97706;">
+                        <i class="ri-time-line me-1"></i>Pending
+                      </span>
+                    <% when "revoked" %>
+                      <span class="badge" style="font-size: 0.6rem; background: rgba(217,7,24,0.1); color: var(--law-red);">
+                        <i class="ri-forbid-line me-1"></i>Revoked
+                      </span>
+                    <% else %>
+                      <span class="badge" style="font-size: 0.6rem; background: rgba(9,44,115,0.06); color: var(--mid-gray);">
+                        <%= grant.status&.titleize %>
+                      </span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <span class="text-muted" style="font-size: 0.75rem;">
+                      <%= grant.granted_at&.strftime("%b %d, %Y") || grant.created_at.strftime("%b %d, %Y") %>
+                    </span>
+                  </td>
+                  <td class="text-end pe-3">
+                    <% if grant.expires_at.present? %>
+                      <% if grant.expires_at > Time.current %>
+                        <span class="text-muted" style="font-size: 0.75rem;"><%= grant.expires_at.strftime("%b %d, %Y") %></span>
+                      <% else %>
+                        <span style="font-size: 0.75rem; color: var(--law-red); font-weight: 600;">Expired</span>
+                      <% end %>
+                    <% else %>
+                      <span class="text-muted" style="font-size: 0.75rem;">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if @consent_grants.count > 15 %>
+          <div class="text-center py-3" style="border-top: 1px solid rgba(9,44,115,0.06);">
+            <span class="text-muted small">Showing 15 of <%= @consent_grants.count %> citizens</span>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-shield-user-line" style="font-size: 2.5rem; color: rgba(9,44,115,0.15);"></i>
+          <p class="text-muted mt-2 mb-0 small">No citizens have granted access yet.</p>
+          <p class="text-muted mb-0" style="font-size: 0.7rem;">When citizens approve your access request, they will appear here.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Recent Identity Lookups ──────────────────────────────── %>
+  <div class="le-report-card">
+    <div class="le-report-card__header d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-search-eye-line"></i>
+        <span>Recent Identity Lookups</span>
+      </div>
+      <span class="badge" style="background: rgba(9,44,115,0.1); color: var(--law-blue); font-size: 0.6rem;">
+        <%= @recent_lookups&.count || 0 %> recent
+      </span>
+    </div>
+    <div class="le-report-card__body p-0">
+      <% if @recent_lookups&.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0" style="font-size: 0.82rem;">
+            <thead>
+              <tr style="background: rgba(9, 44, 115, 0.04);">
+                <th class="ps-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Action</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Citizen</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Location</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Status</th>
+                <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Response</th>
+                <th class="text-end pe-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @recent_lookups.each do |lookup| %>
+                <%
+                  has_alert = lookup.user.present? && @suspect_user_ids.include?(lookup.user.id)
+                  lu_submission = lookup.user&.identity_submissions&.select { |s| s.status == "approved" }&.last
+                  lu_photo = lu_submission&.photo if lu_submission&.photo&.attached?
+                  geo_city = lookup.metadata&.dig("geo", "city") || lookup.metadata&.dig("city")
+                  geo_region = lookup.metadata&.dig("geo", "region") || lookup.metadata&.dig("region")
+                %>
+                <tr style="vertical-align: middle;<%= ' background: rgba(217, 7, 24, 0.04);' if has_alert %>">
+                  <td class="ps-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <% if has_alert %>
+                        <div class="le-critical-icon-pulse" style="width: 4px; height: 24px; border-radius: 2px; background: var(--law-red); flex-shrink: 0;"></div>
+                      <% end %>
+                      <div>
+                        <span class="fw-medium" style="font-size: 0.8rem; color: var(--dark-gray);">
+                          <i class="ri-shield-check-line me-1" style="color: var(--law-blue);"></i>
+                          <%= humanize_api_endpoint(lookup.endpoint) %>
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <% if lookup.user.present? %>
+                      <div class="d-flex align-items-center">
+                        <% if lu_photo %>
+                          <%= image_tag url_for(lu_photo),
+                                        class: "rounded-circle me-2",
+                                        style: "width: 36px; height: 36px; object-fit: cover; object-position: center top; border: 1px solid rgba(9,44,115,0.15);",
+                                        loading: "lazy" %>
+                        <% else %>
+                          <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                               style="width: 36px; height: 36px; background: rgba(9,44,115,0.08);">
+                            <i class="ri-user-line" style="font-size: 0.8rem; color: var(--law-blue);"></i>
+                          </div>
+                        <% end %>
+                        <div>
+                          <div class="fw-medium" style="font-size: 0.8rem;"><%= lookup.user.full_name %></div>
+                          <% if lu_submission&.bonid.present? %>
+                            <code style="font-size: 0.65rem; color: var(--law-blue);"><%= mask_bonid(lu_submission.bonid) %></code>
+                          <% end %>
+                        </div>
+                        <% if has_alert %>
+                          <span class="badge le-critical-icon-pulse ms-2" style="background: var(--law-red); color: #fff; font-size: 0.5rem;">
+                            <i class="ri-alarm-warning-line"></i>
+                          </span>
+                        <% end %>
+                      </div>
+                    <% else %>
+                      <span class="text-muted" style="font-size: 0.75rem;">—</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if geo_city.present? %>
+                      <div class="d-flex align-items-center gap-1">
+                        <i class="ri-map-pin-line" style="color: var(--law-tan); font-size: 0.8rem;"></i>
+                        <span style="font-size: 0.75rem; color: var(--dark-gray);"><%= geo_city %><%= ", #{geo_region}" if geo_region.present? %></span>
+                      </div>
+                    <% else %>
+                      <div class="d-flex align-items-center gap-1">
+                        <i class="ri-global-line" style="color: var(--mid-gray); font-size: 0.8rem;"></i>
+                        <span class="text-muted" style="font-size: 0.75rem;"><%= lookup.ip_address %></span>
+                      </div>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if lookup.success %>
+                      <span class="badge" style="font-size: 0.6rem; background: rgba(73,166,79,0.1); color: var(--law-green);">
+                        <i class="ri-checkbox-circle-line me-1"></i>Authenticated
+                      </span>
+                    <% else %>
+                      <span class="badge" style="font-size: 0.6rem; background: rgba(217,7,24,0.1); color: var(--law-red);">
+                        <i class="ri-close-circle-line me-1"></i>Mismatch
+                      </span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <span class="text-muted" style="font-size: 0.75rem;">
+                      <%= lookup.duration_ms.present? ? "#{lookup.duration_ms}ms" : "—" %>
+                    </span>
+                  </td>
+                  <td class="text-end pe-3">
+                    <div class="text-muted" style="font-size: 0.75rem;"><%= lookup.created_at.strftime("%b %d, %Y") %></div>
+                    <div style="font-size: 0.65rem; color: var(--mid-gray);"><%= lookup.created_at.strftime("%H:%M") %></div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-search-eye-line" style="font-size: 2.5rem; color: rgba(9,44,115,0.15);"></i>
+          <p class="text-muted mt-2 mb-0 small">No identity verification requests yet.</p>
+          <p class="text-muted mb-0" style="font-size: 0.7rem;">Each time you verify a BonID through the API, it will appear here.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+</div>

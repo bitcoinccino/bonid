@@ -1,0 +1,194 @@
+<%# app/views/election/ballots/receipt.html.erb %>
+<%# "Vòt Mwen Konte" — Ballot Receipt Screen
+     Zero-leakage: proves the vote exists WITHOUT revealing the choice.
+     Shareable on WhatsApp for viral trust-building.
+     Printable at consulate kiosks for physical receipts. %>
+
+<% content_for :head do %>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    @media print {
+      body { background: #fff !important; }
+      .no-print { display: none !important; }
+      .receipt-card { box-shadow: none !important; border: 2px solid #000 !important; }
+    }
+  </style>
+<% end %>
+
+<div style="min-height: 100vh; background: linear-gradient(180deg, #00209F 0%, #001466 40%, #0a0f1f 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 1.5rem; font-family: 'Montserrat', 'Inter', sans-serif;">
+
+  <%# ── Success Animation ── %>
+  <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(52, 211, 153, 0.15);
+              display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
+              animation: pulse 2s ease-in-out infinite;">
+    <svg width="40" height="40" viewBox="0 0 20 20" fill="#34d399">
+      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+    </svg>
+  </div>
+
+  <%# ── Title ── %>
+  <h1 style="font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 800; color: #ffffff;
+             margin: 0 0 0.5rem; text-align: center; letter-spacing: -0.02em;">
+    Vòt ou anrejistre!
+  </h1>
+  <p style="font-size: clamp(0.85rem, 2.5vw, 1rem); color: rgba(255,255,255,0.7);
+            margin: 0 0 2rem; text-align: center; max-width: 360px; line-height: 1.5;">
+    Mèsi paske ou patisipe nan deside avni Ayiti.
+  </p>
+
+  <%# ── Receipt Card ── %>
+  <div class="receipt-card" style="width: 100%; max-width: 380px; background: #ffffff;
+              border-radius: 1.25rem; padding: 2rem 1.5rem; position: relative;
+              box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;">
+
+    <%# Channel badge %>
+    <div style="position: absolute; top: 12px; right: 12px;">
+      <% if @kiosk_mode %>
+        <span style="font-size: 0.65rem; font-weight: 700; background: #DBEAFE; color: #1E40AF;
+                     padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;">
+          Konsila
+        </span>
+      <% else %>
+        <span style="font-size: 0.65rem; font-weight: 700; background: #D1FAE5; color: #065F46;
+                     padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;">
+          Remòt
+        </span>
+      <% end %>
+    </div>
+
+    <%# BonID + Election branding %>
+    <div style="text-align: center; margin-bottom: 1.25rem;">
+      <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.75rem;
+                  font-weight: 800; color: #00209F; letter-spacing: 2px; margin-bottom: 4px;">
+        BONID &middot; ELEKSYON 2026
+      </div>
+      <div style="font-size: 0.7rem; color: #94A3B8;">
+        <%= @receipt[:election_id] %>
+      </div>
+    </div>
+
+    <%# Receipt hash %>
+    <div style="margin-bottom: 1.25rem;">
+      <label style="display: block; font-size: 0.65rem; font-weight: 700; color: #94A3B8;
+                    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">
+        Nimewo Resi Vòt Ou
+      </label>
+      <div style="font-family: 'Courier New', monospace; font-size: 0.75rem; background: #F0F4FF;
+                  color: #1E293B; padding: 0.85rem 1rem; border-radius: 0.75rem;
+                  border: 1px solid rgba(0,32,159,0.12); word-break: break-all; line-height: 1.5;
+                  letter-spacing: 0.02em;">
+        <%= @receipt[:ballot_hash] %>
+      </div>
+    </div>
+
+    <%# QR Code %>
+    <div style="text-align: center; margin-bottom: 1rem;">
+      <div style="display: inline-block; padding: 12px; background: #fff;
+                  border: 2px solid #E2E8F0; border-radius: 12px;">
+        <% qr = RQRCode::QRCode.new(@verify_url, size: 6, level: :m) %>
+        <%= raw qr.as_svg(
+          module_size: 3,
+          use_path: true,
+          fill: "ffffff",
+          color: "1E293B",
+          shape_rendering: "crispEdges",
+          viewbox: true
+        ) %>
+      </div>
+    </div>
+
+    <p style="font-size: 0.68rem; color: #94A3B8; text-align: center; line-height: 1.5;
+              margin: 0 0 1rem; padding: 0 0.5rem;">
+      Eskane kòd sa a pou verifye vòt ou nan rejis piblik BonID a.
+    </p>
+
+    <%# Timestamp + verification details %>
+    <div style="border-top: 1px solid #E2E8F0; padding-top: 1rem;">
+      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748B;">
+        <span>Dat</span>
+        <span style="font-weight: 600; color: #1E293B;">
+          <%= Time.parse(@receipt[:timestamp]).strftime("%d %b %Y, %H:%M") rescue @receipt[:timestamp] %>
+        </span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748B; margin-top: 6px;">
+        <span>Resi ID</span>
+        <span style="font-family: monospace; font-weight: 600; color: #1E293B;">
+          <%= @receipt[:receipt_id].to_s[0..7].upcase %>
+        </span>
+      </div>
+      <% if @kiosk_mode && @consulate_name %>
+        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748B; margin-top: 6px;">
+          <span>Konsila</span>
+          <span style="font-weight: 600; color: #1E293B;"><%= @consulate_name %></span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Action Buttons ── %>
+  <div class="no-print" style="margin-top: 2rem; width: 100%; max-width: 380px;">
+    <% if @kiosk_mode %>
+      <%# Consulate: Print button for thermal printer %>
+      <button onclick="window.print()"
+              style="width: 100%; padding: 1rem; background: #ffffff; color: #0F172A;
+                     font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 700;
+                     border: none; border-radius: 0.85rem; cursor: pointer;
+                     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+                     box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <i class="ri-printer-line" style="font-size: 1.2rem;"></i>
+        Enprime Resi an
+      </button>
+    <% else %>
+      <%# Remote: WhatsApp share button %>
+      <% share_text = "✅ Mwen vote nan eleksyon Ayiti 2026! Vòt mwen anrejistre ak BonID. #VòtMwenKonte #Ayiti2026" %>
+      <a href="https://wa.me/?text=<%= CGI.escape(share_text) %>"
+         target="_blank" rel="noopener"
+         style="width: 100%; padding: 1rem; background: #25D366; color: #ffffff;
+                font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 700;
+                border: none; border-radius: 0.85rem; cursor: pointer;
+                display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+                box-shadow: 0 4px 12px rgba(37,211,102,0.3); text-decoration: none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+        Pataje sou WhatsApp
+      </a>
+
+      <%# Copy hash button %>
+      <button onclick="navigator.clipboard.writeText('<%= @receipt[:ballot_hash] %>').then(() => this.textContent = '✓ Kopye!')"
+              style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+                     font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600;
+                     border: 1px solid rgba(255,255,255,0.15); border-radius: 0.85rem; cursor: pointer;
+                     margin-top: 0.75rem;">
+        <i class="ri-file-copy-line" style="margin-right: 4px;"></i>
+        Kopye Nimewo Resi
+      </button>
+    <% end %>
+
+    <%# Return home %>
+    <a href="/citizens/dashboard"
+       style="display: block; text-align: center; padding: 0.75rem;
+              color: rgba(255,255,255,0.5); font-size: 0.82rem; font-weight: 500;
+              text-decoration: none; margin-top: 0.5rem;">
+      Fini — Retounen Akèy
+    </a>
+  </div>
+
+  <%# ── Security Footer ── %>
+  <div class="no-print" style="margin-top: 2rem; text-align: center; max-width: 360px;">
+    <p style="font-size: 0.65rem; color: rgba(255,255,255,0.35); line-height: 1.6;">
+      <i class="ri-lock-line" style="margin-right: 2px;"></i>
+      Vòt ou pwoteje ak chifraj bout-an-bout. Pèsonn — ni BonID, ni BonID — pa ka wè chwa ou.
+      Sèlman ou konnen ki moun ou te vote.
+    </p>
+  </div>
+</div>
+
+<style>
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+  }
+</style>

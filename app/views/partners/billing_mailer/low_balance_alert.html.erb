@@ -1,0 +1,88 @@
+<%# app/views/partners/billing_mailer/low_balance_alert.html.erb %>
+<%# Uses unified mailer layout — set @email_product, @email_badge, @email_alert in mailer %>
+
+<%# Credit Balance Ring %>
+<div style="text-align: center; margin-bottom: 28px;">
+  <div style="display: inline-block; width: 130px; height: 130px; border-radius: 50%; border: 8px solid <%= @balance.to_f < 5 ? '#DC3545' : @balance.to_f < 20 ? '#EDB95E' : '#1A936F' %>; position: relative;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; line-height: 1.2;">
+      <div style="font-size: 30px; font-weight: 800; color: #1a1a2e;"><%= number_with_precision(@balance, precision: 1) %></div>
+      <div style="font-size: 10px; color: #6C757D; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Credits</div>
+    </div>
+  </div>
+</div>
+
+<%# Greeting %>
+<p style="color: #1a1a2e; line-height: 1.7; font-size: 15px; margin-bottom: 8px;">
+  Bonjou <strong><%= @partner.contact_person || @partner.name %></strong>,
+</p>
+
+<p style="color: #4a5568; line-height: 1.7; font-size: 14px; margin-bottom: 20px;">
+  Balans kredi ou <strong style="color: #DC3545;">ba anpil</strong>. Lè li rive zewo, API a ap retounen
+  <code style="background: #f1f5f9; padding: 3px 8px; border-radius: 4px; font-size: 12px; color: #DC3545; font-weight: 600;">402 Payment Required</code>
+  pou tout apèl.
+</p>
+
+<%# Burn Rate Estimate %>
+<div style="background: #FFF5F5; border: 1px solid #FED7D7; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; text-align: center;">
+  <span style="font-size: 12px; color: #C53030; font-weight: 600;">
+    Estimasyon: ~<%= [@purchasing_power[:standard], 1].max %> apèl Standard rete anvan API a kanpe
+  </span>
+</div>
+
+<%# Purchasing Power Breakdown %>
+<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 24px;">
+  <div style="font-size: 12px; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;">
+    Ak <%= @balance %> credits, ou ka fè:
+  </div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #edf2f7;">
+        <span style="font-size: 13px; color: #4a5568;">Standard Checks</span>
+      </td>
+      <td style="padding: 8px 0; border-bottom: 1px solid #edf2f7; text-align: right;">
+        <span style="font-size: 14px; font-weight: 700; color: #198754;"><%= @purchasing_power[:standard] %></span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; border-bottom: 1px solid #edf2f7;">
+        <span style="font-size: 13px; color: #4a5568;">Verifications</span>
+      </td>
+      <td style="padding: 8px 0; border-bottom: 1px solid #edf2f7; text-align: right;">
+        <span style="font-size: 14px; font-weight: 700; color: #00209F;"><%= @purchasing_power[:verifications] %></span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0;">
+        <span style="font-size: 13px; color: #4a5568;">Premium (Liveness/Crime)</span>
+      </td>
+      <td style="padding: 8px 0; text-align: right;">
+        <span style="font-size: 14px; font-weight: 700; color: #DC3545;"><%= @purchasing_power[:premium] %></span>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<%# Developer Alert Box %>
+<div style="background: #1a1a2e; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px;">
+  <div style="font-size: 10px; color: #a0aec0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Developer Alert</div>
+  <div style="font-family: 'Courier New', monospace; font-size: 12px; color: #e2e8f0; line-height: 1.6;">
+    HTTP/1.1 <span style="color: #FC8181;">402 Payment Required</span><br>
+    X-RateLimit-Remaining: <span style="color: #FC8181;">0</span><br>
+    { "error": "insufficient_credits" }
+  </div>
+</div>
+
+<%# CTA Buttons %>
+<div style="text-align: center; margin: 28px 0 12px;">
+  <a href="<%= @wallet_url %>"
+     style="display: inline-block; background: #00209F; color: #FFFFFF; padding: 16px 44px; border-radius: 30px; text-decoration: none; font-weight: 700; font-size: 15px; box-shadow: 0 4px 14px rgba(0, 32, 159, 0.35);">
+    Rechaje Kounye a
+  </a>
+</div>
+<div style="text-align: center; margin-bottom: 8px;">
+  <a href="<%= @wallet_url %>"
+     style="font-size: 12px; color: #00209F; text-decoration: underline; font-weight: 600;">
+    Aktive Rechaj Otomatik →
+  </a>
+</div>

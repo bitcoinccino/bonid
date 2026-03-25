@@ -1,0 +1,57 @@
+<%# Pinned danger banner — shown when person has high-risk status (wanted, armed, dangerous, fugitive, escaped) %>
+<%# This banner uses position:sticky so it stays visible when scrolling %>
+<%
+  # Collect all high-risk statuses from involvements
+  danger_statuses = involvements.select { |i|
+    %w[wanted fugitive armed dangerous escaped_custody].include?(i.status) &&
+    %w[suspect accomplice].include?(i.role)
+  }
+
+  # Determine highest threat
+  is_armed     = danger_statuses.any? { |i| %w[armed dangerous].include?(i.status) }
+  is_wanted    = danger_statuses.any? { |i| %w[wanted fugitive].include?(i.status) }
+  is_escaped   = danger_statuses.any? { |i| i.status == "escaped_custody" }
+
+  banner_label = if is_armed && is_wanted
+                   "ARMED & WANTED"
+                 elsif is_armed
+                   "ARMED & DANGEROUS"
+                 elsif is_wanted
+                   "WANTED"
+                 elsif is_escaped
+                   "ESCAPED CUSTODY"
+                 else
+                   "HIGH RISK"
+                 end
+
+  banner_icon = is_armed ? "ri-alarm-warning-line" : "ri-alert-line"
+%>
+
+<% if danger_statuses.any? %>
+  <div class="d-flex align-items-center gap-2 px-3 py-2 rounded mb-3"
+       style="background: var(--law-red); color: white; position: sticky; top: 0; z-index: 10; animation: pulse-danger 2s ease-in-out infinite;">
+    <i class="<%= banner_icon %>" style="font-size: 1.3rem;"></i>
+    <div>
+      <strong style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; letter-spacing: 0.5px;">
+        <%= banner_label %>
+      </strong>
+      <% if is_armed %>
+        <div style="font-size: 0.75rem; opacity: 0.9;">Exercise extreme caution. Do not approach alone.</div>
+      <% end %>
+    </div>
+    <div class="ms-auto d-flex gap-1">
+      <% danger_statuses.each do |inv| %>
+        <span class="badge bg-light text-danger" style="font-size: 0.65rem;">
+          <%= inv.status&.humanize %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <style>
+    @keyframes pulse-danger {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+  </style>
+<% end %>

@@ -1,0 +1,19 @@
+<% if flash.any? %>
+  <% flash.each do |key, message| %>
+    <div class="alert alert-<%= key == "notice" ? "success" : "danger" %> alert-dismissible fade show rounded-3 fw-semibold" role="alert">
+      <%= message %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+<% end %>
+
+<% if @user&.errors&.any? %>
+  <div class="alert alert-dismissible fade show alert-danger rounded-3">
+    <h6 class="fw-bold mb-2">Please fix the following errors:</h6>
+    <ul class="mb-0">
+      <% @user.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

@@ -1,0 +1,80 @@
+<% content_for :title, "Incident Report Notification" %>
+
+<div style="font-family:'Inter',Arial,sans-serif; color:#101828;">
+  <div style="margin:0 0 10px;">
+    <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-weight:700; font-size:20px; color:#00209F; margin:0;">
+      Incident Report Notification
+    </div>
+    <div style="margin-top:6px; font-size:13px; color:#475467; line-height:1.6;">
+      You have been listed in an incident report filed with law enforcement.
+    </div>
+  </div>
+
+  <!-- NOTIFICATION CARD -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="margin:14px 0 16px; background:#ffffff; border-radius:14px;
+                border:1px solid rgba(0,32,159,0.18); overflow:hidden;">
+    <tr>
+      <td style="padding:14px 14px; background:#f7f9ff;">
+        <div style="font-size:12px; letter-spacing:0.6px; color:#344054; text-transform:uppercase;">
+          Incident Details
+        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+          <tr>
+            <td style="padding:6px 0; font-size:14px; color:#475467; width:100px;">Date:</td>
+            <td style="padding:6px 0; font-size:14px; color:#101828; font-weight:600;">
+              <%= @report.occurred_at&.strftime("%B %d, %Y at %I:%M %p") || "Not specified" %>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:14px; color:#475467;">Location:</td>
+            <td style="padding:6px 0; font-size:14px; color:#101828; font-weight:600;">
+              <%= @report.address&.commune&.name || "Not specified" %><% if @report.address&.department %>, <%= @report.address.department.name %><% end %>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0; font-size:14px; color:#475467;">Type:</td>
+            <td style="padding:6px 0; font-size:14px; color:#101828; font-weight:600;">
+              <%= @report.crime_type&.titleize || "Not specified" %>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:14px; line-height:1.75; color:#101828;">
+    <p style="margin:0 0 10px;">
+      Dear <strong><%= @user.first_name %></strong>,
+    </p>
+
+    <p style="margin:0 0 10px;">
+      This email is to inform you that you have been included in an incident report
+      filed on <strong><%= @report.created_at&.strftime("%B %d, %Y") %></strong>.
+    </p>
+
+    <p style="margin:0 0 10px; padding:12px; background:#fff3cd; border-radius:8px; border-left:4px solid #ffc107;">
+      <strong>What this means:</strong><br>
+      Your BonID was used to identify you in connection with an incident. This is for record-keeping
+      purposes and may be shared with relevant authorities as required by law.
+    </p>
+
+    <p style="margin:0 0 10px;">
+      <strong>Your rights:</strong>
+    </p>
+    <ul style="margin:0 0 10px; padding-left:20px;">
+      <li>You may request a copy of the report from the filing police station</li>
+      <li>You have the right to provide additional information or clarification</li>
+      <li>If you believe this is an error, contact the reporting officer</li>
+    </ul>
+
+    <p style="margin:0 0 10px;">
+      If you have questions or need assistance, please contact
+      <a href="mailto:support@verifyem.ht" style="color:#00209F; text-decoration:none; font-weight:600;">support@verifyem.ht</a>.
+    </p>
+
+    <p style="margin:14px 0 0; color:#475467;">
+      — BonID Notification System
+    </p>
+  </div>
+</div>

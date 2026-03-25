@@ -1,0 +1,293 @@
+<%# BonTouris Verified Result - matches BonID style %>
+<%= render 'officers/bonid_lookups/photo_modal' %>
+<div class="card border-success" data-result-type="visitor_valid">
+  <div class="card-header bg-success text-white py-2">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <i class="ri-passport-line me-2" style="font-size: 1.25rem;"></i>
+        <span style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.9rem;">
+          BonTouris Verified
+        </span>
+      </div>
+      <span class="badge bg-light text-success">
+        <i class="ri-global-line me-1"></i>Tourist
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <%# Overstay Alert Banner %>
+    <% if visitor.overstay? %>
+      <div class="alert alert-danger mb-3 py-2" style="font-size: 0.85rem;">
+        <div class="d-flex align-items-center">
+          <i class="ri-alarm-warning-fill me-2 fs-5"></i>
+          <div>
+            <strong>OVERSTAY ALERT</strong>
+            <div>This tourist has exceeded their authorized stay by <strong><%= visitor.overstay_days %> day<%= visitor.overstay_days == 1 ? '' : 's' %></strong>.</div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="row">
+      <%# Photo Section - col-4 - Clickable to enlarge %>
+      <div class="col-4 text-center">
+        <% if visitor.selfie.attached? %>
+          <% visitor_name = [visitor.first_name, visitor.last_name].compact.join(" ") %>
+          <%# Note: Visitors (tourists) don't have crime records in the system %>
+          <%= image_tag visitor.selfie.variant(resize_to_limit: [120, 120]),
+                        class: "rounded-circle border border-3",
+                        style: "width: 100px; height: 100px; object-fit: cover; border-color: var(--law-green) !important;",
+                        data: {
+                          photo_enlarge: true,
+                          photo_url: url_for(visitor.selfie.variant(resize_to_limit: [800, 800])),
+                          person_name: visitor_name
+                        },
+                        title: "Click to enlarge photo" %>
+        <% else %>
+          <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto"
+               style="width: 100px; height: 100px; background: #d4edda; border: 3px solid var(--law-green);">
+            <i class="ri-user-line" style="font-size: 2.5rem; color: var(--law-green);"></i>
+          </div>
+        <% end %>
+
+        <div class="mt-2">
+          <span class="badge bg-success">
+            <i class="ri-verified-badge-fill me-1"></i>Verified
+          </span>
+        </div>
+
+        <%# Stay Status Badge %>
+        <% if visitor.expires_at.present? %>
+          <div class="mt-2">
+            <% days = visitor.days_remaining %>
+            <% case visitor.stay_status
+               when :valid %>
+              <span class="badge bg-success">
+                <i class="ri-checkbox-circle-line me-1"></i><%= days %> days remaining
+              </span>
+            <% when :expiring_soon %>
+              <span class="badge bg-warning text-dark">
+                <i class="ri-alarm-warning-line me-1"></i>Expires in <%= days %> day<%= days == 1 ? '' : 's' %>
+              </span>
+            <% when :expires_today %>
+              <span class="badge bg-warning text-dark">
+                <i class="ri-alarm-warning-line me-1"></i>Expires TODAY
+              </span>
+            <% when :overstay %>
+              <span class="badge bg-danger">
+                <i class="ri-error-warning-line me-1"></i>OVERSTAY: <%= visitor.overstay_days %> day<%= visitor.overstay_days == 1 ? '' : 's' %>
+              </span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Identity Info - col-8 %>
+      <div class="col-8">
+        <h5 class="mb-1" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1rem; color: var(--dark-gray);">
+          <%= [visitor.first_name, visitor.middle_name, visitor.last_name].compact.join(" ") %>
+        </h5>
+
+        <div class="mb-2" style="font-size: 0.8rem; color: var(--mid-gray);">
+          <div class="row">
+            <div class="col-6 mb-1">
+              <i class="ri-calendar-line me-1" style="font-weight: 400;"></i>
+              <strong>DOB:</strong> <%= visitor.dob&.strftime("%b %d, %Y") || "N/A" %>
+            </div>
+            <div class="col-6 mb-1">
+              <i class="ri-global-line me-1" style="font-weight: 400;"></i>
+              <strong>Nationality:</strong> <%= visitor.nationality || "N/A" %>
+            </div>
+          </div>
+
+          <div class="mb-1">
+            <i class="ri-passport-line me-1" style="font-weight: 400;"></i>
+            <strong>BonTouris:</strong>
+            <code style="font-size: 0.75rem; background: #d4edda; padding: 2px 6px; border-radius: 4px; color: #155724;">
+              <%= visitor.bonid %>
+            </code>
+          </div>
+
+          <div class="mb-1">
+            <i class="ri-file-text-line me-1" style="font-weight: 400;"></i>
+            <strong>Passport:</strong> <%= visitor.passport_number %>
+          </div>
+        </div>
+
+        <% if visitor.expires_at %>
+          <div class="small" style="color: var(--mid-gray);">
+            <i class="ri-time-line me-1" style="font-weight: 400;"></i>
+            <strong>Expires:</strong> <%= visitor.expires_at.strftime("%b %d, %Y") %>
+            <% if visitor.expires_at > Time.current %>
+              <span class="badge bg-success ms-1">Valid</span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Travel & Entry Details Section %>
+    <div class="border-top mt-3 pt-2">
+      <h6 class="mb-2" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--law-blue);">
+        <i class="ri-flight-takeoff-line me-1" style="font-weight: 400;"></i>
+        Travel & Entry Details
+      </h6>
+      <div class="row" style="font-size: 0.8rem; color: var(--mid-gray);">
+        <%# Entry Mode %>
+        <div class="col-6 mb-1">
+          <i class="ri-plane-line me-1" style="font-weight: 400;"></i>
+          <strong>Entry Mode:</strong>
+          <%= case visitor.entry_mode
+              when "air" then "Air"
+              when "sea" then "Sea"
+              when "land" then "Land"
+              end %>
+        </div>
+
+        <%# Purpose of Visit %>
+        <div class="col-6 mb-1">
+          <i class="ri-suitcase-line me-1" style="font-weight: 400;"></i>
+          <strong>Purpose:</strong> <%= visitor.purpose_of_visit&.titleize %>
+        </div>
+
+        <%# Port of Entry %>
+        <% if visitor.port_of_entry.present? %>
+          <div class="col-6 mb-1">
+            <i class="ri-building-line me-1" style="font-weight: 400;"></i>
+            <strong>Port of Entry:</strong> <%= visitor.port_of_entry %>
+          </div>
+        <% end %>
+
+        <%# Residence Country %>
+        <% if visitor.residence_country.present? %>
+          <div class="col-6 mb-1">
+            <i class="ri-home-4-line me-1" style="font-weight: 400;"></i>
+            <strong>Residence:</strong> <%= visitor.residence_country %>
+          </div>
+        <% end %>
+
+        <%# Transport Provider (Airline/Cruise/etc.) %>
+        <% if visitor.transport_provider.present? %>
+          <div class="col-6 mb-1">
+            <% icon = case visitor.entry_mode
+                       when "air" then "ri-flight-takeoff-line"
+                       when "sea" then "ri-ship-line"
+                       else "ri-bus-line"
+                       end %>
+            <i class="<%= icon %> me-1" style="font-weight: 400;"></i>
+            <strong>Carrier:</strong> <%= visitor.transport_provider %>
+          </div>
+        <% end %>
+
+        <%# Transport Reference (Flight #, etc.) %>
+        <% if visitor.transport_reference.present? %>
+          <div class="col-6 mb-1">
+            <i class="ri-ticket-line me-1" style="font-weight: 400;"></i>
+            <strong>Reference:</strong> <%= visitor.transport_reference %>
+          </div>
+        <% end %>
+
+        <%# Arrival Date %>
+        <% if visitor.arrival_date.present? %>
+          <div class="col-6 mb-1">
+            <i class="ri-calendar-check-line me-1" style="font-weight: 400;"></i>
+            <strong>Arrival:</strong> <%= visitor.arrival_date.strftime("%b %d, %Y") %>
+          </div>
+        <% end %>
+
+        <%# Entry Date (if different from arrival) %>
+        <% if visitor.entry_date.present? && visitor.entry_date != visitor.arrival_date %>
+          <div class="col-6 mb-1">
+            <i class="ri-login-box-line me-1" style="font-weight: 400;"></i>
+            <strong>Entry Date:</strong> <%= visitor.entry_date.strftime("%b %d, %Y") %>
+          </div>
+        <% end %>
+
+        <%# Stay Duration %>
+        <% if visitor.stay_duration_days.present? %>
+          <div class="col-6 mb-1">
+            <i class="ri-time-line me-1" style="font-weight: 400;"></i>
+            <strong>Stay Duration:</strong> <%= visitor.stay_duration_days %> days
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Accommodation & Local Contact - Side by Side %>
+    <% has_accommodation = visitor.accommodation_name.present? || visitor.address.present? || visitor.accommodation_address.present? %>
+    <% has_local_contact = visitor.local_contact.present? %>
+    <% if has_accommodation || has_local_contact %>
+      <div class="border-top mt-3 pt-2">
+        <div class="row">
+          <%# Accommodation - Left Side %>
+          <div class="col-6">
+            <% if has_accommodation %>
+              <h6 class="mb-2" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--law-blue);">
+                <i class="ri-map-pin-line me-1" style="font-weight: 400;"></i>
+                Current Address
+              </h6>
+              <div style="font-size: 0.8rem; color: var(--mid-gray);">
+                <% if visitor.accommodation_name.present? %>
+                  <div class="mb-1">
+                    <strong><%= visitor.accommodation_name %></strong>
+                    <% if visitor.accommodation_type.present? %>
+                      <span class="badge bg-secondary ms-1"><%= visitor.accommodation_type.titleize %></span>
+                    <% end %>
+                  </div>
+                <% end %>
+                <% if visitor.address.present? %>
+                  <div>
+                    <i class="ri-map-pin-line me-1" style="font-weight: 400;"></i>
+                    <%= simple_format(visitor.address.formatted_haiti_display, {}, wrapper_tag: "span") %>
+                  </div>
+                <% elsif visitor.accommodation_address.present? %>
+                  <div>
+                    <i class="ri-map-pin-line me-1" style="font-weight: 400;"></i>
+                    <%= visitor.accommodation_address %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <%# Local Contact - Right Side %>
+          <div class="col-6">
+            <% if has_local_contact %>
+              <h6 class="mb-2" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--law-blue);">
+                <i class="ri-phone-line me-1" style="font-weight: 400;"></i>
+                Emergency Contact
+              </h6>
+              <div style="font-size: 0.8rem; color: var(--mid-gray);">
+                <div class="mb-1"><strong><%= visitor.local_contact.name %></strong></div>
+                <% if visitor.local_contact.phone.present? %>
+                  <div><i class="ri-phone-line me-1"></i><%= visitor.local_contact.phone %></div>
+                <% end %>
+                <% if visitor.local_contact.relationship.present? %>
+                  <div><i class="ri-user-heart-line me-1"></i><%= visitor.local_contact.relationship %></div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Action Buttons %>
+    <div class="border-top mt-3 pt-3">
+      <div class="d-flex gap-2">
+        <%= link_to new_officers_incident_report_path(visitor_submission_id: visitor.id),
+                    class: "btn flex-grow-1 text-white",
+                    style: "background: var(--law-green); font-family: 'Montserrat', sans-serif; font-weight: 500;" do %>
+          <i class="ri-file-add-line me-1"></i>Create Report
+        <% end %>
+
+        <button type="button" class="btn btn-outline-secondary"
+                data-action="click->qr-scanner#rescan"
+                style="font-family: 'Montserrat', sans-serif; font-weight: 500;">
+          <i class="ri-refresh-line me-1"></i>New Scan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

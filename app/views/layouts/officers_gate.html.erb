@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : "POLICE NATIONALE D'HAÏTI | IDPol" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<%# officers_gate layout — no sidebar, no navbar, no two-column grid.
+    Used for gate/onboarding pages (guidelines, etc.) that must render
+    cleanly full-viewport before an officer accesses the main portal. %>
+<body class="officers-layout partner-law-enforcement-layout" style="margin:0;padding:0;min-height:100vh;">
+
+  <%# Flash messages — fixed at top so they appear above the page gradient %>
+  <div id="flash" class="position-fixed start-50 translate-middle-x" style="z-index:1060;width:100%;max-width:560px;top:1.25rem;">
+    <%= render "shared/flash" %>
+  </div>
+
+  <%= yield %>
+
+</body>
+</html>

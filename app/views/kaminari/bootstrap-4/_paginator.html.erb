@@ -1,0 +1,52 @@
+<!-- Your plans row here -->
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-5">
+  <%= paginator.render do %>
+    <% total_pages = paginator.instance_variable_get(:@window_options)[:total_pages] rescue nil %>
+
+    <% if total_pages.to_i > 1 %>
+      <nav aria-label="Plan pagination" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+          <%# --- First / Previous --- %>
+          <% unless current_page.first? %>
+            <li class="page-item">
+              <%= link_to '« First', url_for(page: 1), class: "page-link text-haitian-blue fw-medium", data: { turbo_action: "advance" } %>
+            </li>
+            <li class="page-item">
+              <%= link_to '‹ Prev', url_for(page: current_page - 1), class: "page-link text-haitian-blue fw-medium", data: { turbo_action: "advance" } %>
+            </li>
+          <% end %>
+
+          <%# --- Page Numbers --- %>
+          <% each_page do |page| %>
+            <% if page.display_tag? %>
+              <% if page.current? %>
+                <li class="page-item active">
+                  <span class="page-link bg-haitian-blue text-white fw-semibold"><%= page.number %></span>
+                </li>
+              <% else %>
+                <li class="page-item">
+                  <%= link_to page.number, url_for(page: page.number), class: "page-link text-haitian-blue fw-medium", data: { turbo_action: "advance" } %>
+                </li>
+              <% end %>
+            <% else %>
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            <% end %>
+          <% end %>
+
+          <%# --- Next / Last --- %>
+          <% unless current_page.last? %>
+            <li class="page-item">
+              <%= link_to 'Next ›', url_for(page: current_page + 1), class: "page-link text-haitian-blue fw-medium", data: { turbo_action: "advance" } %>
+            </li>
+            <li class="page-item">
+              <%= link_to 'Last »', url_for(page: total_pages), class: "page-link text-haitian-blue fw-medium", data: { turbo_action: "advance" } %>
+            </li>
+          <% end %>
+        </ul>
+      </nav>
+    <% end %>
+  <% end %>
+
+</div>

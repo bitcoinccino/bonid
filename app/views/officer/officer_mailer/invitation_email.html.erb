@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>You're Invited to Join BonID</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #f5f6f8;
+        font-family: 'Montserrat', 'Segoe UI', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      img {
+        border: 0;
+        outline: none;
+        text-decoration: none;
+        max-height: 60px;
+        height: auto;
+      }
+
+      a {
+        text-decoration: none;
+        color: #0052cc;
+      }
+
+      .email-container {
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background-color: #00209f;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .header img {
+        margin-bottom: 12px;
+        max-height: 60px;
+        height: auto;
+      }
+
+      .header h2 {
+        color: #ffffff;
+        font-size: 20px;
+        font-family: 'Crimson Text', serif;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .content {
+        padding: 32px;
+        color: #333333;
+        font-size: 16px;
+        line-height: 24px;
+      }
+
+      .content p {
+        margin: 0 0 16px;
+      }
+
+      .btn {
+        display: inline-block;
+        background-color: #0052cc;
+        color: #ffffff !important;
+        font-size: 16px;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 6px;
+        text-align: center;
+        margin: 16px 0;
+      }
+
+      .footer {
+        padding: 24px;
+        text-align: center;
+        font-size: 14px;
+        color: #6b7280;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .footer a {
+        color: #6b7280;
+        text-decoration: underline;
+      }
+
+      @media only screen and (max-width: 600px) {
+        body {
+          padding: 16px !important;
+        }
+
+        .content {
+          padding: 24px 16px;
+          font-size: 15px;
+        }
+
+        .btn {
+          display: block;
+          width: 100%;
+          padding: 14px;
+          font-size: 16px;
+        }
+
+        .header h2 {
+          font-size: 18px;
+        }
+
+        .footer {
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <table role="presentation" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding: 24px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" class="email-container">
+            <!-- Header -->
+            <tr>
+              <td class="header">
+                <% if @partner&.logo&.attached? %>
+                  <%= image_tag url_for(@partner.logo), alt: "#{@partner.name} Logo" %>
+                <% end %>
+                <h2>Partner: <%= @partner&.name || "Your Partner" %></h2>
+              </td>
+            </tr>
+
+            <!-- Content -->
+            <tr>
+              <td class="content">
+                <p>Hello <strong><%= @officer&.full_name.presence || "Officer" %></strong>,</p>
+                <p><strong><%= @partner&.name || "Your Partner" %></strong> has invited you to join the BonID Officer Portal. As a verified officer, you’ll be able to submit incident reports, look up BonIDs, and access secure partner features.</p>
+                <p style="text-align: center;">
+                  <%= link_to "Accept Invitation", @invitation_link, class: "btn", target: "_blank", rel: "noopener noreferrer" %>
+                </p>
+                <p>If you weren’t expecting this invitation, you can safely ignore this email.</p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td class="footer">
+                <p>&copy; <%= Date.current.year %> BonID. All rights reserved.</p>
+                <p>
+                  <a href="https://bonid.com/support">Support</a> &nbsp;|&nbsp;
+                  <a href="https://bonid.com/privacy">Privacy Policy</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

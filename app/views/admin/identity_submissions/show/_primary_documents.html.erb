@@ -1,0 +1,95 @@
+<div class="tab-pane fade show active" id="primary-docs" role="tabpanel" aria-labelledby="primary-doc-tab">
+  <div class="row g-4">
+    <% if submission.photo.attached? || submission.selfie.attached? %>
+      <div class="col-12">
+        <h3 class="fw-bold text-haitian-blue mt-2 mb-3 fs-6">Identity Images</h3>
+      </div>
+      <% {
+        "Profile Photo" => :photo,
+        "Selfie" => :selfie
+      }.each do |label, field| %>
+        <% file = submission.send(field) %>
+        <% if file&.attached? %>
+          <% modal_id = "#{label.parameterize}-modal" %>
+          <div class="col-md-4 col-6">
+            <div class="card h-100 rounded-3 border-0 shadow-sm bg-white document-card">
+              <% if file.content_type.start_with?('image/') %>
+                <%= image_tag file.variant(resize_to_limit: [200, 200]),
+                              class: "card-img-top rounded-top-3",
+                              style: "object-fit: cover; height: 150px;",
+                              alt: "#{label} thumbnail" %>
+              <% end %>
+              <div class="card-body text-center p-3">
+                <span class="badge bg-info text-dark mb-2">User Provided</span>
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm rounded-pill w-100 font-heading-semibold fs-button"
+                        data-bs-toggle="modal"
+                        data-bs-target="##{modal_id}"
+                        aria-label="View #{label}">
+                  <%= label %>
+                </button>
+              </div>
+            </div>
+
+            <%= render "admin/identity_submissions/modals/document_modal",
+                       submission: submission,
+                       file: file,
+                       label: label,
+                       modal_id: modal_id %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if submission.cin_front.attached? || submission.cin_back.attached? || submission.passport.attached? %>
+      <div class="col-12 mt-4">
+        <h3 class="fw-bold text-haitian-blue mb-3 fs-6">Government ID</h3>
+      </div>
+      <% {
+        "CIN Front" => :cin_front,
+        "CIN Back"  => :cin_back,
+        "Passport"  => :passport
+      }.each do |label, field| %>
+        <% file = submission.send(field) %>
+        <% if file&.attached? %>
+          <% modal_id = "#{label.parameterize}-modal" %>
+          <div class="col-md-4 col-6">
+            <div class="card h-100 rounded-3 border-0 shadow-sm bg-white document-card">
+              <% if file.content_type.start_with?('image/') %>
+                <%= image_tag file.variant(resize_to_limit: [200, 200]),
+                              class: "card-img-top rounded-top-3",
+                              style: "object-fit: cover; height: 150px;",
+                              alt: "#{label} thumbnail" %>
+              <% else %>
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3"
+                     style="height: 150px;">
+                  <i class="bi bi-filetype-pdf fs-3 text-muted"></i>
+                </div>
+              <% end %>
+              <div class="card-body text-center p-3">
+                <span class="badge bg-primary mb-2">Official ID</span>
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm rounded-pill w-100 font-heading-semibold fs-button"
+                        data-bs-toggle="modal"
+                        data-bs-target="##{modal_id}"
+                        aria-label="View #{label}">
+                  <%= label %>
+                </button>
+              </div>
+            </div>
+
+            <%= render "admin/identity_submissions/modals/document_modal",
+                       submission: submission,
+                       file: file,
+                       label: label,
+                       modal_id: modal_id %>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <% if submission.primary_documents.none? && !submission.photo.attached? && !submission.selfie.attached? %>
+      <p class="text-muted font-body">No primary documents uploaded.</p>
+    <% end %>
+  </div>
+</div>

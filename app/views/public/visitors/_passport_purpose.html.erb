@@ -1,0 +1,152 @@
+<!-- =========================================================
+     Section 3: Passport Information
+========================================================= -->
+<div class="card rounded-4 mb-4 border-2">
+
+  <!-- Header -->
+  <div class="card-header bg-white border-0 pb-0">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+          <i class="ri-passport-line text-haitian-blue"></i>
+          <%= t("bon_touris.forms.passport.section_title") %>
+        </h5>
+        <p class="small text-muted mb-0">
+          <%= t("bon_touris.forms.passport.section_description_html").html_safe %>
+        </p>
+      </div>
+
+      <!-- Scan Passport Button -->
+      <button type="button"
+              class="btn btn-outline-primary btn-sm rounded-pill px-3 bt-touch-target"
+              data-passport-scan-target="scanButton"
+              data-action="passport-scan#openCamera">
+        <i class="ri-camera-line me-1"></i> <%= t("bon_touris.wizard.scan_passport") %>
+      </button>
+    </div>
+  </div>
+
+  <!-- Camera Container (hidden by default) -->
+  <div class="d-none px-3 pt-3" data-passport-scan-target="cameraContainer">
+    <div class="position-relative rounded-3 overflow-hidden bg-dark" style="max-height: 320px;">
+      <video data-passport-scan-target="video"
+             autoplay playsinline muted
+             class="w-100"
+             style="object-fit: cover; max-height: 320px;"></video>
+
+      <div class="position-absolute bottom-0 start-0 end-0 p-3 d-flex justify-content-center gap-2"
+           style="background: linear-gradient(transparent, rgba(0,0,0,0.6));">
+        <button type="button"
+                class="btn btn-light btn-sm rounded-pill px-4 fw-semibold"
+                data-action="passport-scan#capture">
+          <i class="ri-camera-line me-1"></i> <%= t("bon_touris.wizard.capture") %>
+        </button>
+        <button type="button"
+                class="btn btn-outline-light btn-sm rounded-pill px-3"
+                data-action="passport-scan#closeCamera">
+          <%= t("bon_touris.wizard.cancel") %>
+        </button>
+      </div>
+    </div>
+    <p class="small text-muted text-center mt-2 mb-0">
+      <i class="ri-information-line me-1"></i> <%= t("bon_touris.wizard.scan_hint") %>
+    </p>
+  </div>
+
+  <canvas data-passport-scan-target="canvas" class="d-none"></canvas>
+
+  <!-- OCR Status -->
+  <div data-passport-scan-target="statusMessage" class="px-3"></div>
+
+  <!-- Body -->
+  <div class="card-body pt-3">
+    <div class="row g-4">
+
+      <!-- Passport Issuing Country -->
+      <div class="col-md-6">
+        <%= f.label :nationality, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.forms.passport.issuing_country.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :nationality,
+              grouped_options_for_select(grouped_country_options, f.object.nationality),
+              { prompt: t("bon_touris.forms.passport.issuing_country.prompt") },
+              class: "form-select text-uppercase",
+              required: true,
+              data: { passport_scan_target: "nationality" } %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.forms.passport.issuing_country.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.forms.passport.issuing_country.help") %>
+        </div>
+      </div>
+
+      <!-- Passport Number -->
+      <div class="col-md-6">
+        <%= f.label :passport_number, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.forms.passport.number.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.text_field :passport_number,
+              class: "form-control text-uppercase",
+              autocomplete: "off",
+              placeholder: t("bon_touris.forms.passport.number.placeholder"),
+              required: true,
+              data: { passport_scan_target: "passportNumber" } %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.forms.passport.number.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.forms.passport.number.help") %>
+        </div>
+      </div>
+
+      <!-- Passport Expiration Date -->
+      <div class="col-md-6">
+        <%= f.label :passport_expiry_date, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.forms.passport.expiry.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.date_field :passport_expiry_date,
+              class: "form-control",
+              required: true,
+              min: Date.current + 1.day,
+              data: { passport_scan_target: "passportExpiryDate" } %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.forms.passport.expiry.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.forms.passport.expiry.help") %>
+        </div>
+      </div>
+
+      <!-- Passport Photo (for face comparison) -->
+      <div class="col-md-6">
+        <%= f.label :passport, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.documents.passport.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.file_field :passport,
+              class: "form-control",
+              accept: "image/jpeg,image/png",
+              data: { passport_scan_target: "passportPhotoInput" } %>
+
+        <div class="form-text">
+          <%= t("bon_touris.wizard.scan_hint") %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

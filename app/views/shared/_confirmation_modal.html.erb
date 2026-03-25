@@ -1,21 +1,53 @@
-<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalTitle" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content rounded-3 shadow">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="confirmationModalTitle">Confirm</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- ================================
+     GLOBAL CONFIRMATION MODAL
+     Intercepts all data-turbo-confirm dialogs app-wide.
+     Uses --bs-primary so it automatically adapts to each
+     portal's color scope (citizen, law enforcement, etc.)
+================================ -->
+<div class="modal fade bonid-confirmation-modal"
+     id="confirmationModal"
+     tabindex="-1"
+     aria-labelledby="confirmationModalTitle"
+     aria-hidden="true">
+
+  <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+    <div class="modal-content border-0 overflow-hidden bonid-confirm-content">
+
+      <!-- HEADER -->
+      <div class="modal-header border-0 bonid-confirm-header px-4 pt-4 pb-3">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <div class="bonid-confirm-icon-wrap d-flex align-items-center justify-content-center flex-shrink-0">
+            <i class="ri-shield-keyhole-line bonid-confirm-icon"></i>
+          </div>
+          <h6 class="modal-title fw-bold mb-0 bonid-confirm-title" id="confirmationModalTitle">
+            Confirmation requise
+          </h6>
+        </div>
+        <button type="button"
+                class="btn-close btn-close-white ms-2 flex-shrink-0"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <p id="confirmationModalBody">Are you sure?</p>
+
+      <!-- BODY — populated dynamically by Turbo.config.forms.confirm -->
+      <div class="modal-body bonid-confirm-body" id="confirmationModalBody">
+        Êtes-vous sûr de vouloir continuer ?
       </div>
-      <div class="modal-footer">
-        <form id="confirmationModalForm" method="post">
-          <input type="hidden" name="_method" id="confirmationModalMethodInput" value="PATCH">
-          <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-          <button type="submit" class="btn btn-danger">Yes, Confirm</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        </form>
+
+      <!-- FOOTER -->
+      <div class="modal-footer border-0 bonid-confirm-footer gap-2 justify-content-center">
+        <button type="button"
+                class="btn bonid-confirm-cancel-btn fw-semibold rounded-pill"
+                data-bs-dismiss="modal">
+          <i class="ri-close-line me-1"></i> Annuler
+        </button>
+        <button type="button"
+                id="confirmationModalConfirmBtn"
+                class="btn bonid-confirm-btn fw-bold rounded-pill">
+          <i class="ri-check-line me-1"></i> Confirmer
+        </button>
       </div>
+
     </div>
   </div>
 </div>

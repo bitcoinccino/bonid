@@ -1,0 +1,5 @@
+class AddRetryAttemptsToApiWebhookEvents < ActiveRecord::Migration[8.0]
+  def change
+    add_column :api_webhook_events, :retry_attempts, :integer
+  end
+end

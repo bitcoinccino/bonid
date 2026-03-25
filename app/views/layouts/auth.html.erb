@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : "BonID – Access Portal" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+
+<body class="<%= content_for?(:body_class) ? yield(:body_class) : "citizen-auth" %>">
+
+  <% if content_for?(:back_link_path) %>
+    <div class="position-absolute top-0 start-0 mt-4 ms-4 z-3">
+      <%= link_to yield(:back_link_path),
+          class: "btn btn-light rounded-circle shadow-sm back-btn",
+          title: "Back" do %>
+        <i class="ri-arrow-left-line fw-bold text-primary fs-5"></i>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="auth-shell">
+    <!-- LEFT COLUMN -->
+    <aside class="auth-left">
+      <%= yield :auth_left %>
+    </aside>
+
+    <!-- RIGHT COLUMN -->
+    <main class="auth-right">
+      <div class="auth-right-inner">
+
+        <% if content_for?(:auth_logo_url) || content_for?(:portal_name) %>
+          <div class="auth-brand mb-4 text-center">
+            <% if content_for?(:auth_logo_url) %>
+              <img src="<%= yield(:auth_logo_url) %>"
+                   alt="BonID"
+                   class="auth-logo mb-2" />
+            <% end %>
+
+            <div class="auth-portal-name">
+              <%= content_for?(:portal_name) ? yield(:portal_name) : "BonID Portal" %>
+            </div>
+          </div>
+        <% end %>
+
+        <%= yield %>
+      </div>
+    </main>
+  </div>
+
+</body>
+</html>
+
+<style>
+/* AUTH SHELL */
+body.citizen-auth,
+body.partner-admin-auth,
+body.officer-auth,
+body.reviewer-auth,
+body.admin-auth {
+  min-height: 100vh;
+  margin: 0;
+  font-family: "Inter", "Montserrat", sans-serif;
+  background: #f8f9fa;
+}
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  min-height: 100vh;
+}
+
+/* LEFT COLUMN (BLUE) */
+.auth-left {
+  background: linear-gradient(180deg, #00209f 0%, #001b7a 100%);
+  color: #ffffff;
+  padding: 4rem 3.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.auth-left h2,
+.auth-left h3 { color: #ffffff; }
+
+.auth-left p { color: rgba(255, 255, 255, 0.9); }
+
+/* RIGHT COLUMN (FORM) */
+.auth-right {
+  background: #ffffff;
+  padding: 4rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-right-inner {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* Brand header */
+.auth-brand .auth-logo {
+  max-width: 140px;
+  height: auto;
+  display: inline-block;
+}
+
+.auth-brand .auth-portal-name {
+  font-family: "Montserrat", "Inter", sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: .6px;
+  color: #00209f;
+  text-transform: uppercase;
+}
+
+@media (max-width: 991px) {
+  .auth-shell { grid-template-columns: 1fr; }
+  .auth-left { display: none; }
+  .auth-right { padding: 2.5rem 1.5rem; }
+}
+</style>

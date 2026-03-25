@@ -1,0 +1,144 @@
+<% profile_complete = current_citizen.profile_complete? || current_citizen.identity_submissions.approved.exists? %>
+
+<div>
+  <% unless profile_complete %>
+    <div class="alert alert-dismissible fade show alert-warning alert-dismissible fade show rounded-3 mb-3 certificate-font shadow-sm" role="alert">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-error-warning-line fs-5 text-warning"></i>
+        <div>
+          <strong>Complete Your Profile</strong><br>
+          Finish your profile to submit a BonID verification.
+        </div>
+      </div>
+      <%= link_to "Complete Profile",
+                  edit_citizens_profile_path,
+                  class: "btn btn-primary btn-sm rounded-3 mt-2 fw-semibold d-flex align-items-center gap-1",
+                  "aria-label": "Complete your profile" %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+
+  <div class="p-2">
+    <% if @submissions.empty? %>
+      <div class="alert alert-dismissible fade show alert-info text-center py-3 rounded-3 shadow-sm">
+        <h4 class="text-primary mb-2 fw-bold fs-5">Start Your BonID Journey</h4>
+        <p class="text-muted mb-3">No verification submissions yet. Submit your first BonID!</p>
+
+        <% if profile_complete %>
+          <%= link_to "Submit Now",
+                      new_citizens_identity_submission_path,
+                      class: "btn btn-primary btn-sm rounded-3 fw-semibold d-flex align-items-center gap-1 mx-auto",
+                      style: "width: fit-content;",
+                      "aria-label": "Start new verification submission" %>
+        <% else %>
+          <button class="btn btn-secondary btn-sm rounded-3 fw-semibold d-flex align-items-center gap-1 mx-auto"
+                  style="width: fit-content;" disabled>
+            Complete Profile First
+          </button>
+        <% end %>
+      </div>
+    <% else %>
+      <% if @last_submission.present? %>
+        <div class="row g-3">
+          <%= render partial: "dashboard_card", locals: { submission: @last_submission } %>
+          <%= render partial: "qrcode_card", locals: { submission: @last_submission } %>
+        </div>
+
+        <!-- ✅ Unified Linked Financial Profiles -->
+        <div class="card border-0 shadow-sm rounded-3 p-3 mt-4">
+          <%= render "citizens/dashboard/bank_profiles",
+                bank_profiles: current_citizen.bank_profiles if current_citizen.respond_to?(:bank_profiles) %>
+        </div>
+
+        <!-- ✅ Scan history collapse -->
+        <div class="mt-4">
+          <button class="btn btn-outline-primary btn-sm mb-2"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#qrScanHistory"
+                  aria-expanded="false"
+                  aria-controls="qrScanHistory">
+            View Scan History (<%= @last_submission.qr_scan_logs_count %>)
+          </button>
+          <%= render partial: "citizens/identity_submissions/scan_history",
+                    locals: { submission: @last_submission } %>
+        </div>
+
+        <!-- ✅ Q&A collapse -->
+        <div class="mt-4">
+          <button class="btn btn-outline-secondary btn-sm mb-2"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#qnaSection"
+                  aria-expanded="false"
+                  aria-controls="qnaSection">
+            BonID Questions & Answers
+          </button>
+          <%= render partial: "citizens/identity_submissions/bonid_qna" %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @submissions.present? %>
+    <%= render partial: "request_modal",
+               locals: { submission: @submissions.first,
+                         submissions: @submissions,
+                         profile_complete: profile_complete } %>
+  <% end %>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+
+    // Share Functionality
+    document.querySelectorAll('.share-bonid').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const url = button.dataset.url;
+        const title = button.dataset.title;
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: title,
+              text: 'Check out my BonID verification!',
+              url: url
+            });
+          } catch (err) {
+            console.error('Error sharing:', err);
+          }
+        } else {
+          navigator.clipboard.writeText(url).then(() => {
+            alert('BonID URL copied to clipboard!');
+          }).catch(err => console.error('Copy failed:', err));
+        }
+      });
+    });
+
+    // Print Functionality
+    document.querySelectorAll('.print-bonid').forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const url = button.dataset.url;
+        const printWindow = window.open(url, '_blank');
+        if (printWindow) {
+          printWindow.onload = () => printWindow.print();
+        }
+      });
+    });
+
+    // Form Validation
+    document.querySelectorAll('.needs-validation').forEach(form => {
+      form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      }, false);
+    });
+  });
+</script>

@@ -1,0 +1,119 @@
+<!-- app/views/admin/identity_submissions/show/_bank_profiles_table.html.erb -->
+<div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden">
+  <div class="card-header bg-haitian-blue text-white d-flex align-items-center justify-content-between rounded-top-4 py-3 px-4">
+    <div class="d-flex align-items-center">
+      <i class="ri-bank-line fs-5 me-2 text-white"></i>
+      <h6 class="mb-0 fw-semibold">Linked Bank Profiles</h6>
+    </div>
+
+    <% if bank_profiles&.any? %>
+      <% total = bank_profiles.size %>
+      <% verified_count = bank_profiles.count { |b| b.status == "verified" } %>
+      <span class="badge rounded-pill bg-white text-haitian-blue fw-semibold px-3 py-2">
+        <%= total %> total
+        <% if verified_count.positive? %>
+          — <%= verified_count %> verified
+        <% end %>
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body px-4 pb-4 pt-3">
+    <% if bank_profiles&.any? %>
+      <p class="text-muted small mb-4">
+        This section lists all <strong>banking</strong> or <strong>wallet</strong> profiles linked to this citizen’s BonID record.
+        These records help <strong>financial partners</strong> and <strong>regulators</strong> verify ownership and ensure
+        compliance with BRH KYC/AML guidelines.
+      </p>
+
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle mb-0 rounded-3 overflow-hidden">
+          <thead class="table-primary text-white bg-haitian-blue">
+            <tr>
+              <th class="ps-3 py-3">Institution / Wallet</th>
+              <th>Account # / Address</th>
+              <th>Type</th>
+              <th>Provider</th>
+              <th>Status</th>
+              <th>Opened</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% bank_profiles.each do |profile| %>
+              <% elapsed = time_ago_in_words(profile.created_at) rescue nil %>
+              <% short_elapsed =
+                if elapsed
+                  elapsed.gsub("about ", "")
+                         .gsub("less than ", "")
+                         .gsub(" hours", "h")
+                         .gsub(" hour", "h")
+                         .gsub(" minutes", "min")
+                         .gsub(" minute", "min")
+                         .gsub(" seconds", "s")
+                         .gsub(" second", "s")
+                         .gsub(" days", "d")
+                         .gsub(" day", "d")
+                         .gsub(" months", "mo")
+                         .gsub(" month", "mo")
+                         .gsub(" years", "y")
+                         .gsub(" year", "y")
+                end %>
+
+              <tr>
+                <!-- Institution -->
+                <td>
+                  <strong><%= profile.bank_name.presence || profile.wallet_provider.presence || "—" %></strong>
+                  <% if profile.created_at %>
+                    <br>
+                    <small class="text-muted">
+                      <i class="ri-time-line me-1"></i> Added <%= short_elapsed %> ago
+                    </small>
+                  <% end %>
+                </td>
+
+                <!-- Account Number / Wallet Address -->
+                <td>
+                  <code><%= profile.account_number.presence || profile.wallet_address.presence || "N/A" %></code><br>
+                  <small class="text-muted">
+                    <%= profile.wallet_provider.present? ? "Blockchain wallet address" : "Local bank account" %>
+                  </small>
+                </td>
+
+                <!-- Account Type -->
+                <td>
+                  <%= profile.account_type&.titleize || "—" %><br>
+                  <small class="text-muted">Checking / Savings / Wallet</small>
+                </td>
+
+                <!-- Provider -->
+                <td>
+                  <%= profile.wallet_provider.presence || profile.bank_name.presence || "—" %>
+                </td>
+
+                <!-- Status -->
+                <td>
+                  <span class="badge bg-<%= profile.status == "verified" ? "success" : profile.status == "pending" ? "warning text-dark" : "secondary" %> shadow-sm">
+                    <i class="ri-<%= profile.status == "verified" ? "checkbox-circle-line" : profile.status == "pending" ? "time-line" : "close-circle-line" %> me-1"></i>
+                    <%= profile.status.titleize %>
+                  </span>
+                </td>
+
+                <!-- Opened Date -->
+                <td>
+                  <% if profile.created_at.present? %>
+                    <%= profile.created_at.strftime("%b %d, %Y") %>
+                  <% else %>
+                    <span class="text-muted">N/A</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">No linked bank profiles recorded for this user.</p>
+    <% end %>
+  </div>
+</div>

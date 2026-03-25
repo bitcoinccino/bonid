@@ -1,0 +1,57 @@
+<%# ===============================================================
+  BonID — Citizen Verification Record Show Page
+  ---------------------------------------------------------------
+  ✅ Renders correct detail partial per record_type + category
+  ✅ Uses Bootstrap cards + Haitian color accents
+================================================================ %>
+
+<%# BonID — View Verification Record %>
+<%# ===============================================================
+  BonID — Citizen Verification Record Show Page
+  ---------------------------------------------------------------
+  ✅ Dynamically renders correct detail partial based on type + category
+  ✅ Uses Bootstrap card layout with Haitian accent colors
+  ✅ Safe fallback if no matching partial exists
+================================================================ %>
+<%# ===============================================================
+  BonID — Citizen Verification Record Show Page
+  ---------------------------------------------------------------
+  ✅ Dynamically loads details partial from subfolders
+  ✅ Fallback message if not found
+================================================================ %>
+
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold text-primary">
+      <i class="ri-eye-line me-2"></i>
+      View <%= @record.record_type.titleize %> Record
+    </h5>
+
+    <%= link_to citizens_verification_records_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="ri-arrow-go-back-line me-1"></i> Back
+    <% end %>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-4">
+      <% record_type = @record.record_type.to_s.downcase.presence %>
+      <% record_category = @record.category.to_s.downcase.presence %>
+
+      <%
+        specific_partial = "citizens/verification_records/#{record_type}/#{record_type}_#{record_category}_details" if record_type && record_category
+        base_partial     = "citizens/verification_records/#{record_type}/#{record_type}_details" if record_type
+      %>
+
+      <% if record_type.present? && specific_partial && lookup_context.exists?(specific_partial, [], true) %>
+        <%= render partial: specific_partial, locals: { record: @record } %>
+      <% elsif record_type.present? && base_partial && lookup_context.exists?(base_partial, [], true) %>
+        <%= render partial: base_partial, locals: { record: @record } %>
+      <% else %>
+        <div class="alert alert-dismissible fade show alert-warning">
+          <i class="ri-alert-line me-2"></i>
+          No details template found for <strong><%= @record.record_type %></strong> record.
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

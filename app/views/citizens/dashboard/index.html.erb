@@ -1,0 +1,618 @@
+<%# app/views/citizens/dashboard/index.html.erb %>
+<%# Clean Apple Wallet-style BonID Dashboard %>
+
+<%
+  # Widen the dashboard layout for the get-started state to match the submission form width
+  dashboard_class = "citizen-dashboard"
+  dashboard_class += " citizen-dashboard--wide" unless @approved_submission.present? || @submissions&.any?(&:status_pending?)
+%>
+<%= turbo_stream_from "citizen_#{current_citizen.id}_family" %>
+<%= turbo_stream_from "citizen_#{current_citizen.id}_consents" %>
+
+<section class="<%= dashboard_class %>" data-controller="wallet-stack">
+  <% if @approved_submission.present? %>
+    <%# ========== VERIFIED USER - WALLET VIEW ========== %>
+    <% submission = @approved_submission %>
+
+    <%# Dashboard Title %>
+    <div class="mb-4">
+      <h4 class="fw-bold mb-1" style="font-family: 'Montserrat', sans-serif; font-size: 1.15rem; color: var(--primary, #00209F);">
+        <i class="ri-dashboard-line me-2"></i>My BonID Dashboard
+      </h4>
+      <p class="text-muted mb-0" style="font-size: 0.85rem; line-height: 1.5;">
+        View your verified identity card, manage your profile information, and access all BonID services from one place.
+      </p>
+    </div>
+
+    <%# ========== ALERTS — Pending transactions + BonID status ========== %>
+    <%= render "citizens/dashboard/pending_alerts" %>
+
+    <%# ========== WALLET STACK - Interactive Card Stack ========== %>
+    <%
+      has_health = current_citizen.health_profile.present?
+      has_bank = current_citizen.bank_profiles.any?
+      # Only count contacts that have a name (valid contacts)
+      valid_emergency_contacts = current_citizen.emergency_contacts.select { |ec| ec.name.present? }
+      has_emergency = valid_emergency_contacts.any?
+      # Only count social handles that have both platform and handle
+      valid_social_handles = current_citizen.social_handles.select { |sh| sh.platform.present? && sh.handle.present? }
+      has_social = valid_social_handles.any?
+      has_physical = current_citizen.physical_profile.present?
+      profile_cards = [has_health, has_bank, has_emergency, has_social, has_physical].count(true)
+    %>
+
+    <div class="wallet-stack-container">
+      <%# BonID Card - Always visible, can be pushed back %>
+      <div class="wallet-card-wrapper active" data-wallet-stack-target="card" data-card="bonid">
+        <div class="bonid-wallet-card">
+          <div class="wallet-card-header">
+            <div class="wallet-brand">
+              <i class="ri-shield-check-fill"></i>
+              <span>BonID</span>
+            </div>
+            <div class="wallet-status">
+              <span class="status-badge active">
+                <i class="ri-checkbox-circle-fill"></i> Active
+              </span>
+            </div>
+          </div>
+
+          <div class="wallet-card-body">
+            <div class="wallet-photo">
+              <% if current_citizen.photo.attached? %>
+                <%= image_tag url_for(current_citizen.photo),
+                              alt: "Profile photo", class: "photo-img",
+                              style: "width: 120px; height: 120px; object-fit: cover; object-position: center top;" %>
+              <% else %>
+                <div class="photo-placeholder">
+                  <i class="ri-user-3-fill"></i>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="wallet-info">
+              <h2 class="wallet-name">
+                <%= [current_citizen.first_name, current_citizen.last_name].compact.join(" ") %>
+              </h2>
+              <%# Mask BonID: show initials + mask middle + show entity+checksum %>
+              <% bonid_parts = current_citizen.bonid.to_s.split("-") %>
+              <% if bonid_parts.length >= 5 %>
+                <% tail = bonid_parts.last %>
+                <% masked_bonid = "#{bonid_parts.first}-****-*-**-#{tail[0]}****#{tail[-3..]}" %>
+              <% else %>
+                <% masked_bonid = current_citizen.bonid %>
+              <% end %>
+              <p class="wallet-bonid"><%= masked_bonid %></p>
+            </div>
+          </div>
+
+          <%# Signature Section %>
+          <% if submission.signature.attached? %>
+            <div class="wallet-signature-section">
+              <%= image_tag submission.signature, alt: "Signature", class: "signature-image" %>
+            </div>
+          <% end %>
+
+          <%# QR Code Button - Opens Modal %>
+          <div class="wallet-qr-action">
+            <button type="button"
+                    class="view-qr-btn"
+                    data-bs-toggle="modal"
+                    data-bs-target="#qrCodeModal_<%= submission.id %>">
+              <i class="ri-qr-code-line"></i>
+              <span>View QR Code</span>
+            </button>
+          </div>
+
+          <div class="wallet-card-footer">
+            <div class="footer-item">
+              <span class="footer-label">Issued</span>
+              <span class="footer-value"><%= submission.updated_at.strftime("%b %d, %Y") %></span>
+            </div>
+            <div class="footer-item">
+              <span class="footer-label">Expires</span>
+              <span class="footer-value"><%= submission.expires_at&.strftime("%b %d, %Y") || "N/A" %></span>
+            </div>
+            <div class="footer-item">
+              <span class="footer-label">Type</span>
+              <span class="footer-value"><%= submission.submission_type&.humanize || "Initial" %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Health Card - Always show (with empty state if no profile) %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="health">
+          <div class="profile-detail-card health-card">
+            <div class="detail-card-header">
+              <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <div class="detail-card-icon">
+                <i class="ri-heart-pulse-fill"></i>
+              </div>
+              <h5>Health</h5>
+              <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#healthModal">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </div>
+            <div class="detail-card-body">
+              <% hp = current_citizen.health_profile if has_health %>
+              <% health_has_data = hp && (hp.blood_type.present? || hp.allergies_list.any? || hp.chronic_conditions_list.any? || hp.medications_list.any?) %>
+              <% if health_has_data %>
+                <div class="detail-row">
+                  <span class="detail-label">Blood Type</span>
+                  <span class="detail-value"><%= hp.blood_type&.upcase || "—" %></span>
+                </div>
+                <% if hp.allergies_list.any? %>
+                  <div class="detail-row">
+                    <span class="detail-label">Allergies</span>
+                    <span class="detail-value"><%= hp.allergies_list.join(", ") %></span>
+                  </div>
+                <% end %>
+                <% if hp.chronic_conditions_list.any? %>
+                  <div class="detail-row">
+                    <span class="detail-label">Conditions</span>
+                    <span class="detail-value"><%= hp.chronic_conditions_list.join(", ") %></span>
+                  </div>
+                <% end %>
+                <% if hp.medications_list.any? %>
+                  <div class="detail-row">
+                    <span class="detail-label">Medications</span>
+                    <span class="detail-value"><%= hp.medications_list.join(", ") %></span>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center text-muted py-4">
+                  <i class="ri-heart-pulse-line ri-2x mb-2 d-block opacity-50"></i>
+                  <p class="mb-2">No health info added yet</p>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#healthModal">
+                    <i class="ri-add-line me-1"></i> Add Health
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="stack-tab health-bg" data-action="click->wallet-stack#showCard" data-card-type="health"></div>
+        </div>
+
+      <%# Bank Card - Always show (with empty state if no profiles) %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="bank">
+          <div class="profile-detail-card bank-card">
+            <div class="detail-card-header">
+              <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <div class="detail-card-icon">
+                <i class="ri-bank-fill"></i>
+              </div>
+              <h5>Financial</h5>
+              <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#bankModal">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </div>
+            <div class="detail-card-body">
+              <% bank_profiles_list = current_citizen.bank_profiles.select { |bp| bp.account_source.present? && (bp.bank_name.present? || bp.wallet_provider.present? || bp.wallet_address.present? || bp.account_number.present?) } %>
+              <% if bank_profiles_list.any? %>
+                <% bank_profiles_list.each do |bp| %>
+                  <div class="bank-account-item">
+                    <div class="bank-icon">
+                      <% if bp.account_source == "bank" %>
+                        <i class="ri-bank-line"></i>
+                      <% elsif bp.account_source == "mobile_wallet" %>
+                        <i class="ri-smartphone-line"></i>
+                      <% elsif bp.account_source == "crypto_wallet" %>
+                        <i class="ri-bit-coin-line"></i>
+                      <% else %>
+                        <i class="ri-question-line"></i>
+                      <% end %>
+                    </div>
+                    <div class="bank-info">
+                      <% if bp.account_source == "bank" %>
+                        <span class="bank-name"><%= bp.bank_name.presence || "Bank Account" %></span>
+                        <%# Mask account number - show only last 4 characters %>
+                        <% masked_acct = bp.account_number.present? ? "••••••" + bp.account_number.gsub(/[^0-9A-Za-z]/, "").last(4).to_s : "" %>
+                        <span class="bank-details">
+                          <%= bp.account_type&.titleize %> • <%= bp.currency&.upcase %>
+                          <% if masked_acct.present? %>
+                            <span class="font-monospace ms-1"><%= masked_acct %></span>
+                          <% end %>
+                        </span>
+                      <% elsif bp.account_source == "mobile_wallet" %>
+                        <span class="bank-name"><%= bp.wallet_provider.presence&.titleize || "Mobile Wallet" %></span>
+                        <%# Mask phone - show only last 4 digits %>
+                        <% masked_phone = bp.wallet_address.present? ? "••••••" + bp.wallet_address.gsub(/[^0-9]/, "").last(4).to_s : "" %>
+                        <span class="bank-details">
+                          <%= bp.currency&.upcase %>
+                          <% if masked_phone.present? %>
+                            <span class="font-monospace ms-1"><%= masked_phone %></span>
+                          <% end %>
+                        </span>
+                      <% elsif bp.account_source == "crypto_wallet" %>
+                        <span class="bank-name"><%= bp.wallet_provider.presence&.titleize || "Crypto Wallet" %></span>
+                        <%# Mask wallet address - show first 4 and last 4 characters %>
+                        <% addr = bp.wallet_address.to_s %>
+                        <% masked_addr = addr.length > 8 ? "#{addr.first(4)}...#{addr.last(4)}" : addr %>
+                        <span class="bank-details">
+                          <%= bp.chain&.titleize %> • <%= bp.currency&.upcase %>
+                          <% if masked_addr.present? %>
+                            <span class="font-monospace ms-1"><%= masked_addr %></span>
+                          <% end %>
+                        </span>
+                      <% else %>
+                        <span class="bank-name">Unknown Account Type</span>
+                        <span class="bank-details">Source: <%= bp.account_source.inspect %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center text-muted py-4">
+                  <i class="ri-bank-line ri-2x mb-2 d-block opacity-50"></i>
+                  <p class="mb-2">No financial accounts added yet</p>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#bankModal">
+                    <i class="ri-add-line me-1"></i> Add Account
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="stack-tab bank-bg" data-action="click->wallet-stack#showCard" data-card-type="bank"></div>
+        </div>
+
+      <%# Emergency Card - Always show (with empty state if no contacts) %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="emergency">
+          <div class="profile-detail-card emergency-card">
+            <div class="detail-card-header">
+              <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <div class="detail-card-icon">
+                <i class="ri-contacts-book-fill"></i>
+              </div>
+              <h5>Emergency Contacts</h5>
+              <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#emergencyModal">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </div>
+            <div class="detail-card-body">
+              <% if valid_emergency_contacts.any? %>
+                <% valid_emergency_contacts.each do |ec| %>
+                  <div class="contact-item">
+                    <div class="contact-avatar">
+                      <% if ec.bonid_photo %>
+                        <%= image_tag ec.bonid_photo, class: "rounded-circle", style: "width: 100%; height: 100%; object-fit: cover;" %>
+                      <% elsif ec.bonid.present? %>
+                        <i class="ri-shield-check-fill"></i>
+                      <% else %>
+                        <i class="ri-user-line"></i>
+                      <% end %>
+                    </div>
+                    <div class="contact-info">
+                      <span class="contact-name"><%= ec.name %></span>
+                      <span class="contact-details">
+                        <%= ec.relation&.titleize || "Contact" %>
+                        <% if ec.phone.present? %> • <%= ec.phone %><% end %>
+                      </span>
+                    </div>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center text-muted py-4">
+                  <i class="ri-contacts-book-line ri-2x mb-2 d-block opacity-50"></i>
+                  <p class="mb-2">No emergency contacts added yet</p>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#emergencyModal">
+                    <i class="ri-add-line me-1"></i> Add Contact
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="stack-tab emergency-bg" data-action="click->wallet-stack#showCard" data-card-type="emergency"></div>
+        </div>
+
+      <%# Family Card - Optional (parents, guardians) %>
+        <% valid_family = current_citizen.family_members.select { |fm| fm.first_name.present? } %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="family">
+          <div class="profile-detail-card family-card">
+            <div class="detail-card-header">
+              <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <div class="detail-card-icon">
+                <i class="ri-parent-fill"></i>
+              </div>
+              <h5>Fanmi</h5>
+              <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#familyModal">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </div>
+            <div class="detail-card-body">
+              <% if valid_family.any? %>
+                <% valid_family.each do |fm| %>
+                  <%= render "citizens/dashboard/family_member_item", fm: fm %>
+                <% end %>
+              <% else %>
+                <div class="text-center text-muted py-4">
+                  <i class="ri-parent-line ri-2x mb-2 d-block opacity-50"></i>
+                  <p class="mb-2">Pa gen enfòmasyon fanmi ankò</p>
+                  <small class="d-block mb-3 px-3">Opsyonèl — ajoute manman oswa papa ou pou sèvis sivil (sètifika nesans, tè, eritaj)</small>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#familyModal">
+                    <i class="ri-add-line me-1"></i> Ajoute Fanmi
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="stack-tab family-bg" data-action="click->wallet-stack#showCard" data-card-type="family"></div>
+        </div>
+
+      <%# Social Card - Always show (with empty state if no handles) %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="social">
+          <div class="profile-detail-card social-card">
+            <div class="detail-card-header">
+              <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <div class="detail-card-icon">
+                <i class="ri-share-fill"></i>
+              </div>
+              <h5>Social</h5>
+              <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#socialModal">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </div>
+            <div class="detail-card-body">
+              <% if valid_social_handles.any? %>
+                <% valid_social_handles.each do |sh| %>
+                  <div class="social-item">
+                    <div class="social-icon">
+                      <i class="ri-<%= sh.platform&.downcase %>-fill"></i>
+                    </div>
+                    <div class="social-info">
+                      <span class="social-platform"><%= sh.platform&.titleize %></span>
+                      <span class="social-handle">@<%= sh.handle %></span>
+                    </div>
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="text-center text-muted py-4">
+                  <i class="ri-share-line ri-2x mb-2 d-block opacity-50"></i>
+                  <p class="mb-2">No social profiles added yet</p>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#socialModal">
+                    <i class="ri-add-line me-1"></i> Add Profile
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="stack-tab social-bg" data-action="click->wallet-stack#showCard" data-card-type="social"></div>
+        </div>
+
+      <%# Physical Card - Always show (with empty state if no profile) %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="physical">
+          <div class="profile-detail-card physical-card">
+            <div class="detail-card-header">
+              <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
+                <i class="ri-arrow-left-line"></i>
+              </button>
+              <div class="detail-card-icon">
+                <i class="ri-body-scan-fill"></i>
+              </div>
+              <h5>Physical</h5>
+              <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#physicalModal">
+                <i class="ri-pencil-line"></i>
+              </button>
+            </div>
+            <div class="detail-card-body">
+              <% pp = current_citizen.physical_profile if has_physical %>
+              <% physical_has_data = pp && (pp.height_cm.present? || pp.weight_kg.present? || pp.eye_color.present? || pp.hair_color.present?) %>
+              <% if physical_has_data %>
+                <div class="detail-row">
+                  <span class="detail-label">Height</span>
+                  <span class="detail-value"><%= pp.height_cm.present? ? "#{pp.height_cm} cm" : "—" %></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Weight</span>
+                  <span class="detail-value"><%= pp.weight_kg.present? ? "#{pp.weight_kg} kg" : "—" %></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Eye Color</span>
+                  <span class="detail-value"><%= pp.eye_color&.titleize || "—" %></span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Hair Color</span>
+                  <span class="detail-value"><%= pp.hair_color&.titleize || "—" %></span>
+                </div>
+              <% else %>
+                <div class="text-center text-muted py-4">
+                  <i class="ri-body-scan-line ri-2x mb-2 d-block opacity-50"></i>
+                  <p class="mb-2">No physical info added yet</p>
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#physicalModal">
+                    <i class="ri-add-line me-1"></i> Add Physical
+                  </button>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <div class="stack-tab physical-bg" data-action="click->wallet-stack#showCard" data-card-type="physical"></div>
+        </div>
+    </div>
+
+    <%# View Certificate Button %>
+    <div class="certificate-action">
+      <%= link_to verified_profile_citizens_identity_submission_path(submission.public_token),
+                  class: "certificate-btn" do %>
+        <i class="ri-award-line"></i> View Certificate
+      <% end %>
+    </div>
+
+  <% elsif (pending = @submissions.find(&:status_pending?)) %>
+    <%# ========== PENDING VERIFICATION ========== %>
+
+    <div class="pending-container">
+      <div class="pending-card">
+        <div class="pending-icon">
+          <i class="ri-time-line"></i>
+        </div>
+        <h3>Verification in Progress</h3>
+        <p>Submitted on <%= pending.created_at.strftime("%B %d, %Y") %></p>
+        <p class="pending-note">We'll notify you by email when your BonID is ready.</p>
+      </div>
+    </div>
+
+  <% elsif (rejected = @submissions.find(&:status_rejected?)) %>
+    <%# ========== SUBMISSION REJECTED ========== %>
+
+    <div class="rejected-container">
+      <div class="rejected-card">
+        <div class="rejected-icon">
+          <i class="ri-close-circle-line"></i>
+        </div>
+        <h3>Submission Rejected</h3>
+        <p>Your BonID submission was not approved. Please review the reason below and resubmit.</p>
+
+        <% if rejected.rejection_reason.present? || rejected.other_reason.present? %>
+          <div class="rejected-reason">
+            <div class="reason-label">
+              <i class="ri-information-line me-1"></i> Reason
+            </div>
+            <div class="reason-text">
+              <%= rejected.rejection_reason&.humanize || "Not specified" %>
+              <% if rejected.other_reason.present? %>
+                <br><%= rejected.other_reason %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <div class="rejected-actions">
+          <%= link_to new_citizens_identity_submission_path(resubmission_from: rejected.public_token),
+                      class: "gs-cta-btn" do %>
+            <i class="ri-refresh-line me-1"></i> Resubmit
+          <% end %>
+        </div>
+
+        <p class="rejected-note">
+          <i class="ri-mail-line me-1"></i>
+          A detailed email was also sent to your inbox.
+        </p>
+      </div>
+    </div>
+
+  <% else %>
+    <%# ========== NO BONID YET — Single unified card ========== %>
+    <div class="get-started-container">
+      <div class="get-started-card">
+
+        <%# Hero section %>
+        <div class="gs-hero">
+          <div class="get-started-icon">
+            <i class="ri-shield-check-line"></i>
+          </div>
+          <h3>Get Your BonID</h3>
+          <p>Your private digital identity accepted at banks, hospitals, embassies, and services across Haiti.</p>
+          <% if current_citizen.profile_complete? %>
+            <%= link_to new_citizens_identity_submission_path,
+                        class: "gs-cta-btn" do %>
+              <i class="ri-send-plane-line me-1"></i> Get Started
+            <% end %>
+          <% else %>
+            <%= link_to edit_citizens_profile_path,
+                        class: "gs-cta-btn" do %>
+              <i class="ri-edit-line me-1"></i> Complete Profile
+            <% end %>
+          <% end %>
+        </div>
+
+        <div class="gs-divider"></div>
+
+        <%# Two-column layout: What You'll Need + How It Works %>
+        <div class="gs-columns">
+          <%# What You'll Need %>
+          <div class="gs-section">
+            <h5 class="gs-section-title">
+              <i class="ri-file-list-3-line"></i> What You'll Need
+            </h5>
+            <% [
+              { icon: "ri-mail-line",      label: "Email address",        detail: "For account verification and OTP login" },
+              { icon: "ri-id-card-line",    label: "CIN or Passport",     detail: "Front and back of your national ID or passport" },
+              { icon: "ri-camera-line",     label: "Clear selfie",        detail: "A recent photo for face verification" },
+              { icon: "ri-file-text-line",  label: "Supporting document", detail: "Proof of address or utility bill" }
+            ].each do |req| %>
+              <div class="gs-row">
+                <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
+                <div class="gs-row-text">
+                  <span class="gs-row-label"><%= req[:label] %></span>
+                  <span class="gs-row-detail"><%= req[:detail] %></span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <%# How It Works %>
+          <div class="gs-section">
+            <h5 class="gs-section-title">
+              <i class="ri-route-line"></i> How It Works
+            </h5>
+            <% [
+              { step: "1", label: "Complete your profile",    detail: "Fill in personal details and upload documents." },
+              { step: "2", label: "Submit for verification",  detail: "A BonID reviewer verifies your identity." },
+              { step: "3", label: "Receive your BonID",       detail: "Get your digital ID with a secure QR code." }
+            ].each do |s| %>
+              <div class="gs-row">
+                <div class="gs-step-num"><%= s[:step] %></div>
+                <div class="gs-row-text">
+                  <span class="gs-row-label"><%= s[:label] %></span>
+                  <span class="gs-row-detail"><%= s[:detail] %></span>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="gs-divider"></div>
+
+        <%# Why BonID? — 4-column on wide layout %>
+        <div class="gs-section">
+          <h5 class="gs-section-title">
+            <i class="ri-star-line"></i> Why BonID?
+          </h5>
+          <div class="gs-advantage-grid">
+            <% [
+              { icon: "ri-qr-code-line",  title: "QR Sharing",    desc: "Share only what's needed via encrypted, time-limited QR." },
+              { icon: "ri-eye-line",       title: "Full Control",  desc: "See when and where your BonID was scanned." },
+              { icon: "ri-lock-2-line",    title: "Private",       desc: "Data encrypted, never shared without consent." },
+              { icon: "ri-global-line",    title: "Works Offline", desc: "Reliable on slow networks, built for Haiti." }
+            ].each do |adv| %>
+              <div class="gs-advantage">
+                <i class="<%= adv[:icon] %>"></i>
+                <span class="gs-adv-title"><%= adv[:title] %></span>
+                <span class="gs-adv-desc"><%= adv[:desc] %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  <% end %>
+
+  <%# QR Code Modal %>
+  <% if @approved_submission.present? %>
+    <%= render "citizens/identity_submissions/qrcode_modal", submission: @approved_submission %>
+  <% end %>
+
+  <%# Profile Modals %>
+  <%= render "citizens/dashboard/health_modal" %>
+  <%= render "citizens/dashboard/physical_modal" %>
+  <%= render "citizens/dashboard/family_modal" %>
+  <%= render "citizens/dashboard/emergency_contacts_modal" %>
+  <%= render "citizens/dashboard/bank_profiles_modal" %>
+  <%= render "citizens/dashboard/social_handles_modal" %>
+  <% if @approved_submission.present? %>
+    <%= render "citizens/identity_submissions/request_modal",
+                profile_complete: @profile_complete,
+                submissions: @submissions %>
+  <% end %>
+</section>

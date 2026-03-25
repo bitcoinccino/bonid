@@ -1,0 +1,211 @@
+// ─── Face Liveness Detector ───
+// Styles for the AWS Amplify FaceLivenessDetector component.
+// IMPORTANT: Do NOT override Amplify's internal layout (position, overflow,
+// border-radius on camera-module, etc.). The ThemeProvider in liveness.jsx
+// handles colors. Only style OUR containers and text colors here.
+
+.liveness-wrapper {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 0.5rem;
+}
+
+// Section header
+.liveness-header {
+  text-align: center;
+  padding: 0.25rem 0 1rem;
+
+  .liveness-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e6eaf5 0%, #d0d8f0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.65rem;
+
+    i {
+      font-size: 1.35rem;
+      color: #00209F;
+    }
+  }
+
+  .liveness-header-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #1a1a2e;
+    margin-bottom: 0.2rem;
+  }
+
+  .liveness-header-subtitle {
+    font-size: 0.82rem;
+    color: #888;
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+.liveness-mount-point {
+  min-height: 380px;
+  border-radius: 0.85rem;
+  background: #fafbff;
+  border: 1px solid #e8ecf4;
+
+  // In dark mode contexts, transparent background.
+  // Height is set by the dark wrapper's own CSS (e.g. _transaction_consents.scss).
+  .consent-liveness-dark &,
+  .bonid-liveness-dark & {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+.liveness-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  font-size: 0.72rem;
+  color: #a0a4b8;
+  letter-spacing: 0.02em;
+
+  i {
+    font-size: 0.82rem;
+    color: #00209F;
+  }
+}
+
+// ─── "Get Ready" Pre-Check Screen ───
+
+.bonid-get-ready {
+  // Tip cards hover effect — light mode
+  > div > div:hover {
+    border-color: #d0d8f0 !important;
+    background: #f0f4ff !important;
+  }
+
+  // Dark mode hover — keep dark background so white text stays visible
+  .consent-liveness-dark &,
+  .bonid-liveness-dark & {
+    > div > div:hover {
+      border-color: rgba(255, 255, 255, 0.15) !important;
+      background: rgba(255, 255, 255, 0.1) !important;
+    }
+  }
+}
+
+// ─── Amplify Detector Reset Fix ───
+// Only fix the ONE thing our global reset breaks: canvas max-width.
+// Everything else, let Amplify handle via its own CSS.
+[data-amplify-liveness-detector] canvas,
+[data-amplify-liveness-detector] svg,
+[data-amplify-liveness-detector] video {
+  max-width: none;
+}
+
+// ─── Amplify Overrides — COLORS/FONTS ONLY ───
+
+// "Start video check" button — color only
+.amplify-button--primary,
+[data-amplify-liveness-detector] .amplify-button--primary {
+  background-color: #00209F !important;
+  font-weight: 600 !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+// Body text font
+[data-amplify-liveness-detector] .amplify-text {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+// Cancel/close link color
+[data-amplify-liveness-detector] .amplify-button--link {
+  color: #00209F !important;
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+// Recording icon / indicator
+.amplify-liveness-recording-icon {
+  background-color: #e63946 !important;
+}
+
+// ─── Liveness Status Messages ───
+
+.liveness-status {
+  .text-success {
+    color: #198754 !important;
+  }
+  .text-danger {
+    color: #dc3545 !important;
+  }
+}
+
+// ─── Mobile Responsive ───
+
+@media (max-width: 768px) {
+  .liveness-wrapper {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .liveness-header {
+    padding: 0 0 0.75rem;
+
+    .liveness-header-icon {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 0.5rem;
+
+      i { font-size: 1.15rem; }
+    }
+
+    .liveness-header-title {
+      font-size: 0.95rem;
+    }
+
+    .liveness-header-subtitle {
+      font-size: 0.78rem;
+    }
+  }
+
+  .liveness-mount-point {
+    min-height: 300px;
+    border: none;
+    background: transparent;
+  }
+
+  .liveness-footer {
+    margin-top: 0.6rem;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .liveness-header {
+    .liveness-header-icon {
+      width: 36px;
+      height: 36px;
+      i { font-size: 1rem; }
+    }
+    .liveness-header-title { font-size: 0.9rem; }
+    .liveness-header-subtitle { font-size: 0.75rem; }
+  }
+
+  .liveness-mount-point {
+    min-height: 260px;
+  }
+
+  .liveness-footer {
+    font-size: 0.68rem;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+
+    i {
+      font-size: 0.78rem;
+    }
+  }
+}

@@ -1,0 +1,52 @@
+<%# Confirmation modal for Critical Incident toggle %>
+<div class="modal fade" id="criticalAlertModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: 2px solid var(--law-red); border-radius: var(--radius-md, 0.75rem); overflow: hidden;">
+      <div class="modal-header py-2" style="background: var(--law-red); color: #fff; border: none;">
+        <h6 class="modal-title fw-bold mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem;">
+          <i class="ri-alarm-warning-line me-2"></i>
+          <%= @partner.critical_incident_active? ? "Deactivate" : "Activate" %> Critical Incident Mode
+        </h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.6rem;"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">
+          <% if @partner.critical_incident_active? %>
+            This will deactivate the critical incident alert for all portal admins.
+          <% else %>
+            This will activate a red alert banner visible to all portal admins.
+            Use only for genuine emergencies.
+          <% end %>
+        </p>
+        <% unless @partner.critical_incident_active? %>
+          <div class="mb-0">
+            <label class="form-label small fw-semibold" for="criticalAlertMessage"
+                   style="font-size: 0.75rem; color: var(--dark-gray);">
+              Alert Message (optional)
+            </label>
+            <input type="text"
+                   class="form-control form-control-sm"
+                   id="criticalAlertMessage"
+                   placeholder="e.g., Mass casualty event — Cité Soleil"
+                   maxlength="200"
+                   style="font-size: 0.8rem; border-color: rgba(9,44,115,0.15);">
+          </div>
+        <% end %>
+      </div>
+      <div class="modal-footer py-2" style="border-top: 1px solid rgba(9,44,115,0.08);">
+        <button type="button" class="btn btn-sm"
+                data-bs-dismiss="modal"
+                style="border: 1px solid rgba(9,44,115,0.15); color: var(--mid-gray); font-size: 0.75rem;">
+          Cancel
+        </button>
+        <button type="button"
+                class="btn btn-sm"
+                style="background: var(--law-red); color: #fff; font-size: 0.75rem;"
+                data-action="click->critical-alert#confirmToggle">
+          <i class="ri-alarm-warning-line me-1"></i>
+          <%= @partner.critical_incident_active? ? "Deactivate" : "Activate" %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

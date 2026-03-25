@@ -1,0 +1,87 @@
+<!-- app/views/admin/identity_submissions/show/_admin_actions_mobile.html.erb -->
+
+<div class="d-lg-none mt-4">
+  <div class="accordion" id="adminActionsAccordion">
+    <div class="accordion-item rounded-3 border-0 bg-white shadow-sm">
+      <h2 class="accordion-header" id="adminActionsHeading">
+        <button class="accordion-button fw-semibold text-primary d-flex align-items-center gap-2"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#adminActionsCollapse"
+                aria-expanded="true"
+                aria-controls="adminActionsCollapse">
+          <i class="ri-shield-user-line fs-5"></i>
+          Admin Actions
+        </button>
+      </h2>
+
+      <div id="adminActionsCollapse"
+           class="accordion-collapse collapse show"
+           aria-labelledby="adminActionsHeading">
+        <div class="accordion-body p-4">
+          <p class="small text-muted mb-3">
+            Use these options to approve, reject, or move this submission to the appropriate review bin.
+            Actions are context-aware and vary depending on the submission’s status.
+          </p>
+
+          <div class="d-flex flex-column gap-3">
+            <%# === Move to BonBin / BadBin === %>
+            <% if submission.status_pending? || submission.rejection_reason == "bad_bin" %>
+              <%= button_to admin_identity_submission_approve_bin_path(submission.uuid),
+                            method: :patch,
+                            class: "btn btn-outline-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2",
+                            data: { turbo: false, bs_toggle: "tooltip", bs_placement: "top", bs_title: "Move to BonBin for bulk approval" } do %>
+                <i class="ri-checkbox-circle-line"></i>
+                Move to BonBin
+              <% end %>
+
+              <button class="btn btn-outline-danger rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#badBinModal"
+                      aria-label="Move to BadBin">
+                <i class="ri-delete-bin-5-line"></i>
+                Move to BadBin
+              </button>
+            <% end %>
+
+            <%# === Reset Request Flow === %>
+            <% if submission.reset_requested? && submission.reset_request_status.blank? %>
+              <%= button_to approve_reset_admin_identity_submission_path(submission.uuid),
+                            method: :patch,
+                            class: "btn btn-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2",
+                            data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "Approve reset request" } do %>
+                <i class="ri-refresh-line"></i>
+                Approve Reset
+              <% end %>
+
+              <button class="btn btn-danger rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#rejectResetModal"
+                      aria-label="Reject Reset">
+                <i class="ri-close-circle-line"></i>
+                Reject Reset
+              </button>
+            <% elsif submission.status_pending? %>
+              <%# === Standard Pending Approval Flow === %>
+              <%= button_to admin_identity_submission_path(submission.uuid, approve: true),
+                            method: :patch,
+                            class: "btn btn-success rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2",
+                            data: { bs_toggle: "tooltip", bs_placement: "top", bs_title: "Approve submission" } do %>
+                <i class="ri-checkbox-circle-line"></i>
+                Approve
+              <% end %>
+
+              <button class="btn btn-danger rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2"
+                      data-bs-toggle="modal"
+                      data-bs-target="#rejectModal"
+                      aria-label="Reject Submission">
+                <i class="ri-close-circle-line"></i>
+                Reject
+              </button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

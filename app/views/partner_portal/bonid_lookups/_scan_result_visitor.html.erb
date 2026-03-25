@@ -1,0 +1,413 @@
+<%# BonTouris Verified Result — Partner Portal Identity Profile Card %>
+<%= render 'partner_portal/bonid_lookups/photo_modal' %>
+
+<% visitor_name = [visitor.first_name, visitor.middle_name, visitor.last_name].compact.join(" ") %>
+<% is_overstay = visitor.respond_to?(:overstay?) && visitor.overstay? %>
+
+<div class="verified-profile-card" data-result-type="visitor_valid">
+  <%# ── Verified Banner ── %>
+  <div class="verified-banner<%= ' verified-banner--alert' if is_overstay %>">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="verified-icon-circle<%= ' verified-icon-circle--alert' if is_overstay %>">
+          <i class="<%= is_overstay ? 'ri-alarm-warning-fill' : 'ri-passport-fill' %>"></i>
+        </div>
+        <div>
+          <div class="verified-title<%= ' verified-title--alert' if is_overstay %>">
+            <%= is_overstay ? "OVERSTAY ALERT" : "BonTouris Verified" %>
+          </div>
+          <div class="verified-subtitle<%= ' verified-subtitle--alert' if is_overstay %>">
+            <%= is_overstay ? "Tourist has exceeded authorized stay by #{visitor.overstay_days} day#{'s' if visitor.overstay_days != 1}" : "Tourist identity authenticated" %>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="tourist-type-badge">
+          <i class="ri-global-line me-1"></i>Tourist
+        </span>
+        <% unless is_overstay %>
+          <div class="verified-checkmark">
+            <i class="ri-checkbox-circle-fill"></i>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Identity Card ── %>
+  <div class="identity-body">
+    <%# Photo + Name Header %>
+    <div class="identity-header">
+      <div class="identity-photo-wrapper">
+        <% if visitor.selfie.attached? %>
+          <%= image_tag visitor.selfie.variant(resize_to_limit: [160, 160]),
+                        class: "identity-photo",
+                        data: {
+                          photo_enlarge: true,
+                          photo_url: url_for(visitor.selfie.variant(resize_to_limit: [800, 800])),
+                          person_name: visitor_name
+                        },
+                        title: "Click to enlarge photo" %>
+        <% else %>
+          <div class="identity-photo-placeholder">
+            <i class="ri-user-line"></i>
+          </div>
+        <% end %>
+        <div class="photo-verified-dot" title="Photo verified">
+          <i class="ri-check-line"></i>
+        </div>
+      </div>
+
+      <div class="identity-name-block">
+        <h4 class="identity-name"><%= visitor_name %></h4>
+        <div class="identity-bonid-row">
+          <code class="bonid-code bonid-code--tourist"><%= mask_bonid(visitor.bonid) %></code>
+          <span class="badge-verified"><i class="ri-verified-badge-fill me-1"></i>Verified</span>
+        </div>
+        <%# Stay Status Badge (inline with name) %>
+        <% if visitor.expires_at.present? %>
+          <div class="mt-1">
+            <% days = visitor.days_remaining %>
+            <% case visitor.stay_status
+               when :valid %>
+              <span class="status-pill status-valid"><i class="ri-checkbox-circle-line me-1"></i><%= days %> days remaining</span>
+            <% when :expiring_soon %>
+              <span class="status-pill status-expiring"><i class="ri-alarm-warning-line me-1"></i>Expires in <%= days %> day<%= days == 1 ? '' : 's' %></span>
+            <% when :expires_today %>
+              <span class="status-pill status-expiring"><i class="ri-alarm-warning-line me-1"></i>Expires TODAY</span>
+            <% when :overstay %>
+              <span class="status-pill status-expired"><i class="ri-error-warning-line me-1"></i>OVERSTAY: <%= visitor.overstay_days %> day<%= visitor.overstay_days == 1 ? '' : 's' %></span>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# 2-Column Data Grid — Identity %>
+    <div class="identity-grid">
+      <div class="identity-grid-row">
+        <div class="identity-field">
+          <span class="field-label"><i class="ri-calendar-line me-1"></i>Date of Birth</span>
+          <span class="field-value"><%= visitor.dob&.strftime("%b %d, %Y") || "N/A" %></span>
+        </div>
+        <div class="identity-field">
+          <span class="field-label"><i class="ri-global-line me-1"></i>Nationality</span>
+          <span class="field-value"><%= visitor.nationality || "N/A" %></span>
+        </div>
+      </div>
+
+      <div class="identity-grid-row">
+        <div class="identity-field">
+          <span class="field-label"><i class="ri-file-text-line me-1"></i>Passport Number</span>
+          <span class="field-value font-mono"><%= visitor.passport_number %></span>
+        </div>
+        <div class="identity-field">
+          <span class="field-label"><i class="ri-time-line me-1"></i>Expiration</span>
+          <span class="field-value">
+            <% if visitor.expires_at %>
+              <%= visitor.expires_at.strftime("%b %d, %Y") %>
+              <% if visitor.expires_at > Time.current %>
+                <span class="status-pill status-valid">Valid</span>
+              <% else %>
+                <span class="status-pill status-expired">Expired</span>
+              <% end %>
+            <% else %>
+              N/A
+            <% end %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <%# Travel & Entry Details Grid %>
+    <div class="travel-section">
+      <div class="travel-section-header">
+        <i class="ri-flight-takeoff-line me-2"></i>Travel & Entry Details
+      </div>
+      <div class="identity-grid" style="border-top: none; border-top-left-radius: 0; border-top-right-radius: 0;">
+        <div class="identity-grid-row">
+          <div class="identity-field">
+            <span class="field-label"><i class="ri-plane-line me-1"></i>Entry Mode</span>
+            <span class="field-value">
+              <% icon = case visitor.entry_mode
+                         when "air" then "ri-plane-line"
+                         when "sea" then "ri-ship-line"
+                         when "land" then "ri-car-line"
+                         end %>
+              <i class="<%= icon %>" style="color: #3B82F6; font-size: 0.9rem;"></i>
+              <%= visitor.entry_mode&.capitalize %>
+            </span>
+          </div>
+          <div class="identity-field">
+            <span class="field-label"><i class="ri-suitcase-line me-1"></i>Purpose of Visit</span>
+            <span class="field-value"><%= visitor.purpose_of_visit&.titleize || "N/A" %></span>
+          </div>
+        </div>
+
+        <div class="identity-grid-row">
+          <% if visitor.port_of_entry.present? %>
+            <div class="identity-field">
+              <span class="field-label"><i class="ri-building-line me-1"></i>Port of Entry</span>
+              <span class="field-value"><%= visitor.port_of_entry %></span>
+            </div>
+          <% end %>
+          <% if visitor.arrival_date.present? %>
+            <div class="identity-field">
+              <span class="field-label"><i class="ri-calendar-check-line me-1"></i>Arrival Date</span>
+              <span class="field-value"><%= visitor.arrival_date.strftime("%b %d, %Y") %></span>
+            </div>
+          <% end %>
+        </div>
+
+        <% if visitor.residence_country.present? || visitor.stay_duration_days.present? %>
+          <div class="identity-grid-row">
+            <% if visitor.residence_country.present? %>
+              <div class="identity-field">
+                <span class="field-label"><i class="ri-home-4-line me-1"></i>Country of Residence</span>
+                <span class="field-value"><%= visitor.residence_country %></span>
+              </div>
+            <% end %>
+            <% if visitor.stay_duration_days.present? %>
+              <div class="identity-field">
+                <span class="field-label"><i class="ri-timer-line me-1"></i>Authorized Stay</span>
+                <span class="field-value"><%= visitor.stay_duration_days %> days</span>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Action Buttons ── %>
+    <div class="identity-actions">
+      <button type="button" class="btn-secondary-scan"
+              data-action="click->partner-scanner#rescan">
+        <i class="ri-refresh-line me-1"></i>New Scan
+      </button>
+    </div>
+
+    <%# Scan timestamp %>
+    <div class="scan-timestamp">
+      <i class="ri-time-line me-1"></i>Verified at <%= Time.current.strftime("%H:%M on %b %d, %Y") %>
+    </div>
+  </div>
+</div>
+
+<%# ── Scoped Styles (extend base + tourist-specific) ── %>
+<style>
+  .verified-profile-card {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #FFFFFF;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+
+  /* ── Verified Banner ── */
+  .verified-banner {
+    background: #ECFDF5;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(5,150,105,0.12);
+  }
+  .verified-banner--alert {
+    background: #FEF2F2 !important;
+    border-bottom-color: rgba(220,38,38,0.15) !important;
+  }
+  .verified-icon-circle {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #059669;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .verified-icon-circle--alert {
+    background: #DC2626 !important;
+  }
+  .verified-icon-circle i { font-size: 1.2rem; color: #FFF; }
+  .verified-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 0.95rem; color: #065F46;
+  }
+  .verified-title--alert { color: #991B1B !important; }
+  .verified-subtitle {
+    font-size: 0.72rem; color: #047857; font-weight: 500; opacity: 0.8;
+  }
+  .verified-subtitle--alert { color: #DC2626 !important; }
+  .verified-checkmark i { font-size: 1.75rem; color: #059669; }
+
+  .tourist-type-badge {
+    font-size: 0.72rem; font-weight: 600;
+    background: #EFF6FF;
+    color: #1E40AF;
+    padding: 4px 10px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+  }
+
+  /* ── Identity Body ── */
+  .identity-body { padding: 24px 20px 16px; }
+
+  /* ── Photo + Name ── */
+  .identity-header {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 20px;
+  }
+  .identity-photo-wrapper { position: relative; flex-shrink: 0; }
+  .identity-photo {
+    width: 88px; height: 88px;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid #D1FAE5;
+    box-shadow: 0 4px 12px rgba(5,150,105,0.15);
+    cursor: zoom-in;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .identity-photo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(5,150,105,0.25);
+  }
+  .identity-photo-placeholder {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: #ECFDF5;
+    border: 3px solid #A7F3D0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .identity-photo-placeholder i { font-size: 2.5rem; color: #059669; }
+  .photo-verified-dot {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: #059669;
+    border: 2px solid #FFFFFF;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .photo-verified-dot i { font-size: 0.7rem; color: #FFF; }
+
+  .identity-name-block { flex: 1; min-width: 0; }
+  .identity-name {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 1.15rem; color: #1A1F36;
+    margin: 0 0 6px; line-height: 1.3;
+  }
+  .identity-bonid-row {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .bonid-code {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.78rem; font-weight: 600;
+    background: #ECFDF5;
+    color: #065F46;
+    padding: 4px 10px; border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+  .bonid-code--tourist {
+    background: #EFF6FF;
+    color: #1E40AF;
+  }
+  .badge-verified {
+    font-size: 0.7rem; font-weight: 600;
+    color: #059669; background: transparent;
+    display: inline-flex; align-items: center;
+  }
+
+  /* ── Data Grid ── */
+  .identity-grid {
+    border: 1px solid #F1F5F9;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .identity-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .identity-grid-row + .identity-grid-row {
+    border-top: 1px solid #F1F5F9;
+  }
+  .identity-field {
+    padding: 12px 16px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .identity-field + .identity-field {
+    border-left: 1px solid #F1F5F9;
+  }
+  .field-label {
+    font-size: 0.7rem; font-weight: 500; color: #94A3B8;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center;
+  }
+  .field-label i { font-size: 0.8rem; color: #CBD5E1; }
+  .field-value {
+    font-size: 0.88rem; font-weight: 600; color: #1E293B;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .field-value.font-mono {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.8rem; letter-spacing: 0.3px;
+  }
+
+  /* ── Status Pills ── */
+  .status-pill {
+    font-size: 0.65rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+  }
+  .status-valid { background: #ECFDF5; color: #059669; }
+  .status-expiring { background: #FFFBEB; color: #D97706; }
+  .status-expired { background: #FEF2F2; color: #DC2626; }
+
+  /* ── Travel Section ── */
+  .travel-section {
+    margin-bottom: 16px;
+  }
+  .travel-section-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.75rem; font-weight: 700; color: #1E40AF;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 10px 16px;
+    background: #EFF6FF;
+    border: 1px solid #F1F5F9;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    display: flex; align-items: center;
+  }
+  .travel-section-header i { font-size: 0.9rem; }
+
+  /* ── Action Buttons ── */
+  .identity-actions {
+    display: flex; gap: 10px; margin-bottom: 12px;
+  }
+  .btn-secondary-scan {
+    flex: 1; padding: 12px;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.85rem;
+    color: #00209F;
+    background: transparent;
+    border: 1.5px solid #00209F;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-secondary-scan:hover {
+    background: rgba(0,32,159,0.04);
+    box-shadow: 0 2px 8px rgba(0,32,159,0.12);
+  }
+
+  /* ── Timestamp ── */
+  .scan-timestamp {
+    text-align: center;
+    font-size: 0.72rem; color: #94A3B8; font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scan-timestamp i { font-size: 0.8rem; }
+
+  /* ── Mobile ── */
+  @media (max-width: 575.98px) {
+    .identity-header { flex-direction: column; text-align: center; }
+    .identity-bonid-row { justify-content: center; }
+    .identity-grid-row { grid-template-columns: 1fr; }
+    .identity-field + .identity-field { border-left: none; border-top: 1px solid #F1F5F9; }
+    .identity-photo { width: 80px; height: 80px; }
+    .identity-photo-placeholder { width: 80px; height: 80px; }
+    .identity-name { font-size: 1.05rem; }
+  }
+</style>

@@ -1,45 +1,50 @@
-// app/javascript/controllers/bonid_lookup_controller.js
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["input", "result", "name", "userId", "editBtn", "toast"]
+  static targets = ["input", "result", "toast"]
 
-  async fetch() {
+  connect() {
+    // Optional: automatically fetch if input already has value
+    if (this.hasInputTarget && this.inputTarget.value.trim()) this.fetch()
+  }
+
+  async fetch(event) {
+    event?.preventDefault()
+
     const bonid = this.inputTarget.value.trim()
     if (!bonid) return
 
+    this.setResult("⏳ Looking up BonID...")
+
     try {
-      const response = await fetch(`/bonid_lookup/${bonid}`)
+      const response = await fetch(`/bonid_lookup/${bonid}`, {
+        headers: { "Accept": "application/json" },
+      })
+      if (!response.ok) throw new Error("Network response was not OK")
+
       const data = await response.json()
 
       if (data.found) {
-        this.inputTarget.readOnly = true
-        this.resultTarget.innerHTML = `
-          <div class="text-success">✅ Match: ${data.name}</div>
-        `
-        this.editBtnTarget.classList.remove("d-none")
+        this.setResult(`✅ Match: ${data.name}`, "text-success")
+        this.showToast("BonID verified successfully!")
 
-        this.nameTarget.value = data.name
-        this.userIdTarget.value = data.user_id
+        // Close modal smoothly after a short delay (e.g., 1.5s)
+        setTimeout(() => {
+          this.closeModal()
+        }, 1500)
       } else {
-        this.resultTarget.innerHTML = `<div class="text-danger">❌ BonID not found</div>`
+        this.setResult("❌ BonID not found", "text-danger")
       }
     } catch (error) {
-      console.error("BonID lookup failed", error)
-      this.resultTarget.innerHTML = `<div class="text-danger">⚠️ Lookup error</div>`
+      console.error("BonID lookup failed:", error)
+      this.setResult("⚠️ Lookup error", "text-danger")
     }
   }
 
-  edit() {
-    this.inputTarget.readOnly = false
-    this.inputTarget.focus()
-    this.inputTarget.value = ""
-    this.nameTarget.value = ""
-    this.userIdTarget.value = ""
-    this.resultTarget.innerHTML = ""
-    this.editBtnTarget.classList.add("d-none")
-
-    this.showToast("You can now edit the BonID.")
+  setResult(message, cls = "") {
+    if (this.hasResultTarget) {
+      this.resultTarget.innerHTML = `<div class="${cls}">${message}</div>`
+    }
   }
 
   showToast(message) {
@@ -52,5 +57,13 @@ export default class extends Controller {
       this.toastTarget.classList.add("d-none")
     }, 3000)
   }
-}
 
+  closeModal() {
+    // Bootstrap 5 way to close modal programmatically
+    const modalEl = this.element.closest(".modal")
+    if (!modalEl) return
+
+    const modal = bootstrap.Modal.getInstance(modalEl)
+    if (modal) modal.hide()
+  }
+}

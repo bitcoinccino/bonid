@@ -1,0 +1,174 @@
+<!-- app/views/citizens/dashboard/_profile_cards.html.erb -->
+<section class="container py-4">
+  <div class="text-center mb-4">
+    <h5 class="fw-semibold text-haitian-blue">
+      <i class="ri-user-settings-line me-2"></i>
+      Manage Your Information
+    </h5>
+    <p class="text-muted small mb-0">
+      Add or update your profile information to share with trusted partners
+    </p>
+  </div>
+
+  <div class="d-flex justify-content-center">
+    <div class="dropdown">
+      <button class="btn btn-haitian-primary btn-lg rounded-pill px-5 py-3 fw-semibold shadow-sm d-flex align-items-center gap-3"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false">
+        <i class="ri-add-circle-line fs-4"></i>
+        Add or Edit Information
+      </button>
+
+      <ul class="dropdown-menu dropdown-menu-center shadow-lg border-0 py-3" style="min-width: 320px;">
+        
+        <!-- Emergency Contacts -->
+        <li>
+          <button type="button"
+                  class="dropdown-item py-3 px-4 d-flex align-items-start gap-3"
+                  data-bs-toggle="modal"
+                  data-bs-target="#emergencyModal">
+            <i class="ri-contacts-book-line fs-5 text-danger mt-1"></i>
+            <div class="text-start flex-grow-1">
+              <div class="fw-semibold d-flex align-items-center justify-content-between">
+                Emergency Contacts
+                <% unless current_citizen.emergency_contacts.any? %>
+                  <span class="badge bg-warning-subtle text-warning small">Needed</span>
+                <% else %>
+                  <span class="badge bg-success-subtle text-success small">
+                    <i class="ri-check-line"></i>
+                  </span>
+                <% end %>
+              </div>
+              <small class="text-muted d-block">
+                Who to contact in case of emergency
+              </small>
+            </div>
+          </button>
+        </li>
+
+        <li><hr class="dropdown-divider my-2"></li>
+
+        <!-- Health Information -->
+        <li>
+          <button type="button"
+                  class="dropdown-item py-3 px-4 d-flex align-items-start gap-3"
+                  data-bs-toggle="modal"
+                  data-bs-target="#healthModal">
+            <i class="ri-heart-pulse-line fs-5 text-danger mt-1"></i>
+            <div class="text-start flex-grow-1">
+              <div class="fw-semibold d-flex align-items-center justify-content-between">
+                Health Information
+                <% unless current_citizen.health_profile.present? %>
+                  <span class="badge bg-warning-subtle text-warning small">Needed</span>
+                <% else %>
+                  <span class="badge bg-success-subtle text-success small">
+                    <i class="ri-check-line"></i>
+                  </span>
+                <% end %>
+              </div>
+              <small class="text-muted d-block">
+                Blood type, allergies, medical conditions
+              </small>
+            </div>
+          </button>
+        </li>
+
+        <li><hr class="dropdown-divider my-2"></li>
+
+        <!-- Physical Characteristics -->
+        <li>
+          <button type="button"
+                  class="dropdown-item py-3 px-4 d-flex align-items-start gap-3"
+                  data-bs-toggle="modal"
+                  data-bs-target="#physicalModal">
+            <i class="ri-body-scan-line fs-5 text-primary mt-1"></i>
+            <div class="text-start flex-grow-1">
+              <div class="fw-semibold d-flex align-items-center justify-content-between">
+                Physical Characteristics
+                <% unless current_citizen.physical_profile.present? %>
+                  <span class="badge bg-warning-subtle text-warning small">Needed</span>
+                <% else %>
+                  <span class="badge bg-success-subtle text-success small">
+                    <i class="ri-check-line"></i>
+                  </span>
+                <% end %>
+              </div>
+              <small class="text-muted d-block">
+                Height, weight, eye color, identifying marks
+              </small>
+            </div>
+          </button>
+        </li>
+
+        <li><hr class="dropdown-divider my-2"></li>
+
+        <!-- Financial Profiles -->
+        <li>
+          <button type="button"
+                  class="dropdown-item py-3 px-4 d-flex align-items-start gap-3"
+                  data-bs-toggle="modal"
+                  data-bs-target="#bankModal">
+            <i class="ri-bank-line fs-5 text-success mt-1"></i>
+            <div class="text-start flex-grow-1">
+              <div class="fw-semibold d-flex align-items-center justify-content-between">
+                Financial Profiles
+                <% if current_citizen.bank_profiles.any? %>
+                  <span class="badge bg-success-subtle text-success small">
+                    <%= current_citizen.bank_profiles.count %>
+                  </span>
+                <% else %>
+                  <span class="badge bg-secondary-subtle text-secondary small">Optional</span>
+                <% end %>
+              </div>
+              <small class="text-muted d-block">
+                Bank accounts, mobile wallets (MonCash)
+              </small>
+            </div>
+          </button>
+        </li>
+
+        <li><hr class="dropdown-divider my-2"></li>
+
+        <!-- Social Media Handles -->
+        <li>
+          <button type="button"
+                  class="dropdown-item py-3 px-4 d-flex align-items-start gap-3"
+                  data-bs-toggle="modal"
+                  data-bs-target="#socialModal">
+            <i class="ri-links-line fs-5 text-info mt-1"></i>
+            <div class="text-start flex-grow-1">
+              <div class="fw-semibold d-flex align-items-center justify-content-between">
+                Social Media Handles
+                <% if current_citizen.social_handles.any? %>
+                  <span class="badge bg-success-subtle text-success small">
+                    <%= current_citizen.social_handles.count %>
+                  </span>
+                <% else %>
+                  <span class="badge bg-secondary-subtle text-secondary small">Optional</span>
+                <% end %>
+              </div>
+              <small class="text-muted d-block">
+                Facebook, Instagram, Twitter, LinkedIn
+              </small>
+            </div>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Privacy Notice -->
+  <div class="alert alert-light border rounded-4 mt-4 mx-auto" style="max-width: 600px;">
+    <div class="d-flex align-items-start">
+      <i class="ri-lock-password-line text-primary fs-5 me-3 mt-1"></i>
+      <div class="small">
+        <strong class="d-block mb-1">Your Privacy is Protected</strong>
+        <p class="text-muted mb-0">
+          This information is stored securely and only shared with partners when you give explicit consent.
+          You control who sees what.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

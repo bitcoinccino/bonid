@@ -1,0 +1,225 @@
+<%# app/views/citizens/passwords/edit.html.erb %>
+
+<% content_for :auth_left do %>
+  <div class="auth-left-inner d-flex flex-column justify-content-between h-100 py-4 py-lg-5 w-100">
+
+    <!-- INTRO -->
+    <div class="text-center mb-4 mb-lg-5">
+      <h2 class="display-5 fw-bold mb-3 font-heading">
+        Set a new password
+      </h2>
+      <p class="lead opacity-90 mx-auto max-w-text">
+        Choose a strong, unique password to keep your BonID account secure.
+      </p>
+    </div>
+
+    <!-- TIPS -->
+    <div class="row g-4 justify-content-center mb-4 mb-lg-5">
+      <% [
+        { icon: "ri-shield-check-line",  title: "Make it strong",   desc: "Mix letters, numbers, and symbols." },
+        { icon: "ri-lock-line",          title: "Make it unique",   desc: "Don't reuse passwords from other accounts." },
+        { icon: "ri-eye-off-line",       title: "Keep it private",  desc: "Never share your password with anyone." }
+      ].each do |item| %>
+        <div class="col-12 col-md-4 text-center">
+          <i class="<%= item[:icon] %> ri-2x text-haitian-cyan mb-2"></i>
+          <div class="fw-semibold small mb-1"><%= item[:title] %></div>
+          <div class="small opacity-80"><%= item[:desc] %></div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div class="text-center">
+      <h6 class="fw-bold mb-3">Password must include</h6>
+      <div class="row g-2 justify-content-center">
+        <% [
+          "At least 8 characters",
+          "One uppercase letter",
+          "One lowercase letter",
+          "One number",
+          "One special character"
+        ].each do |req| %>
+          <div class="col-6 text-start small opacity-80">
+            <i class="ri-checkbox-blank-circle-line me-1 text-haitian-cyan"></i><%= req %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+<% end %>
+
+
+<div class="login-card">
+  <%# Icon badge %>
+  <div class="text-center mb-4">
+    <div style="width: 72px; height: 72px; background: rgba(0,32,159,0.08); border-radius: 50%;
+                display: flex; align-items: center; justify-content: center; margin: 0 auto;
+                border: 2px solid rgba(0,32,159,0.12);">
+      <i class="ri-lock-password-line" style="font-size: 1.75rem; color: #00209f;"></i>
+    </div>
+  </div>
+
+  <%# Flash rendered by citizen_auth layout %>
+  <div id="reset-flash" class="mb-3"></div>
+
+  <%# Errors %>
+  <% if resource.errors.any? %>
+    <div class="alert alert-danger mb-3">
+      <ul class="mb-0 small ps-3">
+        <% resource.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Reset Form %>
+  <%= form_for(resource,
+        as: resource_name,
+        url: citizen_password_path,
+        html: { method: :put, data: { turbo: false }, id: "password-reset-form" }) do |f| %>
+
+    <%= f.hidden_field :reset_password_token %>
+
+    <div class="mb-3">
+      <%= f.label :password, "New Password", class: "form-label" %>
+      <div class="position-relative">
+        <%= f.password_field :password,
+              required: true,
+              autocomplete: "new-password",
+              id: "new-password-field",
+              placeholder: "Enter your new password",
+              class: "form-control pe-5" %>
+        <button type="button"
+                class="btn position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent"
+                id="toggle-new-password">
+          <i class="ri-eye-line" id="new-eye-icon"></i>
+        </button>
+      </div>
+      <div class="mt-2">
+        <div class="progress" style="height: 5px;">
+          <div class="progress-bar" id="strength-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        <small class="text-muted d-block mt-1">
+          Strength: <span id="strength-level" class="fw-semibold"></span>
+        </small>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :password_confirmation, "Confirm New Password", class: "form-label" %>
+      <div class="position-relative">
+        <%= f.password_field :password_confirmation,
+              required: true,
+              autocomplete: "new-password",
+              id: "confirm-password-field",
+              placeholder: "Re-enter your new password",
+              class: "form-control pe-5" %>
+        <button type="button"
+                class="btn position-absolute end-0 top-50 translate-middle-y me-2 border-0 bg-transparent"
+                id="toggle-confirm-password">
+          <i class="ri-eye-line" id="confirm-eye-icon"></i>
+        </button>
+      </div>
+      <div class="mt-2 d-none" id="match-indicator">
+        <small class="text-success"><i class="ri-check-line me-1"></i>Passwords match</small>
+      </div>
+      <div class="mt-2 d-none" id="mismatch-indicator">
+        <small class="text-danger"><i class="ri-close-line me-1"></i>Passwords do not match</small>
+      </div>
+    </div>
+
+    <%= f.submit "Change Password",
+          class: "btn btn-haitian-primary w-100 mt-2",
+          id: "submit-button",
+          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Saving…' } %>
+  <% end %>
+
+  <%# Divider %>
+  <div class="login-divider my-4">
+    <span>or</span>
+  </div>
+
+  <%# Back %>
+  <div>
+    <%= link_to new_citizen_session_path, class: "btn btn-outline-haitian w-100" do %>
+      <i class="ri-arrow-left-line me-2"></i>Back to sign in
+    <% end %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const newField     = document.getElementById('new-password-field');
+    const confirmField = document.getElementById('confirm-password-field');
+    const strengthBar  = document.getElementById('strength-bar');
+    const strengthLvl  = document.getElementById('strength-level');
+    const matchInd     = document.getElementById('match-indicator');
+    const mismatchInd  = document.getElementById('mismatch-indicator');
+    const submitBtn    = document.getElementById('submit-button');
+
+    // Toggle visibility
+    function setupToggle(fieldId, btnId, iconId) {
+      const field  = document.getElementById(fieldId);
+      const button = document.getElementById(btnId);
+      const icon   = document.getElementById(iconId);
+      button?.addEventListener('click', () => {
+        const isText = field.type === 'text';
+        field.type = isText ? 'password' : 'text';
+        icon.className = isText ? 'ri-eye-line' : 'ri-eye-off-line';
+      });
+    }
+    setupToggle('new-password-field', 'toggle-new-password', 'new-eye-icon');
+    setupToggle('confirm-password-field', 'toggle-confirm-password', 'confirm-eye-icon');
+
+    // Strength meter
+    function strength(p) {
+      let s = 0;
+      if (p.length >= 8)           s += 20;
+      if (p.length >= 12)          s += 10;
+      if (/[a-z]/.test(p))        s += 15;
+      if (/[A-Z]/.test(p))        s += 15;
+      if (/[0-9]/.test(p))        s += 20;
+      if (/[^a-zA-Z0-9]/.test(p)) s += 20;
+      return Math.min(s, 100);
+    }
+
+    function updateStrength(p) {
+      const s = strength(p);
+      strengthBar.style.width = s + '%';
+      if (s < 40) {
+        strengthBar.className = 'progress-bar bg-danger';
+        strengthLvl.textContent = 'Weak';
+        strengthLvl.className = 'fw-semibold text-danger';
+      } else if (s < 70) {
+        strengthBar.className = 'progress-bar bg-warning';
+        strengthLvl.textContent = 'Medium';
+        strengthLvl.className = 'fw-semibold text-warning';
+      } else {
+        strengthBar.className = 'progress-bar bg-success';
+        strengthLvl.textContent = 'Strong';
+        strengthLvl.className = 'fw-semibold text-success';
+      }
+    }
+
+    // Match check
+    function checkMatch() {
+      const ok = newField.value && newField.value === confirmField.value;
+      const empty = confirmField.value.length === 0;
+      matchInd.classList.toggle('d-none', !ok);
+      mismatchInd.classList.toggle('d-none', empty || ok);
+      submitBtn.disabled = !ok;
+    }
+
+    newField.addEventListener('input', (e) => { updateStrength(e.target.value); checkMatch(); });
+    confirmField.addEventListener('input', checkMatch);
+
+    document.getElementById('password-reset-form').addEventListener('submit', (e) => {
+      if (newField.value !== confirmField.value) {
+        e.preventDefault();
+        alert('Passwords do not match. Please try again.');
+      }
+    });
+  });
+</script>

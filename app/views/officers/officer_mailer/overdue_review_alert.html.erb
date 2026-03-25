@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial, sans-serif; color:#111827; background:#f9fafb; padding:20px;">
+    <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:8px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <h2 style="color:#DC2626;">⚠️ Overdue Incident Report Review</h2>
+
+      <p>Hello <%= @reviewer.email %>,</p>
+
+      <p style="padding:12px; background:#FEF2F2; border-left:4px solid #DC2626; border-radius:4px;">
+        <strong>Action Required:</strong> The following incident report has exceeded its review deadline and requires your immediate attention.
+      </p>
+
+      <table style="width:100%; border-collapse:collapse; margin:20px 0;">
+        <tr style="background:#f3f4f6;">
+          <td style="padding:10px; border:1px solid #e5e7eb; font-weight:bold; width:35%;">Report ID</td>
+          <td style="padding:10px; border:1px solid #e5e7eb;"><%= @incident_report.report_id %></td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border:1px solid #e5e7eb; font-weight:bold;">Crime Type</td>
+          <td style="padding:10px; border:1px solid #e5e7eb;"><%= @incident_report.crime_type %></td>
+        </tr>
+        <tr style="background:#f3f4f6;">
+          <td style="padding:10px; border:1px solid #e5e7eb; font-weight:bold;">Occurred At</td>
+          <td style="padding:10px; border:1px solid #e5e7eb;"><%= @incident_report.occurred_at&.strftime("%B %d, %Y at %I:%M %p") %></td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border:1px solid #e5e7eb; font-weight:bold;">Submitted By</td>
+          <td style="padding:10px; border:1px solid #e5e7eb;"><%= @incident_report.officer_name %></td>
+        </tr>
+        <tr style="background:#FEF2F2;">
+          <td style="padding:10px; border:1px solid #e5e7eb; font-weight:bold; color:#DC2626;">Review Deadline</td>
+          <td style="padding:10px; border:1px solid #e5e7eb; color:#DC2626; font-weight:bold;">
+            <%= @review.deadline_at&.strftime("%B %d, %Y at %I:%M %p") %>
+            <span style="color:#DC2626; font-weight:bold;"> (OVERDUE)</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border:1px solid #e5e7eb; font-weight:bold;">Priority</td>
+          <td style="padding:10px; border:1px solid #e5e7eb;">
+            <% priority_color = case @review.priority
+               when 0 then "#6B7280"
+               when 1 then "#F59E0B"
+               when 2 then "#EF4444"
+               when 3 then "#111827"
+               else "#6B7280"
+               end %>
+            <span style="color:<%= priority_color %>; font-weight:bold;"><%= @review.priority_label %></span>
+          </td>
+        </tr>
+      </table>
+
+      <p><strong>Description:</strong></p>
+      <p style="padding:12px; background:#f9fafb; border-radius:4px; font-size:14px;">
+        <%= truncate(@incident_report.description, length: 300) %>
+      </p>
+
+      <p style="text-align:center; margin:24px 0;">
+        <a href="<%= admin_incident_report_url(@incident_report) rescue '#' %>"
+           style="background:#04328C; color:#fff; padding:12px 24px; text-decoration:none; border-radius:6px; font-weight:bold;">
+          Review Report Now
+        </a>
+      </p>
+
+      <p style="font-size:14px; color:#6B7280;">
+        <strong>Note:</strong> Reports that remain unreviewed for more than 72 hours after the deadline will be automatically escalated to higher authority.
+      </p>
+
+      <hr style="margin:24px 0; border:none; border-top:1px solid #ddd;" />
+      <p style="font-size:12px; color:#888;">
+        This is an automated message from the BonID Incident Management System.<br>
+        &copy; <%= Time.current.year %> BonID - Police Nationale d'Haïti
+      </p>
+    </div>
+  </body>
+</html>

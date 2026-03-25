@@ -1,0 +1,36 @@
+<div class="contact-item" id="family-member-<%= fm.id %>">
+  <div class="contact-avatar">
+    <% if fm.linked? && fm.link_confirmed? %>
+      <% if fm.linked_user&.photo&.attached? %>
+        <%
+          photo_url = Rails.application.routes.url_helpers.rails_blob_path(
+            fm.linked_user.photo,
+            only_path: true
+          )
+        %>
+        <img src="<%= photo_url %>" class="rounded-circle" style="width: 100%; height: 100%; object-fit: cover;" />
+      <% else %>
+        <i class="ri-shield-check-fill" style="color: var(--bs-success);"></i>
+      <% end %>
+    <% elsif fm.linked? %>
+      <i class="ri-time-line" style="color: var(--bs-warning);"></i>
+    <% else %>
+      <i class="ri-user-heart-line"></i>
+    <% end %>
+  </div>
+  <div class="contact-info">
+    <span class="contact-name"><%= fm.full_name %></span>
+    <span class="contact-details">
+      <%= fm.display_relationship %>
+      <% if fm.alive? %>
+        <% if fm.link_confirmed? %>
+          • <span class="text-success">BonID Verifye</span>
+        <% elsif fm.linked? %>
+          • <span class="text-warning">Ap tann konfimasyon</span>
+        <% end %>
+      <% else %>
+        • <span class="text-muted">Desede</span>
+      <% end %>
+    </span>
+  </div>
+</div>

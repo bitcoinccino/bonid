@@ -1,0 +1,75 @@
+app/views/admin/partners/invite_single.html.erb
+<%# Flash rendered by admin layout %>
+
+<div class="container py-5" style="padding-top: 6rem;">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+
+      <% if @partner&.logo&.attached? %>
+        <div class="d-flex justify-content-center mb-4">
+          <%= image_tag @partner.logo.variant(resize_to_limit: [120, 120]),
+                        class: "rounded-circle shadow",
+                        alt: "#{@partner.name} logo" %>
+        </div>
+      <% end %>
+
+
+      <div class="text-center mb-4">
+        <h2 class="h5 fw-bold text-dark mb-1"><%= @partner.name %></h2>
+        <p class="text-muted small text-uppercase mb-2"><%= @partner.sector.to_s.humanize %></p>
+
+        <h1 class="h4 fw-bold text-primary mb-3">Invite Officers</h1>
+        <p class="text-muted small">
+          You can send an invite to a single <%= invite_role_for_sector(@partner.sector) %> or upload a CSV to invite multiple people at once.
+        </p>
+      </div>
+
+      <!-- SINGLE INVITE FORM -->
+      <div class="card shadow-sm border-0 rounded-3 p-4 p-md-5 bg-white mb-4">
+        <h5 class="fw-semibold mb-3 text-primary">Single Officer Invite</h5>
+        <%= form_with url: send_invite_single_admin_partner_path(@partner.uuid),
+                      method: :post,
+                      local: true,
+                      data: {
+                        controller: "form-handler",
+                        action: "turbo:submit-start->form-handler#submitStart turbo:submit-end->form-handler#submitEnd turbo:submit-error->form-handler#submitError"
+                      },
+                      html: { autocomplete: "off" } do |f| %>
+
+          <div class="mb-4">
+            <%= f.label :email, "Officer Email", class: "form-label fw-semibold", for: "single_invite_email" %>
+            <%= f.email_field :email,
+                              id: "single_invite_email",
+                              placeholder: "officer@example.com",
+                              class: "form-control rounded-3",
+                              required: true,
+                              autofocus: true,
+                              autocomplete: "email",
+                              aria: { describedby: "emailHelp" } %>
+            <div id="emailHelp" class="form-text text-muted mt-1">
+              Ensure the email is valid and belongs to the person you're inviting.
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <%= f.submit "Send Invite",
+                         class: "btn btn-primary rounded-pill px-4",
+                         data: { formHandlerTarget: "submit" } %>
+
+            <div class="spinner-border text-primary d-none"
+                 role="status"
+                 data-form-handler-target="spinner"
+                 aria-hidden="true"></div>
+
+            <!-- Cancel Button to the right -->
+            <%= link_to "Cancel", admin_partner_path(@partner.uuid), class: "btn btn-outline-secondary rounded-pill px-4 ml-auto" %>
+          </div>
+
+          <div class="mt-3 alert alert-danger d-none" data-form-handler-target="error"></div>
+
+        <% end %>
+      </div>
+      
+    </div>
+  </div>
+</div>

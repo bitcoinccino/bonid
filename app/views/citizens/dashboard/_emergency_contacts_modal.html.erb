@@ -1,0 +1,124 @@
+<div class="modal fade" id="emergencyModal" tabindex="-1" aria-labelledby="emergencyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <%= simple_form_for current_citizen,
+            as: :user,
+            url: citizens_profile_path,
+            method: :patch,
+            html: { data: { turbo: false, controller: "emergency-contacts", "emergency-contacts-user-bonid-value": current_citizen&.bonid } } do |f| %>
+        <div class="modal-header bg-haitian-blue text-white">
+          <h5 class="modal-title" id="emergencyModalLabel">
+            <i class="ri-contacts-book-2-line me-2"></i>Emergency Contacts
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <%# Info Banner %>
+          <div class="alert alert-info d-flex align-items-start mb-4">
+            <i class="ri-2x ri-shield-user-line me-3"></i>
+            <div>
+              <strong>Your emergency contacts help responders reach someone you trust.</strong><br>
+              This information is <strong>securely stored</strong> and shared only with authorized responders in emergencies.
+            </div>
+          </div>
+
+          <%# Container for contacts - REQUIRED for Stimulus controller %>
+          <% valid_contacts = current_citizen.emergency_contacts.select { |ec| ec.name.present? } %>
+          <div data-emergency-contacts-target="contacts">
+            <% if valid_contacts.any? %>
+              <%= f.fields_for :emergency_contacts do |ec_form| %>
+                <% next if ec_form.object.name.blank? %>
+                <%= render "citizens/profiles/emergency_contact", ec_form: ec_form %>
+              <% end %>
+            <% else %>
+              <div class="text-center py-4 text-muted" data-emergency-contacts-target="empty">
+                <i class="ri-contacts-book-line ri-3x mb-2"></i>
+                <p class="mb-0">No Emergency Contact added yet!</p>
+                <small>Click the button below to add your first contact.</small>
+              </div>
+            <% end %>
+          </div>
+
+          <%# Template for adding new contacts %>
+          <template data-emergency-contacts-target="template">
+            <div class="border rounded-3 p-3 mb-4 bg-light nested-fields" data-new-record="true">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">BonID (optional)</label>
+                  <input type="text"
+                         name="user[emergency_contacts_attributes][NEW_RECORD][bonid]"
+                         class="form-control rounded-3"
+                         placeholder="Enter a valid BonID to autofill"
+                         data-action="blur->emergency-contacts#fetchBonid"
+                         data-emergency-contacts-target="bonid" />
+                  <small class="text-muted fst-italic">Enter a BonID to auto-fill verified contact info.</small>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Name</label>
+                  <input type="text"
+                         name="user[emergency_contacts_attributes][NEW_RECORD][name]"
+                         class="form-control rounded-3"
+                         placeholder="Full Name"
+                         data-emergency-contacts-target="name" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Phone</label>
+                  <input type="text"
+                         name="user[emergency_contacts_attributes][NEW_RECORD][phone]"
+                         class="form-control rounded-3"
+                         placeholder="Phone Number"
+                         data-emergency-contacts-target="phone" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Email</label>
+                  <input type="email"
+                         name="user[emergency_contacts_attributes][NEW_RECORD][email]"
+                         class="form-control rounded-3"
+                         placeholder="Email" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Relation</label>
+                  <select name="user[emergency_contacts_attributes][NEW_RECORD][relation]"
+                          class="form-select rounded-3">
+                    <option value="">Select relation</option>
+                    <% EmergencyContact::RELATIONS.each do |rel| %>
+                      <option value="<%= rel %>"><%= rel %></option>
+                    <% end %>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Address</label>
+                  <input type="text"
+                         name="user[emergency_contacts_attributes][NEW_RECORD][address]"
+                         class="form-control rounded-3"
+                         placeholder="Address"
+                         data-emergency-contacts-target="address" />
+                </div>
+                <div class="col-12 text-end">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                          data-action="click->emergency-contacts#remove">
+                    <i class="ri-delete-bin-line me-1"></i> Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <%# Add Another Button %>
+          <div class="text-end mt-3">
+            <button type="button"
+                    class="btn btn-outline-primary rounded-pill"
+                    data-action="click->emergency-contacts#add">
+              <i class="ri-add-line me-1"></i> Add Another Emergency Contact
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Save", class: "btn btn-haitian-primary fw-semibold rounded-pill text-white" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

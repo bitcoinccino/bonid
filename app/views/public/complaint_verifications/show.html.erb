@@ -1,0 +1,157 @@
+<%# Public certificate verification page — no auth required.
+    Scanned from the QR code printed on an IGPNH complaint certificate. %>
+
+<div class="container py-5" style="max-width: 680px;">
+
+  <% if @error == :not_found %>
+
+    <%# ── NOT FOUND ──────────────────────────────────────────────── %>
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden text-center">
+      <div class="card-header py-4" style="background: #1a1a2e;">
+        <img src="/assets/igpnh_logo.png" alt="IGPNH" height="48" class="mb-2" onerror="this.style.display='none'">
+        <h5 class="text-white fw-bold mb-0">Inspection Générale de la PNH</h5>
+      </div>
+      <div class="card-body p-5">
+        <div class="bg-danger-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
+             style="width: 72px; height: 72px;">
+          <i class="ri-close-circle-fill text-danger fs-1"></i>
+        </div>
+        <h4 class="fw-bold text-danger mb-2">Certificate Not Found</h4>
+        <p class="text-muted">The tracking number <code><%= params[:tracking_number] %></code> does not exist in the IGPNH database.</p>
+        <p class="small text-muted mt-3">If you believe this is an error, contact the Office de la Protection du Citoyen (OPC).</p>
+      </div>
+    </div>
+
+  <% elsif @valid %>
+
+    <%# ── VALID — certificate is authentic ──────────────────────── %>
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+      <%# Verified header %>
+      <div class="card-header text-white text-center py-4"
+           style="background: linear-gradient(135deg, #00209F, #1a4fa8);">
+        <p class="text-uppercase fw-bold mb-1 small" style="letter-spacing: 2px; opacity: 0.8;">
+          République d'Haïti — IGPNH
+        </p>
+        <h4 class="fw-bold mb-1">Certificate Verified</h4>
+        <div class="badge bg-white text-success rounded-pill px-3 py-2 fw-bold">
+          <i class="ri-shield-check-fill me-1"></i>Authentique / Authentic
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+
+        <%# Reference + checksum %>
+        <div class="text-center mb-4 pb-3 border-bottom">
+          <p class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 1px;">Reference No.</p>
+          <h3 class="fw-bold" style="color: #00209F; font-family: monospace;"><%= @reference %></h3>
+          <div class="d-inline-flex align-items-center gap-2 bg-light rounded-pill px-3 py-1 mt-1">
+            <i class="ri-fingerprint-line text-muted small"></i>
+            <code class="small text-muted">Checksum: <%= @checksum %></code>
+          </div>
+        </div>
+
+        <%# Complaint details %>
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Status</label>
+            <span class="badge rounded-pill bg-<%= @status_color %>-subtle text-<%= @status_color %> border border-<%= @status_color %>-subtle px-3 py-2">
+              <%= @status_label %>
+            </span>
+          </div>
+          <div class="col-6">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Filed</label>
+            <span class="fw-semibold"><%= @filed_at&.strftime("%d %b %Y") %></span>
+          </div>
+          <div class="col-12">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Allegation Category</label>
+            <span class="fw-semibold"><%= @allegation %></span>
+          </div>
+          <div class="col-6">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Department</label>
+            <span class="fw-semibold"><%= @department || "—" %></span>
+          </div>
+          <div class="col-6">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Assigned Unit</label>
+            <span class="fw-semibold small"><%= @directorate %></span>
+          </div>
+        </div>
+
+        <%# Integrity seal %>
+        <div class="alert border-0 rounded-3 mb-0"
+             style="background: rgba(0,32,159,0.05); border: 1px solid rgba(0,32,159,0.15) !important;">
+          <div class="d-flex align-items-start gap-3">
+            <i class="ri-shield-keyhole-fill text-primary fs-4 mt-1 flex-shrink-0"></i>
+            <div>
+              <p class="fw-bold mb-1 small" style="color: #00209F;">Cryptographic Integrity Confirmed</p>
+              <p class="mb-0 small text-muted">
+                This certificate's content has been verified against the IGPNH secure database.
+                The data shown matches the original filing — it has <strong>not been altered</strong>.
+              </p>
+              <p class="mb-0 small text-muted mt-1">
+                <i class="ri-time-line me-1"></i>Signed: <%= @signed_at&.strftime("%d %B %Y at %H:%M UTC") %>
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <%# Footer %>
+      <div class="card-footer bg-light text-center py-3">
+        <p class="small text-muted mb-0">
+          Vérification officielle — <%= Time.current.strftime("%d %B %Y, %H:%M") %> |
+          <a href="https://bonid.ht" class="text-primary text-decoration-none fw-bold">bonid.ht</a>
+        </p>
+      </div>
+    </div>
+
+  <% else %>
+
+    <%# ── INVALID — signature mismatch (tampered) ────────────────── %>
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+      <div class="card-header text-white text-center py-4" style="background: #8B0000;">
+        <p class="text-uppercase fw-bold mb-1 small" style="letter-spacing: 2px; opacity: 0.8;">
+          République d'Haïti — IGPNH
+        </p>
+        <h4 class="fw-bold mb-1">⚠ Verification Failed</h4>
+        <div class="badge bg-white text-danger rounded-pill px-3 py-2 fw-bold">
+          <i class="ri-alert-fill me-1"></i>DOCUMENT SUSPECT / SUSPECT DOCUMENT
+        </div>
+      </div>
+
+      <div class="card-body p-4 text-center">
+        <div class="bg-danger-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
+             style="width: 80px; height: 80px;">
+          <i class="ri-file-damage-fill text-danger" style="font-size: 2rem;"></i>
+        </div>
+
+        <h5 class="fw-bold text-danger mb-3">Certificate Integrity Compromised</h5>
+
+        <p class="text-muted mb-4">
+          The certificate for <strong><%= @reference %></strong> exists in the IGPNH database,
+          but the data on this document <strong>does not match</strong> the original filing.
+          The document may have been altered.
+        </p>
+
+        <div class="alert alert-danger border-0 rounded-3 text-start">
+          <p class="fw-bold mb-2"><i class="ri-error-warning-line me-2"></i>Recommended Actions:</p>
+          <ul class="mb-0 small">
+            <li>Do <strong>not</strong> accept this document as valid proof</li>
+            <li>Report this incident to the OPC: <strong>+509 2813-0000</strong></li>
+            <li>Contact IGPNH directly with reference <strong><%= @reference %></strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card-footer bg-light text-center py-3">
+        <p class="small text-muted mb-0">
+          Scan logged — <%= Time.current.strftime("%d %B %Y, %H:%M UTC") %>
+        </p>
+      </div>
+    </div>
+
+  <% end %>
+
+</div>

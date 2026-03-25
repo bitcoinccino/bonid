@@ -1,0 +1,293 @@
+// ======================================================================
+// Admin Sidebar — Matches Partner Portal Sidebar Design
+// Uses CSS custom properties from base/_tokens.scss:
+//   --topbar-height (70px), --sidebar-width (260px), --haitian-blue (#00209F)
+// ======================================================================
+
+$admin-blue: #00209F; // SCSS var needed for rgba() in Dart Sass
+
+// ============================================================
+// Sidebar Container
+// ============================================================
+.admin-sidebar {
+  position: fixed;
+  top: var(--topbar-height, 70px);
+  left: 0;
+  width: var(--sidebar-width, 260px);
+  height: calc(100dvh - var(--topbar-height, 70px));
+  background: #ffffff;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 1040;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-heading, 'Montserrat', sans-serif);
+  transition: transform 0.3s ease;
+
+  // Thin scrollbar (scoped override of global 8px → 5px)
+  scrollbar-width: thin;
+  scrollbar-color: rgba($admin-blue, 0.3) transparent;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba($admin-blue, 0.3);
+    border-radius: 3px;
+  }
+}
+
+// ============================================================
+// Sidebar Backdrop (Mobile)
+// ============================================================
+.admin-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1039;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+
+  &.show {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+// ============================================================
+// Close Button (Mobile)
+// ============================================================
+.sidebar-close-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d;
+  cursor: pointer;
+  z-index: 10;
+
+  &:hover {
+    color: #343a40;
+  }
+}
+
+// ============================================================
+// Logo / Admin Info Section
+// ============================================================
+.admin-logo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.admin-logo-wrapper {
+  margin-bottom: 0.75rem;
+}
+
+.admin-logo-placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba($admin-blue, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba($admin-blue, 0.2);
+
+  i {
+    font-size: 1.75rem;
+    color: var(--haitian-blue, $admin-blue);
+  }
+}
+
+.admin-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #212529;
+  text-align: center;
+}
+
+.admin-role {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-align: center;
+  margin-top: 0.15rem;
+}
+
+// ============================================================
+// Navigation Links
+// ============================================================
+.sidebar-nav {
+  flex: 1;
+  padding: 0.75rem 0.6rem;
+}
+
+.admin-sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  margin: 0.1rem 0;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #495057;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  position: relative;
+
+  i {
+    font-size: 1.15rem;
+    color: var(--haitian-blue, $admin-blue);
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+  }
+
+  span {
+    white-space: nowrap;
+  }
+
+  // Hover
+  &:hover {
+    background: rgba($admin-blue, 0.06);
+    color: var(--haitian-blue, $admin-blue);
+  }
+
+  // Active / Current Page
+  &.active,
+  &[aria-current="page"] {
+    background: rgba($admin-blue, 0.1);
+    color: var(--haitian-blue, $admin-blue);
+    font-weight: 600;
+
+    i {
+      color: var(--haitian-blue, $admin-blue);
+    }
+
+    // Left accent bar
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 28px;
+      background: var(--haitian-blue, $admin-blue);
+      border-radius: 0 3px 3px 0;
+    }
+  }
+}
+
+// ============================================================
+// Sidebar Divider
+// ============================================================
+.sidebar-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 0.5rem 0.85rem;
+  list-style: none;
+}
+
+// ============================================================
+// API Submenu (Collapsible)
+// ============================================================
+.api-submenu {
+  list-style: none;
+  padding: 0.25rem 0 0.25rem 1rem;
+  margin: 0;
+
+  .nav-link {
+    font-size: 0.85rem;
+    padding: 0.45rem 0.75rem;
+
+    i {
+      font-size: 1rem;
+    }
+  }
+}
+
+.rotate-icon {
+  transition: transform 0.3s ease;
+  font-size: 0.9rem;
+}
+
+[aria-expanded="true"] .rotate-icon {
+  transform: rotate(180deg);
+}
+
+// ============================================================
+// Logout Button
+// ============================================================
+.sidebar-logout {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin-top: auto;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: var(--font-heading, 'Montserrat', sans-serif);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  i {
+    font-size: 1.15rem;
+    color: #e74c3c;
+  }
+
+  &:hover {
+    background: rgba(231, 76, 60, 0.08);
+    color: #e74c3c;
+
+    i {
+      color: #c0392b;
+    }
+  }
+}
+
+// ============================================================
+// Mobile Behavior
+// ============================================================
+@media (max-width: 991.98px) {
+  .admin-sidebar {
+    top: 0;
+    height: 100dvh;
+    transform: translateX(-100%);
+    box-shadow: none;
+
+    &.show {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+// ============================================================
+// Main Content Offset (Desktop)
+// ============================================================
+.admin-main-content {
+  flex: 1;
+  min-height: calc(100dvh - var(--topbar-height, 70px));
+  margin-top: var(--topbar-height, 70px);
+
+  @media (min-width: 992px) {
+    margin-left: var(--sidebar-width, 260px);
+  }
+}

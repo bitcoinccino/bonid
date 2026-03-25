@@ -1,0 +1,253 @@
+<%# app/views/admin/name_change_requests/show.html.erb %>
+
+<section class="container py-5" role="main">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="h4 fw-bold text-primary mb-1">
+        <i class="ri-edit-line me-2"></i>Name Change Request
+      </h2>
+      <p class="text-muted small mb-0">
+        Review the citizen's name change request and take action.
+      </p>
+    </div>
+    <%= link_to admin_name_change_requests_path, class: "btn btn-outline-secondary btn-sm rounded-pill" do %>
+      <i class="ri-arrow-left-line me-1"></i>Back to List
+    <% end %>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Citizen Info + Name Comparison -->
+    <div class="col-lg-8">
+      <!-- Citizen Info Card -->
+      <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="ri-user-3-line me-2"></i>Citizen Information
+          </h6>
+          <div class="d-flex align-items-center mb-3">
+            <div class="me-3 bg-light rounded-circle d-flex align-items-center justify-content-center overflow-hidden" style="width: 64px; height: 64px;">
+              <% if @request.user&.photo&.attached? %>
+                <%= image_tag @request.user.photo.variant(resize_to_fill: [64, 64]).processed,
+                              class: "rounded-circle", alt: "Photo",
+                              style: "width: 64px; height: 64px; object-fit: cover;" %>
+              <% else %>
+                <i class="ri-user-line text-muted fs-3"></i>
+              <% end %>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-0"><%= @request.user&.full_name || "Unknown" %></h5>
+              <div class="text-muted small"><%= @request.user&.email %></div>
+              <div class="text-muted small">BonID: <strong><%= @request.user&.bonid || "—" %></strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Name Comparison Card -->
+      <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="ri-arrow-left-right-line me-2"></i>Name Comparison
+          </h6>
+          <div class="row g-3">
+            <!-- Old Name -->
+            <div class="col-md-6">
+              <div class="border rounded-3 p-3 bg-light">
+                <div class="text-muted small fw-semibold mb-2">
+                  <i class="ri-arrow-left-line me-1"></i>Current Name
+                </div>
+                <div class="mb-2">
+                  <label class="text-muted small">First Name</label>
+                  <div class="fw-semibold"><%= @request.old_first_name %></div>
+                </div>
+                <div class="mb-2">
+                  <label class="text-muted small">Middle Name</label>
+                  <div class="fw-semibold"><%= @request.old_middle_name.presence || "—" %></div>
+                </div>
+                <div>
+                  <label class="text-muted small">Last Name</label>
+                  <div class="fw-semibold"><%= @request.old_last_name %></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- New Name -->
+            <div class="col-md-6">
+              <div class="border rounded-3 p-3 bg-white border-primary">
+                <div class="text-primary small fw-semibold mb-2">
+                  <i class="ri-arrow-right-line me-1"></i>Requested Name
+                </div>
+                <div class="mb-2">
+                  <label class="text-muted small">First Name</label>
+                  <div class="fw-bold <%= @request.old_first_name != @request.new_first_name ? 'text-success' : '' %>">
+                    <%= @request.new_first_name %>
+                    <% if @request.old_first_name != @request.new_first_name %>
+                      <i class="ri-arrow-right-s-fill text-success"></i>
+                    <% end %>
+                  </div>
+                </div>
+                <div class="mb-2">
+                  <label class="text-muted small">Middle Name</label>
+                  <div class="fw-bold <%= @request.old_middle_name != @request.new_middle_name ? 'text-success' : '' %>">
+                    <%= @request.new_middle_name.presence || "—" %>
+                    <% if @request.old_middle_name != @request.new_middle_name %>
+                      <i class="ri-arrow-right-s-fill text-success"></i>
+                    <% end %>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-muted small">Last Name</label>
+                  <div class="fw-bold <%= @request.old_last_name != @request.new_last_name ? 'text-success' : '' %>">
+                    <%= @request.new_last_name %>
+                    <% if @request.old_last_name != @request.new_last_name %>
+                      <i class="ri-arrow-right-s-fill text-success"></i>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Supporting Document -->
+      <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="ri-file-text-line me-2"></i>Supporting Document
+          </h6>
+          <% if @request.supporting_document.attached? %>
+            <div class="d-flex align-items-center gap-3">
+              <% if @request.supporting_document.content_type&.start_with?("image/") %>
+                <%= image_tag url_for(@request.supporting_document),
+                              class: "img-fluid rounded-3 border",
+                              style: "max-height: 400px;",
+                              alt: "Supporting document" %>
+              <% else %>
+                <div class="border rounded-3 p-3 bg-light d-flex align-items-center">
+                  <i class="ri-file-pdf-2-line text-danger fs-3 me-3"></i>
+                  <div>
+                    <div class="fw-semibold"><%= @request.supporting_document.filename %></div>
+                    <div class="text-muted small"><%= number_to_human_size(@request.supporting_document.byte_size) %></div>
+                  </div>
+                </div>
+              <% end %>
+              <div>
+                <%= link_to url_for(@request.supporting_document),
+                            class: "btn btn-outline-primary btn-sm rounded-pill",
+                            target: "_blank" do %>
+                  <i class="ri-external-link-line me-1"></i>Open
+                <% end %>
+              </div>
+            </div>
+          <% else %>
+            <p class="text-muted mb-0">No supporting document was uploaded.</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Status + Actions -->
+    <div class="col-lg-4">
+      <!-- Status Card -->
+      <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold text-primary mb-3">
+            <i class="ri-information-line me-2"></i>Request Details
+          </h6>
+
+          <div class="mb-3">
+            <label class="text-muted small">Status</label>
+            <div>
+              <span class="badge rounded-pill bg-<%= @request.pending? ? 'warning' : @request.approved? ? 'success' : 'danger' %> fs-6">
+                <%= @request.status.titleize %>
+              </span>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="text-muted small">Reason</label>
+            <div class="fw-semibold"><%= @request.reason_label %></div>
+            <% if @request.other_reason.present? %>
+              <div class="text-muted small mt-1"><%= @request.other_reason %></div>
+            <% end %>
+          </div>
+
+          <div class="mb-3">
+            <label class="text-muted small">Submitted</label>
+            <div class="fw-semibold"><%= @request.created_at.strftime("%B %d, %Y at %I:%M %p") %></div>
+          </div>
+
+          <% if @request.reviewed_at.present? %>
+            <div class="mb-3">
+              <label class="text-muted small">Reviewed</label>
+              <div class="fw-semibold"><%= @request.reviewed_at.strftime("%B %d, %Y at %I:%M %p") %></div>
+              <div class="text-muted small">by <%= @request.reviewed_by&.email || "Unknown" %></div>
+            </div>
+          <% end %>
+
+          <% if @request.rejection_reason.present? %>
+            <div class="mb-3">
+              <label class="text-muted small">Rejection Reason</label>
+              <div class="alert alert-danger small py-2 px-3 mb-0 rounded-3">
+                <%= @request.rejection_reason %>
+              </div>
+            </div>
+          <% end %>
+
+          <% if @request.admin_note.present? %>
+            <div class="mb-0">
+              <label class="text-muted small">Admin Note</label>
+              <div class="text-muted small"><%= @request.admin_note %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <!-- Action Buttons (only for pending requests) -->
+      <% if @request.pending? %>
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+          <div class="card-body p-4">
+            <h6 class="fw-bold text-primary mb-3">
+              <i class="ri-checkbox-circle-line me-2"></i>Take Action
+            </h6>
+
+            <!-- Approve -->
+            <%= form_with url: approve_admin_name_change_request_path(@request),
+                          method: :patch, local: true, class: "mb-3" do %>
+              <div class="mb-2">
+                <label class="form-label text-muted small">Admin Note (optional)</label>
+                <textarea name="admin_note" class="form-control form-control-sm" rows="2"
+                          placeholder="Optional note..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-success w-100 rounded-pill fw-semibold">
+                <i class="ri-check-line me-1"></i>Approve Name Change
+              </button>
+            <% end %>
+
+            <hr>
+
+            <!-- Reject -->
+            <%= form_with url: reject_admin_name_change_request_path(@request),
+                          method: :patch, local: true do %>
+              <div class="mb-2">
+                <label class="form-label text-muted small">Rejection Reason <span class="text-danger">*</span></label>
+                <textarea name="rejection_reason" class="form-control form-control-sm" rows="2"
+                          placeholder="Explain why this request was rejected..." required></textarea>
+              </div>
+              <div class="mb-2">
+                <label class="form-label text-muted small">Admin Note (optional)</label>
+                <textarea name="admin_note" class="form-control form-control-sm" rows="2"
+                          placeholder="Optional note..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-outline-danger w-100 rounded-pill fw-semibold">
+                <i class="ri-close-line me-1"></i>Reject Request
+              </button>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

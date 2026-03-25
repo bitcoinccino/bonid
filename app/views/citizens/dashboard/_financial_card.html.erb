@@ -1,0 +1,147 @@
+<!-- app/views/citizens/dashboard/_financial_card.html.erb -->
+<%
+  # Determine card type and styling
+  is_moncash = profile.wallet_provider.to_s.downcase.include?("moncash")
+  is_wallet = profile.wallet_provider.present?
+  
+  card_type = if is_moncash
+    { icon: 'ri-smartphone-line', label: 'MonCash Wallet', gradient: 'linear-gradient(90deg, #E83E2C, #FF6B5A)' }
+  elsif is_wallet
+    { icon: 'ri-wallet-3-line', label: 'Digital Wallet', gradient: 'linear-gradient(90deg, #0A84FF, #00C6FF)' }
+  else
+    { icon: 'ri-bank-line', label: 'Bank Account', gradient: 'linear-gradient(90deg, #00209F, #1E40AF)' }
+  end
+%>
+
+<div class="card border-0 shadow-sm rounded-3 h-100 overflow-hidden">
+  <!-- Header -->
+  <div class="p-3 text-white fw-semibold d-flex align-items-center justify-content-between"
+       style="background: <%= card_type[:gradient] %>;">
+    <div>
+      <i class="<%= card_type[:icon] %> me-1"></i>
+      <%= card_type[:label] %>
+    </div>
+    
+    <!-- Verification Badge -->
+    <% if profile.kyc_verified? %>
+      <span class="badge bg-white bg-opacity-25" data-bs-toggle="tooltip" 
+            title="Verified by <%= profile.verification_source.presence || profile.bank_name || 'Partner' %>">
+        <i class="ri-shield-check-fill"></i>
+      </span>
+    <% end %>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body">
+    <!-- Institution Name -->
+    <div class="mb-3">
+      <strong class="fs-6 text-dark d-block mb-1">
+        <%= profile.bank_name.presence || profile.wallet_provider.presence || "Unknown Institution" %>
+      </strong>
+      
+      <!-- Status Badge -->
+      <% case profile.status.to_s %>
+      <% when "verified", "approved" %>
+        <span class="badge bg-success-subtle text-success border border-success">
+          <i class="ri-check-line me-1"></i>
+          Verified
+        </span>
+      <% when "pending" %>
+        <span class="badge bg-warning-subtle text-warning border border-warning">
+          <i class="ri-time-line me-1"></i>
+          Pending Verification
+        </span>
+      <% when "rejected" %>
+        <span class="badge bg-danger-subtle text-danger border border-danger">
+          <i class="ri-close-line me-1"></i>
+          Verification Failed
+        </span>
+      <% else %>
+        <span class="badge bg-secondary-subtle text-secondary border border-secondary">
+          Not Verified
+        </span>
+      <% end %>
+    </div>
+
+    <!-- Account Details -->
+    <div class="small">
+      <% if profile.account_number.present? %>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted">Account:</span>
+          <span class="text-dark fw-semibold font-monospace">****<%= profile.account_number.last(4) %></span>
+        </div>
+      <% end %>
+
+      <% if is_moncash && profile.wallet_address.present? %>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted">Phone:</span>
+          <span class="text-dark fw-semibold"><%= profile.wallet_address %></span>
+        </div>
+      <% elsif is_wallet && profile.wallet_address.present? %>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted">Wallet:</span>
+          <span class="text-dark fw-semibold"><%= profile.wallet_address.truncate(20) %></span>
+        </div>
+      <% end %>
+
+      <% if profile.currency.present? %>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted">Currency:</span>
+          <span class="text-dark"><%= profile.currency %></span>
+        </div>
+      <% end %>
+
+      <% if profile.account_type.present? %>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted">Type:</span>
+          <span class="text-dark"><%= profile.account_type.titleize %></span>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Verification Info -->
+    <% if profile.kyc_verified? %>
+      <div class="alert alert-success-subtle border-success-subtle mt-3 mb-0 py-2 px-3">
+        <small class="d-flex align-items-center">
+          <i class="ri-shield-check-line me-2"></i>
+          <div>
+            <strong>KYC Verified</strong>
+            <% if profile.verification_source.present? %>
+              <span class="d-block text-muted">via <%= profile.verification_source %></span>
+            <% end %>
+          </div>
+        </small>
+      </div>
+    <% elsif profile.status == "pending" %>
+      <div class="alert alert-warning-subtle border-warning-subtle mt-3 mb-0 py-2 px-3">
+        <small>
+          <i class="ri-time-line me-1"></i>
+          <strong>Verification in progress...</strong>
+          <span class="d-block text-muted mt-1">
+            This may take 1-2 business days
+          </span>
+        </small>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Footer -->
+  <div class="card-footer bg-light border-0 small text-muted d-flex justify-content-between align-items-center">
+    <div>
+      <i class="<%= card_type[:icon] %> me-1"></i>
+      <%= card_type[:label] %>
+    </div>
+    <span>
+      <i class="ri-time-line me-1"></i>
+      <%= time_ago_in_words(profile.updated_at) %> ago
+    </span>
+  </div>
+</div>
+
+<script>
+  // Initialize tooltips
+  document.addEventListener("turbo:load", () => {
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(el => new bootstrap.Tooltip(el));
+  });
+</script>

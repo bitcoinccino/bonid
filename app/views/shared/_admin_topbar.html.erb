@@ -1,0 +1,110 @@
+<%# app/views/shared/_admin_topbar.html.erb %>
+<%# Admin navbar — matches partner portal navbar design %>
+<nav class="admin-topbar navbar navbar-expand-lg fixed-top shadow-sm">
+  <div class="container-fluid px-3 justify-content-between align-items-center">
+
+    <%# Brand + Mobile Toggle %>
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn d-lg-none text-white sidebar-toggle-btn"
+              type="button"
+              id="sidebarToggle"
+              aria-label="Toggle sidebar">
+        <i class="ri-menu-line ri-xl"></i>
+      </button>
+
+      <%= link_to admin_root_path, class: "navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" do %>
+        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center"
+             style="width: 36px; height: 36px;">
+          <i class="ri-shield-check-fill" style="color: #00209F; font-size: 1.25rem;"></i>
+        </div>
+        <span class="fw-bold fs-5" style="font-family: 'Montserrat', sans-serif;">BonID</span>
+        <span class="badge bg-white bg-opacity-25 fw-medium" style="font-size: 0.65rem; letter-spacing: 0.5px;">ADMIN</span>
+      <% end %>
+    </div>
+
+    <%# Smart Search Bar (Desktop only) %>
+    <form class="d-none d-lg-flex mx-auto" role="search" style="width: 480px;">
+      <div class="input-group rounded-pill shadow-sm overflow-hidden bg-white">
+        <span class="input-group-text border-0 bg-transparent ps-3">
+          <i class="ri-search-line text-muted"></i>
+        </span>
+        <input type="search"
+               class="form-control border-0 ps-0 bg-transparent"
+               placeholder="Search partners, BonIDs, citizens..."
+               aria-label="Search"
+               style="color: #333;">
+      </div>
+    </form>
+
+    <%# Right: Notifications + Admin Dropdown %>
+    <div class="d-flex align-items-center gap-3">
+
+      <%# Notifications %>
+      <div class="dropdown">
+        <button class="btn btn-sm text-white position-relative px-2"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="Notifications">
+          <i class="ri-notification-3-line" style="font-size: 1.25rem;"></i>
+          <% if (@unread_notifications_count || 0) > 0 %>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style="font-size: 0.6rem; padding: 3px 6px;">
+              <%= @unread_notifications_count %>
+            </span>
+          <% end %>
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow mt-2" style="min-width: 280px; border-radius: 0.75rem;">
+          <li class="dropdown-header fw-semibold">Notifications</li>
+          <li><hr class="dropdown-divider my-1"></li>
+          <% if (@unread_notifications_count || 0).zero? %>
+            <li class="px-3 py-2 small text-muted text-center">No new notifications</li>
+          <% end %>
+        </ul>
+      </div>
+
+      <%# Admin Profile Dropdown %>
+      <div class="dropdown">
+        <a href="#"
+           class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+               style="width: 36px; height: 36px; border: 2px solid rgba(255,255,255,0.3);">
+            <i class="ri-user-line" style="color: #00209F; font-size: 1.1rem;"></i>
+          </div>
+        </a>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow mt-2" style="min-width: 220px; border-radius: 0.75rem;">
+          <%# Admin info header %>
+          <li class="px-3 py-2 border-bottom">
+            <div class="fw-semibold"><%= current_admin_user&.email&.split("@")&.first&.titleize || "Admin" %></div>
+            <small class="text-muted">BonID Administrator</small>
+          </li>
+          <li>
+            <%= link_to admin_root_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ri-dashboard-line"></i> Dashboard
+            <% end %>
+          </li>
+          <li>
+            <%= link_to admin_partners_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ri-building-line"></i> Partners
+            <% end %>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <%= button_to destroy_admin_user_session_path,
+                method: :delete,
+                form: { data: { turbo: false } },
+                class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
+              <i class="ri-logout-box-r-line"></i> Sign Out
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</nav>

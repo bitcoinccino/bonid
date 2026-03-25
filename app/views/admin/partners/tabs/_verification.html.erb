@@ -1,0 +1,88 @@
+<div class="row g-4">
+
+  <!-- Verification Status -->
+  <div class="col-md-6">
+    <div class="card rounded-3 shadow-sm border-0 h-100">
+      <div class="card-header bg-light border-0 py-3">
+        <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+          Verification Status
+        </h5>
+      </div>
+
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="bg-<%= partner.email_verified? ? 'success' : 'warning' %> bg-opacity-10 rounded p-3">
+            <i class="ri-shield-<%= partner.email_verified? ? 'check' : 'flash' %>-fill text-<%= partner.email_verified? ? 'success' : 'warning' %> fs-4"></i>
+          </div>
+          <div>
+            <div class="fw-bold fs-5 mb-1">
+              <%= partner.email_verified? ? "Email Verified" : "Email Not Verified" %>
+            </div>
+            <p class="text-muted small mb-0">
+              Updated <%= time_ago_in_words(partner.updated_at) %> ago
+            </p>
+          </div>
+        </div>
+
+        <% if partner.verified_at.present? %>
+          <div class="mt-4 pt-3 border-top">
+            <small class="text-success fw-semibold">
+              Fully Verified Partner
+            </small>
+            <p class="text-muted small mb-0 mt-1">
+              Verified on <%= l(partner.verified_at, format: :long) %>
+            </p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Link & QR Code -->
+  <div class="col-md-6">
+    <div class="card rounded-3 shadow-sm border-0 h-100">
+      <div class="card-header bg-light border-0 py-3">
+        <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+          Verification Link & QR Code
+        </h5>
+      </div>
+
+      <div class="card-body p-4 text-center">
+
+        <!-- Start Link -->
+        <div class="bg-light rounded px-4 py-3 mb-4 position-relative">
+          <code class="text-muted small text-uppercase fw-semibold mb-2 d-block">Start Link</span>
+          <code class="fs-6 text-primary fw-semibold">
+            /start?partner=<%= partner.slug %>
+          </code>
+
+          <button class="btn btn-sm btn-outline-primary rounded-pill position-absolute top-50 end-0 translate-middle-y me-3"
+                  onclick="copyToClipboard('<%= start_verification_url(partner: partner.slug) %>')"
+                  data-bs-toggle="tooltip" title="Copy full URL">
+            Copy
+          </button>
+        </div>
+
+        <!-- QR Code -->
+        <% qr_url = start_verification_url(partner: partner.slug) %>
+        <% qr = RQRCode::QRCode.new(qr_url) %>
+
+        <div class="d-inline-block p-3 bg-white rounded-3 shadow-sm border">
+          <%= image_tag qr.as_png(
+                          size: 220,
+                          border_modules: 4,
+                          fill: 'white',
+                          color: '0f172a'
+                        ).to_data_url,
+                        class: "img-fluid",
+                        alt: "Partner QR Code" %>
+        </div>
+
+        <p class="text-muted small mt-3 mb-0">
+          Scan to begin identity verification
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>

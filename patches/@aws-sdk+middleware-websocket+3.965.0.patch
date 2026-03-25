@@ -1,0 +1,26 @@
+diff --git a/node_modules/@aws-sdk/middleware-websocket/dist-cjs/index.js b/node_modules/@aws-sdk/middleware-websocket/dist-cjs/index.js
+index d287b22..9fa624b 100644
+--- a/node_modules/@aws-sdk/middleware-websocket/dist-cjs/index.js
++++ b/node_modules/@aws-sdk/middleware-websocket/dist-cjs/index.js
+@@ -69,7 +69,7 @@ class EventStreamPayloadHandler {
+             result = await next(args);
+         }
+         catch (e) {
+-            request.body.cancel();
++            try { request.body.cancel(); } catch (_) { /* stream already locked */ }
+             throw e;
+         }
+         const match = (headers["authorization"] || "").match(/Signature=([\w]+)$/);
+diff --git a/node_modules/@aws-sdk/middleware-websocket/dist-es/EventStreamPayloadHandler.js b/node_modules/@aws-sdk/middleware-websocket/dist-es/EventStreamPayloadHandler.js
+index bbcfc1d..cb5aa0f 100644
+--- a/node_modules/@aws-sdk/middleware-websocket/dist-es/EventStreamPayloadHandler.js
++++ b/node_modules/@aws-sdk/middleware-websocket/dist-es/EventStreamPayloadHandler.js
+@@ -22,7 +22,7 @@ export class EventStreamPayloadHandler {
+             result = await next(args);
+         }
+         catch (e) {
+-            request.body.cancel();
++            try { request.body.cancel(); } catch (_) { /* stream already locked */ }
+             throw e;
+         }
+         const match = (headers["authorization"] || "").match(/Signature=([\w]+)$/);

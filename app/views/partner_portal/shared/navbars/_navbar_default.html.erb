@@ -1,0 +1,90 @@
+<%# app/views/partner_portal/shared/navbars/_navbar_default.html.erb %>
+<%# Default navbar for non-law enforcement partners — Citizen Haitian Blue theme %>
+<nav class="navbar navbar-expand-lg partner-navbar fixed-top shadow-sm">
+  <div class="container-fluid px-3 justify-content-between align-items-center">
+    <%# Brand + Mobile Toggle %>
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn d-lg-none text-white sidebar-toggle-btn"
+              type="button"
+              onclick="document.dispatchEvent(new CustomEvent('partner-sidebar:toggle'))"
+              aria-label="Toggle sidebar">
+        <i class="ri-menu-line ri-xl"></i>
+      </button>
+      <%= link_to partner_portal_dashboard_path, class: "navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" do %>
+        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center"
+             style="width: 36px; height: 36px;">
+          <i class="ri-shield-check-fill" style="color: #00209F; font-size: 1.25rem;"></i>
+        </div>
+        <span class="fw-bold fs-5 font-heading">BonID</span>
+      <% end %>
+    </div>
+
+    <%# Smart Search Bar (Desktop only) %>
+    <form class="d-none d-lg-flex mx-auto" role="search" style="width: 480px;">
+      <div class="input-group smart-search rounded-pill shadow-sm overflow-hidden bg-white">
+        <span class="input-group-text border-0 bg-transparent ps-3">
+          <i class="ri-search-line text-muted"></i>
+        </span>
+        <input type="search"
+               class="form-control border-0 ps-0 bg-transparent"
+               placeholder="Search citizen BonID..."
+               aria-label="Search citizen BonID"
+               style="color: var(--dark-gray);">
+      </div>
+    </form>
+
+    <%# Partner Admin Avatar & Dropdown %>
+    <% if current_partner_admin %>
+      <div class="dropdown partner-admin-dropdown">
+        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+           href="#"
+           id="partnerAdminDropdown"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <% if @current_partner&.logo&.attached? %>
+            <%= image_tag(
+              url_for(@current_partner.logo.variant(resize_to_limit: [36, 36])),
+              class: "rounded-circle shadow-sm",
+              style: "width: 36px; height: 36px; object-fit: cover; border: 2px solid var(--white);",
+              alt: "#{@current_partner.name || 'Partner'} logo"
+            ) %>
+          <% else %>
+            <div class="bg-light rounded-circle d-flex justify-content-center align-items-center shadow-sm"
+                 style="width: 36px; height: 36px; border: 2px solid var(--white); background-color: rgba(255,255,255,0.2) !important;">
+              <i class="ri-building-line ri-lg text-white"></i>
+            </div>
+          <% end %>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm partner-admin-menu" aria-labelledby="partnerAdminDropdown">
+          <%# Partner info header — matches officer navbar dropdown %>
+          <li class="px-3 py-2 border-bottom">
+            <div class="fw-semibold"><%= current_partner_admin&.first_name || @current_partner&.contact_person || "Partner Admin" %></div>
+            <small class="text-muted"><%= @current_partner&.name || "Partner" %></small>
+          </li>
+          <li>
+            <%= link_to partner_portal_dashboard_path, class: "dropdown-item" do %>
+              <i class="ri-dashboard-line me-2"></i> Dashboard
+            <% end %>
+          </li>
+          <li>
+            <%= link_to edit_partner_portal_partner_admin_profile_path, class: "dropdown-item" do %>
+              <i class="ri-user-line me-2"></i> Profile
+            <% end %>
+          </li>
+          <li>
+            <%= link_to partner_portal_settings_path, class: "dropdown-item" do %>
+              <i class="ri-settings-3-line me-2"></i> Settings
+            <% end %>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <%= button_to destroy_partner_admin_session_path, method: :delete, class: "dropdown-item text-danger" do %>
+              <i class="ri-logout-box-r-line me-2"></i> Log Out
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</nav>

@@ -1,14 +1,31 @@
 # config/initializers/geocoder.rb
+# frozen_string_literal: true
+
 Geocoder.configure(
-  timeout: 5,
-  lookup: :nominatim, # ✅ Specify the lookup service
+  lookup: Rails.env.development? ? :test : :nominatim,
   ip_lookup: :ipinfo_io,
-  language: :en,
+  timeout: 5,
   use_https: true,
-  cache: nil,
-  cache_prefix: 'geocoder:',
+  language: :en,
   units: :km,
   http_headers: {
-    "User-Agent" => "BonID/1.0 (contact@example.com)" # ✅ REQUIRED by Nominatim
+    "User-Agent" => "BonID/1.0 (support@bonid.ht)"
   }
 )
+
+# Disable actual geocoding in development/test
+if Rails.env.development? || Rails.env.test?
+  Geocoder.configure(lookup: :test)
+  Geocoder::Lookup::Test.set_default_stub(
+    [
+      {
+        "coordinates"  => [18.5944, -72.3074],
+        "address"      => "Port-au-Prince, Haiti",
+        "city"         => "Port-au-Prince",
+        "state"        => "Ouest",
+        "country"      => "Haiti",
+        "country_code" => "HT"
+      }
+    ]
+  )
+end

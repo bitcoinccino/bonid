@@ -1,0 +1,82 @@
+<!-- app/views/admin/identity_submissions/show/_other_documents.html.erb -->
+
+<div class="tab-pane fade" id="other-docs" role="tabpanel" aria-labelledby="other-docs-tab">
+  <div class="card border-0 rounded-3 shadow-sm mb-4">
+    <!-- Header -->
+    <div class="card-header bg-light d-flex align-items-center">
+      <i class="ri-folder-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold text-dark">Other Supporting Documents</h6>
+    </div>
+
+    <div class="card-body">
+      <!-- Description -->
+      <p class="text-muted small mb-4">
+        This section contains optional documents provided by the citizen to support their BonID verification.
+        These may include driver’s licenses, voter cards, school or work IDs, and other proofs of identity or residency.
+      </p>
+
+      <div class="row g-4">
+        <% {
+          "Driver License"     => :driver_license,
+          "Voter Card"         => :voter_card,
+          "Resident Permit"    => :resident_permit,
+          "Work Authorization" => :work_authorization,
+          "School ID"          => :school_id,
+          "University ID"      => :university_id,
+          "Other Document"     => :other_document
+        }.each do |label, field| %>
+          <% file = submission.send(field) if submission.respond_to?(field) %>
+          <% if file&.attached? %>
+            <% modal_id = "#{field}-modal-#{submission.id}" %>
+            <div class="col-md-4 col-sm-6">
+              <div class="card h-100 rounded-3 border-0 shadow-sm bg-white document-card">
+                <% if file.content_type.start_with?("image/") %>
+                  <%= image_tag file.variant(resize_to_limit: [400, 400], saver: { quality: 90 }),
+                                class: "card-img-top rounded-top-3 border-bottom",
+                                style: "object-fit: cover; height: 180px;",
+                                alt: "#{label} thumbnail" %>
+                <% else %>
+                  <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3"
+                       style="height: 180px;">
+                    <i class="ri-file-pdf-2-line fs-1 text-muted"></i>
+                  </div>
+                <% end %>
+
+                <div class="card-body text-center p-3">
+                  <span class="badge bg-primary-subtle text-primary d-inline-block mb-2">User Provided</span>
+                  <button type="button"
+                          class="btn btn-outline-primary btn-sm rounded-pill w-100 fw-semibold"
+                          data-bs-toggle="modal"
+                          data-bs-target="##{modal_id}">
+                    <i class="ri-eye-line me-1"></i> View <%= label %>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Modal for full-size preview -->
+              <%= render "admin/identity_submissions/modals/document_modal",
+                         file: file,
+                         label: label,
+                         modal_id: modal_id %>
+            </div>
+          <% end %>
+        <% end %>
+
+        <!-- Empty State -->
+        <% no_docs = {
+          :driver_license, :voter_card, :resident_permit,
+          :work_authorization, :school_id, :university_id, :other_document
+        }.none? { |f| submission.respond_to?(f) && submission.send(f)&.attached? } %>
+
+        <% if no_docs %>
+          <div class="col-12">
+            <div class="alert alert-dismissible fade show alert-light border text-center text-muted shadow-sm mt-3">
+              <i class="ri-information-line fs-5 text-secondary"></i><br>
+              No additional supporting documents have been uploaded for this submission.
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

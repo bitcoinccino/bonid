@@ -1,0 +1,45 @@
+<div class="container py-5 text-center">
+
+  <h1 class="fw-bold text-danger mb-3">Verification Link Expired</h1>
+
+  <p class="lead mb-4">
+    This verification link is no longer valid. It may have expired or already been used.
+  </p>
+
+  <p class="small text-muted">
+    You can request a new verification email in <span id="retry-countdown">10</span> seconds…
+  </p>
+
+  <button id="resend-btn" class="btn btn-primary mt-3" disabled>
+    Resend Verification Email
+  </button>
+
+</div>
+
+<script>
+  let retrySeconds = 10;
+  const retryEl = document.getElementById("retry-countdown");
+  const resendBtn = document.getElementById("resend-btn");
+
+  const retryTimer = setInterval(() => {
+    retrySeconds--;
+    retryEl.textContent = retrySeconds;
+
+    if (retrySeconds <= 0) {
+      clearInterval(retryTimer);
+      resendBtn.disabled = false;
+      resendBtn.textContent = "Resend Verification Email";
+    }
+  }, 1000);
+
+  resendBtn.addEventListener("click", function() {
+    // Replace with real endpoint
+    fetch("/partners/resend_verification?email=<%= params[:email] %>", {
+      method: "POST",
+      headers: { "X-CSRF-Token": document.querySelector('[name="csrf-token"]').content }
+    });
+
+    resendBtn.disabled = true;
+    resendBtn.textContent = "Sent!";
+  });
+</script>

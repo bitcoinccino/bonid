@@ -1,0 +1,84 @@
+<aside class="offcanvas-lg offcanvas-start bg-white border-end shadow-sm reviewer-sidebar"
+       tabindex="-1" id="reviewerSidebar">
+  <div class="offcanvas-body p-3 d-flex flex-column justify-content-between">
+
+    <!-- NAVIGATION -->
+    <div>
+      <h6 class="text-uppercase fw-semibold text-muted small mb-3">Navigation</h6>
+
+      <ul class="nav flex-column gap-2">
+
+        <!-- Dashboard -->
+        <li>
+          <%= link_to reviewers_root_path,
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if current_page?(reviewers_root_path)}" do %>
+              <i class="ri-dashboard-line"></i> Dashboard
+          <% end %>
+        </li>
+
+        <!-- All submissions -->
+        <li>
+          <%= link_to reviewers_identity_submissions_path,
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if current_page?(reviewers_identity_submissions_path)}" do %>
+              <i class="ri-file-list-3-line"></i> All Submissions
+          <% end %>
+        </li>
+
+        <!-- Pending reviews -->
+        <li>
+          <%= link_to reviewers_identity_submissions_path(status: :pending),
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if params[:status] == 'pending'}" do %>
+              <i class="ri-time-line"></i> Pending Reviews
+          <% end %>
+        </li>
+
+        <!-- Approved -->
+        <li>
+          <%= link_to reviewers_identity_submissions_path(status: :approved),
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if params[:status] == 'approved'}" do %>
+              <i class="ri-checkbox-circle-line"></i> Approved
+          <% end %>
+        </li>
+
+        <!-- Rejected -->
+        <li>
+          <%= link_to reviewers_identity_submissions_path(status: :rejected),
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if params[:status] == 'rejected'}" do %>
+              <i class="ri-close-circle-line"></i> Rejected
+          <% end %>
+        </li>
+
+        <!-- Analytics -->
+        <li>
+          <%= link_to reviewers_analytics_index_path,
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if controller_name == 'analytics'}" do %>
+              <i class="ri-bar-chart-2-line"></i> Analytics
+          <% end %>
+        </li>
+
+        <!-- Audit logs -->
+        <li>
+          <%= link_to reviewers_audit_logs_path,
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if controller_name == 'audit_logs'}" do %>
+              <i class="ri-history-line"></i> Audit Logs
+          <% end %>
+        </li>
+
+        <!-- Notifications -->
+        <li>
+          <%= link_to reviewers_notifications_path,
+             class: "nav-link d-flex align-items-center gap-2 #{'active' if controller_name == 'notifications'}" do %>
+              <i class="ri-notification-3-line"></i> Notifications
+          <% end %>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="small text-muted mt-auto pt-4">
+      <i class="ri-information-line"></i>
+      Reviewer Portal v2 • <%= Time.current.year %>
+    </div>
+  </div>
+</aside>

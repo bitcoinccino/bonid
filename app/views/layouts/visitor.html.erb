@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BonTouris ID | A safer way to travel in Haiti</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <!-- ✅ CSS via Propshaft -->
+  <%= stylesheet_link_tag "application", media: "all" %>
+
+  <!-- ✅ JS via Importmap (Rails 8) -->
+<%= javascript_include_tag "application", defer: true %>
+
+
+  <!-- Icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css"
+  >
+
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+</head>
+
+<%
+  is_certificate =
+    content_for?(:body_class) &&
+    yield(:body_class).include?("visitor-certificate")
+%>
+
+<body class="visitor-layout <%= yield(:body_class) if content_for?(:body_class) %>">
+
+  <!-- ===============================
+       FLASH MESSAGES (GLOBAL)
+  ================================ -->
+  <% if flash[:alert] || flash[:notice] %>
+    <div class="container pt-3">
+      <% if flash[:alert] %>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+          <i class="ri-error-warning-line me-1"></i>
+          <%= flash[:alert] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+
+      <% if flash[:notice] %>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+          <i class="ri-check-line me-1"></i>
+          <%= flash[:notice] %>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <!-- BACKGROUND OWNER -->
+  <main class="visitor-canvas">
+
+    <% if content_for?(:auth_left) && !is_certificate %>
+      <!-- ===============================
+           SPLIT LAYOUT (AUTH PAGES ONLY)
+      ================================ -->
+      <div class="auth-layout">
+
+        <!-- LEFT -->
+        <aside class="auth-left d-flex align-items-center justify-content-center">
+          <div class="auth-left-inner w-100" style="max-width: 640px;">
+            <%= yield :auth_left %>
+          </div>
+        </aside>
+
+        <!-- RIGHT -->
+        <section class="auth-right d-flex align-items-center justify-content-center">
+          <div class="auth-right-inner">
+            <%= yield %>
+          </div>
+        </section>
+
+      </div>
+
+    <% else %>
+      <!-- ===============================
+           SINGLE COLUMN
+      ================================ -->
+      <div class="container py-5">
+        <%= yield %>
+      </div>
+    <% end %>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<%# app/views/public/visitors/_certificate_qr.html.erb %>
+<%# IMPORTANT: cert is passed in from success.html.erb %>
+
+<div class="credential-card text-center position-relative">
+
+  <!-- ACTION MENU -->
+  <div class="credential-actions dropdown position-absolute top-0 end-0 m-3">
+    <button
+      class="btn btn-link p-0 credential-actions-trigger"
+      type="button"
+      data-bs-toggle="dropdown"
+      aria-expanded="false"
+      aria-label="Certificate actions">
+      <i class="ri-more-2-line"></i>
+    </button>
+
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li class="dropdown-item text-muted">
+        <i class="ri-wallet-3-line me-2"></i>
+        Apple Wallet (Soon)
+      </li>
+
+      <li><hr class="dropdown-divider"></li>
+
+      <li>
+        <%= link_to download_pdf_public_visitor_path(
+              visitor.public_id,
+              access_token: params[:access_token]
+            ),
+            class: "dropdown-item",
+            target: "_blank",
+            rel: "noopener" do %>
+          <i class="ri-download-line me-2"></i>
+          Download PDF
+        <% end %>
+      </li>
+    </ul>
+  </div>
+
+  <!-- HEADER -->
+  <div class="credential-qr-header">
+    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+      <i class="ri-global-line" style="font-size: 1.2rem; opacity: 0.9;"></i>
+      <span class="credential-brand">BonTouris ID</span>
+    </div>
+    <p class="credential-qr-name"><%= cert.full_name %></p>
+  </div>
+
+  <!-- QR CODE -->
+  <div class="credential-qr-seal">
+    <div class="credential-qr-frame">
+      <%= raw cert.qr_svg if cert.qr_svg.present? %>
+    </div>
+  </div>
+
+  <!-- TRUST LABEL -->
+  <div class="credential-qr-trust mt-3">
+    <i class="ri-lock-line me-1"></i>
+    Cryptographically Secured
+  </div>
+
+  <!-- EXPIRATION -->
+  <% if cert.expiration_date.present? %>
+    <% days_left = cert.days_until_expiration %>
+
+    <div class="credential-qr-expiry mt-3">
+      <% if cert.expired? %>
+        <span class="badge bg-danger rounded-pill px-3 py-2">
+          <i class="ri-error-warning-line me-1"></i> Expired
+        </span>
+      <% elsif days_left <= 7 %>
+        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">
+          <i class="ri-timer-line me-1"></i> Expires in <%= days_left %> day<%= days_left == 1 ? '' : 's' %>
+        </span>
+      <% else %>
+        <span class="badge rounded-pill px-3 py-2" style="background: rgba(255, 215, 0, 0.15); color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.3);">
+          <i class="ri-calendar-check-line me-1"></i> Valid until <%= cert.expiration_date.strftime("%b %d, %Y") %>
+        </span>
+      <% end %>
+    </div>
+  <% end %>
+
+</div>

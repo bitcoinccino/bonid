@@ -1,0 +1,148 @@
+<%# Identification Information Section — all fields editable (citizens may renew docs) %>
+<div class="card profile-card" data-controller="id-switcher">
+  <div class="card-body">
+    <%# Info Banner %>
+    <div class="alert alert-info d-flex align-items-start">
+      <i class="ri-2x ri-shield-keyhole-line me-3"></i>
+      <div>
+        <strong>Your identity is verified under official Haitian regulations.</strong><br>
+        All identification data is <strong>encrypted at rest and in transit</strong>.
+        Only authorized Haitian institutions may verify your identity — never access your full record without consent.
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <%# Type %>
+      <div class="col-md-6">
+        <%= f.input :id_type,
+          label: "Type",
+          collection: IdentitySubmission::ID_TYPES.map { |k, v| [v.upcase, k] },
+          include_blank: "Select ID Type",
+          input_html: {
+            class: "form-select",
+            data: {
+              id_switcher_target: "idType",
+              action: "change->id-switcher#toggleFields"
+            }
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">Choose <strong>CIN</strong> or <strong>Passport</strong></small>
+      </div>
+
+      <%# Number %>
+      <div class="col-md-6">
+        <%= f.input :id_number,
+          label: "Number",
+          input_html: {
+            class: "form-control",
+            placeholder: "T1K2N8697 or R10772334",
+            data: {
+              id_switcher_target: "idNumber",
+              action: "input->id-switcher#formatIdNumber"
+            }
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">
+          CIN example: <strong>T1K2N8697</strong> • Passport example: <strong>R10772334</strong>
+        </small>
+      </div>
+
+      <%# NINU — REQUIRED FOR PASSPORT %>
+      <div class="col-md-6"
+           data-id-switcher-target="ninu"
+           style="<%= f.object.id_type == 'passport' ? '' : 'display:none;' %>">
+        <%= f.input :ninu,
+          label: "National Identification Number (NINU)",
+          input_html: {
+            class: "form-control",
+            placeholder: "0123456789",
+            maxlength: 10,
+            inputmode: "numeric",
+            data: { action: "input->id-switcher#formatNinu" }
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">
+          <strong>Required for all passport services</strong> • Exactly <strong>10 digits</strong><br>
+          Issued by the Haitian State (replaces NIF for immigration & passport processing)
+        </small>
+      </div>
+
+      <%# Place of Birth %>
+      <div class="col-12" data-controller="birth-address">
+        <div class="row g-4">
+          <div class="col-md-6">
+            <%= f.input :birth_department_id,
+              collection: Department.order(:name).map { |d| [d.name, d.id] },
+              include_blank: "Select Department",
+              input_html: {
+                class: "form-select",
+                data: {
+                  action: "change->birth-address#loadCommunes",
+                  birth_address_target: "department"
+                }
+              },
+              label_html: { class: "form-label" } %>
+            <small class="text-muted">Department where you were born</small>
+          </div>
+
+          <div class="col-md-6">
+            <%= f.input :birth_commune_id,
+              collection: f.object.birth_department_id.present? ?
+                Commune.where(department_id: f.object.birth_department_id).order(:name).map { |c| [c.name, c.id] } : [],
+              include_blank: "Select department first",
+              input_html: {
+                class: "form-select",
+                data: { birth_address_target: "commune" }
+              },
+              label_html: { class: "form-label" } %>
+            <small class="text-muted">Commune of birth</small>
+          </div>
+        </div>
+      </div>
+
+      <%# Issued %>
+      <div class="col-md-6">
+        <%= f.input :id_issued_on, as: :date,
+          label: "Issued",
+          start_year: 2000,
+          end_year: Date.current.year,
+          order: [:day, :month, :year],
+          prompt: { day: "Day", month: "Month", year: "Year" },
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">Issue date on your document</small>
+      </div>
+
+      <%# Expired %>
+      <div class="col-md-6">
+        <%= f.input :id_expires_on, as: :date,
+          label: "Expired",
+          start_year: Date.current.year,
+          end_year: Date.current.year + 20,
+          order: [:day, :month, :year],
+          prompt: { day: "Day", month: "Month", year: "Year" },
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">Expiration date on your document</small>
+      </div>
+
+      <%# Issuer %>
+      <div class="col-md-6">
+        <%= f.input :document_issuer,
+          label: "Issuer",
+          collection: DocumentIssuers::LIST,
+          include_blank: "Select Issuing Authority",
+          input_html: { class: "form-select" },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted">Authority that issued your document</small>
+      </div>
+    </div>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-2-fill text-success me-2"></i>
+      <strong>Encrypted • Audited • DIE-Compliant</strong><br>
+      Fully aligned with Haitian passport & identity regulations (2026).
+    </div>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 fw-bold">Select Verified Partner</h1>
+    <%= link_to "Back to Sectors", new_sector_admin_schemas_path, class: "btn btn-outline-secondary" %>
+  </div>
+
+  <% if @partners.any? %>
+    <% @partners.group_by(&:sector).each do |sector, partners| %>
+      <h5 class="mt-3"><%= sector.titleize %></h5>
+      <div class="list-group mb-3 shadow-sm">
+        <% partners.each do |partner| %>
+          <%= link_to new_admin_schema_path(partner_id: partner.id),
+                      class: "list-group-item list-group-item-action d-flex justify-content-between align-items-center" do %>
+            <div>
+              <strong><%= partner.name %></strong><br>
+              <small class="text-muted"><%= partner.city %></small>
+            </div>
+            <span class="badge bg-success">Verified</span>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="alert alert-dismissible fade show alert-warning mt-3">
+      No verified partners found for this sector.
+    </div>
+  <% end %>
+</div>

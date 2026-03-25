@@ -1,0 +1,122 @@
+/* ======================================================
+   GLOBAL LOADING OVERLAY — BonID
+   Page-ready loading indicator for all users.
+   Starts VISIBLE in HTML, JS hides when page is ready.
+====================================================== */
+
+/* Turbo Drive progress bar — Haitian Blue branding */
+.turbo-progress-bar {
+  background-color: var(--haitian-blue, #00209F);
+  height: 3px;
+}
+
+.bonid-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+
+  &.bonid-loading-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  // Dark mode support for law enforcement layout
+  .partner-law-enforcement-layout & {
+    background: rgba(9, 44, 115, 0.92);
+  }
+}
+
+.bonid-loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bonid-loading-ring {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(0, 32, 159, 0.1);
+  border-top-color: var(--haitian-blue, #00209F);
+  border-radius: 50%;
+  animation: bonidSpin 0.8s linear infinite;
+
+  // Law enforcement blue variant
+  .partner-law-enforcement-layout & {
+    border-color: rgba(255, 255, 255, 0.2);
+    border-top-color: var(--haitian-cyan, #00E4FF);
+  }
+}
+
+.bonid-loading-text {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--dark-gray, #343A40);
+  letter-spacing: 0.025em;
+
+  .partner-law-enforcement-layout & {
+    color: #fff;
+  }
+}
+
+/* ========== Error State ========== */
+
+.bonid-loading-error-icon {
+  font-size: 1.5rem;
+  color: #dc3545;
+  display: block;
+  margin-bottom: 0.5rem;
+
+  .partner-law-enforcement-layout & {
+    color: #ff6b6b;
+  }
+}
+
+.bonid-loading-error-text {
+  color: #dc3545;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.5;
+
+  .partner-law-enforcement-layout & {
+    color: #ff6b6b;
+  }
+}
+
+/* ========== Animations ========== */
+
+@keyframes bonidSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+
+/* ========== Mobile Responsive ========== */
+
+@media (max-width: 576px) {
+  .bonid-loading-ring {
+    width: 40px;
+    height: 40px;
+    border-width: 2.5px;
+  }
+
+  .bonid-loading-text {
+    font-size: 0.8125rem;
+  }
+
+  .bonid-loading-error-icon {
+    font-size: 1.25rem;
+  }
+}

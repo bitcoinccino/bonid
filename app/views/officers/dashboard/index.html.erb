@@ -1,0 +1,217 @@
+<%# app/views/officers/dashboard/index.html.erb %>
+
+<div class="container-fluid py-4">
+  <%# Welcome Header with Partner Logo %>
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm bg-white">
+        <div class="card-body py-4">
+          <div class="d-flex align-items-center">
+            <div class="me-3 me-md-4 flex-shrink-0">
+              <% if current_officer.partner&.logo&.attached? %>
+                <%= image_tag current_officer.partner.logo.variant(resize_to_limit: [80, 80]),
+                              class: "rounded-circle",
+                              style: "width: 60px; height: 60px; min-width: 60px; min-height: 60px; object-fit: cover; border: 3px solid rgba(9, 44, 115, 0.2);" %>
+              <% else %>
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 60px; height: 60px; min-width: 60px; min-height: 60px; background: rgba(9, 44, 115, 0.1); border: 3px solid rgba(9, 44, 115, 0.2);">
+                  <i class="ri-shield-star-line text-law-blue" style="font-size: 1.75rem;"></i>
+                </div>
+              <% end %>
+            </div>
+            <div>
+              <h2 class="mb-1 fw-bold" style="font-family: 'Montserrat', sans-serif; color: var(--law-blue);">Welcome Agent <%= current_officer.last_name %></h2>
+              <p class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--mid-gray);">
+                <span class="badge bg-law-blue text-white me-2"><%= current_officer.rank %></span>
+                <span><%= current_officer.unit_name %> - <%= current_officer.unit_type %></span>
+              </p>
+              <p class="mb-0 mt-1" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">
+                Badge: <%= current_officer.badge_id %>
+              </p>
+              <% if current_officer.department_directorate.present? %>
+                <p class="mb-0 mt-1" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">
+                  <i class="ri-map-pin-2-line me-1" style="font-weight: 400;"></i><%= current_officer.department_directorate %> — <%= OfficerConstants::DEPARTMENTS[current_officer.department_directorate] %>
+                </p>
+              <% end %>
+              <% if current_officer.last_sign_in_at.present? %>
+                <p class="mb-0 mt-1" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">
+                  <i class="ri-time-line me-1" style="font-weight: 400;"></i>Last login: <%= time_ago_in_words(current_officer.last_sign_in_at) %> ago
+                </p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Stats Cards %>
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3 mb-md-0">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; min-width: 48px; border-radius: 50%; background: var(--law-blue-10);">
+              <i class="ri-file-list-3-line" style="font-size: 1.25rem; color: var(--law-blue); font-weight: 400;"></i>
+            </div>
+            <div>
+              <h3 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1.5rem; color: var(--dark-gray);"><%= @incident_count || 0 %></h3>
+              <p class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">Total Reports</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3 mb-md-0">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; min-width: 48px; border-radius: 50%; background: rgba(245, 158, 11, 0.1);">
+              <i class="ri-draft-line" style="font-size: 1.25rem; color: #F59E0B; font-weight: 400;"></i>
+            </div>
+            <div>
+              <h3 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1.5rem; color: var(--dark-gray);"><%= @draft_count || 0 %></h3>
+              <p class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">Draft Reports</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; min-width: 48px; border-radius: 50%; background: var(--law-green-10);">
+              <i class="ri-qr-scan-2-line" style="font-size: 1.25rem; color: var(--law-green); font-weight: 400;"></i>
+            </div>
+            <div>
+              <h3 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1.5rem; color: var(--dark-gray);"><%= current_officer.qr_scans.count %></h3>
+              <p class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">Total Scans</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Hot Zones Analysis %>
+  <div class="row g-4 mb-4">
+    <%# Map Placeholder %>
+    <div class="col-lg-8">
+      <div class="card analytics-chart-card border-0 shadow-sm">
+        <div class="card-header bg-white border-0">
+          <h5 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1rem; color: var(--dark-gray);"><i class="ri-fire-line me-2 text-law-red" style="font-weight: 400;"></i>Crime Heat Map</h5>
+        </div>
+        <div class="card-body">
+          <div id="heatMap" class="d-flex align-items-center justify-content-center rounded" style="height: 300px; background: var(--law-gray-light);">
+            <div class="text-center" style="color: var(--mid-gray);">
+              <i class="ri-map-2-line" style="font-size: 2.5rem; opacity: 0.3; font-weight: 400;"></i>
+              <p class="mt-2 mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem;">Interactive map coming soon</p>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="d-flex justify-content-center gap-4" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+              <span><span class="badge bg-law-green">&nbsp;&nbsp;</span> Low (1-5)</span>
+              <span><span class="badge bg-warning">&nbsp;&nbsp;</span> Medium (6-15)</span>
+              <span><span class="badge bg-law-red">&nbsp;&nbsp;</span> High (16+)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Top Hot Zones List %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-0">
+          <h5 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1rem; color: var(--dark-gray);"><i class="ri-alert-line me-2 text-law-red" style="font-weight: 400;"></i>Top Hot Zones</h5>
+        </div>
+        <div class="card-body p-0">
+          <% if @zone_data&.any? %>
+            <div class="list-group list-group-flush">
+              <% @zone_data.sort_by { |z| -z[:count] }.first(5).each_with_index do |zone, idx| %>
+                <%
+                  severity_class = case zone[:count]
+                                   when 0..5 then "law-green"
+                                   when 6..15 then "warning"
+                                   else "law-red"
+                                   end
+                %>
+                <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+                  <div>
+                    <span class="badge bg-<%= severity_class %> me-2"><%= idx + 1 %></span>
+                    <strong style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);"><%= zone[:commune_name] %></strong>
+                    <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);"><%= zone[:department] %></div>
+                    <% if zone[:top_crime_type].present? %>
+                      <div style="font-family: 'Montserrat', sans-serif; font-size: 0.7rem; color: var(--mid-gray); margin-top: 2px;">
+                        <i class="ri-error-warning-line" style="font-weight: 400;"></i>
+                        <%= zone[:top_crime_type] %> (<%= zone[:top_crime_count] %>)
+                      </div>
+                    <% end %>
+                  </div>
+                  <div class="text-end">
+                    <span class="text-<%= severity_class %>" style="font-family: 'Montserrat', sans-serif; font-weight: 600;"><%= zone[:count] %></span>
+                    <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">reports</div>
+                    <% if zone[:severity_label].present? %>
+                      <div style="font-family: 'Montserrat', sans-serif; font-size: 0.65rem; margin-top: 2px;">
+                        <span class="badge bg-<%= severity_class %>" style="font-size: 0.6rem; opacity: 0.9;">
+                          <%= zone[:severity_label] %>
+                        </span>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="text-center py-4" style="color: var(--mid-gray);">
+              <i class="ri-map-pin-line" style="font-size: 2rem; opacity: 0.3; font-weight: 400;"></i>
+              <p class="mt-2 mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">No location data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Draft Reports %>
+  <% if @draft_reports.present? %>
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1rem; color: var(--dark-gray);">Draft Reports</h5>
+            <%= link_to "View All", officers_incident_reports_path(status: "draft"), class: "btn btn-sm btn-outline-primary" %>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Report #</th>
+                    <th>Type</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @draft_reports.limit(5).each do |report| %>
+                    <tr>
+                      <td><%= report.id %></td>
+                      <td><%= report.crime_type&.humanize || "N/A" %></td>
+                      <td><%= time_ago_in_words(report.created_at) %> ago</td>
+                      <td>
+                        <%= link_to edit_officers_incident_report_path(report), class: "btn btn-sm btn-outline-primary" do %>
+                          <i class="ri-edit-line"></i> Continue
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

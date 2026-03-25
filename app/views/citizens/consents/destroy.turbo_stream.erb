@@ -1,0 +1,16 @@
+<!-- app/views/citizens/consents/destroy.turbo_stream.erb -->
+
+<%# Update flash messages %>
+<%= turbo_stream.update "flash_messages" do %>
+  <%= render "shared/flash" %>
+<% end %>
+
+<%# Update the card content (keeps the col-* grid wrapper intact) %>
+<%= turbo_stream.update dom_id(@consent) do %>
+  <%= render "citizens/consents/consent_grant_card", grant: @consent %>
+<% end %>
+
+<%# Update the dashboard consents widget (if present) %>
+<%= turbo_stream.replace "consents-card" do %>
+  <%= render "citizens/consents/card", consent_grants: @consent_grants %>
+<% end %>

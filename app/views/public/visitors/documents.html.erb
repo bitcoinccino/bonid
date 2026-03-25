@@ -1,0 +1,138 @@
+<div class="login-card">
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+  <div class="login-header mb-4 text-center">
+    <h2 class="login-title fw-bold mb-1">
+      <%= t("bon_touris.pages.documents.title") %>
+    </h2>
+    <p class="login-subtitle text-muted mb-0">
+      <%= t("bon_touris.pages.documents.duration_html").html_safe %>
+    </p>
+  </div>
+
+  <%= form_with model: @visitor,
+                url: documents_public_visitor_path(@visitor.public_id),
+                method: :post,
+                local: true,
+                multipart: true,
+                class: "needs-validation" do |f| %>
+
+    <!-- 🔐 Persist access token -->
+    <%= hidden_field_tag :access_token, params[:access_token] %>
+
+    <!-- =====================================================
+         LIVE SELFIE (PREVIEW + RETAKE + CONFIRM)
+    ====================================================== -->
+    <div class="mb-4" data-controller="live-selfie">
+
+      <label class="form-label fw-bold">
+        <%= t("bon_touris.pages.documents.selfie.label") %>
+      </label>
+
+      <!-- Instruction -->
+      <p class="text-center small fw-semibold mb-3 text-primary"
+         data-live-selfie-target="instruction">
+        Initializing camera…
+      </p>
+
+      <!-- Camera + Preview Container -->
+      <div class="text-center mb-4">
+        <video data-live-selfie-target="video"
+               autoplay
+               playsinline
+               muted
+               class="rounded-circle border shadow w-100"
+               style="max-width: 280px; height: auto; aspect-ratio: 1/1; object-fit: cover;">
+        </video>
+
+        <img data-live-selfie-target="preview"
+             class="rounded-circle border shadow w-100 d-none"
+             style="max-width: 280px; height: auto; aspect-ratio: 1/1; object-fit: cover;"
+             alt="Selfie preview" />
+
+        <canvas data-live-selfie-target="canvas" class="d-none"></canvas>
+      </div>
+
+      <!-- Hidden ActiveStorage input -->
+      <%= f.file_field :selfie,
+            class: "d-none",
+            data: { live_selfie_target: "file" },
+            accept: "image/jpeg",
+            required: true %>
+
+      <!-- ACTION BUTTONS -->
+      <div class="d-flex justify-content-center gap-3 mt-4">
+
+        <button type="button"
+                class="btn btn-primary px-4 disabled"
+                data-live-selfie-target="captureBtn"
+                data-action="live-selfie#capture">
+          <i class="ri-camera-line me-2"></i>
+          Capture
+        </button>
+
+        <button type="button"
+                class="btn btn-outline-warning px-4 d-none"
+                data-live-selfie-target="retakeBtn"
+                data-action="live-selfie#retake">
+          <i class="ri-refresh-line me-2"></i>
+          Retake
+        </button>
+
+        <button type="submit"
+                class="btn btn-success px-4 d-none"
+                data-live-selfie-target="confirmBtn">
+          <i class="ri-check-line me-2"></i>
+          Confirm Photo
+        </button>
+
+      </div>
+
+      <div class="form-text mt-3 text-center small">
+        <i class="ri-shield-check-line me-1"></i>
+        Live selfie with guided liveness check • No photo uploads accepted
+      </div>
+    </div>
+
+    <!-- =====================================================
+         PASSPORT PHOTO
+    ====================================================== -->
+    <div class="mb-4">
+      <%= f.label :passport_photo,
+            t("bon_touris.pages.documents.passport.label"),
+            class: "form-label fw-bold" %>
+
+      <%= f.file_field :passport_photo,
+            accept: "image/*",
+            required: true,
+            class: "form-control form-control-lg" %>
+    </div>
+
+    <!-- =====================================================
+         AFFIRMATION
+    ====================================================== -->
+    <div class="form-check mb-4">
+      <%= f.check_box :affirm_information,
+            required: true,
+            class: "form-check-input",
+            id: "affirm_information" %>
+
+      <%= f.label :affirm_information,
+            class: "form-check-label small",
+            for: "affirm_information" do %>
+        <%= t("bon_touris.pages.documents.affirmation.text_html").html_safe %>
+      <% end %>
+    </div>
+
+    <!-- =====================================================
+         SUBMIT
+    ====================================================== -->
+    <div class="d-grid mt-5">
+      <%= f.submit t("bon_touris.actions.submit_documents"),
+            class: "btn btn-haitian-primary btn-lg fw-bold py-3 shadow-sm" %>
+    </div>
+
+  <% end %>
+</div>

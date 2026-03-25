@@ -1,0 +1,43 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="fw-bold text-haitian-blue">Reviewers</h1>
+
+  <div>
+    <%= link_to "Bulk Invite", bulk_new_admin_reviewers_path,
+      class: "btn btn-outline-primary rounded-pill me-2" %>
+
+    <%= link_to "Invite Reviewer", new_admin_reviewer_path,
+      class: "btn btn-primary rounded-pill" %>
+  </div>
+</div>
+
+<div class="card shadow-sm rounded-4 p-4">
+  <table class="table table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Invited</th>
+        <th>Signed In</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @reviewers.each do |user| %>
+        <tr>
+          <td><%= user.email %></td>
+          <td><%= user.invitation_sent_at&.strftime("%b %d, %Y") || "—" %></td>
+          <td><%= user.last_sign_in_at&.strftime("%b %d, %Y") || "—" %></td>
+
+          <td class="text-end">
+            <%= button_to admin_reviewer_path(user),
+              method: :delete,
+              class: "btn btn-sm btn-danger rounded-pill",
+              data: { turbo_confirm: "Remove reviewer role?" } do %>
+              <i class="ri-delete-bin-line me-1"></i> Remove
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

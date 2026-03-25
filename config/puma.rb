@@ -30,6 +30,15 @@ threads threads_count, threads_count
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT", 3000)
 
+# Puma can fork multiple OS processes (workers) within each instance.
+# Each worker has its own thread pool. More workers = more concurrent requests.
+# WEB_CONCURRENCY=4 with RAILS_MAX_THREADS=5 → 20 concurrent requests per instance.
+# Only fork workers in production — single-process in development avoids ngrok/reloading issues.
+if ENV["RAILS_ENV"] == "production" || ENV["WEB_CONCURRENCY"].to_i > 0
+  workers ENV.fetch("WEB_CONCURRENCY", 2)
+  preload_app!
+end
+
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
 

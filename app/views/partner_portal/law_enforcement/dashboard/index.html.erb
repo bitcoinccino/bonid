@@ -1,0 +1,611 @@
+<%# Partner Portal — Law Enforcement: Tactical Command Dashboard %>
+
+<div class="container-fluid py-4"
+     data-controller="critical-alert"
+     data-critical-alert-toggle-url-value="<%= partner_portal_law_enforcement_dashboard_toggle_alert_path %>">
+
+  <%# ── Critical Incident Banner (conditional) ─────────────── %>
+  <%= render "partner_portal/law_enforcement/dashboard/critical_alert_banner" %>
+
+  <%# ── Command Header ──────────────────────────────────────── %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h2 class="mb-1 fw-bold" style="font-family: 'Montserrat', sans-serif; color: var(--law-blue);">
+        Command Dashboard
+      </h2>
+      <p class="text-muted mb-0 small">
+        <i class="ri-shield-check-line me-1"></i>
+        Operational overview — <%= Time.current.strftime("%B %d, %Y • %H:%M") %>
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <%# Emergency Alert Toggle %>
+      <button class="btn btn-sm position-relative"
+              style="<%= @partner.critical_incident_active? ? 'background: var(--law-red); color: #fff;' : 'border: 1px solid rgba(9,44,115,0.15); color: var(--mid-gray);' %> font-size: 0.75rem;"
+              data-action="click->critical-alert#requestToggle"
+              title="<%= @partner.critical_incident_active? ? 'Deactivate Critical Incident' : 'Activate Critical Incident' %>"
+              aria-label="Toggle critical incident mode">
+        <i class="ri-alarm-warning-line<%= ' le-critical-icon-pulse' if @partner.critical_incident_active? %>"></i>
+      </button>
+      <%= link_to partner_portal_law_enforcement_incident_reports_path,
+                  class: "btn btn-sm",
+                  style: "background: var(--law-blue); color: #fff; font-size: 0.75rem;" do %>
+        <i class="ri-file-list-3-line me-1"></i>All Reports
+      <% end %>
+      <%= link_to partner_portal_law_enforcement_officers_path,
+                  class: "btn btn-sm",
+                  style: "border: 1px solid var(--law-blue); color: var(--law-blue); font-size: 0.75rem;" do %>
+        <i class="ri-team-line me-1"></i>All Officers
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Global Search Bar ──────────────────────────────────── %>
+  <div class="position-relative mb-4"
+       data-controller="le-search"
+       data-le-search-url-value="<%= partner_portal_law_enforcement_search_path %>">
+    <div style="border: 1px solid rgba(9, 44, 115, 0.12); border-radius: var(--radius-md, 0.75rem); background: #fff; padding: 0.5rem 1rem;">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-search-line" style="color: var(--law-blue); font-size: 1.1rem; flex-shrink: 0;"></i>
+        <input type="search"
+               class="form-control border-0 bg-transparent"
+               placeholder="Search by BonID, Officer Name, or Case #"
+               data-le-search-target="input"
+               data-action="input->le-search#search keydown.escape->le-search#clear"
+               autocomplete="off"
+               style="font-size: 0.95rem; color: var(--dark-gray); font-family: 'Inter', sans-serif; padding: 0.4rem 0;">
+      </div>
+    </div>
+    <div class="le-search-results d-none"
+         data-le-search-target="results">
+    </div>
+  </div>
+
+  <%# ── Tactical KPI Cards (urgency-coded) ──────────────────── %>
+  <div class="row g-3 mb-4">
+    <%# Incident Reports — Law Red (highest priority) %>
+    <div class="col-6 col-lg-3">
+      <%= link_to partner_portal_law_enforcement_incident_reports_path,
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100" style="border-left: 4px solid var(--law-red);">
+          <div class="le-report-card__body py-3 px-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-red);"><%= @stats[:incident_reports] %></div>
+                <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                  Incident Reports
+                </div>
+              </div>
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(217, 7, 24, 0.08); display: flex; align-items: center; justify-content: center;">
+                <i class="ri-file-list-3-line" style="color: var(--law-red); font-size: 1.1rem;"></i>
+              </div>
+            </div>
+            <% if @incident_stats[:overdue] > 0 %>
+              <div class="mt-2">
+                <span class="badge" style="background: var(--law-red); color: #fff; font-size: 0.6rem;">
+                  <i class="ri-alarm-warning-line me-1"></i><%= @incident_stats[:overdue] %> overdue
+                </span>
+              </div>
+            <% elsif @incident_stats[:pending_review] > 0 %>
+              <div class="mt-2">
+                <span class="badge" style="background: #D97706; color: #fff; font-size: 0.6rem;">
+                  <%= @incident_stats[:pending_review] %> pending review
+                </span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Officers — Law Blue %>
+    <div class="col-6 col-lg-3">
+      <%= link_to partner_portal_law_enforcement_officers_path,
+                  class: "text-decoration-none d-block h-100" do %>
+        <div class="le-report-card h-100" style="border-left: 4px solid var(--law-blue);">
+          <div class="le-report-card__body py-3 px-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-blue);"><%= @stats[:officers] %></div>
+                <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                  Officers
+                </div>
+              </div>
+              <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(9, 44, 115, 0.08); display: flex; align-items: center; justify-content: center;">
+                <i class="ri-shield-user-line" style="color: var(--law-blue); font-size: 1.1rem;"></i>
+              </div>
+            </div>
+            <div class="mt-2 d-flex gap-2">
+              <span style="font-size: 0.65rem; color: var(--law-green); font-weight: 600;">
+                <i class="ri-checkbox-circle-line me-1"></i><%= @stats[:officers_active] %> active
+              </span>
+              <% if @stats[:officers_revoked] > 0 %>
+                <span style="font-size: 0.65rem; color: var(--law-red); font-weight: 600;">
+                  <i class="ri-forbid-line me-1"></i><%= @stats[:officers_revoked] %> revoked
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# BonID Scans — Law Green %>
+    <div class="col-6 col-lg-3">
+      <div class="le-report-card h-100" style="border-left: 4px solid var(--law-green);">
+        <div class="le-report-card__body py-3 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-green);"><%= @stats[:qr_scans] %></div>
+              <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                BonID Scans
+              </div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(73, 166, 79, 0.08); display: flex; align-items: center; justify-content: center;">
+              <i class="ri-qr-scan-2-line" style="color: var(--law-green); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+          <div class="mt-2">
+            <span style="font-size: 0.65rem; color: var(--law-green); font-weight: 600;">
+              <i class="ri-flashlight-line me-1"></i><%= @stats[:qr_scans_today] %> today
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Visitor Entries — Law Tan %>
+    <div class="col-6 col-lg-3">
+      <div class="le-report-card h-100" style="border-left: 4px solid var(--law-tan);">
+        <div class="le-report-card__body py-3 px-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="fw-bold" style="font-size: 1.75rem; color: var(--law-tan);"><%= @border_stats[:total] %></div>
+              <div style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+                Visitor Entries
+              </div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(191, 131, 96, 0.08); display: flex; align-items: center; justify-content: center;">
+              <i class="ri-flight-land-line" style="color: var(--law-tan); font-size: 1.1rem;"></i>
+            </div>
+          </div>
+          <div class="mt-2 d-flex gap-2">
+            <span style="font-size: 0.65rem; color: var(--law-tan); font-weight: 600;">
+              <i class="ri-time-line me-1"></i><%= @border_stats[:today] %> today
+            </span>
+            <span style="font-size: 0.65rem; color: var(--law-blue); font-weight: 600;">
+              <i class="ri-map-pin-user-line me-1"></i><%= @border_stats[:active] %> in country
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── System Health Bar (API stats contextualized) ────────── %>
+  <div class="le-report-card mb-4">
+    <div class="le-report-card__header">
+      <i class="ri-pulse-line"></i>
+      <span>System Health</span>
+      <% if @api_stats[:total] > 0 %>
+        <%
+          success_rate = ((@api_stats[:success].to_f / @api_stats[:total]) * 100).round(1)
+          health_color = success_rate >= 99 ? "var(--law-green)" : success_rate >= 95 ? "#D97706" : "var(--law-red)"
+        %>
+        <span class="badge ms-auto" style="background: <%= health_color %>; color: #fff; font-size: 0.6rem;">
+          <%= success_rate %>% uptime
+        </span>
+      <% end %>
+    </div>
+    <div class="le-report-card__body py-2">
+      <div class="row text-center">
+        <div class="col-3">
+          <div style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+            Total Requests
+          </div>
+          <div class="fw-bold" style="font-size: 1.1rem; color: var(--law-blue);"><%= number_with_delimiter(@api_stats[:total]) %></div>
+        </div>
+        <div class="col-3">
+          <div style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+            Successful
+          </div>
+          <div class="fw-bold" style="font-size: 1.1rem; color: var(--law-green);"><%= number_with_delimiter(@api_stats[:success]) %></div>
+        </div>
+        <div class="col-3">
+          <div style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+            Failed
+          </div>
+          <div class="fw-bold" style="font-size: 1.1rem; color: var(--law-red);"><%= number_with_delimiter(@api_stats[:failed]) %></div>
+        </div>
+        <div class="col-3">
+          <div style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--mid-gray);">
+            Today
+          </div>
+          <div class="fw-bold" style="font-size: 1.1rem; color: var(--law-blue);"><%= number_with_delimiter(@api_stats[:today]) %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Priority Row: Incident Reports + BonID Scans ────────── %>
+  <div class="row g-3 mb-4">
+    <%# Recent Incident Reports (HIGH PRIORITY — shown first) %>
+    <div class="col-lg-7">
+      <div class="le-report-card h-100">
+        <div class="le-report-card__header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-file-list-3-line" style="color: var(--law-red);"></i>
+            <span>Recent Incident Reports</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <% if @incident_stats[:pending_review] > 0 %>
+              <span class="badge" style="background: #D97706; color: #fff; font-size: 0.6rem;">
+                <%= @incident_stats[:pending_review] %> pending
+              </span>
+            <% end %>
+            <%= link_to partner_portal_law_enforcement_incident_reports_path,
+                        style: "font-size: 0.7rem; font-weight: 600; color: var(--law-blue); text-decoration: none;" do %>
+              View All <i class="ri-arrow-right-s-line"></i>
+            <% end %>
+          </div>
+        </div>
+        <div class="le-report-card__body p-0">
+          <% if @incident_reports.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" style="font-size: 0.82rem;">
+                <thead>
+                  <tr style="background: rgba(9, 44, 115, 0.04);">
+                    <th class="ps-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Crime</th>
+                    <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Officer</th>
+                    <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Status</th>
+                    <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Review</th>
+                    <th class="text-end pe-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @incident_reports.each do |report| %>
+                    <%
+                      review = report.incident_reviews.max_by(&:created_at)
+                      is_overdue = review&.overdue?
+                      severity = report.crime_severity_level
+                    %>
+                    <tr class="<%= 'table-danger' if is_overdue %>" style="vertical-align: middle;">
+                      <td class="ps-3">
+                        <%= link_to partner_portal_law_enforcement_incident_report_path(report),
+                                    class: "text-decoration-none" do %>
+                          <div class="fw-semibold" style="color: var(--dark-gray); font-size: 0.8rem;">
+                            <%= report.crime_type&.humanize || "Unknown" %>
+                          </div>
+                          <% if severity >= 3 %>
+                            <%
+                              sev_css = case severity
+                                        when 5 then "le-severity--critical"
+                                        when 4 then "le-severity--severe"
+                                        when 3 then "le-severity--high"
+                                        else ""
+                                        end
+                            %>
+                            <span class="badge <%= sev_css %>" style="font-size: 0.5rem; padding: 1px 5px;">
+                              Sev. <%= severity %>
+                            </span>
+                          <% end %>
+                        <% end %>
+                      </td>
+                      <td>
+                        <%
+                          officer = report.officer
+                          bonid_sub = officer&.user&.identity_submissions&.select { |s| s.status == "approved" }&.last
+                          officer_photo = bonid_sub&.photo if bonid_sub&.photo&.attached?
+                          officer_photo ||= officer.photo if officer&.photo&.attached?
+                        %>
+                        <div class="d-flex align-items-center">
+                          <% if officer_photo %>
+                            <%= image_tag url_for(officer_photo),
+                                          class: "rounded-circle me-2",
+                                          style: "width: 36px; height: 36px; object-fit: cover; object-position: center top; border: 1px solid rgba(9,44,115,0.15);",
+                                          loading: "lazy" %>
+                          <% else %>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                                 style="width: 36px; height: 36px; font-size: 0.65rem; background: var(--law-blue); color: #fff;">
+                              <%= officer&.first_name&.first %><%= officer&.last_name&.first %>
+                            </div>
+                          <% end %>
+                          <span class="small fw-medium"><%= officer&.full_name || "Unknown" %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <%
+                          status_style = case report.status
+                                         when "submitted"    then "background: var(--law-blue); color: #fff;"
+                                         when "under_review" then "background: #D97706; color: #fff;"
+                                         when "approved"     then "background: var(--law-green); color: #fff;"
+                                         when "rejected"     then "background: var(--law-red); color: #fff;"
+                                         when "escalated"    then "background: var(--dark-gray); color: #fff;"
+                                         when "draft"        then "background: var(--mid-gray); color: #fff;"
+                                         else "background: rgba(9,44,115,0.1); color: var(--law-blue);"
+                                         end
+                        %>
+                        <span class="badge" style="font-size: 0.6rem; <%= status_style %>">
+                          <%= report.status&.titleize || "Draft" %>
+                        </span>
+                      </td>
+                      <td>
+                        <% if review %>
+                          <% if review.overdue? %>
+                            <span class="badge" style="background: var(--law-red); color: #fff; font-size: 0.55rem;">
+                              <i class="ri-alarm-warning-line me-1"></i>Overdue
+                            </span>
+                          <% elsif review.decision_pending? %>
+                            <span class="badge" style="background: #D97706; color: #fff; font-size: 0.55rem;">
+                              <i class="ri-time-line me-1"></i>Pending
+                            </span>
+                          <% elsif review.decision_approved? %>
+                            <span class="badge" style="background: var(--law-green); color: #fff; font-size: 0.55rem;">
+                              <i class="ri-checkbox-circle-line me-1"></i>Approved
+                            </span>
+                          <% elsif review.decision_rejected? %>
+                            <span class="badge" style="background: var(--law-red); color: #fff; font-size: 0.55rem;">
+                              <i class="ri-close-circle-line me-1"></i>Rejected
+                            </span>
+                          <% else %>
+                            <span class="badge bg-secondary" style="font-size: 0.55rem;">
+                              <%= review.decision&.titleize %>
+                            </span>
+                          <% end %>
+                        <% elsif report.status_submitted? %>
+                          <span class="badge" style="font-size: 0.55rem; background: rgba(9,44,115,0.1); color: var(--law-blue);">
+                            <i class="ri-inbox-line me-1"></i>Awaiting Review
+                          </span>
+                        <% elsif report.status_under_review? %>
+                          <span class="badge" style="font-size: 0.55rem; background: rgba(217,119,6,0.1); color: #D97706;">
+                            <i class="ri-eye-line me-1"></i>Under Review
+                          </span>
+                        <% elsif report.status_approved? %>
+                          <span class="badge" style="font-size: 0.55rem; background: rgba(73,166,79,0.1); color: var(--law-green);">
+                            <i class="ri-checkbox-circle-line me-1"></i>Approved
+                          </span>
+                        <% elsif report.status_rejected? %>
+                          <span class="badge" style="font-size: 0.55rem; background: rgba(217,7,24,0.1); color: var(--law-red);">
+                            <i class="ri-close-circle-line me-1"></i>Rejected
+                          </span>
+                        <% elsif report.status_draft? %>
+                          <span class="text-muted" style="font-size: 0.65rem;">—</span>
+                        <% else %>
+                          <span class="badge" style="font-size: 0.55rem; background: rgba(9,44,115,0.06); color: var(--mid-gray);">
+                            <%= report.status&.titleize || "N/A" %>
+                          </span>
+                        <% end %>
+                      </td>
+                      <td class="text-end pe-3">
+                        <div class="small text-muted"><%= report.created_at.strftime("%b %d") %></div>
+                        <div style="font-size: 0.65rem; color: var(--mid-gray);"><%= report.created_at.strftime("%H:%M") %></div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-file-list-3-line" style="font-size: 2.5rem; color: rgba(9,44,115,0.15);"></i>
+              <p class="text-muted mt-2 mb-0 small">No incident reports filed yet</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Recent BonID Scans %>
+    <div class="col-lg-5">
+      <div class="le-report-card h-100">
+        <div class="le-report-card__header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-qr-scan-2-line" style="color: var(--law-green);"></i>
+            <span>BonID Scans</span>
+          </div>
+          <span class="badge" style="background: var(--law-green); color: #fff; font-size: 0.6rem;">
+            <%= @stats[:qr_scans_today] %> today
+          </span>
+        </div>
+        <div class="le-report-card__body p-0">
+          <% if @recent_scans.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" style="font-size: 0.82rem;">
+                <thead>
+                  <tr style="background: rgba(9, 44, 115, 0.04);">
+                    <th class="ps-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Citizen</th>
+                    <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">BonID</th>
+                    <th class="text-end pe-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Scanned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_scans.each do |scan| %>
+                    <% submission = scan.identity_submission %>
+                    <% user = submission&.user %>
+                    <tr style="vertical-align: middle;">
+                      <td class="ps-3">
+                        <div class="d-flex align-items-center">
+                          <% if submission&.photo&.attached? %>
+                            <%= image_tag url_for(submission.photo),
+                                          class: "rounded-circle me-2",
+                                          style: "width: 36px; height: 36px; object-fit: cover; object-position: center top; border: 1px solid rgba(9,44,115,0.15);",
+                                          loading: "lazy" %>
+                          <% else %>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                                 style="width: 36px; height: 36px; background: rgba(9,44,115,0.08);">
+                              <i class="ri-user-line" style="font-size: 0.8rem; color: var(--law-blue);"></i>
+                            </div>
+                          <% end %>
+                          <span class="fw-medium small"><%= user&.full_name || "Unknown" %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <code style="font-size: 0.7rem; color: var(--law-blue);"><%= submission&.bonid.present? ? mask_bonid(submission.bonid) : "N/A" %></code>
+                      </td>
+                      <td class="text-end pe-3">
+                        <span class="text-muted small"><%= scan.created_at.strftime("%b %d, %H:%M") %></span>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-qr-scan-2-line" style="font-size: 2.5rem; color: rgba(73,166,79,0.15);"></i>
+              <p class="text-muted mt-2 mb-0 small">No scans recorded yet</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Secondary Row: Visitor Entries + Officers ───────────── %>
+  <div class="row g-3">
+    <%# Recent Visitor Entries %>
+    <div class="col-lg-7">
+      <div class="le-report-card h-100">
+        <div class="le-report-card__header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-flight-land-line" style="color: var(--law-tan);"></i>
+            <span>Visitor Entries</span>
+          </div>
+          <span class="badge" style="background: var(--law-tan); color: #fff; font-size: 0.6rem;">
+            <%= @border_stats[:today] %> today
+          </span>
+        </div>
+        <div class="le-report-card__body p-0">
+          <% if @border_entries.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" style="font-size: 0.82rem;">
+                <thead>
+                  <tr style="background: rgba(9, 44, 115, 0.04);">
+                    <th class="ps-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Visitor</th>
+                    <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Entry Point</th>
+                    <th class="py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Officer</th>
+                    <th class="text-end pe-3 py-2" style="font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--law-blue);">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @border_entries.each do |entry| %>
+                    <% visitor = entry.visitor_submission %>
+                    <tr style="vertical-align: middle;">
+                      <td class="ps-3">
+                        <div class="d-flex align-items-center">
+                          <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                               style="width: 36px; height: 36px; background: rgba(191, 131, 96, 0.1);">
+                            <i class="ri-user-line" style="font-size: 0.8rem; color: var(--law-tan);"></i>
+                          </div>
+                          <div>
+                            <div class="fw-medium small"><%= visitor&.full_name || "Unknown" %></div>
+                            <code style="font-size: 0.6rem; color: var(--law-blue);"><%= visitor&.bonid.present? ? mask_bonid(visitor.bonid) : "N/A" %></code>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge" style="font-size: 0.65rem; background: rgba(9,44,115,0.06); color: var(--dark-gray); border: 1px solid rgba(9,44,115,0.1);">
+                          <% case entry.entry_mode %>
+                          <% when "air" %>
+                            <i class="ri-plane-line me-1"></i>
+                          <% when "sea" %>
+                            <i class="ri-ship-line me-1"></i>
+                          <% when "land" %>
+                            <i class="ri-car-line me-1"></i>
+                          <% end %>
+                          <%= entry.port_of_entry %>
+                        </span>
+                      </td>
+                      <td class="small text-muted"><%= entry.officer&.full_name || "—" %></td>
+                      <td class="text-end pe-3 small text-muted"><%= entry.entered_at&.strftime("%b %d, %H:%M") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-flight-land-line" style="font-size: 2.5rem; color: rgba(191,131,96,0.15);"></i>
+              <p class="text-muted mt-2 mb-0 small">No visitor entries recorded yet</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Officers %>
+    <div class="col-lg-5">
+      <div class="le-report-card h-100">
+        <div class="le-report-card__header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-shield-user-line" style="color: var(--law-blue);"></i>
+            <span>Officers</span>
+          </div>
+          <%= link_to partner_portal_law_enforcement_officers_path,
+                      style: "font-size: 0.7rem; font-weight: 600; color: var(--law-blue); text-decoration: none;" do %>
+            Manage <i class="ri-arrow-right-s-line"></i>
+          <% end %>
+        </div>
+        <div class="le-report-card__body p-0">
+          <% if @officers.any? %>
+            <% @officers.each do |officer| %>
+              <%
+                bonid_sub = officer.user&.identity_submissions&.select { |s| s.status == "approved" }&.last
+                off_photo = bonid_sub&.photo if bonid_sub&.photo&.attached?
+                off_photo ||= officer.photo if officer.photo&.attached?
+              %>
+              <div class="d-flex align-items-center justify-content-between px-3 py-2"
+                   style="border-bottom: 1px solid rgba(9,44,115,0.06);">
+                <div class="d-flex align-items-center">
+                  <% if off_photo %>
+                    <%= image_tag url_for(off_photo),
+                                  class: "rounded-circle me-2",
+                                  style: "width: 32px; height: 32px; object-fit: cover; border: 1px solid rgba(9,44,115,0.15);",
+                                  loading: "lazy" %>
+                  <% else %>
+                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                         style="width: 32px; height: 32px; font-size: 0.6rem; background: var(--law-blue); color: #fff;">
+                      <%= officer.first_name&.first %><%= officer.last_name&.first %>
+                    </div>
+                  <% end %>
+                  <div>
+                    <div class="fw-semibold" style="font-size: 0.8rem;"><%= officer.full_name %></div>
+                    <div class="text-muted" style="font-size: 0.65rem;">
+                      <i class="ri-hashtag me-1"></i><%= officer.badge_id %>
+                      <% if officer.rank.present? %>
+                        <span class="ms-1">· <%= officer.rank&.titleize %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <% if officer.revoked? %>
+                    <span class="badge" style="background: rgba(217,7,24,0.1); color: var(--law-red); font-size: 0.6rem;">
+                      <i class="ri-forbid-line me-1"></i>Revoked
+                    </span>
+                  <% elsif officer.active? %>
+                    <span class="badge" style="background: rgba(73,166,79,0.1); color: var(--law-green); font-size: 0.6rem;">
+                      <i class="ri-checkbox-circle-line me-1"></i>Active
+                    </span>
+                  <% else %>
+                    <span class="badge" style="background: rgba(217,150,11,0.1); color: #D97706; font-size: 0.6rem;">
+                      <i class="ri-time-line me-1"></i>Pending
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-shield-user-line" style="font-size: 2.5rem; color: rgba(9,44,115,0.15);"></i>
+              <p class="text-muted mt-2 mb-0 small">No officers registered yet</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Critical Alert Confirmation Modal ──────────────────── %>
+  <%= render "partner_portal/law_enforcement/dashboard/critical_alert_modal" %>
+</div>

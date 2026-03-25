@@ -1,0 +1,19 @@
+<%# app/views/partners/officer_invitations/create.turbo_stream.erb %>
+
+<%= turbo_stream.replace "global-flash" do %>
+  <%= render "shared/flash" %>
+<% end %>
+
+<% if flash[:success] %>
+  <!-- hide the bootstrap modal -->
+  <turbo-stream action="invoke" target="inviteOfficersModal" method="hide" />
+  <!-- then redirect to dashboard -->
+  <turbo-stream action="redirect" url="<%= partners_dashboard_path %>" />
+<% else %>
+  <!-- on error, swap back in the form (with error messages) -->
+  <turbo-stream action="replace" target="invite-form">
+    <template>
+      <%= render "partners/officer_invitations/form", officer: @officer %>
+    </template>
+  </turbo-stream>
+<% end %>

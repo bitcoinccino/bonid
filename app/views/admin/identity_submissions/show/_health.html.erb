@@ -1,0 +1,70 @@
+<!-- app/views/admin/identity_submissions/show/_health.html.erb -->
+
+<% user = submission&.user %>
+
+<% if user&.health_profile.present? %>
+  <% health = user.health_profile %>
+
+  <div class="card border-0 rounded-3 shadow-sm mb-4">
+    <div class="card-header bg-light d-flex align-items-center">
+      <i class="ri-heart-pulse-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold">Health Profile</h6>
+    </div>
+
+    <div class="card-body">
+      <p class="text-muted small mb-4">
+        This section contains basic medical information voluntarily provided by the citizen.  
+        It assists authorized hospitals, insurers, and emergency responders in health-related verifications.
+      </p>
+
+      <ul class="list-unstyled row g-4 mb-0">
+        <li class="col-md-6">
+          <strong>Blood Type:</strong>
+          <%= health.blood_type.presence || "N/A" %><br>
+          <small class="text-muted">Declared blood group for emergency reference</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Allergies:</strong>
+          <% if health.allergies_list.any? %>
+            <%= health.allergies_list.join(", ") %>
+          <% else %>
+            N/A
+          <% end %>
+          <br>
+          <small class="text-muted">Known allergens reported by the user</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Chronic Conditions:</strong>
+          <% if health.chronic_conditions_list.any? %>
+            <%= health.chronic_conditions_list.join(", ") %>
+          <% else %>
+            N/A
+          <% end %>
+          <br>
+          <small class="text-muted">Ongoing medical or diagnosed conditions</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Medications:</strong>
+          <% if health.medications_list.any? %>
+            <%= health.medications_list.join(", ") %>
+          <% else %>
+            N/A
+          <% end %>
+          <br>
+          <small class="text-muted">Regular prescriptions or treatments</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Organ Donor:</strong>
+          <%= health.organ_donor? ? "Yes" : "No" %><br>
+          <small class="text-muted">Consent for organ donation in emergencies</small>
+        </li>
+      </ul>
+    </div>
+  </div>
+<% else %>
+  <p class="text-muted mb-0">No health profile data available for this user.</p>
+<% end %>

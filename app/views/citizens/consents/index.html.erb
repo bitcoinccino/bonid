@@ -1,0 +1,35 @@
+<%# app/views/citizens/consents/index.html.erb %>
+<div class="px-0">
+
+  <%# ── Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--haitian-blue, #00209f);" class="mb-1">
+        <i class="ri-shield-keyhole-line me-2"></i>Partner Consents
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        Control which partners can access your verified BonID data.
+      </p>
+    </div>
+  </div>
+
+  <%# ── Empty state ── %>
+  <% if @consent_grants.empty? %>
+    <div class="text-center py-5 rounded-4 consent-empty-card">
+      <div class="display-1 text-muted mb-4"><i class="ri-fingerprint-2-line"></i></div>
+      <h3 class="fw-bold">No Active Requests</h3>
+      <p class="text-muted">When a partner requests your data, it will securely appear here.</p>
+    </div>
+
+  <%# ── Cards ── %>
+  <% else %>
+    <div class="row g-4">
+      <% @consent_grants.each do |grant| %>
+        <div class="col-xl-4 col-lg-6 col-12" id="<%= dom_id(grant) %>">
+          <%= render "citizens/consents/consent_grant_card", grant: grant %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+</div>

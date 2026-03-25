@@ -1,0 +1,127 @@
+
+<header class="hero-section text-white" role="banner">
+  <!-- BACKGROUND RING -->
+  <div class="hero-bg" aria-hidden="true">
+    <div class="outer-ring">
+      <div class="outer-ring-dashed"></div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="container">
+    <div class="row align-items-center min-vh-80">
+
+      <!-- LEFT COPY -->
+      <div class="col-lg-6 mb-5 mb-lg-0 text-center text-lg-start">
+        <h1 class="display-4 fw-semibold mb-3">
+          <%= t("main.hero.title", default: "Haiti’s Open Digital Identity.") %>
+        </h1>
+
+        <p class="lead mb-4 opacity-75" id="hero-rotating-subtitle" aria-live="polite">
+        </p>
+
+        <% unless current_resource&.respond_to?(:admin?) && current_resource.admin? %>
+          <div class="d-flex flex-wrap justify-content-center justify-content-lg-start gap-3">
+            <a href="#enskri" data-enskri="citizen"
+               class="btn btn-outline-light btn-lg fw-semibold rounded-pill px-5 py-3"
+               style="text-decoration: none;">
+              <%= t("main.hero.cta", default: "Join the Waitlist") %>
+            </a>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- RIGHT — FACE SCANS -->
+      <div class="col-lg-6 d-flex justify-content-center align-items-center">
+        <div class="stacked-scan-cards">
+
+          <% scans = [
+            {
+              image: "partners/hero_scan_sample.svg",
+              name: "Jean-Pierre Louis",
+              verified_via: "Unibank",
+              icon: "ri-bank-card-line"
+            },
+            {
+              image: "partners/hero_scan_sample3.svg",
+              name: "Marie-Claire Joseph",
+              verified_via: "U.S. Embassy",
+              icon: "ri-building-4-line"
+            },
+            {
+              image: "partners/hero_scan_sample4.svg",
+              name: "Robert Voltaire",
+              verified_via: "Police Nationale d’Haïti (PNH)",
+              icon: "ri-shield-check-line"
+            }
+          ] %>
+
+          <% scans.each_with_index do |scan, i| %>
+            <div class="scan-card" style="--index:<%= i %>;">
+              <div class="scan-frame">
+                <%= image_tag scan[:image],
+                              class: "face-image",
+                              alt: t("main.hero.scan_alt", name: scan[:name], default: "Verified identity for #{scan[:name]}") %>
+
+                <div class="scan-line"></div>
+
+                <div class="verification-badge demonstrated">
+                  <i class="<%= scan[:icon] %>"></i>
+                </div>
+              </div>
+
+              <!-- DESCRIPTION -->
+              <div class="scan-meta text-center mt-3">
+                <div class="scan-name"><%= scan[:name] %></div>
+                <div class="scan-verified">
+                  <%= t("main.hero.verified_via_html", org: scan[:verified_via], default: "Verified via <strong>#{scan[:verified_via]}</strong>").html_safe %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</header>
+
+<script>
+  (function() {
+    var lines = [
+      "Banks lose millions to identity fraud every year. BonID verifies customers in seconds, not days.",
+      "Hospitals need to confirm patient identity fast. BonID gives instant verification at the bedside.",
+      "Passport fraud undermines Haiti abroad. BonID anchors every document to a verified biometric identity.",
+      "Aid organizations need to know who they're serving. BonID eliminates duplicate registrations and ghost beneficiaries.",
+      "Police checkpoints rely on paper documents anyone can fake. BonID gives officers real-time verification.",
+      "Embassies process thousands of visa applications. BonID confirms identity before the interview even starts.",
+      "Telecom companies lose revenue to SIM fraud. BonID ties every SIM registration to a verified person.",
+      "Microfinance lenders can't verify borrowers in rural areas. BonID works anywhere with a phone signal.",
+      "Elections require trusted voter rolls. BonID links every vote to a biometrically verified citizen.",
+      "Insurance claims get filed under stolen identities. BonID stops fraud before the payout."
+    ];
+
+    var el = document.getElementById("hero-rotating-subtitle");
+    if (!el) return;
+
+    // shuffle
+    for (var i = lines.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = lines[i]; lines[i] = lines[j]; lines[j] = tmp;
+    }
+
+    var idx = 0;
+    el.textContent = lines[0];
+
+    setInterval(function() {
+      el.style.transition = "opacity 0.4s ease";
+      el.style.opacity = "0";
+      setTimeout(function() {
+        idx = (idx + 1) % lines.length;
+        el.textContent = lines[idx];
+        el.style.opacity = "1";
+      }, 400);
+    }, 8000);
+  })();
+</script>

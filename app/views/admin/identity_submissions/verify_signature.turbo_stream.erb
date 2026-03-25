@@ -1,0 +1,22 @@
+<%# Ensure @submission is available before rendering %>
+<% if @submission.present? %>
+  <%= turbo_stream.replace dom_id(@submission, :signature_card) do %>
+    <%= render "admin/identity_submissions/show/signature", submission: @submission %>
+  <% end %>
+
+  <%= turbo_stream.prepend "flash_messages" do %>
+    <div class="alert alert-dismissible fade show alert-success alert-dismissible fade show small mt-3 shadow-sm" role="alert">
+      <i class="ri-check-line me-1"></i>
+      Signature verified successfully.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+<% else %>
+  <%= turbo_stream.prepend "flash_messages" do %>
+    <div class="alert alert-dismissible fade show alert-danger alert-dismissible fade show small mt-3 shadow-sm" role="alert">
+      <i class="ri-error-warning-line me-1"></i>
+      Signature verification failed — submission not found.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+<% end %>

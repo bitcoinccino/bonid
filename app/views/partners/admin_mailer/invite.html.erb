@@ -1,0 +1,46 @@
+<!-- app/views/partners/admin_mailer/invite.html.erb -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; padding: 20px; background: #ffffff; border-radius: 8px; }
+    .btn {
+      display: inline-block; padding: 10px 20px; background: #1e40af;
+      color: #ffffff; text-decoration: none; border-radius: 25px;
+      font-weight: 600; margin-top: 12px;
+    }
+    .footer { font-size: 12px; color: #6b7280; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 You’ve Been Invited</h1>
+
+    <p>Hello <%= @user.first_name || "User" %>,</p>
+
+    <p>
+      <%= @partner.name %> has invited you to join BonID as a
+      <strong><%= invite_role_for_sector(@partner.sector) %></strong>.
+    </p>
+
+    <p>
+      As a <%= invite_role_for_sector(@partner.sector) %>, you’ll have access to
+      <%= partner_admin_role_text(@partner) %>.
+    </p>
+
+    <p>To activate your account, click the button below:</p>
+
+    <p>
+      <a href="<%= @invite_url %>" class="btn">Accept Invitation</a>
+    </p>
+
+    <p>If you did not expect this invitation, you can safely ignore this email.</p>
+
+    <p class="footer">
+      This is an automated message from BonID. © <%= Time.current.year %> BonID. All rights reserved.
+    </p>
+  </div>
+</body>
+</html>

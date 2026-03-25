@@ -1,0 +1,115 @@
+app/views/public/visitors/_local_contact.html.erb
+<%# =========================================================
+   Section: Local Contact in Haiti
+========================================================= %>
+
+<div class="card rounded-4 mb-4 border-2">
+  <div class="card-header bg-white border-bottom">
+    <h5 class="fw-bold mb-1 d-flex align-items-center gap-2 text-haitian-blue">
+      <i class="ri-contacts-line"></i>
+      Local Contact in Haiti
+    </h5>
+
+    <p class="small text-muted mb-0">
+      A trusted person or organization in Haiti we may contact if needed.
+      Preferably someone with a <strong>verified BonID</strong>.
+    </p>
+  </div>
+
+  <div class="card-body" data-controller="local-contact">
+
+    <%= f.fields_for :local_contact do |lc| %>
+
+      <!-- BonID Lookup -->
+      <div class="mb-3">
+        <%= lc.label :bonid, "BonID (if available)", class: "form-label fw-semibold" %>
+
+        <%= lc.text_field :bonid,
+              class: "form-control text-uppercase",
+              placeholder: "JM-1968-M-OUEST-P2334-217",
+              autocomplete: "off",
+              data: {
+                local_contact_target: "bonid",
+                action: "input->local-contact#lookup"
+              } %>
+
+        <small
+          data-local-contact-target="status"
+          class="fw-semibold d-none mt-1">
+        </small>
+
+        <div class="form-text">
+          If the contact has a BonID, their details will auto-fill and lock.
+        </div>
+      </div>
+
+      <!-- Manual / Auto-filled Fields -->
+      <div data-local-contact-target="manual" class="row g-4">
+
+        <!-- Full Name -->
+        <div class="col-md-6">
+          <%= lc.label :name, class: "form-label fw-semibold" %>
+          <%= lc.text_field :name,
+                class: "form-control",
+                placeholder: "Full name",
+                data: { local_contact_target: "name" } %>
+        </div>
+
+        <!-- Email -->
+        <div class="col-md-6">
+          <%= lc.label :email, class: "form-label fw-semibold" %>
+          <%= lc.email_field :email,
+                class: "form-control",
+                placeholder: "email@example.com",
+                autocomplete: "email",
+                data: { local_contact_target: "email" } %>
+        </div>
+
+        <!-- Phone with Country Code -->
+        <div class="col-md-6">
+          <%= lc.label :phone, class: "form-label fw-semibold" %>
+
+          <div class="input-group">
+            <%= lc.select :phone_country_code,
+                  phone_country_code_options,
+                  { prompt: "Code" },
+                  class: "form-select",
+                  style: "max-width: 200px;",
+                  data: { local_contact_target: "phoneCountryCode" } %>
+
+            <%= lc.telephone_field :phone,
+                  class: "form-control",
+                  placeholder: "37xx xxxx",
+                  autocomplete: "tel-national",
+                  data: { local_contact_target: "phone" } %>
+          </div>
+
+          <div class="form-text">
+            Country code + local number (numbers only).
+          </div>
+        </div>
+
+        <!-- Relationship -->
+        <div class="col-md-6">
+          <%= lc.label :relationship, class: "form-label fw-semibold" %>
+          <%= lc.select :relationship,
+                LocalContact::RELATIONSHIP_TYPES.map { |r| [r.titleize, r] },
+                { prompt: "Select relationship" },
+                class: "form-select",
+                data: { local_contact_target: "relationship" } %>
+        </div>
+
+      </div>
+
+      <!-- Hidden Integrity Fields -->
+      <%= lc.hidden_field :verified,
+            value: false,
+            data: { local_contact_target: "verified" } %>
+
+      <%= lc.hidden_field :user_id,
+            data: { local_contact_target: "userId" } %>
+
+    <% end %>
+
+  </div>
+</div>

@@ -1,0 +1,481 @@
+<%# app/views/officers/incident_reports/preview.html.erb %>
+<%# Read-only pre-submission preview with digital signature / attestation block %>
+
+<%# Reuse the same BonID masking helpers from show.html.erb %>
+<%
+  def mask_bonid(bonid)
+    return bonid if bonid.blank?
+    parts = bonid.split('-')
+    return bonid if parts.length < 5
+    tail = parts.last
+    masked_parts = [
+      parts[0], '••••', '•', '••', "#{tail[0]}••••#{tail[-3..]}"
+    ]
+    masked_parts.join('-')
+  end
+
+  def mask_bontouris(bonid)
+    return bonid if bonid.blank?
+    parts = bonid.split('-')
+    return bonid if parts.length < 6
+    masked_parts = [
+      parts[0], parts[1], '••••', '•', parts[-3], parts[-2], parts[-1]
+    ]
+    masked_parts.join('-')
+  end
+
+  officer             = @incident_report.officer
+  verified_submission = officer&.user&.identity_submissions&.approved&.last
+%>
+
+<div class="certificate-font py-4">
+  <div class="container">
+
+    <%# ─── Breadcrumb ─── %>
+    <div class="d-flex align-items-center gap-2 mb-3 small text-muted">
+      <%= link_to "Rapports", officers_incident_reports_path, class: "text-decoration-none fw-semibold" %>
+      <i class="ri-arrow-right-s-line"></i>
+      <%= link_to @incident_report.report_id, officers_incident_report_path(@incident_report), class: "text-decoration-none fw-semibold font-monospace" %>
+      <i class="ri-arrow-right-s-line"></i>
+      <span>Aperçu avant soumission</span>
+    </div>
+
+    <%# ─── Preview Warning Banner ─── %>
+    <div class="rounded-3 mb-4 p-3 d-flex align-items-center gap-3 flex-wrap"
+         style="background: #fef3c7; border: 1px solid #fbbf24; color: #78350f;">
+      <i class="ri-eye-line fs-4 flex-shrink-0"></i>
+      <div class="flex-grow-1">
+        <p class="fw-bold mb-0 small text-uppercase" style="letter-spacing: 0.5px;">APERÇU — NON SOUMIS</p>
+        <p class="mb-0 small">Vérifiez attentivement ce rapport. Une fois signé, il sera transmis à votre superviseur pour examen.</p>
+      </div>
+      <%= link_to edit_officers_incident_report_path(@incident_report),
+                  class: "btn btn-sm btn-outline-secondary rounded-pill fw-semibold flex-shrink-0" do %>
+        <i class="ri-edit-line me-1"></i>Modifier
+      <% end %>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════════════════════ %>
+    <%# CERTIFICATE CARD — identical layout to show.html.erb %>
+    <%# ═══════════════════════════════════════════════════════════════════════ %>
+    <div class="card shadow-lg border-0 certificate-card rounded-4 overflow-hidden mb-4">
+      <div class="card-body p-4 p-md-5 position-relative">
+
+        <%# HEADER %>
+        <div class="text-center mb-4">
+          <% if officer&.partner&.logo&.attached? %>
+            <div class="d-flex align-items-center justify-content-center mb-3">
+              <%= image_tag url_for(officer.partner.logo),
+                            style: "width: 100px; height: auto;",
+                            loading: "lazy" %>
+            </div>
+          <% end %>
+
+          <div class="mb-1" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--mid-gray);">
+            <% if officer&.unit_type.present? %>
+              <span class="fw-medium" style="color: var(--law-blue);">Specialty:</span> <%= officer.unit_type %>
+              <% if officer&.unit_name.present? %><span class="mx-2">|</span><% end %>
+            <% end %>
+            <% if officer&.unit_name.present? %>
+              <span class="fw-medium" style="color: var(--law-blue);">Unit:</span> <%= officer.unit_name %>
+            <% end %>
+          </div>
+
+          <% if officer&.department_directorate.present? %>
+            <div class="mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; color: var(--mid-gray);">
+              <i class="ri-map-pin-2-line me-1"></i>
+              <strong style="color: var(--law-blue);"><%= OfficerConstants::DEPARTMENTS[officer.department_directorate] %></strong>
+            </div>
+          <% else %>
+            <div class="mb-3"></div>
+          <% end %>
+
+          <h2 class="fw-bold mb-0 font-heading-semibold" style="color: var(--law-blue); font-size: 1.1rem; letter-spacing: 1px;">
+            RAPPORT D'INCIDENT OFFICIEL
+          </h2>
+        </div>
+
+        <hr class="my-4" style="border-color: var(--law-blue); border-width: 1px;">
+
+        <%# REPORT DETAILS %>
+        <div class="row g-4 mb-5">
+          <div class="col-12 text-center">
+            <div class="d-inline-block border rounded-3 p-3 bg-white shadow-sm mb-3" style="border-color: var(--law-blue) !important;">
+              <p class="fw-bold mb-1 small" style="color: var(--law-blue);">Numéro de Rapport</p>
+              <span class="fw-bold font-monospace fs-5" style="color: var(--law-blue);"><%= @incident_report.report_id %></span>
+            </div>
+            <% if @incident_report.bonid_case_number.present? %>
+              <div class="d-inline-block border rounded-3 p-3 bg-white shadow-sm mb-3 ms-md-3" style="border-color: #FFD700 !important;">
+                <p class="fw-bold mb-1 small" style="color: var(--law-blue);">Numéro de Dossier</p>
+                <span class="fw-bold font-monospace fs-5" style="color: var(--law-blue);"><%= @incident_report.bonid_case_number %></span>
+              </div>
+            <% end %>
+          </div>
+
+          <%# Crime Details %>
+          <div class="col-md-6">
+            <div class="border rounded-3 p-3 h-100" style="border-color: rgba(9,44,115,0.2) !important; background: rgba(9,44,115,0.02);">
+              <h6 class="fw-bold mb-2 font-heading-semibold" style="color: var(--law-blue);">
+                <i class="ri-alert-line me-1" style="color: var(--law-red);"></i>Type de Crime
+              </h6>
+              <p class="mb-2 fw-semibold"><%= @incident_report.crime_type&.humanize %></p>
+              <% if @incident_report.crime_severity_level.present? %>
+                <%
+                  severity = @incident_report.crime_severity_level
+                  severity_class = case severity
+                                   when 5, 4 then "bg-danger"
+                                   when 3     then "bg-warning text-dark"
+                                   when 2     then "bg-info"
+                                   else            "bg-secondary"
+                                   end
+                  severity_text = case severity
+                                  when 5 then "Critique (5)"
+                                  when 4 then "Sévère (4)"
+                                  when 3 then "Élevé (3)"
+                                  when 2 then "Moyen (2)"
+                                  when 1 then "Faible (1)"
+                                  else        "Non classé"
+                                  end
+                %>
+                <span class="badge <%= severity_class %>"><%= severity_text %></span>
+              <% end %>
+              <% if @incident_report.penal_code_articles.present? %>
+                <p class="mt-2 mb-0 small text-muted">
+                  <i class="ri-scales-3-line me-1"></i>Articles <%= @incident_report.penal_code_articles %> (Code Pénal)
+                </p>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Date & Location %>
+          <div class="col-md-6">
+            <div class="border rounded-3 p-3 h-100" style="border-color: rgba(9,44,115,0.2) !important; background: rgba(9,44,115,0.02);">
+              <h6 class="fw-bold mb-2 font-heading-semibold" style="color: var(--law-blue);">
+                <i class="ri-calendar-line me-1"></i>Date et Lieu
+              </h6>
+              <p class="mb-2">
+                <strong>Date:</strong> <%= @incident_report.occurred_at&.strftime("%d %B %Y à %H:%M") || "Non spécifié" %>
+              </p>
+              <% if @incident_report.address.present? %>
+                <p class="mb-0">
+                  <strong>Lieu:</strong><br>
+                  <%= @incident_report.address.street_address %><br>
+                  <span class="text-muted small">
+                    <%= [
+                          @incident_report.address.commune&.name,
+                          @incident_report.address.communal_section&.name,
+                          @incident_report.address.department&.name,
+                          @incident_report.address.postal_code
+                        ].compact.join(", ") %>
+                  </span>
+                </p>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Description %>
+          <% if @incident_report.description.present? %>
+            <div class="col-12">
+              <div class="border rounded-3 p-3" style="border-color: rgba(9,44,115,0.2) !important; background: rgba(9,44,115,0.02);">
+                <h6 class="fw-bold mb-2 font-heading-semibold" style="color: var(--law-blue);">
+                  <i class="ri-file-text-line me-1"></i>Description de l'Incident
+                </h6>
+                <p class="mb-0"><%= @incident_report.description %></p>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <hr class="my-4" style="border-color: var(--law-blue); opacity: 0.3;">
+
+        <%# PERSONS INVOLVED %>
+        <% if @incident_report.person_involvements.any? %>
+          <div class="mb-5">
+            <h5 class="text-center fw-bold mb-4 font-heading-semibold" style="color: var(--law-blue); font-size: 0.95rem;">
+              <i class="ri-group-line me-2"></i>PERSONNES IMPLIQUÉES
+            </h5>
+            <div class="row g-3 justify-content-center">
+              <% @incident_report.person_involvements.each do |pi| %>
+                <%
+                  is_tourist   = pi.visitor_submission.present?
+                  photo_attached = pi.user&.photo&.attached? || pi.visitor_submission&.selfie&.attached?
+                  person_name = if pi.user.present?
+                    [pi.user.first_name, pi.user.last_name].compact.join(' ')
+                  elsif pi.visitor_submission.present?
+                    [pi.visitor_submission.first_name, pi.visitor_submission.last_name].compact.join(' ')
+                  else
+                    pi.name || "Inconnu"
+                  end
+                  full_id = is_tourist ? (pi.visitor_submission&.bonid || pi.bonid) : (pi.bonid || pi.user&.bonid)
+                  masked_id = is_tourist ? mask_bontouris(full_id) : mask_bonid(full_id)
+                  tourist_country = pi.visitor_submission&.nationality
+                %>
+                <div class="col-md-6 col-lg-4">
+                  <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid var(--law-blue) !important;">
+                    <div class="card-body p-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="flex-shrink-0">
+                          <% if photo_attached %>
+                            <% if pi.user&.photo&.attached? %>
+                              <%= image_tag url_for(pi.user.photo),
+                                            class: "rounded-circle",
+                                            style: "width:60px;height:60px;object-fit:cover;border:1px solid var(--law-blue);",
+                                            loading: "lazy" %>
+                            <% elsif pi.visitor_submission&.selfie&.attached? %>
+                              <%= image_tag url_for(pi.visitor_submission.selfie),
+                                            class: "rounded-circle",
+                                            style: "width:60px;height:60px;object-fit:cover;border:1px solid var(--law-blue);",
+                                            loading: "lazy" %>
+                            <% end %>
+                          <% else %>
+                            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                 style="width:60px;height:60px;background:rgba(9,44,115,0.1);border:1px solid var(--law-blue);">
+                              <i class="ri-user-line fs-4" style="color:var(--law-blue);"></i>
+                            </div>
+                          <% end %>
+                        </div>
+                        <div class="flex-grow-1">
+                          <h6 class="mb-1 fw-semibold" style="color:var(--law-blue);"><%= person_name %></h6>
+                          <% if masked_id.present? %>
+                            <p class="mb-1 small font-monospace" style="color:var(--mid-gray);font-size:0.75rem;"><%= masked_id %></p>
+                          <% end %>
+                          <div class="d-flex flex-wrap gap-1">
+                            <% if is_tourist %>
+                              <span class="badge" style="background-color:var(--law-tan);font-size:0.65rem;">
+                                <i class="ri-plane-line me-1"></i>Tourist<%= " · #{tourist_country}" if tourist_country.present? %>
+                              </span>
+                            <% else %>
+                              <span class="badge" style="background-color:var(--law-green);font-size:0.65rem;">
+                                <i class="ri-user-heart-line me-1"></i>Citizen
+                              </span>
+                            <% end %>
+                            <% role_class = case pi.role
+                                            when "suspect", "accomplice" then "bg-danger"
+                                            when "victim"                 then "bg-warning text-dark"
+                                            when "witness"                then "bg-info"
+                                            else                               "bg-secondary"
+                                            end %>
+                            <span class="badge <%= role_class %>" style="font-size:0.65rem;"><%= pi.role&.titleize || "Inconnu" %></span>
+                            <% if pi.status.present? %>
+                              <% status_class = case pi.status
+                                                when "wanted","fugitive","at_large","armed","dangerous" then "bg-danger"
+                                                when "in_custody","detained"                           then "bg-success"
+                                                when "deceased"                                        then "bg-dark"
+                                                else                                                        "bg-secondary"
+                                                end %>
+                              <span class="badge <%= status_class %>" style="font-size:0.65rem;"><%= pi.status&.titleize %></span>
+                            <% end %>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+          <hr class="my-4" style="border-color: var(--law-blue); opacity: 0.3;">
+        <% end %>
+
+        <%# OFFICER SIGNATURE SECTION %>
+        <div class="mb-5">
+          <h5 class="text-center fw-bold mb-4 font-heading-semibold" style="color: var(--law-blue); font-size: 0.95rem;">
+            <i class="ri-user-star-line me-2"></i>OFFICIER RESPONSABLE
+          </h5>
+          <div class="d-flex flex-column align-items-center">
+            <div class="text-center">
+              <div class="d-flex align-items-center gap-3 justify-content-center">
+                <% if verified_submission&.photo&.attached? %>
+                  <%= image_tag url_for(verified_submission.photo),
+                                class: "rounded-circle shadow-sm",
+                                style: "width:100px;height:100px;object-fit:cover;border:1px solid rgba(9,44,115,0.15);",
+                                loading: "lazy" %>
+                <% elsif officer&.photo&.attached? %>
+                  <%= image_tag url_for(officer.photo),
+                                class: "rounded-circle shadow-sm",
+                                style: "width:100px;height:100px;object-fit:cover;border:1px solid rgba(9,44,115,0.15);",
+                                loading: "lazy" %>
+                <% else %>
+                  <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                       style="width:100px;height:100px;background:rgba(9,44,115,0.08);border:1px solid rgba(9,44,115,0.15);">
+                    <i class="ri-user-star-line fs-1" style="color:var(--law-blue);"></i>
+                  </div>
+                <% end %>
+                <div>
+                  <h5 class="mb-1 fw-bold" style="color:var(--law-blue);"><%= @incident_report.officer_name %></h5>
+                  <p class="mb-1 small" style="color:var(--mid-gray);">
+                    <i class="ri-medal-line me-1"></i>Rank: <%= officer&.rank || "Officer" %>
+                  </p>
+                  <p class="mb-1 small" style="color:var(--mid-gray);">
+                    <i class="ri-shield-star-line me-1"></i>Badge: <%= officer&.badge_id %>
+                  </p>
+                  <% if verified_submission&.bonid.present? %>
+                    <div class="mt-2 p-2 rounded" style="background:rgba(9,44,115,0.06);">
+                      <small style="font-size:0.7rem;color:var(--mid-gray);">BonID</small>
+                      <div style="font-family:monospace;font-size:0.75rem;font-weight:500;color:var(--law-blue);letter-spacing:0.5px;">
+                        <%= mask_bonid(verified_submission.bonid) %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <% if verified_submission&.signature&.attached? %>
+                  <div class="border rounded p-3 bg-white text-center" style="border-color:rgba(9,44,115,0.1) !important;max-width:280px;margin:0 auto;">
+                    <%= image_tag verified_submission.signature, style: "max-width:100%;max-height:100px;", alt: "Officer signature" %>
+                  </div>
+                  <p class="text-muted small mt-1 text-center">
+                    <i class="ri-shield-check-line me-1" style="color:var(--law-green);"></i>Signature vérifiée
+                  </p>
+                <% elsif verified_submission&.signature_data.present? %>
+                  <div class="border rounded p-3 bg-white text-center" style="border-color:rgba(9,44,115,0.1) !important;max-width:280px;margin:0 auto;">
+                    <%= image_tag verified_submission.signature_data, style: "max-width:100%;max-height:100px;", alt: "Officer signature" %>
+                  </div>
+                  <p class="text-muted small mt-1 text-center">
+                    <i class="ri-shield-check-line me-1" style="color:var(--law-green);"></i>Signature vérifiée
+                  </p>
+                <% else %>
+                  <div style="width:280px;border-bottom:1px solid var(--law-blue);margin:0 auto;"></div>
+                  <p class="text-muted small mt-1 text-center">Signature de l'Officier</p>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4" style="border-color: var(--law-blue); opacity: 0.3;">
+
+        <%# INTEGRITY STRIP %>
+        <div class="d-flex align-items-start gap-3 p-3 rounded-3 mb-4"
+             style="background:#f8fafc;border:1px solid rgba(9,44,115,0.15);">
+          <% qr_b64 = @incident_report.report_qr_png_base64 %>
+          <% if qr_b64.present? %>
+            <img src="data:image/png;base64,<%= qr_b64 %>"
+                 style="width:90px;height:90px;flex-shrink:0;border:1px solid #e2e8f0;border-radius:4px;"
+                 alt="QR de vérification" />
+          <% elsif @incident_report.qr_code.present? %>
+            <img src="data:image/png;base64,<%= @incident_report.qr_code %>"
+                 style="width:90px;height:90px;flex-shrink:0;border:1px solid #e2e8f0;border-radius:4px;"
+                 alt="QR de vérification" />
+          <% end %>
+          <div style="flex:1;font-family:'Montserrat',sans-serif;">
+            <div style="font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--law-blue);margin-bottom:3px;">
+              Vérification / Report Verification
+            </div>
+            <div style="font-size:0.68rem;color:#333;word-break:break-all;margin-bottom:6px;">
+              <%= @incident_report.verify_url %>
+            </div>
+            <div style="font-size:0.6rem;color:#666;">
+              Checksum HMAC-SHA256:
+              <span style="font-family:monospace;font-weight:700;color:#000;letter-spacing:1px;">
+                <%= @incident_report.report_checksum %>
+              </span>
+            </div>
+            <% if @incident_report.report_signed_at %>
+              <div style="font-size:0.6rem;color:#666;margin-top:3px;">
+                Signé le: <%= @incident_report.report_signed_at.strftime("%d %B %Y à %H:%M UTC") %>
+              </div>
+            <% end %>
+            <%# Draft reports always show BROUILLON — the valid badge appears after signing %>
+            <span style="display:inline-block;font-size:0.55rem;font-weight:700;text-transform:uppercase;padding:2px 8px;border-radius:20px;margin-top:5px;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;">
+              ⏳ BROUILLON — signature à confirmer
+            </span>
+          </div>
+        </div>
+
+      </div><%# /card-body %>
+    </div><%# /certificate-card %>
+
+    <%# ═══════════════════════════════════════════════════════════════════════ %>
+    <%# DIGITAL SIGNATURE BLOCK — outside the certificate card %>
+    <%# ═══════════════════════════════════════════════════════════════════════ %>
+    <div class="card border-0 rounded-4 mb-5"
+         style="border: 2px solid var(--law-blue) !important; background: rgba(9,44,115,0.03);">
+      <div class="card-body p-4">
+
+        <%# Header %>
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+               style="width:48px;height:48px;background:var(--law-blue);">
+            <i class="ri-quill-pen-fill text-white fs-5"></i>
+          </div>
+          <div>
+            <h6 class="fw-bold mb-0" style="color:var(--law-blue);font-family:'Montserrat',sans-serif;">
+              Signature Numérique Officielle
+            </h6>
+            <p class="small text-muted mb-0">Attestation requise avant soumission officielle</p>
+          </div>
+        </div>
+
+        <%= form_with url: submit_officers_incident_report_path(@incident_report), method: :post do |f| %>
+
+          <%# Attestation Checkbox %>
+          <div class="p-3 rounded-3 mb-4" style="background:#fff;border:2px solid #e2e8f0;">
+            <div class="d-flex align-items-start gap-3">
+              <%= check_box_tag :officer_attestation, "1", false,
+                    id: "officer_attestation",
+                    class: "form-check-input flex-shrink-0 mt-1",
+                    required: true,
+                    style: "width:1.25rem;height:1.25rem;cursor:pointer;" %>
+              <label class="fw-semibold text-dark small lh-base" for="officer_attestation" style="cursor:pointer;">
+                Je, <strong><%= current_officer.full_name %></strong>,
+                titulaire du Badge
+                <strong style="color:var(--law-blue);font-family:monospace;"><%= current_officer.badge_id %></strong>,
+                certifie sur l'honneur que les informations contenues dans ce rapport sont exactes, sincères et
+                conformes à ma connaissance des faits.
+                <br>
+                <span class="text-muted" style="font-size:0.7rem;font-weight:400;">
+                  Cette attestation électronique a la même valeur juridique qu'une signature manuscrite
+                  selon les directives de l'IGPNH.
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <%# Action Buttons %>
+          <div class="d-flex flex-column flex-sm-row gap-3 align-items-center">
+            <%= f.submit "✅ Signer et Soumettre le Rapport",
+                  class: "btn text-white fw-bold px-5 rounded-pill",
+                  style: "background:var(--law-blue);font-family:'Montserrat',sans-serif;letter-spacing:0.5px;" %>
+            <%= link_to "Annuler",
+                  officers_incident_report_path(@incident_report),
+                  class: "btn btn-outline-secondary rounded-pill px-4",
+                  style: "font-family:'Montserrat',sans-serif;" %>
+          </div>
+
+        <% end %>
+
+        <%# Legal Footer %>
+        <p class="small text-muted mt-3 mb-0">
+          <i class="ri-shield-keyhole-line me-1"></i>
+          Votre badge ID <strong style="font-family:monospace;"><%= current_officer.badge_id %></strong>
+          sera inclus dans la signature cryptographique HMAC-SHA256 de ce rapport.
+          Toute falsification est un délit pénal.
+        </p>
+
+      </div>
+    </div>
+
+  </div><%# /container %>
+</div>
+
+<%# Fonts (same as show.html.erb) %>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --law-blue: #092C73;
+  --law-red:  #D90718;
+  --law-green: #49A64F;
+  --law-tan:  #BF8360;
+  --mid-gray: #6C757D;
+}
+.certificate-font { font-family: 'Inter', sans-serif; }
+.font-heading-semibold { font-family: 'Montserrat', sans-serif; font-weight: 600; letter-spacing: 0.3px; }
+.certificate-card {
+  background: linear-gradient(180deg, #fff 0%, #f9f9f9 100%);
+  border: 1px solid var(--law-blue) !important;
+}
+/* Subtle visual cue that the form-check-input becomes checked */
+#officer_attestation:checked + label { color: var(--law-blue); }
+</style>

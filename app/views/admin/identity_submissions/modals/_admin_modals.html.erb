@@ -1,0 +1,75 @@
+<!-- Reject Submission Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-3 bg-white">
+      <%= form_with model: [:admin, submission],
+                    url: admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    local: true,
+                    data: { controller: "admin-rejection" } do |form| %>
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title font-heading-semibold fs-5" id="rejectModalLabel">Reject Submission</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <%= form.label :rejection_reason, "Reason for Rejection", class: "form-label fw-semibold font-body mb-2" %>
+          <%= form.select :rejection_reason,
+                          IdentitySubmission.rejection_reasons_options,
+                          { prompt: "Select a reason" },
+                          class: "form-select rounded-pill py-2 font-body",
+                          required: true,
+                          data: { admin_rejection_target: "reasonSelect", action: "change->admin-rejection#toggle" } %>
+          <div class="mt-3" data-admin_rejection_target="otherWrapper" style="display: none;">
+            <%= form.label :other_reason, "Additional Details", class: "form-label fw-semibold font-body mb-2" %>
+            <%= form.text_area :other_reason, rows: 4, class: "form-control rounded-3 font-body", placeholder: "Provide more details if needed" %>
+          </div>
+          <%= hidden_field_tag :reject, true %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <%= form.submit "Confirm Rejection", class: "btn btn-danger rounded-pill" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Reset Modal -->
+<div class="modal fade" id="rejectResetModal" tabindex="-1" aria-labelledby="rejectResetModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-3 bg-white">
+      <%= form_with url: reject_reset_admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    local: true,
+                    data: { controller: "admin-rejection" } do |form| %>
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title font-heading-semibold fs-5" id="rejectResetModalLabel">Reject Reset Request</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <%= form.label :reset_rejection_reason, "Reason for Rejection", class: "form-label fw-semibold font-body mb-2" %>
+          <%= form.select :reset_rejection_reason,
+                          [
+                            "Incomplete Documentation",
+                            "Invalid Request",
+                            "Insufficient Evidence",
+                            "Security Concerns",
+                            "Other (please specify below)"
+                          ],
+                          { prompt: "Select a reason" },
+                          class: "form-select rounded-pill py-2 font-body",
+                          required: true,
+                          data: { admin_rejection_target: "reasonSelect", action: "change->admin-rejection#toggle" } %>
+          <div class="mt-3" data-admin_rejection_target="otherWrapper" style="display: none;">
+            <%= form.label :reset_other_reason, "Additional Details", class: "form-label fw-semibold font-body mb-2" %>
+            <%= form.text_area :reset_other_reason, rows: 4, class: "form-control rounded-3 font-body", placeholder: "Provide more details if needed" %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+          <%= form.submit "Confirm Rejection", class: "btn btn-danger rounded-pill" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

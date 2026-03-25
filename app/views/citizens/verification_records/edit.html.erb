@@ -1,0 +1,40 @@
+<%# ===============================================================
+  BonID — Edit Verification Record (Turbo-Enabled)
+  ---------------------------------------------------------------
+  ✅ Uses same dynamic form loader as “new”
+  ✅ Auto-loads correct partial based on record_type + category
+  ✅ SPA-style updates with Turbo Streams
+================================================================ %>
+<%# ===============================================================
+  BonID — Citizen Verification Record Edit Page
+  ---------------------------------------------------------------
+  ✅ Dynamically loads the proper form partial
+  ✅ Maintains Bootstrap styling
+================================================================ %>
+
+<div class="container-fluid px-0 px-md-3 py-3">
+  <!-- 🧭 Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+      <i class="ri-pencil-line text-primary"></i>
+      Edit <%= @record.record_type.titleize %> Record
+    </h5>
+
+    <%= link_to citizens_verification_records_path,
+                class: "btn btn-sm btn-outline-secondary rounded-3 d-flex align-items-center gap-1 fw-semibold" do %>
+      <i class="ri-arrow-go-back-line"></i>
+      Back
+    <% end %>
+  </div>
+
+  <!-- 🧩 Form Loader -->
+  <% unless turbo_frame_request? %>
+    <%= turbo_frame_tag "record_form_frame" do %>
+      <%= render partial: "citizens/verification_records/form",
+                 locals: { record: @record } %>
+    <% end %>
+  <% else %>
+    <%= render partial: "citizens/verification_records/form",
+               locals: { record: @record } %>
+  <% end %>
+</div>

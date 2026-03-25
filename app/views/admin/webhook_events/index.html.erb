@@ -1,0 +1,121 @@
+<div class="container-fluid mt-4">
+  <h1 class="mb-4 fw-semibold text-haitian-blue">Webhook Events</h1>
+
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-body">
+      <%= form_with url: admin_webhook_events_path, method: :get, local: true, class: "row g-3 mb-4" do %>
+        <div class="col-md-4">
+          <%= label_tag :partner_id, "Partner", class: "form-label fw-medium" %>
+          <%= select_tag :partner_id,
+                options_from_collection_for_select(Partner.all, :id, :name, params[:partner_id]),
+                include_blank: "All Partners",
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= label_tag :event_type, "Event Type", class: "form-label fw-medium" %>
+          <%= text_field_tag :event_type, params[:event_type], class: "form-control", placeholder: "e.g. verification.completed" %>
+        </div>
+
+        <div class="col-md-2 align-self-end">
+          <%= submit_tag "Filter", class: "btn btn-primary w-100" %>
+        </div>
+      <% end %>
+
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr class="table-light">
+            <th>Partner</th>
+            <th>Event Type</th>
+            <th>BonID</th>
+            <th>Received</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @logs.present? && @logs.any? %>
+            <% @logs.each do |log| %>
+              <tr>
+                <td><%= log.partner&.name || "—" %></td>
+                <td><%= log.event_type.presence || "—" %></td>
+                <td><%= log.bonid.presence || "—" %></td>
+                <td><%= log.created_at ? time_ago_in_words(log.created_at) + " ago" : "—" %></td>
+                <td class="d-flex gap-2">
+                  <!-- View Payload -->
+                  <button class="btn btn-outline-primary btn-sm"
+                          data-bs-toggle="modal"
+                          data-bs-target="#payloadModal"
+                          data-payload="<%= h(JSON.pretty_generate(log.payload.presence || {})) %>"
+                          data-event="<%= h(log.event_type.presence || 'Unknown') %>"
+                          data-partner="<%= h(log.partner&.name.presence || 'Unknown') %>"
+                          data-bonid="<%= h(log.bonid.presence || 'N/A') %>">
+                    View Payload
+                  </button>
+
+                  <!-- Replay Webhook -->
+                  <% if log.respond_to?(:failed?) && log.failed? %>
+                    <%= button_to replay_admin_webhook_event_path(log), method: :post, form_class: "d-inline", class: "btn btn-outline-warning btn-sm" do %>
+                      Replay
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="5" class="text-center text-muted py-3">
+                No webhooks from a partner yet.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+
+      <div class="mt-3">
+        <%= paginate @logs, theme: 'bootstrap-4' if @logs.present? %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payload Modal -->
+<div class="modal fade" id="payloadModal" tabindex="-1" aria-labelledby="payloadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-haitian-blue text-white">
+        <h5 class="modal-title" id="payloadModalLabel">Webhook Payload</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="payloadContent" class="bg-light p-3 rounded text-dark small"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("turbo:load", () => {
+  const modal = document.getElementById("payloadModal")
+  if (!modal) return
+
+  modal.addEventListener("show.bs.modal", event => {
+    const button = event.relatedTarget
+    let payload = button.getAttribute("data-payload")
+    const eventType = button.getAttribute("data-event") || "Unknown"
+    const partner = button.getAttribute("data-partner") || "Unknown"
+    const bonid = button.getAttribute("data-bonid") || "N/A"
+
+    try {
+      payload = JSON.stringify(JSON.parse(payload), null, 2)
+    } catch (e) {
+      payload = payload || "{}"
+    }
+
+    modal.querySelector(".modal-title").textContent = `${eventType} — ${partner} (${bonid})`
+    modal.querySelector("#payloadContent").textContent = payload
+  })
+})
+</script>

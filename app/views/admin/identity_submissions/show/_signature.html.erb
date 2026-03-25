@@ -1,0 +1,89 @@
+<!-- app/views/admin/identity_submissions/show/_signature.html.erb -->
+
+<div id="<%= dom_id(submission, :signature_card) %>"
+     class="card border-0 rounded-3 shadow-sm mb-4 overflow-hidden">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="ri-pencil-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold text-dark">Signature</h6>
+    </div>
+
+    <% if submission.signature_verified_at.present? %>
+      <span class="badge bg-success d-flex align-items-center gap-1 px-2 py-1">
+        <i class="ri-check-line fw-bold"></i> Verified
+      </span>
+    <% elsif submission.signature&.attached? %>
+      <%= button_to verify_signature_admin_identity_submission_path(submission.uuid),
+            method: :post,
+            params: { method: "manual_review", note: "Verified by admin panel" },
+            data: { turbo_stream: true },
+            class: "btn btn-sm btn-outline-primary rounded-pill d-flex align-items-center gap-1" do %>
+        <i class="ri-shield-check-line"></i> Verify Signature
+      <% end %>
+    <% else %>
+      <span class="badge bg-warning text-dark d-flex align-items-center gap-1 px-2 py-1">
+        <i class="ri-alert-line"></i> Not Provided
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body text-center py-4">
+    <p class="text-muted small mb-4">
+      The signature represents the citizen’s consent and authentication mark for verified identity usage  
+      in official or legal contexts, such as embassy, financial, and medical validations.
+    </p>
+
+    <% if submission.signature&.attached? %>
+      <%= image_tag url_for(submission.signature),
+                    class: "img-fluid rounded shadow-sm border mx-auto d-block",
+                    alt: "Citizen Signature",
+                    style: "max-height: 100px; object-fit: contain;" %>
+
+      <small class="text-muted d-block mt-2">
+        Digitally stored and protected for identity verification use.
+      </small>
+
+      <% if submission.signature_verified_at.present? %>
+        <small class="text-success fw-semibold d-block mt-1">
+          Verified on <%= submission.signature_verified_at.strftime("%b %d, %Y at %I:%M %p") %>
+        </small>
+      <% else %>
+        <small class="text-warning d-block mt-1">
+          Awaiting manual verification by admin.
+        </small>
+      <% end %>
+    <% else %>
+      <p class="text-muted mb-0 mt-2">
+        No signature provided by this citizen.
+        <br>
+        <small>Signatures are optional but required for advanced verification tiers.</small>
+      </p>
+    <% end %>
+  </div>
+
+  <% if submission.signature_logs.any? %>
+    <div class="card-footer bg-light small text-start border-top">
+      <strong class="d-block mb-2 text-dark">
+        Signature Activity Logs
+      </strong>
+      <p class="text-muted small mb-3">
+        Tracks when and how signature-related actions occurred — such as uploads, reviews, or verifications.
+      </p>
+
+      <ul class="list-unstyled mb-0">
+        <% submission.signature_logs.order(created_at: :desc).each do |log| %>
+          <li class="text-muted mb-1">
+            <i class="ri-time-line"></i>
+            <%= log.event&.to_s&.titleize || "—" %>
+            <span class="text-secondary">
+              — <%= log.created_at.strftime("%b %d, %Y %H:%M") %>
+            </span>
+            <% if log.note.present? %>
+              <em class="text-muted">(<%= log.note %>)</em>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+</div>

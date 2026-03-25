@@ -1,0 +1,153 @@
+<div class="row g-4 mt-1">
+
+  <!-- ================================ -->
+  <!-- SYSTEM INFORMATION CARD          -->
+  <!-- ================================ -->
+  <div class="col-md-6">
+    <div class="card rounded-3 shadow-sm border-0 h-100">
+
+      <div class="card-header bg-light border-0 py-3">
+        <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+          System Information
+        </h5>
+      </div>
+
+      <div class="card-body p-4">
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Partner ID</span>
+          <strong class="text-dark"><%= partner.id %></strong>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Status</span>
+          <span class="badge rounded-pill px-3 bg-<%= 
+            partner.status == 'verified' ? 'success' : 
+            partner.status == 'rejected' ? 'danger' :
+            partner.status == 'pending' ? 'warning text-dark' : 'secondary'
+          %>">
+            <%= partner.status&.titleize || "—" %>
+          </span>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Verified At</span>
+          <strong class="text-dark"><%= partner.verified_at ? l(partner.verified_at, format: :long) : "—" %></strong>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Created</span>
+          <strong class="text-dark"><%= l(partner.created_at, format: :short) %></strong>
+        </div>
+
+        <div class="d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Last Updated</span>
+          <strong class="text-dark"><%= time_ago_in_words(partner.updated_at) %> ago</strong>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================ -->
+  <!-- INTEGRATION SETTINGS CARD        -->
+  <!-- ================================ -->
+  <div class="col-md-6">
+    <div class="card rounded-3 shadow-sm border-0 h-100">
+
+      <div class="card-header bg-light border-0 py-3">
+        <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+          Integration Settings
+        </h5>
+      </div>
+
+      <div class="card-body p-4">
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">API Key Last Rotated</span>
+          <strong class="text-dark"><%= partner.api_key_rotated_at ? l(partner.api_key_rotated_at.to_date) : "Never" %></strong>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Integration Active</span>
+          <span class="badge rounded-pill px-3 <%= partner.active ? 'bg-success' : 'bg-secondary' %>">
+            <%= partner.active ? "Yes" : "No" %>
+          </span>
+        </div>
+
+        <div class="d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Preferred Integration</span>
+          <strong class="text-dark"><%= partner.preferred_integration&.titleize || "—" %></strong>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================ -->
+  <!-- APPLICATION METADATA CARD        -->
+  <!-- ================================ -->
+  <div class="col-md-6">
+    <div class="card rounded-3 shadow-sm border-0 h-100">
+
+      <div class="card-header bg-light border-0 py-3">
+        <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+          Application Metadata
+        </h5>
+      </div>
+
+      <div class="card-body p-4">
+
+        <div class="mb-3 border-bottom pb-2">
+          <span class="text-muted">Use Cases</span>
+          <p class="mb-0 fw-medium text-dark mt-1"><%= partner.use_cases.presence || "—" %></p>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Estimated Team Size</span>
+          <strong class="text-dark"><%= partner.estimated_team_size || "—" %></strong>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Intended Users to Verify</span>
+          <strong class="text-dark"><%= number_with_delimiter(partner.intended_users_to_verify) || "—" %></strong>
+        </div>
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">How Did You Hear About Us</span>
+          <strong class="text-dark"><%= partner.how_did_you_hear&.titleize || "—" %></strong>
+        </div>
+
+        <div class="d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Other Use Case</span>
+          <strong class="text-dark"><%= partner.other_use_case.presence || "—" %></strong>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================ -->
+  <!-- ADMIN & ASSIGNMENT CARD          -->
+  <!-- ================================ -->
+  <div class="col-md-6">
+    <div class="card rounded-3 shadow-sm border-0 h-100">
+
+      <div class="card-header bg-light border-0 py-3">
+        <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+          Admin & Assignment
+        </h5>
+      </div>
+
+      <div class="card-body p-4">
+
+        <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
+          <span class="text-muted">Managed By Admin ID</span>
+          <strong class="text-dark"><%= partner.admin_user_id || "—" %></strong>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

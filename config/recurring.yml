@@ -1,4 +1,65 @@
-# production:
+# Recurring jobs for BonID
+# These run automatically via Solid Queue
+
+production:
+  # Check for overdue incident report reviews every 4 hours
+  # Sends alerts to supervisors and auto-escalates if 24+ hours past deadline
+  overdue_review_check:
+    class: OverdueReviewAlertJob
+    queue: default
+    schedule: every 4 hours
+
+  # Daily summary of pending reviews at 8am Haiti time (UTC-5)
+  # Helps supervisors plan their day
+  daily_review_summary:
+    class: DailyReviewSummaryJob
+    queue: default
+    schedule: at 8am every day
+
+  # Expire stale transaction consents (per-transaction consent for financial partners)
+  expire_transaction_consents:
+    class: ExpireTransactionConsentsJob
+    queue: default
+    schedule: every 1 minute
+
+  # Daily exchange rate refresh (USD/HTG) at 7am Haiti time
+  refresh_exchange_rate:
+    class: RefreshExchangeRateJob
+    queue: default
+    schedule: at 7am every day
+
+  # Auto-reconcile pending MonCash payments every 15 minutes
+  moncash_reconciliation:
+    class: MoncashReconciliationJob
+    queue: billing
+    schedule: every 15 minutes
+
+development:
+  # More frequent checks in development for testing
+  overdue_review_check:
+    class: OverdueReviewAlertJob
+    queue: default
+    schedule: every 30 minutes
+
+  # Transaction consent expiration
+  expire_transaction_consents:
+    class: ExpireTransactionConsentsJob
+    queue: default
+    schedule: every 1 minute
+
+  # Exchange rate refresh (more frequent in dev for testing)
+  refresh_exchange_rate:
+    class: RefreshExchangeRateJob
+    queue: default
+    schedule: every 6 hours
+
+  # MonCash reconciliation
+  moncash_reconciliation:
+    class: MoncashReconciliationJob
+    queue: default
+    schedule: every 5 minutes
+
+# Example configurations (commented out):
 #   periodic_cleanup:
 #     class: CleanSoftDeletedRecordsJob
 #     queue: background

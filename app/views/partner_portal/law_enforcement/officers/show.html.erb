@@ -1,0 +1,204 @@
+<%# app/views/partner_portal/law_enforcement/officers/show.html.erb %>
+
+<div class="container-fluid py-4">
+
+  <%# Header with Back Button %>
+  <div class="d-flex align-items-center mb-4">
+    <%= link_to partner_portal_law_enforcement_officers_path, class: "btn btn-outline-secondary me-3" do %>
+      <i class="ri-arrow-left-line"></i>
+    <% end %>
+    <div class="flex-grow-1">
+      <h2 class="mb-1 fw-bold"><%= @officer.full_name.presence || @officer.email %></h2>
+      <p class="text-muted mb-0"><%= @officer.rank %> · <%= @officer.role&.humanize %> · <code><%= @officer.badge_id %></code></p>
+    </div>
+    <%# Status Badge %>
+    <% if @officer.revoked? %>
+      <span class="badge bg-danger fs-6 px-3 py-2">
+        <i class="ri-forbid-line me-1"></i>Révoqué
+      </span>
+    <% elsif @officer.active? %>
+      <span class="badge bg-success fs-6 px-3 py-2">
+        <i class="ri-checkbox-circle-line me-1"></i>Actif
+      </span>
+    <% else %>
+      <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+        <i class="ri-mail-line me-1"></i>Invitation en attente
+      </span>
+    <% end %>
+  </div>
+
+  <%# Revoked banner %>
+  <% if @officer.revoked? %>
+    <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-start" role="alert">
+      <i class="ri-forbid-line fs-5 me-3 mt-1 flex-shrink-0"></i>
+      <div>
+        <strong>Accès révoqué.</strong>
+        Cet agent ne peut plus se connecter au système ni soumettre de rapports.
+        Pour rétablir l'accès, cliquez sur le bouton ci-dessous.
+      </div>
+    </div>
+  <% end %>
+
+  <div class="row g-4">
+    <%# Left column — Profile card + details %>
+    <div class="col-lg-4">
+
+      <%# Profile card %>
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-primary text-white py-3 text-center">
+          <h6 class="mb-0 fw-semibold"><i class="ri-user-line me-2"></i>Profil de l'agent</h6>
+        </div>
+        <div class="card-body text-center p-4">
+          <% officer_photo = @officer.user&.photo %>
+          <% if officer_photo&.attached? %>
+            <%= image_tag officer_photo.variant(resize_to_fill: [180, 180]),
+                          class: "rounded-circle mx-auto d-block mb-3 border border-3",
+                          style: "width:90px;height:90px;object-fit:cover;border-color:#{@officer.revoked? ? 'var(--law-red)' : 'var(--law-blue)'} !important;#{'opacity:0.5;' if @officer.revoked?}" %>
+          <% else %>
+            <% avatar_bg  = @officer.revoked? ? "bg-danger" : "bg-primary" %>
+            <% avatar_ico = @officer.revoked? ? "ri-forbid-line" : "ri-user-line" %>
+            <div class="<%= avatar_bg %> bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 border border-3 <%= @officer.revoked? ? 'border-danger' : 'border-primary' %>"
+                 style="width: 90px; height: 90px;">
+              <i class="<%= avatar_ico %> fs-1 <%= @officer.revoked? ? 'text-danger' : 'text-primary' %>"></i>
+            </div>
+          <% end %>
+
+          <h5 class="fw-bold mb-1 <%= 'text-muted' if @officer.revoked? %>">
+            <%= @officer.full_name.presence || "—" %>
+          </h5>
+          <p class="text-muted small mb-0"><%= @officer.rank %></p>
+          <p class="text-muted small mb-3"><%= @officer.unit_name %></p>
+          <code class="d-block mb-3 fs-6"><%= @officer.badge_id %></code>
+        </div>
+
+        <div class="card-footer bg-light border-top p-3">
+          <% if @officer.revoked? %>
+            <%= button_to reactivate_partner_portal_law_enforcement_officer_path(@officer),
+                          method: :post,
+                          class: "btn btn-success w-100 rounded-pill",
+                          data: { turbo_confirm: "Rétablir l'accès de #{@officer.full_name.presence || @officer.email} ?" } do %>
+              <i class="ri-user-follow-line me-2"></i>Rétablir l'accès
+            <% end %>
+          <% else %>
+            <%= button_to revoke_partner_portal_law_enforcement_officer_path(@officer),
+                          method: :post,
+                          class: "btn btn-danger w-100 rounded-pill",
+                          data: { turbo_confirm: "⚠️ Révoquer l'accès de #{@officer.full_name.presence || @officer.email} (#{@officer.badge_id}) ?\n\nCet agent ne pourra plus se connecter ni soumettre de rapports." } do %>
+              <i class="ri-forbid-line me-2"></i>Révoquer l'accès
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Officer details card %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light border-0 py-3">
+          <h6 class="mb-0 fw-semibold"><i class="ri-information-line me-2 text-primary"></i>Informations</h6>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">Email</span>
+            <span class="small fw-medium text-end"><%= @officer.email %></span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">Unité</span>
+            <span class="small fw-medium"><%= @officer.unit_name.presence || "—" %></span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">Type d'unité</span>
+            <span class="small fw-medium"><%= @officer.unit_type.presence || "—" %></span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">Département</span>
+            <span class="small fw-medium"><%= @officer.department_directorate.presence || "—" %></span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">BonID vérifié</span>
+            <span class="small fw-medium">
+              <% if @officer.user&.identity_submissions&.approved&.any? %>
+                <span class="text-success"><i class="ri-shield-check-line me-1"></i>Oui</span>
+              <% else %>
+                <span class="text-warning"><i class="ri-time-line me-1"></i>Non</span>
+              <% end %>
+            </span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">Invitation acceptée</span>
+            <span class="small fw-medium">
+              <%= @officer.invitation_accepted_at ? @officer.invitation_accepted_at.strftime("%d/%m/%Y") : "—" %>
+            </span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+            <span class="text-muted small">Créé le</span>
+            <span class="small fw-medium"><%= @officer.created_at.strftime("%d/%m/%Y") %></span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <%# Right column — Recent incident reports %>
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-file-list-3-line me-2"></i>Rapports d'incident récents
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <% if @incident_reports.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="bg-light">
+                  <tr>
+                    <th class="border-0 ps-3 small text-muted">Réf.</th>
+                    <th class="border-0 small text-muted">Type d'incident</th>
+                    <th class="border-0 small text-muted">Statut</th>
+                    <th class="border-0 small text-muted">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @incident_reports.each do |report| %>
+                    <tr>
+                      <td class="ps-3 align-middle">
+                        <code class="small text-muted"><%= (report.report_id || report.id.to_s).upcase %></code>
+                      </td>
+                      <td class="align-middle">
+                        <span class="fw-medium small">
+                          <%= truncate(report.crime_type || report.incident_type || "—", length: 40) %>
+                        </span>
+                      </td>
+                      <td class="align-middle">
+                        <% badge_class = case report.status
+                           when "draft"        then "bg-secondary"
+                           when "submitted"    then "bg-primary"
+                           when "under_review" then "bg-warning text-dark"
+                           when "approved"     then "bg-success"
+                           when "rejected"     then "bg-danger"
+                           when "escalated"    then "bg-dark"
+                           when "archived"     then "bg-secondary"
+                           else "bg-secondary"
+                           end %>
+                        <span class="badge <%= badge_class %>">
+                          <%= report.status&.humanize %>
+                        </span>
+                      </td>
+                      <td class="text-muted small align-middle">
+                        <%= report.created_at.strftime("%d/%m/%Y") %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5 text-muted">
+              <i class="ri-file-list-3-line" style="font-size: 3rem;"></i>
+              <p class="mt-3 mb-0">Aucun rapport soumis par cet agent.</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

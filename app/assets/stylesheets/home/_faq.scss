@@ -1,0 +1,241 @@
+/* ======================================================
+   HOME — FAQ SECTION (ENHANCED + TAP FIX)
+====================================================== */
+
+.faq-section {
+  position: relative;
+  min-height: 85vh;
+  padding: 6rem 0;
+  background: linear-gradient(180deg, #001b7a, #000b2d);
+  overflow: hidden;
+
+  /* ✅ FIX: ensure FAQ sits ABOVE any prior section overlays/canvas */
+  isolation: isolate;
+  z-index: 50;
+}
+
+/* If you later add decorative pseudo elements, they should never block taps */
+.faq-section::before,
+.faq-section::after {
+  pointer-events: none !important;
+}
+
+/* Force white text color */
+.faq-section h2,
+.faq-section h3,
+.faq-section p,
+.faq-section .lead {
+  color: #ffffff !important;
+}
+
+/* Header */
+.faq-section h2 {
+  letter-spacing: -0.02em;
+}
+
+.faq-section p {
+  max-width: 720px;
+}
+
+/* ✅ FIX: keep actual FAQ content above any background layers */
+.faq-section > .container,
+.faq-section .faq-accordion {
+  position: relative;
+  z-index: 2;
+}
+
+/* No decorative glow effects */
+
+/* ─────────────────────────────────────────
+   ACCORDION WRAPPER
+───────────────────────────────────────── */
+.faq-section .faq-accordion {
+  margin-top: 3rem;
+}
+
+/* ─────────────────────────────────────────
+   ACCORDION ITEM
+───────────────────────────────────────── */
+.faq-section .faq-accordion .accordion-item {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.faq-section .faq-accordion .accordion-item:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+/* ─────────────────────────────────────────
+   ACCORDION BUTTON — CLOSED STATE
+───────────────────────────────────────── */
+.faq-section .faq-accordion .accordion-button {
+  background: transparent;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: none;
+  border-radius: 0;
+  border: none;
+  transition: all 0.2s ease;
+
+  /* ✅ FIX: guarantee the button receives taps/clicks */
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.faq-section .faq-accordion .accordion-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ─────────────────────────────────────────
+   ACCORDION BUTTON — OPEN STATE
+───────────────────────────────────────── */
+.faq-section .faq-accordion .accordion-button:not(.collapsed) {
+  background: rgba(0, 255, 255, 0.1);
+  color: #ffffff;
+  box-shadow: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ─────────────────────────────────────────
+   CHEVRON ICON
+───────────────────────────────────────── */
+.faq-section .faq-accordion .accordion-button::after {
+  filter: brightness(2);
+  background-size: 1.25rem;
+  transition: transform 0.3s ease;
+}
+
+.faq-section .faq-accordion .accordion-button:not(.collapsed)::after {
+  transform: rotate(-180deg);
+}
+
+/* ─────────────────────────────────────────
+   ACCORDION BODY
+───────────────────────────────────────── */
+.faq-section .faq-accordion .accordion-body {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Links in accordion body */
+.faq-section .faq-accordion .accordion-body a {
+  color: rgba(0, 255, 255, 0.9);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.faq-section .faq-accordion .accordion-body a:hover {
+  color: rgba(0, 255, 255, 1);
+}
+
+/* Lists */
+.faq-section .faq-accordion .accordion-body ul {
+  padding-left: 1.5rem;
+  margin-top: 0.75rem;
+  list-style-type: disc;
+}
+
+.faq-section .faq-accordion .accordion-body li {
+  margin-bottom: 0.5rem;
+  list-style-type: disc;
+}
+
+/* Strong/bold text */
+.faq-section .faq-accordion .accordion-body strong {
+  color: rgba(255, 255, 255, 1);
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────
+   FOCUS STATE (ACCESSIBILITY)
+───────────────────────────────────────── */
+.faq-section .faq-accordion .accordion-button:focus {
+  box-shadow: none;
+  outline: 2px solid rgba(0, 255, 255, 0.5);
+  outline-offset: 2px;
+  z-index: 4;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE DESIGN
+───────────────────────────────────────── */
+@media (max-width: 992px) {
+  .faq-section {
+    padding: 4rem 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .faq-section {
+    padding: 4rem 1rem;
+  }
+
+  .faq-section .faq-accordion .accordion-button {
+    font-size: 0.95rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .faq-section .faq-accordion .accordion-body {
+    padding: 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .faq-section .faq-accordion .accordion-item {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .faq-section {
+    padding: 3rem 1rem;
+  }
+
+  .faq-section .faq-accordion .accordion-button {
+    font-size: 0.9rem;
+    padding: 1rem;
+  }
+
+  .faq-section .faq-accordion .accordion-body {
+    padding: 1rem;
+  }
+}
+
+/* ─────────────────────────────────────────
+   ACCESSIBILITY — REDUCED MOTION
+───────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .faq-section .faq-accordion .accordion-item,
+  .faq-section .faq-accordion .accordion-button,
+  .faq-section .faq-accordion .accordion-button::after {
+    transition: none;
+  }
+
+  .faq-section .faq-accordion .accordion-item:hover {
+    transform: none;
+  }
+}
+
+/* ======================================================
+   HARD STOP: If canvases/overlays from OTHER sections
+   are still blocking taps on mobile, disable their pointer events.
+   (Safe: decorative layers should never capture clicks.)
+====================================================== */
+#meshCanvas,
+.matrix-overlay,
+#constellationCanvas,
+.dev-grid {
+  pointer-events: none !important;
+}

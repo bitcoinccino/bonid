@@ -1,0 +1,165 @@
+<%# app/views/citizens/name_change_requests/new.html.erb %>
+
+<div class="citizen-profile-page container-fluid py-4">
+  <div class="mb-5 bg-white shadow-sm overflow-hidden" style="border-radius: 0.5rem;">
+    <%# ── Blue Header ── %>
+    <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #00209F;">
+      <div>
+        <h4 class="mb-1 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">
+          <i class="ri-edit-line me-2"></i>Request a Name Change
+        </h4>
+        <p class="mb-0 text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
+          Submit a request to update your legal name. You'll need to provide a reason and
+          supporting documentation (e.g., marriage certificate, court order). An administrator will review your request.
+        </p>
+      </div>
+      <%= link_to edit_citizens_profile_path, class: "btn btn-outline-light rounded-pill ms-3 flex-shrink-0", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
+        <i class="ri-arrow-left-line me-1"></i>Back to Profile
+      <% end %>
+    </div>
+
+    <%# ── Form Body ── %>
+    <div class="p-4 p-md-5">
+    <%= simple_form_for @name_change_request,
+          url: citizens_name_change_requests_path,
+          html: { class: "profile-form", multipart: true, data: { turbo: false } } do |f| %>
+
+      <%# Current Name (read-only) %>
+      <div class="card profile-card mb-4">
+        <div class="card-body">
+          <h6 class="fw-bold text-haitian-blue mb-3">
+            <i class="ri-user-line me-2"></i>Current Name
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label text-muted small">First Name</label>
+              <div class="form-control bg-light"><%= current_citizen.first_name %></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-muted small">Middle Name</label>
+              <div class="form-control bg-light"><%= current_citizen.middle_name.presence || "—" %></div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label text-muted small">Last Name</label>
+              <div class="form-control bg-light"><%= current_citizen.last_name %></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# New Name %>
+      <div class="card profile-card mb-4">
+        <div class="card-body">
+          <h6 class="fw-bold text-haitian-blue mb-3">
+            <i class="ri-pencil-line me-2"></i>New Name
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <%= f.input :new_first_name, required: true,
+                input_html: {
+                  placeholder: "e.g. Marie",
+                  class: "form-control",
+                  autocomplete: "given-name"
+                },
+                label: "First Name",
+                label_html: { class: "form-label" } %>
+            </div>
+            <div class="col-md-4">
+              <%= f.input :new_middle_name,
+                input_html: {
+                  placeholder: "e.g. Claudette (optional)",
+                  class: "form-control",
+                  autocomplete: "additional-name"
+                },
+                label: "Middle Name",
+                label_html: { class: "form-label" } %>
+            </div>
+            <div class="col-md-4">
+              <%= f.input :new_last_name, required: true,
+                input_html: {
+                  placeholder: "e.g. Dupont",
+                  class: "form-control",
+                  autocomplete: "family-name"
+                },
+                label: "Last Name",
+                label_html: { class: "form-label" } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Reason & Document %>
+      <div class="card profile-card mb-4" data-controller="name-change-reason">
+        <div class="card-body">
+          <h6 class="fw-bold text-haitian-blue mb-3">
+            <i class="ri-file-text-line me-2"></i>Reason & Supporting Document
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.input :reason, required: true,
+                collection: NameChangeRequest::REASONS.map { |k, v| [v, k] },
+                include_blank: "Select a reason",
+                input_html: {
+                  class: "form-select",
+                  data: {
+                    name_change_reason_target: "reason",
+                    action: "change->name-change-reason#toggle"
+                  }
+                },
+                label: "Reason for Name Change",
+                label_html: { class: "form-label" } %>
+            </div>
+
+            <div class="col-md-6" data-name-change-reason-target="otherField" style="display: none;">
+              <%= f.input :other_reason,
+                input_html: {
+                  placeholder: "Please describe...",
+                  class: "form-control",
+                  rows: 2
+                },
+                label: "Other Reason",
+                label_html: { class: "form-label" } %>
+            </div>
+
+            <div class="col-12">
+              <%= f.input :supporting_document, as: :file, required: true,
+                input_html: {
+                  class: "form-control",
+                  accept: ".pdf,.jpg,.jpeg,.png"
+                },
+                label: "Supporting Document",
+                label_html: { class: "form-label" },
+                hint: "Upload a marriage certificate, court order, or official document (PDF, JPG, or PNG)." %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Privacy Notice %>
+      <div class="alert alert-info d-flex align-items-start mb-4">
+        <i class="ri-shield-check-line ri-lg me-3 mt-1"></i>
+        <div class="small">
+          <strong>Your request is encrypted and secure.</strong><br>
+          Only authorized administrators can review name change requests.
+          You will be notified by email once your request is reviewed.
+        </div>
+      </div>
+
+      <%# Submit %>
+      <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+        <%= link_to edit_citizens_profile_path, class: "btn btn-outline-secondary rounded-pill px-4" do %>
+          <i class="ri-arrow-left-line me-1"></i> Cancel
+        <% end %>
+
+        <%= f.submit "Submit Request",
+          class: "btn btn-haitian-blue btn-lg rounded-pill px-5 shadow-sm fw-bold",
+          data: { disable_with: "Submitting..." } %>
+      </div>
+    <% end %>
+
+    <div class="mt-4 pt-3 border-top text-center small text-muted">
+      <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
+    </div>
+    </div><%# close form body %>
+  </div><%# close card %>
+</div>

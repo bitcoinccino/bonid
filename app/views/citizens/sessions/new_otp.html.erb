@@ -1,0 +1,141 @@
+<%# app/views/citizens/sessions/new_otp.html.erb %>
+
+<% content_for :auth_left do %>
+  <div class="auth-left-inner d-flex flex-column justify-content-between h-100 py-4 py-lg-5 w-100">
+
+    <!-- INTRO -->
+    <div class="text-center mb-4 mb-lg-5">
+      <h2 class="display-5 fw-bold mb-3 font-heading">
+        One-Time Login
+      </h2>
+      <p class="lead opacity-90 mx-auto max-w-text">
+        No password needed. We'll send a secure 6 digit code straight to your inbox.
+      </p>
+    </div>
+
+    <!-- BENEFITS -->
+    <div class="row g-4 justify-content-center mb-4 mb-lg-5">
+      <% [
+        { icon: "ri-lock-unlock-line",  title: "No password",    desc: "Log in without ever typing a password." },
+        { icon: "ri-time-line",         title: "Expires in 10m", desc: "Each code is single use and time limited." },
+        { icon: "ri-mail-check-line",   title: "Sent to you",    desc: "Code arrives in your inbox within seconds." }
+      ].each do |item| %>
+        <div class="col-12 col-md-4 text-center">
+          <i class="<%= item[:icon] %> ri-2x text-haitian-cyan mb-2"></i>
+          <div class="fw-semibold small mb-1"><%= item[:title] %></div>
+          <div class="small opacity-80"><%= item[:desc] %></div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- FOOTER NOTE -->
+    <p class="small opacity-75 fst-italic text-center">
+      BonID is a private digital identity service, not a government ID.
+    </p>
+
+  </div>
+<% end %>
+
+
+<div class="login-card">
+  <%# Partner branding banner (only when coming from a partner OAuth flow) %>
+  <% if @partner.present? %>
+    <div class="p-3 mb-4 rounded-3" style="background: #f0f4ff; border: 1px solid rgba(0,32,159,0.1);">
+      <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+        <%# Partner logo %>
+        <div class="d-flex align-items-center justify-content-center rounded-circle overflow-hidden flex-shrink-0"
+             style="width: 36px; height: 36px; background: #fff; border: 1px solid #e2e8f0;">
+          <% if @partner.logo.attached? %>
+            <%= image_tag @partner.logo.variant(resize_to_fill: [72, 72]),
+                  style: "width: 100%; height: 100%; object-fit: cover;",
+                  alt: @partner.name %>
+          <% else %>
+            <i class="ri-building-2-line" style="font-size: 0.9rem; color: #64748b;"></i>
+          <% end %>
+        </div>
+
+        <%# Connection icon %>
+        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+             style="width: 24px; height: 24px; background: #e2e8f0; border: 1px solid #cbd5e1;">
+          <i class="ri-link-m" style="font-size: 0.7rem; color: #64748b;"></i>
+        </div>
+
+        <%# BonID logo %>
+        <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+             style="width: 36px; height: 36px; background: #00209F; border: 1px solid #00209F;">
+          <i class="ri-shield-check-line" style="font-size: 0.9rem; color: #fff;"></i>
+        </div>
+      </div>
+      <div class="text-center">
+        <div class="fw-semibold" style="font-size: 0.82rem; color: #0F172A;">
+          <%= @partner.name %>
+        </div>
+        <div style="font-size: 0.72rem; color: #64748b;">
+          uses BonID to verify your identity
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Icon badge %>
+  <div class="text-center mb-4">
+    <div class="auth-icon-badge">
+      <i class="ri-mail-send-line"></i>
+    </div>
+  </div>
+
+  <%# Flash rendered by citizen_auth layout %>
+
+  <%# OTP Request Form %>
+  <%= form_with url: citizens_otp_sign_in_path(
+                  partner_slug: params[:from_partner] || params[:partner_slug]
+                ),
+                method: :post,
+                scope: :citizen,
+                local: true,
+                html: { data: { turbo: false }, id: "otp-request-form" } do |f| %>
+
+    <%= hidden_field_tag :partner_slug, params[:from_partner] || params[:partner_slug] %>
+
+    <div class="form-floating mb-3">
+      <%= f.text_field :email,
+            autofocus: true,
+            required: true,
+            autocomplete: "email",
+            placeholder: "you@email.com or BON 123456",
+            class: "form-control" %>
+      <%= f.label :email, "Email or BonID Number" %>
+    </div>
+
+    <%= f.submit "Send One-Time Code",
+          class: "btn btn-haitian-primary w-100 mt-2",
+          id: "send-code-button",
+          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Sending…' } %>
+
+    <div class="trust-badge">
+      <i class="ri-shield-check-line"></i>
+      <span>Secure &amp; encrypted</span>
+    </div>
+
+    <div class="auth-privacy-note">
+      <i class="ri-lock-line"></i>We'll never share your email with third parties.
+    </div>
+  <% end %>
+
+  <%# Divider %>
+  <div class="login-divider my-4">
+    <span>or</span>
+  </div>
+
+  <%# Create account %>
+  <div class="mb-3">
+    <%= link_to new_citizen_registration_path(from_partner: params[:from_partner] || params[:partner_slug]),
+          class: "btn btn-ghost-haitian w-100" do %>
+      <i class="ri-user-add-line me-2"></i>Create a BonID account
+    <% end %>
+  </div>
+
+  <div class="auth-help-link">
+    <a href="mailto:support@bonid.app">Need help?</a>
+  </div>
+</div>

@@ -1,0 +1,162 @@
+<%
+  # 🧭 Extract and normalize nested hashes
+  data       = record.data || {}
+  property   = data["property"].is_a?(Hash) ? data["property"] : {}
+  valuation  = data["valuation"].is_a?(Hash) ? data["valuation"] : {}
+  legal      = data["legal"].is_a?(Hash) ? data["legal"] : {}
+  permit     = data["permit"].is_a?(Hash) ? data["permit"] : {}
+  coords     = data["coordinates"].is_a?(Hash) ? data["coordinates"] : {}
+  coowners   = data["coowners"].is_a?(Array) ? data["coowners"] : []
+  documents  = data["documents"].is_a?(Array) ? data["documents"] : []
+  buyer      = data["buyer"].is_a?(Hash) ? data["buyer"] : {}
+  seller     = data["seller"].is_a?(Hash) ? data["seller"] : {}
+%>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <h5 class="mb-0 fw-semibold text-primary">
+      <i class="ri-home-4-line me-2 text-primary"></i>
+      Property Record
+    </h5>
+
+    <% if record.status == "verified" %>
+      <span class="badge bg-success-subtle text-success border border-success rounded-pill">
+        <i class="ri-shield-check-line me-1"></i> Verified via BonID
+      </span>
+    <% else %>
+      <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill">
+        <i class="ri-time-line me-1"></i> Pending Verification
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body">
+    <div class="row g-4">
+
+      <!-- 🏠 BASIC INFO -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2"><i class="ri-map-pin-2-line me-1 text-primary"></i> Location</h6>
+        <p class="mb-0"><%= property["location"] || "N/A" %></p>
+        <small class="text-muted d-block">Commune: <%= property["commune"] || "N/A" %></small>
+        <small class="text-muted d-block">Section Communale: <%= property["section_communal"] || "N/A" %></small>
+      </div>
+
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2"><i class="ri-building-2-line me-1 text-primary"></i> Property Type</h6>
+        <p class="mb-0"><%= property["property_type"]&.titleize || "N/A" %></p>
+        <small class="text-muted d-block">Zoning Use: <%= property["zoning_use"] || "N/A" %></small>
+      </div>
+
+      <!-- 📜 TITLE -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2"><i class="ri-draft-line me-1 text-primary"></i> Title & Registry</h6>
+        <p class="mb-1"><strong>Title Number:</strong> <%= property["title_number"] || "N/A" %></p>
+        <p class="mb-0"><strong>Cadastral Ref:</strong> <%= property["cadastral_ref"] || "N/A" %></p>
+      </div>
+
+      <!-- 📏 SIZE & VALUE -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2"><i class="ri-ruler-line me-1 text-primary"></i> Size</h6>
+        <p class="mb-0"><%= property["area_m2"] || "N/A" %> m²</p>
+        <small class="text-muted d-block">Owner Since: <%= property["owner_since"] || "N/A" %></small>
+      </div>
+
+      <!-- 💰 VALUATION -->
+      <div class="col-md-6">
+        <h6 class="fw-bold mb-2"><i class="ri-bank-line me-1 text-primary"></i> Valuation</h6>
+        <% if valuation["market_value_htg"].present? %>
+          <p class="mb-0 fw-semibold">
+            <%= number_with_delimiter(valuation["market_value_htg"].to_i, delimiter: ",") %> HTG
+          </p>
+        <% else %>
+          <p class="mb-0 text-muted">N/A</p>
+        <% end %>
+        <small class="text-muted d-block">Last Appraisal: <%= valuation["last_appraisal_date"] || "N/A" %></small>
+      </div>
+
+      <!-- ⚖️ LEGAL -->
+      <% if legal.present? %>
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-2"><i class="ri-scale-line me-1 text-primary"></i> Legal Information</h6>
+          <p class="mb-1"><strong>Notary:</strong> <%= legal["notary_name"] || "N/A" %></p>
+          <p class="mb-1"><strong>Registration Ref:</strong> <%= legal["registration_ref"] || "N/A" %></p>
+        </div>
+      <% end %>
+
+      <!-- 🧾 PERMIT -->
+      <% if permit.present? %>
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-2"><i class="ri-file-list-3-line me-1 text-primary"></i> Building Permit</h6>
+          <p class="mb-1"><strong>Number:</strong> <%= permit["number"] || "N/A" %></p>
+          <p class="mb-1"><strong>Status:</strong> <%= permit["status"] || "N/A" %></p>
+          <p class="mb-0"><strong>Issued By:</strong> <%= permit["issued_by"] || "N/A" %></p>
+        </div>
+      <% end %>
+
+      <!-- 👥 CO-OWNERS -->
+      <% if coowners.any? %>
+        <div class="col-md-12">
+          <h6 class="fw-bold mb-2"><i class="ri-user-shared-line me-1 text-primary"></i> Co-Owners</h6>
+          <ul class="list-unstyled mb-0">
+            <% coowners.each do |c| %>
+              <li>👥 <%= c["name"] || "Unknown" %> — <%= c["share_pct"] || "?" %>% share</li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- 🤝 TRANSACTION -->
+      <% if buyer.present? || seller.present? %>
+        <div class="col-md-12">
+          <h6 class="fw-bold mb-2"><i class="ri-hand-coin-line me-1 text-primary"></i> Recent Transaction</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <p class="mb-1"><strong>Buyer:</strong> <%= buyer["name"] || "N/A" %></p>
+              <small class="text-muted">Type: <%= buyer["type"] || "N/A" %></small>
+            </div>
+            <div class="col-md-6">
+              <p class="mb-1"><strong>Seller:</strong> <%= seller["name"] || "N/A" %></p>
+              <small class="text-muted">Type: <%= seller["type"] || "N/A" %></small>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- 🗺️ COORDINATES -->
+      <% if coords.present? %>
+        <div class="col-md-6">
+          <h6 class="fw-bold mb-2"><i class="ri-map-pin-line me-1 text-primary"></i> Coordinates</h6>
+          <p class="mb-0">Lat: <%= coords["lat"] || "?" %>, Lng: <%= coords["lng"] || "?" %></p>
+        </div>
+      <% end %>
+
+      <!-- 📎 DOCUMENTS -->
+      <% if documents.any? %>
+        <div class="col-md-12">
+          <h6 class="fw-bold mb-2"><i class="ri-attachment-2 me-1 text-primary"></i> Documents</h6>
+          <ul class="list-unstyled small mb-0">
+            <% documents.each do |doc| %>
+              <li class="mb-1">
+                <i class="ri-file-pdf-2-line text-danger me-1"></i>
+                <strong><%= doc["type"]&.titleize || "Document" %>:</strong>
+                <span class="text-muted"><%= doc["file_id"] || "N/A" %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- 🖼️ PHOTO -->
+      <% if data["photo_url"].present? %>
+        <div class="col-md-12 text-center">
+          <h6 class="fw-bold mb-2"><i class="ri-image-2-line me-1 text-primary"></i> Property Photo</h6>
+          <img src="<%= data["photo_url"] %>"
+               alt="Property Photo"
+               class="img-fluid rounded shadow-sm border"
+               style="max-height: 280px; object-fit: cover;">
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

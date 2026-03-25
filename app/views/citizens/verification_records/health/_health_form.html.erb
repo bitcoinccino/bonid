@@ -1,0 +1,79 @@
+<%# app/views/citizens/verification_records/_health_form.html.erb %>
+<%# ✅ Dynamic Health Record Form for BonID Citizens %>
+
+<%= turbo_frame_tag "record_form_frame" do %>
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-light fw-semibold">
+      <i class="ri-hospital-line me-1 text-danger"></i>
+      Health Record
+    </div>
+
+    <div class="card-body">
+      <%= form_with model: record,
+                    url: record.persisted? ? citizens_verification_record_path(record) : citizens_verification_records_path,
+                    method: record.persisted? ? :patch : :post,
+                    data: { turbo_frame: "record_form_frame" },
+                    class: "needs-validation",
+                    local: true do |f| %>
+
+        <!-- 🏥 Institution / Hospital -->
+        <div class="mb-3">
+          <%= f.label :data_facility_name, "Health Facility Name", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_facility_name,
+                value: record.data&.dig("facility_name"),
+                class: "form-control rounded-3 shadow-sm",
+                placeholder: "e.g. Hôpital de l'Université d'État d'Haïti" %>
+        </div>
+
+        <!-- 👩‍⚕️ Doctor / Practitioner -->
+        <div class="mb-3">
+          <%= f.label :data_doctor_name, "Doctor / Practitioner", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_doctor_name,
+                value: record.data&.dig("doctor_name"),
+                class: "form-control rounded-3 shadow-sm",
+                placeholder: "e.g. Dr. Jean Baptiste" %>
+        </div>
+
+        <!-- 🧾 Record Type -->
+        <div class="mb-3">
+          <%= f.label :data_record_type, "Record Type", class: "form-label fw-semibold" %>
+          <%= f.select :data_record_type,
+                options_for_select([
+                  ["General Consultation", "general_consultation"],
+                  ["Lab Report", "lab_report"],
+                  ["Vaccination", "vaccination"],
+                  ["Prescription", "prescription"],
+                  ["Emergency Visit", "emergency_visit"]
+                ], record.data&.dig("record_type")),
+                { prompt: "Select type" },
+                class: "form-select rounded-3 shadow-sm" %>
+        </div>
+
+        <!-- 📅 Record Date -->
+        <div class="mb-3">
+          <%= f.label :data_record_date, "Date of Record", class: "form-label fw-semibold" %>
+          <%= f.date_field :data_record_date,
+                value: record.data&.dig("record_date"),
+                class: "form-control rounded-3 shadow-sm" %>
+        </div>
+
+        <!-- 📝 Notes -->
+        <div class="mb-3">
+          <%= f.label :data_notes, "Notes / Observations", class: "form-label fw-semibold" %>
+          <%= f.text_area :data_notes,
+                value: record.data&.dig("notes"),
+                class: "form-control rounded-3 shadow-sm",
+                rows: 3,
+                placeholder: "Optional notes, test results, or observations..." %>
+        </div>
+
+        <!-- 💾 Submit -->
+        <div class="text-end">
+          <%= f.submit record.persisted? ? "Update Health Record" : "Save Health Record",
+                       class: "btn btn-primary fw-semibold rounded-3 px-4" %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+<% end %>

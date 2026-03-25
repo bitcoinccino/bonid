@@ -1,0 +1,17 @@
+<% if flash[:success] %>
+  <turbo-stream action="remove" target="inviteOfficersModal" />
+  <turbo-stream action="append" target="flash-messages">
+    <template>
+      <div class="alert alert-dismissible fade show alert-success alert-dismissible fade show" role="alert">
+        <%= flash[:success] %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    </template>
+  </turbo-stream>
+<% else %>
+  <turbo-stream action="replace" target="invite-form">
+    <template>
+      <%= render "form", officer: @officer %>
+    </template>
+  </turbo-stream>
+<% end %>

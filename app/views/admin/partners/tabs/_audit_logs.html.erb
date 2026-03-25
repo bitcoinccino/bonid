@@ -1,0 +1,112 @@
+<div class="card rounded-3 shadow-sm border-0 h-100">
+  <div class="card-header bg-light border-0 py-3">
+    <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+      Audit Trail
+    </h5>
+  </div>
+
+  <div class="card-body p-4">
+
+    <% if partner.partner_audit_logs.any? %>
+      <div class="timeline">
+
+        <% partner.partner_audit_logs.order(created_at: :desc).limit(100).each do |log| %>
+          <div class="timeline-item mb-4">
+            <div class="d-flex gap-3">
+
+              <!-- Timeline dot -->
+              <div class="flex-shrink-0 mt-1">
+                <div class="bg-primary rounded-circle" style="width: 10px; height: 10px;"></div>
+              </div>
+
+              <div class="flex-grow-1">
+
+                <!-- HEADER -->
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h6 class="fw-semibold text-dark mb-1">
+                      <%= log.event&.titleize || "Unknown Event" %>
+                    </h6>
+
+                    <p class="text-muted small mb-1">
+                      <% admin = AdminUser.find_by(id: log.admin_user_id) %>
+                      <% if admin %>
+                        by <span class="fw-medium"><%= admin.email %></span>
+                      <% else %>
+                        by <em>Deleted Admin (ID: <%= log.admin_user_id %>)</em>
+                      <% end %>
+                    </p>
+                  </div>
+
+                  <div class="text-end small text-muted">
+                    <%= l(log.created_at, format: :short) %><br>
+                    <span class="text-nowrap"><%= time_ago_in_words(log.created_at) %> ago</span>
+                  </div>
+                </div>
+
+                <!-- DETAILS -->
+                <% if log.details.present? %>
+                  <div class="mt-2 small text-muted bg-light bg-opacity-75 rounded px-3 py-2">
+
+                    <% parsed = begin
+                      # JSON string? Parse it.
+                      log.details.is_a?(String) && log.details.strip.start_with?("{", "[") ?
+                        JSON.parse(log.details) :
+                        log.details
+                    rescue
+                      log.details
+                    end %>
+
+                    <% if parsed.is_a?(Hash) %>
+
+                      <% parsed.each do |field, value| %>
+                        <% next if value.blank? %>
+                        <div class="mb-1">
+                          <strong><%= field.to_s.humanize %></strong>:
+                          <%= value.is_a?(Array) ? value.join(", ") : value.to_s.strip %>
+                        </div>
+                      <% end %>
+
+                    <% elsif parsed.is_a?(Array) %>
+
+                      <% parsed.each do |item| %>
+                        <div class="mb-1"><%= item.to_s %></div>
+                      <% end %>
+
+                    <% else %>
+
+                      <div><%= parsed.to_s %></div>
+
+                    <% end %>
+
+                  </div>
+                <% end %>
+
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+      </div>
+
+      <% if partner.partner_audit_logs.count > 100 %>
+        <div class="text-center mt-3">
+          <small class="text-muted">
+            Showing latest 100 events • Total: <%= partner.partner_audit_logs.count %>
+          </small>
+        </div>
+      <% end %>
+
+    <% else %>
+
+      <div class="text-center py-5 my-4 bg-light bg-opacity-50 rounded-3">
+        <p class="text-muted mb-0">
+          <strong>No audit events recorded</strong><br>
+          <small>All actions on this partner will appear here.</small>
+        </p>
+      </div>
+
+    <% end %>
+
+  </div>
+</div>

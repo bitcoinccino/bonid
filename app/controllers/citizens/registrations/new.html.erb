@@ -1,0 +1,60 @@
+<section class="container d-flex justify-content-center align-items-center min-vh-100" role="main" style="max-width: 480px;">
+  <div class="p-4 p-md-5 rounded-4 shadow-sm bg-white w-100 text-center">
+
+    <%= render "shared/flash" %>
+
+    <!-- Title -->
+    <h2 class="fw-bold mb-4">Citizen Sign Up</h2>
+    <p class="text-muted small mb-4">
+      Create your account to start your BonID application.
+    </p>
+
+    <%= form_for(resource, 
+                 as: resource_name, 
+                 url: registration_path(resource_name, partner: params[:partner]), 
+                 html: { class: "text-start" }) do |f| %>
+      <div class="mb-3">
+        <%= f.label :email, "Email Address", class: "form-label small fw-semibold" %>
+        <%= f.email_field :email,
+              autofocus: true,
+              autocomplete: "email",
+              class: "form-control rounded-2",
+              placeholder: "you@example.com",
+              required: true %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :password, "Password", class: "form-label small fw-semibold" %>
+        <%= f.password_field :password,
+              autocomplete: "new-password",
+              class: "form-control rounded-2",
+              required: true %>
+      </div>
+
+      <div class="mb-3">
+        <%= f.label :password_confirmation, "Confirm Password", class: "form-label small fw-semibold" %>
+        <%= f.password_field :password_confirmation,
+              autocomplete: "new-password",
+              class: "form-control rounded-2",
+              required: true %>
+      </div>
+
+      <!-- Hidden partner slug -->
+      <% if params[:partner].present? %>
+        <%= hidden_field_tag :partner, params[:partner] %>
+      <% end %>
+
+      <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-primary rounded-2 fw-bold">
+          Sign Up
+        </button>
+      </div>
+    <% end %>
+
+    <div class="text-center small mt-3">
+      <%= link_to "Already have an account? Log In", 
+                  citizens_sign_in_path(partner: params[:partner]),
+                  class: "text-primary text-decoration-none fw-semibold" %>
+    </div>
+  </div>
+</section>

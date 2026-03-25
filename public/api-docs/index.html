@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BonID API Documentation</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Source+Code+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --bonid-blue: #00209F;
+      --bonid-blue-light: #e6ecf6;
+      --bonid-blue-hover: #001a7a;
+      --bonid-blue-10: rgba(0, 32, 159, 0.1);
+      --white: #ffffff;
+      --bg: #f8f9fc;
+      --text-muted: #6c757d;
+    }
+
+    html { box-sizing: border-box; overflow-y: scroll; }
+    *, *:before, *:after { box-sizing: inherit; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ── Header ── */
+    .bonid-header {
+      background: var(--bonid-blue);
+      color: var(--white);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .bonid-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .bonid-header-left i {
+      font-size: 1.8rem;
+      opacity: 0.9;
+    }
+    .bonid-header h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .bonid-header p {
+      margin: 2px 0 0;
+      font-size: 0.78rem;
+      opacity: 0.8;
+      font-weight: 400;
+    }
+    .bonid-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .env-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 0.3px;
+    }
+    .env-toggle-btn {
+      background: var(--white);
+      color: var(--bonid-blue);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.78rem;
+      transition: background 0.2s;
+    }
+    .env-toggle-btn:hover {
+      background: var(--bonid-blue-light);
+    }
+
+    /* ── Content Card ── */
+    .api-card {
+      max-width: 1260px;
+      margin: 24px auto;
+      background: var(--white);
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      padding: 28px;
+    }
+    .api-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      color: var(--bonid-blue);
+    }
+    .api-card-header i { font-size: 1.3rem; }
+    .api-card-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .info-banner {
+      background: var(--bonid-blue-light);
+      border-left: 4px solid var(--bonid-blue);
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 0.88rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .info-banner i {
+      font-size: 1.2rem;
+      color: var(--bonid-blue);
+      margin-top: 2px;
+    }
+    .info-banner strong { color: var(--bonid-blue); }
+
+    /* ── Swagger UI Overrides ── */
+    .swagger-ui .topbar { display: none !important; }
+
+    .swagger-ui .info .title {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+      font-weight: 700;
+    }
+    .swagger-ui .info .title small.version-stamp {
+      background-color: var(--bonid-blue);
+    }
+    .swagger-ui .info a { color: var(--bonid-blue); }
+
+    .swagger-ui .opblock-tag {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+      border-bottom: 1px solid var(--bonid-blue-light);
+      font-weight: 600;
+    }
+    .swagger-ui .opblock-tag:hover {
+      background: var(--bonid-blue-light);
+    }
+
+    .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--bonid-blue); }
+    .swagger-ui .opblock.opblock-get .opblock-summary { border-color: var(--bonid-blue); }
+    .swagger-ui .opblock.opblock-get { background: rgba(0,32,159,0.04); border-color: rgba(0,32,159,0.3); }
+
+    .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #198754; }
+    .swagger-ui .opblock.opblock-post .opblock-summary { border-color: #198754; }
+    .swagger-ui .opblock.opblock-post { background: rgba(25,135,84,0.04); border-color: rgba(25,135,84,0.3); }
+
+    .swagger-ui .opblock.opblock-put .opblock-summary-method { background: #e67e22; }
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: #dc3545; }
+
+    .swagger-ui .btn.execute {
+      background-color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      color: var(--white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+    }
+    .swagger-ui .btn.execute:hover { background-color: var(--bonid-blue-hover); }
+
+    .swagger-ui .try-out__btn {
+      color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+    }
+    .swagger-ui .try-out__btn:hover { background: var(--bonid-blue-light); }
+
+    .swagger-ui .btn.authorize {
+      color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+    }
+    .swagger-ui .btn.authorize svg { fill: var(--bonid-blue); }
+
+    .swagger-ui .dialog-ux .modal-ux-header h3 {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+    }
+    .swagger-ui .btn.modal-btn.auth.authorize {
+      background-color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      color: var(--white);
+    }
+
+    .swagger-ui .responses-inner h4,
+    .swagger-ui .responses-inner h5,
+    .swagger-ui table thead tr th {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+    }
+
+    .swagger-ui section.models h4 {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+      border-bottom: 1px solid var(--bonid-blue-light);
+    }
+    .swagger-ui section.models .model-container {
+      background: var(--bonid-blue-light);
+      border-radius: 6px;
+    }
+
+    .swagger-ui .scheme-container {
+      background: var(--white);
+      border-bottom: 2px solid var(--bonid-blue);
+    }
+
+    .swagger-ui .filter .operation-filter-input {
+      border-color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+    }
+    .swagger-ui .filter .operation-filter-input:focus { outline-color: var(--bonid-blue); }
+
+    .swagger-ui a.nostyle { color: var(--bonid-blue); }
+    .swagger-ui .response-col_status { color: var(--bonid-blue); font-weight: 600; }
+
+    .swagger-ui .highlight-code pre,
+    .swagger-ui .microlight {
+      font-family: 'Source Code Pro', monospace;
+    }
+
+    /* ── Testing Guide ── */
+    .test-guide { margin-top: 24px; }
+    .test-guide h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--bonid-blue);
+      margin-bottom: 12px;
+    }
+    .test-guide details {
+      margin-bottom: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .test-guide summary {
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      background: var(--bonid-blue-light);
+      color: var(--bonid-blue);
+    }
+    .test-guide summary:hover { background: #d4ddf0; }
+    .test-guide pre {
+      margin: 0;
+      padding: 14px;
+      background: #1e1e2e;
+      color: #e0e0e0;
+      font-size: 0.82rem;
+      font-family: 'Source Code Pro', monospace;
+      overflow-x: auto;
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bonid-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+    }
+    .copy-btn:hover { background: var(--bonid-blue-hover); }
+
+    /* ── Footer ── */
+    .bonid-footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--bonid-blue-light);
+      margin-top: 20px;
+    }
+    .bonid-footer a {
+      color: var(--bonid-blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bonid-blue-light); }
+    ::-webkit-scrollbar-thumb { background: var(--bonid-blue); border-radius: 4px; }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      .bonid-header { padding: 12px 16px; flex-direction: column; gap: 10px; }
+      .bonid-header h1 { font-size: 1.1rem; }
+      .api-card { margin: 12px; padding: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="bonid-header">
+  <div class="bonid-header-left">
+    <i class="ri-shield-keyhole-line"></i>
+    <div>
+      <h1>BonID API Documentation</h1>
+      <p>Secure Digital Identity Verification for Haiti</p>
+    </div>
+  </div>
+  <div class="bonid-header-right">
+    <span class="env-badge" id="env-badge" style="background: var(--white); color: var(--bonid-blue);">Production</span>
+    <button class="env-toggle-btn" id="env-toggle">Switch Environment</button>
+  </div>
+</div>
+
+<div class="api-card">
+  <div class="api-card-header">
+    <i class="ri-code-s-slash-line"></i>
+    <h2>Interactive API Explorer</h2>
+  </div>
+
+  <div class="info-banner">
+    <i class="ri-information-line"></i>
+    <div>
+      <strong>All endpoints are testable.</strong>
+      Click <em>Authorize</em> to enter your <code>X-Partner-Api-Key</code>, then expand
+      any endpoint and click <em>Try it out</em> to send live requests.
+    </div>
+  </div>
+
+  <div id="swagger-ui"></div>
+
+  <div class="test-guide">
+    <h3><i class="ri-terminal-box-line"></i> Quick Start (cURL)</h3>
+
+    <details>
+      <summary>Verify a Citizen's BonID</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"bonid": "JM-1968-M-OUEST-P2334-217"}' \
+  https://api.bonid.ht/api/v1/verify_identity</code></pre>
+    </details>
+
+    <details>
+      <summary>Get Full Identity Details</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X GET \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  https://api.bonid.ht/api/v1/identity/JM-1968-M-OUEST-P2334-217</code></pre>
+    </details>
+
+    <details>
+      <summary>Check Crime Status</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X GET \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  https://api.bonid.ht/api/v1/crime_status/JM-1968-M-OUEST-P2334-217</code></pre>
+    </details>
+
+    <details>
+      <summary>Exchange OAuth Token</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -d '{"grant_type": "authorization_code", "code": "AUTH_CODE"}' \
+  https://api.bonid.ht/api/v1/oauth/token</code></pre>
+    </details>
+
+    <details>
+      <summary>Verify Certificate Signature (Public)</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"certificate_id": "A3F8B2C1", "report_id": "PNH-DDO-HOMO-20260222", "algorithm": "RSASSA-PSS", "issued_at": "2026-02-22T10:30:00Z", "signature_value": "BASE64_SIG"}' \
+  https://api.bonid.ht/api/v1/certificates/verify</code></pre>
+    </details>
+
+    <details>
+      <summary>Create Transaction Consent</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># Step 1: Request citizen consent
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -d '{"bonid": "JM-1968-M-OUEST-P2334-217", "transaction_type": "wire_transfer", "scopes": ["profile", "address"], "amount": 5000, "currency": "HTG"}' \
+  https://api.bonid.ht/api/v1/transaction_consents</code></pre>
+    </details>
+
+    <details>
+      <summary>Double-Lock: Get Identity with Consent</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># Step 2: After citizen approves, use consent_token to access identity data
+# Only the scopes the citizen consented to will be returned
+curl -X GET \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  "https://api.bonid.ht/api/v1/identity/JM-1968-M-OUEST-P2334-217?consent_token=txn_abc123xyz"
+
+# Without consent_token, only verification status is returned:
+# { "verified": true, "bonid": "JM-1968-M-OUEST-P2334-217" }</code></pre>
+    </details>
+
+    <details>
+      <summary>Check Voter Eligibility (Election)</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X GET \
+  -H "X-BonID-Voter-Token: VOTER_SESSION_TOKEN" \
+  -H "X-BonID-Attestation: APP_HMAC_NONCE" \
+  -H "X-BonID-Timestamp: 1724947200" \
+  -H "X-BonID-Device: DEVICE_FINGERPRINT" \
+  https://api.bonid.ht/api/v1/election/2026-presidential-round1/eligibility</code></pre>
+    </details>
+
+    <details>
+      <summary>Cast a Vote (Election — ZKP Encrypted)</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># The server NEVER sees the vote choice — only encrypted payload
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-BonID-Voter-Token: VOTER_SESSION_TOKEN" \
+  -H "X-BonID-Attestation: APP_HMAC_NONCE" \
+  -H "X-BonID-Timestamp: 1724947200" \
+  -H "X-BonID-Source: remote" \
+  -d '{
+    "nullifier": "e3b0c44298fc1c14...",
+    "encrypted_choice": {
+      "encrypted_choice": "BASE64...",
+      "encrypted_key": "BASE64...",
+      "iv": "BASE64...",
+      "auth_tag": "BASE64..."
+    },
+    "zkp_commitment": "a8f3b2c1...",
+    "zkp_proof": {
+      "challenge": "HEX...",
+      "response": "HEX...",
+      "public_commitment": "HEX..."
+    },
+    "liveness_session_id": "6e183b42-a256-45b1-af0c-1b7d4c5761ae",
+    "biometric_hash": "d4e5f607..."
+  }' \
+  https://api.bonid.ht/api/v1/election/2026-presidential-round1/cast</code></pre>
+    </details>
+
+    <details>
+      <summary>Verify Ballot — "Vòt ou konte" (Public)</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># No authentication needed — anyone can verify
+curl -X GET \
+  https://api.bonid.ht/api/v1/election/2026-presidential-round1/verify/a8f3b2c1d4e5f607...
+
+# Response: { "verified": true, "message": "Vòt ou konte", "position": 4523 }</code></pre>
+    </details>
+
+    <details>
+      <summary>Register Consulate Kiosk (Election)</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-BonID-Kiosk-Secret: CONSULATE_SECRET" \
+  -d '{
+    "consulate_id": "HT-CONS-MIAMI",
+    "station_id": "KIOSK-01",
+    "latitude": 25.7617,
+    "longitude": -80.1918
+  }' \
+  https://api.bonid.ht/api/v1/election/2026-presidential-round1/kiosk/register</code></pre>
+    </details>
+
+    <details>
+      <summary>Scan Voter BonID at Kiosk (Election)</summary>
+      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-BonID-Kiosk-Token: KIOSK_SESSION_TOKEN" \
+  -d '{"bonid": "VP-1970-M-US-P2334-4EC"}' \
+  https://api.bonid.ht/api/v1/election/2026-presidential-round1/kiosk/scan
+
+# Response: { "status": "eligible", "voter_token": "...", "display": { "title": "Elektè Elijib" } }</code></pre>
+    </details>
+  </div>
+</div>
+
+<div class="bonid-footer">
+  Powered by <a href="https://bonid.ht" target="_blank">BonID</a> &mdash; Haiti's National Digital Identity Platform
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+
+<script>
+  function copyCode(btn) {
+    const code = btn.nextElementSibling.textContent;
+    navigator.clipboard.writeText(code);
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  }
+
+  window.onload = () => {
+    const specUrl = './openapi.json';
+
+    const envs = [
+      { name: 'Local', url: 'http://localhost:3100/api/v1', badge: '#e67e22' },
+      { name: 'Sandbox', url: 'https://sandbox.bonid.ht/api/v1', badge: '#198754' },
+      { name: 'Production', url: 'https://api.bonid.ht/api/v1', badge: '#00209F' }
+    ];
+
+    // Auto-detect environment
+    let envIdx = 2; // production default
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      envIdx = 0;
+    } else if (host.includes('sandbox') || host.includes('ngrok')) {
+      envIdx = 1;
+    }
+
+    const badge = document.getElementById('env-badge');
+    const toggleBtn = document.getElementById('env-toggle');
+
+    function updateBadge() {
+      const env = envs[envIdx];
+      badge.textContent = env.name;
+      badge.style.background = 'var(--white)';
+      badge.style.color = env.badge;
+    }
+
+    function loadSwagger() {
+      const env = envs[envIdx];
+      document.getElementById('swagger-ui').innerHTML = '';
+
+      SwaggerUIBundle({
+        url: specUrl,
+        dom_id: '#swagger-ui',
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+        layout: 'BaseLayout',
+        docExpansion: 'list',
+        defaultModelsExpandDepth: 2,
+        tryItOutEnabled: true,
+        persistAuthorization: true,
+        filter: true,
+        displayRequestDuration: true,
+        requestInterceptor: (req) => {
+          // Rewrite server URL to current environment
+          if (req.url && req.url.includes('/api/v1/')) {
+            const path = req.url.split('/api/v1/').pop();
+            req.url = env.url + '/' + path;
+          }
+          return req;
+        }
+      });
+    }
+
+    toggleBtn.addEventListener('click', () => {
+      envIdx = (envIdx + 1) % envs.length;
+      updateBadge();
+      loadSwagger();
+    });
+
+    updateBadge();
+    loadSwagger();
+  };
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!-- app/views/admin/identity_submissions/show/_identity_images.html.erb -->
+
+<div class="card border-0 rounded-3 shadow-sm mb-4">
+  <!-- Header -->
+  <div class="card-header bg-light d-flex align-items-center">
+    <i class="ri-user-3-line text-primary me-2"></i>
+    <h6 class="mb-0 fw-semibold text-dark">Identity Images</h6>
+  </div>
+
+  <div class="card-body">
+    <!-- Description -->
+    <p class="text-muted small mb-4">
+      These images are used to confirm the citizen’s visual identity.  
+      The profile photo and selfie should clearly match the image on their government-issued ID.
+    </p>
+
+    <div class="row g-4">
+      <!-- Profile Photo -->
+      <div class="col-md-6 text-center">
+        <% if submission.user&.photo&.attached? %>
+          <%= image_tag submission.user.photo.variant(
+                resize_to_fill: [400, 400],
+                saver: { quality: 90 }
+              ),
+              class: "img-fluid rounded shadow-sm border mb-2",
+              style: "max-height: 250px; object-fit: cover;",
+              alt: "#{submission.user.full_name} profile photo" %>
+
+          <div class="badge bg-primary-subtle text-primary">User Provided</div>
+          <div class="small text-muted">Profile Photo</div>
+        <% else %>
+          <div class="p-4 border rounded-3 bg-light d-flex flex-column align-items-center justify-content-center h-100">
+            <i class="ri-user-line display-5 text-muted mb-2"></i>
+            <div class="small text-muted">No profile photo uploaded</div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Selfie -->
+      <div class="col-md-6 text-center">
+        <% if submission.selfie&.attached? %>
+          <%= image_tag submission.selfie.variant(
+                resize_to_fill: [400, 400],
+                saver: { quality: 90 }
+              ),
+              class: "img-fluid rounded shadow-sm border mb-2",
+              style: "max-height: 250px; object-fit: cover;",
+              alt: "#{submission.user.full_name} selfie" %>
+
+          <div class="badge bg-primary-subtle text-primary">User Provided</div>
+          <div class="small text-muted">Selfie</div>
+        <% else %>
+          <div class="p-4 border rounded-3 bg-light d-flex flex-column align-items-center justify-content-center h-100">
+            <i class="ri-camera-line display-5 text-muted mb-2"></i>
+            <div class="small text-muted">No selfie uploaded</div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <% unless submission.user&.photo&.attached? || submission.selfie&.attached? %>
+      <div class="alert alert-dismissible fade show alert-light border text-center text-muted mt-4 shadow-sm">
+        <i class="ri-information-line fs-5 text-secondary"></i><br>
+        No identity images have been uploaded for this submission.
+      </div>
+    <% end %>
+  </div>
+</div>

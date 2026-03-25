@@ -1,0 +1,64 @@
+<%# app/views/officers/invitations/edit.html.erb %>
+
+<div class="officer-form-card">
+  <%# Icon %>
+  <div class="form-icon">
+    <%= image_tag "pnh.png", alt: "PNH" %>
+  </div>
+
+  <%# Title %>
+  <h1>Welcome, Officer!</h1>
+  <p class="form-subtitle">
+    Set your password to complete your account setup and access the PNH IDPol Portal.
+  </p>
+
+  <%# Error Messages %>
+  <% if resource.errors.any? %>
+    <div class="alert alert-danger mb-4" role="alert">
+      <ul class="mb-0 ps-3">
+        <% resource.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Form %>
+  <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put, data: { turbo: false } }) do |f| %>
+    <%# Hidden token %>
+    <%= f.hidden_field :invitation_token, value: params[:invitation_token] %>
+
+    <div class="mb-3">
+      <%= f.label :password, "Create Password", class: "form-label" %>
+      <%= f.password_field :password,
+            autofocus: true,
+            autocomplete: "new-password",
+            placeholder: "Enter a strong password",
+            class: "form-control" %>
+      <small class="text-muted">Minimum 8 characters</small>
+    </div>
+
+    <div class="mb-4">
+      <%= f.label :password_confirmation, "Confirm Password", class: "form-label" %>
+      <%= f.password_field :password_confirmation,
+            autocomplete: "new-password",
+            placeholder: "Confirm your password",
+            class: "form-control" %>
+    </div>
+
+    <%= f.submit "Activate Account", class: "btn-officer-primary" %>
+  <% end %>
+
+  <%# Info Box %>
+  <div class="mt-4 p-3 rounded" style="background: rgba(9, 44, 115, 0.05); border: 1px solid rgba(9, 44, 115, 0.1);">
+    <div class="d-flex align-items-start gap-2">
+      <i class="ri-information-line text-primary mt-1"></i>
+      <div>
+        <strong class="text-dark" style="font-size: 0.875rem;">What happens next?</strong>
+        <p class="text-muted mb-0" style="font-size: 0.8rem;">
+          After setting your password, you'll be redirected to complete your officer profile with your badge number, unit assignment, and other official details.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

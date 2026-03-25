@@ -1,0 +1,120 @@
+<%# app/views/citizens/transaction_consents/_focus_card.html.erb %>
+<%# Hero card for the most urgent active pending consent. %>
+<%# Uses consent-focus controller for countdown + audio, consent-liveness for biometric approval. %>
+
+<%= turbo_frame_tag "focus-consent-#{consent.consent_token}" do %>
+  <div class="consent-focus-card"
+       data-controller="consent-focus"
+       data-consent-focus-target="focusCard"
+       data-consent-focus-expires-at-value="<%= consent.expires_at.iso8601 %>"
+       data-consent-focus-sound-url-value="<%= asset_path('consent-ping.wav') rescue '' %>">
+
+    <%# ── Partner identity row ── %>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <% if consent.partner.logo.attached? %>
+        <%= image_tag url_for(consent.partner.logo),
+              class: "rounded-3 flex-shrink-0",
+              style: "width:56px;height:56px;object-fit:cover;border:2px solid #dee2e6;" %>
+      <% else %>
+        <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3"
+             style="width:56px;height:56px;background:#f8f9fa;border:2px solid #dee2e6;">
+          <i class="ri-building-2-line fs-3 text-muted"></i>
+        </div>
+      <% end %>
+      <div>
+        <p class="mb-0 fw-bold" style="font-family:'Montserrat',sans-serif; font-size:0.95rem; color:#00209f;">
+          <%= t("transaction_consents.new_request", partner: consent.partner.name) %>
+        </p>
+        <span class="small text-muted">
+          <i class="ri-building-4-line me-1"></i><%= consent.partner.sector&.titleize || "Partner" %>
+        </span>
+      </div>
+    </div>
+
+    <%# ── Amount + Transaction Type (large, high-contrast) ── %>
+    <div class="text-center mb-3">
+      <% if consent.amount.present? && consent.amount > 0 %>
+        <div style="font-family:'Montserrat',sans-serif; font-size:2.2rem; font-weight:800; color:#00209f; line-height:1.1;">
+          <%= number_to_currency(consent.amount, unit: consent.currency == "HTG" ? "G " : "$ ", precision: 0) %>
+        </div>
+      <% end %>
+      <div class="text-muted mt-1" style="font-size:1.05rem; font-weight:600;">
+        <%= t("transaction_consents.types.#{consent.transaction_type}", default: consent.transaction_type.titleize) %>
+      </div>
+      <% if consent.description.present? %>
+        <div class="text-muted small mt-1"><%= consent.description %></div>
+      <% end %>
+    </div>
+
+    <%# ── Scopes (data shared) ── %>
+    <% scopes = Array(consent.scopes).reject(&:blank?) %>
+    <% if scopes.any? %>
+      <div class="mb-3 text-center">
+        <span class="small text-uppercase fw-bold text-muted"><%= t("transaction_consents.scopes_label") %>:</span>
+        <div class="d-flex flex-wrap justify-content-center gap-1 mt-1">
+          <% scopes.each do |scope| %>
+            <span class="badge rounded-pill px-2 py-1" style="background:#e9ecef; color:#495057; font-size:0.75rem;">
+              <%= scope.titleize %>
+            </span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Countdown Progress Bar ── %>
+    <div class="mb-3">
+      <div class="consent-countdown-bar">
+        <div class="consent-countdown-bar__fill" data-consent-focus-target="progressBar"></div>
+      </div>
+      <div class="text-center mt-1">
+        <span data-consent-focus-target="countdown" class="small fw-bold text-muted"></span>
+      </div>
+    </div>
+
+    <%# ── Instructional microcopy ── %>
+    <p class="text-center small text-muted mb-3">
+      <i class="ri-information-line me-1"></i><%= t("transaction_consents.instruction") %>
+    </p>
+
+    <%# ── Action Buttons ── %>
+    <% if consent.citizen.bonid_verified? %>
+      <div class="d-grid gap-2">
+        <%# Primary: Biometric Verify to Approve %>
+        <button type="button"
+                class="btn btn-approve-lg"
+                data-controller="consent-liveness"
+                data-consent-liveness-consent-token-value="<%= consent.consent_token %>"
+                data-consent-liveness-decide-url-value="<%= liveness_decide_citizens_transaction_consent_path(consent.consent_token) %>"
+                data-action="click->consent-liveness#startLiveness">
+          <i class="ri-shield-check-line me-2"></i><%= t("transaction_consents.verify_to_approve") %>
+        </button>
+
+        <%# Fallback: Approve with OTP code %>
+        <div class="text-center">
+          <a href="#"
+             class="small text-muted text-decoration-underline"
+             data-bs-toggle="modal"
+             data-bs-target="#otpModal-<%= consent.consent_token %>"
+             data-approve="true">
+            <i class="ri-key-2-line me-1"></i><%= t("transaction_consents.use_code_instead") %>
+          </a>
+        </div>
+
+        <%# Deny button %>
+        <button type="button"
+                class="btn btn-deny-lg"
+                data-bs-toggle="modal"
+                data-bs-target="#otpModal-<%= consent.consent_token %>"
+                data-deny="true">
+          <i class="ri-close-line me-2"></i><%= t("transaction_consents.deny") %>
+        </button>
+      </div>
+    <% else %>
+      <div class="text-center small text-warning">
+        <i class="ri-shield-check-line me-1"></i>
+        You must <strong><%= link_to "verify your BonID", citizens_identity_submissions_path, class: "text-warning text-decoration-underline" %></strong> before you can approve or deny transactions.
+      </div>
+    <% end %>
+
+  </div>
+<% end %>

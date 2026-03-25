@@ -1,0 +1,305 @@
+<%# After officer confirms visual verification — Identity Card with dynamic alert state %>
+<%= render 'officers/bonid_lookups/photo_modal' %>
+<%
+  latest_involvement = defined?(involvements) && involvements.present? ? involvements.first : nil
+  latest_crime_type  = latest_involvement&.incident_report&.crime_type&.humanize
+  latest_severity    = latest_involvement&.incident_report&.crime_severity_level
+  has_incidents      = defined?(involvements) && involvements.present?
+
+  # Detect high-risk statuses for alert state
+  high_risk_statuses = %w[wanted fugitive armed dangerous escaped_custody]
+  high_risk_involvements = has_incidents ? involvements.select { |i|
+    high_risk_statuses.include?(i.status) && %w[suspect accomplice].include?(i.role)
+  } : []
+  is_high_risk = high_risk_involvements.any?
+  is_armed     = high_risk_involvements.any? { |i| %w[armed dangerous].include?(i.status) }
+
+  # Dynamic colors based on risk
+  accent_color    = is_high_risk ? "var(--law-red)" : "var(--law-green)"
+  accent_color_10 = is_high_risk ? "var(--law-red-10)" : "var(--law-green-10)"
+  header_label    = is_high_risk ? "CRIMINAL RECORD FOUND" : "IDENTITY CONFIRMED"
+  header_icon     = is_high_risk ? "ri-alarm-warning-line" : "ri-shield-check-line"
+%>
+
+<%# Pinned danger banner for armed/wanted/escaped individuals %>
+<% if is_high_risk %>
+  <%= render 'officers/bonid_lookups/danger_banner', involvements: involvements %>
+<% end %>
+
+<div class="card border-0" data-result-type="<%= is_high_risk ? 'alert' : 'valid' %>" style="border-left: 4px solid <%= accent_color %> !important;">
+  <%# Dynamic header with visual verification badge %>
+  <div class="card-header text-white py-2 border-0"
+       style="background: <%= accent_color %>;<%= is_high_risk ? ' animation: pulse-danger 2s ease-in-out infinite;' : '' %>">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <i class="<%= header_icon %> me-2" style="font-size: 1.1rem;"></i>
+        <span style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.9rem;">
+          <%= header_label %>
+        </span>
+      </div>
+      <span class="badge bg-light <%= is_high_risk ? 'text-danger' : 'text-success' %> px-2" style="font-size: 0.7rem;">
+        <i class="ri-eye-line me-1"></i>VISUALLY VERIFIED
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body p-3">
+    <%# === THE IDENTITY CARD === %>
+    <div class="d-flex align-items-start gap-3 mb-3">
+      <%# Large Photo — border shifts to red for criminal records %>
+      <div class="flex-shrink-0 text-center">
+        <% if user.photo.attached? %>
+          <%= image_tag user.photo.variant(resize_to_limit: [200, 200]),
+                        class: "rounded border border-3",
+                        style: "width: 120px; height: 140px; object-fit: cover; border-color: #{accent_color} !important; cursor: pointer;",
+                        data: {
+                          photo_enlarge: true,
+                          photo_url: url_for(user.photo.variant(resize_to_limit: [800, 800])),
+                          person_name: user.full_name,
+                          crime_type: latest_crime_type,
+                          severity_level: latest_severity
+                        },
+                        title: "Tap to enlarge" %>
+        <% else %>
+          <div class="rounded d-flex align-items-center justify-content-center"
+               style="width: 120px; height: 140px; background: <%= accent_color_10 %>; border: 3px solid <%= accent_color %>;">
+            <i class="ri-user-line" style="font-size: 3rem; color: <%= accent_color %>;"></i>
+          </div>
+        <% end %>
+        <div class="mt-2">
+          <% if is_high_risk %>
+            <span class="badge text-white d-block" style="background: var(--law-red); font-size: 0.7rem;">
+              <i class="ri-alarm-warning-line me-1"></i>Alert
+            </span>
+          <% else %>
+            <span class="badge text-white d-block" style="background: var(--law-green); font-size: 0.7rem;">
+              <i class="ri-verified-badge-line me-1"></i>Verified
+            </span>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Name + Quick Details %>
+      <div class="flex-grow-1">
+        <h5 class="mb-1" style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.15rem; color: var(--dark-gray); line-height: 1.2;">
+          <%= user.full_name %>
+        </h5>
+
+        <div class="mb-2">
+          <code class="d-inline-block px-2 py-1 rounded" style="font-size: 0.78rem; background: <%= accent_color_10 %>; color: <%= is_high_risk ? '#721c24' : 'var(--law-green-dark)' %>; letter-spacing: 0.5px;">
+            <%= submission.bonid %>
+          </code>
+        </div>
+
+        <div style="font-size: 0.8rem; color: var(--mid-gray);">
+          <div class="d-flex flex-wrap gap-3">
+            <span>
+              <i class="ri-calendar-line me-1" style="font-weight: 400;"></i>
+              <strong>DOB</strong> <%= user.dob&.strftime("%b %d, %Y") || "N/A" %>
+            </span>
+            <span>
+              <i class="ri-user-line me-1" style="font-weight: 400;"></i>
+              <strong>Sex</strong> <%= user.sex&.capitalize || "N/A" %>
+            </span>
+          </div>
+
+          <% if user.address %>
+            <div class="mt-1">
+              <i class="ri-map-pin-line me-1" style="font-weight: 400;"></i>
+              <%= user.formatted_address&.truncate(50) || "N/A" %>
+            </div>
+          <% end %>
+
+          <% if submission.expires_at %>
+            <div class="mt-1">
+              <i class="ri-time-line me-1" style="font-weight: 400;"></i>
+              Expires <%= submission.expires_at.strftime("%b %d, %Y") %>
+              <% if submission.expires_at > Time.current %>
+                <span class="badge bg-success ms-1" style="font-size: 0.65rem;">VALID</span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Health info %>
+    <% if user.health_profile&.blood_type.present? %>
+      <div class="d-flex flex-wrap gap-2 mb-3 pb-3 border-bottom" style="font-size: 0.8rem;">
+        <span class="badge bg-danger">
+          <i class="ri-drop-line me-1"></i><%= user.health_profile.blood_type %>
+        </span>
+        <% if user.health_profile.organ_donor %>
+          <span class="badge bg-info">
+            <i class="ri-heart-line me-1"></i>Organ Donor
+          </span>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# === CRIMINAL HISTORY — detailed block for high-risk === %>
+    <% if has_incidents %>
+      <div class="mb-3 pb-3 border-bottom">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 600; color: <%= is_high_risk ? 'var(--law-red)' : 'var(--law-blue)' %>;">
+            <i class="<%= is_high_risk ? 'ri-alarm-warning-line' : 'ri-file-list-3-line' %> me-1" style="font-weight: 400;"></i>
+            <%= is_high_risk ? 'Criminal History' : 'Incident History' %>
+          </span>
+          <span class="badge bg-danger" style="font-size: 0.65rem;"><%= involvements.count %> Record(s)</span>
+        </div>
+
+        <div style="max-height: 200px; overflow-y: auto;">
+          <% involvements.limit(5).each do |involvement| %>
+            <%
+              role_color = case involvement.role
+                           when "suspect" then "danger"
+                           when "victim" then "warning"
+                           when "witness" then "info"
+                           when "accomplice" then "dark"
+                           else "secondary"
+                           end
+              status_color = case involvement.status
+                             when "wanted", "fugitive", "escaped_custody", "armed", "dangerous" then "danger"
+                             when "in_custody", "detained_awaiting_charges", "under_investigation" then "warning"
+                             when "convicted", "awaiting_trial" then "dark"
+                             when "released_on_bail", "probation", "paroled" then "info"
+                             when "acquitted", "released_no_charges" then "success"
+                             else "secondary"
+                             end
+              severity = involvement.incident_report&.crime_severity_level || 0
+              severity_color = case severity
+                               when 5, 4 then "danger"
+                               when 3 then "warning"
+                               when 2 then "info"
+                               else "secondary"
+                               end
+              is_danger_status = high_risk_statuses.include?(involvement.status)
+            %>
+            <div class="py-2 <%= is_high_risk ? 'px-2 rounded mb-1' : '' %>" style="font-size: 0.75rem;<%= is_danger_status ? ' background: rgba(217, 7, 24, 0.05);' : '' %>">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <span class="badge bg-<%= role_color %> me-1"><%= involvement.role&.humanize %></span>
+                  <strong><%= involvement.incident_report&.crime_type&.humanize || "Incident" %></strong>
+                  <% if severity > 0 %>
+                    <span class="badge bg-<%= severity_color %> ms-1">Lvl <%= severity %></span>
+                  <% end %>
+                </div>
+                <small class="text-muted text-nowrap ms-2">
+                  <%= involvement.incident_report&.occurred_at&.strftime("%b %d, %Y") || involvement.incident_report&.created_at&.strftime("%b %d, %Y") %>
+                </small>
+              </div>
+              <% if involvement.status.present? && (involvement.role_suspect? || involvement.role_accomplice?) %>
+                <div class="mt-1 d-flex align-items-center gap-2">
+                  <span class="badge bg-<%= status_color %>" style="font-size: 0.65rem;">
+                    <i class="<%= is_danger_status ? 'ri-alarm-warning-line' : 'ri-information-line' %> me-1"></i>
+                    <%= involvement.status&.humanize %>
+                  </span>
+                  <% if involvement.incident_report&.officer %>
+                    <span style="font-size: 0.65rem; color: var(--mid-gray);">
+                      <i class="ri-user-star-line me-1"></i><%= involvement.incident_report.officer.full_name&.truncate(20) %>
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <% if involvements.count > 5 %>
+          <div class="text-muted small mt-1" style="font-size: 0.7rem;">
+            <i class="ri-information-line me-1"></i>Showing 5 of <%= involvements.count %> records
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# === ACTION BUTTONS === %>
+    <% if is_high_risk %>
+      <div class="d-flex flex-column gap-2">
+        <% if is_armed %>
+          <div class="d-flex align-items-center gap-2 py-2 px-3 rounded" style="background: rgba(217, 7, 24, 0.08); font-size: 0.8rem;">
+            <i class="ri-alarm-warning-line" style="color: var(--law-red); font-size: 1rem;"></i>
+            <span style="color: var(--dark-gray);"><strong>Exercise extreme caution.</strong> Do not approach alone.</span>
+          </div>
+        <% end %>
+
+        <div class="d-flex gap-2">
+          <a href="tel:911" class="btn flex-grow-1 text-white"
+             style="background: var(--law-red); font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.85rem;">
+            <i class="ri-phone-line me-1"></i>Call for Backup
+          </a>
+
+          <%= link_to new_officers_incident_report_path(bonid_submission_id: submission.id),
+                      class: "btn text-white",
+                      style: "background: var(--law-blue); font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;" do %>
+            <i class="ri-file-add-line me-1"></i>File Report
+          <% end %>
+        </div>
+
+        <div class="d-flex gap-2">
+          <% if latest_involvement&.incident_report %>
+            <%= link_to officers_incident_report_path(latest_involvement.incident_report),
+                        class: "btn flex-grow-1",
+                        style: "font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem; background: var(--law-red-10); color: var(--law-red); border: 1px solid var(--law-red);" do %>
+              <i class="ri-folder-open-line me-1"></i>View Case File
+            <% end %>
+          <% end %>
+
+          <button type="button" class="btn btn-outline-secondary"
+                  data-action="click->qr-scanner#rescan"
+                  style="font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;">
+            <i class="ri-qr-scan-2-line me-1"></i>New Scan
+          </button>
+        </div>
+      </div>
+    <% else %>
+      <div class="d-flex gap-2">
+        <%= link_to new_officers_incident_report_path(bonid_submission_id: submission.id),
+                    class: "btn flex-grow-1 text-white",
+                    style: "background: var(--law-green); font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;" do %>
+          <i class="ri-file-add-line me-1"></i>Create Report
+        <% end %>
+
+        <button type="button" class="btn btn-outline-secondary"
+                data-action="click->qr-scanner#rescan"
+                style="font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;">
+          <i class="ri-qr-scan-2-line me-1"></i>New Scan
+        </button>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# Alert trigger — vibration + audio for high-risk encounters %>
+<% if is_high_risk %>
+  <script>
+    (function() {
+      if (navigator.vibrate) {
+        navigator.vibrate(<%= is_armed ? '[200, 100, 200, 100, 400]' : '[200, 100, 200]' %>);
+      }
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq, duration, delay) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          gain.gain.value = 0.3;
+          osc.start(ctx.currentTime + delay);
+          osc.stop(ctx.currentTime + delay + duration);
+        }
+        beep(880, 0.15, 0);
+        beep(880, 0.15, 0.25);
+        <% if is_armed %>beep(1200, 0.3, 0.5);<% end %>
+      } catch(e) {}
+    })();
+  </script>
+
+  <style>
+    @keyframes pulse-danger {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+  </style>
+<% end %>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Activate Your BonID Banking Account</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Montserrat', sans-serif;
+      color: #333;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+      padding: 32px;
+      max-width: 480px;
+      margin: 60px auto;
+    }
+    .btn-primary {
+      background-color: #04328C;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 24px;
+      color: #fff;
+      font-weight: 600;
+      width: 100%;
+      transition: background-color 0.2s ease-in-out;
+    }
+    .btn-primary:hover {
+      background-color: #032870;
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 16px auto;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #04328C;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card text-center">
+    <div class="logo">
+      <i class="ri-bank-line ri-2x"></i>
+    </div>
+
+    <h2 class="fw-bold mb-3">Activate Your BonID Banking Account</h2>
+    <p class="text-muted mb-4">Set your password to access your teller dashboard.</p>
+
+    <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put }) do |f| %>
+      <%= f.hidden_field :invitation_token %>
+
+      <%# ✅ Pass partner slug if known (auto-detect if @partner is set) %>
+      <% if defined?(@partner) && @partner.present? %>
+        <%= hidden_field_tag :partner_slug, @partner.slug %>
+      <% elsif resource.try(:partner).present? %>
+        <%= hidden_field_tag :partner_slug, resource.partner.slug %>
+      <% end %>
+
+      <div class="mb-3 text-start">
+        <%= f.label :password, "New Password", class: "form-label fw-semibold" %>
+        <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: "form-control form-control-lg rounded-pill" %>
+      </div>
+
+      <div class="mb-4 text-start">
+        <%= f.label :password_confirmation, "Confirm Password", class: "form-label fw-semibold" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control form-control-lg rounded-pill" %>
+      </div>
+
+      <%= f.submit "Activate Account", class: "btn btn-primary" %>
+    <% end %>
+
+    <p class="text-muted small mt-4">
+      © <%= Time.current.year %> BonID – Digital Identity Platform of Haiti
+    </p>
+  </div>
+</body>
+</html>

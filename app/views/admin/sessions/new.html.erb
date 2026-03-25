@@ -1,0 +1,71 @@
+<section class="login-wrapper d-flex flex-column align-items-center justify-content-center position-relative bg-light py-5">
+
+  <%# Flash rendered by admin_auth layout %>
+
+  <!-- 🔐 Admin Login Card -->
+  <div style="max-width: 480px;">
+
+    <!-- Header -->
+    <div class="mb-4 text-center">
+      <h1 class="h4 fw-bold text-dark mb-1">Admin Login</h1>
+      <p class="text-muted small">
+        Access the BonID administrative dashboard to manage partners, users, and identity submissions.
+      </p>
+    </div>
+
+    <%= form_for(resource,
+                 as: resource_name,
+                 url: session_path(resource_name),
+                 html: { class: "w-100 needs-validation", novalidate: true, data: { turbo: false } }) do |f| %>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <%= f.email_field :email,
+              autofocus: true,
+              autocomplete: "email",
+              required: true,
+              class: "form-control form-control-lg rounded-3 py-3 shadow-sm",
+              placeholder: "Email address" %>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-2">
+        <%= f.password_field :password,
+              autocomplete: "current-password",
+              required: true,
+              class: "form-control form-control-lg rounded-3 py-3 shadow-sm",
+              placeholder: "Password" %>
+      </div>
+
+      <!-- Remember Me -->
+      <div class="form-check mb-3 text-start">
+        <%= f.check_box :remember_me, class: "form-check-input" %>
+        <%= f.label :remember_me, class: "form-check-label text-muted small" %>
+      </div>
+
+      <!-- Forgot Password -->
+      <div class="text-start mb-4">
+        <%= link_to "Forgot your password?",
+                    new_password_path(resource_name),
+                    class: "text-primary small text-decoration-none fw-medium",
+                    tabindex: "-1" %>
+      </div>
+
+      <!-- Submit -->
+      <%= f.submit "Continue", 
+                   class: "btn btn-primary btn-lg w-100 rounded-3 fw-semibold py-3 shadow-sm mb-3",
+                   data: { disable_with: "Signing In..." } %>
+
+    <% end %>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="mt-auto w-100 text-center py-3 small text-muted">
+    <p class="mb-0">&copy; 2025 BonID. All rights reserved.
+      <a href="#" class="text-primary text-decoration-none">Privacy Policy</a> |
+      <a href="#" class="text-primary text-decoration-none">Terms</a>
+    </p>
+  </div>
+
+</section>

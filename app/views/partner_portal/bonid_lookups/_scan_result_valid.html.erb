@@ -1,0 +1,493 @@
+<%# Verified BonID Result — Partner Portal Identity Profile Card %>
+<%= render 'partner_portal/bonid_lookups/photo_modal' %>
+
+<% display_name = user.full_name %>
+<% age_display = user.respond_to?(:age) ? user.age : nil %>
+
+<div class="verified-profile-card" data-result-type="valid">
+
+  <%# ── 1. Green Verified Banner ── %>
+  <div class="verified-banner">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <div class="verified-icon-circle">
+          <i class="ri-shield-check-fill"></i>
+        </div>
+        <div>
+          <div class="verified-title">Identity Verified</div>
+          <div class="verified-subtitle">Digital signature authenticated</div>
+        </div>
+      </div>
+      <div class="verified-checkmark">
+        <i class="ri-checkbox-circle-fill"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="verified-body">
+
+    <%# ── 2. Identity Profile: Photo + Data Grid ── %>
+    <div class="profile-layout">
+
+      <%# Photo with Verified badge overlaid %>
+      <div class="profile-photo-col">
+        <div class="profile-photo-frame">
+          <% if user.photo.attached? %>
+            <%= image_tag user.photo.variant(resize_to_limit: [200, 240]),
+                          class: "profile-photo",
+                          data: {
+                            photo_enlarge: true,
+                            photo_url: url_for(user.photo.variant(resize_to_limit: [800, 800])),
+                            person_name: display_name,
+                            status: 'Verified'
+                          },
+                          title: "Click to enlarge photo" %>
+          <% else %>
+            <div class="profile-photo-placeholder">
+              <i class="ri-user-line"></i>
+            </div>
+          <% end %>
+
+          <div class="photo-status-badge photo-status-verified">
+            <i class="ri-verified-badge-fill me-1"></i>Verified
+          </div>
+        </div>
+        <div class="photo-hint">
+          <i class="ri-zoom-in-line me-1"></i>Click to enlarge
+        </div>
+      </div>
+
+      <%# Two-Column Data Grid %>
+      <div class="profile-data-col">
+        <h4 class="profile-name"><%= display_name %></h4>
+
+        <div class="data-grid">
+          <%# Row 1 %>
+          <div class="data-grid-row">
+            <div class="data-cell">
+              <span class="data-label">Date of Birth</span>
+              <span class="data-value"><%= user.dob&.strftime("%b %d, %Y") || "N/A" %></span>
+            </div>
+            <div class="data-cell">
+              <span class="data-label">BonID Number</span>
+              <span class="data-value data-value--mono data-value--bonid"><%= mask_bonid(submission.bonid) %></span>
+            </div>
+          </div>
+
+          <%# Row 2 %>
+          <div class="data-grid-row">
+            <div class="data-cell">
+              <span class="data-label">Sex</span>
+              <span class="data-value"><%= user.sex&.capitalize || "N/A" %></span>
+            </div>
+            <div class="data-cell">
+              <span class="data-label">Expiration</span>
+              <span class="data-value">
+                <% if submission.expires_at %>
+                  <%= submission.expires_at.strftime("%b %d, %Y") %>
+                  <% if submission.expires_at < Time.current %>
+                    <span class="status-pill status-pill--expired">Expired</span>
+                  <% elsif submission.expires_at < 30.days.from_now %>
+                    <span class="status-pill status-pill--warning">Expiring Soon</span>
+                  <% else %>
+                    <span class="status-pill status-pill--valid">Valid</span>
+                  <% end %>
+                <% else %>
+                  N/A
+                <% end %>
+              </span>
+            </div>
+          </div>
+
+          <%# Row 3 %>
+          <div class="data-grid-row">
+            <div class="data-cell">
+              <span class="data-label">Age</span>
+              <span class="data-value"><%= age_display || "N/A" %></span>
+            </div>
+            <div class="data-cell">
+              <span class="data-label">Marital Status</span>
+              <span class="data-value"><%= user.respond_to?(:marital_status) ? user.marital_status&.capitalize || "N/A" : "N/A" %></span>
+            </div>
+          </div>
+        </div>
+
+        <%# Address — two lines %>
+        <% if user.address %>
+          <div class="profile-address">
+            <i class="ri-map-pin-2-fill address-pin"></i>
+            <div>
+              <% addr = user.address %>
+              <div class="address-primary"><%= [addr.street_address, addr.locality].compact_blank.join(", ") %></div>
+              <div class="address-secondary"><%= [addr.commune&.name&.upcase, addr.department&.name&.upcase, addr.country&.upcase || "HAITI"].compact_blank.join(", ") %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── 3. Medical / Health Sub-Card ── %>
+    <% if user.health_profile&.blood_type.present? %>
+      <div class="health-subcard">
+        <div class="health-subcard-header">
+          <i class="ri-heart-pulse-line me-2"></i>Medical Information
+        </div>
+        <div class="health-pills">
+          <span class="health-pill health-pill--blood">
+            <i class="ri-drop-fill me-1"></i>Blood Type: <strong><%= user.health_profile.blood_type %></strong>
+          </span>
+          <% if user.health_profile.organ_donor %>
+            <span class="health-pill health-pill--donor">
+              <i class="ri-heart-line me-1"></i>Organ Donor
+            </span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── 4. Biometric Verification Proof ── %>
+    <% liveness_data = submission.metadata&.dig("liveness") %>
+    <% face_match_data = submission.metadata&.dig("face_match") %>
+    <% if liveness_data.present? || face_match_data.present? %>
+      <div class="biometric-subcard">
+        <div class="biometric-subcard-header">
+          <i class="ri-fingerprint-line me-2"></i>Biometric Verification
+        </div>
+        <div class="biometric-content">
+          <div class="biometric-badges">
+            <% if liveness_data.present? %>
+              <% liveness_passed = liveness_data["passed"] == true %>
+              <% liveness_conf = liveness_data["confidence"]&.to_f&.round(1) %>
+              <div class="biometric-badge <%= liveness_passed ? 'biometric-badge--pass' : 'biometric-badge--fail' %>">
+                <i class="<%= liveness_passed ? 'ri-checkbox-circle-fill' : 'ri-close-circle-fill' %>"></i>
+                <div>
+                  <div class="biometric-badge-label">Liveness Check</div>
+                  <div class="biometric-badge-value"><%= liveness_passed ? "Passed" : "Failed" %><% if liveness_conf && liveness_conf > 0 %> &middot; <%= liveness_conf %>%<% end %></div>
+                </div>
+              </div>
+            <% end %>
+
+            <% if face_match_data.present? %>
+              <% face_matched = face_match_data["status"] == "match" %>
+              <% similarity = face_match_data["similarity"]&.to_f&.round(1) %>
+              <% compared_to = face_match_data["target_image"] %>
+              <div class="biometric-badge <%= face_matched ? 'biometric-badge--pass' : 'biometric-badge--fail' %>">
+                <i class="<%= face_matched ? 'ri-user-follow-fill' : 'ri-user-unfollow-fill' %>"></i>
+                <div>
+                  <div class="biometric-badge-label">Face vs. <%= compared_to == "cin_front" ? "CIN" : compared_to == "passport" ? "Passport" : "ID" %></div>
+                  <div class="biometric-badge-value"><%= face_matched ? "Match" : "No Match" %><% if similarity && similarity > 0 %> &middot; <%= similarity %>%<% end %></div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <% if face_match_data&.dig("matched_at").present? %>
+            <div class="biometric-timestamp">
+              <i class="ri-time-line me-1"></i>
+              Verified <%= Time.parse(face_match_data["matched_at"]).strftime("%b %d, %Y at %I:%M %p") rescue face_match_data["matched_at"] %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── 5. New Scan Button ── %>
+    <div class="verified-actions">
+      <button type="button" class="btn-new-scan"
+              data-action="click->partner-scanner#rescan">
+        <i class="ri-refresh-line me-1"></i>New Scan
+      </button>
+    </div>
+
+    <%# Scan timestamp %>
+    <div class="scan-timestamp">
+      <i class="ri-time-line me-1"></i>Verified at <%= Time.current.strftime("%H:%M on %b %d, %Y") %>
+    </div>
+  </div>
+</div>
+
+<%# ── Scoped Styles ── %>
+<style>
+  .verified-profile-card {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #FFFFFF;
+  }
+
+  /* ── 1. Verified Banner ── */
+  .verified-banner {
+    background: #ECFDF5;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(5,150,105,0.12);
+  }
+  .verified-icon-circle {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: #059669;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .verified-icon-circle i { font-size: 1.1rem; color: #FFF; }
+  .verified-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 0.9rem; color: #065F46;
+  }
+  .verified-subtitle {
+    font-size: 0.75rem; color: #047857; font-weight: 500; line-height: 1.4;
+  }
+  .verified-checkmark i {
+    font-size: 1.75rem; color: #059669;
+  }
+
+  /* ── 2. Profile Layout ── */
+  .verified-body { padding: 24px 20px 16px; }
+
+  .profile-layout {
+    display: flex; gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Photo Column */
+  .profile-photo-col {
+    flex-shrink: 0; text-align: center;
+  }
+  .profile-photo-frame {
+    position: relative; display: inline-block;
+  }
+  .profile-photo {
+    width: 130px; height: 160px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 3px solid #059669;
+    cursor: zoom-in;
+    transition: transform 0.2s ease;
+  }
+  .profile-photo:hover {
+    transform: scale(1.03);
+  }
+  .profile-photo-placeholder {
+    width: 130px; height: 160px;
+    border-radius: 12px;
+    background: #F1F5F9;
+    border: 3px solid #059669;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .profile-photo-placeholder i { font-size: 3rem; color: #94A3B8; }
+
+  /* Verified badge overlaid on photo */
+  .photo-status-badge {
+    position: absolute; top: -6px; right: -6px;
+    font-size: 0.65rem; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+    z-index: 2;
+  }
+  .photo-status-verified {
+    background: #059669; color: #FFF;
+  }
+
+  .photo-hint {
+    font-size: 0.68rem; color: #94A3B8; margin-top: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Data Column */
+  .profile-data-col { flex: 1; min-width: 0; }
+
+  .profile-name {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 800; font-size: 1.25rem; color: #0F172A;
+    margin: 0 0 14px; line-height: 1.3;
+  }
+
+  /* Data Grid */
+  .data-grid {
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .data-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .data-grid-row + .data-grid-row {
+    border-top: 1px solid #E2E8F0;
+  }
+  .data-cell {
+    padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .data-cell + .data-cell {
+    border-left: 1px solid #E2E8F0;
+  }
+  .data-label {
+    font-size: 0.68rem; font-weight: 500; color: #94A3B8;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .data-value {
+    font-size: 0.88rem; font-weight: 600; color: #0F172A;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .data-value--mono {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.8rem; letter-spacing: 0.3px;
+  }
+  .data-value--bonid {
+    color: #DC2626;
+  }
+
+  /* Status Pills */
+  .status-pill {
+    font-size: 0.6rem; font-weight: 700;
+    padding: 2px 7px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+  }
+  .status-pill--valid { background: #ECFDF5; color: #059669; }
+  .status-pill--warning { background: #FFFBEB; color: #D97706; }
+  .status-pill--expired { background: #FEF2F2; color: #DC2626; }
+
+  /* Address */
+  .profile-address {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: #F8FAFC; border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .address-pin { font-size: 0.95rem; color: #64748B; margin-top: 1px; flex-shrink: 0; }
+  .address-primary { font-size: 0.82rem; font-weight: 500; color: #334155; }
+  .address-secondary { font-size: 0.73rem; color: #64748B; margin-top: 1px; }
+
+  /* ── 3. Health Sub-Card ── */
+  .health-subcard {
+    background: #FAFBFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .health-subcard-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700; color: #475569;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 8px 14px;
+    background: #F1F5F9;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex; align-items: center;
+  }
+  .health-subcard-header i { font-size: 0.85rem; color: #DC2626; }
+  .health-pills {
+    padding: 10px 14px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .health-pill {
+    font-size: 0.78rem; font-weight: 600;
+    padding: 6px 14px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+  }
+  .health-pill--blood {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid rgba(220,38,38,0.12);
+  }
+  .health-pill--blood strong {
+    margin-left: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+  .health-pill--donor {
+    background: #EFF6FF;
+    color: #1E40AF;
+    border: 1px solid rgba(30,64,175,0.12);
+  }
+
+  /* ── 4. Biometric Verification ── */
+  .biometric-subcard {
+    background: #FAFBFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .biometric-subcard-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700; color: #1e3a5f;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 8px 14px;
+    background: #EFF6FF;
+    border-bottom: 1px solid #DBEAFE;
+    display: flex; align-items: center;
+  }
+  .biometric-subcard-header i { font-size: 0.85rem; color: #00209F; }
+  .biometric-content { padding: 12px 14px; }
+  .biometric-badges {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .biometric-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 10px;
+    flex: 1; min-width: 140px;
+  }
+  .biometric-badge i { font-size: 1.2rem; flex-shrink: 0; }
+  .biometric-badge--pass {
+    background: #F0FDF4; border: 1px solid #BBF7D0;
+  }
+  .biometric-badge--pass i { color: #16A34A; }
+  .biometric-badge--fail {
+    background: #FEF2F2; border: 1px solid #FECACA;
+  }
+  .biometric-badge--fail i { color: #DC2626; }
+  .biometric-badge-label {
+    font-size: 0.68rem; font-weight: 500; color: #64748B;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .biometric-badge-value {
+    font-size: 0.82rem; font-weight: 700; color: #0F172A;
+  }
+  .biometric-badge--pass .biometric-badge-value { color: #166534; }
+  .biometric-badge--fail .biometric-badge-value { color: #991B1B; }
+  .biometric-timestamp {
+    margin-top: 8px;
+    font-size: 0.68rem; color: #94A3B8; font-weight: 500;
+    display: flex; align-items: center;
+  }
+
+  /* ── 5. New Scan Button ── */
+  .verified-actions {
+    margin-bottom: 12px;
+  }
+  .btn-new-scan {
+    width: 100%; padding: 12px;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.85rem;
+    color: #00209F;
+    background: transparent;
+    border: 1.5px solid #00209F;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .btn-new-scan:hover {
+    background: rgba(0,32,159,0.04);
+  }
+
+  /* ── Timestamp ── */
+  .scan-timestamp {
+    text-align: center;
+    font-size: 0.72rem; color: #94A3B8; font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .scan-timestamp i { font-size: 0.8rem; }
+
+  /* ── Mobile ── */
+  @media (max-width: 575.98px) {
+    .profile-layout { flex-direction: column; align-items: center; }
+    .profile-data-col { text-align: center; }
+    .profile-name { text-align: center; }
+    .data-grid-row { grid-template-columns: 1fr; }
+    .data-cell + .data-cell { border-left: none; border-top: 1px solid #E2E8F0; }
+    .profile-address { text-align: left; }
+    .profile-photo { width: 110px; height: 140px; }
+    .profile-photo-placeholder { width: 110px; height: 140px; }
+  }
+</style>

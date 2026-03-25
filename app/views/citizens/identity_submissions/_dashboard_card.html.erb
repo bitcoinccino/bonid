@@ -1,0 +1,176 @@
+
+<div class="card dashboard-card w-100 h-100">
+
+  <!-- ======================================================
+       HEADER (NON-STACKING, MOBILE-SAFE)
+  ======================================================= -->
+  <div class="bonid-card-header">
+    <% profile_complete = profile_complete?(current_citizen) || current_citizen.identity_submissions.approved.exists? %>
+
+    <!-- LEFT: ICON + BONID -->
+    <div class="bonid-header-left">
+      <i class="ri-pass-valid-line"></i>
+
+      <span class="bonid-value">
+        <%= submission.user&.bonid.presence || "N/A" %>
+      </span>
+    </div>
+
+    <!-- RIGHT: ACTION -->
+    <div class="bonid-header-right">
+      <button
+        class="btn btn-light btn-sm fw-semibold rounded-pill d-flex align-items-center gap-1 shadow-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#requestNewBonIDModal"
+        aria-label="Request new BonID"
+        id="requestNewBonIDButtonHeader"
+        <%= 'disabled' unless !current_citizen&.admin? && profile_complete %>>
+        <i class="ri-add-line text-haitian-blue"></i>
+        <span class="d-none d-md-inline">New</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================
+       BODY
+  ======================================================= -->
+  <div class="card-body p-4 d-flex flex-column justify-content-between">
+
+    <!-- =====================
+         IDENTITY GRID
+    ====================== -->
+    <div class="row g-3">
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-user-line text-muted mt-1"></i>
+        <div>
+          <label>Full Name</label>
+          <div class="field-value">
+            <%= [submission.user&.first_name,
+                 submission.user&.middle_name,
+                 submission.user&.last_name].compact.join(" ") || "-" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-cake-2-line text-muted mt-1"></i>
+        <div>
+          <label>Date of Birth</label>
+          <div class="field-value">
+            <%= submission.user&.dob&.strftime("%b %d, %Y") || "-" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-user-heart-line text-muted mt-1"></i>
+        <div>
+          <label>Sex</label>
+          <div class="field-value">
+            <%= submission.user&.sex&.capitalize || "-" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-hearts-line text-muted mt-1"></i>
+        <div>
+          <label>Marital Status</label>
+          <div class="field-value">
+            <%= submission.user&.marital_status&.capitalize || "-" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-calendar-check-line text-success mt-1"></i>
+        <div>
+          <label>Issue Date</label>
+          <div class="field-value text-success">
+            <%= submission.status_approved? ? submission.updated_at.strftime("%b %d, %Y") : "Pending Approval" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-calendar-line text-muted mt-1"></i>
+        <div>
+          <label>Expires</label>
+          <div class="field-value">
+            <%= submission.expires_at&.strftime("%b %d, %Y") || "-" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-restart-line text-muted mt-1"></i>
+        <div>
+          <label>Reissued</label>
+          <div class="field-value">
+            <%= submission.submission_type == "reissue" ? submission.updated_at.strftime("%b %d, %Y") : "-" %>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 d-flex gap-2 align-items-start">
+        <i class="ri-list-check text-muted mt-1"></i>
+        <div>
+          <label>Type</label>
+          <div class="field-value">
+            <%= submission.submission_type&.humanize || "-" %>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =====================
+         STATUS
+    ====================== -->
+    <div class="mt-4">
+      <%= render "shared/submission_status_card", submission: submission %>
+    </div>
+
+    <!-- =====================
+         SIGNATURE
+    ====================== -->
+    <% if submission.signature&.attached? %>
+      <div class="mt-4 text-center">
+        <label class="mb-2 d-block">
+          <i class="ri-ball-pen-line me-1"></i> Signature
+        </label>
+
+        <div class="signature-box mx-auto">
+          <%= image_tag url_for(submission.signature),
+                        class: "signature-image",
+                        alt: "Citizen Signature" %>
+        </div>
+
+        <small class="text-muted d-block mt-2">
+          Used for legal, embassy, and medical ID validation.
+        </small>
+      </div>
+    <% end %>
+
+    <!-- =====================
+         ACTIONS
+    ====================== -->
+    <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+      <% if submission.status_approved? %>
+        <%= link_to verified_profile_citizens_identity_submission_path(submission.public_token),
+          class: "btn btn-haitian-blue rounded-pill fw-semibold small d-flex align-items-center gap-2" do %>
+          <i class="ri-award-line"></i> View Certificate
+        <% end %>
+      <% end %>
+
+      <% if submission.status_rejected? %>
+        <%= link_to edit_citizens_identity_submission_path(submission),
+          class: "btn btn-outline-danger rounded-pill fw-semibold small d-flex align-items-center gap-2" do %>
+          <i class="ri-refresh-line"></i> Resubmit
+        <% end %>
+      <% end %>
+    </div>
+
+  </div>
+</div>

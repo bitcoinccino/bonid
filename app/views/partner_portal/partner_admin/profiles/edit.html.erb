@@ -1,0 +1,238 @@
+<%# app/views/partner_portal/partner_admin/profiles/edit.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-10 col-xl-8">
+
+      <%# Header %>
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h1 class="h3 fw-bold mb-1">Edit Profile</h1>
+          <p class="text-muted mb-0">Update your organization's information</p>
+        </div>
+        <%= link_to partner_portal_law_enforcement_dashboard_path, class: "btn btn-outline-secondary" do %>
+          <i class="ri-arrow-left-line me-1"></i> Back to Dashboard
+        <% end %>
+      </div>
+
+      <%# Profile Form %>
+      <%= simple_form_for @partner,
+            url: partner_portal_partner_admin_profile_path,
+            method: :patch,
+            html: {
+              multipart: true,
+              class: "profile-edit-form"
+            } do |f| %>
+
+        <div class="card shadow-sm border-0 rounded-4">
+          <div class="card-body p-4 p-lg-5">
+
+            <%# ================================================================
+                SECTION 1: Organization Logo & Basic Info
+            ================================================================ %>
+            <h2 class="h5 fw-bold text-primary mb-4">
+              <i class="ri-building-line me-2"></i> Organization Information
+            </h2>
+
+            <div class="row mb-5">
+              <%# Logo Upload %>
+              <div class="col-md-4 mb-4">
+                <label class="form-label fw-bold">Organization Logo</label>
+                <div class="logo-upload-container text-center p-4 border rounded-3 bg-light">
+                  <% if @partner.logo.attached? %>
+                    <%= image_tag @partner.logo.variant(resize_to_limit: [120, 120]),
+                                  class: "rounded-circle mb-3 shadow-sm",
+                                  style: "width: 100px; height: 100px; object-fit: cover;" %>
+                  <% else %>
+                    <div class="logo-placeholder rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+                         style="width: 100px; height: 100px;">
+                      <i class="ri-image-add-line ri-2x"></i>
+                    </div>
+                  <% end %>
+                  <%= f.file_field :logo,
+                      accept: "image/png,image/jpeg,image/jpg,image/webp",
+                      class: "form-control form-control-sm" %>
+                  <small class="text-muted d-block mt-2">PNG, JPG (max 2MB)</small>
+                </div>
+              </div>
+
+              <%# Name & Contact %>
+              <div class="col-md-8">
+                <div class="row">
+                  <div class="col-12 mb-3">
+                    <%= f.input :name,
+                        label: "Organization Name",
+                        required: true,
+                        input_html: {
+                          placeholder: "Your organization name",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :contact_person,
+                        label: "Contact Person",
+                        required: true,
+                        input_html: {
+                          placeholder: "Full name of primary contact",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :phone_number,
+                        label: "Phone Number",
+                        required: true,
+                        input_html: {
+                          placeholder: "+509 1234 5678",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :email,
+                        label: "Email",
+                        input_html: {
+                          placeholder: "contact@organization.ht",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :website,
+                        label: "Website",
+                        required: false,
+                        input_html: {
+                          placeholder: "https://your-organization.gov.ht",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%# Description %>
+            <div class="mb-5">
+              <%= f.label :description, class: "form-label fw-bold" %>
+              <span class="text-danger">*</span>
+              <%= f.text_area :description,
+                  rows: 4,
+                  required: true,
+                  class: "form-control rounded-3",
+                  placeholder: "Describe your organization's mission and how you use BonID for identity verification..." %>
+              <small class="form-text text-muted">
+                This description helps citizens understand who you are when they see verification requests.
+              </small>
+            </div>
+
+            <%# ================================================================
+                SECTION 2: Address Information
+            ================================================================ %>
+            <div class="mb-5">
+              <%= render "partner_portal/shared/components/address_info", f: f %>
+            </div>
+
+            <%# ================================================================
+                SECTION 3: Unit Information (for Law Enforcement)
+            ================================================================ %>
+            <% if @partner.sector == "law_enforcement" %>
+              <div class="mb-5">
+                <h2 class="h5 fw-bold text-primary mb-4">
+                  <i class="ri-shield-user-line me-2"></i> Unit Information
+                </h2>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :unit_type,
+                        label: "Unit Type",
+                        as: :select,
+                        collection: [
+                          ["UDMO - Patrouille Urbaine", "UDMO"],
+                          ["POLIFRONT - Securite Frontaliere", "POLIFRONT"],
+                          ["DCPJ - Police Judiciaire", "DCPJ"],
+                          ["USGPN - Garde Presidentielle", "USGPN"],
+                          ["BRI - Brigade d'Intervention", "BRI"],
+                          ["CIMO - Intervention Mobile", "CIMO"],
+                          ["Other", "other"]
+                        ],
+                        prompt: "Select unit type",
+                        input_html: { class: "form-select rounded-3" } %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= f.input :unit_name,
+                        label: "Unit Name",
+                        required: false,
+                        input_html: {
+                          placeholder: "e.g., UDMO Delmas 33",
+                          class: "form-control rounded-3"
+                        } %>
+                  </div>
+                </div>
+
+                <%= f.input :department_sector,
+                    label: "Department/Sector",
+                    as: :select,
+                    collection: [
+                      ["PNH - Police Nationale d'Haiti", "pnh"],
+                      ["DCPJ - Direction Centrale de la Police Judiciaire", "dcpj"],
+                      ["FAd'H - Forces Armees d'Haiti", "fadh"],
+                      ["Other", "other"]
+                    ],
+                    prompt: "Select department",
+                    input_html: { class: "form-select rounded-3" },
+                    wrapper_html: { class: "mb-3" } %>
+              </div>
+            <% end %>
+
+            <%# Submit Buttons %>
+            <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+              <%= link_to partner_portal_law_enforcement_dashboard_path, class: "btn btn-outline-secondary" do %>
+                Cancel
+              <% end %>
+              <%= f.button :submit, class: "btn btn-primary px-4 fw-semibold" do %>
+                <i class="ri-save-line me-2"></i> Save Changes
+              <% end %>
+            </div>
+
+          </div>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .text-primary {
+    color: var(--law-blue, #092C73) !important;
+  }
+
+  .btn-primary {
+    background-color: var(--law-blue, #092C73);
+    border-color: var(--law-blue, #092C73);
+  }
+
+  .btn-primary:hover {
+    background-color: #061F54;
+    border-color: #061F54;
+  }
+
+  .logo-upload-container {
+    border: 2px dashed #dee2e6 !important;
+    transition: border-color 0.2s ease;
+  }
+
+  .logo-upload-container:hover {
+    border-color: var(--law-blue, #092C73) !important;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--law-blue, #092C73);
+    box-shadow: 0 0 0 0.2rem rgba(9, 44, 115, 0.15);
+  }
+
+  h2.h5 {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.75rem;
+  }
+</style>

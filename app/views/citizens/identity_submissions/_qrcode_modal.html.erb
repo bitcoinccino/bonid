@@ -1,0 +1,104 @@
+<%# app/views/citizens/identity_submissions/_qrcode_modal.html.erb %>
+<%# Modern QR Code Modal - Clean, centered design %>
+
+<div class="modal fade bonid-qr-modal"
+     id="qrCodeModal_<%= submission.id %>"
+     tabindex="-1"
+     aria-hidden="true"
+     data-controller="qr-modal qr-rotator"
+     data-qr-rotator-interval-value="60000"
+     data-qr-rotator-expired-value="<%= submission.qr_expired? %>">
+
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content qr-modal-content">
+
+      <%# Close Button - Floating %>
+      <button type="button"
+              class="qr-modal-close"
+              data-bs-dismiss="modal"
+              aria-label="Close">
+        <i class="ri-close-line"></i>
+      </button>
+
+      <%# Modal Body %>
+      <div class="qr-modal-body">
+
+        <%# Header Section %>
+        <div class="qr-modal-header">
+          <div class="qr-modal-icon">
+            <i class="ri-shield-check-fill"></i>
+          </div>
+          <h4 class="qr-modal-title">Your BonID</h4>
+          <p class="qr-modal-bonid"><%= submission.user.bonid %></p>
+        </div>
+
+        <%# Local Alerts %>
+        <div id="<%= dom_id(submission, :qr_notice) %>"></div>
+
+        <%# QR Code Section %>
+        <div class="qr-modal-code">
+          <div id="<%= dom_id(submission, :qr_wrapper) %>" class="qr-code-wrapper">
+            <%= image_tag("data:image/png;base64,#{submission.qr_for(:citizen)}",
+                          id: dom_id(submission, :qr_rotating_image),
+                          class: "qr-code-image",
+                          alt: "BonID QR Code") %>
+
+            <%# Photo Overlay %>
+            <div class="qr-photo-overlay">
+              <% if submission.user.photo.attached? %>
+                <%= image_tag url_for(submission.user.photo),
+                              class: "qr-photo",
+                              style: "width: 56px; height: 56px; object-fit: cover; object-position: center top;" %>
+              <% else %>
+                <%= image_tag "haiti_flag.png", class: "qr-photo" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# Status Badge %>
+        <div class="qr-modal-status">
+          <span class="status-badge-active">
+            <i class="ri-checkbox-circle-fill"></i>
+            Verified & Active
+          </span>
+        </div>
+
+        <%# Countdown Timer - 60 seconds matches qr-rotator interval %>
+        <div class="qr-modal-countdown"
+             data-controller="qr-countdown"
+             data-qr-countdown-interval-value="60">
+          <span class="countdown-label">Auto-refresh in</span>
+          <span class="countdown-timer" data-qr-countdown-target="display">1:00</span>
+        </div>
+
+        <%# Info Section %>
+        <div class="qr-modal-info">
+          <i class="ri-information-line"></i>
+          <p>Your QR code rotates periodically for enhanced security. Partners and officers scan this to verify your identity.</p>
+        </div>
+
+        <%# Refresh Button %>
+        <%= form_with url: refresh_qr_citizens_identity_submission_path(submission.public_token),
+                      method: :post,
+                      data: {
+                        controller: "qr-refresh",
+                        qr_rotator_target: "refreshForm",
+                        action: "turbo:submit-start->qr-refresh#start turbo:submit-end->qr-refresh#finish"
+                      },
+                      class: "qr-refresh-form" do %>
+
+          <button type="submit"
+                  class="qr-refresh-btn"
+                  data-qr-refresh-target="submit">
+            <span data-qr-refresh-target="spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+            <i class="ri-refresh-line" data-qr-refresh-target="icon"></i>
+            <span data-qr-refresh-target="label">Refresh Now</span>
+          </button>
+
+        <% end %>
+
+      </div>
+    </div>
+  </div>
+</div>

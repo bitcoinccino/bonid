@@ -1,0 +1,227 @@
+<!-- app/views/admin/identity_submissions/show/_submission_documents.html.erb -->
+
+<div class="submission-documents">
+
+  <!-- === Identity Images (Profile & Selfie) === -->
+  <% if submission.user.photo.attached? || submission.selfie.attached? %>
+    <div class="card border-0 rounded-3 shadow-sm mb-4">
+      <div class="card-header bg-light d-flex align-items-center">
+        <i class="ri-user-3-line text-primary me-2"></i>
+        <h6 class="mb-0 fw-semibold text-dark">Identity Images</h6>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-4">
+          These images are used for visual identity verification.  
+          The profile photo and selfie must clearly match the citizen’s face on their official ID.
+        </p>
+
+        <div class="row g-4">
+          <% { "Profile Photo" => :photo, "Selfie" => :selfie }.each do |label, field| %>
+            <% file = (field == :photo ? submission.user.photo : submission.selfie) %>
+            <% if file&.attached? %>
+              <% modal_id = "#{label.parameterize}-modal-#{submission.id}" %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card h-100 border-0 shadow-sm rounded-3 document-card">
+                  <% if file.content_type.in?(%w[image/jpeg image/png image/gif image/webp]) && file.variable? %>
+                    <%= image_tag file.variant(resize_to_fill: [400, 400], saver: { quality: 90 }),
+                                  class: "card-img-top rounded-top-3",
+                                  style: "object-fit: cover; height: 200px;",
+                                  alt: "#{label} thumbnail" %>
+                  <% elsif file.content_type.start_with?('image/') %>
+                    <%= image_tag file,
+                                  class: "card-img-top rounded-top-3",
+                                  style: "object-fit: cover; height: 200px;",
+                                  alt: "#{label} thumbnail" %>
+                  <% else %>
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3" style="height: 200px;">
+                      <i class="ri-file-line fs-2 text-muted"></i>
+                    </div>
+                  <% end %>
+
+                  <div class="card-body text-center p-3">
+                    <span class="badge bg-info text-dark mb-2">User Provided</span>
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm rounded-pill w-100"
+                            data-bs-toggle="modal"
+                            data-bs-target="##{modal_id}">
+                      <%= label %>
+                    </button>
+                    <% if document_updated?(submission, field) %>
+                      <span class="badge bg-warning text-dark ms-2">🔄 Updated</span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <%= render "admin/identity_submissions/modals/document_modal",
+                           submission: submission,
+                           file: file,
+                           label: label,
+                           modal_id: modal_id %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- === Government IDs === -->
+  <% if submission.cin_front.attached? || submission.cin_back.attached? || submission.passport.attached? %>
+    <div class="card border-0 rounded-3 shadow-sm mb-4">
+      <div class="card-header bg-light d-flex align-items-center">
+        <i class="ri-id-card-line text-primary me-2"></i>
+        <h6 class="mb-0 fw-semibold text-dark">Government ID Documents</h6>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-4">
+          These are the official ID documents uploaded for verification — such as CIN, passport, or equivalent.
+          Ensure details on these IDs match the citizen’s profile and BonID data.
+        </p>
+
+        <div class="row g-4">
+          <% { "CIN Front" => :cin_front, "CIN Back" => :cin_back, "Passport" => :passport }.each do |label, field| %>
+            <% file = submission.send(field) %>
+            <% if file&.attached? %>
+              <% modal_id = "#{label.parameterize}-modal-#{submission.id}" %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card h-100 border-0 shadow-sm rounded-3 document-card">
+                  <% if file.content_type.in?(%w[image/jpeg image/png image/gif image/webp]) && file.variable? %>
+                    <%= image_tag file.variant(resize_to_fill: [400, 400], saver: { quality: 90 }),
+                                  class: "card-img-top rounded-top-3",
+                                  style: "object-fit: cover; height: 200px;",
+                                  alt: "#{label} thumbnail" %>
+                  <% elsif file.content_type.start_with?('image/') %>
+                    <%= image_tag file,
+                                  class: "card-img-top rounded-top-3",
+                                  style: "object-fit: cover; height: 200px;",
+                                  alt: "#{label} thumbnail" %>
+                  <% else %>
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3" style="height: 200px;">
+                      <i class="ri-file-pdf-2-line fs-2 text-muted"></i>
+                    </div>
+                  <% end %>
+                  <div class="card-body text-center p-3">
+                    <span class="badge bg-primary mb-2">Official ID</span>
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm rounded-pill w-100"
+                            data-bs-toggle="modal"
+                            data-bs-target="##{modal_id}">
+                      <%= label %>
+                    </button>
+                    <% if document_updated?(submission, field) %>
+                      <span class="badge bg-warning text-dark ms-2">🔄 Updated</span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <%= render "admin/identity_submissions/modals/document_modal",
+                           submission: submission,
+                           file: file,
+                           label: label,
+                           modal_id: modal_id %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- === Supporting Documents === -->
+  <% supporting_docs = {
+    "Digicel Phone Bill" => :digicel_phone_bill,
+    "Natcom Phone Bill" => :natcom_phone_bill,
+    "DINEPA Bill" => :dinepa_bill,
+    "EDH Bill" => :edh_bill,
+    "Internet Bill" => :internet_bill,
+    "Baptismal Certificate" => :baptismal_certificate,
+    "Birth Certificate" => :birth_certificate,
+    "Adoption Certificate" => :adoption_certificate,
+    "Naturalization Copy" => :naturalization_monitor_copy,
+    "Archives Extract" => :archives_extract,
+    "PNH Record" => :pnh_record,
+    "Bank Record" => :bank_record,
+    "Western Union Record" => :western_union_record,
+    "MoneyGram Record" => :moneygram_record,
+    "SendWave Record" => :sendwave_record,
+    "Unibank Transfer" => :unitransfer_record,
+    "Car Registration" => :car_registration,
+    "Car Rental Receipt" => :car_rental_receipt,
+    "Other Supporting Document" => :additional_proof,
+    "Host Country ID (Diaspora)" => :host_country_id
+  } %>
+
+  <% if supporting_docs.values.any? { |field| submission.send(field)&.attached? } %>
+    <div class="card border-0 rounded-3 shadow-sm mb-4">
+      <div class="card-header bg-light d-flex align-items-center">
+        <i class="ri-folder-3-line text-primary me-2"></i>
+        <h6 class="mb-0 fw-semibold text-dark">Supporting Documents</h6>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-4">
+          These files provide additional context — proof of residence, phone bills, or legal documents.
+          They help validate background information during manual review.
+        </p>
+
+        <% if submission.birth_certificate&.attached? || submission.additional_proof_type.to_s == "Birth Certificate" %>
+          <div class="alert alert-warning small rounded-3 mb-4">
+            <i class="ri-error-warning-line me-2"></i>
+            <strong>Extrait de Naissance:</strong> Verify this is the authentic, blue-colored Birth Certificate
+            from the <strong>National Archives</strong> (Archives Nationales d'Ha&iuml;ti).
+            Local town hall (mairie) copies must be rejected.
+          </div>
+        <% end %>
+
+        <div class="row g-4">
+          <% supporting_docs.each do |label, field| %>
+            <% file = submission.send(field) %>
+            <% if file&.attached? %>
+              <% modal_id = "#{field}-modal-#{submission.id}" %>
+              <div class="col-md-4 col-sm-6">
+                <div class="card h-100 border-0 shadow-sm rounded-3 document-card">
+                  <% if file.content_type.in?(%w[image/jpeg image/png image/gif image/webp]) && file.variable? %>
+                    <%= image_tag file.variant(resize_to_fill: [400, 400], saver: { quality: 90 }),
+                                  class: "card-img-top rounded-top-3",
+                                  style: "object-fit: cover; height: 200px;",
+                                  alt: "#{label} thumbnail" %>
+                  <% elsif file.content_type.start_with?("image/") %>
+                    <%= image_tag file,
+                                  class: "card-img-top rounded-top-3",
+                                  style: "object-fit: cover; height: 200px;",
+                                  alt: "#{label} thumbnail" %>
+                  <% else %>
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center rounded-top-3" style="height: 200px;">
+                      <i class="ri-file-pdf-2-line fs-2 text-muted"></i>
+                    </div>
+                  <% end %>
+                  <div class="card-body text-center p-3">
+                    <button type="button"
+                            class="btn btn-outline-primary btn-sm rounded-pill w-100"
+                            data-bs-toggle="modal"
+                            data-bs-target="##{modal_id}">
+                      <%= label %>
+                    </button>
+                    <% if document_updated?(submission, field) %>
+                      <span class="badge bg-warning text-dark ms-2">🔄 Updated</span>
+                    <% end %>
+                  </div>
+                </div>
+
+                <%= render "admin/identity_submissions/modals/document_modal",
+                           submission: submission,
+                           file: file,
+                           label: label,
+                           modal_id: modal_id %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <div class="alert alert-dismissible fade show alert-light border text-muted text-center py-4 shadow-sm">
+      <i class="ri-information-line fs-4 text-secondary"></i><br>
+      No supporting documents uploaded for this submission.
+    </div>
+  <% end %>
+</div>

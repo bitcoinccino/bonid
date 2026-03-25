@@ -1,0 +1,60 @@
+<%# app/views/admin/identity_submissions/show/_liveness_badge.html.erb %>
+<% liveness = submission.metadata&.dig("liveness") %>
+
+<% if liveness.present? %>
+  <%
+    passed = liveness["passed"]
+    confidence = liveness["confidence"]
+    badge_bg = passed ? "#2F855A" : "#E53E3E"
+    badge_icon = passed ? "ri-shield-check-line" : "ri-shield-cross-line"
+    status_text = passed ? "Passed" : "Failed"
+  %>
+
+  <div class="card border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-header d-flex align-items-center rounded-top-4"
+         style="background-color: <%= badge_bg %>; color: #FFFFFF;">
+      <i class="<%= badge_icon %> fs-5 me-2"></i>
+      <h6 class="mb-0 fw-semibold">Liveness Detection</h6>
+    </div>
+
+    <div class="card-body">
+      <div class="row g-3">
+        <%# Status Badge %>
+        <div class="col-12">
+          <span class="badge <%= passed ? 'bg-success text-white' : 'bg-danger text-white' %> px-3 py-2 fs-6">
+            <i class="<%= badge_icon %> me-1"></i>
+            Liveness <%= status_text %> — <%= confidence %>%
+          </span>
+
+          <% unless passed %>
+            <div class="alert alert-danger small mt-3 mb-0 rounded-3">
+              <i class="ri-alert-line me-1"></i>
+              <strong>Flagged:</strong> Liveness check did not meet the confidence threshold.
+              Please verify the selfie manually before approving.
+            </div>
+          <% end %>
+        </div>
+
+        <%# Confidence & Threshold %>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Confidence Score</small>
+          <strong><%= confidence ? "#{confidence}%" : "N/A" %></strong>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Status</small>
+          <strong><%= liveness["status"] || "N/A" %></strong>
+        </div>
+
+        <%# Session & Timestamp %>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Session ID</small>
+          <strong class="text-break" style="font-size: 0.82rem;"><%= liveness["session_id"] || "N/A" %></strong>
+        </div>
+        <div class="col-md-6">
+          <small class="text-muted d-block">Checked At</small>
+          <strong><%= liveness["checked_at"] ? Time.parse(liveness["checked_at"]).strftime("%b %d, %Y %I:%M %p") : "N/A" %></strong>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

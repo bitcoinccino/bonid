@@ -1,0 +1,79 @@
+<% if !current_citizen&.admin? && profile_complete && eligible_for_new_bonid_request?(current_citizen, submissions) %>
+
+  <div class="modal fade" id="requestNewBonIDModal" tabindex="-1" aria-labelledby="requestNewBonIDModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-white border-0 shadow-lg rounded-3 overflow-hidden">
+
+        <!-- Header -->
+        <div class="modal-header header-bg text-white py-2 px-3">
+          <h5 class="modal-title fw-bold mb-0 fs-6 d-flex align-items-center gap-2">
+            <i class="ri-refresh-line"></i> Request New BonID
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- Body -->
+        <div class="modal-body p-3">
+
+          <!-- Info Alert -->
+          <div class="alert alert-info rounded-3 mb-3 small animate__animated animate__fadeIn">
+            <i class="ri-information-line me-2"></i>
+            Select a reason for requesting a new BonID. Your existing BonID will be revoked once the new one is approved.
+          </div>
+
+          <!-- Form -->
+          <%= form_with url: request_new_citizens_identity_submissions_path,
+                        method: :post,
+                        local: true,
+                        html: { class: "needs-validation", novalidate: true } do |f| %>
+
+            <div class="mb-2">
+              <%= f.label :reason, "Reason for Request", class: "form-label fw-semibold small" %>
+              <%= f.select :reason, [
+                    ["Name change", "name_change"],
+                    ["BonID expired", "expired"]
+                  ],
+                  { prompt: "Select a reason" },
+                  class: "form-select rounded-3",
+                  required: true,
+                  id: "bonid_request_reason" %>
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex gap-2 mt-3">
+              <%= f.submit "Submit Request", class: "btn btn-primary w-100 fw-semibold pulse-glow" %>
+              <button type="button" class="btn btn-outline-secondary w-100 fw-semibold" data-bs-dismiss="modal">
+                Cancel
+              </button>
+            </div>
+
+          <% end %>
+
+          <!-- Warnings (toggle based on selected reason) -->
+          <div class="alert alert-warning small mt-3 rounded-3" id="modal-warning-expired">
+            <i class="ri-time-line me-2"></i>
+            Your current BonID will be revoked and a new one issued with a fresh expiry date.
+          </div>
+          <div class="alert alert-info small mt-3 rounded-3 d-none" id="modal-warning-name-change">
+            <i class="ri-user-line me-2"></i>
+            <strong>Name change:</strong> You will need to re-submit your updated ID documents.
+            Your current BonID will be revoked once your new submission is approved.
+          </div>
+
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              var sel = document.getElementById("bonid_request_reason");
+              if (!sel) return;
+              sel.addEventListener("change", function () {
+                var isName = sel.value === "name_change";
+                document.getElementById("modal-warning-expired").classList.toggle("d-none", isName);
+                document.getElementById("modal-warning-name-change").classList.toggle("d-none", !isName);
+              });
+            });
+          </script>
+
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

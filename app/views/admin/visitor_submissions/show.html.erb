@@ -1,0 +1,178 @@
+<main class="form-container bg-white p-3 p-md-4 rounded-4 shadow-sm"
+      style="max-width: 1100px; margin: 0 auto;"
+      role="main">
+
+  <% visitor = @visitor_submission %>
+
+  <!-- ========================================================= -->
+  <!-- Header: Visitor Profile + Status -->
+  <!-- ========================================================= -->
+  <header class="text-center mb-4 position-relative">
+
+    <!-- Utilities -->
+    <div class="position-absolute top-0 end-0 d-flex gap-2">
+
+      <button onclick="window.print()"
+              class="btn btn-outline-secondary btn-sm rounded-pill">
+        <i class="ri-printer-line me-1"></i> Print
+      </button>
+
+      <%= link_to "#",
+            class: "btn btn-outline-secondary btn-sm rounded-pill",
+            title: "Export PDF (coming soon)" do %>
+        <i class="ri-file-pdf-line me-1"></i> PDF
+      <% end %>
+
+      <% if visitor.approved? %>
+        <%= button_to resend_certificate_admin_visitor_submission_path(visitor),
+              method: :post,
+              class: "btn btn-outline-primary btn-sm rounded-pill",
+              data: { turbo_confirm: "Resend the BonTouris ID certificate email?" } do %>
+          <i class="ri-mail-send-line me-1"></i> Resend Certificate
+        <% end %>
+      <% end %>
+
+    </div>
+
+    <!-- Avatar -->
+    <div class="position-relative d-inline-block mb-3">
+      <% if visitor.selfie.attached? %>
+        <%= image_tag visitor.selfie.variant(resize_to_fill: [120, 120]),
+              class: "rounded-circle border shadow-sm",
+              style: "width:120px;height:120px;object-fit:cover;" %>
+      <% else %>
+        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center shadow-sm"
+             style="width:120px;height:120px;">
+          <i class="ri-user-line fs-1 text-muted"></i>
+        </div>
+      <% end %>
+
+      <% status_class, status_icon = case visitor.status
+        when "approved" then ["bg-success", "ri-checkbox-circle-line"]
+        when "pending_review" then ["bg-warning text-dark", "ri-time-line"]
+        when "rejected" then ["bg-danger", "ri-close-circle-line"]
+        else ["bg-secondary", "ri-information-line"]
+      end %>
+
+      <span class="badge <%= status_class %> position-absolute end-0 bottom-0 me-1 mb-1 d-flex align-items-center gap-1">
+        <i class="<%= status_icon %>"></i>
+        <%= visitor.status.titleize %>
+      </span>
+    </div>
+
+    <!-- Name -->
+    <h5 class="fw-bold mb-1">
+      <%= [visitor.title, visitor.first_name, visitor.last_name].compact.join(" ") %>
+    </h5>
+
+    <!-- Meta -->
+    <p class="text-muted small mb-0">
+      <i class="ri-mail-line me-1"></i> <%= visitor.email %> |
+      <i class="ri-fingerprint-line ms-2 me-1"></i>
+      <%= visitor.bonid || "VIS-#{visitor.id}" %>
+    </p>
+
+    <!-- Admin Actions -->
+    <% if visitor.pending_review? %>
+      <div class="dropdown mt-3">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill"
+                data-bs-toggle="dropdown">
+          <i class="ri-more-2-line"></i> Actions
+        </button>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+
+          <li>
+            <%= button_to approve_admin_visitor_submission_path(visitor),
+                  method: :post,
+                  class: "dropdown-item text-success" do %>
+              <i class="ri-check-line me-1"></i> Approve
+            <% end %>
+          </li>
+
+          <li>
+            <button type="button"
+                    class="dropdown-item text-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#rejectVisitorModal">
+              <i class="ri-close-circle-line me-1"></i> Reject
+            </button>
+          </li>
+
+        </ul>
+      </div>
+    <% end %>
+
+    <!-- Rejection Summary -->
+    <% if visitor.rejected? %>
+      <div class="alert alert-danger mt-4 text-start small">
+        <strong>Rejection Reason:</strong>
+        <<%= visitor.rejection_reason_label %>
+        <% if visitor.rejection_notes.present? %>
+          <br>
+          <strong>Notes:</strong> <%= visitor.rejection_notes %>
+        <% end %>
+      </div>
+    <% end %>
+
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- Tabs -->
+  <!-- ========================================================= -->
+  <ul class="nav nav-tabs justify-content-center mb-4" role="tablist">
+    <li class="nav-item">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#personal">
+        <i class="ri-user-line me-1"></i> Personal
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#travel">
+        <i class="ri-plane-line me-1"></i> Travel
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#documents">
+        <i class="ri-file-list-line me-1"></i> Documents
+      </button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#local-contact">
+        <i class="ri-contacts-line me-1"></i> Local Contact
+      </button>
+    </li>
+  </ul>
+
+  <!-- ========================================================= -->
+  <!-- Tab Contents -->
+  <!-- ========================================================= -->
+  <div class="tab-content">
+
+    <div class="tab-pane fade show active" id="personal">
+      <%= render "admin/visitor_submissions/show/personal",
+            visitor_submission: visitor %>
+    </div>
+
+    <div class="tab-pane fade" id="travel">
+      <%= render "admin/visitor_submissions/show/travel",
+            visitor_submission: visitor %>
+    </div>
+
+    <div class="tab-pane fade" id="documents">
+      <%= render "admin/visitor_submissions/show/documents",
+            visitor_submission: visitor %>
+    </div>
+
+    <div class="tab-pane fade" id="local-contact">
+      <%= render "admin/visitor_submissions/show/local_contact",
+            visitor_submission: visitor %>
+    </div>
+
+  </div>
+</main>
+
+<!-- ========================================================= -->
+<!-- Reject Modal -->
+<!-- ========================================================= -->
+<%= render "admin/visitor_submissions/show/reject_modal",
+      visitor_submission: visitor %>

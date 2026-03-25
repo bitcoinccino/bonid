@@ -1,0 +1,18 @@
+Hello <%= @user.full_name %>,
+
+Your BonID was scanned.
+
+Scanned At: <%= @scan_log.scanned_at.strftime("%B %d, %Y at %I:%M %p") %>
+IP Address: <%= @scan_log.ip_address %>
+City: <%= @scan_log.city.presence || "Unknown" %>
+Country: <%= @scan_log.country.presence || "Unknown" %>
+Organization: <%= @scan_log.organization.presence || "Unknown" %>
+Source: <%= @scan_log.source.humanize %>
+
+View your verified certificate:
+<%= verified_profile_citizens_identity_submission_url(
+      @submission,
+      host: Rails.application.config.action_mailer.default_url_options[:host]
+    ) %>
+
+⚠️ If this wasn’t you, contact BonID Support immediately.

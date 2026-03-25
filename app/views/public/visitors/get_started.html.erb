@@ -1,0 +1,158 @@
+<% content_for :auth_left do %>
+  <div class="auth-left-inner d-flex flex-column justify-content-between h-100 py-4 py-lg-5 w-100">
+
+    <!-- INTRO -->
+    <div class="text-center mb-4 mb-lg-5">
+      <h2 class="display-5 fw-bold mb-3 font-heading">
+        Welcome to BonTouris ID
+      </h2>
+
+      <p class="lead opacity-90 mx-auto max-w-text">
+        A secure digital identity for visitors in Haiti
+        designed to reduce document handling while protecting your privacy.
+      </p>
+    </div>
+
+    <!-- CAROUSEL -->
+    <div id="benefitsCarousel"
+         class="carousel slide mb-4 mb-lg-5"
+         data-bs-ride="carousel"
+         data-bs-interval="9000">
+
+      <div class="carousel-indicators position-static justify-content-center mb-3">
+        <% 6.times do |i| %>
+          <button type="button"
+                  data-bs-target="#benefitsCarousel"
+                  data-bs-slide-to="<%= i %>"
+                  class="<%= i.zero? ? 'active' : '' %>"
+                  aria-label="Slide <%= i + 1 %>"></button>
+        <% end %>
+      </div>
+
+      <div class="carousel-inner">
+
+        <!-- PRIMARY SLIDE -->
+        <div class="carousel-item active text-center px-3">
+          <i class="ri-shield-user-line ri-4x text-haitian-cyan mb-3"></i>
+          <h4 class="fw-bold mb-2">What is BonTouris ID?</h4>
+          <p class="mx-auto max-w-carousel opacity-90">
+            A temporary digital ID that lets you verify yourself to trusted
+            hotels, hospitals, and local services
+            <strong>without repeatedly presenting your passport</strong>.
+          </p>
+        </div>
+
+        <% [
+          { icon: "ri-hotel-line", title: "Accepted Locally", desc: "Recognized by hotels, clinics, emergency services, and approved partners across Haiti." },
+          { icon: "ri-qr-code-line", title: "QR-Based Verification", desc: "Instant verification using a secure QR code — no paper copies required." },
+          { icon: "ri-eye-line", title: "Transparent Access", desc: "You can see when and where your ID is verified." },
+          { icon: "ri-lock-2-line", title: "Privacy by Design", desc: "Your data is encrypted and shared only when necessary." },
+          { icon: "ri-global-line", title: "Built for Real Conditions", desc: "Designed to work reliably even with limited internet access." }
+        ].each do |slide| %>
+          <div class="carousel-item text-center px-3">
+            <i class="<%= slide[:icon] %> ri-4x text-haitian-cyan mb-3"></i>
+            <h5 class="fw-bold mb-2"><%= slide[:title] %></h5>
+            <p class="mx-auto max-w-carousel opacity-90">
+              <%= slide[:desc] %>
+            </p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div class="text-center mt-4">
+      <h5 class="fw-bold mb-3">What you’ll need</h5>
+
+      <div class="row g-3 justify-content-center mb-4">
+        <% [
+          ["ri-passport-line", "Valid passport"],
+          ["ri-camera-line", "Clear selfie"],
+          ["ri-image-line", "Passport photo"],
+          ["ri-mail-line", "Email address"]
+        ].each do |icon, label| %>
+          <div class="col-6 col-md-3">
+            <div class="text-center">
+              <i class="<%= icon %> ri-2x text-haitian-cyan mb-1"></i>
+              <div class="small fw-medium"><%= label %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <p class="small opacity-75 fst-italic">
+        BonTouris ID does not replace your passport or IKAT.
+        It helps reduce how often you need to show it.
+      </p>
+    </div>
+
+  </div>
+<% end %>
+
+
+<!-- RIGHT COLUMN: Action / Status Card -->
+<div class="login-card">
+
+  <!-- HEADER -->
+  <div class="text-center mb-4">
+    <%= image_tag "haiti_flag.png", height: 56, class: "mb-3" %>
+
+    <h2 class="fw-bold font-heading mb-1">
+      BonTouris ID Portal
+    </h2>
+
+    <p class="text-muted mb-0">
+      Secure access to your visitor identity
+    </p>
+  </div>
+
+  <!-- PRIMARY ACTION -->
+  <div class="mb-4">
+    <%= link_to "Start a New Application",
+                new_public_visitor_path,
+                class: "btn btn-haitian-primary btn-lg w-100 fw-bold py-3" %>
+
+    <p class="small text-muted text-center mt-2">
+      Takes about 5 minutes · Passport required
+    </p>
+  </div>
+
+  <!-- DIVIDER -->
+  <div class="text-center my-4 position-relative">
+    <hr>
+    <span class="divider-label">OR</span>
+  </div>
+
+  <!-- STATUS / RESUME -->
+  <div class="text-center">
+    <h6 class="fw-semibold mb-2">
+      Check application status
+    </h6>
+
+    <p class="small text-muted mb-3">
+      Enter the email you used to start your application.
+      We’ll send a secure verification code to confirm your identity.
+    </p>
+
+    <%= form_with url: continue_public_visitors_path,
+                  method: :post,
+                  data: { turbo: false } do |f| %>
+
+      <div class="input-group input-group-lg mb-3">
+        <%= f.email_field :email,
+              required: true,
+              placeholder: "you@example.com",
+              class: "form-control text-center" %>
+      </div>
+
+      <%= f.submit " Check Status",
+            class: "btn btn-outline-haitian btn-lg w-100 fw-bold py-3" %>
+    <% end %>
+
+    <p class="small text-muted mt-3">
+      🔒 A one-time 6-digit code will be sent to your email.<br>
+      Access is not possible without verification.
+    </p>
+  </div>
+
+</div>

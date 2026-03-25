@@ -1,0 +1,69 @@
+<!-- app/views/citizens/identity_submissions/_qrcode_card.html.erb -->
+<div id="<%= dom_id(submission, :qr_card) %>">
+  <div class="qr-card-container">
+
+    <div class="card qr-card">
+
+      <!-- HEADER -->
+      <div class="qr-card-header">
+        <div class="qr-card-title">
+          <i class="ri-qr-code-line"></i>
+          <h5>BonID QR Code</h5>
+        </div>
+
+        <div class="dropdown qr-header-menu">
+          <button class="btn btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
+            <i class="ri-more-2-fill"></i>
+          </button>
+
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+            <!-- your menu items -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div class="qr-card-body">
+
+        <% if submission.status_approved? && submission.expires_at&.future? %>
+
+          <!-- FIXED: Button with mobile tap support -->
+          <button type="button"
+                  class="btn p-0 border-0 qr-image-container"
+                  data-bs-toggle="modal"
+                  data-bs-target="#qrCodeModal_<%= submission.id %>">
+            <%= image_tag("data:image/png;base64,#{submission.qr_for(:citizen)}",
+                          alt: "BonID QR Code",
+                          class: "qr-image") %>
+
+            <div class="qr-photo-overlay">
+              <% if submission.user.photo.attached? %>
+                <%= image_tag url_for(submission.user.photo),
+                              class: "rounded-circle",
+                              style: "width: 64px; height: 64px; object-fit: cover; object-position: center top;" %>
+              <% else %>
+                <%= image_tag "haiti_flag.png", class: "rounded-circle" %>
+              <% end %>
+            </div>
+          </button>
+
+          <p class="qr-tap-hint">
+            <i class="ri-fingerprint-line"></i>
+            Tap QR to enlarge or scan
+          </p>
+
+          <!-- rest of content -->
+
+        <% else %>
+          <div class="qr-expired-alert">
+            <i class="ri-alert-line"></i>
+            BonID not approved or expired.
+          </div>
+        <% end %>
+
+        <%= render "shared/qr_code_status_alert", submission: submission %>
+
+      </div>
+    </div>
+  </div>
+</div>

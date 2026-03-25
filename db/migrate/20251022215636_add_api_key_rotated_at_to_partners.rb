@@ -1,0 +1,5 @@
+class AddApiKeyRotatedAtToPartners < ActiveRecord::Migration[8.0]
+  def change
+    add_column :partners, :api_key_rotated_at, :datetime
+  end
+end

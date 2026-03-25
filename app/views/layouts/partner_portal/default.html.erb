@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for(:title) || "BonID Partner Portal" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="turbo-cache-control" content="no-cache" />
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --sidebar-width: 260px;
+      --topbar-height: 70px;
+      --navbar-height: 70px;
+
+      /* Citizen color scheme */
+      --haitian-blue: #00209F;
+      --haitian-blue-hover: #032B77;
+      --haitian-blue-light: rgba(0, 32, 159, 0.1);
+      --haitian-blue-subtle: rgba(0, 32, 159, 0.06);
+      --haitian-blue-border: rgba(0, 32, 159, 0.12);
+
+      --palm-green: #1A936F;
+      --golden-yellow: #FFD700;
+      --dark-gray: #1C1C1C;
+      --mid-gray: #6C757D;
+      --light-gray: #F8F9FA;
+      --white: #FFFFFF;
+      --coral-red: #E63946;
+
+      /* Override law-blue so shared sidebar/navbar SCSS uses citizen blue */
+      --law-blue: #00209F;
+    }
+
+    body {
+      font-family: 'Inter', 'Montserrat', system-ui, sans-serif;
+      background-color: var(--light-gray);
+    }
+
+    /* ============================================================
+       NAVBAR — Citizen Haitian Blue
+    ============================================================ */
+    .partner-navbar {
+      background: var(--haitian-blue) !important;
+      height: var(--topbar-height);
+      z-index: 1050;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ============================================================
+       SIDEBAR COLOR OVERRIDES — Citizen Blue Theme
+    ============================================================ */
+    .partner-sidebar .partner-logo-section {
+      border-bottom-color: var(--haitian-blue-border) !important;
+    }
+
+    .partner-sidebar .partner-logo-img {
+      border-color: rgba(0, 32, 159, 0.15) !important;
+    }
+
+    .partner-sidebar .partner-logo-placeholder {
+      background-color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .nav-link:hover {
+      background-color: var(--haitian-blue-subtle) !important;
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .nav-link:hover > i:first-child {
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .nav-link.active {
+      background-color: var(--haitian-blue-light) !important;
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .nav-link.active > i:first-child {
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .sidebar-divider {
+      background-color: var(--haitian-blue-border) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .dropdown-menu {
+      border-color: var(--haitian-blue-border) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .dropdown-item:hover,
+    .partner-sidebar .sidebar-nav .dropdown-item:focus {
+      background-color: var(--haitian-blue-subtle) !important;
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-nav .dropdown-item:hover i {
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-sidebar .sidebar-close-btn:hover {
+      color: var(--haitian-blue) !important;
+    }
+
+    @media (min-width: 992px) {
+      .partner-sidebar {
+        border-right-color: var(--haitian-blue-border) !important;
+      }
+    }
+
+    @media (max-width: 991.98px) {
+      .partner-sidebar {
+        border-right-color: var(--haitian-blue-border) !important;
+      }
+    }
+
+    /* ============================================================
+       NAVBAR DROPDOWN OVERRIDES — Citizen Blue
+    ============================================================ */
+    .partner-navbar .partner-admin-menu {
+      border-color: var(--haitian-blue-border) !important;
+    }
+
+    .partner-navbar .partner-admin-menu .dropdown-item:hover,
+    .partner-navbar .partner-admin-menu .dropdown-item:focus {
+      background-color: rgba(0, 32, 159, 0.08) !important;
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-navbar .partner-admin-menu .dropdown-item:hover i,
+    .partner-navbar .partner-admin-menu .dropdown-item:focus i {
+      color: var(--haitian-blue) !important;
+    }
+
+    .partner-navbar .dropdown-divider {
+      border-color: var(--haitian-blue-border) !important;
+    }
+
+    /* ============================================================
+       HEADING FONT
+    ============================================================ */
+    .font-heading {
+      font-family: 'Montserrat', sans-serif !important;
+    }
+  </style>
+</head>
+
+<body class="partners-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-default-layout"
+      data-controller="tooltip bootstrap global-loading">
+
+  <%= render "shared/global_loading" %>
+  <turbo-frame id="turbo-redirect"></turbo-frame>
+
+  <%# Global confirmation modal %>
+  <%= render "shared/confirmation_modal" if lookup_context.exists?("shared/confirmation_modal", [], true) %>
+
+  <!-- Sidebar -->
+  <%= render "partner_portal/shared/sidebars/sidebar_default_content" %>
+
+  <!-- Main Content -->
+  <main class="flex-grow-1 w-100 position-relative">
+    <%= render "partner_portal/shared/navbars/navbar_default" %>
+
+    <div id="flash-messages">
+      <% unless controller.devise_controller? %>
+        <%= render "shared/flash" if lookup_context.exists?("shared/flash", [], true) %>
+      <% end %>
+    </div>
+
+    <div class="p-4 partner-scroll-region">
+      <%= yield %>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<%# Profile Photo Section %>
+<div class="card profile-card" data-controller="form-handler">
+  <div class="card-body">
+    <%# Info Banner %>
+    <div class="alert alert-info d-flex align-items-start">
+      <i class="ri-2x ri-image-line me-3"></i>
+      <div>
+        <strong>Your profile photo is part of your BonID verification.</strong><br>
+        Please upload a <strong>clear, passport-style photo</strong> showing your full face.
+      </div>
+    </div>
+
+    <%# Upload Area %>
+    <div class="profile-photo-section">
+      <label for="citizen_photo" class="profile-photo-wrapper">
+        <%# Hidden Input %>
+        <%= f.file_field :photo,
+              id: "citizen_photo",
+              class: "d-none",
+              accept: "image/jpeg,image/png",
+              required: !f.object.photo.attached?,
+              data: {
+                action: "change->form-handler#previewImage",
+                form_handler_target: "fileInput"
+              } %>
+
+        <%# Current / Previewed Photo %>
+        <% if f.object.photo.attached? %>
+          <%= image_tag url_for(f.object.photo),
+                class: "photo-preview",
+                alt: "Profile photo preview",
+                style: "width: 180px; height: 180px; object-fit: cover; object-position: center top;",
+                data: { form_handler_target: "imagePreview" } %>
+        <% else %>
+          <div class="photo-placeholder" data-form-handler-target="placeholder">
+            <i class="ri-camera-line"></i>
+          </div>
+          <%= image_tag "", class: "photo-preview d-none", alt: "Profile photo preview", data: { form_handler_target: "imagePreview" } %>
+        <% end %>
+
+        <%# Hover Overlay %>
+        <div class="photo-overlay">
+          <i class="ri-upload-line"></i>
+          <span><%= f.object.photo.attached? ? "Change Photo" : "Upload Photo" %></span>
+        </div>
+      </label>
+
+      <small class="d-block text-muted mt-3">
+        Upload a <strong>clear, front-facing photo</strong> (JPEG or PNG, max 5MB).
+      </small>
+    </div>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-line"></i>
+      Your photo is encrypted and used only for identity verification within BonID.
+    </div>
+  </div>
+</div>

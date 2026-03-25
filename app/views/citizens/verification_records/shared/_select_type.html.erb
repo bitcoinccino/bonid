@@ -1,0 +1,35 @@
+<%# ===============================================================
+  BonID — Record Type Selector
+  ---------------------------------------------------------------
+  ✅ Renders inside record_form_frame
+  ✅ Turbo-safe links (loads form inline)
+  ✅ Responsive 2–3 column grid
+  ✅ Consistent Bootstrap 5 + Remix Icons styling
+================================================================ %>
+<%= turbo_frame_tag "record_form_frame" do %>
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-light fw-semibold">
+      <i class="ri-database-2-line me-1"></i>
+      Choose Record Type
+    </div>
+
+    <div class="card-body p-4">
+      <p class="text-muted mb-3">
+        Please select the type of verification record you wish to create.
+      </p>
+
+      <div class="row g-3">
+        <% @available_types.each do |label, type| %>
+          <div class="col-md-4">
+            <%= link_to new_citizens_verification_record_path(record_type: type),
+                        class: "btn btn-outline-primary w-100 py-3 fw-semibold",
+                        data: { turbo_frame: "record_form_frame" } do %>
+              <i class="ri-add-line me-1"></i>
+              <%= label %>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

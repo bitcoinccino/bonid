@@ -1,0 +1,38 @@
+<!-- app/views/admin/shared/_payload_modal.html.erb -->
+<div class="modal fade" id="payloadModal" tabindex="-1" aria-labelledby="payloadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="payloadModalLabel">Event Payload</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Application:</strong> <span id="modalApp"></span></p>
+        <p><strong>User:</strong> <span id="modalUser"></span></p>
+        <p><strong>Event:</strong> <span id="modalEventType"></span></p>
+        <pre id="modalPayload">{}</pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("turbo:load", function() {
+    const payloadModal = document.getElementById('payloadModal');
+    payloadModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const payload = button.getAttribute('data-payload');
+      const app = button.getAttribute('data-app') || "—";
+      const user = button.getAttribute('data-user') || "—";
+      const eventType = button.getAttribute('data-event') || "—";
+
+      document.getElementById('modalPayload').textContent = JSON.stringify(JSON.parse(payload || "{}"), null, 2);
+      document.getElementById('modalApp').textContent = app;
+      document.getElementById('modalUser').textContent = user;
+      document.getElementById('modalEventType').textContent = eventType;
+    });
+  });
+</script>

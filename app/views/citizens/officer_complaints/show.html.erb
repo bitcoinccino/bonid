@@ -1,0 +1,133 @@
+<div class="complaint-status-page py-4">
+  <div class="px-0">
+    <div style="max-width: 720px; margin: 0 auto;">
+
+      <%# Header Section %>
+      <div class="text-center mb-5">
+        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle rounded-circle mb-3 shadow-sm" style="width: 64px; height: 64px;">
+          <i class="ri-file-shield-2-fill text-primary fs-2"></i>
+        </div>
+        <p class="text-uppercase fw-bold text-muted small mb-1" style="letter-spacing: 2px;">Inspection Générale de la PNH</p>
+        <h1 class="h3 fw-bold text-haitian-blue mb-2">Complaint Status Tracking</h1>
+        <div class="badge bg-white border text-primary rounded-pill px-3 py-2 shadow-sm">
+          <code class="fw-bold fs-6"><%= @certificate[:certificate_reference] %></code>
+        </div>
+      </div>
+
+      <%# Progress Visualizer (Timeline) %>
+      <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-body p-4 bg-white">
+          <div class="status-timeline d-flex justify-content-between position-relative mb-4">
+            <%# CSS-based timeline — immediate visual feedback %>
+            <div class="timeline-track"></div>
+            <div class="timeline-step completed">
+              <div class="step-dot"><i class="ri-check-line"></i></div>
+              <span class="step-label">Submitted</span>
+            </div>
+            <div class="timeline-step <%= 'active' if @certificate[:status_label].match?(/En cours|Initial/i) %>">
+              <div class="step-dot"></div>
+              <span class="step-label">Review</span>
+            </div>
+            <div class="timeline-step">
+              <div class="step-dot"></div>
+              <span class="step-label">Investigation</span>
+            </div>
+            <div class="timeline-step">
+              <div class="step-dot"></div>
+              <span class="step-label">Resolution</span>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <span class="badge rounded-pill px-4 py-2 bg-<%= @certificate[:status_color] %>-subtle text-<%= @certificate[:status_color] %> border border-<%= @certificate[:status_color] %>-subtle fs-6">
+              <i class="ri-loader-4-line ri-spin me-2"></i>Current Status: <strong><%= @certificate[:status_label] %></strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <%# Details Grid %>
+      <div class="row g-4 mb-4">
+        <div class="col-md-7">
+          <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+              <h6 class="fw-bold text-dark mb-0">Incident Information</h6>
+            </div>
+            <div class="card-body p-4 pt-2">
+              <div class="info-grid">
+                <div class="info-item mb-3">
+                  <label class="text-muted small text-uppercase fw-bold">Allegation Category</label>
+                  <p class="mb-0 fw-semibold text-dark"><%= @certificate[:allegation_category] %></p>
+                </div>
+                <div class="info-item mb-3">
+                  <label class="text-muted small text-uppercase fw-bold">Specific Act</label>
+                  <p class="mb-0 text-dark"><%= @certificate[:specific_allegation] %></p>
+                </div>
+                <div class="info-item">
+                  <label class="text-muted small text-uppercase fw-bold">Location & Date</label>
+                  <p class="mb-0 text-dark">
+                    <i class="ri-map-pin-line me-1"></i><%= [@certificate[:commune], @certificate[:department]].compact.join(", ") %><br>
+                    <i class="ri-calendar-line me-1"></i><%= @certificate[:occurred_at]&.strftime("%d %B %Y") %>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-5">
+          <div class="card border-0 shadow-sm rounded-4 h-100 text-white"
+               style="background: var(--primary, #00209F);">
+            <div class="card-body p-4 d-flex flex-column" style="background: transparent;">
+              <h6 class="fw-bold mb-3 text-white">Handling Office</h6>
+              <div class="mt-auto">
+                <h2 class="display-6 fw-bold mb-0 text-white"><%= @certificate[:routed_directorate_code] %></h2>
+                <p class="mb-0 text-white" style="opacity: 0.75;"><%= @certificate[:routed_directorate_name] %></p>
+                <hr style="opacity: 0.25; border-color: #fff;">
+                <p class="small mb-0 text-white">
+                  <i class="ri-time-line me-1"></i> Submitted: <%= @certificate[:submitted_at]&.strftime("%d %B %Y") %>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Next Steps Card %>
+      <div class="card border-0 shadow-sm rounded-4 mb-4 bg-light">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center mb-3">
+            <i class="ri-list-ordered text-primary fs-4 me-2"></i>
+            <h6 class="fw-bold mb-0 text-dark">Required Actions & Next Steps</h6>
+          </div>
+          <ul class="list-group list-group-flush bg-transparent">
+            <% @certificate[:next_steps].each do |step| %>
+              <li class="list-group-item bg-transparent border-0 px-0 py-2 d-flex align-items-start">
+                <i class="ri-checkbox-blank-circle-fill text-primary-emphasis mt-1 me-3" style="font-size: 8px;"></i>
+                <span class="text-dark-emphasis small"><%= step %></span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+
+      <%# Action Buttons %>
+      <div class="row g-2">
+        <div class="col-6">
+          <%= link_to certificate_citizens_officer_complaint_path(@complaint.uuid),
+                      class: "btn btn-white border shadow-sm w-100 rounded-pill py-2 fw-bold text-dark",
+                      target: "_blank" do %>
+            <i class="ri-download-cloud-2-line me-2"></i>Save Certificate
+          <% end %>
+        </div>
+        <div class="col-6">
+          <%= link_to citizens_officer_complaints_path,
+                      class: "btn btn-primary w-100 rounded-pill py-2 fw-bold shadow-sm" do %>
+            <i class="ri-arrow-go-back-line me-2"></i>Back to My List
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

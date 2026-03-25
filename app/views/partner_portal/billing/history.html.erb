@@ -1,0 +1,71 @@
+<%# app/views/partner_portal/billing/history.html.erb %>
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1" style="color: var(--law-blue, #092C73);">Istwa Peman Konplè</h1>
+      <p class="text-muted mb-0">Tout tranzaksyon ou yo</p>
+    </div>
+    <%= link_to partner_portal_billing_path, class: "btn btn-outline-primary rounded-pill" do %>
+      <i class="ri-arrow-left-line me-1"></i> Retounen
+    <% end %>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body px-4">
+      <% if @payments.present? %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr class="text-muted small">
+                <th>Dat</th>
+                <th>Nimewo Kòmand</th>
+                <th>Plan</th>
+                <th>Montan</th>
+                <th>Metòd</th>
+                <th>Tip</th>
+                <th>Estati</th>
+                <th>Tranzaksyon ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @payments.each do |payment| %>
+                <tr>
+                  <td class="small"><%= payment.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+                  <td class="small font-monospace"><%= payment.order_id %></td>
+                  <td><%= payment.payment_type&.titleize %></td>
+                  <td class="fw-semibold"><%= payment.formatted_amount %></td>
+                  <td>
+                    <% if payment.payment_method == "moncash" %>
+                      <span class="badge bg-danger-subtle text-danger rounded-pill">MonCash</span>
+                    <% else %>
+                      <span class="badge bg-primary-subtle text-primary rounded-pill">Stripe</span>
+                    <% end %>
+                  </td>
+                  <td class="small text-capitalize"><%= payment.payment_type %></td>
+                  <td>
+                    <% case payment.status %>
+                    <% when "completed" %>
+                      <span class="badge bg-success-subtle text-success rounded-pill">Konplete</span>
+                    <% when "pending" %>
+                      <span class="badge bg-warning-subtle text-warning rounded-pill">Annatant</span>
+                    <% when "failed" %>
+                      <span class="badge bg-danger-subtle text-danger rounded-pill">Echwe</span>
+                    <% when "refunded" %>
+                      <span class="badge bg-info-subtle text-info rounded-pill">Ranbouse</span>
+                    <% end %>
+                  </td>
+                  <td class="small font-monospace text-muted"><%= payment.transaction_id || "—" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-file-list-3-line ri-3x text-muted mb-3 d-block"></i>
+          <p class="text-muted">Pa gen istwa peman.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

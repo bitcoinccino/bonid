@@ -1,0 +1,120 @@
+<%# Partner Dashboard Overview — Stats + Quick Actions %>
+
+<%# Stats Cards %>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body text-center py-3">
+        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+             style="width: 48px; height: 48px; background: rgba(0, 32, 159, 0.1);">
+          <i class="ri-qr-scan-2-line" style="font-size: 1.25rem; color: #00209F;"></i>
+        </div>
+        <h3 class="fw-bold mb-0" style="font-family: 'Montserrat', sans-serif; color: #00209F;">
+          <%= @stats[:qr_scans] %>
+        </h3>
+        <small class="text-muted" style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem;">Total Scans</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body text-center py-3">
+        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+             style="width: 48px; height: 48px; background: rgba(25, 135, 84, 0.1);">
+          <i class="ri-calendar-check-line" style="font-size: 1.25rem; color: #198754;"></i>
+        </div>
+        <h3 class="fw-bold mb-0" style="font-family: 'Montserrat', sans-serif; color: #198754;">
+          <%= @stats[:qr_scans_today] %>
+        </h3>
+        <small class="text-muted" style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem;">Scans Today</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body text-center py-3">
+        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+             style="width: 48px; height: 48px; background: rgba(0, 32, 159, 0.1);">
+          <i class="ri-shield-check-line" style="font-size: 1.25rem; color: #00209F;"></i>
+        </div>
+        <h3 class="fw-bold mb-0" style="font-family: 'Montserrat', sans-serif; color: #00209F;">
+          <%= @stats[:verifications] %>
+        </h3>
+        <small class="text-muted" style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem;">Verifications</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-body text-center py-3">
+        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-2"
+             style="width: 48px; height: 48px; background: rgba(139, 92, 246, 0.1);">
+          <i class="ri-user-heart-line" style="font-size: 1.25rem; color: #8B5CF6;"></i>
+        </div>
+        <h3 class="fw-bold mb-0" style="font-family: 'Montserrat', sans-serif; color: #8B5CF6;">
+          <%= @stats[:consent_grants] %>
+        </h3>
+        <small class="text-muted" style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem;">Consents</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Recent Scan Activity %>
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+    <h6 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 600; color: #00209F;">
+      <i class="ri-time-line me-1" style="font-weight: 400;"></i>Recent Activity
+    </h6>
+    <%= link_to partner_portal_scans_path, class: "text-decoration-none small", style: "color: #00209F; font-family: 'Montserrat', sans-serif;" do %>
+      View All <i class="ri-arrow-right-s-line"></i>
+    <% end %>
+  </div>
+  <div class="card-body p-0">
+    <% if @recent_scans.any? %>
+      <div class="list-group list-group-flush">
+        <% @recent_scans.limit(5).each do |scan| %>
+          <div class="list-group-item px-3 py-2 border-0 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width: 36px; height: 36px; background: rgba(0, 32, 159, 0.1); flex-shrink: 0;">
+                  <i class="ri-qr-scan-2-line" style="font-size: 0.9rem; color: #00209F;"></i>
+                </div>
+                <div>
+                  <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;">
+                    <%= scan.identity_submission&.user&.full_name || "Unknown" %>
+                  </div>
+                  <div class="text-muted" style="font-size: 0.7rem;">
+                    BonID: <%= scan.identity_submission&.bonid.present? ? mask_bonid(scan.identity_submission.bonid) : "N/A" %>
+                    <% if scan.manual? %>
+                      <span class="badge bg-secondary ms-1" style="font-size: 0.6rem;">Manual</span>
+                    <% else %>
+                      <span class="badge bg-success ms-1" style="font-size: 0.6rem;">QR</span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+              <small class="text-muted" style="font-size: 0.7rem;">
+                <%= time_ago_in_words(scan.created_at) %> ago
+              </small>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="text-center py-4">
+        <i class="ri-scan-line" style="font-size: 2.5rem; color: #dee2e6;"></i>
+        <p class="text-muted mt-2 mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem;">
+          No scans yet. Start verifying BonIDs!
+        </p>
+        <%= link_to partner_portal_scans_path, class: "btn btn-sm mt-2 text-white", style: "background: #00209F; font-family: 'Montserrat', sans-serif; font-size: 0.8rem;" do %>
+          <i class="ri-qr-scan-2-line me-1"></i>Start Scanning
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

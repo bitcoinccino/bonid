@@ -1,0 +1,155 @@
+<%# Public incident report verification — no auth required.
+    Scanned from the QR code on a printed PNH officer incident report.
+    Exposes: crime type, date, location, status — NO person PII. %>
+
+<div class="container py-5" style="max-width: 680px;">
+
+  <% if @error == :not_found %>
+
+    <%# ── NOT FOUND ──────────────────────────────────────────────── %>
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden text-center">
+      <div class="card-header py-4" style="background: #092C73;">
+        <h5 class="text-white fw-bold mb-0">Police Nationale d'Haïti</h5>
+        <p class="text-white mb-0 small" style="opacity: 0.75;">Système de Vérification de Rapport</p>
+      </div>
+      <div class="card-body p-5">
+        <div class="bg-danger-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
+             style="width: 72px; height: 72px;">
+          <i class="ri-close-circle-fill text-danger fs-1"></i>
+        </div>
+        <h4 class="fw-bold text-danger mb-2">Rapport Introuvable</h4>
+        <p class="text-muted">
+          Le numéro <code><%= params[:report_id] %></code> n'existe pas dans la base de données PNH.
+        </p>
+        <p class="small text-muted mt-3">
+          Si vous pensez qu'il s'agit d'une erreur, contactez l'unité concernée directement.
+        </p>
+      </div>
+    </div>
+
+  <% elsif @valid %>
+
+    <%# ── VALID — report is authentic ───────────────────────────── %>
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+      <div class="card-header text-white text-center py-4"
+           style="background: linear-gradient(135deg, #092C73, #1a4fa8);">
+        <p class="text-uppercase fw-bold mb-1 small" style="letter-spacing: 2px; opacity: 0.8;">
+          République d'Haïti — PNH
+        </p>
+        <h4 class="fw-bold mb-1">Rapport Vérifié</h4>
+        <div class="badge bg-white text-success rounded-pill px-3 py-2 fw-bold">
+          <i class="ri-shield-check-fill me-1"></i>Authentique / Authentic
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+
+        <%# Report ID + checksum %>
+        <div class="text-center mb-4 pb-3 border-bottom">
+          <p class="text-muted small text-uppercase fw-bold mb-1" style="letter-spacing: 1px;">Numéro de Rapport</p>
+          <h3 class="fw-bold" style="color: #092C73; font-family: monospace; font-size: 1rem;"><%= @report_id %></h3>
+          <div class="d-inline-flex align-items-center gap-2 bg-light rounded-pill px-3 py-1 mt-1">
+            <i class="ri-fingerprint-line text-muted small"></i>
+            <code class="small text-muted">Checksum: <%= @checksum %></code>
+          </div>
+        </div>
+
+        <%# Report facts — NO person PII %>
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Type de Crime / Crime Type</label>
+            <span class="fw-semibold"><%= @crime_type&.humanize %></span>
+          </div>
+          <div class="col-6">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Date de l'Incident</label>
+            <span class="fw-semibold"><%= @occurred_at&.strftime("%d %b %Y") %></span>
+          </div>
+          <div class="col-6">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Statut / Status</label>
+            <span class="badge bg-secondary rounded-pill px-2 py-1 fw-semibold"><%= @status&.humanize %></span>
+          </div>
+          <div class="col-12">
+            <label class="text-muted small fw-bold text-uppercase d-block mb-1" style="letter-spacing: 0.5px; font-size: 0.65rem;">Lieu / Location</label>
+            <span class="fw-semibold small"><%= @location %></span>
+          </div>
+        </div>
+
+        <%# Integrity seal %>
+        <div class="alert border-0 rounded-3 mb-0"
+             style="background: rgba(9,44,115,0.05); border: 1px solid rgba(9,44,115,0.15) !important;">
+          <div class="d-flex align-items-start gap-3">
+            <i class="ri-shield-keyhole-fill fs-4 mt-1 flex-shrink-0" style="color: #092C73;"></i>
+            <div>
+              <p class="fw-bold mb-1 small" style="color: #092C73;">Intégrité Cryptographique Confirmée</p>
+              <p class="mb-0 small text-muted">
+                Les données de ce rapport correspondent à l'enregistrement original dans la base de données PNH.
+                Le document <strong>n'a pas été altéré</strong>.
+              </p>
+              <p class="mb-0 small text-muted mt-1">
+                <i class="ri-time-line me-1"></i>Signé le: <%= @signed_at&.strftime("%d %B %Y à %H:%M UTC") %>
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card-footer bg-light text-center py-3">
+        <p class="small text-muted mb-0">
+          Vérification officielle — <%= Time.current.strftime("%d %B %Y, %H:%M") %> |
+          <strong style="color: #092C73;">Police Nationale d'Haïti</strong>
+        </p>
+      </div>
+    </div>
+
+  <% else %>
+
+    <%# ── TAMPERED — signature mismatch ─────────────────────────── %>
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+      <div class="card-header text-white text-center py-4" style="background: #8B0000;">
+        <p class="text-uppercase fw-bold mb-1 small" style="letter-spacing: 2px; opacity: 0.8;">
+          République d'Haïti — PNH
+        </p>
+        <h4 class="fw-bold mb-1">⚠ Vérification Échouée</h4>
+        <div class="badge bg-white text-danger rounded-pill px-3 py-2 fw-bold">
+          <i class="ri-alert-fill me-1"></i>DOCUMENT SUSPECT / SUSPECT DOCUMENT
+        </div>
+      </div>
+
+      <div class="card-body p-4 text-center">
+        <div class="bg-danger-subtle rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
+             style="width: 80px; height: 80px;">
+          <i class="ri-file-damage-fill text-danger" style="font-size: 2rem;"></i>
+        </div>
+
+        <h5 class="fw-bold text-danger mb-3">Intégrité du Rapport Compromise</h5>
+
+        <p class="text-muted mb-4">
+          Le rapport <strong><%= @report_id %></strong> existe dans la base de données PNH,
+          mais les données sur ce document <strong>ne correspondent pas</strong> à l'enregistrement original.
+          Le document peut avoir été altéré.
+        </p>
+
+        <div class="alert alert-danger border-0 rounded-3 text-start">
+          <p class="fw-bold mb-2"><i class="ri-error-warning-line me-2"></i>Actions Recommandées:</p>
+          <ul class="mb-0 small">
+            <li>N'acceptez <strong>pas</strong> ce document comme preuve valide</li>
+            <li>Signalez cet incident à l'IGPNH: <strong>inspection@pnh.gouv.ht</strong></li>
+            <li>Contactez l'OPC: <strong>+509 2813-0000</strong></li>
+            <li>Référence: <strong><%= @report_id %></strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card-footer bg-light text-center py-3">
+        <p class="small text-muted mb-0">
+          Scan enregistré — <%= Time.current.strftime("%d %B %Y, %H:%M UTC") %>
+        </p>
+      </div>
+    </div>
+
+  <% end %>
+
+</div>

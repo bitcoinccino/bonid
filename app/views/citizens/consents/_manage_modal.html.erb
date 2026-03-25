@@ -1,0 +1,50 @@
+<!-- app/views/citizens/consents/_manage_modal.html.erb -->
+<%= content_for :modals do %>
+  <div class="modal fade" id="manageConsentsModal" tabindex="-1" aria-labelledby="manageConsentsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content rounded-4 shadow-lg">
+        <div class="modal-header bg-haitian-blue text-white border-0">
+          <h5 class="modal-title fw-semibold" id="manageConsentsLabel">
+            <i class="ri-shield-keyhole-line me-2"></i>
+            Manage Data Sharing Consents
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body py-4">
+          <% if @citizen.consent_grants.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col">Partner</th>
+                    <th scope="col">Shared Data</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="consents-table-body">
+                  <% @citizen.consent_grants.includes(:partner).each do |c| %>
+                    <%= render "consent_row", grant: c %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-inbox-line fs-1 text-muted mb-3"></i>
+              <p class="text-muted">No data sharing consents yet.</p>
+              <small class="text-muted">Partners will appear here when they request access to your verified BonID data.</small>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

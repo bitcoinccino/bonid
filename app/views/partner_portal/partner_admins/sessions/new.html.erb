@@ -1,0 +1,143 @@
+<%# app/views/partner_portal/partner_admins/sessions/new.html.erb %>
+
+<section class="login-wrapper d-flex flex-column align-items-center justify-content-center min-vh-100 position-relative">
+  <%# Flash Messages %>
+  <div class="flash-container position-absolute top-0 mt-4 w-100 text-center px-3" style="z-index: 1050;">
+    <%= render "shared/flash" %>
+  </div>
+
+  <%# Login Card %>
+  <div class="login-card shadow-lg border-0 rounded-4 p-4 p-md-5 text-center bg-white">
+    <%# Logo %>
+    <div class="mb-3">
+      <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle" style="width: 64px; height: 64px;">
+        <i class="ri-shield-keyhole-line ri-2x text-primary"></i>
+      </div>
+    </div>
+
+    <%# Title %>
+    <h1 class="h4 fw-bold text-dark mb-1">Partner Portal</h1>
+    <p class="text-muted small mb-4">
+      Sign in to manage your organization and oversee verifications.
+    </p>
+
+    <%# Form %>
+    <%= form_for(resource,
+                 as: resource_name,
+                 url: session_path(resource_name),
+                 html: { class: "w-100", data: { turbo: false } }) do |f| %>
+
+      <div class="mb-3 text-start">
+        <%= f.label :email, "Email", class: "form-label fw-semibold text-dark" %>
+        <%= f.email_field :email,
+              autofocus: true,
+              autocomplete: "email",
+              placeholder: "your@email.com",
+              class: "form-control form-control-lg border rounded-3 shadow-sm" %>
+      </div>
+
+      <div class="mb-3 text-start">
+        <%= f.label :password, "Password", class: "form-label fw-semibold text-dark" %>
+        <%= f.password_field :password,
+              autocomplete: "current-password",
+              placeholder: "Your password",
+              class: "form-control form-control-lg border rounded-3 shadow-sm" %>
+      </div>
+
+      <%= f.submit "Sign In", class: "btn btn-primary btn-lg w-100 rounded-3 fw-semibold py-2 mt-2 shadow-sm" %>
+    <% end %>
+
+    <%# Links %>
+    <div class="text-center mt-4">
+      <%= link_to "Forgot your password?", new_partner_admin_password_path, class: "text-primary small text-decoration-none fw-semibold" %>
+    </div>
+
+    <hr class="my-4">
+
+    <%# Sign Up Link %>
+    <div class="text-center">
+      <p class="text-muted small mb-2">Don't have an account?</p>
+      <%= link_to new_partner_path, class: "btn btn-outline-primary btn-lg w-100 rounded-3 fw-semibold" do %>
+        <i class="ri-user-add-line me-2"></i> Apply
+      <% end %>
+    </div>
+  </div>
+
+  <%# Footer %>
+  <div class="text-center mt-4">
+    <p class="text-white-50 small mb-0">
+      &copy; <%= Time.current.year %> BonID &middot; Haiti's Open Identity Platform
+    </p>
+  </div>
+</section>
+
+<style>
+  .login-wrapper {
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  .login-card {
+    width: 100%;
+    max-width: 420px;
+    background-color: #ffffff;
+    border-radius: 1rem;
+  }
+
+  .bg-primary-subtle {
+    background-color: rgba(4, 50, 140, 0.1) !important;
+  }
+
+  .text-primary {
+    color: #00209F !important;
+  }
+
+  .form-control {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #dee2e6;
+  }
+
+  .form-control:focus {
+    border-color: #00209F;
+    box-shadow: 0 0 0 0.2rem rgba(4, 50, 140, 0.15);
+  }
+
+  .btn-primary {
+    background-color: #00209F;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .btn-primary:hover {
+    background-color: #032B77;
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-primary {
+    color: #00209F;
+    border: 2px solid #00209F;
+    background: transparent;
+    padding: 0.65rem 1.5rem;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #00209F;
+    color: #ffffff;
+    border-color: #00209F;
+  }
+
+  .flash-container .alert {
+    display: inline-block;
+    max-width: 420px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    animation: slideDown 0.4s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

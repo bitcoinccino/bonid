@@ -1,0 +1,49 @@
+<!-- app/views/admin/partners/dashboard.html.erb -->
+<h1><%= t('dashboard.title', partner: @partner_details[:name]) %></h1>
+<p><%= t('dashboard.welcome', email: (curren_admin_user&.email || current_user&.email)) %></p>
+
+
+<h2><%= t('dashboard.partner_details') %></h2>
+<ul>
+  <li><strong><%= t('dashboard.partner_name') %>:</strong> <%= @partner_details[:name] %></li>
+  <li><strong><%= t('dashboard.sector') %>:</strong> <%= @partner_details[:sector] %></li>
+  <li><strong><%= t('dashboard.email') %>:</strong> <%= @partner_details[:email] %></li>
+  <li><strong><%= t('dashboard.phone') %>:</strong> <%= @partner_details[:phone_number] %></li>
+  <li><strong><%= t('dashboard.address') %>:</strong> <%= @partner_details[:address] || t('dashboard.no_address') %></li>
+</ul>
+
+<%= render 'admin/shared/tabs', active: :dashboard %>
+
+<h2><%= t('dashboard.officers') %></h2>
+<% if @officers.any? %>
+  <table>
+    <thead>
+      <tr>
+        <th><%= t('dashboard.officer_email') %></th>
+        <th><%= t('dashboard.name') %></th>
+        <th><%= t('dashboard.actions') %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @officers.each do |officer| %>
+        <tr>
+          <td><%= officer.email %></td>
+          <td><%= "#{officer.first_name} #{officer.last_name}" %></td>
+          <td>
+            <%= link_to t('dashboard.view'), admin_partner_officer_path(partner_id: @partner.id, id: officer.id) %>
+            <%= link_to t('dashboard.edit'), edit_admin_partner_officer_path(partner_id: @partner.id, id: officer.id) %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <%= paginate @officers %>
+<% else %>
+  <p><%= t('dashboard.no_officers') %></p>
+<% end %>
+
+<!-- ... (rest of the view for incident_reports, tickets, assignments, pending_invites unchanged) -->%>
+
+<%= link_to t('dashboard.manage_officers'), admin_partner_officers_path(partner_id: @partner.id) %>
+<%= link_to t('dashboard.manage_assignments'), admin_partner_assignments_path(partner_id: @partner.id) %>
+<%= link_to t('dashboard.incident_reports'), admin_incident_reports_path %>

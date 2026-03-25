@@ -1,42 +1,99 @@
+
 <% if local_assigns[:submission].present? %>
   <% submission = local_assigns[:submission] %>
+  <div class="card qr-code-status shadow-sm rounded-4 border-0 mt-3 animate__animated animate__fadeIn" role="region" aria-live="polite">
+    <div class="card-body p-4">
 
-  <% if submission.reset_request_status == "pending" %>
-    <div class="alert alert-info rounded-3 small mt-3">
-      <i class="ri-refresh-line me-2"></i>
-      You requested a BonID reissue. Your previous QR code is now invalid, and a new one will appear here once approved.
-    </div>
+      <%# === Pending Reissue === %>
+      <% if submission.reset_request_status == "pending" %>
+        <div class="d-flex align-items-center mb-3">
+          <div class="icon-circle bg-haitian-blue text-white me-3">
+            <i class="ri-refresh-line fs-5"></i>
+          </div>
+          <div>
+            <h6 class="mb-1 fw-bold text-uppercase small text-haitian-blue">Pending Reissue</h6>
+            <p class="mb-0 small text-muted">
+              You requested a BonID reissue. Your previous QR code is now invalid. A new one will appear here once approved.
+            </p>
+          </div>
+        </div>
 
-  <% elsif submission.status == "invalidated" || (submission.expires_at.present? && Time.current >= submission.expires_at) %>
-    <div class="alert alert-danger rounded-3 small mt-3">
-      <i class="ri-shield-cross-line me-2"></i>
-      Your previous BonID QR code is <strong>no longer valid</strong>. Please wait for your new BonID to be approved.
-    </div>
+      <%# === Invalid or Expired QR === %>
+      <% elsif submission.status == "revoked" || submission.qr_expired? %>
+        <div class="d-flex align-items-center mb-3">
+          <div class="icon-circle bg-danger text-white me-3">
+            <i class="ri-shield-cross-line fs-5"></i>
+          </div>
+          <div>
+            <h6 class="mb-1 fw-bold text-uppercase small text-danger">Invalid QR Code</h6>
+            <p class="mb-0 small text-muted">
+              Your BonID QR code is <strong>no longer valid</strong>. Please wait for a new approval to receive your updated BonID.
+            </p>
+          </div>
+        </div>
 
-  <% elsif submission.approved? && submission.expires_at&.future? %>
-    <div class="alert alert-primary rounded-3 small mt-3">
-      <i class="ri-shield-check-line me-2"></i>
-      This BonID QR code is <strong>active and valid</strong>. Only share it with trusted authorities like <strong>PNH, banks, schools, or border officials</strong>.
-    </div>
+      <%# === Approved and Active === %>
+      <% elsif submission.status == "approved" && submission.expires_at&.future? %>
+        <div class="d-flex align-items-center mb-3">
+          <div class="icon-circle bg-haitian-blue text-white me-3">
+            <i class="ri-shield-check-line fs-5"></i>
+          </div>
+          <div>
+            <h6 class="mb-1 fw-bold text-uppercase small text-haitian-blue">Active QR Code</h6>
+            <p class="mb-0 small text-muted">
+              This BonID QR code is <strong>active and valid</strong>. Only share it with trusted authorities like <strong>PNH, banks, schools, or border officials</strong>.
+            </p>
+          </div>
+        </div>
 
-  <% elsif submission.pending? || submission.status.nil? %>
-    <div class="alert alert-warning rounded-3 small mt-3">
-      <i class="ri-time-line me-2"></i>
-      <strong>Your BonID QR code will appear here once your submission is approved.</strong><br>
-      Please check back later or monitor your email for updates.
-    </div>
+      <%# === Awaiting Approval === %>
+      <% elsif submission.pending? || submission.status.nil? %>
+        <div class="d-flex align-items-center mb-3">
+          <div class="icon-circle bg-warning text-white me-3">
+            <i class="ri-time-line fs-5"></i>
+          </div>
+          <div>
+            <h6 class="mb-1 fw-bold text-uppercase small text-warning">Awaiting Approval</h6>
+            <p class="mb-0 small text-muted">
+              <strong>Your BonID QR code will appear here once your submission is approved.</strong><br>
+              Please check back later or monitor your email for updates.
+            </p>
+          </div>
+        </div>
 
-  <% else %>
-    <div class="alert alert-secondary rounded-3 small mt-3">
-      <i class="ri-information-line me-2"></i>
-      We’re unable to determine the status of your BonID QR code at this time.
+      <%# === Unknown State === %>
+      <% else %>
+        <div class="d-flex align-items-center mb-3">
+          <div class="icon-circle bg-secondary text-white me-3">
+            <i class="ri-information-line fs-5"></i>
+          </div>
+          <div>
+            <h6 class="mb-1 fw-bold text-uppercase small text-secondary">Status Unknown</h6>
+            <p class="mb-0 small text-muted">
+              We’re unable to determine the status of your BonID QR code at this time.<br>
+              Current status: <%= submission.status || "N/A" %>.
+            </p>
+          </div>
+        </div>
+      <% end %>
+
     </div>
-  <% end %>
+  </div>
 
 <% else %>
-  <div class="alert alert-warning rounded-3 small mt-3">
-    <i class="ri-time-line me-2"></i>
-    No BonID QR code has been generated yet. Submit a verification to get started.
+  <div class="card qr-code-status shadow-sm rounded-4 border-0 mt-3 animate__animated animate__fadeIn" role="region" aria-live="polite">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center mb-3">
+        <div class="icon-circle bg-warning text-white me-3">
+          <i class="ri-time-line fs-5"></i>
+        </div>
+        <div>
+          <h6 class="mb-1 fw-bold text-uppercase small text-warning">No QR Code Generated</h6>
+          <p class="mb-0 small text-muted">
+            No BonID QR code has been generated yet. Submit your identity for verification to get started.
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 <% end %>
-

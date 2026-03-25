@@ -1,0 +1,86 @@
+<%# app/views/officers/officer_mailer/invitation_email.html.erb %>
+<%# Uses unified mailer layout (IDPol product) %>
+
+<%# Gold Banner %>
+<div style="background: #FFD700; height: 6px; border-radius: 3px; margin-bottom: 20px;"></div>
+
+<%# Department Logo %>
+<div style="text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+  <% if attachments["pnh.png"] %>
+    <%= image_tag attachments["pnh.png"].url, style: "height: 72px; width: auto;", alt: @partner.name %>
+  <% end %>
+  <div style="margin-top: 10px; font-size: 14px; font-weight: 700; color: #092C73; text-transform: uppercase; letter-spacing: 1px;">
+    <%= @partner.name %>
+  </div>
+  <div style="font-size: 11px; color: #6C757D; margin-top: 2px;">Pòtay Ofisye — IDPol by Verifyem</div>
+</div>
+
+<%# Greeting — use rank + last name %>
+<p style="color: #1a1a2e; font-size: 15px; line-height: 1.7; margin-bottom: 16px;">
+  Bonjou <strong><%= @rank_title %></strong>,
+</p>
+
+<%# Context & Purpose %>
+<p style="color: #4a5568; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+  Ou envite pou rejwenn pòtay ofisye <strong><%= @partner.name %></strong> sou platfòm IDPol.
+  Pòtay sa a pèmèt ou jere rapò ensidan, verifikasyon idantite, ak dosye ka nan yon sistèm sekirize.
+</p>
+
+<%# Authorization Notice %>
+<div style="background: #FFFDF5; border-left: 4px solid #FFD700; border-radius: 4px; padding: 14px 18px; margin-bottom: 24px;">
+  <div style="font-size: 11px; font-weight: 700; color: #B8860B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Kominikasyon Ofisyèl</div>
+  <p style="font-size: 13px; color: #4a5568; line-height: 1.6; margin: 0;">
+    Envitasyon sa a otorize pa administrasyon <strong><%= @partner.name %></strong>.
+    Si ou gen kesyon, tanpri kontakte sipò teknik depatman ou.
+  </p>
+</div>
+
+<%# Accept Button %>
+<div style="text-align: center; margin: 32px 0;">
+  <a href="<%= @invitation_link %>"
+     style="display: inline-block; background: #092C73; color: #FFFFFF; padding: 16px 48px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px; font-family: Arial, sans-serif;">
+    Aksepte Envitasyon
+  </a>
+</div>
+
+<%# Security Details %>
+<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; font-size: 13px;">
+    <tr>
+      <td style="padding: 6px 0; color: #6C757D; width: 40%;">Lyen ekspire nan:</td>
+      <td style="padding: 6px 0; color: #1a1a2e; font-weight: 600;">48 èdtan</td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #6C757D; border-top: 1px solid #edf2f7;">Depatman:</td>
+      <td style="padding: 6px 0; color: #1a1a2e; font-weight: 600; border-top: 1px solid #edf2f7;"><%= @partner.name %></td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #6C757D; border-top: 1px solid #edf2f7;">Grad:</td>
+      <td style="padding: 6px 0; color: #1a1a2e; font-weight: 600; border-top: 1px solid #edf2f7;"><%= @officer.rank.presence || "—" %></td>
+    </tr>
+    <tr>
+      <td style="padding: 6px 0; color: #6C757D; border-top: 1px solid #edf2f7;">Imèl:</td>
+      <td style="padding: 6px 0; color: #1a1a2e; font-weight: 600; border-top: 1px solid #edf2f7;"><%= @officer.email %></td>
+    </tr>
+  </table>
+</div>
+
+<%# Fallback Link %>
+<p style="font-size: 12px; color: #6C757D; line-height: 1.6; margin-bottom: 8px;">
+  Si bouton an pa mache, kopye epi kole lyen sa a nan navigatè ou:
+</p>
+<p style="word-break: break-all; font-size: 12px; color: #092C73; font-family: 'Courier New', monospace; background: #f1f5f9; padding: 10px; border-radius: 6px;">
+  <%= @invitation_link %>
+</p>
+
+<%# Gold Bottom Banner %>
+<div style="background: #FFD700; height: 4px; border-radius: 2px; margin: 24px 0 16px;"></div>
+
+<%# Privacy Notice %>
+<div style="padding-top: 0;">
+  <p style="font-size: 11px; color: #94A3B8; line-height: 1.6; margin: 0;">
+    <strong>Avètisman Sekirite:</strong> Pa pataje lyen envitasyon sa a ak pèsonn.
+    Tout enfòmasyon nan pòtay sa a konfidansyèl epi pwoteje pa lwa sou pwoteksyon done.
+    Si ou pa t mande envitasyon sa a, tanpri inyore imèl sa a epi kontakte sipò teknik.
+  </p>
+</div>

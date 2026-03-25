@@ -1,0 +1,118 @@
+<!-- Partner Onboarding Fields Only -->
+<div class="p-4"
+     style="font-family: 'Inter', 'Montserrat', sans-serif; border-color: #0033A0;"
+     data-controller="unit">
+
+  <!-- Basic Info -->
+  <%= f.input :name, label: "Organization Name", required: true,
+        input_html: {
+          placeholder: "e.g. Unibank S.A.",
+          class: "form-control rounded-3 py-3 fw-semibold",
+          style: "border-color: #0033A0; font-weight: normal;"
+        },
+        wrapper_html: { class: "mb-3" } %>
+
+  <%= f.input :email, label: "Email Address", required: true,
+        input_html: {
+          placeholder: "e.g. contact@unibank.ht",
+          class: "form-control rounded-3 py-3 fw-semibold",
+          style: "border-color: #0033A0; font-weight: normal;"
+        },
+        wrapper_html: { class: "mb-3" } %>
+
+  <%= f.input :phone_number, label: "Phone Number (Optional)",
+        input_html: {
+          placeholder: "+509 3456 7890",
+          class: "form-control rounded-3 py-3 fw-semibold",
+          style: "border-color: #0033A0; font-weight: normal;"
+        },
+        wrapper_html: { class: "mb-3" } %>
+
+  <%# === SECTOR SELECTION === %>
+  <% sector_groups = begin
+    (PartnerSectorConstants.grouped_sector_options.presence || [])
+      .compact
+      .reject { |g| g.blank? || g.first.blank? || g.last.blank? }
+      .map { |group, options| [group, Array(options).compact.reject(&:blank?)] }
+  rescue => e
+    Rails.logger.warn("⚠️ Sector options unavailable: #{e.class} - #{e.message}")
+    []
+  end %>
+
+  <div class="mb-3">
+    <%= f.label :sector, "Sector", class: "form-label fw-semibold text-primary" %>
+    <%= f.select :sector,
+          grouped_options_for_select(sector_groups, f.object.sector),
+          { prompt: "Select a sector" },
+          class: "form-select rounded-3 py-3 fw-semibold",
+          style: "border-color: #0033A0; font-weight: normal;",
+          data: { controller: "unit", action: "change->unit#toggleUnitFields" } %>
+    <small class="text-muted d-block mt-1">
+      Choose the main industry your organization belongs to.
+    </small>
+  </div>
+
+  <%# === LAW ENFORCEMENT UNIT FIELDS === %>
+  <% unit_options = begin
+    OfficerConstants::UNIT_OPTIONS.presence || {}
+  rescue NameError => e
+    Rails.logger.warn("Unit options unavailable: #{e.message}")
+    {}
+  end %>
+  <% paired_unit_types = unit_options.keys.compact_blank.map { |key| [key, key] } %>
+  <% show_unit_fields = f.object.sector == "law_enforcement" %>
+
+  <div id="law-enforcement-fields"
+       class="<%= show_unit_fields ? 'mt-4 p-4 rounded-4 border border-primary-subtle bg-light-subtle' : 'd-none' %>"
+       data-unit-target="wrapper">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="h6 fw-bold text-primary mb-0">
+        <i class="ri-police-car-line me-1"></i> Law Enforcement Details
+      </h3>
+      <span class="badge bg-primary-subtle text-primary fw-semibold">Law Enforcement Only</span>
+    </div>
+
+    <%= f.input :unit_type,
+          collection: paired_unit_types,
+          prompt: "Select Unit Type",
+          label: "Unit Type",
+          input_html: {
+            class: "form-select rounded-3 py-3 fw-semibold",
+            style: "border-color: #0033A0; font-weight: normal;",
+            data: { unit_target: "type", action: "change->unit#updateUnitNames" }
+          },
+          wrapper_html: { class: "mb-3" } %>
+
+    <%= f.input :unit_name,
+          as: :select,
+          collection: (show_unit_fields ? unit_options[paired_unit_types.first&.first] || [] : []),
+          prompt: "Select Unit Name",
+          label: "Unit Name",
+          input_html: {
+            class: "form-select rounded-3 py-3 fw-semibold",
+            style: "border-color: #0033A0; font-weight: normal;",
+            data: { unit_target: "name" }
+          },
+          wrapper_html: { class: "mb-3" } %>
+  </div>
+
+  <!-- Submit Button -->
+  <div class="text-center mt-5">
+    <%= f.button :submit, "Submit Application",
+          class: "btn btn-primary px-5 py-3 rounded-pill fw-bold shadow-sm",
+          style: "background-color: #0033A0; border-color: #0033A0;" %>
+    <p class="text-muted small mt-2 mb-0">
+      By submitting, you agree to BonID’s verification and partnership terms.
+    </p>
+  </div>
+</div>
+
+<!-- JSON constants for Stimulus -->
+<%= tag.script id: "unit-options-json", type: "application/json" do %>
+  <% begin %>
+    <%= OfficerConstants::UNIT_OPTIONS.to_json.html_safe %>
+  <% rescue NameError %>
+    <%= {}.to_json.html_safe %>
+  <% end %>
+<% end %>

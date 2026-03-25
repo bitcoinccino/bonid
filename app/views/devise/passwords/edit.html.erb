@@ -1,261 +1,144 @@
+<!-- app/views/users/passwords/edit.html.erb -->
+<%= render "shared/navbar" %>
 
-<div class="container d-flex align-items-center justify-content-center min-vh-100 bg-light">
-  <div class="form-container p-4 rounded-3 bg-white shadow-sm w-100" style="max-width: 500px;">
-    <!-- Header with Logo/Icon -->
-    <div class="text-center mb-4">
-      <div class="d-flex justify-content-center align-items-center mb-3">
-        <%# <%= image_tag "bonid_logo.png", alt: "BonID Logo", class: "logo-img me-2", style: "max-width: 40px;" if asset_exists?("bonid_logo.png") %> 
-        <h2 class="h4 text-primary mb-0"><i class="ri-edit-line me-2"></i> Edit Profile</h2>
-      </div>
-      <p class="text-muted small">Update your BonID account details</p>
-    </div>
+<section class="container d-flex justify-content-center align-items-center min-vh-100" style="max-width: 480px;">
+ <div class="p-4 p-md-5 rounded-4 shadow-sm position-relative military-card bg-white w-100 text-center"
+ data-controller="form-handler"
+ data-action="turbo:submit-start->form-handler#submitStart turbo:submit-end->form-handler#submitEnd turbo:submit-error->form-handler#submitError">
 
-    <!-- Error Messages -->
-    <% if resource.errors.any? %>
-      <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
-        <ul class="mb-0">
-          <% resource.errors.full_messages.each do |msg| %>
-            <li><%= msg %></li>
-          <% end %>
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    <% end %>
+ <%= render "shared/flash" %>
 
-    <!-- Edit Profile Form -->
-   <%= form_for(resource, as: resource_name, url: send("#{resource_name}_password_path"), html: { method: :put }) do |f| %>
+ <!-- PNH Logo -->
+ <% if @partner&.logo&.attached? %>
+ <%= image_tag @partner.logo.variant(resize_to_limit: [80, 80]).processed,
+ class: "rounded-circle border shadow-sm mx-auto mb-3",
+ alt: "Police National D'Haiti logo",
+ style: "object-fit: cover; width: 80px; height: 80px;" %>
+ <% else %>
+ <div class="rounded-circle bg-light d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+ <i class="ri-image-line text-muted" style="font-size: 2rem;"></i>
+ </div>
+ <% end %>
 
-      <div class="mb-3">
-        <%= f.label :email, class: "form-label fw-bold" %>
-        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "form-control rounded-3", placeholder: "Enter your email", aria_label: "Email address" %>
-      </div>
+ <!-- Title -->
+ <h4 class="text-uppercase fw-bold text-primary font-heading mb-1" style="letter-spacing: 1px;">
+ Reset Your Password
+ </h4>
+ <p class="text-muted small font-body mb-4">
+ Create a new password to regain access to your PNH partner admin account.
+ </p>
 
-      <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-        <div class="alert alert-info rounded-3 mb-3">
-          Currently waiting confirmation for: <%= resource.unconfirmed_email %>
-        </div>
-      <% end %>
+ <!-- Form -->
+ <%= form_for(resource, as: resource_name, url: user_password_path, html: { method: :put, class: "reset-password-form", data: { turbo: "true" } }) do |f| %>
+ <%= f.hidden_field :reset_password_token %>
 
-      <div class="mb-3">
-        <%= f.label :password, class: "form-label fw-bold" %>
-        <%= f.password_field :password, autocomplete: "new-password", class: "form-control rounded-3", placeholder: "New password (leave blank to keep current)", aria_label: "New password" %>
-        <small class="text-muted form-text">Leave blank if you don’t want to change it</small>
-      </div>
+ <% if resource.errors.any? %>
+ <div class="alert alert-dismissible fade show alert-danger mb-3" data-form-handler-target="error">
+ <%= resource.errors.full_messages.to_sentence %>
+ </div>
+ <% end %>
 
-      <div class="mb-3">
-        <%= f.label :password_confirmation, class: "form-label fw-bold" %>
-        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control rounded-3", placeholder: "Confirm new password", aria_label: "Password confirmation" %>
-      </div>
+ <div class="mb-3 text-start">
+ <%= f.label :password, "New Password", class: "form-label small fw-semibold text-uppercase font-body" %>
+ <%= f.password_field :password, autocomplete: "new-password", class: "form-control rounded-2", placeholder: "Create a password (8+ characters)", required: true, minlength: 8, autofocus: true %>
+ </div>
 
-      <div class="mb-3">
-        <%= f.label :current_password, class: "form-label fw-bold" %>
-        <%= f.password_field :current_password, autocomplete: "current-password", class: "form-control rounded-3", placeholder: "Current password", aria_label: "Current password" %>
-        <small class="text-muted form-text">We need your current password to confirm your changes</small>
-      </div>
+ <div class="mb-3 text-start">
+ <%= f.label :password_confirmation, "Confirm Password", class: "form-label small fw-semibold text-uppercase font-body" %>
+ <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "form-control rounded-2", placeholder: "Repeat password", required: true, minlength: 8 %>
+ </div>
 
-      <div class="d-grid">
-        <%= f.submit "Update", class: "btn btn-primary fw-semibold rounded-3", data: { bs_toggle: "tooltip", bs_placement: "top" }, title: "Update your profile", aria_label: "Update profile" %>
-      </div>
-    <% end %>
+ <div class="d-grid mb-3">
+ <button type="submit"
+ class="btn btn-primary rounded-2 fw-bold text-uppercase d-flex justify-content-center align-items-center gap-2"
+ data-form-handler-target="submit">
+ <span data-form-handler-target="submitText">Update Password</span>
+ <div class="spinner-border spinner-border-sm d-none"
+ role="status"
+ aria-hidden="true"
+ data-form-handler-target="spinner"
+ style="animation-duration: 1.5s;"></div>
+ </button>
+ </div>
+ <% end %>
 
-    <%# <!-- Cancel Account -->
-    <div class="mt-5">
-      <h3 class="text-primary mb-3">Cancel My Account</h3>
-      <p class="text-muted small mb-3">Unhappy? You can cancel your account below.</p>
-      <%= button_to "Cancel My Account",
-                    registration_path(resource_name),
-                    data: { confirm: "Are you sure?", turbo_confirm: "Are you sure?" },
-                    method: :delete,
-                    class: "btn btn-danger fw-semibold rounded-3 w-100",
-                    data: { bs_toggle: "tooltip", bs_placement: "top" },
-                    title: "Permanently delete your account",
-                    aria_label: "Cancel account" %>
-    <%# </div> %> 
-
-    <!-- Back Link -->
-    <div class="text-center mt-4">
-      <%= link_to "Back to login", new_officer_session_path, class: "text-muted small" %>
-    </div>
-  </div>
-</div>
+ <%= link_to "Back to login", new_user_session_path, class: "text-muted small text-decoration-none" %>
+ </div>
+</section>
 
 <%= render "shared/footer" %>
 
-<!-- Custom CSS -->
 <style>
-  /* Reset browser defaults */
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  /* Sticky footer and full-width styles */
-  body {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-  }
-
-  .main-content {
-    flex: 1 0 auto;
-    width: 100%;
-  }
-
-  .navbar, footer {
-    flex-shrink: 0;
-    width: 100vw;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .container-fluid {
-    padding-left: 15px !important;
-    padding-right: 15px !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    width: 100% !important;
-  }
-
-  /* BonID Styles */
-  .bg-light {
-    background-color: #F8F9FA !important; /* Light Gray */
-  }
-
-  .form-container {
-    max-width: 500px;
-    background-color: #FFFFFF; /* Pure White */
-    border: 1px solid #F8F9FA; /* Light Gray */
-    transition: all 0.3s ease;
-  }
-
-  .text-primary {
-    color: #3366CC !important; /* Ocean Blue */
-  }
-
-  .text-muted {
-    color: #6C757D !important; /* Mid Gray */
-  }
-
-  .btn-primary {
-    background-color: #00209F; /* Haitian Blue */
-    border-color: #00209F;
-    color: #FFFFFF;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-  }
-
-  .btn-primary:hover {
-    background-color: #001A80; /* Darker Haitian Blue */
-    border-color: #001A80;
-  }
-
-  .btn-danger {
-    background-color: #E63946; /* Coral Red */
-    border-color: #E63946;
-    color: #FFFFFF;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-  }
-
-  .btn-danger:hover {
-    background-color: #D32F3B; /* Darker Coral Red */
-    border-color: #D32F3B;
-  }
-
-  .form-control {
-    border: 1px solid #6C757D; /* Mid Gray */
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-    padding: 0.5rem 0.75rem;
-  }
-
-  .form-control:focus {
-    border-color: #3366CC; /* Ocean Blue */
-    box-shadow: 0 0 0 0.2rem rgba(51, 102, 204, 0.25);
-  }
-
-  .form-text {
-    font-size: 0.8rem;
-    color: #6C757D; /* Mid Gray */
-  }
-
-  .alert-danger {
-    background-color: rgba(230, 57, 70, 0.1); /* Coral Red with opacity */
-    border-color: #E63946; /* Coral Red */
-    color: #343A40; /* Dark Gray */
-    border  border-radius: 0.5rem;
-  }
-
-  .alert-danger .btn-close {
-    filter: invert(0.5);
-  }
-
-  .alert-info {
-    background-color: rgba(51, 102, 204, 0.1); /* Ocean Blue with opacity */
-    border-color: #3366CC; /* Ocean Blue */
-    color: #343A40; /* Dark Gray */
-    border-radius: 0.5rem;
-  }
-
-  .text-decoration-none:hover {
-    color: #00209F !important; /* Haitian Blue */
-  }
-
-  .logo-img {
-    max-width: 40px;
-    height: auto;
-  }
-
-  /* Tooltip styles */
-  .tooltip-inner {
-    background-color: #343A40; /* Dark Gray */
-    color: #FFFFFF;
-    border-radius: 0.5rem;
-  }
-
-  .tooltip.bs-tooltip-top .tooltip-arrow::before {
-    border-top-color: #343A40;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 576px) {
-    .form-container {
-      padding: 1rem;
-      max-width: 400px;
-    }
-    .btn {
-      font-size: 0.85rem;
-      padding: 0.4rem 0.8rem;
-    }
-    .form-control {
-      font-size: 0.85rem;
-      padding: 0.4rem 0.6rem;
-    }
-    h2 {
-      font-size: 1.5rem;
-    }
-    h3 {
-      font-size: 1.25rem;
-    }
-    .logo-img {
-      max-width: 32px;
-    }
-    .text-muted {
-      font-size: 0.8rem;
-    }
-  }
+ html, body {
+ margin: 0;
+ padding: 0;
+ width: 100%;
+ overflow-x: hidden;
+ font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+ }
+ body {
+ display: flex;
+ flex-direction: column;
+ min-height: 100vh;
+ background-color: #f8fafc;
+ }
+ .military-card {
+ border-radius: 12px;
+ box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+ transition: transform 0.2s ease;
+ position: relative;
+ z-index: 1;
+ }
+ .military-card:hover {
+ transform: translateY(-5px);
+ }
+ .camo-overlay {
+ position: absolute;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ background: linear-gradient(135deg, rgba(30, 64, 175, 0.1) 25%, rgba(5, 150, 105, 0.1) 75%);
+ opacity: 0.3;
+ z-index: 0;
+ pointer-events: none;
+ }
+ :root {
+ --haitian-blue: #1e40af;
+ --palm-green: #059669;
+ --golden-yellow: #f59e0b;
+ --mid-gray: #6b7280;
+ }
+ .text-primary { color: var(--haitian-blue) !important; }
+ .alert-danger { background-color: #fee2e2; border-color: #fecaca; color: #991b1b; }
+ .form-control {
+ border: 1px solid #d1d5db;
+ border-radius: 8px;
+ padding: 10px 12px;
+ font-size: 0.9rem;
+ transition: border-color 0.2s ease;
+ z-index: 1;
+ }
+ .form-control:focus {
+ border-color: var(--haitian-blue);
+ box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+ }
+ .btn-primary {
+ background: var(--haitian-blue);
+ border-color: var(--haitian-blue);
+ }
+ .btn-primary:hover {
+ background: #1e3a8a;
+ border-color: #1e3a8a;
+ }
+ .reset-password-form { position: relative; z-index: 1; }
 </style>
 
-<!-- JavaScript for Tooltips -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-      new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-  });
+ document.addEventListener("DOMContentLoaded", function () {
+ const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+ tooltipTriggerList.forEach(function (el) {
+ new bootstrap.Tooltip(el);
+ });
+ });
 </script>

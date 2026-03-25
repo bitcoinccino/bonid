@@ -1,0 +1,84 @@
+<%# app/views/public/visitors/_certificate_card.html.erb %>
+<%# IMPORTANT: cert is passed in from success.html.erb %>
+
+<div class="credential-card position-relative">
+
+  <!-- WATERMARK -->
+  <div class="credential-watermark" aria-hidden="true">
+    <%= cert.masked_bonid %>
+  </div>
+
+  <!-- TOP BAND -->
+  <div class="credential-top-band">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-global-line" style="font-size: 1.2rem; opacity: 0.9;"></i>
+        <span class="credential-brand">BonTouris ID</span>
+      </div>
+      <div class="credential-verified-badge">
+        <i class="ri-shield-check-line me-1"></i> Verified
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="credential-body">
+
+    <!-- PHOTO + NAME -->
+    <div class="text-center mb-4">
+      <% if visitor.selfie.attached? %>
+        <div class="credential-photo-ring">
+          <%= image_tag url_for(visitor.selfie),
+                class: "credential-photo",
+                alt: cert.full_name %>
+        </div>
+      <% end %>
+
+      <h2 class="credential-name"><%= cert.full_name %></h2>
+
+      <div class="credential-bonid-pill">
+        <%= cert.masked_bonid %>
+      </div>
+    </div>
+
+    <!-- DETAILS -->
+    <div class="credential-details">
+      <div class="credential-detail-row">
+        <div class="credential-detail">
+          <span class="credential-detail__label">Nationality</span>
+          <span class="credential-detail__value"><%= cert.nationality %></span>
+        </div>
+        <div class="credential-detail">
+          <span class="credential-detail__label">Purpose</span>
+          <span class="credential-detail__value"><%= cert.purpose %></span>
+        </div>
+      </div>
+      <div class="credential-detail-row">
+        <div class="credential-detail">
+          <span class="credential-detail__label">Entry Date</span>
+          <span class="credential-detail__value"><%= cert.entry_date %></span>
+        </div>
+        <div class="credential-detail credential-detail--highlight">
+          <span class="credential-detail__label">Valid Until</span>
+          <span class="credential-detail__value"><%= cert.valid_until %></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="credential-card-footer">
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="ri-shield-star-line" style="opacity: 0.8;"></i>
+        <span class="small">Officially issued</span>
+      </div>
+      <div class="credential-verification-code">
+        <span class="credential-verification-code__label">Code</span>
+        <span class="credential-verification-code__value"><%= cert.verification_code %></span>
+      </div>
+    </div>
+  </div>
+
+</div>

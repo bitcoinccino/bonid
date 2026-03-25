@@ -1,0 +1,172 @@
+<%# Crime Location Analytics - Map & Location-Based Analysis %>
+<%# Unified Law Enforcement Styling %>
+
+<div class="container-fluid py-4">
+  <%# Header with gradient %>
+  <div class="card border-0 analytics-header mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center">
+        <%= link_to officers_analytics_path, class: "btn btn-sm analytics-back-btn me-3" do %>
+          <i class="ri-arrow-left-line"></i>
+        <% end %>
+        <div class="text-white">
+          <h2 class="mb-1 analytics-header-title"><i class="ri-map-2-line me-2"></i>Crime Location</h2>
+          <p class="mb-0 analytics-header-subtitle">Geographic analysis of incident locations</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Summary Stats %>
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-blue mx-auto mb-2">
+            <i class="ri-map-pin-line fs-4 text-law-blue"></i>
+          </div>
+          <div class="stat-value text-law-blue"><%= @location_stats[:total] %></div>
+          <div class="stat-label">Mapped Locations</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-red mx-auto mb-2">
+            <i class="ri-alert-line fs-4 text-law-red"></i>
+          </div>
+          <div class="stat-value text-law-red"><%= @crime_locations.count { |c| c[:severity] >= 4 } %></div>
+          <div class="stat-label">High Severity</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card analytics-stat-card h-100">
+        <div class="card-body text-center py-3">
+          <div class="stat-icon stat-icon-green mx-auto mb-2">
+            <i class="ri-pie-chart-line fs-4 text-law-green"></i>
+          </div>
+          <div class="stat-value text-law-green"><%= @location_stats[:by_type].keys.count %></div>
+          <div class="stat-label">Crime Types</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# Map Placeholder %>
+    <div class="col-lg-8">
+      <div class="card analytics-chart-card">
+        <div class="card-header">
+          <h5><i class="ri-map-2-line me-2 text-law-blue"></i>Crime Map</h5>
+        </div>
+        <div class="card-body">
+          <div id="crimeMap" class="d-flex align-items-center justify-content-center rounded" style="height: 400px; background: var(--law-gray-light, #F8F8F8);">
+            <% if @crime_locations.any? %>
+              <div class="analytics-empty-state">
+                <i class="ri-map-2-line"></i>
+                <p>Interactive map integration required</p>
+                <small class="text-muted"><%= @crime_locations.count %> locations ready for mapping</small>
+              </div>
+            <% else %>
+              <div class="analytics-empty-state">
+                <i class="ri-map-pin-line"></i>
+                <p>No location data available</p>
+              </div>
+            <% end %>
+          </div>
+          <div class="mt-3">
+            <div class="d-flex justify-content-center gap-4">
+              <span><span class="badge bg-success">&nbsp;&nbsp;</span> Low (1-2)</span>
+              <span><span class="badge bg-warning">&nbsp;&nbsp;</span> Medium (3)</span>
+              <span><span class="badge bg-danger">&nbsp;&nbsp;</span> High (4-5)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Top Crime Types at Locations %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-pie-chart-line me-2 text-law-red"></i>Top Crimes by Location</h5>
+        </div>
+        <div class="card-body">
+          <% if @location_stats[:by_type].any? %>
+            <% max_count = @location_stats[:by_type].first&.last || 1 %>
+            <% @location_stats[:by_type].each do |crime, count| %>
+              <div class="mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                  <span class="small fw-semibold"><%= crime.to_s.titleize %></span>
+                  <span class="small text-muted"><%= count %></span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-law-red" style="width: <%= (count.to_f / max_count * 100).round %>%"></div>
+                </div>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-pie-chart-line"></i>
+              <p>No crime type data</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Location List %>
+    <div class="col-12">
+      <div class="card analytics-chart-card">
+        <div class="card-header">
+          <h5><i class="ri-list-check me-2 text-law-blue"></i>Recent Incident Locations</h5>
+        </div>
+        <div class="card-body p-0">
+          <% if @crime_locations.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover analytics-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Crime Type</th>
+                    <th>Severity</th>
+                    <th>Coordinates</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @crime_locations.first(15).each do |loc| %>
+                    <tr>
+                      <td><%= loc[:occurred_at] %></td>
+                      <td><%= loc[:crime_type]&.titleize %></td>
+                      <td>
+                        <% severity_class = case loc[:severity]
+                           when 1..2 then "bg-success"
+                           when 3 then "bg-warning text-dark"
+                           when 4..5 then "bg-danger"
+                           else "bg-secondary"
+                           end %>
+                        <span class="badge <%= severity_class %>"><%= loc[:severity] %></span>
+                      </td>
+                      <td>
+                        <small class="text-muted">
+                          <%= loc[:lat]&.round(4) %>, <%= loc[:lng]&.round(4) %>
+                        </small>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state py-4">
+              <i class="ri-map-pin-line"></i>
+              <p>No location data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

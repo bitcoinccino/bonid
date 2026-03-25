@@ -1,0 +1,30 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+  <div class="card shadow-lg border-0 rounded-4 p-4 text-center" style="max-width: 480px;">
+    <div class="mx-auto mb-3 rounded-circle d-flex justify-content-center align-items-center"
+         style="width: 80px; height: 80px; background-color: <%= color %>;">
+      <i class="<%= icon %> ri-2x text-white"></i>
+    </div>
+
+    <h4 class="fw-bold mb-1"><%= title %></h4>
+    <p class="text-muted small mb-4">Set your password to activate your account.</p>
+
+    <%= form_for(resource, as: resource_name, url: invitation_path(resource_name), html: { method: :put }) do |f| %>
+      <%= f.hidden_field :invitation_token %>
+      <div class="mb-3 text-start">
+        <%= f.label :password, "Password", class: "form-label fw-semibold" %>
+        <%= f.password_field :password, autocomplete: "new-password",
+              class: "form-control rounded-pill" %>
+      </div>
+      <div class="mb-4 text-start">
+        <%= f.label :password_confirmation, "Confirm Password", class: "form-label fw-semibold" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password",
+              class: "form-control rounded-pill" %>
+      </div>
+      <%= f.submit "Activate Account",
+            class: "btn w-100 text-white fw-semibold rounded-pill",
+            style: "background-color: #{color};" %>
+    <% end %>
+
+    <p class="text-muted small mt-4">© <%= Time.current.year %> BonID – Digital Identity Platform of Haiti</p>
+  </div>
+</div>

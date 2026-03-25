@@ -1,0 +1,192 @@
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-header bg-light fw-semibold">
+    💼 Employment Record — <%= record.data["company"] || "Unknown Employer" %>
+  </div>
+
+  <div class="card-body">
+    <!-- === Job Information === -->
+    <h6 class="fw-semibold text-secondary mb-2">
+      🏢 Job Information
+    </h6>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <strong>Position:</strong><br>
+        <%= record.data["position"] %>
+      </div>
+      <div class="col-md-4 mb-3">
+        <strong>Department:</strong><br>
+        <%= record.data["department"] %>
+      </div>
+      <div class="col-md-4 mb-3">
+        <strong>Employment Type:</strong><br>
+        <%= record.data["employment_type"] %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <strong>Contract Type:</strong><br>
+        <%= record.data["contract_type"] %>
+      </div>
+      <div class="col-md-6 mb-3">
+        <strong>Work Location:</strong><br>
+        <%= record.data["work_location"] %>
+      </div>
+    </div>
+
+    <% if record.data["job_description"].present? %>
+      <p class="small text-muted mt-n2 mb-3">
+        <strong>Description:</strong> <%= record.data["job_description"] %>
+      </p>
+    <% end %>
+
+    <hr>
+
+    <!-- === Contract Duration === -->
+    <h6 class="fw-semibold text-secondary mb-2">
+      📅 Contract Duration
+    </h6>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <strong>Start Date:</strong><br>
+        <%= record.data["start_date"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>End Date:</strong><br>
+        <%= record.data["end_date"].presence || "—" %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Probation:</strong><br>
+        <%= [record.data["probation_start_date"], record.data["probation_end_date"]].compact.join(" → ") %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Contract Duration:</strong><br>
+        <%= record.data["contract_duration"] %>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- === Compensation === -->
+    <h6 class="fw-semibold text-secondary mb-2">
+      💰 Compensation
+    </h6>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <strong>Salary (HTG):</strong><br>
+        <%= number_with_delimiter(record.data["salary_htg"].to_i, delimiter: ",") %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Frequency:</strong><br>
+        <%= record.data["payment_frequency"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Annual Bonus (HTG):</strong><br>
+        <%= number_with_delimiter(record.data["annual_bonus_htg"].to_i, delimiter: ",") %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Benefits:</strong><br>
+        <%= record.data["benefits"] %>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- === Compliance === -->
+    <h6 class="fw-semibold text-secondary mb-2">
+      ⚖️ Compliance & Registration
+    </h6>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <strong>CNSS Number:</strong><br>
+        <%= record.data["cnss_number"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>CNSS Registration Date:</strong><br>
+        <%= record.data["cnss_registration_date"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Work Book #:</strong><br>
+        <%= record.data["work_book_number"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Collective Agreement:</strong><br>
+        <%= record.data["collective_agreement_reference"] %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <strong>Termination Conditions:</strong><br>
+        <%= record.data["termination_conditions"] %>
+      </div>
+      <div class="col-md-4 mb-3">
+        <strong>Notice Period (months):</strong><br>
+        <%= record.data["notice_period_months"] %>
+      </div>
+      <div class="col-md-4 mb-3">
+        <strong>Disciplinary Records:</strong><br>
+        <%= record.data["disciplinary_records"] %>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- === Employee Identification === -->
+    <h6 class="fw-semibold text-secondary mb-2">
+      🪪 Employee Identification
+    </h6>
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <strong>National ID:</strong><br>
+        <%= record.data["employee_national_id"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Nationality:</strong><br>
+        <%= record.data["nationality"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Date of Birth:</strong><br>
+        <%= record.data["date_of_birth"] %>
+      </div>
+      <div class="col-md-3 mb-3">
+        <strong>Gender:</strong><br>
+        <%= record.data["gender"] %>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <strong>Marital Status:</strong><br>
+        <%= record.data["marital_status"] %>
+      </div>
+      <div class="col-md-6 mb-3">
+        <strong>Residence Address:</strong><br>
+        <%= record.data["residence_address"] %>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- === HR & Supervisors === -->
+    <h6 class="fw-semibold text-secondary mb-2">
+      🧑‍💼 HR & Supervisor Contacts
+    </h6>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <strong>Supervisor:</strong><br>
+        <%= record.data["supervisor_name"] %><br>
+        <span class="text-muted small"><%= record.data["supervisor_contact"] %></span>
+      </div>
+      <div class="col-md-4 mb-3">
+        <strong>HR Contact:</strong><br>
+        <%= record.data["hr_contact"] %><br>
+        <span class="text-muted small"><%= record.data["hr_email"] %></span>
+      </div>
+      <div class="col-md-4 mb-3">
+        <strong>HR Phone:</strong><br>
+        <%= record.data["hr_phone"] %>
+      </div>
+    </div>
+  </div>
+</div>

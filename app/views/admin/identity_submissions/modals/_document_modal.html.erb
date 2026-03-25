@@ -1,33 +1,94 @@
-<!-- app/views/admin/identity_submissions/modals/_document_modal.html.erb -->
-<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content rounded-3 bg-white">
-      <div class="modal-header gradient-bg text-white">
-        <h5 class="modal-title" id="<%= modal_id %>Label"><%= label %></h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<%# Ensure file is always available if passed from parent partial %>
+<% file ||= local_assigns[:file] %>
+
+<div class="modal fade"
+     id="<%= modal_id %>"
+     tabindex="-1"
+     aria-labelledby="<%= modal_id %>Label"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+
+      <!-- Header -->
+      <div class="modal-header text-white py-3"
+           style="background: linear-gradient(90deg, #04328C, #1A73E8);">
+        <h5 class="modal-title fw-semibold d-flex align-items-center gap-2" id="<%= modal_id %>Label">
+          <i class="ri-file-line fs-5"></i>
+          <%= label %>
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
       </div>
-      <div class="modal-body text-center">
-        <% file = submission.send(field) %>
-        <% if file.content_type.starts_with?('image/') %>
-          <%= image_tag file.variant(resize_to_limit: [700, 500]), class: "img-fluid rounded shadow-sm", alt: "#{label} document" %>
-        <% elsif file.content_type == 'application/pdf' %>
-          <iframe src="<%= url_for(file) %>" width="100%" height="600px" style="border: none;"></iframe>
+
+      <!-- Body -->
+      <div class="modal-body bg-white text-center p-4">
+        <% if file.blank? %>
+          <p class="text-muted mb-0">No document uploaded.</p>
+
+        <% elsif file.content_type&.in?(%w[image/jpeg image/png image/gif image/webp]) && file.variable? %>
+          <!-- Transformable image preview: improved resolution & responsiveness -->
+          <%= image_tag file.variant(resize_to_limit: [1200, 1200]),
+                        class: "img-fluid rounded-3 shadow-lg border mx-auto d-block",
+                        alt: "#{label} document",
+                        style: "max-height: 75vh; object-fit: contain; image-rendering: auto;" %>
+
+        <% elsif file.content_type&.start_with?("image/") %>
+          <!-- Non-transformable image (SVG, etc.) - display directly -->
+          <%= image_tag file,
+                        class: "img-fluid rounded-3 shadow-lg border mx-auto d-block",
+                        alt: "#{label} document",
+                        style: "max-height: 75vh; object-fit: contain;" %>
+
+        <% elsif file.content_type == "application/pdf" %>
+          <!-- PDF Preview -->
+          <iframe src="<%= url_for(file) %>"
+                  class="w-100 border-0 rounded-3 shadow-sm"
+                  style="height: 80vh;"
+                  title="<%= label %> PDF preview"
+                  onerror="this.outerHTML='<p class=\'text-danger\'>Preview unavailable. Please download instead.</p>'"></iframe>
+
         <% else %>
-          <p class="text-muted">Preview not available. Please download the file.</p>
+          <p class="text-muted">Preview not available for this file type. Please download to view.</p>
         <% end %>
       </div>
-      <div class="modal-footer">
-        <%= link_to url_for(file),
-                    class: "btn btn-success rounded-3",
-                    target: "_blank",
-                    download: true,
-                    role: "button",
-                    aria_label: "Download #{label} document",
-                    title: "Download #{label} document" do %>
-          <i class="ri-download-line me-1"></i> Download
-        <% end %>
-        <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal" aria-label="Close modal">Close</button>
+
+      <!-- Footer -->
+      <div class="modal-footer bg-light border-0 d-flex justify-content-between flex-wrap gap-2 px-4 py-3">
+        <small class="text-muted d-flex align-items-center">
+          <i class="ri-information-line me-1"></i>
+          <span>This document was uploaded by the citizen for verification purposes.</span>
+        </small>
+
+        <div class="d-flex gap-2">
+          <% if file.present? %>
+            <% if file.content_type&.start_with?("image/") || file.content_type == "application/pdf" %>
+              <%= link_to url_for(file),
+                          class: "btn btn-primary rounded-pill px-3 d-flex align-items-center gap-1",
+                          target: "_blank",
+                          aria: { label: "Open #{label} in fullscreen" } do %>
+                <i class="ri-fullscreen-line"></i> View Fullscreen
+              <% end %>
+            <% end %>
+
+            <%= link_to url_for(file),
+                        class: "btn btn-success rounded-pill px-3 d-flex align-items-center gap-1",
+                        target: "_blank",
+                        download: true,
+                        aria: { label: "Download #{label} document" } do %>
+              <i class="ri-download-line"></i> Download
+            <% end %>
+          <% end %>
+
+          <button type="button"
+                  class="btn btn-outline-secondary rounded-pill px-3"
+                  data-bs-dismiss="modal">
+            Close
+          </button>
+        </div>
       </div>
+
     </div>
   </div>
 </div>

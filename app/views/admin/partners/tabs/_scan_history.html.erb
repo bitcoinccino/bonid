@@ -1,0 +1,63 @@
+<div class="card rounded-3 shadow-sm border-0 h-100">
+  <div class="card-header bg-light border-0 py-3">
+    <h5 class="h6 fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+      QR Scan History
+    </h5>
+  </div>
+
+  <div class="card-body p-4">
+
+    <% if partner.qr_scan_logs.any? %>
+      <div class="table-responsive rounded-3 shadow-sm overflow-hidden">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light text-uppercase small text-muted">
+            <tr>
+              <th class="ps-4">Scanned At</th>
+              <th>IP Address</th>
+              <th>User Agent</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% partner.qr_scan_logs.order(created_at: :desc).limit(50).each do |log| %>
+              <tr class="small">
+                <td class="ps-4 fw-medium text-dark">
+                  <%= l(log.created_at, format: :short) %>
+                  <span class="text-muted d-block small">
+                    <%= time_ago_in_words(log.created_at) %> ago
+                  </span>
+                </td>
+
+                <td>
+                  <code class="bg-light px-2 py-1 rounded small"><%= log.ip_address %></code>
+                </td>
+
+                <td class="text-muted" style="max-width: 300px;">
+                  <%= truncate(log.user_agent, length: 60) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if partner.qr_scan_logs.count > 50 %>
+        <div class="text-center mt-3">
+          <small class="text-muted">
+            Showing latest 50 scans • Total: <%= partner.qr_scan_logs.count %>
+          </small>
+        </div>
+      <% end %>
+
+    <% else %>
+      <div class="text-center py-5 my-4 bg-light bg-opacity-50 rounded-3">
+        <i class="ri-qr-scan-off-line display-4 text-muted opacity-50 mb-3"></i>
+        <p class="text-muted mb-0">
+          <strong>No QR scans recorded yet</strong><br>
+          <small>This partner’s QR code has not been scanned.</small>
+        </p>
+      </div>
+    <% end %>
+
+  </div>
+</div>

@@ -1,13 +1,121 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <style>
-      /* Email styles need to be inline */
-    </style>
-  </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f4f6fb;
+      font-family: 'Inter', 'Montserrat', Arial, sans-serif;
+      color: #1a1a2e;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background: #f4f6fb; font-family: 'Inter', 'Montserrat', Arial, sans-serif;">
 
-  <body>
-    <%= yield %>
-  </body>
+  <%# ═══════════════════════════════════════════════════════════
+       Product config — set @email_product in your mailer action
+       Defaults to BonID if not set
+  ═══════════════════════════════════════════════════════════ %>
+  <%
+    product = @email_product || "bonid"
+    config = {
+      "verifyem"  => { name: "Verifyem",  monogram: "V",  color: "#00209F", tagline: "Platfòm Idantite Dijital" },
+      "bonid"     => { name: "BonID",     monogram: "B",  color: "#00209F", tagline: "Idantite Dijital Repiblik Dayiti" },
+      "idpol"     => { name: "IDPol",     monogram: "IP", color: "#092C73", tagline: "Sekirite & Enfòsman Lalwa" },
+      "bonvote"   => { name: "BonVote",   monogram: "BV", color: "#1A936F", tagline: "Vòt Dijital Sekirize" },
+      "bontouris" => { name: "BonTouris", monogram: "BT", color: "#EDB95E", tagline: "Verifikasyon Touris" }
+    }[product]
+    brand_color = config[:color]
+    monogram = config[:monogram]
+    product_name = config[:name]
+    tagline = config[:tagline]
+    mono_font_size = monogram.length > 1 ? "14px" : "18px"
+    mono_text_color = product == "bontouris" ? "#1a1a2e" : "#FFFFFF"
+  %>
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: #f4f6fb; padding: 24px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%; border-radius: 0; overflow: hidden;">
+
+          <%# ═══════════ HEADER ═══════════ %>
+          <tr>
+            <td style="background: <%= brand_color %>; padding: 20px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                <tr>
+                  <td style="text-align: left; vertical-align: middle;">
+                    <table cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+                      <tr>
+                        <td style="vertical-align: middle; padding-right: 10px;">
+                          <div style="width: 34px; height: 34px; background: rgba(255,255,255,0.2); border-radius: 50%; text-align: center; line-height: 34px; display: inline-block;">
+                            <span style="color: #FFFFFF; font-family: 'Glock Grotesque', 'Montserrat', sans-serif; font-size: <%= mono_font_size %>; font-weight: 800;"><%= monogram %></span>
+                          </div>
+                        </td>
+                        <td style="vertical-align: middle;">
+                          <span style="color: #FFFFFF; font-family: 'Glock Grotesque', 'Montserrat', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;"><%= product_name %></span>
+                          <span style="display: block; color: rgba(255,255,255,0.5); font-size: 9px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;">by VERIFYEM</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td style="text-align: right; vertical-align: middle;">
+                    <% if @email_badge.present? %>
+                      <span style="color: rgba(255,255,255,0.8); font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 12px;"><%= @email_badge %></span>
+                    <% end %>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <%# ═══════════ ACCENT BAR (optional) ═══════════ %>
+          <% if @email_alert.present? %>
+            <% alert_colors = { "danger" => "#DC3545", "warning" => "#EDB95E", "success" => "#1A936F", "info" => "#00209F" } %>
+            <% alert_bg = alert_colors[@email_alert_type || "info"] || "#00209F" %>
+            <tr>
+              <td style="background: <%= alert_bg %>; padding: 8px 30px; text-align: center;">
+                <span style="color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;"><%= @email_alert %></span>
+              </td>
+            </tr>
+          <% end %>
+
+          <%# ═══════════ BODY ═══════════ %>
+          <tr>
+            <td style="background: #FFFFFF; padding: 30px; font-size: 14px; line-height: 1.7; color: #4a5568;">
+              <%= yield %>
+            </td>
+          </tr>
+
+          <%# ═══════════ FOOTER ═══════════ %>
+          <tr>
+            <td style="background: <%= brand_color %>; padding: 24px 30px; text-align: center;">
+              <div style="margin-bottom: 10px;">
+                <div style="display: inline-block; width: 28px; height: 28px; background: rgba(255,255,255,0.15); border-radius: 50%; text-align: center; line-height: 28px; margin-bottom: 4px;">
+                  <span style="color: #FFFFFF; font-family: 'Glock Grotesque', 'Montserrat', sans-serif; font-size: <%= monogram.length > 1 ? '11px' : '15px' %>; font-weight: 800;"><%= monogram %></span>
+                </div>
+                <div style="color: #FFFFFF; font-family: 'Glock Grotesque', 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: -0.3px;"><%= product_name %></div>
+                <div style="color: rgba(255,255,255,0.5); font-size: 10px; line-height: 1.6;"><%= tagline %></div>
+              </div>
+              <div style="color: rgba(255,255,255,0.6); font-size: 11px; line-height: 1.8;">
+                <a href="https://verifyem.ht" style="color: rgba(255,255,255,0.8); text-decoration: none;">verifyem.ht</a> &middot;
+                <a href="mailto:support@verifyem.ht" style="color: rgba(255,255,255,0.8); text-decoration: none;">support@verifyem.ht</a>
+              </div>
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.12);">
+                <span style="color: rgba(255,255,255,0.35); font-size: 10px;">
+                  &copy; <%= Date.today.year %> Verifyem &middot; Tout dwa rez&egrave;ve
+                </span>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
 </html>

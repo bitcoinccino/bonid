@@ -1,0 +1,103 @@
+<%# app/views/citizens/dashboard/_pending_alerts.html.erb %>
+<%# Urgent alerts shown at the top of the dashboard %>
+
+<%# ── Name Change Reverification Alert (highest priority) ── %>
+<% pending_name_change = current_citizen.name_change_requests.where(status: :approved).order(updated_at: :desc).first %>
+<% has_pending_name_change = false %>
+<% if pending_name_change.present? %>
+  <% has_reissue = current_citizen.identity_submissions.where(submission_type: :reissue).where("created_at > ?", pending_name_change.updated_at).exists? %>
+  <% name_applied = current_citizen.first_name == pending_name_change.new_first_name && current_citizen.last_name == pending_name_change.new_last_name %>
+  <% has_pending_name_change = !has_reissue && !name_applied %>
+  <% if has_pending_name_change %>
+    <div class="dashboard-alert dashboard-alert--warning mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="dashboard-alert-icon">
+          <i class="ri-edit-line"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="fw-bold small">Chanjman Non Apwouve — Reverifikasyon Obligatwa</div>
+          <div class="small opacity-75">
+            Chanjman non ou pou <strong><%= pending_name_change.new_full_name %></strong> apwouve.
+            Upload nouvo CIN/Paspò ou ak nouvo non an epi fè verifikasyon figi pou aplike chanjman an.
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          <%= link_to new_citizens_identity_submission_path(submission_type: "reissue"),
+                      class: "btn btn-sm btn-outline-light rounded-pill px-3" do %>
+            <i class="ri-upload-2-line me-1"></i>Reverifye
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<%# ── BonID Status Alerts (skip if name change reverification is pending) ── %>
+<% unless has_pending_name_change %>
+  <% if @last_submission&.status_pending? %>
+    <div class="dashboard-alert dashboard-alert--info mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="dashboard-alert-icon">
+          <i class="ri-time-line"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="fw-bold small">BonID Verification in Progress</div>
+          <div class="small opacity-75">Submitted <%= time_ago_in_words(@last_submission.created_at) %> ago. We'll notify you by email when your BonID is ready.</div>
+        </div>
+      </div>
+    </div>
+  <% elsif @last_submission&.status_rejected? %>
+    <div class="dashboard-alert dashboard-alert--danger mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="dashboard-alert-icon">
+          <i class="ri-close-circle-line"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="fw-bold small">BonID Submission Rejected</div>
+          <div class="small opacity-75">
+            <%= @last_submission.rejection_reason&.humanize || "Please review and resubmit your documents." %>
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          <%= link_to new_citizens_identity_submission_path(resubmission_from: @last_submission.public_token),
+                      class: "btn btn-sm btn-outline-light rounded-pill px-3" do %>
+            <i class="ri-refresh-line me-1"></i>Resubmit
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<%# ── Pending Transaction Consent Alerts ── %>
+<% if @pending_consents.present? %>
+  <% @pending_consents.each do |consent| %>
+    <% minutes_left = ((consent.expires_at - Time.current) / 60).ceil %>
+    <% urgent = minutes_left <= 5 %>
+    <div class="dashboard-alert <%= urgent ? 'dashboard-alert--danger' : 'dashboard-alert--warning' %> mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="dashboard-alert-icon">
+          <i class="ri-exchange-funds-line"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div class="fw-bold small">
+            <%= consent.partner.name %> — <%= t("transaction_consents.types.#{consent.transaction_type}", default: consent.transaction_type.titleize) %>
+          </div>
+          <div class="small opacity-75">
+            <% if consent.amount.present? && consent.amount > 0 %>
+              <span class="fw-semibold"><%= number_to_currency(consent.amount, unit: consent.currency == "HTG" ? "G " : "$ ", precision: 2) %></span> —
+            <% end %>
+            Check your email for the 6-digit approval code.
+            <span class="fw-semibold"><%= minutes_left %> min remaining</span>
+          </div>
+        </div>
+        <div class="flex-shrink-0">
+          <%= link_to citizens_transaction_consents_path,
+                      class: "btn btn-sm btn-outline-light rounded-pill px-3" do %>
+            <i class="ri-arrow-right-line me-1"></i>View
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>

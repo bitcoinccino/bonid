@@ -1,0 +1,133 @@
+<%# ===============================================================
+  BonID — Citizen Verification Records Index (Production)
+  ---------------------------------------------------------------
+  ✅ Supports record_type, category, visibility filters
+  ✅ Compatible with Turbo modals + remote pagination
+  ✅ Clean Bootstrap 5 + Remix Icons layout
+================================================================ %>
+<%# ===============================================================
+  BonID — Citizen Verification Records Index (Fixed Production)
+  ---------------------------------------------------------------
+  ✅ Create / Edit / View now work
+  ✅ Unified Turbo Frame target: "record_form_frame"
+  ✅ Compatible with dynamic partial loader
+  ✅ Supports filters, pagination, and inline modals
+================================================================ %>
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between flex-wrap gap-3 py-3">
+    <h6 class="mb-0 fw-semibold text-dark d-flex align-items-center">
+      <i class="ri-database-2-line text-primary me-2"></i>
+      My Verification Records
+    </h6>
+
+    <div class="d-flex align-items-center flex-wrap gap-2">
+
+      <!-- 🔍 Unified Filters (keeps params together) -->
+      <%= form_with url: citizens_verification_records_path, method: :get, local: true, class: "d-flex flex-wrap align-items-center gap-2" do %>
+        <!-- Record Type -->
+        <div class="input-group input-group-sm">
+          <%= select_tag :record_type,
+                options_for_select(
+                  [
+                    ["All Types", ""],
+                    ["Education", "education"],
+                    ["Employment", "employment"],
+                    ["Business", "business"],
+                    ["Property", "property"],
+                    ["Health", "health"]
+                  ],
+                  params[:record_type]
+                ),
+                class: "form-select form-select-sm",
+                onchange: "this.form.submit()" %>
+        </div>
+
+        <!-- Category -->
+        <div class="input-group input-group-sm">
+          <%= select_tag :category,
+                options_for_select(
+                  [
+                    ["All Categories", ""],
+                    ["Base", "base"],
+                    ["Land Transactions", "land_transaction"],
+                    ["Registration", "registration"],
+                    ["Patient Record", "patient_record"]
+                  ],
+                  params[:category]
+                ),
+                class: "form-select form-select-sm",
+                onchange: "this.form.submit()" %>
+        </div>
+
+        <!-- Visibility -->
+        <div class="input-group input-group-sm">
+          <%= select_tag :visibility,
+                options_for_select(
+                  [
+                    ["All Visibilities", ""],
+                    ["Private", "private_access"],
+                    ["Partner", "partner_access"],
+                    ["Public", "public_access"]
+                  ],
+                  params[:visibility]
+                ),
+                class: "form-select form-select-sm",
+                onchange: "this.form.submit()" %>
+        </div>
+      <% end %>
+
+      <!-- ➕ Add Record -->
+      <%= link_to new_citizens_verification_record_path,
+                  class: "btn btn-sm btn-primary d-flex align-items-center gap-1",
+                  data: { turbo_frame: "record_form_frame" } do %>
+        <i class="ri-add-line"></i>
+        Add Record
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <%= turbo_frame_tag "records_list" do %>
+      <% if @records.any? %>
+        <%= render partial: "citizens/verification_records/shared/table", locals: { records: @records } %>
+
+        <!-- 🧩 Pagination -->
+        <div class="mt-4 d-flex justify-content-center">
+          <%= paginate @records, theme: "bootstrap4" %>
+        </div>
+      <% else %>
+        <div class="text-center text-muted py-5">
+          <i class="ri-folder-warning-line display-5 mb-2 d-block text-secondary"></i>
+          <p class="mb-1 fw-semibold">No verification records found.</p>
+          <p class="small text-muted mb-3">
+            Click “Add Record” above to create your first verification record.
+          </p>
+        </div>
+      <% end %>
+    <% end %>
+
+    <!-- 🏷️ Legend -->
+    <div class="mt-4 border-top pt-3 small text-muted">
+      <i class="ri-information-line me-1"></i>
+      <span class="me-3">
+        <span class="badge bg-success-subtle text-success border">Verified</span> — Approved by BonID or Partner
+      </span>
+      <span class="me-3">
+        <span class="badge bg-warning-subtle text-warning border">Pending</span> — Under review
+      </span>
+      <span>
+        <span class="badge bg-danger-subtle text-danger border">Rejected</span> — Needs resubmission
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ⚡ Inline Turbo Frame for Form Loader -->
+<div class="mt-4">
+  <%= turbo_frame_tag "record_form_frame" do %>
+    <div class="alert alert-dismissible fade show alert-light text-center small border rounded-3 mb-0">
+      <i class="ri-information-line text-muted me-1"></i>
+      Select “Add Record” or “Edit” to open a record form here.
+    </div>
+  <% end %>
+</div>

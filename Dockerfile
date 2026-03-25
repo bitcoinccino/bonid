@@ -6,7 +6,7 @@ ENV BUNDLER_VERSION=2.5.6 \
     RAILS_ENV=production \
     NODE_ENV=production \
     NODE_OPTIONS=--max-old-space-size=4096 \
-    RUNTIME_DEPS="libvips libpq5" \
+    RUNTIME_DEPS="libvips libpq5 imagemagick" \
     BUILD_DEPS="build-essential libpq-dev libvips-dev git curl libyaml-dev pkg-config libffi-dev node-gyp python-is-python3"
 
 RUN apt-get update -qq && \

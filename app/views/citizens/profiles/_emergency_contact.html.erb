@@ -1,0 +1,153 @@
+<%# Emergency Contact Entry - Shows differently for new vs existing contacts %>
+<% contact = ec_form.object %>
+<% is_new = contact.new_record? %>
+<% has_bonid = contact.bonid.present? %>
+
+<div class="border rounded-3 p-3 mb-4 bg-light position-relative nested-fields"
+     data-new-record="<%= is_new %>">
+
+  <% if is_new %>
+    <%# === NEW CONTACT: Show BonID lookup form === %>
+    <div class="row g-3 align-items-end">
+      <!-- BonID Lookup -->
+      <div class="col-md-6">
+        <%= ec_form.input :bonid,
+              input_html: {
+                placeholder: "Enter BonID to autofill",
+                class: "form-control rounded-3",
+                "data-emergency-contacts-target": "bonid",
+                "data-action": "blur->emergency-contacts#fetchBonid"
+              },
+              label: "BonID (optional)",
+              label_html: { class: "form-label fw-semibold font-body" } %>
+        <small class="text-muted fst-italic">
+          Enter a BonID to auto-fill verified contact info.
+        </small>
+      </div>
+
+      <!-- Name -->
+      <div class="col-md-6">
+        <%= ec_form.input :name,
+              input_html: {
+                class: "form-control rounded-3",
+                placeholder: "Full Name",
+                "data-emergency-contacts-target": "name"
+              },
+              label_html: { class: "form-label fw-semibold font-body" } %>
+      </div>
+
+      <!-- Phone -->
+      <div class="col-md-6">
+        <%= ec_form.input :phone,
+              input_html: {
+                class: "form-control rounded-3",
+                placeholder: "Phone",
+                "data-emergency-contacts-target": "phone"
+              },
+              label_html: { class: "form-label fw-semibold font-body" } %>
+      </div>
+
+      <!-- Email -->
+      <div class="col-md-6">
+        <%= ec_form.input :email,
+              input_html: {
+                class: "form-control rounded-3",
+                placeholder: "Email",
+                "data-emergency-contacts-target": "email"
+              },
+              label_html: { class: "form-label fw-semibold font-body" } %>
+      </div>
+
+      <!-- Relation -->
+      <div class="col-md-6">
+        <%= ec_form.input :relation,
+              collection: EmergencyContact::RELATIONS,
+              prompt: "Select relation",
+              input_html: { class: "form-select rounded-3" },
+              label_html: { class: "form-label fw-semibold font-body" } %>
+      </div>
+
+      <!-- Address -->
+      <div class="col-md-6">
+        <%= ec_form.input :address,
+              input_html: {
+                class: "form-control rounded-3",
+                placeholder: "Address",
+                "data-emergency-contacts-target": "address"
+              },
+              label_html: { class: "form-label fw-semibold font-body" } %>
+      </div>
+
+      <!-- Hidden destroy field -->
+      <%= ec_form.hidden_field :_destroy, class: "destroy-flag" %>
+
+      <!-- Remove Button -->
+      <div class="col-12 text-end mt-2">
+        <button type="button"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                data-action="click->emergency-contacts#remove">
+          <i class="ri-delete-bin-line me-1"></i> Remove
+        </button>
+      </div>
+    </div>
+
+  <% else %>
+    <%# === EXISTING CONTACT: Show clean display with edit option === %>
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-3">
+        <% if contact.bonid_photo %>
+          <%= image_tag contact.bonid_photo, class: "rounded-circle", style: "width: 48px; height: 48px; object-fit: cover;" %>
+        <% else %>
+          <div class="contact-avatar rounded-circle bg-haitian-blue text-white d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+            <% if has_bonid %>
+              <i class="ri-shield-check-fill fs-5"></i>
+            <% else %>
+              <i class="ri-user-line fs-5"></i>
+            <% end %>
+          </div>
+        <% end %>
+        <div>
+          <h6 class="mb-0 fw-bold"><%= contact.name %></h6>
+          <small class="text-muted">
+            <%= contact.relation&.titleize %>
+            <% if has_bonid %>
+              <span class="badge bg-success-subtle text-success ms-2">
+                <i class="ri-verified-badge-fill me-1"></i>Verified BonID
+              </span>
+            <% end %>
+          </small>
+          <div class="mt-1">
+            <% if contact.phone.present? %>
+              <small class="text-muted me-3"><i class="ri-phone-line me-1"></i><%= contact.phone %></small>
+            <% end %>
+            <% if contact.email.present? %>
+              <small class="text-muted"><i class="ri-mail-line me-1"></i><%= contact.email %></small>
+            <% end %>
+          </div>
+          <% if contact.address.present? %>
+            <small class="text-muted d-block mt-1"><i class="ri-map-pin-line me-1"></i><%= contact.address %></small>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <!-- Hidden fields for form submission -->
+        <%= ec_form.hidden_field :id %>
+        <%= ec_form.hidden_field :bonid %>
+        <%= ec_form.hidden_field :name %>
+        <%= ec_form.hidden_field :phone %>
+        <%= ec_form.hidden_field :email %>
+        <%= ec_form.hidden_field :relation %>
+        <%= ec_form.hidden_field :address %>
+        <%= ec_form.hidden_field :_destroy, class: "destroy-flag" %>
+
+        <!-- Remove Button -->
+        <button type="button"
+                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                data-action="click->emergency-contacts#remove">
+          <i class="ri-delete-bin-line me-1"></i> Remove
+        </button>
+      </div>
+    </div>
+  <% end %>
+</div>

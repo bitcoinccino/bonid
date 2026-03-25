@@ -1,0 +1,950 @@
+<%# Developer / API Management — Redesigned %>
+
+<div class="api-dash" data-controller="api-keys">
+
+  <%# ── Page Header ── %>
+  <div class="api-header">
+    <div>
+      <h4 class="api-page-title"><i class="ri-terminal-box-line me-2"></i>Developer &amp; API</h4>
+      <p class="api-page-subtitle">Credentials, consent grants, and request logs</p>
+    </div>
+  </div>
+
+  <%# ── Summary Stats Bar ── %>
+  <div class="api-summary-bar">
+    <div class="summary-stat">
+      <span class="summary-stat-value"><%= @api_stats[:total] %></span>
+      <span class="summary-stat-label">Total Requests</span>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <span class="summary-stat-value summary-stat-value--green"><%= @api_stats[:success_rate] %>%</span>
+      <span class="summary-stat-label">Success Rate</span>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <span class="summary-stat-value"><%= @consent_stats[:active] %></span>
+      <span class="summary-stat-label">Active Tokens</span>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-stat">
+      <span class="summary-stat-value <%= @api_stats[:avg_latency].to_f > 500 ? 'summary-stat-value--orange' : 'summary-stat-value--green' %>"><%= @api_stats[:avg_latency] %>ms</span>
+      <span class="summary-stat-label">Avg. Latency</span>
+    </div>
+  </div>
+
+  <%# ── Flash: New API Key ── %>
+  <% if @new_api_key_token.present? %>
+    <div class="api-alert api-alert--success">
+      <div class="api-alert-icon"><i class="ri-key-2-line"></i></div>
+      <div class="api-alert-body">
+        <strong>API Key Regenerated!</strong> Copy it now — it won't be shown again.
+        <div class="api-alert-key-row">
+          <code id="newApiKey" class="api-secret-block"><%= @new_api_key_token %></code>
+          <button type="button" class="api-copy-btn" onclick="copyToClipboard('newApiKey', this)">
+            <i class="ri-file-copy-line me-1"></i>Copy
+          </button>
+        </div>
+      </div>
+      <button type="button" class="api-alert-close" data-bs-dismiss="alert" aria-label="Close">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+  <% end %>
+
+  <%# ── Flash: Bearer Token ── %>
+  <% if flash[:bearer_token].present? %>
+    <div class="api-alert api-alert--info">
+      <div class="api-alert-icon"><i class="ri-shield-keyhole-line"></i></div>
+      <div class="api-alert-body">
+        <strong>Bearer Token Ready!</strong> Expires in 1 hour.
+        <div class="api-alert-key-row">
+          <code id="bearerToken" class="api-secret-block"><%= flash[:bearer_token] %></code>
+          <button type="button" class="api-copy-btn" onclick="copyToClipboard('bearerToken', this)">
+            <i class="ri-file-copy-line me-1"></i>Copy
+          </button>
+        </div>
+        <div class="api-alert-hint">
+          <code>Authorization: Bearer <%= flash[:bearer_token].to_s.first(12) %>...</code>
+        </div>
+      </div>
+      <button type="button" class="api-alert-close" data-bs-dismiss="alert" aria-label="Close">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+  <% end %>
+
+  <%# ══════════════════════════════════════════════════════════ %>
+  <%# ── 1. CREDENTIALS SECTION (Collapsible) ── %>
+  <%# ══════════════════════════════════════════════════════════ %>
+  <div class="api-card">
+    <div class="api-card-header api-card-header--collapsible"
+         data-action="click->api-keys#toggleSection"
+         data-api-keys-section-param="credentials">
+      <h6 class="api-card-title">
+        <i class="ri-key-2-line me-2"></i>Credentials
+      </h6>
+      <div class="d-flex align-items-center gap-3">
+        <% if @partner.api_key_rotated_at.present? %>
+          <span class="api-meta-badge">
+            <i class="ri-time-line me-1"></i>Rotated <%= time_ago_in_words(@partner.api_key_rotated_at) %> ago
+          </span>
+        <% end %>
+        <i class="ri-arrow-down-s-line api-collapse-icon" data-api-keys-target="collapseIcon" data-section="credentials"></i>
+      </div>
+    </div>
+    <div class="api-card-body" data-api-keys-target="section" data-section="credentials">
+
+      <%# API Key Row %>
+      <div class="credential-row">
+        <div class="credential-info">
+          <span class="credential-label">API Key</span>
+          <div class="credential-value-row">
+            <% if @partner.api_key_digest.present? %>
+              <code class="credential-digest"><%= @partner.api_key_digest.first(10) %>••••••••</code>
+              <button type="button" class="api-copy-inline" onclick="copyToClipboard('apiDigest', this)" title="Copy digest">
+                <i class="ri-file-copy-line"></i>
+              </button>
+              <span id="apiDigest" class="d-none"><%= @partner.api_key_digest.first(10) %></span>
+            <% else %>
+              <span class="credential-empty"><i class="ri-error-warning-line me-1"></i>No API key generated yet</span>
+            <% end %>
+          </div>
+        </div>
+        <div class="credential-actions">
+          <%= button_to partner_portal_api_keys_path,
+                method: :post,
+                class: "api-btn api-btn--danger-outline",
+                form: { data: { turbo_confirm: "Regenerate your API key? The current key will stop working immediately." } } do %>
+            <i class="ri-refresh-line me-1"></i>Regenerate
+          <% end %>
+        </div>
+      </div>
+
+      <div class="credential-divider"></div>
+
+      <%# Endpoint + Auth Header %>
+      <div class="credential-grid">
+        <div class="credential-block">
+          <span class="credential-label">API Endpoint</span>
+          <div class="credential-code-row">
+            <code id="apiEndpoint" class="credential-code">POST <%= request.base_url %>/api/v1/verify_identity</code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('apiEndpoint', this)">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+        <div class="credential-block">
+          <span class="credential-label">Auth Header</span>
+          <div class="credential-code-row">
+            <code id="authHeader" class="credential-code">X-Partner-Api-Key: YOUR_API_KEY</code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('authHeader', this)">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════ %>
+  <%# ── 2. QUICK EXAMPLE (Collapsible + Tabbed) ── %>
+  <%# ══════════════════════════════════════════════════════════ %>
+  <div class="api-card">
+    <div class="api-card-header api-card-header--collapsible"
+         data-action="click->api-keys#toggleSection"
+         data-api-keys-section-param="examples">
+      <h6 class="api-card-title">
+        <i class="ri-code-s-slash-line me-2"></i>Quick Example
+      </h6>
+      <i class="ri-arrow-down-s-line api-collapse-icon" data-api-keys-target="collapseIcon" data-section="examples"></i>
+    </div>
+    <div class="api-card-body api-card-body--dark" data-api-keys-target="section" data-section="examples">
+
+      <%# Language Tabs %>
+      <div class="code-tabs">
+        <button type="button" class="code-tab active" data-action="click->api-keys#switchCodeTab" data-lang="curl">cURL</button>
+        <button type="button" class="code-tab" data-action="click->api-keys#switchCodeTab" data-lang="python">Python</button>
+        <button type="button" class="code-tab" data-action="click->api-keys#switchCodeTab" data-lang="node">Node.js</button>
+      </div>
+
+      <div class="code-panel-wrap">
+        <%# cURL %>
+        <pre class="code-panel active" style="display:block;" data-api-keys-target="codePanel" data-lang="curl"><code id="exCurl">curl -X GET "<%= request.base_url %>/api/v1/identity/BONID_HERE" \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json"</code></pre>
+
+        <%# Python %>
+        <pre class="code-panel" style="display:none;" data-api-keys-target="codePanel" data-lang="python"><code id="exPython">import requests
+
+url = "<%= request.base_url %>/api/v1/identity/BONID_HERE"
+headers = {
+    "X-Partner-Api-Key": "YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+response = requests.get(url, headers=headers)
+print(response.json())</code></pre>
+
+        <%# Node.js %>
+        <pre class="code-panel" style="display:none;" data-api-keys-target="codePanel" data-lang="node"><code id="exNode">const response = await fetch(
+  "<%= request.base_url %>/api/v1/identity/BONID_HERE",
+  {
+    headers: {
+      "X-Partner-Api-Key": "YOUR_API_KEY",
+      "Content-Type": "application/json"
+    }
+  }
+);
+
+const data = await response.json();
+console.log(data);</code></pre>
+      </div>
+
+      <div class="code-copy-row">
+        <button type="button" class="api-copy-btn api-copy-btn--dark" data-action="click->api-keys#copyActiveExample">
+          <i class="ri-file-copy-line me-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════ %>
+  <%# ── 3. CITIZENS WHO GRANTED ACCESS ── %>
+  <%# ══════════════════════════════════════════════════════════ %>
+  <div class="api-card">
+    <div class="api-card-header">
+      <h6 class="api-card-title">
+        <i class="ri-shield-user-line me-2"></i>Citizens Who Granted Access
+      </h6>
+      <div class="d-flex align-items-center gap-2">
+        <span class="api-stat-pill api-stat-pill--green"><%= @consent_stats[:active] %> Active</span>
+        <span class="api-stat-pill api-stat-pill--amber"><%= @consent_stats[:pending] %> Pending</span>
+        <span class="api-stat-pill api-stat-pill--gray"><%= @consent_stats[:total] %> Total</span>
+      </div>
+    </div>
+    <div class="api-card-body api-card-body--table">
+      <% if @consent_grants&.any? %>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Citizen</th>
+                <th>BonID</th>
+                <th>Scopes</th>
+                <th>Status</th>
+                <th>Granted</th>
+                <th>Expires</th>
+                <th>Token</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @consent_grants.each do |grant| %>
+                <% citizen = grant.citizen %>
+                <tr>
+                  <%# Citizen avatar + name %>
+                  <td>
+                    <% if citizen.present? %>
+                      <div class="citizen-cell">
+                        <div class="citizen-avatar">
+                          <% if citizen.identity_submissions.approved.last&.photo&.attached? %>
+                            <%= image_tag citizen.identity_submissions.approved.last.photo.variant(resize_to_limit: [32, 32]),
+                                          class: "citizen-avatar-img" %>
+                          <% else %>
+                            <span class="citizen-avatar-initials">
+                              <%= citizen.full_name&.split&.map(&:first)&.first(2)&.join&.upcase || "?" %>
+                            </span>
+                          <% end %>
+                        </div>
+                        <div class="citizen-info">
+                          <span class="citizen-name"><%= citizen.full_name %></span>
+                          <span class="citizen-email"><%= mask_email(citizen.email) %></span>
+                        </div>
+                      </div>
+                    <% else %>
+                      <span class="table-muted">Unknown</span>
+                    <% end %>
+                  </td>
+
+                  <%# BonID (truncated) %>
+                  <td>
+                    <% submission = citizen&.identity_submissions&.approved&.last %>
+                    <% if submission&.bonid.present? %>
+                      <code class="bonid-code" title="<%= submission.bonid %>"><%= mask_bonid(submission.bonid) %></code>
+                    <% else %>
+                      <span class="table-badge table-badge--amber">Not Verified</span>
+                    <% end %>
+                  </td>
+
+                  <%# Scopes as tags %>
+                  <td>
+                    <div class="scope-tags">
+                      <% Array(grant.granted_scopes).each do |scope| %>
+                        <span class="scope-tag scope-tag--<%= scope.to_s.downcase %>"><%= scope %></span>
+                      <% end %>
+                    </div>
+                  </td>
+
+                  <%# Status pill %>
+                  <td>
+                    <% case grant.status
+                       when "approved" %>
+                      <% if grant.expires_at && grant.expires_at > Time.current %>
+                        <span class="table-badge table-badge--green">Active</span>
+                      <% else %>
+                        <span class="table-badge table-badge--gray">Expired</span>
+                      <% end %>
+                    <% when "pending" %>
+                      <span class="table-badge table-badge--amber">Pending</span>
+                    <% when "revoked" %>
+                      <span class="table-badge table-badge--red">Revoked</span>
+                    <% else %>
+                      <span class="table-badge table-badge--gray"><%= grant.status %></span>
+                    <% end %>
+                  </td>
+
+                  <%# Granted %>
+                  <td class="table-muted">
+                    <%= grant.granted_at&.strftime("%b %d, %Y") || grant.created_at.strftime("%b %d, %Y") %>
+                  </td>
+
+                  <%# Expires %>
+                  <td>
+                    <% if grant.expires_at.present? %>
+                      <% if grant.expires_at > Time.current %>
+                        <span class="table-muted"><%= grant.expires_at.strftime("%b %d, %Y") %></span>
+                      <% else %>
+                        <span class="table-muted table-muted--red">Expired</span>
+                      <% end %>
+                    <% else %>
+                      <span class="table-muted">—</span>
+                    <% end %>
+                  </td>
+
+                  <%# Token action %>
+                  <td>
+                    <% grant_active = grant.status == "approved" && grant.expires_at.present? && grant.expires_at > Time.current %>
+                    <% if grant_active %>
+                      <%= button_to generate_token_partner_portal_api_keys_path(grant_id: grant.id),
+                            method: :post,
+                            class: "api-btn api-btn--sm" do %>
+                        <i class="ri-key-line me-1"></i>Token
+                      <% end %>
+                    <% else %>
+                      <span class="table-muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if @consent_grants.total_pages > 1 %>
+          <div class="api-table-footer">
+            <span class="table-muted">Page <%= @consent_grants.current_page %> of <%= @consent_grants.total_pages %></span>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="api-empty">
+          <i class="ri-shield-user-line"></i>
+          <p class="api-empty-title">No citizens have granted access yet</p>
+          <p class="api-empty-desc">When citizens approve your access request, they will appear here.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════════ %>
+  <%# ── 4. RECENT API REQUESTS ── %>
+  <%# ══════════════════════════════════════════════════════════ %>
+  <div class="api-card">
+    <div class="api-card-header">
+      <h6 class="api-card-title">
+        <i class="ri-search-eye-line me-2"></i>Recent API Requests
+      </h6>
+      <span class="api-stat-pill api-stat-pill--gray"><%= @recent_lookups&.count || 0 %> recent</span>
+    </div>
+    <div class="api-card-body api-card-body--table">
+      <% if @recent_lookups&.any? %>
+        <div class="api-table-wrap">
+          <table class="api-table">
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Citizen</th>
+                <th>IP Address</th>
+                <th>Status</th>
+                <th>Latency</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @recent_lookups.each do |lookup| %>
+                <tr>
+                  <%# Endpoint — humanized %>
+                  <td>
+                    <code class="endpoint-code"><%= humanize_api_endpoint(lookup.endpoint) %></code>
+                  </td>
+
+                  <%# Citizen %>
+                  <td>
+                    <% if lookup.user.present? %>
+                      <div class="citizen-cell">
+                        <div class="citizen-avatar citizen-avatar--sm">
+                          <% if lookup.user.identity_submissions.approved.last&.photo&.attached? %>
+                            <%= image_tag lookup.user.identity_submissions.approved.last.photo.variant(resize_to_limit: [28, 28]),
+                                          class: "citizen-avatar-img" %>
+                          <% else %>
+                            <span class="citizen-avatar-initials citizen-avatar-initials--sm">
+                              <%= lookup.user.full_name&.split&.map(&:first)&.first(2)&.join&.upcase || "?" %>
+                            </span>
+                          <% end %>
+                        </div>
+                        <div class="citizen-info">
+                          <span class="citizen-name"><%= lookup.user.full_name %></span>
+                          <% if lookup.user.identity_submissions.approved.last&.bonid.present? %>
+                            <code class="bonid-code bonid-code--sm"><%= mask_bonid(lookup.user.identity_submissions.approved.last.bonid) %></code>
+                          <% end %>
+                        </div>
+                      </div>
+                    <% else %>
+                      <span class="table-muted">—</span>
+                    <% end %>
+                  </td>
+
+                  <%# IP Address (truncated for IPv6) %>
+                  <td>
+                    <% ip = lookup.ip_address.to_s %>
+                    <% if ip.length > 20 %>
+                      <span class="ip-truncated" title="<%= ip %>"><%= ip.first(18) %>…</span>
+                    <% else %>
+                      <span class="ip-display"><%= ip %></span>
+                    <% end %>
+                  </td>
+
+                  <%# Status %>
+                  <td>
+                    <% if lookup.success %>
+                      <span class="table-badge table-badge--green">Success</span>
+                    <% else %>
+                      <span class="table-badge table-badge--red">Failed</span>
+                    <% end %>
+                  </td>
+
+                  <%# Latency with color indicator %>
+                  <td>
+                    <% if lookup.duration_ms.present? %>
+                      <% latency_class = if lookup.duration_ms < 200
+                                           "latency--fast"
+                                         elsif lookup.duration_ms < 1000
+                                           "latency--normal"
+                                         else
+                                           "latency--slow"
+                                         end %>
+                      <span class="latency-value <%= latency_class %>">
+                        <span class="latency-dot"></span><%= lookup.duration_ms.round(1) %>ms
+                      </span>
+                    <% else %>
+                      <span class="table-muted">—</span>
+                    <% end %>
+                  </td>
+
+                  <%# Date %>
+                  <td class="table-muted">
+                    <%= lookup.created_at.strftime("%b %d, %H:%M") %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="api-empty">
+          <i class="ri-search-eye-line"></i>
+          <p class="api-empty-title">No API requests yet</p>
+          <p class="api-empty-desc">Use your API key to verify citizen identities — each request will appear here.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── STYLES ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<style>
+  .api-dash { max-width: 100%; }
+
+  /* ── Header ── */
+  .api-header {
+    margin-bottom: 20px;
+  }
+  .api-page-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 1.3rem; color: #0F172A;
+    margin: 0;
+    display: flex; align-items: center;
+  }
+  .api-page-title i { color: #00209F; font-size: 1.15rem; }
+  .api-page-subtitle {
+    font-size: 0.8rem; color: #64748B; margin: 4px 0 0;
+  }
+
+  /* ── Summary Stats Bar ── */
+  .api-summary-bar {
+    display: flex; align-items: center;
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 14px 24px;
+    margin-bottom: 20px;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .summary-stat {
+    display: flex; flex-direction: column;
+  }
+  .summary-stat-value {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 1.25rem; color: #0F172A;
+    line-height: 1.2;
+  }
+  .summary-stat-value--green { color: #059669; }
+  .summary-stat-value--orange { color: #D97706; }
+  .summary-stat-label {
+    font-size: 0.68rem; color: #94A3B8; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .summary-divider {
+    width: 1px; height: 32px;
+    background: #E2E8F0;
+    flex-shrink: 0;
+  }
+
+  /* ── Alert Banners ── */
+  .api-alert {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    position: relative;
+    border: 1px solid #E2E8F0;
+  }
+  .api-alert--success { background: #F0FDF4; border-color: rgba(5,150,105,0.2); }
+  .api-alert--info { background: #EFF6FF; border-color: rgba(0,32,159,0.15); }
+  .api-alert-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 1rem;
+  }
+  .api-alert--success .api-alert-icon { background: #059669; color: #FFF; }
+  .api-alert--info .api-alert-icon { background: #00209F; color: #FFF; }
+  .api-alert-body { flex: 1; font-size: 0.82rem; color: #334155; }
+  .api-alert-body strong { color: #0F172A; }
+  .api-alert-key-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px; flex-wrap: wrap;
+  }
+  .api-secret-block {
+    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+    font-size: 0.78rem;
+    background: #1E293B; color: #E2E8F0;
+    padding: 8px 14px; border-radius: 8px;
+    word-break: break-all; user-select: all;
+  }
+  .api-alert-hint {
+    margin-top: 6px; font-size: 0.72rem; color: #64748B;
+  }
+  .api-alert-hint code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: #334155;
+  }
+  .api-alert-close {
+    position: absolute; top: 12px; right: 12px;
+    background: none; border: none; cursor: pointer;
+    color: #94A3B8; font-size: 1.1rem; padding: 0;
+  }
+  .api-alert-close:hover { color: #475569; }
+
+  /* ── Generic Card ── */
+  .api-card {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .api-card-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid #F1F5F9;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+  }
+  .api-card-header--collapsible { cursor: pointer; user-select: none; }
+  .api-card-header--collapsible:hover { background: #FAFBFC; }
+  .api-card-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.82rem; font-weight: 700; color: #0F172A;
+    margin: 0; display: flex; align-items: center;
+  }
+  .api-card-title i { color: #64748B; font-size: 0.95rem; }
+  .api-card-body { padding: 20px; }
+  .api-card-body--table { padding: 0; }
+  .api-card-body--dark {
+    background: #1E293B;
+    padding: 0;
+  }
+
+  .api-collapse-icon {
+    font-size: 1.1rem; color: #94A3B8;
+    transition: transform 0.2s;
+  }
+  .api-collapse-icon.collapsed { transform: rotate(-90deg); }
+
+  .api-meta-badge {
+    font-size: 0.68rem; font-weight: 500; color: #64748B;
+    display: inline-flex; align-items: center;
+  }
+
+  /* ── Credentials ── */
+  .credential-row {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 14px;
+  }
+  .credential-info { flex: 1; min-width: 0; }
+  .credential-label {
+    display: block;
+    font-size: 0.68rem; font-weight: 600; color: #94A3B8;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .credential-value-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .credential-digest {
+    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+    font-size: 0.92rem; font-weight: 500; color: #0F172A;
+    letter-spacing: 0.5px;
+  }
+  .credential-empty {
+    font-size: 0.82rem; color: #94A3B8;
+  }
+  .credential-actions { flex-shrink: 0; }
+  .credential-divider {
+    height: 1px; background: #F1F5F9;
+    margin: 18px 0;
+  }
+  .credential-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .credential-block {}
+  .credential-code-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .credential-code {
+    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+    font-size: 0.76rem; color: #334155;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    flex: 1;
+    word-break: break-all;
+  }
+  .api-copy-inline {
+    background: none; border: none; cursor: pointer;
+    color: #94A3B8; font-size: 0.9rem; padding: 4px;
+    border-radius: 4px; transition: color 0.15s;
+    flex-shrink: 0;
+  }
+  .api-copy-inline:hover { color: #00209F; }
+
+  /* ── Code Tabs ── */
+  .code-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid #334155;
+    padding: 0 20px;
+  }
+  .code-tab {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 600;
+    color: #94A3B8;
+    background: none; border: none;
+    padding: 10px 16px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .code-tab:hover { color: #E2E8F0; }
+  .code-tab.active {
+    color: #38BDF8; border-bottom-color: #38BDF8;
+  }
+
+  .code-panel-wrap { position: relative; }
+  .code-panel {
+    display: none;
+    margin: 0;
+    padding: 16px 20px;
+    overflow-x: auto;
+  }
+  .code-panel.active { display: block; }
+  .code-panel code {
+    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+    font-size: 0.78rem; color: #E2E8F0;
+    line-height: 1.7;
+  }
+
+  .code-copy-row {
+    padding: 8px 20px 12px;
+    display: flex; justify-content: flex-end;
+  }
+
+  /* ── Buttons ── */
+  .api-btn {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.78rem;
+    padding: 8px 16px; border-radius: 8px;
+    cursor: pointer; display: inline-flex;
+    align-items: center; border: none;
+    transition: all 0.15s;
+  }
+  .api-btn--sm {
+    font-size: 0.7rem; padding: 5px 10px; border-radius: 6px;
+    background: #00209F; color: #FFF; border: none;
+  }
+  .api-btn--sm:hover { background: #001A7A; }
+  .api-btn--danger-outline {
+    background: transparent; color: #DC2626;
+    border: 1px solid #DC2626;
+  }
+  .api-btn--danger-outline:hover {
+    background: #FEF2F2;
+  }
+
+  .api-copy-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 600;
+    padding: 6px 12px; border-radius: 6px;
+    cursor: pointer; display: inline-flex;
+    align-items: center; border: none;
+    background: #059669; color: #FFF;
+    transition: background 0.15s;
+  }
+  .api-copy-btn:hover { background: #047857; }
+  .api-copy-btn--dark {
+    background: #334155; color: #E2E8F0;
+  }
+  .api-copy-btn--dark:hover { background: #475569; }
+
+  /* ── Stat Pills ── */
+  .api-stat-pill {
+    font-size: 0.65rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+  }
+  .api-stat-pill--green { background: #ECFDF5; color: #059669; }
+  .api-stat-pill--amber { background: #FFFBEB; color: #D97706; }
+  .api-stat-pill--gray { background: #F1F5F9; color: #64748B; }
+
+  /* ── Table ── */
+  .api-table-wrap { overflow-x: auto; }
+  .api-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .api-table thead th {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.68rem; font-weight: 700; color: #64748B;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 10px 16px;
+    background: #FAFBFC;
+    border-bottom: 1px solid #E2E8F0;
+    white-space: nowrap;
+  }
+  .api-table tbody tr {
+    border-bottom: 1px solid #F8FAFC;
+    transition: background 0.1s;
+  }
+  .api-table tbody tr:last-child { border-bottom: none; }
+  .api-table tbody tr:hover { background: #FAFBFD; }
+  .api-table tbody td {
+    padding: 14px 16px;
+    vertical-align: middle;
+  }
+  .api-table-footer {
+    padding: 10px 16px;
+    border-top: 1px solid #F1F5F9;
+    text-align: center;
+  }
+
+  .table-muted { font-size: 0.75rem; color: #94A3B8; }
+  .table-muted--red { color: #DC2626; }
+
+  /* ── Table Badges ── */
+  .table-badge {
+    font-size: 0.65rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+    white-space: nowrap;
+  }
+  .table-badge--green { background: #059669; color: #FFF; }
+  .table-badge--red { background: #DC2626; color: #FFF; }
+  .table-badge--amber { background: #D97706; color: #FFF; }
+  .table-badge--gray { background: #94A3B8; color: #FFF; }
+
+  /* ── Citizen Cell ── */
+  .citizen-cell {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .citizen-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .citizen-avatar--sm { width: 28px; height: 28px; }
+  .citizen-avatar-img {
+    width: 100%; height: 100%;
+    object-fit: cover; border-radius: 50%;
+  }
+  .citizen-avatar-initials {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(0,32,159,0.08); color: #00209F;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.62rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .citizen-avatar-initials--sm {
+    width: 28px; height: 28px; font-size: 0.58rem;
+  }
+  .citizen-info { min-width: 0; }
+  .citizen-name {
+    font-size: 0.78rem; font-weight: 600; color: #1E293B;
+    display: block; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .citizen-email {
+    font-size: 0.68rem; color: #94A3B8;
+    display: block;
+  }
+
+  /* ── BonID Code ── */
+  .bonid-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; font-weight: 500;
+    color: #00209F;
+    cursor: default;
+  }
+  .bonid-code--sm { font-size: 0.65rem; }
+
+  /* ── Scope Tags ── */
+  .scope-tags {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .scope-tag {
+    font-size: 0.62rem; font-weight: 600;
+    padding: 2px 8px; border-radius: 4px;
+    display: inline-flex; align-items: center;
+    background: #F1F5F9; color: #475569;
+    border: 1px solid #E2E8F0;
+  }
+  .scope-tag--email { background: #EFF6FF; color: #1D4ED8; border-color: rgba(29,78,216,0.12); }
+  .scope-tag--phone { background: #F0FDF4; color: #059669; border-color: rgba(5,150,105,0.12); }
+  .scope-tag--address { background: #FFF7ED; color: #C2410C; border-color: rgba(194,65,12,0.12); }
+  .scope-tag--name { background: #FAF5FF; color: #7C3AED; border-color: rgba(124,58,237,0.12); }
+  .scope-tag--dob { background: #FEF2F2; color: #B91C1C; border-color: rgba(185,28,28,0.12); }
+  .scope-tag--photo { background: #ECFEFF; color: #0891B2; border-color: rgba(8,145,178,0.12); }
+  .scope-tag--identity { background: #FFFBEB; color: #92400E; border-color: rgba(146,64,14,0.12); }
+
+  /* ── Endpoint Code ── */
+  .endpoint-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: #334155;
+    background: #F8FAFC;
+    padding: 2px 8px; border-radius: 4px;
+  }
+
+  /* ── IP Display ── */
+  .ip-truncated, .ip-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; color: #94A3B8;
+  }
+
+  /* ── Latency ── */
+  .latency-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .latency-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .latency--fast { color: #059669; }
+  .latency--fast .latency-dot { background: #059669; }
+  .latency--normal { color: #0F172A; }
+  .latency--normal .latency-dot { background: #D97706; }
+  .latency--slow { color: #DC2626; }
+  .latency--slow .latency-dot { background: #DC2626; }
+
+  /* ── Empty States ── */
+  .api-empty {
+    text-align: center; padding: 40px 20px;
+  }
+  .api-empty i {
+    font-size: 2.5rem; color: #E2E8F0; display: block;
+    margin-bottom: 12px;
+  }
+  .api-empty-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.88rem; font-weight: 600; color: #475569;
+    margin: 0 0 4px;
+  }
+  .api-empty-desc {
+    font-size: 0.78rem; color: #94A3B8; margin: 0;
+  }
+
+  /* ── Collapsed section ── */
+  [data-api-keys-target="section"].collapsed {
+    display: none;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 767.98px) {
+    .api-summary-bar {
+      gap: 16px; padding: 12px 16px;
+    }
+    .summary-divider { display: none; }
+    .summary-stat { flex: 1; min-width: 70px; text-align: center; }
+    .summary-stat-value { font-size: 1rem; }
+    .credential-grid { grid-template-columns: 1fr; }
+    .credential-row { flex-direction: column; align-items: flex-start; }
+    .credential-actions { width: 100%; }
+    .credential-actions .api-btn { width: 100%; justify-content: center; }
+    .api-table { font-size: 0.72rem; }
+    .api-table thead th { padding: 8px 10px; }
+    .api-table tbody td { padding: 10px; }
+  }
+</style>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── SCRIPT ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<script>
+  function copyToClipboard(elementId, btn) {
+    var el = document.getElementById(elementId);
+    if (!el) return;
+    var text = el.innerText.trim();
+    navigator.clipboard.writeText(text).then(function() {
+      var originalHTML = btn.innerHTML;
+      btn.innerHTML = '<i class="ri-check-line me-1"></i>Copied!';
+      btn.classList.add('api-copy-btn--copied');
+      setTimeout(function() {
+        btn.innerHTML = originalHTML;
+        btn.classList.remove('api-copy-btn--copied');
+      }, 2000);
+    });
+  }
+</script>

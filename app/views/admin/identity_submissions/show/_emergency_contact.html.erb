@@ -1,0 +1,175 @@
+<!-- app/views/admin/identity_submissions/show/_emergency_contacts_table.html.erb -->
+
+<div class="card border-0 rounded-3 shadow-sm mb-4">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="ri-phone-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold">Emergency Contacts</h6>
+    </div>
+    <% if submission.user&.emergency_contacts&.any? %>
+      <span class="badge rounded-pill bg-haitian-blue-subtle text-haitian-blue">
+        <%= submission.user.emergency_contacts.count %> total
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body">
+    <% contacts = submission.user&.emergency_contacts %>
+
+    <% if contacts&.any? %>
+      <p class="text-muted small mb-4">
+        Listed below are the citizen’s emergency contacts — individuals authorized to be notified  
+        or act on their behalf during critical situations. Verified BonIDs indicate trusted, validated relationships.
+      </p>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Relation</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>BonID</th>
+              <th>Visibility</th>
+              <th>Verification</th>
+              <th>Synced</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% contacts.each do |ec| %>
+              <tr>
+                <!-- Name -->
+                <td>
+                  <strong><%= ec.name.presence || "—" %></strong>
+                  <% if ec.created_at %>
+                    <br><small class="text-muted">Added <%= time_ago_in_words(ec.created_at) %> ago</small>
+                  <% end %>
+                  <br><small class="text-muted">Registered emergency contact</small>
+                </td>
+
+                <!-- Relation -->
+                <td>
+                  <%= ec.relation.presence || "N/A" %>
+                  <br><small class="text-muted">Relationship to citizen</small>
+                </td>
+
+                <!-- Phone -->
+                <td>
+                  <% if ec.phone.present? %>
+                    <a href="tel:<%= ec.phone %>" class="text-decoration-none text-dark">
+                      <i class="ri-phone-fill me-1 text-muted"></i><%= ec.phone %>
+                    </a>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                  <br><small class="text-muted">Primary contact number</small>
+                </td>
+
+                <!-- Email -->
+                <td>
+                  <% if ec.email.present? %>
+                    <a href="mailto:<%= ec.email %>" class="text-decoration-none text-dark">
+                      <i class="ri-mail-line me-1 text-muted"></i><%= ec.email %>
+                    </a>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                  <br><small class="text-muted">Contact email address</small>
+                </td>
+
+                <!-- BonID -->
+                <td>
+                  <% if ec.bonid.present? %>
+                    <span class="text-haitian-blue fw-semibold">
+                      <i class="ri-qr-code-line me-1"></i><%= ec.bonid %>
+                    </span>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                  <br><small class="text-muted">Linked BonID identity</small>
+                </td>
+
+                <!-- Visibility -->
+                <td>
+                  <% case ec.visibility %>
+                  <% when "public" %>
+                    <span class="badge bg-info text-dark">
+                      <i class="ri-earth-line me-1"></i>Public
+                    </span>
+                  <% when "partners_only" %>
+                    <span class="badge bg-warning text-dark">
+                      <i class="ri-building-4-line me-1"></i>Partners
+                    </span>
+                  <% else %>
+                    <span class="badge bg-secondary">
+                      <i class="ri-lock-line me-1"></i>Private
+                    </span>
+                  <% end %>
+                  <br><small class="text-muted">Visibility setting</small>
+                </td>
+
+                <!-- Verification -->
+                <td>
+                  <% case ec.verification_status %>
+                  <% when "verified" %>
+                    <span class="badge bg-success">
+                      <i class="ri-shield-check-line me-1"></i>Verified
+                    </span>
+                  <% when "failed" %>
+                    <span class="badge bg-danger">
+                      <i class="ri-close-line me-1"></i>Failed
+                    </span>
+                  <% when "pending" %>
+                    <span class="badge bg-info text-dark">
+                      <i class="ri-time-line me-1"></i>Pending
+                    </span>
+                  <% else %>
+                    <span class="badge bg-secondary">
+                      <i class="ri-eye-off-line me-1"></i>Unverified
+                    </span>
+                  <% end %>
+                  <br><small class="text-muted">Verification status</small>
+                </td>
+
+                <!-- Mutual Verification -->
+                <td>
+                  <% if ec.verified? && ec.mutual_verification? %>
+                    <i class="ri-user-shared-line text-success me-1"></i>
+                    <small>Mutual</small>
+                  <% elsif ec.verified? %>
+                    <i class="ri-user-check-line text-haitian-blue me-1"></i>
+                    <small>One-way</small>
+                  <% elsif ec.bonid.present? %>
+                    <i class="ri-user-follow-line text-warning me-1"></i>
+                    <small>Pending</small>
+                  <% else %>
+                    <small class="text-muted">N/A</small>
+                  <% end %>
+                  <br><small class="text-muted">BonID sync status</small>
+                </td>
+
+                <!-- Admin Actions -->
+                <td class="text-center">
+                  <% if ec.bonid.present? %>
+                    <%= link_to admin_identity_submissions_path(q: ec.bonid), class: "btn btn-sm btn-outline-primary rounded-pill px-2 py-1" do %>
+                      <i class="ri-search-eye-line me-1"></i>View BonID
+                    <% end %>
+                  <% else %>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" disabled>
+                      <i class="ri-eye-off-line me-1"></i>Unavailable
+                    </button>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">No emergency contacts recorded for this user.</p>
+    <% end %>
+  </div>
+</div>

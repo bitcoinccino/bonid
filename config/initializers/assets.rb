@@ -1,16 +1,33 @@
 # config/initializers/assets.rb
 
-Rails.application.config.assets.version = "1.0"
+# --------------------------------------------------
+# Add asset paths
+# --------------------------------------------------
+Rails.application.config.assets.paths << Rails.root.join("app/assets/stylesheets")
+Rails.application.config.assets.paths << Rails.root.join("app/assets/fonts")
 
-# 👉 Ensure builds (esbuild & cssbundling) are available
-Rails.application.config.assets.paths << Rails.root.join("app/assets/builds")
+# Optional: auto-include subfolders (safe)
+Dir.glob(Rails.root.join("app/assets/stylesheets/**/*")).each do |path|
+  Rails.application.config.assets.paths << path if File.directory?(path)
+end
 
-# 👉 Include node_modules for Bootstrap & icons
-Rails.application.config.assets.paths << Rails.root.join("node_modules")
-Rails.application.config.assets.paths << Rails.root.join("node_modules/bootstrap-icons/font")
+Dir.glob(Rails.root.join("app/assets/fonts/**/*")).each do |path|
+  Rails.application.config.assets.paths << path if File.directory?(path)
+end
 
-# 👉 Optional: preload specific JS (if using importmap — you're not anymore)
-# Rails.application.config.assets.precompile += %w( bootstrap.min.js popper.js bootstrap.bundle.min.js )
+# --------------------------------------------------
+# Explicit font precompile (Propshaft-safe)
+# --------------------------------------------------
+Rails.application.config.assets.precompile += %w[
+  glock_grotesque/GlockGrotesque-Medium.woff
+  glock_grotesque/GlockGrotesque-Medium.woff2
+]
 
-# 👉 Include custom image path (good for logos etc.)
-Rails.application.config.assets.paths << Rails.root.join("app/assets/images")
+# --------------------------------------------------
+# Additional stylesheets (isolated entry points)
+# --------------------------------------------------
+Rails.application.config.assets.precompile += %w[
+  partner_portal_public.css
+  officer.css
+  visitor.css
+]

@@ -1,0 +1,100 @@
+app/views/admin/visitor_submissions/_local_contact.html.erb
+<section class="mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 text-primary fw-semibold d-flex align-items-center gap-2 mb-0">
+      <i class="ri-contacts-line"></i> Local Contact in Haiti
+    </h2>
+  </div>
+
+  <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+    <% contact = visitor_submission.local_contact %>
+
+    <p class="text-muted small mb-4">
+      This section records the local contact provided by the visitor in Haiti.
+      This information may be used for emergency coordination or verification if required.
+    </p>
+
+    <% if contact.present? %>
+      <div class="row g-4">
+
+        <!-- Identity -->
+        <div class="col-md-6">
+          <strong>Full Name:</strong><br>
+          <span><%= contact.name.presence || "N/A" %></span>
+          <br>
+          <small class="text-muted">
+            Individual designated as the visitor’s local contact
+          </small>
+        </div>
+
+        <div class="col-md-6">
+          <strong>Relationship:</strong><br>
+          <span><%= contact.relationship&.titleize || "N/A" %></span>
+          <br>
+          <small class="text-muted">
+            Relationship between the visitor and the local contact
+          </small>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="col-md-6">
+          <strong>Email:</strong><br>
+          <span><%= contact.email.presence || "N/A" %></span>
+          <br>
+          <small class="text-muted">
+            Email address provided for communication
+          </small>
+        </div>
+
+        <div class="col-md-6">
+          <strong>Phone Number:</strong><br>
+          <span>
+            <%= [
+                  contact.phone_country_code,
+                  contact.phone
+                ].compact.join(" ").presence || "N/A" %>
+          </span>
+          <br>
+          <small class="text-muted">
+            Local or reachable phone number in Haiti
+          </small>
+        </div>
+
+        <!-- BonID / Verification -->
+        <div class="col-md-6">
+          <strong>Linked BonID:</strong><br>
+          <span class="fw-medium">
+            <%= contact.bonid.presence || "Not linked" %>
+          </span>
+          <br>
+          <small class="text-muted">
+            BonID reference if the local contact is a registered citizen
+          </small>
+        </div>
+
+        <div class="col-md-6">
+          <strong>Verification Status:</strong><br>
+          <% if contact.verified? %>
+            <span class="badge bg-success-subtle text-success">
+              <i class="ri-check-line me-1"></i> Verified
+            </span>
+          <% else %>
+            <span class="badge bg-secondary-subtle text-muted">
+              <i class="ri-time-line me-1"></i> Not verified
+            </span>
+          <% end %>
+          <br>
+          <small class="text-muted d-block mt-1">
+            Indicates whether this contact has been verified within the system
+          </small>
+        </div>
+
+      </div>
+    <% else %>
+      <div class="alert alert-warning small mb-0">
+        <i class="ri-alert-line me-1"></i>
+        No local contact information was provided by the visitor.
+      </div>
+    <% end %>
+  </div>
+</section>

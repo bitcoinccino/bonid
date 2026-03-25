@@ -1,0 +1,53 @@
+
+<li class="nav-item dropdown">
+  <a
+    class="nav-link dropdown-toggle fw-semibold"
+    href="#"
+    role="button"
+    data-bs-toggle="dropdown"
+    aria-expanded="false"
+  >
+    <i class="ri-function-line me-1 text-haitian-blue"></i>
+    <%= t("main.navbar.products") %>
+  </a>
+
+  <ul class="dropdown-menu bonid-dropdown">
+
+    <div class="dropdown-label"><%= t("main.navbar.core_identity") %></div>
+
+    <% core_products.each do |product| %>
+      <li>
+        <%= link_to product[:path],
+          class: "dropdown-item d-flex align-items-center gap-3" do %>
+          <i class="<%= product[:icon] %> dropdown-icon <%= product[:highlight] %>"></i>
+          <div>
+            <strong><%= product[:name] %></strong>
+            <small class="d-block text-muted"><%= product[:description] %></small>
+          </div>
+          <% if product[:badge] %>
+            <span class="badge <%= product[:badge_class] %> ms-auto"><%= product[:badge] %></span>
+          <% end %>
+        <% end %>
+      </li>
+    <% end %>
+
+    <li><hr class="dropdown-divider"></li>
+
+    <div class="dropdown-label mt-2"><%= t("main.navbar.get_started") %></div>
+
+    <% getting_started_links.each do |link| %>
+      <li>
+        <%= link_to link[:path],
+          class: "dropdown-item d-flex align-items-center gap-3",
+          data: link[:data] || {} do %>
+          <i class="<%= link[:icon] %> dropdown-icon"></i>
+          <div>
+            <strong><%= link[:title] %></strong>
+            <small class="d-block text-muted"><%= link[:description] %></small>
+          </div>
+        <% end %>
+      </li>
+    <% end %>
+
+  </ul>
+</li>

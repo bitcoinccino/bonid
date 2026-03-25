@@ -1,0 +1,72 @@
+<%# Recent Verifications Tab — Partner Dashboard %>
+
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-0 py-3">
+    <h6 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 600; color: #00209F;">
+      <i class="ri-shield-check-line me-1" style="font-weight: 400;"></i>Recent Verifications
+    </h6>
+  </div>
+  <div class="card-body p-0">
+    <% if @recent_scans.any? %>
+      <div class="table-responsive">
+        <table class="table table-hover mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+          <thead>
+            <tr class="text-muted" style="font-size: 0.75rem;">
+              <th class="border-0 ps-3">Person</th>
+              <th class="border-0">BonID</th>
+              <th class="border-0">Method</th>
+              <th class="border-0">Verified By</th>
+              <th class="border-0 pe-3">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_scans.each do |scan| %>
+              <tr>
+                <td class="ps-3">
+                  <div class="d-flex align-items-center gap-2">
+                    <% user = scan.identity_submission&.user %>
+                    <% if user&.photo&.attached? %>
+                      <%= image_tag user.photo.variant(resize_to_fill: [32, 32]),
+                                    class: "rounded-circle",
+                                    style: "width: 32px; height: 32px; object-fit: cover;" %>
+                    <% else %>
+                      <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                           style="width: 32px; height: 32px;">
+                        <i class="ri-user-line text-muted" style="font-size: 0.9rem;"></i>
+                      </div>
+                    <% end %>
+                    <span class="fw-medium"><%= user&.full_name || "Unknown" %></span>
+                  </div>
+                </td>
+                <td>
+                  <code style="font-size: 0.75rem; background: #e8f0fe; padding: 2px 6px; border-radius: 4px; color: #00209F;">
+                    <%= scan.identity_submission&.bonid || "N/A" %>
+                  </code>
+                </td>
+                <td>
+                  <% if scan.manual? %>
+                    <span class="badge bg-secondary"><i class="ri-keyboard-line me-1"></i>Manual</span>
+                  <% else %>
+                    <span class="badge bg-success"><i class="ri-qr-code-line me-1"></i>QR Scan</span>
+                  <% end %>
+                </td>
+                <td class="text-muted"><%= scan.verified_by || "Partner" %></td>
+                <td class="pe-3 text-muted">
+                  <%= scan.scanned_at&.strftime("%b %d, %Y %I:%M%p") || scan.created_at.strftime("%b %d, %Y %I:%M%p") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="text-center py-5">
+        <i class="ri-shield-check-line" style="font-size: 3rem; color: #dee2e6;"></i>
+        <p class="text-muted mt-2 mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem;">
+          No verifications recorded yet.
+        </p>
+        <p class="text-muted small">Scan a BonID to start verifying identities.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

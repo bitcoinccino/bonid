@@ -1,0 +1,197 @@
+<%# Officer Performance Dashboard %>
+<%# Unified Law Enforcement Styling %>
+
+<div class="container-fluid py-4">
+  <%# Header with gradient %>
+  <div class="card border-0 analytics-header mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center">
+        <%= link_to officers_analytics_path, class: "btn btn-sm analytics-back-btn me-3" do %>
+          <i class="ri-arrow-left-line"></i>
+        <% end %>
+        <div class="text-white">
+          <h2 class="mb-1 analytics-header-title"><i class="ri-medal-line me-2"></i>My Performance</h2>
+          <p class="mb-0 analytics-header-subtitle">Personal metrics and comparison to station average</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# Career Stats %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card text-white" style="background: var(--law-gradient-primary);">
+        <div class="card-body">
+          <h5 class="mb-4"><i class="ri-trophy-line me-2"></i>Career Stats</h5>
+          <div class="row g-3">
+            <div class="col-6 text-center">
+              <div class="fs-1 fw-bold"><%= @my_stats[:total] %></div>
+              <div class="small opacity-75">Total Reports</div>
+            </div>
+            <div class="col-6 text-center">
+              <div class="fs-1 fw-bold"><%= @my_stats[:approval_rate] %>%</div>
+              <div class="small opacity-75">Approval Rate</div>
+            </div>
+            <div class="col-6 text-center border-top pt-3" style="border-color: rgba(255,255,255,0.2) !important;">
+              <div class="fs-3 fw-bold"><%= @my_stats[:this_month] %></div>
+              <div class="small opacity-75">This Month</div>
+            </div>
+            <div class="col-6 text-center border-top pt-3" style="border-color: rgba(255,255,255,0.2) !important;">
+              <div class="fs-3 fw-bold"><%= @my_stats[:this_week] %></div>
+              <div class="small opacity-75">This Week</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Station Comparison %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-team-line me-2 text-law-blue"></i>Station Comparison</h5>
+        </div>
+        <div class="card-body">
+          <% if @comparison.any? %>
+            <div class="text-center mb-4">
+              <div class="fs-1 fw-bold text-<%= @comparison[:diff] >= 0 ? 'law-green' : 'law-red' %>">
+                <%= @comparison[:diff] >= 0 ? '+' : '' %><%= @comparison[:diff] %>
+              </div>
+              <div class="text-muted">vs Station Average</div>
+            </div>
+            <div class="row text-center">
+              <div class="col-6">
+                <div class="fs-3 fw-semibold text-law-blue"><%= @comparison[:my_count] %></div>
+                <div class="small text-muted">Your Reports</div>
+              </div>
+              <div class="col-6">
+                <div class="fs-3 fw-semibold text-secondary"><%= @comparison[:station_avg] %></div>
+                <div class="small text-muted">Station Avg</div>
+              </div>
+            </div>
+            <hr>
+            <div class="text-center">
+              <div class="small text-muted">For selected period</div>
+            </div>
+          <% else %>
+            <div class="analytics-empty-state">
+              <i class="ri-team-line"></i>
+              <p>No peer data available</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Resolution Breakdown %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-checkbox-circle-line me-2 text-law-green"></i>Resolution Status</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 200px;">
+            <canvas id="resolutionChart"></canvas>
+          </div>
+          <div class="row text-center mt-3 g-2">
+            <div class="col-3">
+              <div class="fs-5 fw-bold text-law-green"><%= @resolution_rates[:approved] %></div>
+              <div class="small text-muted">Approved</div>
+            </div>
+            <div class="col-3">
+              <div class="fs-5 fw-bold text-law-red"><%= @resolution_rates[:rejected] %></div>
+              <div class="small text-muted">Rejected</div>
+            </div>
+            <div class="col-3">
+              <div class="fs-5 fw-bold text-law-tan"><%= @resolution_rates[:pending] %></div>
+              <div class="small text-muted">Pending</div>
+            </div>
+            <div class="col-3">
+              <div class="fs-5 fw-bold text-law-blue"><%= @resolution_rates[:total] %></div>
+              <div class="small text-muted">Total</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Tips Section %>
+    <div class="col-12">
+      <div class="card analytics-chart-card" style="background: var(--law-gray-light, #F8F8F8);">
+        <div class="card-body">
+          <h6 class="mb-3"><i class="ri-lightbulb-line me-2 text-law-tan"></i>Tips for Better Performance</h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="analytics-insight-card">
+                <div class="d-flex">
+                  <div class="insight-icon me-3" style="background: var(--law-green-10, rgba(73, 166, 79, 0.1));">
+                    <i class="ri-checkbox-circle-line text-law-green fs-4"></i>
+                  </div>
+                  <div>
+                    <strong class="insight-title">Complete Reports</strong>
+                    <p class="small text-muted mb-0">Include all required fields and evidence to increase approval rates</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="analytics-insight-card">
+                <div class="d-flex">
+                  <div class="insight-icon me-3" style="background: var(--law-blue-10, rgba(9, 44, 115, 0.1));">
+                    <i class="ri-time-line text-law-blue fs-4"></i>
+                  </div>
+                  <div>
+                    <strong class="insight-title">Timely Submission</strong>
+                    <p class="small text-muted mb-0">Submit reports within 24 hours of the incident for accuracy</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="analytics-insight-card">
+                <div class="d-flex">
+                  <div class="insight-icon me-3" style="background: var(--law-tan-10, rgba(191, 131, 96, 0.1));">
+                    <i class="ri-user-search-line text-law-tan fs-4"></i>
+                  </div>
+                  <div>
+                    <strong class="insight-title">Verify BonIDs</strong>
+                    <p class="small text-muted mb-0">Always scan and verify BonIDs when available for faster processing</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Law enforcement color palette
+  const lawColors = {
+    blue: '#092C73',
+    red: '#D90718',
+    green: '#49A64F',
+    tan: '#BF8360'
+  };
+
+  new Chart(document.getElementById('resolutionChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Approved', 'Rejected', 'Pending'],
+      datasets: [{
+        data: [<%= @resolution_rates[:approved] %>, <%= @resolution_rates[:rejected] %>, <%= @resolution_rates[:pending] %>],
+        backgroundColor: [lawColors.green, lawColors.red, lawColors.tan]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+});
+</script>

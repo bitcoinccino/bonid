@@ -1,0 +1,73 @@
+<!-- =========================================================
+     Section 2: Contact Information
+========================================================= -->
+<div class="card rounded-4 mb-4 border-2">
+
+  <!-- Header -->
+  <div class="card-header bg-white border-0 pb-0">
+    <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+      <i class="ri-mail-line text-haitian-blue"></i>
+      <%= t("bon_touris.pages.contact_information.title") %>
+    </h5>
+
+    <p class="small text-muted mb-0">
+      <%= t("bon_touris.pages.contact_information.subtitle_html").html_safe %>
+    </p>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body pt-3">
+    <div class="row g-4">
+
+      <!-- Email -->
+      <div class="col-md-6">
+        <%= f.label :email, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.contact_information.email.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.email_field :email,
+              class: "form-control",
+              required: true,
+              autocomplete: "email",
+              placeholder: t("bon_touris.pages.contact_information.email.placeholder") %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.pages.contact_information.email.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.contact_information.email.help") %>
+        </div>
+      </div>
+
+      <!-- Phone with Country Code -->
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">
+          <%= t("bon_touris.pages.contact_information.phone.label") %>
+          <span class="text-muted">
+            <%= t("bon_touris.pages.contact_information.phone.optional") %>
+          </span>
+        </label>
+
+        <div class="input-group">
+          <%= f.select :phone_country_code,
+                phone_country_code_options,
+                { prompt: t("bon_touris.pages.contact_information.phone.country_code_prompt") },
+                class: "form-select",
+                style: "max-width: 220px;" %>
+
+          <%= f.telephone_field :phone,
+                class: "form-control",
+                placeholder: t("bon_touris.pages.contact_information.phone.placeholder"),
+                autocomplete: "tel-national" %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.contact_information.phone.help") %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

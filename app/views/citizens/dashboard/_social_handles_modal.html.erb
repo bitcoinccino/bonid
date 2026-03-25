@@ -1,0 +1,47 @@
+<!-- app/views/citizens/dashboard/_social_handles_modal.html.erb -->
+<div class="modal fade" id="socialModal" tabindex="-1" aria-labelledby="socialModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="modal-header bg-haitian-blue text-white">
+        <h5 class="modal-title" id="socialModalLabel">
+          <i class="ri-links-line me-2"></i>
+          <%= current_citizen.social_handles.any? ? "Edit" : "Add" %> Social Media
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- FORM -->
+      <%= simple_form_for current_citizen,
+            as: :user,
+            url: citizens_profile_path,
+            method: :patch,
+            html: { data: { turbo: false } } do |f| %>
+
+        <div class="modal-body">
+
+     
+          <%= render "citizens/profiles/social_handles", f: f %>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer" style="border-top: none;">
+          <button type="button"
+                  class="btn btn-ghost-cancel rounded-pill px-4"
+                  data-bs-dismiss="modal">
+            Cancel
+          </button>
+
+          <%= f.submit "Save",
+                class: "btn btn-haitian-primary rounded-pill px-4 fw-semibold" %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+</div>

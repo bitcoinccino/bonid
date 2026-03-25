@@ -1,0 +1,81 @@
+<%# Partner reported visual mismatch %>
+<div class="card border-danger" data-result-type="mismatch">
+  <div class="card-header bg-danger text-white py-2">
+    <div class="d-flex align-items-center">
+      <i class="ri-alarm-warning-line me-2" style="font-size: 1.25rem;"></i>
+      <span style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.9rem;">
+        Identity Mismatch Reported
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="alert alert-danger mb-3" style="font-size: 0.85rem;">
+      <i class="ri-error-warning-line me-1"></i>
+      <strong>Warning:</strong> You have reported that the person does not match the BonID photo.
+      This incident has been logged for review.
+    </div>
+
+    <div class="row mb-3">
+      <%# Photo Section %>
+      <div class="col-4 text-center">
+        <% if user.photo.attached? %>
+          <%= image_tag user.photo.variant(resize_to_limit: [100, 100]),
+                        class: "rounded-circle border border-3",
+                        style: "width: 80px; height: 80px; object-fit: cover; border-color: #dc3545 !important; opacity: 0.7;" %>
+        <% else %>
+          <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto"
+               style="width: 80px; height: 80px; background: #f8d7da; border: 3px solid #dc3545;">
+            <i class="ri-user-line" style="font-size: 2rem; color: #dc3545;"></i>
+          </div>
+        <% end %>
+        <div class="mt-2">
+          <span class="badge bg-danger">
+            <i class="ri-close-circle-line me-1"></i>Mismatch
+          </span>
+        </div>
+      </div>
+
+      <%# BonID Info %>
+      <div class="col-8">
+        <h6 class="mb-1" style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.9rem; color: var(--dark-gray, #333); text-decoration: line-through;">
+          <%= user.full_name %>
+        </h6>
+        <div style="font-size: 0.8rem; color: var(--mid-gray, #6c757d);">
+          <div class="mb-1">
+            <i class="ri-fingerprint-line me-1" style="font-weight: 400;"></i>
+            <strong>BonID:</strong>
+            <code style="font-size: 0.75rem; background: #f8d7da; padding: 2px 6px; border-radius: 4px; color: #721c24;">
+              <%= submission.bonid %>
+            </code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Next Steps %>
+    <div class="alert alert-warning mb-3" style="font-size: 0.8rem;">
+      <strong><i class="ri-information-line me-1"></i>Recommended Actions:</strong>
+      <ol class="mb-0 mt-1 ps-3">
+        <li>Request additional identification from the individual</li>
+        <li>Verify identity through alternative means</li>
+        <li>Do not proceed with services until identity is confirmed</li>
+        <li>Contact local authorities if fraud is suspected</li>
+      </ol>
+    </div>
+
+    <%# Action Buttons %>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn flex-grow-1"
+              data-action="click->partner-scanner#rescan"
+              style="font-family: 'Montserrat', sans-serif; font-weight: 500; background: transparent; color: var(--haitian-blue, #00209F); border: 1px solid var(--haitian-blue, #00209F);">
+        <i class="ri-refresh-line me-1"></i>New Lookup
+      </button>
+    </div>
+
+    <div class="text-muted text-center mt-3" style="font-size: 0.75rem;">
+      <i class="ri-time-line me-1"></i>
+      This mismatch has been logged at <%= Time.current.strftime("%H:%M:%S on %b %d, %Y") %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,213 @@
+<div class="officer-guidelines-portal py-5 min-vh-100" style="background: linear-gradient(180deg, var(--law-gray-light) 0%, var(--law-gray-dark) 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10 col-xl-8">
+
+        
+        <header class="text-center mb-5">
+          <div class="seal-wrapper mb-4 position-relative d-inline-block">
+            <% if current_officer&.partner&.logo&.attached? %>
+              <div class="official-seal-circle border border-4 border-white bg-white">
+                <%= image_tag current_officer.partner.logo.variant(resize_to_limit: [240, 240]), 
+                              class: "img-fluid p-2", alt: "Official Seal" %>
+              </div>
+            <% else %>
+              <div class="official-seal-circle bg-law-blue d-flex align-items-center justify-content-center">
+                <i class="ri-shield-star-fill text-haitian-gold display-4"></i>
+              </div>
+            <% end %>
+            <div class="audit-pulse"></div>
+          </div>
+          
+          <h1 class="h2 fw-black text-law-blue text-uppercase ls-2 mb-1" style="font-family: var(--font-heading);">
+            République d'Haïti
+          </h1>
+          <p class="h5 fw-bold text-muted mb-0">Police Nationale | Inspection Générale (IGPNH)</p>
+          <div class="d-flex align-items-center justify-content-center mt-3">
+            <div class="accent-line"></div>
+            <span class="small fw-bold text-law-blue text-uppercase ls-1 mx-3">Protocole Déontologique v2026</span>
+            <div class="accent-line"></div>
+          </div>
+        </header>
+
+        <%# --- II. The Formal Protocol Document --- %>
+        <div class="protocol-document border-0 bg-white position-relative overflow-hidden">
+          <%# Security Strip (Law Enforcement Colors) %>
+          <div class="security-header-strip"></div>
+          
+          <div class="card-body p-4">
+            
+            <%# Section 1: The Solemn Oath %>
+            <div class="oath-container mb-5 text-center px-lg-4">
+              <i class="ri-double-quotes-l display-5 text-law-blue opacity-10 mb-2 d-block"></i>
+              <h4 class="fw-bold italic text-dark mb-3 lh-base" style="font-family: var(--font-body);">
+                "Je jure, devant Dieu et devant la Patrie, de servir avec honneur, intégrité et dévouement, de respecter la Constitution et les lois de la République..."
+              </h4>
+              <p class="small text-law-blue fw-black ls-2">— SERMENT D'ENGAGEMENT</p>
+            </div>
+
+            <%# Section 2: Technical & Legal Commitments %>
+            <div class="row g-4 mb-5">
+              <div class="col-12">
+                <h6 class="protocol-section-title">01. Responsabilités Systémiques</h6>
+              </div>
+              
+              <% [
+                { icon: "ri-scales-3-line", title: "Valeur Juridique", desc: "Toute saisie constitue un procès-verbal numérique admissible en justice." },
+                { icon: "ri-user-follow-line", title: "Contrôle d'Identité", desc: "Obligation de vérification visuelle entre le citoyen et le profil BonID." },
+                { icon: "ri-key-2-line", title: "Confidentialité PII", desc: "Les données personnelles sont protégées par le secret professionnel strict." },
+                { icon: "ri-radar-line", title: "Audit de Traçabilité", desc: "Chaque action est horodatée et géolocalisée pour audit permanent." }
+              ].each do |item| %>
+                <div class="col-md-6">
+                  <div class="protocol-item p-3 rounded bg-law-gray-light h-100 border-start border-4 border-law-blue">
+                    <div class="d-flex align-items-center mb-2">
+                      <i class="<%= item[:icon] %> text-law-blue fs-5 me-2"></i>
+                      <span class="fw-black text-law-blue small text-uppercase"><%= item[:title] %></span>
+                    </div>
+                    <p class="small text-muted mb-0"><%= item[:desc] %></p>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+
+            <%# Section 3: High Risk Warning %>
+            <div class="p-4 rounded-3 border-law-red bg-law-red-subtle mb-5">
+              <div class="d-flex align-items-center mb-3 text-law-red">
+                <i class="ri-alert-fill fs-3 me-3"></i>
+                <h6 class="fw-black text-uppercase mb-0 ls-1">Zéro Tolérance : Corruption et Abus</h6>
+              </div>
+              <p class="small text-dark fw-semibold mb-0 lh-base">
+                Toute sollicitation de pot-de-vin ou falsification de rapport entraîne une 
+                <span class="text-law-red fw-black">révocation immédiate</span> et des poursuites criminelles automatiques.
+              </p>
+            </div>
+
+            <%# --- III. The Legal Acceptance --- %>
+            <div class="acceptance-gate border-top pt-5">
+              <%= form_with url: officers_confirm_guidelines_path, method: :post, local: true do |f| %>
+                <div class="p-4 rounded-4 mb-4 confirmation-box transition-all">
+                  <div class="form-check d-flex align-items-center gap-3 m-0">
+                    <%= f.check_box :confirmed, id: "confirm_guidelines", class: "form-check-input flex-shrink-0 mt-0", required: true %>
+                    <label class="form-check-label fw-bold text-law-blue-dark mb-0" for="confirm_guidelines">
+                      Je confirme avoir lu ces directives et m'engage à les appliquer avec rigueur.
+                    </label>
+                  </div>
+                </div>
+                
+                <div class="d-grid gap-3">
+                  <%= f.button type: :submit, class: "btn btn-law-blue rounded-pill fw-black text-uppercase ls-2" do %>
+                    <i class="ri-shield-user-fill me-2"></i> Activer mon Profil Officier
+                  <% end %>
+                  <%= link_to "Déconnexion", destroy_officer_session_path, method: :delete, class: "text-center text-muted small fw-bold text-decoration-none hover-red" %>
+                </div>
+              <% end %>
+            </div>
+
+          </div>
+        </div>
+
+        <%# Metadata Footnote — deterministic audit token tied to officer identity + hour.
+            Same officer sees the same token within the same hour window.
+            Once confirmed, the AuditLog entry timestamp will match this display. %>
+        <%
+          audit_token = Digest::SHA256.hexdigest(
+            "#{current_officer.id}|#{current_officer.badge_id}|#{Time.current.beginning_of_hour.to_i}"
+          ).first(12).upcase
+        %>
+        <p class="text-center mt-4 text-muted small opacity-50 font-monospace">
+          SESSION: <%= audit_token %> | <%= Time.current.strftime("%Y-%m-%dT%H:%M:%SZ") %>
+        </p>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ─── Guidelines page styles — ALL scoped under .officer-guidelines-portal ───
+     This prevents any rule from leaking to other officer pages.                  */
+
+  .officer-guidelines-portal .text-law-blue { color: var(--law-blue); }
+  .officer-guidelines-portal .text-law-red  { color: var(--law-red); }
+  .officer-guidelines-portal .bg-law-blue   { background-color: var(--law-blue); }
+  .officer-guidelines-portal .bg-law-red-subtle  { background-color: var(--law-red-subtle); }
+  .officer-guidelines-portal .bg-law-gray-light  { background-color: var(--law-gray-light); }
+  .officer-guidelines-portal .border-law-red { border: 1px solid var(--law-red); }
+  .officer-guidelines-portal .ls-2 { letter-spacing: 2px; }
+
+  .officer-guidelines-portal .official-seal-circle {
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    z-index: 2;
+    position: relative;
+  }
+
+  .officer-guidelines-portal .audit-pulse {
+    position: absolute;
+    top: -5px; left: -5px; right: -5px; bottom: -5px;
+    border-radius: 50%;
+    border: 2px solid var(--law-blue);
+    animation: guidelines-pulse-blue 2s infinite;
+    z-index: 1;
+  }
+
+  /* Keyframe name is unique to avoid colliding with any other animation */
+  @keyframes guidelines-pulse-blue {
+    0%   { transform: scale(0.95); opacity: 0.8; }
+    70%  { transform: scale(1.15); opacity: 0; }
+    100% { transform: scale(0.95); opacity: 0; }
+  }
+
+  .officer-guidelines-portal .protocol-document {
+    border-radius: 12px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+
+  .officer-guidelines-portal .security-header-strip {
+    height: 12px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--law-blue),
+      var(--law-blue) 15px,
+      var(--haitian-gold) 15px,
+      var(--haitian-gold) 30px
+    );
+  }
+
+  .officer-guidelines-portal .protocol-section-title {
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--law-blue);
+    border-bottom: 2px solid var(--haitian-gold);
+    display: inline-block;
+    padding-bottom: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .officer-guidelines-portal .confirmation-box {
+    background: var(--law-gray-light);
+    border: 2px solid var(--law-gray-dark);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .officer-guidelines-portal .confirmation-box:hover { border-color: var(--law-blue); }
+
+  .officer-guidelines-portal .btn-law-blue {
+    background: var(--law-blue);
+    color: white;
+    border: none;
+    transition: all 0.3s ease;
+  }
+
+  .officer-guidelines-portal .btn-law-blue:hover {
+    background: var(--law-blue-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(9, 44, 115, 0.3);
+  }
+
+  .officer-guidelines-portal .accent-line { width: 50px; height: 3px; background: var(--haitian-gold); }
+  .officer-guidelines-portal .hover-red:hover { color: var(--law-red) !important; }
+</style>

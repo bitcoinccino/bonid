@@ -1,0 +1,67 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 fw-bold">New Schema for <%= @schema.partner&.name %></h1>
+    <%= link_to "Back to Schemas", admin_schemas_path, class: "btn btn-outline-secondary" %>
+  </div>
+
+  <%= simple_form_for @schema, html: { class: "needs-validation", data: { controller: "multi-step-schema-form" } } do |f| %>
+
+    <!-- Step 1: Basic Info -->
+    <div id="step-1" data-multi-step-schema-form-target="step" class="step active">
+      <h5>Step 1: Basic Information</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <%= f.input :name, required: true, input_html: { class: "form-control" } %>
+          <%= f.input :record_type, collection: ["property","health","business","education","mortgage","kyc"], input_html: { class: "form-select", required: true } %>
+          <%= f.input :sector, collection: Partner::SECTOR_OPTIONS, input_html: { class: "form-select", required: true } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.input :visibility, collection: ["partner","public","internal"], input_html: { class: "form-select", required: true } %>
+          <%= f.input :version, input_html: { value: "1.0", class: "form-control", required: true } %>
+          <%= f.input :template, as: :boolean, input_html: { class: "form-check-input" } %>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-primary" data-action="click->multi-step-schema-form#nextStep">Next: Description</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Description -->
+    <div id="step-2" data-multi-step-schema-form-target="step" class="step d-none">
+      <h5>Step 2: Description</h5>
+      <div class="row mb-3">
+        <div class="col-12">
+          <%= f.text_area :description, rows: 3, class: "form-control" %>
+        </div>
+      </div>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-action="click->multi-step-schema-form#prevStep">Back</button>
+        <button type="button" class="btn btn-primary" data-action="click->multi-step-schema-form#nextStep">Next: JSON Structure</button>
+      </div>
+    </div>
+
+    <!-- Step 3: JSON Structure -->
+    <div id="step-3" data-multi-step-schema-form-target="step" class="step d-none">
+      <h5>Step 3: JSON Structure</h5>
+      <%= f.text_area :structure, rows: 15, value: JSON.pretty_generate(@schema.structure || { "fields" => [] }), class: "form-control" %>
+      <div class="d-flex justify-content-between mt-3">
+        <button type="button" class="btn btn-outline-secondary" data-action="click->multi-step-schema-form#prevStep">Back</button>
+        <button type="button" class="btn btn-primary" data-action="click->multi-step-schema-form#nextStep">Next: Validation Rules</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Validation Rules -->
+    <div id="step-4" data-multi-step-schema-form-target="step" class="step d-none">
+      <h5>Step 4: Validation Rules (Optional)</h5>
+      <%= f.text_area :validation_rules, rows: 8, value: JSON.pretty_generate(@schema.validation_rules || {}), class: "form-control" %>
+      <div class="d-flex justify-content-between mt-3">
+        <button type="button" class="btn btn-outline-secondary" data-action="click->multi-step-schema-form#prevStep">Back</button>
+        <%= f.button :submit, "Create Schema", class: "btn btn-primary" %>
+      </div>
+    </div>
+
+    <div class="progress mt-3" style="height:6px;">
+      <div class="progress-bar" style="width:0%;" data-multi-step-schema-form-target="progressBar"></div>
+    </div>
+  <% end %>
+</div>

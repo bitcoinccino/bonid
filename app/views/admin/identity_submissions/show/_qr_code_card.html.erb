@@ -1,0 +1,88 @@
+<!-- app/views/admin/identity_submissions/show/_qr_code_card.html.erb -->
+
+<div class="card border-0 rounded-3 shadow-sm mb-4 text-center overflow-hidden">
+  <!-- Header -->
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="ri-qr-code-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold text-dark">BonID QR Code</h6>
+    </div>
+    <% if submission.qr_scan_logs.any? %>
+      <span class="badge rounded-pill bg-haitian-blue-subtle text-haitian-blue">
+        <%= pluralize(submission.qr_scan_logs.count, "scan") %>
+      </span>
+    <% end %>
+  </div>
+
+  <div class="card-body">
+    <!-- Description -->
+    <p class="text-muted small mb-3">
+      This unique BonID QR code securely links to the citizen’s verified digital identity.  
+      Partners, officers, and authorized entities can scan it to confirm authenticity,  
+      access verified records, and log validation activity.
+    </p>
+
+    <% if submission.qr_for(:admin).present? %>
+      <!-- QR Image -->
+      <div class="d-flex justify-content-center mb-3">
+        <%= image_tag(
+              "data:image/png;base64,#{submission.qr_for(:admin)}",
+              alt: "BonID QR Code",
+              class: "shadow-sm border rounded-3 p-2 bg-white",
+              style: "max-width: 240px; height: auto;"
+            ) %>
+      </div>
+
+      <!-- BonID & Expiry Info -->
+      <p class="mb-1 small text-dark">
+        <strong>BonID:</strong> <%= submission.bonid %>
+      </p>
+      <p class="mb-1 small text-muted">
+        <strong>Expires:</strong>
+        <%= submission.expires_at ? l(submission.expires_at, format: :long) : "N/A" %>
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="d-flex justify-content-center gap-2 mt-3">
+        <%= link_to "#",
+                    class: "btn btn-sm btn-outline-primary d-flex align-items-center gap-1",
+                    data: { action: "click->download#qr" } do %>
+          <i class="ri-download-line"></i> Download
+        <% end %>
+
+        <%= link_to "#",
+                    class: "btn btn-sm btn-outline-secondary d-flex align-items-center gap-1",
+                    onclick: "window.print();" do %>
+          <i class="ri-printer-line"></i> Print
+        <% end %>
+      </div>
+    <% else %>
+      <div class="alert alert-dismissible fade show alert-warning small mb-0 mt-3 d-flex align-items-center justify-content-center gap-2">
+        <i class="ri-error-warning-line text-warning"></i>
+        No QR code generated yet.
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Recent Scan Summary -->
+  <% if submission.qr_scan_logs.any? %>
+    <div class="card-footer bg-light text-start small">
+      <strong class="text-dark d-block mb-2">Recent Scans</strong>
+      <ul class="list-unstyled mb-1">
+        <% submission.qr_scan_logs.limit(5).order(created_at: :desc).each do |log| %>
+          <li class="text-muted mb-1">
+            <i class="ri-time-line me-1 text-secondary"></i>
+            <%= l(log.created_at, format: :short) %>
+            — <%= log.partner_name || "Public" %>
+          </li>
+        <% end %>
+      </ul>
+
+      <% if submission.qr_scan_logs.count > 5 %>
+        <p class="small text-primary mb-0">
+          <%= pluralize(submission.qr_scan_logs.count, "total scan") %> recorded.
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

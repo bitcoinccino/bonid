@@ -1,20 +1,31 @@
-<h2>Resend confirmation instructions</h2>
+<h2 class="text-center mb-4">Resend confirmation instructions</h2>
 
-<%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f| %>
-  <%= f.error_notification %>
-  <%= f.full_error :confirmation_token %>
+<div class="d-flex justify-content-center">
+  <div class="w-100" style="max-width: 400px;">
+    <%= simple_form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post, class: "needs-validation" }) do |f| %>
+      <%= f.error_notification class: "alert alert-danger" %>
+      <%= f.full_error :confirmation_token, class: "text-danger mb-2" %>
 
-  <div class="form-inputs">
-    <%= f.input :email,
-                required: true,
-                autofocus: true,
-                value: (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
-                input_html: { autocomplete: "email" } %>
+      <div class="mb-3">
+        <%= f.input :email,
+                    required: true,
+                    autofocus: true,
+                    label: false,
+                    input_html: { 
+                      class: "form-control form-control-lg", 
+                      autocomplete: "email",
+                      value: params[:email].presence || (resource.pending_reconfirmation? ? resource.unconfirmed_email : resource.email),
+                      placeholder: "Enter your email address"
+                    } %>
+      </div>
+
+      <div class="d-grid">
+        <%= f.button :submit, "Resend confirmation instructions", class: "btn btn-primary btn-lg" %>
+      </div>
+    <% end %>
+
+    <div class="mt-3 text-center">
+      <%= render "devise/shared/links" %>
+    </div>
   </div>
-
-  <div class="form-actions">
-    <%= f.button :submit, "Resend confirmation instructions" %>
-  </div>
-<% end %>
-
-<%= render "devise/shared/links" %>
+</div>

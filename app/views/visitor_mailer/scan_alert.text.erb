@@ -1,0 +1,12 @@
+BonTouris ID Scan Alert
+
+BonTouris ID: <%= @event.bon_touris_id %>
+Time: <%= @event.occurred_at_local.strftime("%B %d, %Y • %I:%M %p %Z") %>
+Method: <%= @event.input_method == "manual" ? "Manual entry" : "QR scan" %>
+Result: <%= @event.ok ? "VERIFIED" : @event.status.to_s.humanize %><%= @event.message.present? ? " — #{@event.message}" : "" %>
+Who checked it: <%= @event.actor_label.presence || "Public" %><%= @event.actor_verified ? " (Verified)" : "" %>
+IP: <%= @event.ip_address || "—" %>
+Device: <%= @event.device_summary.presence || "—" %>
+Location: <%= @event.location_summary || "—" %>
+
+If this wasn’t you, contact support@verifyem.ht

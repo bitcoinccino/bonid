@@ -1,0 +1,83 @@
+<%= render "admin/shared/admin_topbar" %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1">
+          <li class="breadcrumb-item"><%= link_to "Analytics", admin_incident_analytics_path %></li>
+          <li class="breadcrumb-item active">Hotspots</li>
+        </ol>
+      </nav>
+      <h1 class="h3 mb-0">Crime Hotspots</h1>
+    </div>
+    <div>
+      <%= button_to "Regenerate Report", admin_incident_analytics_generate_hotspot_report_path,
+          method: :post, class: "btn btn-primary" %>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Rank</th>
+              <th>Commune</th>
+              <th class="text-end">Incidents</th>
+              <th class="text-end">Severity Score</th>
+              <th class="text-end">Trend</th>
+              <th>Top Crimes</th>
+              <th>Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @hotspots.each_with_index do |hotspot, index| %>
+              <tr>
+                <td>
+                  <span class="badge <%= index < 3 ? 'bg-danger' : 'bg-secondary' %>">
+                    #<%= index + 1 %>
+                  </span>
+                </td>
+                <td>
+                  <strong><%= hotspot.commune&.name || 'Unknown' %></strong>
+                </td>
+                <td class="text-end">
+                  <span class="fw-semibold"><%= number_with_delimiter(hotspot.incident_count) %></span>
+                </td>
+                <td class="text-end">
+                  <span class="badge bg-<%= hotspot.severity_score > 50 ? 'danger' : hotspot.severity_score > 20 ? 'warning' : 'info' %>">
+                    <%= hotspot.severity_score.round(1) %>
+                  </span>
+                </td>
+                <td class="text-end">
+                  <% if hotspot.trend_percentage.present? %>
+                    <span class="<%= hotspot.trend_percentage > 0 ? 'text-danger' : 'text-success' %>">
+                      <i class="ri-arrow-<%= hotspot.trend_percentage > 0 ? 'up' : 'down' %>-line"></i>
+                      <%= hotspot.trend_percentage.abs.round(1) %>%
+                    </span>
+                  <% else %>
+                    <span class="text-muted">-</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if hotspot.breakdown.present? %>
+                    <% hotspot.breakdown.sort_by { |_, v| -v }.first(3).each do |type, count| %>
+                      <span class="badge bg-light text-dark me-1"><%= type %>: <%= count %></span>
+                    <% end %>
+                  <% end %>
+                </td>
+                <td>
+                  <small class="text-muted">
+                    <%= hotspot.period_start.strftime("%b %d") %> - <%= hotspot.period_end.strftime("%b %d, %Y") %>
+                  </small>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

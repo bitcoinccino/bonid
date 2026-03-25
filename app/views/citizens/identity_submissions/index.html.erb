@@ -1,0 +1,71 @@
+
+<div class="bonid-dashboard py-5" data-controller="citizen-toggle">
+
+  <!-- =======================
+       HEADER
+  ======================== -->
+  <div class="dashboard-header">
+    <h2>Your Official BonID </h2>
+
+    <p>
+      View your verified identity information and your active BonID QR code.
+      Switch between your BonID card and QR code for verification at banks,
+      embassies, airports, schools, and law-enforcement checkpoints.
+    </p>
+    </div>
+
+
+
+  <% if @submissions.any? && @last_submission.present? %>
+
+    <!-- =======================
+         TOGGLE — CENTERED & CLEAN (SHADOW REMOVED)
+    ======================== -->
+    <div class="d-flex justify-content-center mb-5">
+      <div class="bonid-toggle-wrapper">
+        <div class="bonid-toggle position-relative">
+
+          <!-- Sliding Pill -->
+          <div class="toggle-pill" data-citizen-toggle-target="pill"></div>
+
+          <!-- BonID Card Button -->
+          <button type="button"
+                  class="toggle-tab active"
+                  data-citizen-toggle-target="bonidBtn"
+                  data-action="click->citizen-toggle#showBonid">
+            BonID Card
+          </button>
+
+          <!-- QR Code Button -->
+          <button type="button"
+                  class="toggle-tab"
+                  data-citizen-toggle-target="qrBtn"
+                  data-action="click->citizen-toggle#showQr">
+            QR Code
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- =======================
+         EXCLUSIVE VIEW SLOT
+    ======================== -->
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10 col-xl-8">
+
+        <!-- BonID Card View -->
+        <div data-citizen-toggle-target="bonidCard">
+          <%= render partial: "dashboard_card", locals: { submission: @last_submission } %>
+        </div>
+
+        <!-- QR Card View -->
+        <div data-citizen-toggle-target="qrCard" class="d-none">
+          <%= render partial: "qrcode_card", locals: { submission: @last_submission } %>
+        </div>
+
+      </div>
+    </div>
+
+  <% end %>
+</div>

@@ -1,26 +1,50 @@
-<%= render "shared/navbar" %>
+<%# app/views/officers/passwords/edit.html.erb %>
 
-<div class="container d-flex justify-content-center align-items-center min-vh-100">
-  <div class="col-md-6 col-lg-5 bg-white p-5 rounded-4 shadow-sm">
-    <h2 class="fw-bold text-center mb-4">Reset Your Password</h2>
+<div class="officer-form-card">
+  <%# Icon %>
+  <div class="form-icon">
+    <%= image_tag "pnh.png", alt: "PNH" %>
+  </div>
 
-    <%= simple_form_for(resource, as: :officer, url: officer_password_path, html: { method: :put }) do |f| %>
-      <%= f.error_notification %>
-      <%= hidden_field_tag :reset_password_token, params[:reset_password_token] %>
+  <%# Title %>
+  <h1>Set New Password</h1>
+  <p class="form-subtitle">
+    Create a strong password for your officer account.
+  </p>
 
-      <div class="mb-3">
-        <%= f.input :password, required: true, label: "New Password", input_html: { class: "form-control rounded-3", autocomplete: "new-password" } %>
-      </div>
+  <%# Form %>
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, data: { turbo: false } }) do |f| %>
+    <%= f.hidden_field :reset_password_token %>
 
-      <div class="mb-3">
-        <%= f.input :password_confirmation, required: true, label: "Confirm Password", input_html: { class: "form-control rounded-3", autocomplete: "new-password" } %>
-      </div>
-
-      <%= f.button :submit, "Reset Password", class: "btn btn-primary w-100 rounded-pill fw-semibold" %>
-    <% end %>
-
-    <div class="text-center mt-3">
-      <%= link_to "Back to login", new_officer_session_path, class: "text-muted small" %>
+    <div class="mb-3">
+      <%= f.label :password, "New Password", class: "form-label" %>
+      <%= f.password_field :password,
+            autofocus: true,
+            autocomplete: "new-password",
+            placeholder: "Enter new password",
+            class: "form-control" %>
+      <small class="text-muted">Minimum 8 characters</small>
     </div>
+
+    <div class="mb-4">
+      <%= f.label :password_confirmation, "Confirm Password", class: "form-label" %>
+      <%= f.password_field :password_confirmation,
+            autocomplete: "new-password",
+            placeholder: "Confirm new password",
+            class: "form-control" %>
+    </div>
+
+    <%= f.submit "Update Password", class: "btn-officer-primary" %>
+  <% end %>
+
+  <%# Links %>
+  <div class="form-divider">
+    <span>or</span>
+  </div>
+
+  <div class="text-center">
+    <%= link_to new_officer_session_path, class: "btn-officer-outline" do %>
+      <i class="ri-arrow-left-line me-2"></i> Back to Sign In
+    <% end %>
   </div>
 </div>

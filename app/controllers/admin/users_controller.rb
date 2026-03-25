@@ -1,6 +1,6 @@
 class Admin::UsersController < Admin::ApplicationController
-  before_action :authenticate_user!
-  before_action :require_admin!
+  before_action before_action :authenticate_admin_user!
+
 
   def edit
     @user = User.find_by(id: params[:id])
@@ -20,12 +20,9 @@ class Admin::UsersController < Admin::ApplicationController
 
   private
 
-  def require_admin!
-    redirect_to root_path, alert: "Access denied." unless current_user.admin?
-  end
-
   def user_params
-    if current_user.admin?
+    # Only admins can access this controller, but keep explicit check
+    if curren_admin_user
       params.require(:user).permit(:email, :role_int)
     else
       params.require(:user).permit(:email)

@@ -1,0 +1,447 @@
+<%# app/views/officers/incident_reports/_form.html.erb %>
+<%# Officer Incident Report Form - Matches sidebar/nav styling %>
+
+<div data-controller="offline-report">
+  <%# Offline indicator %>
+  <div data-offline-report-target="offlineIndicator" class="alert alert-warning d-none mb-3">
+    <div class="d-flex align-items-center">
+      <i class="ri-wifi-off-line me-2" style="font-size: 1.25rem;"></i>
+      <div>
+        <strong>You are offline.</strong>
+        <span class="d-block small">Your report will be saved locally and submitted automatically when connectivity returns.</span>
+      </div>
+    </div>
+  </div>
+
+  <%# Pending reports alert %>
+  <div data-offline-report-target="pendingAlert" class="d-none alert alert-info mb-3">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <i class="ri-upload-cloud-line me-2"></i>
+        You have <strong><span data-offline-report-target="pendingCount">0</span></strong> pending report(s) waiting to sync.
+      </div>
+      <button type="button" class="btn btn-sm btn-info" data-action="click->offline-report#manualSync">
+        <i class="ri-refresh-line me-1"></i> Sync Now
+      </button>
+    </div>
+  </div>
+
+  <%= form_with model: [:officers, incident_report],
+                id: "incident-report-form",
+                class: "incident-report-form",
+                data: {
+                  controller: "nested-form address",
+                  offline_report_target: "form",
+                  action: "submit->offline-report#handleSubmit"
+                } do |f| %>
+
+  <% if incident_report.errors.any? %>
+    <div class="alert alert-danger mb-4" style="border-left: 4px solid var(--law-red);">
+      <div class="d-flex align-items-start">
+        <i class="ri-error-warning-line me-2 text-danger" style="font-size: 1.25rem;"></i>
+        <div>
+          <h6 class="fw-bold mb-2"><%= pluralize(incident_report.errors.count, "error") %> prohibited this report from being saved:</h6>
+          <ul class="mb-0 ps-3 small">
+            <% incident_report.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# Section 1: PERSONS INVOLVED (Primary - moved to top) %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header border-0 py-3" style="background: var(--law-blue);">
+      <h5 class="mb-0 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 500;">
+        <i class="ri-user-line me-2" style="font-weight: 400;"></i>Persons Involved
+      </h5>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3" style="font-size: 0.8rem;">
+        <i class="ri-fingerprint-line me-1" style="color: var(--law-blue);"></i>
+        All persons must have a valid BonID or BonTouris. <strong>Citizens:</strong> <code>8697-761</code> | <strong>Tourists:</strong> <code>P-123456</code>
+      </p>
+
+      <div id="person-involvements" data-nested-form-target="container">
+        <%= f.fields_for :person_involvements do |pi| %>
+          <%= render "officers/incident_reports/person_involvement_fields", f: pi %>
+        <% end %>
+      </div>
+
+      <template data-nested-form-target="template">
+        <%= f.fields_for :person_involvements, PersonInvolvement.new, child_index: "NEW_RECORD" do |pi| %>
+          <%= render "officers/incident_reports/person_involvement_fields", f: pi %>
+        <% end %>
+      </template>
+
+      <button type="button"
+              class="btn mt-3"
+              style="background: var(--law-blue-subtle); color: var(--law-blue); border: 1px dashed var(--law-blue); font-family: 'Montserrat', sans-serif; font-weight: 500;"
+              data-action="nested-form#add">
+        <i class="ri-user-add-line me-1"></i> Add Another Person
+      </button>
+    </div>
+  </div>
+
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# Section 2: CRIME DETAILS %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header border-0 py-3" style="background: var(--law-red);">
+      <h5 class="mb-0 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 500;">
+        <i class="ri-alert-line me-2" style="font-weight: 400;"></i>Crime Details
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :crime_type, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :crime_type,
+                       grouped_options_for_select(IncidentReport::CRIME_TYPES.transform_keys { |k| k.to_s.titleize }, incident_report.crime_type),
+                       { include_blank: "Select crime type..." },
+                       class: "form-select #{'is-invalid' if incident_report.errors[:crime_type].any?}" %>
+          <% if incident_report.errors[:crime_type].any? %>
+            <div class="invalid-feedback"><%= incident_report.errors[:crime_type].first %></div>
+          <% end %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :occurred_at, "Date & Time of Incident", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.datetime_local_field :occurred_at,
+                                     class: "form-control #{'is-invalid' if incident_report.errors[:occurred_at].any?}",
+                                     value: incident_report.occurred_at&.strftime("%Y-%m-%dT%H:%M") %>
+          <% if incident_report.errors[:occurred_at].any? %>
+            <div class="invalid-feedback"><%= incident_report.errors[:occurred_at].first %></div>
+          <% end %>
+        </div>
+
+        <div class="col-12">
+          <%= f.label :description, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.text_area :description,
+                          rows: 4,
+                          placeholder: "Provide a detailed description of the incident...",
+                          class: "form-control #{'is-invalid' if incident_report.errors[:description].any?}",
+                          style: "font-size: 0.875rem;" %>
+          <% if incident_report.errors[:description].any? %>
+            <div class="invalid-feedback"><%= incident_report.errors[:description].first %></div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# Section 3: INCIDENT LOCATION (Full Address Fields) %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header border-0 py-3" style="background: var(--law-green);">
+      <h5 class="mb-0 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 500;">
+        <i class="ri-map-pin-line me-2" style="font-weight: 400;"></i>Incident Location
+      </h5>
+    </div>
+    <div class="card-body" data-controller="address">
+      <%# Loading spinner %>
+      <div data-address-target="spinner" class="d-none text-center py-2">
+        <div class="spinner-border spinner-border-sm text-primary"></div>
+        <small class="ms-2">Loading...</small>
+      </div>
+      <%# Error message %>
+      <div data-address-target="error" class="d-none alert alert-danger py-2">
+        <small>Failed to load options. <button type="button" class="btn btn-link btn-sm p-0" data-action="click->address#retry">Retry</button></small>
+      </div>
+
+      <%
+        # Build slug map for departments (needed for arrondissement loading)
+        departments = Department.order(:name)
+        dept_slug_map = departments.index_by(&:id).transform_values(&:slug)
+      %>
+      <%= f.fields_for :address, incident_report.address || incident_report.build_address do |addr| %>
+        <div class="row g-3">
+          <%# Street Address %>
+          <div class="col-12">
+            <%= addr.label :street_address, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.text_field :street_address,
+                                placeholder: "Street address, building name, or landmark",
+                                class: "form-control",
+                                style: "font-size: 0.875rem;" %>
+          </div>
+
+          <%# Department %>
+          <div class="col-md-6">
+            <%= addr.label :department_id, "Department", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.collection_select :department_id,
+                                       departments,
+                                       :id, :name,
+                                       { include_blank: "Select department..." },
+                                       { class: "form-select",
+                                         style: "font-size: 0.875rem;",
+                                         data: {
+                                           address_target: "department",
+                                           action: "change->address#loadArrondissements",
+                                           selected: addr.object&.department_id.to_s,
+                                           slug_map_value: dept_slug_map.to_json
+                                         } } %>
+          </div>
+
+          <%# Arrondissement %>
+          <div class="col-md-6">
+            <%= addr.label :arrondissement_id, "Arrondissement", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.collection_select :arrondissement_id,
+                                       (addr.object&.department&.arrondissements&.order(:name) || []),
+                                       :id, :name,
+                                       { include_blank: "Select arrondissement..." },
+                                       { class: "form-select",
+                                         style: "font-size: 0.875rem;",
+                                         disabled: addr.object&.department_id.blank?,
+                                         data: {
+                                           address_target: "arrondissement",
+                                           action: "change->address#loadCommunes",
+                                           selected: addr.object&.arrondissement_id.to_s,
+                                           prompt: "Select arrondissement..."
+                                         } } %>
+          </div>
+
+          <%# Commune %>
+          <div class="col-md-6">
+            <%= addr.label :commune_id, "Commune", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.collection_select :commune_id,
+                                       (addr.object&.arrondissement&.communes&.order(:name) || []),
+                                       :id, :name,
+                                       { include_blank: "Select commune..." },
+                                       { class: "form-select",
+                                         style: "font-size: 0.875rem;",
+                                         disabled: addr.object&.arrondissement_id.blank?,
+                                         data: {
+                                           address_target: "commune",
+                                           action: "change->address#loadCommunalSections",
+                                           selected: addr.object&.commune_id.to_s,
+                                           prompt: "Select commune..."
+                                         } } %>
+          </div>
+
+          <%# Communal Section %>
+          <div class="col-md-6">
+            <%= addr.label :communal_section_id, "Communal Section", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.collection_select :communal_section_id,
+                                       (addr.object&.commune&.communal_sections&.order(:name) || []),
+                                       :id, :name,
+                                       { include_blank: "Select section..." },
+                                       { class: "form-select",
+                                         style: "font-size: 0.875rem;",
+                                         disabled: addr.object&.commune_id.blank?,
+                                         data: {
+                                           address_target: "section",
+                                           action: "change->address#loadPostalCode",
+                                           selected: addr.object&.communal_section_id.to_s,
+                                           prompt: "Select section..."
+                                         } } %>
+          </div>
+
+          <%# Postal Code (auto-populated from communal section) %>
+          <div class="col-md-3">
+            <%= addr.label :postal_code, "Postal Code", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.text_field :postal_code,
+                                class: "form-control bg-light",
+                                readonly: true,
+                                placeholder: "Auto-filled",
+                                data: { address_target: "postalCode" } %>
+          </div>
+
+          <%# Locality %>
+          <div class="col-md-5">
+            <%= addr.label :locality, "Locality/Neighborhood", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.text_field :locality,
+                                placeholder: "Locality or neighborhood name",
+                                class: "form-control",
+                                style: "font-size: 0.875rem;" %>
+          </div>
+
+          <%# Plus Code (What3Words alternative) %>
+          <div class="col-md-4">
+            <%= addr.label :plus_code, "Plus Code / GPS Reference", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= addr.text_field :plus_code,
+                                placeholder: "Plus code or GPS reference (if known)",
+                                class: "form-control",
+                                style: "font-size: 0.875rem;" %>
+          </div>
+
+          <%# Hidden fields %>
+          <%= addr.hidden_field :latitude, data: { address_target: "latitude" } %>
+          <%= addr.hidden_field :longitude, data: { address_target: "longitude" } %>
+          <%= addr.hidden_field :country, value: "Haiti" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# Section 4: EVIDENCE & MEDIA — Camera + Filmstrip + Auto-Watermark %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%
+    # Use direct blob URLs instead of variant URLs to prevent blocking page load.
+    # Variant generation (resize_to_limit) is synchronous and can hang for 50s+ on
+    # multiple files. CSS handles thumbnail sizing; the browser scales the full image.
+    existing_media_json = if incident_report.media.attached?
+      incident_report.media.map { |m|
+        {
+          id: m.id,
+          filename: m.filename.to_s,
+          url: m.content_type.start_with?("image/") ? url_for(m) : "",
+          contentType: m.content_type
+        }
+      }.to_json
+    else
+      "[]"
+    end
+  %>
+
+  <div class="card mb-4 border-0" style="border: 1px solid var(--law-tan);">
+    <div class="card-header border-0 py-3" style="background: var(--law-tan);">
+      <h5 class="mb-0 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 500;">
+        <i class="ri-camera-line me-2" style="font-weight: 400;"></i>Evidence & Media
+      </h5>
+    </div>
+    <div class="card-body"
+         data-controller="evidence-camera evidence-filmstrip"
+         data-evidence-camera-officer-badge-value="<%= current_officer.badge_id %>"
+         data-evidence-camera-max-files-value="10"
+         data-evidence-filmstrip-max-files-value="10"
+         data-evidence-filmstrip-existing-media-value="<%= existing_media_json %>">
+
+      <%# ── Camera Panel (hidden by default) ── %>
+      <div data-evidence-camera-target="cameraPanel" class="evidence-camera-panel d-none mb-3">
+        <video data-evidence-camera-target="video" autoplay playsinline muted
+               class="evidence-camera-panel__video"></video>
+        <canvas data-evidence-camera-target="canvas" class="d-none"></canvas>
+        <div class="evidence-camera-panel__controls">
+          <button type="button" class="btn btn-light btn-sm"
+                  data-action="evidence-camera#closeCamera"
+                  style="font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.8rem;">
+            <i class="ri-close-line me-1"></i>Close
+          </button>
+          <button type="button" class="btn text-white btn-sm"
+                  style="background: var(--law-red); font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.8rem; min-width: 100px;"
+                  data-evidence-camera-target="captureBtn"
+                  data-action="evidence-camera#capture"
+                  disabled>
+            <i class="ri-camera-line me-1"></i>Capture
+          </button>
+        </div>
+        <div data-evidence-camera-target="gpsStatus" class="evidence-camera-panel__gps">
+          <i class="ri-map-pin-line me-1"></i>Acquiring GPS...
+        </div>
+      </div>
+
+      <%# ── Action Buttons ── %>
+      <div class="d-flex gap-2 mb-3">
+        <button type="button" class="btn btn-sm"
+                style="border: 1px solid var(--law-blue); color: var(--law-blue); font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;"
+                data-action="evidence-camera#openCamera">
+          <i class="ri-camera-line me-1"></i>Open Camera
+        </button>
+
+        <label class="btn btn-outline-secondary btn-sm mb-0"
+               style="cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.85rem;">
+          <i class="ri-upload-2-line me-1"></i>Upload Files
+          <%= f.file_field :media,
+                multiple: true,
+                accept: "image/*,video/*",
+                class: "d-none",
+                data: {
+                  evidence_camera_target: "fileInput",
+                  evidence_filmstrip_target: "fileInput",
+                  action: "change->evidence-filmstrip#filesSelected"
+                } %>
+        </label>
+      </div>
+
+      <%# ── Counter ── %>
+      <div class="mb-2">
+        <small data-evidence-filmstrip-target="counter"
+               data-evidence-camera-target="counter"
+               class="text-muted"
+               style="font-size: 0.8rem;">0 / 10 files</small>
+      </div>
+
+      <%# ── Filmstrip ── %>
+      <div class="evidence-filmstrip" data-evidence-filmstrip-target="strip">
+        <%# Thumbnails are inserted here dynamically via JS %>
+      </div>
+
+      <%# ── Thumbnail Template ── %>
+      <template data-evidence-filmstrip-target="template">
+        <div class="evidence-thumb" data-file-id="">
+          <div class="evidence-thumb__img-wrap">
+            <img src="" alt="" class="evidence-thumb__img">
+            <div class="evidence-thumb__video-icon d-none">
+              <i class="ri-video-line"></i>
+            </div>
+            <button type="button" class="evidence-thumb__remove"
+                    data-action="evidence-filmstrip#removeFile">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+          <div class="evidence-thumb__info">
+            <span class="evidence-thumb__name"></span>
+            <span class="evidence-thumb__size"></span>
+          </div>
+        </div>
+      </template>
+
+      <%# ── Hidden GPS data for watermarking ── %>
+      <%= hidden_field_tag "incident_report[media_gps]", "[]",
+            data: { evidence_camera_target: "gpsData" } %>
+
+      <%# ── Hidden container for edit form removal inputs ── %>
+      <div data-evidence-filmstrip-target="removeContainer"></div>
+
+      <div class="form-text mt-2">
+        <i class="ri-information-line me-1"></i>
+        Max 10 files. Images and videos accepted (max 10MB each).
+        Photos are automatically watermarked with timestamp, GPS, and badge ID.
+      </div>
+    </div>
+  </div>
+
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# Submit Buttons %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-3">
+    <%# Left: Cancel %>
+    <%= link_to officers_incident_reports_path,
+                class: "btn btn-outline-secondary",
+                style: "font-family: 'Montserrat', sans-serif; font-size: 0.875rem; font-weight: 500;" do %>
+      <i class="ri-arrow-left-line me-1"></i>Annuler
+    <% end %>
+
+    <%# Right: Save Draft + Continue to Preview %>
+    <div class="d-flex gap-2 flex-wrap justify-content-end">
+      <%# Secondary: save incomplete draft (formnovalidate skips HTML5 required checks) %>
+      <%= submit_tag "💾 Enregistrer le brouillon",
+            name: "save_as_draft",
+            value: "1",
+            class: "btn btn-outline-secondary",
+            formnovalidate: true,
+            style: "font-family: 'Montserrat', sans-serif; font-size: 0.875rem; font-weight: 500;" %>
+
+      <%# Primary: validate + go to preview %>
+      <%= f.submit incident_report.new_record? ? "Continuer vers l'Aperçu →" : "Mettre à jour & Aperçu →",
+                   class: "btn text-white px-4",
+                   style: "background-color: var(--law-blue); font-family: 'Montserrat', sans-serif; font-size: 0.875rem; font-weight: 500;" %>
+    </div>
+  </div>
+<% end %>
+
+<%# Integrity Reminder Modal - Shown before submitting new reports %>
+<% if incident_report.new_record? %>
+  <%= render "officers/incident_reports/integrity_reminder_modal" %>
+<% end %>
+
+</div> <%# Close offline-report controller div %>

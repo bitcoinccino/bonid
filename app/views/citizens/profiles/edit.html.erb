@@ -1,0 +1,154 @@
+<%# app/views/citizens/profiles/edit.html.erb %>
+
+<div class="citizen-profile-page container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+
+
+      <% if @identity_verified %>
+        <div class="alert alert-info d-flex align-items-center rounded-3 shadow-sm" role="alert">
+          <i class="ri-shield-check-fill fs-4 me-3 text-success"></i>
+          <div>
+            <strong>Identity Verified</strong> —
+            Your name, date of birth, and sex are locked because your identity has been approved.
+            Everything else (photo, phone, ID documents, address) can still be updated.
+            <%= link_to "Request a name change", new_citizens_name_change_request_path, class: "fw-semibold" %> if you need to update your name.
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mb-5 bg-white shadow-sm position-relative overflow-hidden" style="border-radius: 0.5rem;">
+    <%# ── Blue Header ── %>
+    <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #00209F;">
+      <div>
+        <h4 class="mb-1 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">
+          <i class="ri-user-settings-line me-2"></i>Get Verified
+        </h4>
+        <p class="mb-0 text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
+          Complete the sections below to create your official BonID profile.
+          This information confirms your identity and allows verified partners to trust and recognize you securely.
+        </p>
+      </div>
+      <%= link_to citizens_identity_submissions_path, class: "btn btn-outline-light rounded-pill ms-3 flex-shrink-0", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
+        <i class="ri-arrow-left-line me-1"></i>Back to Dashboard
+      <% end %>
+    </div>
+
+    <%# ── Form Body ── %>
+    <div class="p-4 p-md-5">
+    <%= simple_form_for @citizen, as: :user,
+          url: citizens_profile_path, method: :patch,
+          html: { class: "profile-form", data: {
+            turbo: false,
+            controller: "wizard profile-review",
+            wizard_current_step_value: "1",
+            action: "wizard:stepChanged->profile-review#onStepChanged"
+          } } do |f| %>
+
+      <!-- STEP 1 — Profile Photo -->
+      <section data-wizard-target="step" data-step="1" class="wizard-step active">
+        <h6 class="fw-bold text-haitian-blue mb-4">
+          <i class="ri-camera-line me-2"></i>Step 1 – Profile Photo
+        </h6>
+
+        <%= render "citizens/profiles/profile_photo_fields", f: f %>
+
+        <div class="d-flex justify-content-end mt-4">
+          <button type="button" class="btn btn-haitian-blue rounded-pill px-5 shadow-sm fw-semibold"
+                  data-action="wizard#next">
+            Continue <i class="ri-arrow-right-line ms-2"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 2 — Personal Information -->
+      <section data-wizard-target="step" data-step="2" class="wizard-step d-none">
+        <h6 class="fw-bold text-haitian-blue mb-4">
+          <i class="ri-user-3-line me-2"></i>Step 2 – Personal Information
+        </h6>
+
+        <%= render "citizens/profiles/personal_fields", f: f %>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+          <button type="button" class="btn btn-haitian-blue rounded-pill px-5 shadow-sm fw-semibold"
+                  data-action="wizard#next">
+            Next <i class="ri-arrow-right-line ms-2"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 3 — Identification -->
+      <section data-wizard-target="step" data-step="3" class="wizard-step d-none">
+        <h6 class="fw-bold text-haitian-blue mb-4">
+          <i class="ri-id-card-line me-2"></i>Step 3 – Identification Information
+        </h6>
+
+        <%= render "citizens/profiles/identification_fields", f: f %>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+          <button type="button" class="btn btn-haitian-blue rounded-pill px-5 shadow-sm fw-semibold"
+                  data-action="wizard#next">
+            Next <i class="ri-arrow-right-line ms-2"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 4 — Address -->
+      <section data-wizard-target="step" data-step="4" class="wizard-step d-none">
+        <h6 class="fw-bold text-haitian-blue mb-4">
+          <i class="ri-home-4-line me-2"></i>Step 4 – Address Information
+        </h6>
+
+        <%= render "citizens/profiles/address_fields", f: f %>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+          <button type="button" class="btn btn-haitian-blue rounded-pill px-5 shadow-sm fw-semibold"
+                  data-action="wizard#next">
+            Review <i class="ri-arrow-right-line ms-2"></i>
+          </button>
+        </div>
+      </section>
+
+      <!-- STEP 5 — Review & Save -->
+      <section data-wizard-target="step" data-step="5" class="wizard-step d-none">
+        <h6 class="fw-bold text-haitian-blue mb-4">
+          <i class="ri-checkbox-circle-line me-2"></i>Step 5 – Review & Save
+        </h6>
+
+        <%= render "citizens/profiles/review_section" %>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+          <button type="button"
+                  class="btn btn-outline-secondary rounded-pill px-4"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+
+          <%= f.submit "Save & Continue",
+              class: "btn btn-primary btn-lg rounded-pill px-5 shadow-sm fw-bold profile-submit-btn",
+              data: { disable_with: "Saving..." } %>
+        </div>
+      </section>
+
+    <% end %>
+
+    <div class="mt-4 pt-3 border-top text-center small text-muted">
+      <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
+    </div>
+    </div><%# close form body %>
+  </div><%# close card %>
+</div>

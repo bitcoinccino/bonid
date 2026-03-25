@@ -1,0 +1,120 @@
+<%# app/views/citizens/transaction_consents/_otp_modal.html.erb %>
+<%# One modal per pending consent — used for OTP-based approve (fallback) and deny %>
+
+<div class="modal fade"
+     id="otpModal-<%= consent.consent_token %>"
+     tabindex="-1"
+     aria-labelledby="otpModalLabel-<%= consent.consent_token %>"
+     aria-hidden="true"
+     data-controller="otp-consent"
+     data-otp-consent-expires-at-value="<%= consent.expires_at.iso8601 %>">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 overflow-hidden" style="border: 2px solid #dee2e6;">
+
+      <%# ── Header ── %>
+      <div class="modal-header border-0 pb-0" style="background: #f8f9fa;">
+        <div class="w-100 text-center pt-2">
+          <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+            <% if consent.partner.logo.attached? %>
+              <%= image_tag url_for(consent.partner.logo),
+                    class: "rounded-3",
+                    style: "width:36px;height:36px;object-fit:cover;" %>
+            <% else %>
+              <div class="d-flex align-items-center justify-content-center rounded-3"
+                   style="width:36px;height:36px;background:#e9ecef;">
+                <i class="ri-building-2-line"></i>
+              </div>
+            <% end %>
+            <h6 class="modal-title fw-bold mb-0" id="otpModalLabel-<%= consent.consent_token %>">
+              <%= consent.partner.name %>
+            </h6>
+          </div>
+          <p class="small text-muted mb-0">
+            <%= t("transaction_consents.types.#{consent.transaction_type}", default: consent.transaction_type.titleize) %>
+            <% if consent.amount.present? && consent.amount > 0 %>
+              — <span class="fw-bold" style="color: #00209f;">
+                <%= number_to_currency(consent.amount, unit: consent.currency == "HTG" ? "G " : "$ ", precision: 2) %>
+              </span>
+            <% end %>
+          </p>
+        </div>
+        <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%# ── Body ── %>
+      <div class="modal-body px-4 pt-3 pb-4">
+
+        <%# Countdown timer %>
+        <div class="text-center mb-3">
+          <span class="small text-muted" data-otp-consent-target="countdown">
+            <% minutes_left = ((consent.expires_at - Time.current) / 60).ceil %>
+            <%= minutes_left %> min remaining
+          </span>
+        </div>
+
+        <%# Error placeholder (updated by Turbo Stream) %>
+        <div id="otp-error-<%= consent.consent_token %>"></div>
+
+        <%# OTP Form %>
+        <%= form_with url: decide_citizens_transaction_consent_path(consent.consent_token),
+                      method: :post do |f| %>
+
+          <input type="hidden" name="decision" value=""
+                 data-otp-consent-target="decisionInput">
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-muted text-center d-block">
+              Enter 6-digit approval code
+            </label>
+            <input type="text"
+                   name="otp"
+                   class="form-control form-control-lg text-center fw-bold"
+                   style="font-size: 1.8rem; letter-spacing: 0.5rem; font-family: monospace; border: 2px solid #dee2e6;"
+                   inputmode="numeric"
+                   pattern="[0-9]*"
+                   maxlength="6"
+                   autocomplete="one-time-code"
+                   placeholder="------"
+                   required
+                   data-otp-consent-target="input"
+                   data-action="input->otp-consent#onInput paste->otp-consent#onPaste">
+          </div>
+
+          <div class="small text-muted text-center mb-3">
+            <i class="ri-mail-line me-1"></i>Check the email linked to your BonID for the code.
+          </div>
+
+          <%# Action buttons — ONE shows at a time based on which trigger opened the modal %>
+          <div class="d-grid gap-2">
+            <button type="button"
+                    class="btn btn-success fw-bold py-2 rounded-3"
+                    disabled
+                    data-otp-consent-target="approveBtn"
+                    data-action="click->otp-consent#approve">
+              <i class="ri-check-double-line me-1"></i><%= t("transaction_consents.approve_with_otp") %>
+            </button>
+            <button type="button"
+                    class="btn btn-danger fw-bold py-2 rounded-3 d-none"
+                    disabled
+                    data-otp-consent-target="denyBtn"
+                    data-action="click->otp-consent#deny">
+              <i class="ri-close-circle-line me-1"></i><%= t("transaction_consents.confirm_denial") %>
+            </button>
+          </div>
+
+        <% end %>
+
+        <%# Remaining attempts %>
+        <% if consent.otp_attempts > 0 %>
+          <div class="text-center mt-3">
+            <span class="small text-danger">
+              <i class="ri-error-warning-line me-1"></i>
+              <%= TransactionConsent::MAX_OTP_ATTEMPTS - consent.otp_attempts %> attempt<%= (TransactionConsent::MAX_OTP_ATTEMPTS - consent.otp_attempts) != 1 ? 's' : '' %> remaining
+            </span>
+          </div>
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>

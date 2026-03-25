@@ -1,0 +1,182 @@
+<%# app/views/citizens/transaction_consents/index.html.erb %>
+<% current_filter = params[:status].presence || "pending" %>
+
+<div class="px-0 mx-auto" style="max-width: 1140px;" data-controller="consent-focus"
+     data-consent-focus-expires-at-value="<%= @pending_consents.first&.expires_at&.iso8601 || '' %>"
+     data-consent-focus-sound-url-value="">
+
+  <%# Flash messages container for Turbo Stream %>
+  <div id="flash-messages"></div>
+
+  <%# ── Connection Status Bar + Header ── %>
+  <div class="consent-topbar d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-2">
+      <span class="connection-dot" data-consent-focus-target="connectionDot"></span>
+      <span class="small fw-semibold" data-consent-focus-target="connectionLabel" style="color: #198754;">
+        <%= t("transaction_consents.connection_live") %>
+      </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <%= render "shared/language_switcher" %>
+    </div>
+  </div>
+
+  <%# ── Title ── %>
+  <div class="mb-3">
+    <h3 style="font-family: 'Montserrat', sans-serif; font-size: 1.2rem; font-weight: 700; color: var(--haitian-blue, #00209f);" class="mb-1">
+      <i class="ri-exchange-funds-line me-2"></i><%= t("transaction_consents.title") %>
+    </h3>
+    <p class="text-muted mb-0" style="font-size: 0.78rem;">
+      <%= t("transaction_consents.subtitle") %>
+    </p>
+  </div>
+
+  <%# ── Turbo Stream subscription for real-time updates ── %>
+  <%= turbo_stream_from "citizen_#{@citizen.id}_consents" %>
+
+  <%# ── Filter Chips with Counts ── %>
+  <div class="d-flex align-items-center gap-2 mb-3 flex-wrap mt-3">
+    <%= link_to citizens_transaction_consents_path(status: "pending"),
+                class: "consent-chip text-decoration-none #{current_filter == 'pending' ? 'consent-chip--active' : ''}" do %>
+      <i class="ri-time-line me-1"></i><%= t("transaction_consents.tabs.pending") %>
+      <span id="consent-count-pending" class="consent-chip-count badge rounded-pill ms-1"><%= @pending_count %></span>
+    <% end %>
+    <%= link_to citizens_transaction_consents_path(status: "approved"),
+                class: "consent-chip text-decoration-none #{current_filter == 'approved' ? 'consent-chip--active' : ''}" do %>
+      <i class="ri-check-line me-1"></i><%= t("transaction_consents.tabs.approved") %>
+      <span id="consent-count-approved" class="consent-chip-count badge rounded-pill ms-1"><%= @approved_count %></span>
+    <% end %>
+    <%= link_to citizens_transaction_consents_path(status: "denied"),
+                class: "consent-chip text-decoration-none #{current_filter == 'denied' ? 'consent-chip--active' : ''}" do %>
+      <i class="ri-close-line me-1"></i><%= t("transaction_consents.tabs.denied") %>
+      <span id="consent-count-denied" class="consent-chip-count badge rounded-pill ms-1"><%= @denied_count %></span>
+    <% end %>
+    <%= link_to citizens_transaction_consents_path(status: "expired"),
+                class: "consent-chip text-decoration-none #{current_filter == 'expired' ? 'consent-chip--active' : ''}" do %>
+      <i class="ri-timer-line me-1"></i><%= t("transaction_consents.tabs.expired") %>
+      <span id="consent-count-expired" class="consent-chip-count badge rounded-pill ms-1"><%= @expired_count %></span>
+    <% end %>
+
+    <%# Sort indicator %>
+    <span class="ms-auto small text-muted d-none d-md-inline">
+      <i class="ri-sort-desc me-1"></i>Newest first
+    </span>
+  </div>
+
+  <%# ══════════════════════════════════════════════════════ %>
+  <%# CARD GRID                                             %>
+  <%# ══════════════════════════════════════════════════════ %>
+  <% if @transaction_consents.any? %>
+    <div class="row g-4 justify-content-center">
+      <% @transaction_consents.each do |consent| %>
+        <div class="col-xl-4 col-lg-6 col-12" id="<%= dom_id(consent) %>">
+          <%= render "citizens/transaction_consents/consent_card", consent: consent %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ── Pagination ── %>
+    <% if @transaction_consents.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-4">
+        <%= paginate @transaction_consents, theme: "bootstrap-4" %>
+      </div>
+    <% end %>
+
+  <% else %>
+    <%# ── Empty State ── %>
+    <div class="consent-empty-state">
+      <% if current_filter == "pending" %>
+        <div class="mb-3" style="font-size: 2.5rem; color: #00209f;">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <h5 class="fw-bold mb-2" style="font-family: 'Montserrat', sans-serif; color: #343A40;">
+          <%= t("transaction_consents.empty.caught_up_title") %>
+        </h5>
+        <p class="text-muted small mb-3">
+          <%= t("transaction_consents.empty.caught_up_body") %>
+        </p>
+      <% else %>
+        <div class="mb-3" style="font-size: 2.5rem; color: #00209f;">
+          <i class="ri-inbox-line"></i>
+        </div>
+        <h5 class="fw-bold mb-2" style="font-family: 'Montserrat', sans-serif; color: #343A40;">
+          <%= t("transaction_consents.empty.no_results_title") %>
+        </h5>
+        <p class="text-muted small mb-3">
+          <%= t("transaction_consents.empty.no_#{current_filter}") rescue t("transaction_consents.empty.body") %>
+        </p>
+      <% end %>
+      <%= link_to citizens_dashboard_path, class: "small text-decoration-none", style: "color: #00209f;" do %>
+        <i class="ri-arrow-left-line me-1"></i>Back to Dashboard
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ══════════════════════════════════════════════════════ %>
+  <%# RECENT COMPLETED — "peace of mind" section            %>
+  <%# ══════════════════════════════════════════════════════ %>
+  <% if @transaction_consents.empty? && @recent_completed.any? %>
+    <div class="mt-4">
+      <h6 class="fw-bold text-muted small text-uppercase mb-3">
+        <i class="ri-history-line me-1"></i><%= t("transaction_consents.recent_title") %>
+      </h6>
+      <div class="row g-4 justify-content-center">
+        <% @recent_completed.each do |consent| %>
+          <div class="col-xl-4 col-lg-6 col-12">
+            <%= render "citizens/transaction_consents/consent_card", consent: consent %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+</div>
+
+<%# ── OTP Modals (one per pending consent) ── %>
+<% @pending_consents.each do |consent| %>
+  <%= render "citizens/transaction_consents/otp_modal", consent: consent %>
+<% end %>
+
+<%# ── Liveness mount point (hidden until triggered) ── %>
+<div id="consent-liveness-mount" class="d-none">
+  <div class="consent-liveness-overlay">
+    <div class="consent-liveness-container">
+      <%# Header bar %>
+      <div class="consent-liveness-header">
+        <span class="consent-liveness-title">
+          <i class="ri-shield-check-line me-1"></i> Verifikasyon Idantite
+        </span>
+        <button type="button"
+                class="consent-liveness-close"
+                onclick="document.getElementById('consent-liveness-mount').classList.add('d-none'); document.body.classList.remove('liveness-active');">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <%# Liveness detector — same structure as BonID submission %>
+      <div class="liveness-wrapper consent-liveness-dark" style="width: 100%; height: calc(100vh - 120px); min-height: 500px; display: flex; flex-direction: column;">
+        <div id="consent-liveness-react-mount" class="liveness-mount-point" style="width: 100%; height: 100%; flex: 1 1 auto; position: relative;"></div>
+        <div id="consent-liveness-status" class="liveness-status"></div>
+      </div>
+
+      <%# OTP fallback link %>
+      <% first_pending = @pending_consents&.first %>
+      <% if first_pending %>
+        <div class="consent-liveness-fallback">
+          <a href="#"
+             onclick="document.getElementById('consent-liveness-mount').classList.add('d-none'); document.body.classList.remove('liveness-active');"
+             data-bs-toggle="modal"
+             data-bs-target="#otpModal-<%= first_pending.consent_token %>">
+            <i class="ri-key-2-line me-1"></i>Itilize kòd pito / Use code instead
+          </a>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── Conditionally load liveness bundle when there are pending consents ── %>
+<% if @pending_consents.any? %>
+  <%= stylesheet_link_tag "liveness", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "liveness", type: "module", defer: true %>
+<% end %>

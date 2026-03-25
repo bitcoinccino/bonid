@@ -1,34 +1,26 @@
-<!-- app/views/admin/guidelines/index.html.erb -->
-<%=render "shared/navbar" %>
-<div style="padding-top: 56px;"></div> <!-- Matches navbar height -->
-
-<div class="container py-4 py-md-5">
-  <div class="card mx-auto shadow-lg" style="max-width: 960px; border: none; border-radius: 12px; overflow: hidden;">
+<div class="guidelines-wrapper d-flex align-items-center justify-content-center">
+  <div class="card shadow border-0" style="max-width: 800px; border-radius: 12px; overflow: hidden;">
     <!-- Header -->
-    <div class="card-header bg-haitian-blue text-white py-3">
-      <div class="d-flex justify-content-between align-items-center px-3 px-md-4">
-        <h2 class="mb-0 fw-bold d-flex align-items-center">
-          <i class="ri-shield-user-line me-2" style="font-size: 1.5rem;"></i> BonID Data Handling Guidelines
-        </h2>
-        <%= button_to destroy_user_session_path, method: :delete, class: "btn btn-outline-light btn-sm rounded-pill", role: "button" do %>
-          <i class="ri-logout-box-line me-1"></i> Sign Out
-        <% end %>
-      </div>
+    <div class="card-header bg-haitian-blue text-white py-3 text-center">
+      <h2 class="mb-0 fw-semibold d-flex justify-content-center align-items-center fs-5">
+        <i class="ri-shield-user-line me-2" style="font-size: 1.25rem;"></i> 
+        BonID Data Handling Guidelines
+      </h2>
     </div>
 
     <!-- Body -->
     <div class="card-body p-4 p-md-5">
       <!-- Guidelines -->
       <div class="mb-5">
-        <h4 class="text-dark fw-semibold mb-3">BonID Protocol for Handling User Data</h4>
-        <p class="text-secondary mb-4" style="font-size: 0.95rem;">
+        <h4 class="text-haitian-blue fw-semibold mb-3 fs-5">BonID Protocol for Handling User Data</h4>
+        <p class="text-muted mb-4 small">
           As an admin, you are required to follow these guidelines to ensure the security and privacy of user data in compliance with BonID’s protocol.
         </p>
         <ul class="list-group list-group-flush">
-          <% guidelines.each do |guideline| %>
+          <% @guidelines.each do |guideline| %>
             <li class="list-group-item d-flex align-items-start border-0 py-2">
-              <i class="ri-checkbox-circle-fill text-haitian-blue me-3" style="font-size: 1.25rem;"></i>
-              <span class="text-dark" style="font-size: 0.95rem;"><%= guideline %></span>
+              <i class="ri-checkbox-circle-fill text-haitian-blue me-3 mt-1" style="font-size: 1.1rem;" aria-hidden="true"></i>
+              <span class="text-dark small"><%= guideline %></span>
             </li>
           <% end %>
         </ul>
@@ -39,16 +31,16 @@
                     html: { class: "needs-validation", novalidate: true, data: { controller: "confirmation" } } do |f| %>
         <div class="form-check mb-4">
           <%= f.check_box :confirmed, id: "confirm_guidelines", class: "form-check-input", required: true,
-                          data: { confirmation_target: "checkbox" } %>
+                          data: { confirmation_target: "checkbox" }, aria_describedby: "confirm_guidelines_label" %>
           <%= f.label :confirmed, "I acknowledge and agree to follow the BonID data handling guidelines.",
-                      class: "form-check-label ms-2 text-dark fw-medium" %>
-          <div class="invalid-feedback mt-1" style="font-size: 0.85rem;">
+                      id: "confirm_guidelines_label", class: "form-check-label ms-2 text-dark fw-medium small" %>
+          <div class="invalid-feedback mt-1 small">
             You must confirm to proceed to the admin dashboard.
           </div>
         </div>
 
         <%= f.submit "Proceed to Dashboard",
-                     class: "btn btn-haitian-blue btn-lg rounded-pill fw-semibold w-100 w-md-auto",
+                     class: "btn btn-haitian-blue btn-md rounded-pill fw-semibold w-100 w-md-auto px-4 py-2",
                      data: { action: "click->confirmation#validate" } %>
       <% end %>
     </div>
@@ -56,90 +48,44 @@
 </div>
 
 <style>
-  /* Guidelines Page Styles without Gradients */
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background-color: #f8f9fa;
-    line-height: 1.6;
+  /* Full height flex center */
+  .guidelines-wrapper {
+    min-height: 100vh;
+    background-color: #f0f4f9; /* subtle background */
+    padding: 2rem 1rem;
   }
 
+  /* Haitian Blue (#00209F) */
   .bg-haitian-blue {
-    background-color: #003087;
-    border-radius: 12px 12px 0 0;
+    background-color: #00209F;
   }
-
   .text-haitian-blue {
-    color: #003087;
+    color: #00209F;
   }
-
-  .card {
-    background-color: #ffffff;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  }
-
-  .form-check-input {
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 2px solid #6c757d;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-  }
-
-  .form-check-input:checked {
-    background-color: #003087;
-    border-color: #003087;
-  }
-
-  .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(0, 48, 135, 0.2);
-    border-color: #003087;
-  }
-
-  .invalid-feedback {
-    color: #c8102e; /* BonID red for error feedback */
-  }
-
   .btn-haitian-blue {
-    background-color: #003087;
+    background-color: #00209F;
     color: #ffffff;
     border: none;
-    padding: 0.75rem 1.5rem;
     transition: background-color 0.3s ease;
   }
-
   .btn-haitian-blue:hover {
-    background-color: #002066;
-    color: #ffffff; /* Explicitly set text color to white on hover */
+    background-color: #001a7d;
+    color: #ffffff;
   }
 
-  .btn-outline-light {
-    border-color: rgba(255, 255, 255, 0.8);
-    transition: all 0.2s ease;
+  /* Form elements */
+  .form-check-input:checked {
+    background-color: #00209F;
+    border-color: #00209F;
   }
-
-  .btn-outline-light:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .list-group-item {
-    background-color: transparent;
+  .form-check-input:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 32, 159, 0.25);
+    border-color: #00209F;
   }
 
   @media (max-width: 576px) {
-    .card { padding: 1rem; }
     .card-body { padding: 1.5rem; }
-    .btn-lg { font-size: 0.9rem; padding: 0.6rem 1.2rem; }
-    .form-check-input { width: 1.25rem; height: 1.25rem; }
-    h2 { font-size: 1.5rem; }
-    h4 { font-size: 1.25rem; }
-  }
-
-  @media (min-width: 768px) {
-    .btn-lg { padding: 0.75rem 2rem; }
+    h2 { font-size: 1.25rem; }
+    h4 { font-size: 1rem; }
   }
 </style>

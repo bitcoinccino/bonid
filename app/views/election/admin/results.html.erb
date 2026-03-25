@@ -1,0 +1,160 @@
+<%# app/views/election/admin/results.html.erb %>
+<%# "Election Night" Results Screen — shown ONLY after Multi-Sig decryption.
+    Displays the official vote totals per candidate.
+    Broadcast live on national TV / streamed online. %>
+
+<div style="min-height: 100vh; background: linear-gradient(180deg, #0a0f1f 0%, #001466 50%, #00209F 100%);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 2rem 1.5rem; font-family: 'Montserrat', 'Inter', sans-serif; color: #ffffff;">
+
+  <%# ── Official Header ── %>
+  <div style="text-align: center; margin-bottom: 2.5rem; max-width: 700px;">
+    <div style="margin-bottom: 1rem;">
+      <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.75rem;
+                  font-weight: 800; color: #EDB95E; letter-spacing: 3px;">
+        REPIBLIK D'AYITI &middot; KONSÈY ELEKTORAL PWOVIZWA
+      </div>
+    </div>
+
+    <h1 style="font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: 800; margin: 0 0 0.5rem;
+               background: linear-gradient(135deg, #ffffff 0%, #EDB95E 100%);
+               -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+               background-clip: text;">
+      Rezilta Ofisyèl — Dyaspora
+    </h1>
+
+    <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6); margin: 0;">
+      Eleksyon Jeneral &middot; 30 Out 2026 &middot; Premye Tou
+    </p>
+
+    <div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 6px;
+                padding: 6px 16px; background: rgba(52,211,153,0.15); border-radius: 20px;">
+      <span style="width: 8px; height: 8px; background: #34d399; border-radius: 50%;"></span>
+      <span style="font-size: 0.72rem; font-weight: 700; color: #34d399;">
+        DECHIFRE &middot; OFISYÈL
+      </span>
+    </div>
+  </div>
+
+  <%# ── Total Participation ── %>
+  <div style="width: 100%; max-width: 800px; text-align: center; margin-bottom: 2rem;">
+    <div style="font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5);
+                text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">
+      Patisipasyon Total Dyaspora
+    </div>
+    <div style="font-size: clamp(2.5rem, 8vw, 4rem); font-weight: 800; color: #ffffff;
+                letter-spacing: -0.02em;">
+      <%= number_with_delimiter(@stats[:total_votes] || 0) %>
+    </div>
+    <div style="font-size: 0.82rem; color: rgba(255,255,255,0.5);">
+      vòt konte nan <%= (@stats[:by_country] || {}).size %> peyi
+    </div>
+  </div>
+
+  <%# ── Candidate Results ── %>
+  <div style="width: 100%; max-width: 800px; margin-bottom: 2rem;">
+    <% total = (@results[:candidates] || {}).values.sum.to_f %>
+    <% sorted_candidates = (@results[:candidates] || {}).sort_by { |_, v| -v } %>
+
+    <% sorted_candidates.each_with_index do |(candidate, votes), index| %>
+      <% percentage = total > 0 ? ((votes.to_f / total) * 100).round(1) : 0 %>
+      <% is_winner = index == 0 && percentage > 50 %>
+      <% bar_color = index == 0 ? "#EDB95E" : index == 1 ? "#7b8fff" : "rgba(255,255,255,0.3)" %>
+
+      <div style="margin-bottom: 1.5rem; padding: 1.25rem 1.5rem;
+                  background: <%= is_winner ? 'linear-gradient(135deg, rgba(237,185,94,0.1) 0%, rgba(237,185,94,0.05) 100%)' : 'rgba(255,255,255,0.03)' %>;
+                  border: 1px solid <%= is_winner ? 'rgba(237,185,94,0.25)' : 'rgba(255,255,255,0.06)' %>;
+                  border-radius: 1rem; position: relative; overflow: hidden;">
+
+        <% if is_winner %>
+          <div style="position: absolute; top: 10px; right: 12px;">
+            <span style="font-size: 0.65rem; font-weight: 800; background: #EDB95E; color: #0a0f1f;
+                         padding: 3px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;">
+              Eli
+            </span>
+          </div>
+        <% end %>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem;">
+          <div>
+            <div style="font-size: clamp(1rem, 3vw, 1.2rem); font-weight: 800; color: #fff;">
+              <%= candidate %>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: clamp(1.2rem, 4vw, 1.6rem); font-weight: 800; color: <%= bar_color %>;">
+              <%= percentage %>%
+            </div>
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">
+              <%= number_with_delimiter(votes) %> vòt
+            </div>
+          </div>
+        </div>
+
+        <%# Progress bar %>
+        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+          <div style="width: <%= percentage %>%; height: 100%; background: <%= bar_color %>;
+                      border-radius: 4px; transition: width 1.5s ease;"></div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if sorted_candidates.empty? %>
+      <div style="text-align: center; padding: 3rem; color: rgba(255,255,255,0.4);">
+        <i class="ri-lock-line" style="font-size: 2rem; display: block; margin-bottom: 0.75rem;"></i>
+        Rezilta yo ap trete...
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Verification Footer ── %>
+  <div style="width: 100%; max-width: 800px; margin-bottom: 2rem;">
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+                border-radius: 1rem; padding: 1.5rem;">
+      <h3 style="font-size: 0.82rem; font-weight: 700; margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="ri-shield-check-line" style="color: #34d399;"></i>
+        Sètifika Entegrite
+      </h3>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; font-size: 0.75rem;">
+        <div>
+          <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Merkle Root</div>
+          <div style="font-family: monospace; color: #7b8fff; word-break: break-all; font-size: 0.68rem;">
+            <%= @integrity[:merkle_root] || "N/A" %>
+          </div>
+        </div>
+        <div>
+          <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Dechifre pa</div>
+          <div style="color: #fff; font-weight: 600;">
+            <%= @sig_status[:signatories]&.map { |s| s[:name] }&.join(", ") || "N/A" %>
+          </div>
+        </div>
+        <div>
+          <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Dechifre le</div>
+          <div style="color: #fff; font-weight: 600;">
+            <%= @results[:decrypted_at] ? Time.parse(@results[:decrypted_at]).strftime("%d %b %Y à %H:%M:%S") : "N/A" %>
+          </div>
+        </div>
+        <div>
+          <div style="color: rgba(255,255,255,0.5); margin-bottom: 4px;">Protokòl</div>
+          <div style="color: #EDB95E; font-weight: 600;">
+            Pedersen + Schnorr ZKP + AES-256-GCM
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Official Stamp ── %>
+  <div style="text-align: center; margin-top: 1rem; padding: 1.5rem;">
+    <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.65rem;
+                font-weight: 800; color: rgba(255,255,255,0.2); letter-spacing: 3px;">
+      BONID &middot; VERIFYEM &middot; CEP
+    </div>
+    <div style="font-size: 0.6rem; color: rgba(255,255,255,0.15); margin-top: 6px;">
+      Rezilta sa yo jere pa Pedersen Commitment ak verifikasyon homomòfik.<br>
+      Vòt endividyèl yo pa janm dechifre — sèlman total agreje a vizib.<br>
+      &copy; 2026 Konsèy &Eacute;lektoral Pwovizwa &middot; BonID / Verifyem
+    </div>
+  </div>
+</div>

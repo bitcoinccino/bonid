@@ -1,0 +1,302 @@
+<style>
+  @import url('https://fonts.googleapis.com');
+
+  :root {
+    --pnh-blue: #00209F;
+    --sep-gray: #e2e8f0;
+  }
+
+  body { 
+    background: #f1f5f9; 
+    padding: 40px 20px; 
+    -webkit-print-color-adjust: exact;
+  }
+
+  .cert-container { 
+    background: #fff; 
+    max-width: 800px; 
+    margin: 0 auto; 
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  /* Decorative Security Border */
+  .cert-inner-border {
+    margin: 15px;
+    border: 1px solid var(--pnh-blue);
+    padding: 40px;
+    position: relative;
+  }
+
+  .cert-inner-border::before {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px; right: 2px; bottom: 2px;
+    border: 3px double var(--pnh-blue);
+    pointer-events: none;
+  }
+
+  .cert-header { text-align: center; margin-bottom: 30px; }
+  
+  .gov-header {
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: var(--pnh-blue);
+    margin-bottom: 5px;
+  }
+
+  .pnh-sub {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.75rem;
+    color: #444;
+    margin-bottom: 20px;
+  }
+
+  .cert-title-box {
+    background: var(--pnh-blue);
+    color: white;
+    padding: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    margin-bottom: 25px;
+  }
+
+  .ref-number-box {
+    border: 2px solid var(--pnh-blue);
+    padding: 10px 20px;
+    display: inline-block;
+    margin-bottom: 30px;
+  }
+
+  .ref-label { font-family: 'Montserrat', sans-serif; font-size: 0.6rem; color: var(--pnh-blue); font-weight: 700; text-transform: uppercase; }
+  .ref-value { font-family: 'Montserrat', sans-serif; font-size: 1.3rem; font-weight: 700; color: #000; letter-spacing: 2px; }
+
+  /* Data Grid */
+  .data-section { border-top: 1px solid var(--sep-gray); padding: 12px 0; display: flex; }
+  .data-label { width: 35%; font-family: 'Montserrat', sans-serif; font-size: 0.65rem; font-weight: 700; color: #666; text-transform: uppercase; }
+  .data-content { width: 65%; font-family: 'Libre Baskerville', serif; font-size: 0.9rem; color: #000; font-weight: 700; }
+
+  .narrative-block {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 4px;
+  }
+
+  .official-seal {
+    position: absolute;
+    bottom: 80px;
+    right: 60px;
+    opacity: 0.15;
+    width: 150px;
+    pointer-events: none;
+  }
+
+  /* Anti-tamper QR + signature strip */
+  .cert-integrity-strip {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid var(--sep-gray);
+    border-radius: 4px;
+  }
+
+  .cert-integrity-strip img {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+    border: 1px solid var(--sep-gray);
+    border-radius: 4px;
+  }
+
+  .cert-integrity-text {
+    flex: 1;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .cert-integrity-text .verify-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--pnh-blue);
+    margin-bottom: 3px;
+  }
+
+  .cert-integrity-text .verify-url {
+    font-size: 0.68rem;
+    color: #333;
+    word-break: break-all;
+    margin-bottom: 8px;
+  }
+
+  .cert-integrity-text .checksum-row {
+    font-size: 0.6rem;
+    color: #666;
+  }
+
+  .cert-integrity-text .checksum-value {
+    font-family: monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #000;
+    letter-spacing: 1px;
+  }
+
+  .cert-validity-badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 5px;
+  }
+
+  .cert-validity-badge.valid {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+  }
+
+  .cert-validity-badge.invalid {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
+  .footer-notice {
+    margin-top: 40px;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.7rem;
+    color: #555;
+    text-align: center;
+    line-height: 1.6;
+    padding-top: 20px;
+    border-top: 1px solid var(--sep-gray);
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .cert-container { box-shadow: none; max-width: 100%; }
+    .no-print { display: none !important; }
+  }
+</style>
+
+<div class="cert-container">
+  <div class="cert-inner-border">
+    
+    <%# Watermark Seal %>
+    <%= image_tag "haiti_flag.png", class: "official-seal", alt: "Seal" %>
+
+    <div class="cert-header">
+      <div class="gov-header">République d'Haïti</div>
+      <div class="pnh-sub">Police Nationale d'Haïti — Inspection Générale (IGPNH)</div>
+      
+      <div class="cert-title-box">
+        CERTIFICAT DE DÉPÔT DE PLAINTE / SÈTIFIKA DEPO PLENT
+      </div>
+
+      <div class="ref-number-box">
+        <div class="ref-label">Référence Officielle / Reference No.</div>
+        <div class="ref-value"><%= @certificate[:certificate_reference] %></div>
+      </div>
+    </div>
+
+    <%# Filing Metadata %>
+    <div class="data-section">
+      <div class="data-label">Date de Dépôt / Filing Date</div>
+      <div class="data-content"><%= @certificate[:submitted_at]&.strftime("%d %B %Y — %H:%M") %></div>
+    </div>
+
+    <div class="data-section">
+      <div class="data-label">Plaignant / Complainant</div>
+      <div class="data-content">
+        <%= @certificate[:complainant_name] || "ANONYME" %>
+        <% if @certificate[:complainant_bonid].present? %>
+          <div style="font-size: 0.7rem; color: #666; font-weight: 400;">ID: <%= @certificate[:complainant_bonid] %></div>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="data-section">
+      <div class="data-label">Nature de la Faute / Allegation</div>
+      <div class="data-content">
+        <%= @certificate[:allegation_category] %> 
+        <span style="font-weight: 400; color: #666;">(<%= @certificate[:specific_allegation] %>)</span>
+      </div>
+    </div>
+
+    <div class="data-section">
+      <div class="data-label">Lieu & Date / Event Details</div>
+      <div class="data-content">
+        <%= [@certificate[:commune], @certificate[:department]].compact.join(", ") %><br>
+        <span style="font-weight: 400; color: #666;"><%= @certificate[:occurred_at]&.strftime("%d %B %Y") %></span>
+      </div>
+    </div>
+
+    <%# Investigation Routing %>
+    <div class="narrative-block">
+      <div class="data-label" style="width: 100%; margin-bottom: 8px;">Unité d'Enquête / Assigned Unit</div>
+      <div class="data-content" style="width: 100%; color: var(--pnh-blue);">
+        <%= @certificate[:routed_directorate_code] %> — <%= @certificate[:routed_directorate_name] %>
+      </div>
+      <div style="font-size: 0.7rem; color: #666; margin-top: 5px; font-family: 'Montserrat';">
+        COPIE NOTIFIÉE AUTOMATIQUEMENT: OFFICE DE LA PROTECTION DU CITOYEN (OPC)
+      </div>
+    </div>
+
+    <%# Anti-Tamper Integrity Strip %>
+    <div class="cert-integrity-strip">
+      <% if @certificate[:qr_png_base64].present? %>
+        <img src="data:image/png;base64,<%= @certificate[:qr_png_base64] %>"
+             alt="Scan to verify" title="Scan to verify this certificate online" />
+      <% end %>
+      <div class="cert-integrity-text">
+        <div class="verify-label">Vérification / Certificate Verification</div>
+        <div class="verify-url"><%= @certificate[:verification_url] %></div>
+        <div class="checksum-row">
+          Checksum HMAC-SHA256: <span class="checksum-value"><%= @certificate[:certificate_checksum] %></span>
+        </div>
+        <% if @certificate[:certificate_signed_at] %>
+          <div class="checksum-row" style="margin-top: 3px;">
+            Signé le / Signed: <%= @certificate[:certificate_signed_at].strftime("%d %B %Y à %H:%M UTC") %>
+          </div>
+        <% end %>
+        <div class="cert-validity-badge <%= @certificate[:certificate_valid] ? 'valid' : 'invalid' %>">
+          <%= @certificate[:certificate_valid] ? "✓ Intégrité confirmée / Integrity verified" : "⚠ Signature invalide / Invalid signature" %>
+        </div>
+      </div>
+    </div>
+
+    <%# Legal Footer %>
+    <div class="footer-notice">
+      <%= @certificate[:legal_notice] %>
+      <br>
+      <strong>VALEUR PROBANTE:</strong> Ce certificat constitue une preuve légale de signalement. Sans réponse de l'IGPNH sous 15 jours ouvrables, présentez ce document à l'<strong>OPC</strong> ou au <strong>Tribunal de Première Instance</strong> compétent.
+    </div>
+
+  </div>
+</div>
+
+<%# Print controls %>
+<div class="no-print" style="text-align: center; margin-top: 30px; padding-bottom: 50px;">
+  <button onclick="window.print()" style="background: #00209F; color: white; border: none; padding: 12px 30px; border-radius: 50px; font-family: 'Montserrat'; font-weight: 700; cursor: pointer;">
+    <i class="ri-printer-line me-2"></i> Print / Download PDF
+  </button>
+  <div style="margin-top: 15px;">
+    <%= link_to "Back to My Complaints", citizens_officer_complaints_path, style: "color: #666; font-size: 0.8rem; font-family: 'Montserrat';" %>
+  </div>
+</div>

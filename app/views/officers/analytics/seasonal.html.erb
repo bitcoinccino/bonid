@@ -1,0 +1,379 @@
+<%# Seasonal Analysis - Crime Patterns by Season %>
+<%# Unified Law Enforcement Styling %>
+
+<div class="container-fluid py-4">
+  <%# Header with gradient %>
+  <div class="card border-0 analytics-header mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center">
+        <%= link_to officers_analytics_path, class: "btn btn-sm analytics-back-btn me-3" do %>
+          <i class="ri-arrow-left-line"></i>
+        <% end %>
+        <div class="text-white">
+          <h2 class="mb-1 analytics-header-title"><i class="ri-leaf-line me-2"></i>Seasonal Analysis</h2>
+          <p class="mb-0 analytics-header-subtitle">Crime patterns across Winter, Spring, Summer, and Fall</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# Season Summary Cards %>
+  <div class="row g-3 mb-4">
+    <%
+      seasons = %w[Winter Spring Summer Fall]
+      season_icons = { "Winter" => "ri-snowy-line", "Spring" => "ri-seedling-line", "Summer" => "ri-sun-line", "Fall" => "ri-leaf-line" }
+      season_colors = { "Winter" => "#0A3A9E", "Spring" => "#49A64F", "Summer" => "#FFD700", "Fall" => "#BF8360" }
+      season_bg_colors = { "Winter" => "rgba(10, 58, 158, 0.1)", "Spring" => "rgba(73, 166, 79, 0.1)", "Summer" => "rgba(255, 215, 0, 0.15)", "Fall" => "rgba(191, 131, 96, 0.1)" }
+      total = @seasonal_data.values.sum.to_f
+      total = 1 if total == 0
+      max_season = @seasonal_data.max_by { |_, v| v }&.first
+    %>
+    <% seasons.each do |season| %>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-law-sm h-100 <%= 'border-start border-4' if season == max_season %>" style="<%= "border-color: #{season_colors[season]} !important;" if season == max_season %>">
+          <div class="card-body text-center py-3">
+            <div class="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; background: <%= season_bg_colors[season] %>;">
+              <i class="<%= season_icons[season] %> fs-3" style="color: <%= season_colors[season] %>;"></i>
+            </div>
+            <div class="fs-2 fw-bold" style="color: <%= season_colors[season] %>;"><%= @seasonal_data[season] || 0 %></div>
+            <div class="small text-muted"><%= season %></div>
+            <div class="small mt-1">
+              <span class="badge" style="background: <%= season_bg_colors[season] %>; color: <%= season_colors[season] %>;">
+                <%= ((@seasonal_data[season] || 0).to_f / total * 100).round(1) %>%
+              </span>
+              <% if season == max_season %>
+                <span class="badge bg-danger ms-1">
+                  <i class="ri-arrow-up-line"></i> Peak
+                </span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="row g-4">
+    <%# Seasonal Distribution Chart %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-bar-chart-grouped-line me-2 text-law-blue"></i>Seasonal Distribution</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="seasonalChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Year-over-Year Comparison %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-line-chart-line me-2 text-law-green"></i>Year-over-Year Comparison</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 300px;">
+            <canvas id="seasonalYoyChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Top Crimes by Season %>
+    <div class="col-12">
+      <div class="card analytics-chart-card">
+        <div class="card-header">
+          <h5><i class="ri-folder-chart-line me-2 text-law-tan"></i>Top Crime Types by Season</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <% seasons.each do |season| %>
+              <div class="col-md-3">
+                <div class="border rounded p-3 h-100" style="border-color: <%= season_colors[season] %> !important; border-width: 2px !important;">
+                  <h6 class="d-flex align-items-center mb-3" style="color: <%= season_colors[season] %>;">
+                    <i class="<%= season_icons[season] %> me-2"></i><%= season %>
+                  </h6>
+                  <% if @seasonal_crime_types[season]&.any? %>
+                    <% @seasonal_crime_types[season].each_with_index do |(crime, count), idx| %>
+                      <div class="d-flex justify-content-between align-items-center mb-2" style="font-size: 0.8rem;">
+                        <span class="text-truncate me-2" style="max-width: 120px;" title="<%= crime %>">
+                          <span class="badge bg-light text-dark me-1"><%= idx + 1 %></span>
+                          <%= crime&.humanize&.truncate(15) || "Unknown" %>
+                        </span>
+                        <span class="badge" style="background: <%= season_bg_colors[season] %>; color: <%= season_colors[season] %>;"><%= count %></span>
+                      </div>
+                    <% end %>
+                  <% else %>
+                    <div class="text-muted small text-center py-3">
+                      <i class="ri-inbox-line d-block" style="font-size: 1.5rem; opacity: 0.3;"></i>
+                      No data
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Severity by Season %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100">
+        <div class="card-header">
+          <h5><i class="ri-alert-line me-2 text-law-red"></i>Severity Distribution by Season</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 280px;">
+            <canvas id="severityChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Seasonal Insights %>
+    <div class="col-lg-6">
+      <div class="card analytics-chart-card h-100" style="background: var(--law-gray-light, #F8F8F8);">
+        <div class="card-body">
+          <h6 class="mb-3"><i class="ri-lightbulb-flash-line me-2 text-law-tan"></i>Seasonal Insights</h6>
+
+          <%
+            # Calculate insights
+            max_season_data = @seasonal_data.max_by { |_, v| v }
+            min_season_data = @seasonal_data.min_by { |_, v| v }
+            current_year = Date.current.year
+            prev_year = current_year - 1
+
+            # YoY changes
+            yoy_changes = {}
+            seasons.each do |s|
+              current = @seasonal_yoy[current_year]&.dig(s) || 0
+              previous = @seasonal_yoy[prev_year]&.dig(s) || 0
+              if previous > 0
+                yoy_changes[s] = ((current - previous).to_f / previous * 100).round(1)
+              else
+                yoy_changes[s] = current > 0 ? 100 : 0
+              end
+            end
+            biggest_increase = yoy_changes.max_by { |_, v| v }
+            biggest_decrease = yoy_changes.min_by { |_, v| v }
+          %>
+
+          <div class="row g-3">
+            <%# Peak Season %>
+            <div class="col-6">
+              <div class="analytics-insight-card">
+                <div class="d-flex align-items-center">
+                  <i class="<%= season_icons[max_season_data&.first] || 'ri-fire-line' %> fs-3 me-3" style="color: <%= season_colors[max_season_data&.first] || '#D90718' %>;"></i>
+                  <div>
+                    <div class="insight-title">Peak Season</div>
+                    <div class="insight-value" style="color: <%= season_colors[max_season_data&.first] || '#D90718' %>;">
+                      <%= max_season_data&.first || "N/A" %>
+                    </div>
+                    <div class="small text-muted"><%= max_season_data&.last || 0 %> incidents</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%# Lowest Season %>
+            <div class="col-6">
+              <div class="analytics-insight-card">
+                <div class="d-flex align-items-center">
+                  <i class="<%= season_icons[min_season_data&.first] || 'ri-shield-check-line' %> fs-3 me-3" style="color: <%= season_colors[min_season_data&.first] || '#49A64F' %>;"></i>
+                  <div>
+                    <div class="insight-title">Lowest Season</div>
+                    <div class="insight-value" style="color: <%= season_colors[min_season_data&.first] || '#49A64F' %>;">
+                      <%= min_season_data&.first || "N/A" %>
+                    </div>
+                    <div class="small text-muted"><%= min_season_data&.last || 0 %> incidents</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%# Biggest YoY Increase %>
+            <div class="col-6">
+              <div class="analytics-insight-card">
+                <div class="d-flex align-items-center">
+                  <i class="ri-arrow-up-circle-line fs-3 me-3 text-law-red"></i>
+                  <div>
+                    <div class="insight-title">Biggest Increase (YoY)</div>
+                    <div class="insight-value text-law-red">
+                      <%= biggest_increase&.first || "N/A" %>
+                    </div>
+                    <div class="small text-muted">
+                      <% if biggest_increase&.last&.positive? %>
+                        <i class="ri-arrow-up-s-line"></i> +<%= biggest_increase&.last %>%
+                      <% else %>
+                        No increase
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <%# Biggest YoY Decrease %>
+            <div class="col-6">
+              <div class="analytics-insight-card">
+                <div class="d-flex align-items-center">
+                  <i class="ri-arrow-down-circle-line fs-3 me-3 text-law-green"></i>
+                  <div>
+                    <div class="insight-title">Biggest Decrease (YoY)</div>
+                    <div class="insight-value text-law-green">
+                      <%= biggest_decrease&.first || "N/A" %>
+                    </div>
+                    <div class="small text-muted">
+                      <% if biggest_decrease&.last&.negative? %>
+                        <i class="ri-arrow-down-s-line"></i> <%= biggest_decrease&.last %>%
+                      <% else %>
+                        No decrease
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Season color palette
+  const seasonColors = {
+    Winter: '#0A3A9E',
+    Spring: '#49A64F',
+    Summer: '#FFD700',
+    Fall: '#BF8360'
+  };
+
+  const seasonBgColors = {
+    Winter: 'rgba(10, 58, 158, 0.7)',
+    Spring: 'rgba(73, 166, 79, 0.7)',
+    Summer: 'rgba(255, 215, 0, 0.7)',
+    Fall: 'rgba(191, 131, 96, 0.7)'
+  };
+
+  const seasons = ['Winter', 'Spring', 'Summer', 'Fall'];
+
+  // Seasonal Distribution Bar Chart
+  const seasonalData = <%= raw @seasonal_data.to_json %>;
+  new Chart(document.getElementById('seasonalChart'), {
+    type: 'bar',
+    data: {
+      labels: seasons,
+      datasets: [{
+        label: 'Incidents',
+        data: seasons.map(s => seasonalData[s] || 0),
+        backgroundColor: seasons.map(s => seasonBgColors[s]),
+        borderColor: seasons.map(s => seasonColors[s]),
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // Year-over-Year Comparison Chart
+  const yoyData = <%= raw @seasonal_yoy.to_json %>;
+  const years = Object.keys(yoyData).sort().reverse();
+
+  new Chart(document.getElementById('seasonalYoyChart'), {
+    type: 'bar',
+    data: {
+      labels: seasons,
+      datasets: years.map((year, idx) => ({
+        label: year,
+        data: seasons.map(s => (yoyData[year] && yoyData[year][s]) || 0),
+        backgroundColor: idx === 0 ? seasons.map(s => seasonBgColors[s]) : 'rgba(150, 150, 150, 0.4)',
+        borderColor: idx === 0 ? seasons.map(s => seasonColors[s]) : 'rgba(150, 150, 150, 0.6)',
+        borderWidth: 2,
+        borderRadius: 4
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { font: { size: 11 } }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // Severity by Season Stacked Bar Chart
+  const severityData = <%= raw @seasonal_severity.to_json %>;
+  const severityLevels = [1, 2, 3, 4, 5];
+  const severityLabels = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Severe', 5: 'Critical' };
+  const severityColors = {
+    1: 'rgba(73, 166, 79, 0.7)',   // Green - Low
+    2: 'rgba(191, 131, 96, 0.7)',  // Tan - Medium
+    3: 'rgba(255, 193, 7, 0.7)',   // Yellow - High
+    4: 'rgba(220, 53, 69, 0.7)',   // Red - Severe
+    5: 'rgba(102, 16, 242, 0.7)'   // Purple - Critical
+  };
+
+  new Chart(document.getElementById('severityChart'), {
+    type: 'bar',
+    data: {
+      labels: seasons,
+      datasets: severityLevels.map(level => ({
+        label: severityLabels[level],
+        data: seasons.map(s => (severityData[s] && severityData[s][level]) || 0),
+        backgroundColor: severityColors[level],
+        borderWidth: 0,
+        borderRadius: 2
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { size: 10 }, boxWidth: 12 }
+        }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
+      }
+    }
+  });
+});
+</script>

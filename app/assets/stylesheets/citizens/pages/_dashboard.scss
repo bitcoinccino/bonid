@@ -1,0 +1,1500 @@
+// ============================================================
+// Citizens Dashboard Styling
+// BonID / Verifyem — Apple Wallet Style
+// ============================================================
+
+// ==========================================================
+// CSS VARIABLES
+// ==========================================================
+:root {
+  --wallet-bg: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  --wallet-card-bg: linear-gradient(135deg, #00209F 0%, #001a7a 100%);
+  --wallet-radius: 1.25rem;
+  --wallet-shadow: 0 8px 24px rgba(0, 32, 159, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+// ==========================================================
+// MAIN DASHBOARD CONTAINER
+// ==========================================================
+.citizen-dashboard {
+  padding: 1rem;
+  max-width: 380px;
+  margin: 0 auto;
+
+  @media (min-width: 768px) {
+    padding: 1.25rem;
+  }
+
+  @media (min-width: 992px) {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+// ==========================================================
+// WALLET STACK CONTAINER - Apple Wallet Style (Cards peek from TOP)
+// ==========================================================
+.wallet-stack-container {
+  position: relative;
+  margin-bottom: 2rem;
+  // Reserve space for stacked cards peeking from top
+  padding-top: 80px;
+}
+
+// Card wrapper for positioning - all cards stack with top edges peeking
+.wallet-card-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  // BonID is relatively positioned at the bottom of stack to set container height
+  &[data-card="bonid"] {
+    position: relative;
+    z-index: 50;
+  }
+
+  // Active card - front and center
+  &.active {
+    z-index: 50;
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    top: auto;
+    bottom: 0;
+
+    .stack-tab {
+      display: none;
+    }
+
+    .profile-detail-card,
+    .bonid-wallet-card {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+
+  // Stacked cards - peek from ABOVE BonID (like Apple Wallet)
+  &.stacked {
+    bottom: auto;
+    pointer-events: none;
+
+    // Hide the full card content, show only top edge
+    .profile-detail-card {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    // The clickable area
+    .stack-tab {
+      display: block;
+      pointer-events: auto;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      z-index: 10;
+    }
+  }
+
+  // Stack positions - cards peek from TOP, each one higher
+  // First card (health) is closest to BonID, last card (physical) is at very top
+  &.stacked[data-card="health"] {
+    z-index: 46;
+    top: 80px;
+  }
+  &.stacked[data-card="bank"] {
+    z-index: 45;
+    top: 64px;
+  }
+  &.stacked[data-card="emergency"] {
+    z-index: 44;
+    top: 48px;
+  }
+  &.stacked[data-card="family"] {
+    z-index: 43;
+    top: 32px;
+  }
+  &.stacked[data-card="social"] {
+    z-index: 42;
+    top: 16px;
+  }
+  &.stacked[data-card="physical"] {
+    z-index: 41;
+    top: 0px;
+  }
+
+  // Pushed back (BonID when viewing another card)
+  &.pushed-back {
+    z-index: 40;
+    transform: translateY(20px) scale(0.96);
+    opacity: 0.6;
+
+    .bonid-wallet-card {
+      pointer-events: none;
+    }
+  }
+}
+
+// Stack tab - invisible clickable area on top edge of stacked cards
+.stack-tab {
+  display: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border-radius: var(--wallet-radius) var(--wallet-radius) 0 0;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+// ==========================================================
+// PROFILE DETAIL CARDS - Shown when expanded
+// ==========================================================
+.profile-detail-card {
+  border-radius: var(--wallet-radius);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-height: 380px;
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+
+  &.health-card { background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%); }
+  &.bank-card { background: linear-gradient(135deg, #1A936F 0%, #156b52 100%); }
+  &.emergency-card { background: linear-gradient(135deg, #EDB95E 0%, #d4a34e 100%); }
+  &.family-card { background: linear-gradient(135deg, #D4956A 0%, #b87a50 100%); }
+  &.social-card { background: linear-gradient(135deg, #3366CC 0%, #2952a3 100%); }
+  &.physical-card { background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%); }
+}
+
+// When stacked, show a compact header strip with icon and name
+.wallet-card-wrapper.stacked {
+  .profile-detail-card {
+    min-height: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  // Hide the card body when stacked, only show header
+  .detail-card-body {
+    display: none;
+  }
+
+  // Compact header for stacked view
+  .detail-card-header {
+    padding: 0.75rem 1.25rem;
+
+    .back-btn,
+    .edit-btn {
+      display: none;
+    }
+
+    h5 {
+      font-size: 0.9rem;
+    }
+
+    .detail-card-icon {
+      width: 32px;
+      height: 32px;
+
+      i { font-size: 1rem; }
+    }
+  }
+}
+
+.detail-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  color: #ffffff;
+
+  .back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    i { font-size: 1.1rem; color: #ffffff; }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  .detail-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i { font-size: 1.25rem; color: #ffffff; }
+  }
+
+  h5 {
+    flex: 1;
+    margin: 0;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #ffffff;
+  }
+
+  .edit-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    i { font-size: 1rem; color: #ffffff; }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.detail-card-body {
+  background: #ffffff;
+  padding: 1.5rem;
+  min-height: 280px;
+  border-radius: 1.5rem 1.5rem 0 0;
+  margin-top: -1rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid #f1f3f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .detail-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .detail-value {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #212529;
+  }
+}
+
+// Bank account items
+.bank-account-item,
+.contact-item,
+.social-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.bank-icon,
+.contact-avatar,
+.social-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--haitian-blue, #00209F);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  i { font-size: 1.25rem; color: #ffffff; }
+}
+
+.bank-info,
+.contact-info,
+.social-info {
+  flex: 1;
+  min-width: 0;
+
+  .bank-name,
+  .contact-name,
+  .social-platform {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #212529;
+  }
+
+  .bank-details,
+  .contact-details,
+  .social-handle {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+}
+
+// Legacy container (keep for compatibility)
+.wallet-container {
+  margin-bottom: 2rem;
+}
+
+// ==========================================================
+// BONID WALLET CARD - Apple Wallet Style
+// ==========================================================
+.bonid-wallet-card {
+  background: var(--wallet-card-bg);
+  border-radius: var(--wallet-radius);
+  box-shadow: var(--wallet-shadow);
+  overflow: hidden;
+  color: #ffffff;
+  position: relative;
+
+  // Subtle shine overlay
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+  }
+}
+
+// ==========================================================
+// WALLET CARD HEADER
+// ==========================================================
+.wallet-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.wallet-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+
+  i {
+    font-size: 1.25rem;
+  }
+}
+
+.wallet-status {
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.active {
+      background: rgba(40, 167, 69, 0.25);
+      color: #7dff9e;
+      border: 1px solid rgba(40, 167, 69, 0.4);
+    }
+
+    i {
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ==========================================================
+// WALLET CARD BODY - Photo & Info
+// ==========================================================
+.wallet-card-body {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.5rem 1.5rem 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.wallet-photo {
+  flex-shrink: 0;
+
+  .photo-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .photo-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 2rem;
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+}
+
+.wallet-info {
+  flex: 1;
+  min-width: 0;
+
+  .wallet-name {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.35rem;
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+    color: #ffffff;
+  }
+
+  .wallet-bonid {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+}
+
+// ==========================================================
+// WALLET SIGNATURE SECTION
+// ==========================================================
+.wallet-signature-section {
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+  .signature-image {
+    max-width: 200px;
+    max-height: 70px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: brightness(0) invert(1); // Make signature white on dark background
+    opacity: 0.95;
+  }
+}
+
+// ==========================================================
+// WALLET QR ACTION BUTTON
+// ==========================================================
+.wallet-qr-action {
+  padding: 1rem 1.5rem 1.25rem;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+
+  // Divider line
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.view-qr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+
+  i {
+    font-size: 1.25rem;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// ==========================================================
+// WALLET CARD FOOTER
+// ==========================================================
+.wallet-card-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+.footer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  .footer-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.2rem;
+  }
+
+  .footer-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffffff;
+  }
+}
+
+// ==========================================================
+// QUICK ACTIONS SECTION
+// ==========================================================
+.quick-actions {
+  margin-bottom: 1.5rem;
+
+  .actions-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--haitian-blue, #00209F);
+    margin-bottom: 1rem;
+    padding-left: 0.25rem;
+
+    i {
+      font-size: 1rem;
+    }
+  }
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background: #f8f9fa;
+    border-color: var(--haitian-blue, #00209F);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 32, 159, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  i {
+    font-size: 1.5rem;
+    color: var(--haitian-blue, #00209F);
+
+    &.check-icon {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.85rem;
+      color: #28a745;
+    }
+  }
+
+  span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+// ==========================================================
+// CERTIFICATE ACTION BUTTON
+// ==========================================================
+.certificate-action {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.certificate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 999px;
+  color: var(--haitian-blue, #00209F);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--haitian-blue, #00209F);
+    border-color: var(--haitian-blue, #00209F);
+    color: #ffffff;
+  }
+
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+
+// ==========================================================
+// PENDING VERIFICATION STATE
+// ==========================================================
+.pending-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.pending-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
+  width: 100%;
+
+  .pending-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+
+    i {
+      font-size: 2.5rem;
+      color: #856404;
+    }
+  }
+
+  h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #212529;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+
+    &.pending-note {
+      font-size: 0.85rem;
+      color: #868e96;
+      margin-top: 1rem;
+    }
+  }
+}
+
+// ==========================================================
+// WIDE LAYOUT MODIFIER (for get-started state)
+// Matches the identity submission form width (max-width: 900px)
+// ==========================================================
+.citizen-dashboard--wide {
+  max-width: 900px;
+
+  @media (min-width: 992px) {
+    max-width: 900px;
+  }
+}
+
+// ==========================================================
+// REJECTED SUBMISSION STATE
+// ==========================================================
+.rejected-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.rejected-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+
+  .rejected-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffe0e3 0%, #ffc2c7 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+
+    i {
+      font-size: 2.5rem;
+      color: #dc3545;
+    }
+  }
+
+  h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #212529;
+    margin-bottom: 0.5rem;
+  }
+
+  > p {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+
+  .rejected-reason {
+    background: #fff5f5;
+    border: 1px solid #fecdd3;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+
+    .reason-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #dc3545;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+    }
+
+    .reason-text {
+      font-size: 0.875rem;
+      color: #4a1520;
+      line-height: 1.5;
+    }
+  }
+
+  .rejected-actions {
+    margin-bottom: 1.25rem;
+  }
+
+  .rejected-note {
+    font-size: 0.8rem;
+    color: #868e96;
+    margin: 0;
+
+    i {
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ==========================================================
+// GET STARTED STATE (No BonID Yet)
+// ==========================================================
+.get-started-container {
+  padding: 0.25rem 0 1rem;
+}
+
+.get-started-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 32, 159, 0.08);
+
+  .get-started-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00209F 0%, #001a7a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+
+    i {
+      font-size: 1.4rem;
+      color: #ffffff;
+    }
+  }
+
+  h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #212529;
+    margin-bottom: 0.35rem;
+  }
+
+  p {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    line-height: 1.45;
+  }
+}
+
+// CTA button — custom styled link
+.gs-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 1.5rem;
+  background: #00209F;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #032B77;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  i { font-size: 1rem; }
+}
+
+// --- Unified Get Started Card — Internal Sections ---
+
+.gs-hero {
+  text-align: center;
+  padding-bottom: 0.25rem;
+}
+
+.gs-divider {
+  height: 1px;
+  background: rgba(0, 32, 159, 0.1);
+  margin: 0.875rem 0;
+}
+
+.gs-section {
+  text-align: left;
+}
+
+// Two-column layout for What You'll Need + How It Works
+.gs-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
+
+.gs-section-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #00209F;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  i {
+    font-size: 0.95rem;
+    opacity: 0.8;
+  }
+}
+
+// Rows — shared by Requirements & Steps
+.gs-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.3rem 0;
+}
+
+.gs-row-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 0.375rem;
+  background: rgba(0, 32, 159, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    font-size: 0.875rem;
+    color: #00209F;
+  }
+}
+
+.gs-step-num {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: #00209F;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+}
+
+.gs-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.gs-row-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #343A40;
+}
+
+.gs-row-detail {
+  font-size: 0.75rem;
+  color: #6C757D;
+  line-height: 1.4;
+}
+
+// Advantage grid — 4 columns on wide, 2 columns on narrow
+.gs-advantage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+
+  @media (max-width: 576px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.gs-advantage {
+  background: rgba(0, 32, 159, 0.03);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.5rem;
+  text-align: center;
+  border: 1px solid rgba(0, 32, 159, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+
+  > i {
+    font-size: 1.1rem;
+    color: #00209F;
+    margin-bottom: 0.15rem;
+  }
+}
+
+.gs-adv-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #343A40;
+}
+
+.gs-adv-desc {
+  font-size: 0.7rem;
+  color: #6C757D;
+  line-height: 1.4;
+}
+
+// ==========================================================
+// LEGACY STYLES (kept for backwards compatibility)
+// ==========================================================
+.bonid-dashboard {
+  padding-top: 2rem;
+  padding-bottom: 3rem;
+
+  .dashboard-header {
+    text-align: center;
+    margin-bottom: 3rem;
+
+    h2 {
+      font-family: "Montserrat", "Inter", sans-serif;
+      font-weight: 700;
+      font-size: 1.75rem;
+      letter-spacing: -0.2px;
+      line-height: 1.25;
+      margin-bottom: 0.75rem;
+      color: var(--haitian-blue);
+    }
+
+    p {
+      font-family: "Inter", sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.55;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+      color: var(--mid-gray);
+    }
+  }
+
+  .card {
+    border: none;
+    border-radius: 1rem;
+    background-color: #ffffff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0.75rem 1.25rem rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .dashboard-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    .card-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--haitian-blue);
+      color: #ffffff;
+      border-radius: 0.75rem 0.75rem 0 0;
+    }
+  }
+
+  .qrcode-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .btn-primary {
+    background-color: var(--haitian-blue);
+    border: none;
+    font-weight: 600;
+
+    &:hover {
+      background-color: #3366cc;
+    }
+  }
+
+  .btn-outline-primary {
+    border-color: var(--haitian-blue);
+    color: var(--haitian-blue);
+    font-weight: 600;
+
+    &:hover {
+      background-color: var(--haitian-blue);
+      color: #ffffff;
+    }
+  }
+
+  .alert {
+    border-radius: 0.75rem;
+    box-shadow: 0 0.4rem 1rem rgba(0, 0, 0, 0.05);
+  }
+
+  h4,
+  h5 {
+    font-family: "Montserrat", "Inter", sans-serif;
+    color: var(--haitian-blue);
+  }
+
+  label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--mid-gray);
+  }
+}
+
+// Legacy toggle styles
+.bonid-toggle-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.bonid-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: #e9ecef;
+  padding: 4px;
+  border-radius: 999px;
+  gap: 4px;
+}
+
+.toggle-tab {
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--haitian-blue);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 0.9rem;
+
+  &.active {
+    background: var(--haitian-blue);
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  &:hover:not(.active) {
+    background: #d7dbe0;
+  }
+}
+
+// Legacy card header
+.bonid-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--haitian-blue);
+  color: #fff;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.bonid-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+
+  i {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
+.bonid-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bonid-header-right {
+  flex-shrink: 0;
+}
+
+.dashboard-card label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--mid-gray);
+}
+
+.field-value {
+  font-weight: 500;
+  color: #212529;
+}
+
+.signature-box {
+  max-width: 420px;
+  min-height: 140px;
+  border: 2px solid #f1f3f5;
+  border-radius: 0.75rem;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+  &:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.signature-image {
+  max-height: 120px;
+  object-fit: contain;
+  filter: contrast(110%) brightness(1.05);
+}
+
+// ==========================================================
+// RESPONSIVE
+// ==========================================================
+@media (max-width: 991px) {
+  .bonid-dashboard {
+    .col-lg-6 {
+      margin-bottom: 1rem;
+    }
+
+    .dashboard-card .card-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.5rem;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .bonid-dashboard {
+    .dashboard-header h2 {
+      font-size: 1.45rem;
+    }
+
+    .dashboard-header p {
+      font-size: 0.9rem;
+    }
+  }
+
+  .wallet-card-body {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .wallet-info {
+    text-align: center;
+  }
+
+  .wallet-card-footer {
+    padding: 0.875rem 1rem;
+  }
+
+  .footer-item {
+    .footer-label {
+      font-size: 0.6rem;
+    }
+
+    .footer-value {
+      font-size: 0.75rem;
+    }
+  }
+
+  .wallet-signature-section {
+    padding: 0.5rem 1rem;
+
+    .signature-image {
+      max-width: 150px;
+      max-height: 55px;
+    }
+  }
+}
+
+// ==========================================================
+// HEALTH MULTISELECT DROPDOWN FIXES
+// ==========================================================
+.health-multiselect {
+  .dropdown-toggle {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+
+    &:hover,
+    &:focus {
+      background-color: #ffffff !important;
+      border-color: #00209F !important;
+    }
+
+    &::after {
+      color: #6c757d;
+    }
+  }
+
+  .dropdown-menu {
+    background-color: #ffffff !important;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    .dropdown-item {
+      background-color: transparent !important;
+      color: #212529 !important;
+      cursor: pointer;
+
+      &:hover,
+      &:focus {
+        background-color: #f8f9fa !important;
+        color: #212529 !important;
+      }
+
+      .form-check-input {
+        border-color: #adb5bd;
+
+        &:checked {
+          background-color: #00209F;
+          border-color: #00209F;
+        }
+      }
+
+      span {
+        color: #212529;
+      }
+    }
+  }
+}
+
+// Modal dropdown fix - ensure dropdowns in modals show correctly
+.modal {
+  .dropdown-menu {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+
+    .dropdown-item {
+      background-color: transparent !important;
+      color: #212529 !important;
+
+      &:hover {
+        background-color: #f8f9fa !important;
+      }
+    }
+  }
+}
+
+// ==========================================================
+// DASHBOARD ALERT BANNERS — Transaction consents + BonID status
+// ==========================================================
+.dashboard-alert {
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: none;
+
+  .dashboard-alert-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+
+  &--warning {
+    background: #e67e22;
+    color: #fff;
+  }
+
+  &--danger {
+    background: #c0392b;
+    color: #fff;
+  }
+
+  &--info {
+    background: #00209f;
+    color: #fff;
+  }
+
+  .btn-outline-light {
+    border-color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #fff;
+    }
+  }
+}

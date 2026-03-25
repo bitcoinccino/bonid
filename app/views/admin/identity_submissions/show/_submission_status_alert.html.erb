@@ -1,0 +1,51 @@
+<% if defined?(current_user) && current_user&.admin? && local_assigns[:submission].present? %>
+  <% status_info = submission_status_info(submission) %>
+
+  <div class="card submission-status border-0 rounded-3 shadow-sm mt-3 bg-white animate__animated animate__fadeIn" role="region" aria-live="polite">
+    <!-- Header -->
+    <div class="card-header bg-light d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <i class="<%= status_icon(submission) %> text-primary fs-5"></i>
+        <h6 class="mb-0 fw-semibold text-dark">Submission Status</h6>
+      </div>
+      <span class="badge <%= status_info[:badge_class] %> rounded-pill text-uppercase fw-semibold small d-flex align-items-center gap-1">
+        <i class="<%= status_icon(submission) %>"></i>
+        <%= status_info[:text] %>
+      </span>
+    </div>
+
+    <div class="card-body p-3">
+      <!-- Section Description -->
+      <p class="text-muted small mb-3">
+        This panel summarizes the current review state of the citizen’s submission.  
+        It provides context for the admin’s next actions and displays what the citizen will see in their own dashboard.
+      </p>
+
+      <!-- Status Message -->
+      <div class="mb-2">
+        <p class="mb-1 small text-dark">
+          <strong>Status:</strong> <%= status_message(submission) %>
+        </p>
+        <p class="mb-1 small text-muted">
+          <%= submission_type_description(submission) %>
+        </p>
+
+        <% if submission.rejection_reason.present? && (submission.status == "rejected" || submission.reset_request_status == "rejected") %>
+          <p class="mb-1 small text-danger">
+            <strong>Rejection Reason:</strong>
+            <%= user_friendly_rejection_reason(submission.rejection_reason) %>
+          </p>
+        <% end %>
+      </div>
+
+      <!-- Citizen's Next Step -->
+      <% citizen_action = submission_action_for(submission, submission.user) %>
+      <% if citizen_action != :none %>
+        <div class="alert alert-dismissible fade show alert-light border-start border-3 border-primary small mt-3 mb-0">
+          <i class="ri-user-line text-primary me-1"></i>
+          <em>The citizen will see <strong><%= citizen_action.to_s.humanize %></strong> as their next required action.</em>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

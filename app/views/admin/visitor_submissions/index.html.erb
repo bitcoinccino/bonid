@@ -1,0 +1,112 @@
+<main class="py-4">
+  <div class="container-xl">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h4 fw-bold mb-0">
+        <i class="ri-suitcase-line me-2"></i>
+        Visitor Applications (BonTouris ID)
+      </h1>
+    </div>
+
+    <div class="card shadow-sm rounded-4">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 56px;"></th>
+              <th>Visitor</th>
+              <th>Sex</th>
+              <th>Email</th>
+              <th>Nationality</th>
+              <th>Status</th>
+              <th>Submitted</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% @visitor_submissions.each do |visitor| %>
+              <tr>
+
+                <!-- Selfie -->
+                <td>
+                  <% if visitor.selfie.attached? %>
+                    <%= image_tag visitor.selfie.variant(resize_to_fill: [40, 40]),
+                          class: "rounded-circle border",
+                          alt: "Selfie",
+                          style: "width:40px;height:40px;object-fit:cover;" %>
+                  <% else %>
+                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center border"
+                         style="width:40px;height:40px;">
+                      <i class="ri-user-line text-muted"></i>
+                    </div>
+                  <% end %>
+                </td>
+
+                <!-- Name -->
+                <td class="fw-semibold">
+                  <%= [visitor.first_name, visitor.last_name].join(" ") %>
+                </td>
+
+                <!-- Sex -->
+                <td>
+                  <% if visitor.sex.present? %>
+                    <span class="badge bg-secondary-subtle text-dark">
+                      <%= visitor.sex.upcase %>
+                    </span>
+                  <% else %>
+                    <span class="text-muted small">N/A</span>
+                  <% end %>
+                </td>
+
+                <!-- Email -->
+                <td><%= visitor.email %></td>
+
+                <!-- Nationality -->
+                <td><%= visitor.nationality || "N/A" %></td>
+
+                <!-- Status -->
+                <td>
+                  <% badge_class = case visitor.status
+                    when "approved" then "bg-success"
+                    when "pending_review" then "bg-warning text-dark"
+                    when "rejected" then "bg-danger"
+                    else "bg-secondary"
+                  end %>
+
+                  <span class="badge <%= badge_class %>">
+                    <%= visitor.status.titleize %>
+                  </span>
+                </td>
+
+                <!-- Submitted -->
+                <td class="text-muted small">
+                  <%= visitor.created_at.strftime("%b %d, %Y") %>
+                </td>
+
+                <!-- Action -->
+                <td class="text-end">
+                  <%= link_to admin_visitor_submission_path(visitor),
+                        class: "btn btn-sm btn-outline-primary" do %>
+                    View
+                  <% end %>
+                </td>
+
+              </tr>
+            <% end %>
+
+            <% if @visitor_submissions.empty? %>
+              <tr>
+                <td colspan="8" class="text-center text-muted py-4">
+                  No visitor applications found.
+                </td>
+              </tr>
+            <% end %>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>

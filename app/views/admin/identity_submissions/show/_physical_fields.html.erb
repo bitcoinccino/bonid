@@ -1,0 +1,79 @@
+<!-- app/views/admin/identity_submissions/show/_physical_fields.html.erb -->
+
+<div class="card border-0 rounded-3 shadow-sm mb-4">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="ri-body-scan-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold">Physical Profile</h6>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <% physical = submission.user&.physical_profile %>
+
+    <% if physical.present? %>
+      <p class="text-muted small mb-4">
+        This section summarizes the citizen’s physical characteristics as recorded during identity registration.  
+        These traits support biometric verification and manual identity checks by authorized partners.
+      </p>
+
+      <ul class="list-unstyled row g-4 mb-0">
+        <li class="col-md-6">
+          <strong>Height:</strong> 
+          <%= physical.height_cm.present? ? "#{physical.height_cm} cm" : "—" %><br>
+          <small class="text-muted">Measured in centimeters during onboarding</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Weight:</strong> 
+          <%= physical.weight_kg.present? ? "#{physical.weight_kg} kg" : "—" %><br>
+          <small class="text-muted">Citizen’s current recorded body weight</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Eye Color:</strong> 
+          <%= physical.eye_color&.titleize || "—" %><br>
+          <small class="text-muted">Primary eye pigment or color</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Hair Color:</strong> 
+          <%= physical.hair_color&.titleize || "—" %><br>
+          <small class="text-muted">Current hair color as observed</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Race:</strong> 
+          <%= physical.race&.titleize || "—" %><br>
+          <small class="text-muted">Self-identified ethnic classification</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Body Type:</strong> 
+          <%= physical.body_type&.titleize || "—" %><br>
+          <small class="text-muted">Overall body frame or physique</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Skin Tone:</strong> 
+          <%= physical.skin_tone&.titleize || "—" %><br>
+          <small class="text-muted">Visible complexion or pigmentation</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Facial Hair:</strong> 
+          <%= physical.facial_hair&.titleize || "—" %><br>
+          <small class="text-muted">Beard, mustache, or clean-shaven status</small>
+        </li>
+
+        <li class="col-md-6">
+          <strong>Handedness:</strong> 
+          <%= physical.handedness&.titleize || "—" %><br>
+          <small class="text-muted">Dominant hand for writing or tasks</small>
+        </li>
+      </ul>
+    <% else %>
+      <p class="text-muted mb-0">No physical characteristics recorded for this user.</p>
+    <% end %>
+  </div>
+</div>

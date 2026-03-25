@@ -1,0 +1,177 @@
+<div class="card rounded-4 shadow-sm border-0 mb-4">
+  <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between gap-4">
+
+    <!-- LEFT SIDE -->
+    <div class="d-flex align-items-center gap-3">
+
+      <!-- LOGO -->
+      <% if partner.logo.attached? %>
+        <%= image_tag partner.logo.variant(resize_to_limit: [80, 80]),
+                      class: "rounded-circle shadow-sm",
+                      style: "width:80px;height:80px;object-fit:cover;" %>
+      <% else %>
+        <div class="rounded-circle bg-light d-flex justify-content-center align-items-center shadow-sm"
+             style="width:80px;height:80px;">
+          <i class="ri-building-line text-muted fs-1"></i>
+        </div>
+      <% end %>
+
+      <!-- NAME + STATUS -->
+      <div>
+        <div class="d-flex align-items-center gap-2">
+
+          <h3 class="fw-bold text-haitian-blue mb-0">
+            <%= partner.name %>
+          </h3>
+
+          <!-- APPLICATION STATUS -->
+          <% app_badge, app_color =
+            case partner.status
+            when "approved"  then ["Approved", "bg-success"]
+            when "rejected"  then ["Rejected", "bg-danger"]
+            when "suspended" then ["Suspended", "bg-secondary"]
+            else                  ["Pending Review", "bg-warning text-dark"]
+            end
+          %>
+
+          <span class="badge <%= app_color %> px-3 py-2 rounded-pill">
+            <%= app_badge %>
+          </span>
+
+          <!-- EMAIL VERIFICATION STATUS -->
+          <% if partner.verified_at.present? %>
+            <span class="badge bg-success px-3 py-2 rounded-pill">
+              <i class="ri-mail-check-line me-1"></i> Email Verified
+            </span>
+          <% else %>
+            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+              <i class="ri-mail-close-line me-1"></i> Email Not Verified
+            </span>
+          <% end %>
+
+        </div>
+
+        <p class="mb-0 text-muted small d-flex align-items-center">
+          <i class="ri-map-pin-line me-1"></i>
+          <%= partner.full_address.presence || "Address Not Provided" %>
+        </p>
+      </div>
+
+    </div>
+
+    <!-- RIGHT SIDE — HORIZONTAL THREE DOTS -->
+    <div class="dropdown">
+      <button class="btn btn-link text-muted p-2" data-bs-toggle="dropdown">
+        <i class="ri-more-fill fs-3"></i>
+      </button>
+
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+
+        <!-- ============================================================
+             PENDING
+             ============================================================ -->
+        <% if partner.status == "pending" %>
+          <li>
+            <%= button_to approve_admin_partner_path(partner.uuid),
+                          method: :post,
+                          class: "dropdown-item text-success" do %>
+              <i class="ri-check-line me-1"></i> Approve
+            <% end %>
+          </li>
+
+          <li>
+            <button class="dropdown-item text-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#rejectPartnerModal">
+              <i class="ri-close-line me-1"></i> Reject
+            </button>
+          </li>
+        <% end %>
+
+        <!-- ============================================================
+             REJECTED
+             ============================================================ -->
+        <% if partner.status == "rejected" %>
+          <li>
+            <%= button_to approve_admin_partner_path(partner.uuid),
+                          method: :post,
+                          class: "dropdown-item text-success" do %>
+              <i class="ri-check-line me-1"></i> Approve
+            <% end %>
+          </li>
+        <% end %>
+
+        <!-- ============================================================
+             APPROVED
+             ============================================================ -->
+        <% if partner.status == "approved" %>
+          <li>
+            <%= button_to suspend_admin_partner_path(partner.uuid),
+                          method: :post,
+                          class: "dropdown-item text-warning text-dark" do %>
+              <i class="ri-alert-line me-1"></i> Suspend
+            <% end %>
+          </li>
+        <% end %>
+
+        <!-- ============================================================
+             SUSPENDED
+             ============================================================ -->
+        <% if partner.status == "suspended" %>
+          <li>
+            <%= button_to restore_admin_partner_path(partner.uuid),
+                          method: :post,
+                          class: "dropdown-item text-success" do %>
+              <i class="ri-refresh-line me-1"></i> Restore
+            <% end %>
+          </li>
+        <% end %>
+
+        <!-- ============================================================
+             ALWAYS AVAILABLE ACTIONS
+             ============================================================ -->
+
+        <%# Resend verification email (pre-approval) %>
+        <% unless partner.email_verified? %>
+          <li>
+            <%= button_to resend_verification_email_admin_partner_path(partner.uuid),
+                          method: :post,
+                          class: "dropdown-item text-primary" do %>
+              <i class="ri-mail-send-line me-1"></i> Resend Verification
+            <% end %>
+          </li>
+        <% end %>
+
+        <%# Resend invitation link (post-approval) %>
+        <% if partner.verified_at.present? %>
+          <li>
+            <%= button_to resend_invitation_admin_partner_path(partner.uuid),
+                          method: :post,
+                          class: "dropdown-item text-warning" do %>
+              <i class="ri-mail-send-line me-1"></i> Resend Invitation
+            <% end %>
+          </li>
+        <% end %>
+
+        <li>
+          <%= button_to rotate_api_key_admin_partner_path(partner.uuid),
+                        method: :post,
+                        class: "dropdown-item" do %>
+            <i class="ri-key-2-line me-1"></i> Rotate API Key
+          <% end %>
+        </li>
+
+        <li>
+          <%= button_to soft_delete_admin_partner_path(partner.uuid),
+                        method: :post,
+                        class: "dropdown-item text-danger",
+                        data: { turbo_confirm: "Delete this partner? This is SOFT DELETE." } do %>
+            <i class="ri-delete-bin-line me-1"></i> Delete
+          <% end %>
+        </li>
+
+      </ul>
+    </div>
+
+  </div>
+</div>

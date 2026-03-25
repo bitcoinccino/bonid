@@ -1,0 +1,162 @@
+<%# app/views/citizens/consents/_consent_grant_card.html.erb
+     Renders the INNER content of a consent card (forms + card markup).
+     The col-* grid wrapper lives in the index view. %>
+<% theme = grant.status_theme %>
+
+<%# ── Hidden action forms ── %>
+<% if grant.pending? %>
+  <%= form_with url: citizens_consents_path,
+                method: :post,
+                id: "approve-form-#{grant.id}",
+                data: { turbo_confirm: "Approve access request for #{grant.partner.name}?" },
+                style: "display:none" do %>
+    <input type="hidden" name="consent_grant[partner_id]" value="<%= grant.partner_id %>">
+    <% Array(grant.requested_scopes).each do |scope| %>
+      <input type="hidden" name="consent_grant[requested_scopes][]" value="<%= scope %>">
+    <% end %>
+  <% end %>
+  <%= form_with url: citizens_consent_path(grant),
+                method: :delete,
+                id: "deny-form-#{grant.id}",
+                data: { turbo_confirm: "Deny access for #{grant.partner.name}?" },
+                style: "display:none" do %>
+  <% end %>
+<% elsif grant.approved? %>
+  <%= form_with url: citizens_consent_path(grant),
+                method: :delete,
+                id: "revoke-form-#{grant.id}",
+                data: { turbo_confirm: "Revoke access for #{grant.partner.name}? This cannot be undone." },
+                style: "display:none" do %>
+  <% end %>
+<% end %>
+
+<div class="card consent-card h-100 border-0 rounded-4 overflow-hidden" style="border:1px solid #e9ecef !important;">
+
+  <%# ── Card Header: logo + name + status badge + kebab menu ── %>
+  <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+    <div class="d-flex justify-content-between align-items-start">
+
+      <%# Partner identity %>
+      <div class="d-flex align-items-center gap-3">
+        <% if grant.partner.logo.attached? %>
+          <%= image_tag grant.partner.logo,
+                class: "rounded-3 flex-shrink-0",
+                style: "width:52px;height:52px;object-fit:cover;" %>
+        <% else %>
+          <div class="partner-avatar-circle flex-shrink-0">
+            <i class="ri-building-2-fill fs-3"></i>
+          </div>
+        <% end %>
+        <div>
+          <h5 class="mb-1 fw-bold lh-1"><%= grant.partner.name %></h5>
+          <span class="badge bg-<%= theme[:css] %>-subtle text-<%= theme[:css] %> border border-<%= theme[:css] %>-subtle fw-semibold">
+            <i class="<%= theme[:icon] %> me-1"></i><%= grant.status.capitalize %>
+          </span>
+        </div>
+      </div>
+
+      <%# Kebab menu — only meaningful for approved grants %>
+      <% if grant.approved? %>
+        <div class="dropdown">
+          <a href="#"
+             class="consent-kebab-btn"
+             data-bs-toggle="dropdown"
+             aria-expanded="false">
+            <i class="ri-more-line"></i>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end border">
+            <li>
+              <a class="dropdown-item py-2 text-danger"
+                 href="#"
+                 onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit(); return false;">
+                <i class="ri-close-circle-line me-2"></i>Revoke Access
+              </a>
+            </li>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Sector tag %>
+    <div class="mt-2 mb-1">
+      <span class="small text-muted">
+        <i class="ri-building-4-line me-1"></i><%= grant.partner.sector&.titleize || "Verified Partner" %>
+      </span>
+    </div>
+  </div>
+
+  <%# ── Card Body ── %>
+  <div class="card-body px-4 pt-3 pb-2">
+
+    <%# Scopes %>
+    <div class="mb-3">
+      <div class="small text-uppercase fw-bold text-muted mb-2">Permissions</div>
+      <div class="d-flex flex-wrap gap-2">
+        <% scopes = (grant.granted_scopes.presence || grant.requested_scopes).to_a.reject { |s| s == "openid" } %>
+        <% if scopes.any? %>
+          <% scopes.each do |scope| %>
+            <span class="badge rounded-pill consent-scope-badge px-3 py-2">
+              <i class="ri-check-line me-1"></i><%= scope.titleize %>
+            </span>
+          <% end %>
+        <% else %>
+          <span class="small text-muted">Basic authentication only</span>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Activity metrics %>
+    <div class="consent-metrics rounded-3 p-3 mb-3">
+      <div class="row text-center g-0">
+        <div class="col-6 border-end">
+          <div class="small text-muted mb-1">Last Accessed</div>
+          <div class="fw-semibold small">
+            <%= grant.last_accessed_at ? "#{time_ago_in_words(grant.last_accessed_at)} ago" : "Never" %>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="small text-muted mb-1">Access Count</div>
+          <div class="fw-semibold small"><%= grant.access_count %></div>
+        </div>
+      </div>
+    </div>
+
+    <%# Expiry %>
+    <% if grant.expires_at.present? %>
+      <div class="alert <%= grant.expires_at < 3.days.from_now ? 'alert-warning' : 'alert-light' %> py-2 px-3 small border-0 rounded-3 d-flex align-items-center mb-0">
+        <i class="ri-calendar-event-line me-2 flex-shrink-0"></i>
+        Valid until <%= grant.expires_at.strftime("%b %d, %Y") %>
+      </div>
+    <% end %>
+
+  </div>
+
+  <%# ── Card Footer: action buttons ── %>
+  <div class="card-footer border-0 bg-white px-4 pb-4 pt-2">
+    <% if grant.pending? %>
+      <div class="d-grid gap-2">
+        <button type="button"
+                class="btn btn-primary fw-bold py-2 rounded-3"
+                onclick="document.getElementById('approve-form-<%= grant.id %>').requestSubmit(); return false;">
+          <i class="ri-check-line me-1"></i>Grant Secure Access
+        </button>
+        <button type="button"
+                class="btn btn-outline-danger btn-sm border-0"
+                onclick="document.getElementById('deny-form-<%= grant.id %>').requestSubmit(); return false;">
+          <i class="ri-close-line me-1"></i>Decline Request
+        </button>
+      </div>
+    <% elsif grant.approved? %>
+      <button type="button"
+              class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium"
+              onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit(); return false;">
+        <i class="ri-forbid-2-line text-danger me-2"></i>Revoke Access
+      </button>
+    <% elsif grant.revoked? %>
+      <div class="text-center small text-muted py-1">
+        <i class="ri-information-line me-1"></i>Access was revoked
+      </div>
+    <% end %>
+  </div>
+
+</div>

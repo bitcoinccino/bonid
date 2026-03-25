@@ -1,0 +1,501 @@
+/* ======================================================
+   BONVOTE — Shared styles for /election/verify
+   Uses the same dark palette as the main landing page:
+   --haiti-space (#001b7a) → --haiti-deep (#000b2d)
+====================================================== */
+
+/* Page wrapper */
+.bonvote-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--haiti-space, #001b7a) 0%, var(--haiti-deep, #000b2d) 100%);
+  font-family: var(--font-body, 'Inter', sans-serif);
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+@keyframes sealPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.2); }
+  50% { box-shadow: 0 0 0 12px rgba(0, 255, 255, 0); }
+}
+
+.bonvote-page input:focus {
+  border-color: rgba(0, 255, 255, 0.4) !important;
+  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.1);
+}
+
+/* Two-column grid */
+.bonvote-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
+  align-items: start;
+}
+
+/* Left column */
+.bonvote-left { padding-top: 0.5rem; max-width: 100%; overflow-x: hidden; }
+
+/* Hero */
+.bonvote-hero-title {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  font-family: var(--font-heading, 'Montserrat', sans-serif);
+}
+
+.bonvote-hero-sub {
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
+  margin: 0 0 2rem;
+}
+
+/* Language Switcher */
+.bonvote-lang-switcher {
+  display: inline-flex;
+  gap: 6px;
+}
+.bonvote-lang-pill {
+  padding: 4px 12px;
+  border-radius: 2rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+.bonvote-lang-pill.active {
+  background: rgba(0, 255, 255, 0.15);
+  color: rgba(0, 255, 255, 0.9);
+}
+.bonvote-lang-pill:not(.active) {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+}
+.bonvote-lang-pill:hover:not(.active) {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.8);
+}
+
+/* Tabs */
+.bonvote-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 6px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.bonvote-tab {
+  flex: 1;
+  min-width: 70px;
+  padding: 10px 8px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: var(--font-heading, 'Montserrat', sans-serif);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.bonvote-tab i { font-size: 1rem; }
+.bonvote-tab:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.04); }
+.bonvote-tab.active {
+  background: rgba(0, 255, 255, 0.08);
+  color: rgba(0, 255, 255, 0.9);
+  box-shadow: 0 1px 4px rgba(0, 255, 255, 0.15);
+}
+
+/* Tab content */
+.bonvote-tab-content { display: none; }
+.bonvote-tab-content.active { display: block; }
+
+.bonvote-tab-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.75rem;
+  font-family: var(--font-heading, 'Montserrat', sans-serif);
+}
+
+/* Info cards */
+.bonvote-info-card {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 1.75rem;
+  align-items: flex-start;
+}
+.bonvote-info-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.bonvote-info-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.5rem;
+}
+.bonvote-info-text {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Feature list */
+.bonvote-feature-list { display: flex; flex-direction: column; gap: 16px; }
+.bonvote-feature {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.bonvote-feature > i {
+  font-size: 1.2rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.bonvote-feature strong {
+  display: block;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.85);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.bonvote-feature span {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.5;
+}
+
+/* Steps */
+.bonvote-steps { display: flex; flex-direction: column; gap: 10px; }
+.bonvote-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+}
+.bonvote-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.1);
+  color: rgba(0, 255, 255, 0.8);
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.bonvote-step-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+/* Advantages */
+.bonvote-advantages { display: flex; flex-direction: column; gap: 12px; }
+.bonvote-advantage {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.bonvote-advantage > i {
+  font-size: 1.1rem;
+  color: #10B981;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.bonvote-advantage strong {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.8);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.bonvote-advantage span {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  line-height: 1.5;
+}
+
+/* Trust badges */
+.bonvote-trust-badges {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.bonvote-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 2rem;
+}
+.bonvote-badge i {
+  font-size: 0.85rem;
+  color: rgba(0, 255, 255, 0.5);
+}
+.bonvote-badge span {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.5);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* FAQ */
+.bonvote-faq-list { display: flex; flex-direction: column; gap: 16px; }
+.bonvote-faq-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.bonvote-faq-q {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.bonvote-faq-q strong {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.8);
+}
+.bonvote-faq-a {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 28px;
+}
+
+/* Right column */
+.bonvote-right {
+  position: sticky;
+  top: 2rem;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Search card */
+.bonvote-search-card {
+  background: rgba(255,255,255,0.04);
+  border: 2px solid rgba(0, 255, 255, 0.12);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.bonvote-search-glow {
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at center, rgba(0, 255, 255, 0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+.bonvote-search-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+.bonvote-search-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(148,163,184,0.2);
+  border-radius: 0.75rem;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: clamp(0.82rem, 2.5vw, 0.95rem);
+  outline: none;
+  text-align: center;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.2s;
+}
+.bonvote-search-btn {
+  width: 100%;
+  padding: 0.95rem;
+  background: var(--bonid-blue, #00209F);
+  color: #fff;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 800;
+  font-size: clamp(0.88rem, 2.5vw, 1rem);
+  cursor: pointer;
+  font-family: var(--font-heading, 'Montserrat', sans-serif);
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 20px rgba(0, 32, 159, 0.4), 0 0 40px rgba(0, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.bonvote-search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 32, 159, 0.5), 0 0 50px rgba(0, 255, 255, 0.15);
+}
+
+/* Live ledger card */
+.bonvote-ledger-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+/* Comparison table */
+.bonvote-compare-table {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+.bonvote-compare-header {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 0;
+  background: rgba(255,255,255,0.04);
+  padding: 8px 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bonvote-compare-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 0;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.bonvote-compare-label { color: rgba(255,255,255,0.5); font-weight: 500; }
+.bonvote-compare-good { color: rgba(0, 255, 255, 0.8); font-weight: 700; }
+.bonvote-compare-bad { color: rgba(248,113,113,0.7); font-weight: 500; font-size: 0.68rem; }
+
+/* Stress test table */
+.bonvote-stress-table {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.bonvote-stress-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.5);
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.bonvote-stress-row:first-child { border-top: none; }
+.bonvote-stress-header {
+  background: rgba(255,255,255,0.04);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94A3B8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bonvote-verdict-instant { color: rgba(0, 255, 255, 0.8); font-weight: 700; font-size: 0.68rem; }
+.bonvote-verdict-fast { color: var(--bonid-gold, #EDB95E); font-weight: 700; font-size: 0.68rem; }
+
+/* Subsystem stats */
+.bonvote-subsystem-stats { display: flex; flex-direction: column; gap: 8px; }
+.bonvote-subsystem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.4;
+}
+.bonvote-subsystem i { flex-shrink: 0; margin-top: 1px; }
+.bonvote-subsystem strong { color: rgba(255,255,255,0.7); }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .bonvote-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 0 0.75rem 2rem;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .bonvote-left { max-width: 100%; overflow-x: hidden; }
+  .bonvote-right { position: static; max-width: 100%; overflow-x: hidden; }
+  .bonvote-hero-title { text-align: center; font-size: 1.4rem; word-break: break-word; }
+  .bonvote-hero-sub { text-align: center; font-size: 0.85rem; }
+  .bonvote-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .bonvote-tabs::-webkit-scrollbar { display: none; }
+  .bonvote-tab { min-width: 54px; flex-shrink: 0; padding: 8px 4px; }
+  .bonvote-tab span { font-size: 0.55rem; }
+  .bonvote-tab i { font-size: 0.9rem; }
+  .bonvote-tab-title { font-size: 0.95rem; }
+  .bonvote-feature { gap: 10px; }
+  .bonvote-feature > i { font-size: 1rem; }
+  .bonvote-feature strong { font-size: 0.78rem; }
+  .bonvote-feature span { font-size: 0.72rem; }
+  .bonvote-compare-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bonvote-compare-header, .bonvote-compare-row { min-width: 340px; }
+  .bonvote-stress-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bonvote-stress-row { min-width: 280px; }
+  .bonvote-faq-item { padding: 12px; }
+  .bonvote-faq-q strong { font-size: 0.78rem; }
+  .bonvote-faq-a { font-size: 0.72rem; padding-left: 24px; }
+  .bonvote-trust-badges { gap: 0.5rem; }
+  .bonvote-badge { padding: 4px 8px; }
+  .bonvote-badge span { font-size: 0.52rem; }
+  .bonvote-info-card { gap: 10px; }
+  .bonvote-info-icon { width: 32px; height: 32px; font-size: 1rem; }
+  .bonvote-step { gap: 8px; }
+  .bonvote-step-desc { font-size: 0.7rem; }
+}

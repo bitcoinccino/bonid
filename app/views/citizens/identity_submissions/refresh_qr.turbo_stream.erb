@@ -1,0 +1,34 @@
+<%# Turbo Stream response for QR refresh %>
+<%# Updates the QR code wrapper in the modal %>
+
+<%= turbo_stream.replace dom_id(@submission, :qr_wrapper) do %>
+  <div id="<%= dom_id(@submission, :qr_wrapper) %>" class="qr-code-wrapper">
+    <%= image_tag("data:image/png;base64,#{@submission.qr_for(:citizen)}",
+                  id: dom_id(@submission, :qr_rotating_image),
+                  class: "qr-code-image",
+                  alt: "BonID QR Code") %>
+
+    <%# Photo Overlay %>
+    <div class="qr-photo-overlay">
+      <% if @submission.user.photo.attached? %>
+        <%= image_tag url_for(@submission.user.photo),
+                      class: "qr-photo",
+                      style: "width: 56px; height: 56px; object-fit: cover; object-position: center top;" %>
+      <% else %>
+        <%= image_tag "haiti_flag.png", class: "qr-photo" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<% unless @auto_refresh %>
+  <%= turbo_stream.replace dom_id(@submission, :qr_notice) do %>
+    <div id="<%= dom_id(@submission, :qr_notice) %>" class="qr-refresh-notice">
+      <div class="alert alert-success d-flex align-items-center gap-2 mb-3 py-2 px-3 rounded-pill" role="alert">
+        <i class="ri-checkbox-circle-fill"></i>
+        <span>QR Code refreshed successfully</span>
+        <button type="button" class="btn-close btn-close-sm ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    </div>
+  <% end %>
+<% end %>

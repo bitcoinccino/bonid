@@ -1,0 +1,177 @@
+<!-- =========================================================
+     Section 1: Personal Information
+     Used to create your BonTouris ID (non-immigration)
+========================================================= -->
+<div class="card rounded-4 mb-4 border-2">
+
+  <!-- Header -->
+  <div class="card-header bg-white border-0 pb-0">
+    <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+      <i class="ri-user-3-line text-haitian-blue"></i>
+      <%= t("bon_touris.pages.personal_information.title") %>
+    </h5>
+    <p class="small text-muted mb-0">
+      <%= t("bon_touris.pages.personal_information.subtitle").html_safe %>
+    </p>
+  </div>
+
+  <div class="card-body pt-3">
+    <div class="row g-4">
+
+      <!-- Title -->
+      <div class="col-12 col-md-3">
+        <%= f.label :title, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.title_field.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :title,
+              [["Mr.", "Mr."], ["Mrs.", "Mrs."], ["Miss", "Miss"], ["Ms.", "Ms."], ["Dr.", "Dr."]],
+              { prompt: t("bon_touris.pages.personal_information.title_field.prompt") },
+              class: "form-select",
+              required: true %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.pages.personal_information.title_field.error") %>
+        </div>
+      </div>
+
+      <!-- First Name -->
+      <div class="col-12 col-md-3">
+        <%= f.label :first_name, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.first_name.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.text_field :first_name,
+              class: "form-control",
+              placeholder: t("bon_touris.pages.personal_information.first_name.placeholder"),
+              required: true,
+              autocomplete: "given-name",
+              data: { passport_scan_target: "firstName" } %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.pages.personal_information.first_name.error") %>
+        </div>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.personal_information.first_name.help") %>
+        </div>
+      </div>
+
+      <!-- Middle Name -->
+      <div class="col-12 col-md-3">
+        <%= f.label :middle_name,
+              t("bon_touris.pages.personal_information.middle_name.label"),
+              class: "form-label fw-semibold" %>
+
+        <%= f.text_field :middle_name,
+              class: "form-control",
+              placeholder: t("bon_touris.pages.personal_information.middle_name.placeholder"),
+              autocomplete: "additional-name" %>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.personal_information.middle_name.help") %>
+        </div>
+      </div>
+
+      <!-- Last Name -->
+      <div class="col-12 col-md-3">
+        <%= f.label :last_name, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.last_name.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.text_field :last_name,
+              class: "form-control",
+              placeholder: t("bon_touris.pages.personal_information.last_name.placeholder"),
+              required: true,
+              autocomplete: "family-name",
+              data: { passport_scan_target: "lastName" } %>
+
+        <div class="invalid-feedback">
+          <%= t("bon_touris.pages.personal_information.last_name.error") %>
+        </div>
+      </div>
+
+      <!-- Date of Birth -->
+      <div class="col-12 col-md-4">
+        <%= f.label :dob, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.dob.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.date_field :dob,
+              class: "form-control",
+              required: true,
+              max: Date.current,
+              autocomplete: "bday",
+              data: { passport_scan_target: "dob" } %>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.personal_information.dob.help") %>
+        </div>
+      </div>
+
+      <!-- Sex -->
+      <div class="col-12 col-md-4">
+        <%= f.label :sex, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.sex.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :sex,
+              [["Male", "male"], ["Female", "female"], ["Other", "other"]],
+              { prompt: t("bon_touris.pages.personal_information.sex.prompt") },
+              class: "form-select",
+              required: true,
+              data: { passport_scan_target: "sex" } %>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.personal_information.sex.help") %>
+        </div>
+      </div>
+
+      <!-- Nationality -->
+      <div class="col-12 col-md-4">
+        <%= f.label :nationality, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.nationality.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :nationality,
+              options_for_select(nationality_options, f.object.nationality),
+              { prompt: t("bon_touris.pages.personal_information.nationality.prompt") },
+              class: "form-select",
+              required: true,
+              data: { passport_scan_target: "nationality" } %>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.personal_information.nationality.help") %>
+        </div>
+      </div>
+
+      <!-- Country of Residence -->
+      <div class="col-12 col-md-6">
+        <%= f.label :residence_country, class: "form-label fw-semibold" do %>
+          <%= t("bon_touris.pages.personal_information.residence_country.label") %>
+          <span class="text-danger">*</span>
+        <% end %>
+
+        <%= f.select :residence_country,
+              grouped_options_for_select(
+                grouped_country_options,
+                f.object.residence_country
+              ),
+              { prompt: t("bon_touris.pages.personal_information.residence_country.prompt") },
+              class: "form-select",
+              required: true %>
+
+        <div class="form-text">
+          <%= t("bon_touris.pages.personal_information.residence_country.help") %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

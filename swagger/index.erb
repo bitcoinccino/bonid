@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BonID API Documentation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Source+Code+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="./swagger-ui.css">
+  <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+  <style>
+    :root {
+      --bonid-blue: #00209F;
+      --bonid-blue-light: #e6ecf6;
+      --bonid-blue-hover: #001a7a;
+      --bonid-white: #ffffff;
+    }
+
+    html {
+      box-sizing: border-box;
+      overflow-y: scroll;
+    }
+    *, *:before, *:after { box-sizing: inherit; }
+
+    body {
+      margin: 0;
+      background: #f8f9fc;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* ── Top Bar ── */
+    .swagger-ui .topbar {
+      background-color: var(--bonid-blue);
+      padding: 12px 0;
+    }
+    .swagger-ui .topbar .download-url-wrapper .select-label {
+      color: var(--bonid-white);
+    }
+    .swagger-ui .topbar .download-url-wrapper .select-label select {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.1);
+      color: var(--bonid-white);
+    }
+    .swagger-ui .topbar .download-url-wrapper input[type=text] {
+      border-color: rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.1);
+      color: var(--bonid-white);
+    }
+    .swagger-ui .topbar a { display: none; }
+    .swagger-ui .topbar .download-url-wrapper .select-label span {
+      color: var(--bonid-white);
+    }
+    .swagger-ui .topbar .download-url-wrapper button {
+      background: var(--bonid-white);
+      color: var(--bonid-blue);
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* ── BonID Header ── */
+    .bonid-header {
+      background: var(--bonid-blue);
+      color: var(--bonid-white);
+      padding: 24px 40px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .bonid-header svg {
+      width: 40px;
+      height: 40px;
+      fill: var(--bonid-white);
+      flex-shrink: 0;
+    }
+    .bonid-header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .bonid-header p {
+      margin: 2px 0 0;
+      font-size: 0.82rem;
+      opacity: 0.85;
+      font-weight: 400;
+    }
+
+    /* ── Info Section ── */
+    .swagger-ui .info {
+      margin: 20px 0 10px;
+    }
+    .swagger-ui .info .title {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+      font-weight: 700;
+    }
+    .swagger-ui .info .title small.version-stamp {
+      background-color: var(--bonid-blue);
+    }
+    .swagger-ui .info a {
+      color: var(--bonid-blue);
+    }
+
+    /* ── Tag Groups ── */
+    .swagger-ui .opblock-tag {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+      border-bottom: 1px solid var(--bonid-blue-light);
+      font-weight: 600;
+    }
+    .swagger-ui .opblock-tag:hover {
+      background: var(--bonid-blue-light);
+    }
+
+    /* ── HTTP Method Badges ── */
+    .swagger-ui .opblock.opblock-get .opblock-summary-method {
+      background: var(--bonid-blue);
+    }
+    .swagger-ui .opblock.opblock-get .opblock-summary {
+      border-color: var(--bonid-blue);
+    }
+    .swagger-ui .opblock.opblock-get {
+      background: rgba(0, 32, 159, 0.04);
+      border-color: rgba(0, 32, 159, 0.3);
+    }
+
+    .swagger-ui .opblock.opblock-post .opblock-summary-method {
+      background: #198754;
+    }
+    .swagger-ui .opblock.opblock-post .opblock-summary {
+      border-color: #198754;
+    }
+    .swagger-ui .opblock.opblock-post {
+      background: rgba(25, 135, 84, 0.04);
+      border-color: rgba(25, 135, 84, 0.3);
+    }
+
+    .swagger-ui .opblock.opblock-put .opblock-summary-method {
+      background: #e67e22;
+    }
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method {
+      background: #dc3545;
+    }
+
+    /* ── Buttons (Try It Out / Execute) ── */
+    .swagger-ui .btn.execute {
+      background-color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      color: var(--bonid-white);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+    }
+    .swagger-ui .btn.execute:hover {
+      background-color: var(--bonid-blue-hover);
+    }
+    .swagger-ui .try-out__btn {
+      color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 500;
+    }
+    .swagger-ui .try-out__btn:hover {
+      background: var(--bonid-blue-light);
+    }
+    .swagger-ui .btn.authorize {
+      color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 600;
+    }
+    .swagger-ui .btn.authorize svg {
+      fill: var(--bonid-blue);
+    }
+
+    /* ── Authorize Modal ── */
+    .swagger-ui .dialog-ux .modal-ux-header h3 {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+    }
+    .swagger-ui .auth-btn-wrapper .btn-done {
+      color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+    }
+    .swagger-ui .btn.modal-btn.auth.authorize {
+      background-color: var(--bonid-blue);
+      border-color: var(--bonid-blue);
+      color: var(--bonid-white);
+    }
+
+    /* ── Response Codes ── */
+    .swagger-ui .responses-inner h4,
+    .swagger-ui .responses-inner h5 {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+    }
+    .swagger-ui table thead tr th {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+    }
+
+    /* ── Models Section ── */
+    .swagger-ui section.models h4 {
+      font-family: 'Montserrat', sans-serif;
+      color: var(--bonid-blue);
+      border-bottom: 1px solid var(--bonid-blue-light);
+    }
+    .swagger-ui section.models .model-container {
+      background: var(--bonid-blue-light);
+      border-radius: 6px;
+    }
+
+    /* ── Code Blocks ── */
+    .swagger-ui .highlight-code pre {
+      font-family: 'Source Code Pro', monospace;
+    }
+    .swagger-ui .microlight {
+      font-family: 'Source Code Pro', monospace;
+    }
+
+    /* ── Filter Input ── */
+    .swagger-ui .filter .operation-filter-input {
+      border-color: var(--bonid-blue);
+      font-family: 'Montserrat', sans-serif;
+    }
+    .swagger-ui .filter .operation-filter-input:focus {
+      outline-color: var(--bonid-blue);
+    }
+
+    /* ── Scheme Container ── */
+    .swagger-ui .scheme-container {
+      background: var(--bonid-white);
+      border-bottom: 2px solid var(--bonid-blue);
+    }
+
+    /* ── Links & Misc ── */
+    .swagger-ui a.nostyle { color: var(--bonid-blue); }
+    .swagger-ui .response-col_status { color: var(--bonid-blue); font-weight: 600; }
+
+    /* ── Scrollbar Styling ── */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bonid-blue-light); }
+    ::-webkit-scrollbar-thumb { background: var(--bonid-blue); border-radius: 4px; }
+
+    /* ── Footer ── */
+    .bonid-footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 0.8rem;
+      font-family: 'Montserrat', sans-serif;
+      border-top: 1px solid var(--bonid-blue-light);
+      margin-top: 40px;
+    }
+    .bonid-footer a {
+      color: var(--bonid-blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+      .bonid-header {
+        padding: 16px 20px;
+      }
+      .bonid-header h1 {
+        font-size: 1.1rem;
+      }
+      .bonid-header svg {
+        width: 32px;
+        height: 32px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="bonid-header">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+  </svg>
+  <div>
+    <h1>BonID API Documentation</h1>
+    <p>Secure Digital Identity Verification for Haiti</p>
+  </div>
+</div>
+
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:absolute;width:0;height:0">
+  <defs>
+    <symbol viewBox="0 0 20 20" id="unlocked">
+      <path d="M15.8 8H14V5.6C14 2.703 12.665 1 10 1 7.334 1 6 2.703 6 5.6V6h2v-.801C8 3.754 8.797 3 10 3c1.203 0 2 .754 2 2.199V8H4c-.553 0-1 .646-1 1.199V17c0 .549.428 1.139.951 1.307l1.197.387C5.672 18.861 6.55 19 7.1 19h5.8c.549 0 1.428-.139 1.951-.307l1.196-.387c.524-.167.953-.757.953-1.306V9.199C17 8.646 16.352 8 15.8 8z"></path>
+    </symbol>
+    <symbol viewBox="0 0 20 20" id="locked">
+      <path d="M15.8 8H14V5.6C14 2.703 12.665 1 10 1 7.334 1 6 2.703 6 5.6V8H4c-.553 0-1 .646-1 1.199V17c0 .549.428 1.139.951 1.307l1.197.387C5.672 18.861 6.55 19 7.1 19h5.8c.549 0 1.428-.139 1.951-.307l1.196-.387c.524-.167.953-.757.953-1.306V9.199C17 8.646 16.352 8 15.8 8zM12 8H8V5.199C8 3.754 8.797 3 10 3c1.203 0 2 .754 2 2.199V8z"/>
+    </symbol>
+    <symbol viewBox="0 0 20 20" id="close">
+      <path d="M14.348 14.849c-.469.469-1.229.469-1.697 0L10 11.819l-2.651 3.029c-.469.469-1.229.469-1.697 0-.469-.469-.469-1.229 0-1.697l2.758-3.15-2.759-3.152c-.469-.469-.469-1.228 0-1.697.469-.469 1.228-.469 1.697 0L10 8.183l2.651-3.031c.469-.469 1.228-.469 1.697 0 .469.469.469 1.229 0 1.697l-2.758 3.152 2.758 3.15c.469.469.469 1.229 0 1.698z"/>
+    </symbol>
+    <symbol viewBox="0 0 20 20" id="large-arrow">
+      <path d="M13.25 10L6.109 2.58c-.268-.27-.268-.707 0-.979.268-.27.701-.27.969 0l7.83 7.908c.268.271.268.709 0 .979l-7.83 7.908c-.268.271-.701.27-.969 0-.268-.269-.268-.707 0-.979L13.25 10z"/>
+    </symbol>
+    <symbol viewBox="0 0 20 20" id="large-arrow-down">
+      <path d="M17.418 6.109c.272-.268.709-.268.979 0s.271.701 0 .969l-7.908 7.83c-.27.268-.707.268-.979 0l-7.908-7.83c-.27-.268-.27-.701 0-.969.271-.268.709-.268.979 0L10 13.25l7.418-7.141z"/>
+    </symbol>
+    <symbol viewBox="0 0 24 24" id="jump-to">
+      <path d="M19 7v4H5.83l3.58-3.59L8 6l-6 6 6 6 1.41-1.41L5.83 13H21V7z"/>
+    </symbol>
+    <symbol viewBox="0 0 24 24" id="expand">
+      <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="swagger-ui"></div>
+
+<div class="bonid-footer">
+  Powered by <a href="https://bonid.ht" target="_blank">BonID</a> &mdash; Haiti's National Digital Identity Platform
+</div>
+
+<script>
+  if (window.navigator.userAgent.indexOf("Edge") > -1) {
+    window.fetch = undefined;
+  }
+</script>
+
+<script src="./swagger-ui-bundle.js"></script>
+<script src="./swagger-ui-standalone-preset.js"></script>
+<script>
+  window.onload = function () {
+    var configObject = JSON.parse('<%= config_object.to_json %>');
+    var oauthConfigObject = JSON.parse('<%= oauth_config_object.to_json %>');
+
+    configObject.dom_id = "#swagger-ui";
+    configObject.presets = [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset];
+    configObject.layout = "StandaloneLayout";
+    configObject.deepLinking = true;
+    configObject.filter = true;
+    configObject.tryItOutEnabled = true;
+    configObject.displayRequestDuration = true;
+
+    if (!configObject.hasOwnProperty("oauth2RedirectUrl"))
+      configObject.oauth2RedirectUrl = window.location.href.replace("index.html", "oauth2-redirect.html");
+
+    const ui = SwaggerUIBundle(configObject);
+    ui.initOAuth(oauthConfigObject);
+  }
+</script>
+</body>
+</html>

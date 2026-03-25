@@ -1,0 +1,471 @@
+// ============================================================
+// Partner Portal — Law Enforcement Report Review
+// Command & Control dashboard styles for incident report review
+// ============================================================
+
+.le-report {
+
+  // ── Case Header Bar (sticky) ──────────────────────────────
+  &-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--law-blue, #092C73);
+    color: #fff;
+    border-radius: 0 0 var(--radius-md, 0.75rem) var(--radius-md, 0.75rem);
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+
+    .le-report-id {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+    }
+
+    .le-back-btn {
+      color: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      text-decoration: none;
+
+      &:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    .le-crime-type {
+      font-family: "Montserrat", sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+  }
+
+  // ── Right Sidebar (sticky) ────────────────────────────────
+  &-sidebar {
+    position: sticky;
+    top: 90px;
+    max-height: calc(100vh - 110px);
+    overflow-y: auto;
+
+    // Thin scrollbar
+    &::-webkit-scrollbar { width: 3px; }
+    &::-webkit-scrollbar-thumb { background: rgba(9, 44, 115, 0.2); border-radius: 3px; }
+  }
+
+  // ── Section Cards ─────────────────────────────────────────
+  &-card {
+    border: 1px solid rgba(9, 44, 115, 0.12);
+    border-radius: var(--radius-md, 0.75rem);
+    background: #fff;
+    margin-bottom: 1rem;
+    overflow: hidden;
+
+    &__header {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 600;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid rgba(9, 44, 115, 0.08);
+      color: var(--law-blue, #092C73);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      i { font-size: 1rem; }
+    }
+
+    &__body {
+      padding: 1rem;
+    }
+  }
+}
+
+// ── Person Involvement Cards ──────────────────────────────
+.le-person-card {
+  border: 1px solid rgba(9, 44, 115, 0.1);
+  border-left: 4px solid var(--mid-gray, #6C757D);
+  border-radius: var(--radius-sm, 0.45rem);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fff;
+  transition: border-color 0.15s;
+
+  &--suspect,
+  &--accomplice {
+    border-left-color: var(--law-red, #D90718);
+    background: rgba(217, 7, 24, 0.02);
+  }
+
+  &--victim {
+    border-left-color: var(--golden-yellow, #EDB95E);
+    background: rgba(237, 185, 94, 0.04);
+  }
+
+  &--witness {
+    border-left-color: var(--ocean-blue, #3366CC);
+    background: rgba(51, 102, 204, 0.02);
+  }
+
+  .le-person-photo {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(9, 44, 115, 0.15);
+    flex-shrink: 0;
+  }
+
+  .le-person-photo-placeholder {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(9, 44, 115, 0.08);
+    border: 2px solid rgba(9, 44, 115, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--law-blue, #092C73);
+    font-size: 1.5rem;
+  }
+
+  .le-person-name {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--dark-gray, #343A40);
+  }
+
+  .le-person-bonid {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--law-blue, #092C73);
+    letter-spacing: 0.3px;
+  }
+}
+
+// ── High-Contrast Status Pills ────────────────────────────
+.le-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+
+  // Roles
+  &--suspect    { background: var(--law-red, #D90718); color: #fff; }
+  &--accomplice { background: #7C3AED; color: #fff; }
+  &--victim     { background: var(--golden-yellow, #EDB95E); color: #000; }
+  &--witness    { background: var(--ocean-blue, #3366CC); color: #fff; }
+  &--innocent   { background: var(--palm-green, #1A936F); color: #fff; }
+  &--unknown    { background: var(--mid-gray, #6C757D); color: #fff; }
+
+  // Statuses — high-contrast for rapid identification
+  &--wanted,
+  &--fugitive,
+  &--at_large,
+  &--armed,
+  &--dangerous,
+  &--escaped_custody { background: #DC2626; color: #fff; }
+
+  &--in_custody,
+  &--detained_awaiting_charges { background: var(--dark-gray, #343A40); color: #fff; }
+
+  &--deceased     { background: #000; color: #fff; }
+  &--missing      { background: #D97706; color: #fff; }
+  &--cooperating  { background: var(--palm-green, #1A936F); color: #fff; }
+  &--released_on_bail,
+  &--released_no_charges { background: #059669; color: #fff; }
+
+  &--convicted    { background: #7C2D12; color: #fff; }
+  &--under_surveillance { background: #4338CA; color: #fff; }
+}
+
+// ── Detail Row (icon + label + value) ─────────────────────
+.le-detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(9, 44, 115, 0.06);
+  }
+
+  .le-detail-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(9, 44, 115, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--law-blue, #092C73);
+    font-size: 0.9rem;
+  }
+
+  .le-detail-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--mid-gray, #6C757D);
+    font-weight: 500;
+    margin-bottom: 0.1rem;
+  }
+
+  .le-detail-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dark-gray, #343A40);
+  }
+}
+
+// ── Map Container ─────────────────────────────────────────
+.le-map-container {
+  height: 200px;
+  border-radius: var(--radius-md, 0.75rem);
+  overflow: hidden;
+  border: 1px solid rgba(9, 44, 115, 0.12);
+}
+
+// ── Review Action Buttons ─────────────────────────────────
+.le-action-approve {
+  background: var(--law-green, #49A64F);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 0.45rem);
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  width: 100%;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #3D8B42;
+    color: #fff;
+  }
+}
+
+.le-action-toggle {
+  background: none;
+  border: 1px solid rgba(9, 44, 115, 0.15);
+  border-radius: var(--radius-sm, 0.45rem);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dark-gray, #343A40);
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.15s;
+  cursor: pointer;
+
+  &:hover { background: rgba(9, 44, 115, 0.04); }
+
+  &--reject {
+    &:hover { color: var(--law-red, #D90718); border-color: var(--law-red, #D90718); }
+  }
+
+  &--info {
+    &:hover { color: #D97706; border-color: #D97706; }
+  }
+
+  &--escalate {
+    &:hover { color: var(--dark-gray, #343A40); border-color: var(--dark-gray, #343A40); }
+  }
+
+  .le-toggle-chevron {
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+
+  &[aria-expanded="true"] .le-toggle-chevron {
+    transform: rotate(180deg);
+  }
+}
+
+// ── Officer Card ──────────────────────────────────────────
+.le-officer-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(9, 44, 115, 0.15);
+  flex-shrink: 0;
+}
+
+.le-officer-photo-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--law-blue, #092C73);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+// ── Severity Badge ────────────────────────────────────────
+.le-severity {
+  &--critical { background: #DC2626; color: #fff; }
+  &--severe   { background: #EA580C; color: #fff; }
+  &--high     { background: #D97706; color: #fff; }
+  &--moderate { background: #CA8A04; color: #fff; }
+  &--low      { background: var(--mid-gray, #6C757D); color: #fff; }
+}
+
+// ── Evidence Grid ─────────────────────────────────────────
+.le-evidence-thumb {
+  position: relative;
+  border-radius: var(--radius-sm, 0.45rem);
+  overflow: hidden;
+  border: 1px solid rgba(9, 44, 115, 0.1);
+
+  img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .le-watermark-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: var(--law-green, #49A64F);
+    color: #fff;
+    font-size: 0.5rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+}
+
+// ── QR / Integrity Footer ─────────────────────────────────
+.le-integrity {
+  font-size: 0.7rem;
+  color: var(--mid-gray, #6C757D);
+
+  .le-checksum {
+    font-family: monospace;
+    font-weight: 700;
+    color: var(--dark-gray, #343A40);
+    letter-spacing: 1px;
+  }
+}
+
+// ── Global Search Results Dropdown ────────────────────────
+.le-search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1060;
+  background: #fff;
+  border: 1px solid rgba(9, 44, 115, 0.12);
+  border-radius: var(--radius-md, 0.75rem);
+  margin-top: 0.25rem;
+  max-height: 400px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar { width: 3px; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(9, 44, 115, 0.2);
+    border-radius: 3px;
+  }
+}
+
+.le-search-group-header {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 600;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--law-blue, #092C73);
+  padding: 0.5rem 0.75rem 0.25rem;
+  border-bottom: 1px solid rgba(9, 44, 115, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.le-search-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  text-decoration: none;
+  color: var(--dark-gray, #343A40);
+  font-size: 0.82rem;
+  font-family: "Inter", sans-serif;
+  transition: background 0.1s;
+  border-bottom: 1px solid rgba(9, 44, 115, 0.04);
+
+  &:hover {
+    background: rgba(9, 44, 115, 0.04);
+    color: var(--law-blue, #092C73);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.le-search-item-meta {
+  font-size: 0.65rem;
+  color: var(--mid-gray, #6C757D);
+}
+
+// ── Critical Incident Alert ──────────────────────────────
+.le-critical-banner {
+  background: var(--law-red, #D90718);
+  color: #fff;
+  font-family: "Inter", sans-serif;
+}
+
+.le-critical-icon-pulse {
+  animation: le-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes le-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+// ── Responsive ────────────────────────────────────────────
+@media (max-width: 991.98px) {
+  .le-report-sidebar {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .le-report-header {
+    border-radius: 0;
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+}

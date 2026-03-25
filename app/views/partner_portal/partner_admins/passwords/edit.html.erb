@@ -1,0 +1,45 @@
+<!-- app/views/partner_portal/partner_admin/passwords/edit.html.erb -->
+<div class="auth-card">
+  <h1 class="h4 fw-bold mb-3 text-center">Choose a New Password</h1>
+  <p class="text-muted text-center mb-4">
+    Enter your new password below to finish resetting your account.
+  </p>
+
+  <%= form_for(resource, as: resource_name, url: password_path(resource_name),
+               html: { method: :put, data: { turbo: false } }) do |f| %>
+
+    <%= f.hidden_field :reset_password_token %>
+
+    <div class="mb-3">
+      <%= f.label :password, "New Password", class: "form-label fw-semibold" %>
+      <%= f.password_field :password, autofocus: true, autocomplete: "new-password",
+          class: "form-control form-control-lg", placeholder: "Enter new password" %>
+    </div>
+
+    <div class="mb-3">
+      <%= f.label :password_confirmation, "Confirm Password", class: "form-label fw-semibold" %>
+      <%= f.password_field :password_confirmation, autocomplete: "new-password",
+          class: "form-control form-control-lg", placeholder: "Confirm new password" %>
+    </div>
+
+    <%= f.submit "Update Password", class: "btn btn-primary w-100 fw-semibold" %>
+  <% end %>
+
+  <div class="text-center mt-3">
+    <%= link_to "Back to Login", new_partner_admin_session_path, class: "text-muted" %>
+  </div>
+</div>
+
+
+<style>
+  body {
+    background: linear-gradient(180deg, #00209F 0%, #032B77 60%, #f8f9fa 100%);
+  }
+  .btn-primary {
+    background-color: #00209F;
+    border: none;
+  }
+  .btn-primary:hover {
+    background-color: #032B77;
+  }
+</style>

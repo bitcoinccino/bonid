@@ -1,0 +1,89 @@
+<!-- app/views/admin/identity_submissions/show/_verification_records.html.erb -->
+<div class="card border-0 rounded-3 shadow-sm mb-4">
+  <div class="card-header bg-light d-flex align-items-center">
+    <i class="ri-shield-check-line text-primary me-2"></i>
+    <h6 class="mb-0 fw-semibold text-dark">Verification Records</h6>
+  </div>
+
+  <div class="card-body">
+    <% records = submission.user.verification_records.order(created_at: :desc) %>
+
+    <% if records.any? %>
+      <table class="table table-sm align-middle mb-0 table-hover">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Category</th>
+            <th scope="col">Key Info</th>
+            <th scope="col" class="text-center">Access</th>
+            <th scope="col" class="text-center">Source</th>
+            <th scope="col" class="text-center">Status</th>
+            <th scope="col" class="text-center">Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% records.each do |record| %>
+            <% data = record.decrypted_data rescue record.data %>
+            <tr>
+              <td>
+                <i class="ri-database-2-line text-secondary me-1"></i>
+                <%= record.record_type&.to_s&.titleize || "—" %>
+              </td>
+              <td><%= record.category&.titleize || "—" %></td>
+              <td class="text-truncate" style="max-width: 280px;">
+                <% key_field = data["institution"] || data["company"] || data["business_name"] || data["address"] || data["title_number"] %>
+                <%= key_field || content_tag(:span, "N/A", class: "text-muted small") %>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-<%= {
+                    "private_access" => "secondary",
+                    "partners_access" => "info",
+                    "public_access" => "success"
+                  }[record.access_level] %>">
+                  <%= record.access_level.humanize %>
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge bg-light text-dark">
+                  <%= record.source.humanize %>
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge <%= {
+                    "pending" => "bg-warning text-dark",
+                    "verified" => "bg-success",
+                    "rejected" => "bg-danger",
+                    "revoked" => "bg-secondary"
+                  }[record.status] %>">
+                  <%= record.status&.to_s&.titleize || "—" %>
+                </span>
+              </td>
+              <td class="text-center text-muted small">
+                <%= time_ago_in_words(record.created_at) %> ago
+              </td>
+            </tr>
+
+            <!-- Expandable row for full JSON data -->
+            <tr class="border-top-0">
+              <td colspan="7" class="bg-light-subtle small ps-5 py-2">
+                <details>
+                  <summary class="text-primary fw-semibold" style="cursor: pointer;">
+                    View Details
+                  </summary>
+                  <pre class="bg-white border rounded-3 p-2 mt-2 mb-0 text-muted small" style="max-height: 240px; overflow:auto;">
+<%= JSON.pretty_generate(data) %>
+                  </pre>
+                </details>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="alert alert-dismissible fade show alert-light border text-center text-muted py-4 shadow-sm">
+        <i class="ri-information-line fs-4 text-secondary"></i><br>
+        No verification records found for this user.
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,105 @@
+<div class="border rounded-3 bg-white p-3 shadow-sm small">
+  <h6 class="fw-semibold text-primary mb-3">
+    <i class="ri-hospital-line me-1"></i>
+    Health Record — <%= record.data["provider_name"] || "Unknown Provider" %>
+  </h6>
+
+  <!-- 🏥 Insurance Information -->
+  <details open>
+    <summary class="fw-semibold text-dark mb-2">
+      <i class="ri-file-shield-2-line me-1"></i> Insurance Information
+    </summary>
+    <div class="row mt-2 mb-2">
+      <div class="col-md-4 mb-2"><p class="mb-1"><strong>Provider:</strong> <%= record.data["provider_name"] || "N/A" %></p></div>
+      <div class="col-md-4 mb-2"><p class="mb-1"><strong>Policy #:</strong> <%= record.data["policy_number"] || "N/A" %></p></div>
+      <div class="col-md-4 mb-2"><p class="mb-1"><strong>Coverage:</strong> <%= record.data["coverage_type"] || "N/A" %></p></div>
+    </div>
+    <div class="row mt-2 mb-2">
+      <div class="col-md-3 mb-2"><p class="mb-1"><strong>Valid:</strong> <%= record.data["valid_from"] %> → <%= record.data["valid_until"] %></p></div>
+      <div class="col-md-3 mb-2"><p class="mb-1"><strong>Premium:</strong> <%= number_with_delimiter(record.data["premium_amount_htg"].to_i) if record.data["premium_amount_htg"] %> HTG</p></div>
+      <div class="col-md-3 mb-2"><p class="mb-1"><strong>Limit:</strong> <%= number_with_delimiter(record.data["coverage_limit_htg"].to_i) if record.data["coverage_limit_htg"] %> HTG</p></div>
+      <div class="col-md-3 mb-2"><p class="mb-1"><strong>Deductible:</strong> <%= number_with_delimiter(record.data["deductible_htg"].to_i) if record.data["deductible_htg"] %> HTG</p></div>
+    </div>
+  </details>
+
+  <!-- 💉 Medical Profile -->
+  <hr>
+  <details>
+    <summary class="fw-semibold text-dark mb-2">
+      <i class="ri-user-heart-line me-1"></i> Medical Profile
+    </summary>
+    <p class="mb-1"><strong>Blood Type:</strong> <%= record.data["blood_type"] || "N/A" %></p>
+    <% if record.data["chronic_conditions"].present? %>
+      <p class="mb-1"><strong>Chronic Conditions:</strong> <%= record.data["chronic_conditions"].join(", ") %></p>
+    <% end %>
+    <% if record.data["current_medications"].present? %>
+      <p class="mb-1"><strong>Current Medications:</strong> <%= record.data["current_medications"].join(", ") %></p>
+    <% end %>
+    <% if record.data["allergies"].present? %>
+      <p class="mb-1"><strong>Allergies:</strong> <%= record.data["allergies"].join(", ") %></p>
+    <% end %>
+  </details>
+
+  <!-- 💉 Vaccinations -->
+  <hr>
+  <details>
+    <summary class="fw-semibold text-dark mb-2">
+      <i class="ri-syringe-line me-1"></i> Vaccinations
+    </summary>
+    <% if record.data["vaccinations"].present? %>
+      <ul class="list-unstyled ps-3 mt-2">
+        <% record.data["vaccinations"].each do |v| %>
+          <li><i class="ri-capsule-line text-success me-1"></i><%= v["name"] %> — <span class="text-muted"><%= v["date"] %></span></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-muted small mt-2">No vaccinations recorded.</p>
+    <% end %>
+  </details>
+
+  <!-- 👨‍👩‍👧 Beneficiaries -->
+  <hr>
+  <details>
+    <summary class="fw-semibold text-dark mb-2">
+      <i class="ri-user-add-line me-1"></i> Beneficiaries
+    </summary>
+    <% if record.data["beneficiaries"].present? %>
+      <ul class="list-unstyled ps-3 mt-2 mb-0">
+        <% record.data["beneficiaries"].each do |b| %>
+          <li><i class="ri-user-line text-danger me-1"></i><%= b["name"] %> — <span class="text-muted"><%= b["relationship"] %></span></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-muted small mt-2">No beneficiaries listed.</p>
+    <% end %>
+  </details>
+
+  <!-- 🚨 Emergency Contact -->
+  <hr>
+  <details>
+    <summary class="fw-semibold text-dark mb-2">
+      <i class="ri-phone-line me-1"></i> Emergency Contact
+    </summary>
+    <% ec = record.data["emergency_contact"] || {} %>
+    <p class="mt-2 mb-1"><strong><%= ec["name"] %></strong><br>
+      <%= ec["relationship"] %> — <span class="text-muted"><%= ec["phone"] %></span>
+    </p>
+  </details>
+
+  <!-- 📄 Claims -->
+  <hr>
+  <details>
+    <summary class="fw-semibold text-dark mb-2">
+      <i class="ri-file-list-3-line me-1"></i> Claims History
+    </summary>
+    <% if record.data["claims_history"].present? %>
+      <ul class="list-unstyled ps-3 mt-2">
+        <% record.data["claims_history"].each do |c| %>
+          <li><i class="ri-file-paper-line text-info me-1"></i><%= c["date"] %>: <%= c["description"] %> — <%= number_with_delimiter(c["amount_htg"].to_i) %> HTG (<%= c["status"] %>)</li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-muted small mt-2">No claims on record.</p>
+    <% end %>
+  </details>
+</div>

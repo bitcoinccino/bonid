@@ -1,0 +1,90 @@
+<%# Invalid/Failed BonID lookup result - Partner Portal %>
+<div class="card border-danger" data-result-type="invalid">
+  <div class="card-header bg-danger text-white py-2">
+    <div class="d-flex align-items-center">
+      <i class="ri-shield-cross-line me-2" style="font-size: 1.25rem;"></i>
+      <span style="font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 0.9rem;">
+        Verification Failed
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body text-center py-4">
+    <div class="mb-3">
+      <div class="rounded-circle d-inline-flex align-items-center justify-content-center"
+           style="width: 80px; height: 80px; background: #f8d7da;">
+        <i class="ri-close-circle-line" style="font-size: 3rem; color: #dc3545;"></i>
+      </div>
+    </div>
+
+    <h5 class="mb-2" style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: var(--dark-gray, #333);">
+      <%= case status
+          when :not_found
+            "BonID Not Found"
+          when :expired
+            "BonID Has Expired"
+          when :invalid_format
+            "Invalid Format"
+          when :too_many_failures
+            "Too Many Attempts"
+          when :no_valid_submission
+            "No Approved BonID"
+          else
+            "Verification Failed"
+          end %>
+    </h5>
+
+    <p class="text-muted mb-3" style="font-size: 0.85rem;">
+      <%= error || "Unable to verify the provided BonID." %>
+    </p>
+
+    <% if bonid.present? %>
+      <div class="mb-3">
+        <span class="badge bg-light text-dark" style="font-size: 0.8rem;">
+          <i class="ri-search-line me-1"></i>
+          Searched: <code><%= bonid %></code>
+        </span>
+      </div>
+    <% end %>
+
+    <%# Guidance based on error type %>
+    <div class="alert alert-light text-start mb-3" style="font-size: 0.8rem;">
+      <strong><i class="ri-lightbulb-line me-1"></i>Suggestions:</strong>
+      <ul class="mb-0 mt-1 ps-3">
+        <% case status %>
+        <% when :not_found %>
+          <li>Enter the last 6 characters of the BonID (e.g., <code>697XDS</code>)</li>
+          <li>Ask the citizen to show their BonID card</li>
+          <li>Try scanning their QR code instead</li>
+        <% when :expired %>
+          <li>The citizen's BonID has expired</li>
+          <li>Advise them to renew their BonID</li>
+        <% when :invalid_format %>
+          <li>Full BonID format: <code>DV-1989-M-SE-P8697XDS</code></li>
+          <li>Manual entry: last 6 characters (e.g., <code>697XDS</code>)</li>
+        <% when :too_many_failures %>
+          <li>Wait 10 minutes before trying again</li>
+          <li>Contact your administrator if urgent</li>
+        <% else %>
+          <li>Try scanning the QR code on their BonID card</li>
+          <li>Ensure the BonID is entered correctly</li>
+        <% end %>
+      </ul>
+    </div>
+
+    <%# Retry Buttons %>
+    <div class="d-flex gap-2 justify-content-center">
+      <button type="button" class="btn"
+              data-action="click->partner-scanner#rescan"
+              style="font-family: 'Montserrat', sans-serif; font-weight: 500; background: transparent; color: var(--haitian-blue, #00209F); border: 1px solid var(--haitian-blue, #00209F);">
+        <i class="ri-refresh-line me-1"></i>Try Again
+      </button>
+
+      <button type="button" class="btn btn-outline-secondary"
+              data-action="click->partner-scanner#showManualSection"
+              style="font-family: 'Montserrat', sans-serif; font-weight: 500;">
+        <i class="ri-keyboard-line me-1"></i>Manual Entry
+      </button>
+    </div>
+  </div>
+</div>

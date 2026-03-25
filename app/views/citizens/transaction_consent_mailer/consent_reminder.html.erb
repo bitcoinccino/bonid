@@ -1,0 +1,61 @@
+<%# Transaction Consent Reminder — Same OTP, urgency added %>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="text-align:center; padding-bottom:16px;">
+      <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-size:18px; font-weight:700; color:#f59e0b;">
+        <%= t("mailers.transaction_consent.consent_reminder.heading") %>
+      </div>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding-bottom:16px; text-align:center;">
+      <div style="font-family:'Inter',Arial,sans-serif; font-size:14px; color:#0F172A;">
+        <%= t("mailers.transaction_consent.consent_reminder.body_html",
+              partner_name: @partner.name,
+              transaction_type: t("transaction_consents.types.#{@consent.transaction_type}", default: @consent.transaction_type.titleize)).html_safe %>
+      </div>
+      <% if @consent.amount.present? %>
+        <div style="font-family:'Inter',Arial,sans-serif; font-size:18px; font-weight:700; color:#0F172A; margin-top:8px;">
+          <%= number_to_currency(@consent.amount, unit: @consent.currency + " ", precision: 2) %>
+        </div>
+      <% end %>
+    </td>
+  </tr>
+
+  <%# OTP Code — Large and Bold %>
+  <tr>
+    <td style="text-align:center; padding-bottom:6px;">
+      <div style="font-family:'Inter',Arial,sans-serif; font-size:13px; color:#64748b;">
+        <%= t("mailers.transaction_consent.consent_reminder.approval_code") %>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td style="text-align:center; padding-bottom:16px;">
+      <div style="font-family:'Courier New',monospace; font-size:36px; font-weight:700;
+                  letter-spacing:0.3em; color:#00209F; background:#f0f4ff;
+                  border:2px solid rgba(0,32,159,0.15); border-radius:12px;
+                  padding:14px 20px; display:inline-block;">
+        <%= @otp %>
+      </div>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="text-align:center; padding-bottom:16px;">
+      <div style="font-family:'Inter',Arial,sans-serif; font-size:12px; color:#dc2626; font-weight:600;">
+        <%= t("mailers.transaction_consent.consent_reminder.expires_in", minutes: ((@consent.expires_at - Time.current) / 60).ceil) %>
+      </div>
+    </td>
+  </tr>
+
+  <tr>
+    <td style="padding-top:8px; border-top:1px solid #e2e8f0;">
+      <div style="font-family:'Inter',Arial,sans-serif; font-size:12px; color:#94a3b8; text-align:center; padding-top:12px;">
+        <%= t("mailers.transaction_consent.consent_reminder.safety_notice") %>
+      </div>
+    </td>
+  </tr>
+</table>

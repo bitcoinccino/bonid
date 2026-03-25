@@ -1,0 +1,791 @@
+<%# app/views/citizens/officer_complaints/new.html.erb %>
+<%# Complaint form — 5 pillars as wizard steps + Review step (Step 6) %>
+
+<div class="citizen-profile-page container-fluid py-4">
+<div class="mb-5 bg-white shadow-sm overflow-hidden complaint-form-wrapper" style="border-radius: 0.5rem;">
+
+  <%# ── Blue Header ── %>
+  <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #00209F;">
+    <div class="d-flex align-items-center gap-3">
+      <%= image_tag "haiti_flag.png", style: "height: 32px; width: auto; opacity: 0.9;", alt: "Drapeau d'Haïti" %>
+      <div>
+        <h4 class="mb-1 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">
+          <i class="ri-shield-check-line me-2"></i>Déposer une Plainte
+        </h4>
+        <p class="mb-0 text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
+          Votre plainte sera transmise à l'IGPNH — Direction régionale compétente.
+          Un certificat de dépôt vous sera remis immédiatement.
+        </p>
+      </div>
+    </div>
+    <%= link_to citizens_officer_complaints_path, class: "btn btn-outline-light rounded-pill ms-3 flex-shrink-0", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
+      <i class="ri-arrow-left-line me-1"></i>Mes Plaintes
+    <% end %>
+  </div>
+
+  <%# ── Form Body ── %>
+  <div class="p-4 p-md-5">
+
+  <%# Flash rendered by citizen layout %>
+
+  <%= form_with model: [:citizens, @complaint], url: citizens_officer_complaints_path,
+               local: true,
+               data: {
+                 controller: "wizard complaint-form",
+                 action: "wizard:stepChanged->complaint-form#onStepChanged"
+               } do |f| %>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP INDICATOR + PROGRESS BAR %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div class="mb-4">
+      <%# Step circles %>
+      <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 600px; margin: 0 auto;">
+        <% step_labels = [
+          { icon: "ri-user-3-line", label: "Plaignant" },
+          { icon: "ri-calendar-event-line", label: "Incident" },
+          { icon: "ri-user-search-line", label: "Policier" },
+          { icon: "ri-scales-3-line", label: "Allégation" },
+          { icon: "ri-file-text-line", label: "Preuves" },
+          { icon: "ri-checkbox-circle-line", label: "Révision" }
+        ] %>
+        <% step_labels.each_with_index do |step, i| %>
+          <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
+            <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if i == 0 %>"
+                 style="width: 36px; height: 36px; font-size: 0.75rem; font-weight: 600;
+                        border: 2px solid #e4e7ec; background: #fff; color: #98a2b3;
+                        transition: all 0.3s ease;">
+              <i class="<%= step[:icon] %>" style="font-size: 0.9rem;"></i>
+            </div>
+            <div style="font-size: 0.62rem; color: #98a2b3; margin-top: 4px; font-weight: 500;">
+              <%= step[:label] %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <%# Progress bar %>
+      <div style="height: 4px; background: #e4e7ec; border-radius: 4px; max-width: 600px; margin: 0 auto;">
+        <div data-wizard-target="progressBar"
+             style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary, #00209F), #1a4fa8);
+                    border-radius: 4px; transition: width 0.4s ease;">
+        </div>
+      </div>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP 1 — Complainant Information %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div data-wizard-target="step">
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+            <i class="ri-user-3-line me-2"></i>1. Enfòmasyon sou Plenyant lan
+            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Complainant Information</span>
+          </h6>
+          <%# Pre-filled from BonID — shown as read-only with a note %>
+          <div class="alert rounded-3 mb-3 complaint-bonid-alert" style="font-size: 0.8rem;">
+            <i class="ri-lock-line me-2" style="color: var(--primary, #00209F);"></i>
+            Vos informations BonID ont été pré-remplies et vérifiées.
+            <strong style="color: var(--primary, #00209F);"><%= current_citizen.bonid %></strong>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.label :complainant_name, "Nom complet", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.text_field :complainant_name,
+                  class: "form-control form-control-sm",
+                  placeholder: "Prénom Nom",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :complainant_phone, "Téléphone", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.telephone_field :complainant_phone,
+                  class: "form-control form-control-sm",
+                  placeholder: "+509 XXXX-XXXX",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :complainant_email, "Email", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.email_field :complainant_email,
+                  class: "form-control form-control-sm",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :complainant_role, "Votre rôle dans l'incident", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.select :complainant_role,
+                  options_for_select([
+                    ["Victime directe", "victim"],
+                    ["Témoin", "witness"],
+                    ["Famille / Proche", "relative"],
+                    ["Représentant légal / OPC", "legal_rep"]
+                  ], @complaint.complainant_role),
+                  { include_blank: "Sélectionner..." },
+                  class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                  required: true %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Navigation %>
+      <div class="d-flex justify-content-end">
+        <button type="button" class="btn text-white fw-semibold px-4 py-2"
+                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+                data-action="click->wizard#next">
+          Continuer <i class="ri-arrow-right-line ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP 2 — Incident Details %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div data-wizard-target="step" class="d-none">
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <%# address_controller handles 3-level cascade: dept → commune → section %>
+        <div class="card-body p-4" data-controller="address">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+            <i class="ri-map-pin-2-line me-2"></i>2. Detay sou Ensidan an
+            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Incident Details</span>
+          </h6>
+
+          <%# Address loading states %>
+          <div data-address-target="spinner" class="text-center mb-3 d-none">
+            <div class="spinner-border spinner-border-sm text-success" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+            <span class="small text-muted ms-2">Chargement des données géographiques…</span>
+          </div>
+          <div data-address-target="error" class="alert alert-warning small d-none mb-3">
+            <i class="ri-alert-line me-1"></i>
+            Impossible de charger les données.
+            <a href="#" data-action="click->address#retry" class="fw-semibold">Réessayer</a>
+          </div>
+
+          <%# ── SECTION A: Incident Address ── %>
+          <div class="mb-4">
+            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+              <i class="ri-home-4-line me-2" style="color: var(--primary, #00209F); font-size: 1rem;"></i>
+              <span class="fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: var(--primary, #00209F);">Adresse de l'incident</span>
+            </div>
+            <div class="row g-3">
+              <%# Department — triggers arrondissement cascade %>
+              <div class="col-md-6">
+                <%= f.label :department_id, "Département", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.collection_select :department_id,
+                    @departments, :id, :name,
+                    { include_blank: "Sélectionner le département..." },
+                    class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                    required: true,
+                    data: {
+                      address_target: "department",
+                      action: "change->address#loadArrondissements",
+                      selected: @complaint.department_id.to_s,
+                      prompt: "Sélectionner le département..."
+                    } %>
+              </div>
+
+              <%# Arrondissement %>
+              <div class="col-md-6">
+                <%= f.label :arrondissement_id, "Arrondissement", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.collection_select :arrondissement_id,
+                    @arrondissements, :id, :name,
+                    { include_blank: "Sélectionner l'arrondissement..." },
+                    class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                    disabled: @complaint.department_id.blank?,
+                    data: {
+                      address_target: "arrondissement",
+                      action: "change->address#loadCommunes",
+                      selected: @complaint.arrondissement_id.to_s,
+                      prompt: "Sélectionner l'arrondissement..."
+                    } %>
+              </div>
+
+              <%# Commune %>
+              <div class="col-md-6">
+                <%= f.label :commune_id, "Commune", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.collection_select :commune_id,
+                    @communes, :id, :name,
+                    { include_blank: "Sélectionner la commune..." },
+                    class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                    disabled: @complaint.arrondissement_id.blank?,
+                    data: {
+                      address_target: "commune",
+                      action: "change->address#loadCommunalSections",
+                      selected: @complaint.commune_id.to_s,
+                      prompt: "Sélectionner la commune..."
+                    } %>
+              </div>
+
+              <%# Section Communale %>
+              <div class="col-md-6">
+                <%= f.label :communal_section_id, "Section Communale", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.collection_select :communal_section_id,
+                    (@communal_sections || []), :id, :name,
+                    { include_blank: "Sélectionner la section..." },
+                    class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                    disabled: @complaint.commune_id.blank?,
+                    data: {
+                      address_target: "section",
+                      action: "change->address#loadPostalCode",
+                      selected: @complaint.communal_section_id.to_s,
+                      prompt: "Sélectionner la section..."
+                    } %>
+              </div>
+
+              <%# Postal Code — auto-filled %>
+              <div class="col-md-6">
+                <%= f.label :postal_code, "Code Postal", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.text_field :postal_code,
+                    class: "form-control form-control-sm bg-light",
+                    readonly: true,
+                    placeholder: "Ex: HT6110",
+                    style: "font-size: 0.875rem;",
+                    data: { address_target: "postalCode" } %>
+              </div>
+
+              <%# Street Address %>
+              <div class="col-md-6">
+                <%= f.label :street_address, "Adresse (rue)", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.text_field :street_address,
+                    class: "form-control form-control-sm",
+                    placeholder: "Ex: 123 Rue Principale",
+                    style: "font-size: 0.875rem;" %>
+              </div>
+
+              <%# Locality %>
+              <div class="col-md-6">
+                <%= f.label :locality, "Localité / Quartier", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.text_field :locality,
+                    class: "form-control form-control-sm",
+                    placeholder: "Ex: Delmas 33",
+                    style: "font-size: 0.875rem;" %>
+              </div>
+
+              <%# Country %>
+              <div class="col-md-6">
+                <%= f.label :country, "Pays", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.select :country,
+                    options_for_select(["Haiti", "Dominican Republic", "Chile", "Brazil", "Mexico", "Canada", "France", "USA"],
+                    @complaint.country || "Haiti"),
+                    {},
+                    class: "form-select form-select-sm", style: "font-size: 0.875rem;" %>
+              </div>
+
+              <%# Location description — landmarks %>
+              <div class="col-12">
+                <%= f.label :location_description, "Description du lieu (commissariat, point de repère)", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.text_area :location_description,
+                    class: "form-control form-control-sm",
+                    rows: 2,
+                    placeholder: "Ex: Devant le commissariat de Delmas 33, en face de la pharmacie...",
+                    style: "font-size: 0.875rem;",
+                    required: true %>
+              </div>
+            </div>
+          </div>
+
+          <%# ── SECTION B: Incident Info ── %>
+          <div>
+            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+              <i class="ri-calendar-event-line me-2" style="color: var(--primary, #00209F); font-size: 1rem;"></i>
+              <span class="fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: var(--primary, #00209F);">Détails de l'incident</span>
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <%= f.label :occurred_at, "Date et Heure de l'incident", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.datetime_local_field :occurred_at,
+                    class: "form-control form-control-sm",
+                    style: "font-size: 0.875rem;",
+                    required: true %>
+              </div>
+              <div class="col-md-6">
+                <%= f.label :pnh_unit_involved, "Unité PNH impliquée (si connue)", class: "form-label",
+                    style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+                <%= f.select :pnh_unit_involved,
+                    options_for_select([["Je ne sais pas", ""]] + @pnh_units.map { |u| [u, u] },
+                    @complaint.pnh_unit_involved),
+                    {},
+                    class: "form-select form-select-sm", style: "font-size: 0.875rem;" %>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Navigation %>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
+                data-action="click->wizard#previous">
+          <i class="ri-arrow-left-line me-1"></i> Précédent
+        </button>
+        <button type="button" class="btn text-white fw-semibold px-4 py-2"
+                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+                data-action="click->wizard#next">
+          Continuer <i class="ri-arrow-right-line ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP 3 — Officer Identification %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div data-wizard-target="step" class="d-none">
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+            <i class="ri-user-search-line me-2"></i>3. Idantifikasyon Polisye a
+            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Officer Identification</span>
+          </h6>
+          <div class="alert rounded-3 mb-3" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255,193,7,0.3); font-size: 0.78rem;">
+            <i class="ri-information-line me-2" style="color: #856404;"></i>
+            Remplissez au moins un des champs ci-dessous. Si vous ne connaissez pas le nom ni le numéro de badge,
+            une description physique suffit pour que l'IGPNH puisse mener l'enquête.
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.label :accused_officer_badge, "Numéro de badge (si visible)", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.text_field :accused_officer_badge,
+                  class: "form-control form-control-sm",
+                  placeholder: "Ex: PNH03456",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :accused_officer_name, "Nom du policier (si connu)", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.text_field :accused_officer_name,
+                  class: "form-control form-control-sm",
+                  placeholder: "Ex: Agent Jean...",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :accused_officer_vehicle, "Numéro du véhicule PNH (si visible)", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.text_field :accused_officer_vehicle,
+                  class: "form-control form-control-sm",
+                  placeholder: "Ex: PNH-1234",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :accused_officer_unit, "Unité de l'officier (si connue)", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.select :accused_officer_unit,
+                  options_for_select([["Je ne sais pas", ""]] + @pnh_units.map { |u| [u, u] },
+                  @complaint.accused_officer_unit),
+                  {},
+                  class: "form-select form-select-sm", style: "font-size: 0.875rem;" %>
+            </div>
+            <div class="col-12">
+              <%= f.label :physical_description, "Description physique (grade visible, taille, vêtements, traits distinctifs)", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.text_area :physical_description,
+                  class: "form-control form-control-sm",
+                  rows: 3,
+                  placeholder: "Ex: Homme d'environ 35 ans, portait un uniforme bleu CIMO, grand, cicatrice sur le menton...",
+                  style: "font-size: 0.875rem;" %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Navigation %>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
+                data-action="click->wizard#previous">
+          <i class="ri-arrow-left-line me-1"></i> Précédent
+        </button>
+        <button type="button" class="btn text-white fw-semibold px-4 py-2"
+                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+                data-action="click->wizard#next">
+          Continuer <i class="ri-arrow-right-line ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP 4 — Nature of Allegations %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div data-wizard-target="step" class="d-none">
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+            <i class="ri-scales-3-line me-2"></i>4. Kalite Plent lan
+            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Nature of Allegations</span>
+          </h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <%= f.label :allegation_category, "Catégorie de faute", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.select :allegation_category,
+                  options_for_select(
+                    @allegation_types.keys.map { |k| [k, k] },
+                    @complaint.allegation_category
+                  ),
+                  { include_blank: "Sélectionner la catégorie..." },
+                  class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                  required: true,
+                  data: { action: "change->complaint-form#updateSubcategories",
+                          complaint_form_allegations_value: @allegation_types.to_json } %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :specific_allegation, "Acte spécifique", class: "form-label",
+                  style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+              <%= f.select :specific_allegation,
+                  options_for_select(
+                    (@complaint.allegation_category.present? ?
+                      (@allegation_types[@complaint.allegation_category] || []) :
+                      []).map { |s| [s, s] },
+                    @complaint.specific_allegation
+                  ),
+                  { include_blank: "Sélectionner d'abord la catégorie..." },
+                  class: "form-select form-select-sm", style: "font-size: 0.875rem;",
+                  required: true,
+                  data: { complaint_form_target: "specificSelect" } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Navigation %>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
+                data-action="click->wizard#previous">
+          <i class="ri-arrow-left-line me-1"></i> Précédent
+        </button>
+        <button type="button" class="btn text-white fw-semibold px-4 py-2"
+                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+                data-action="click->wizard#next">
+          Continuer <i class="ri-arrow-right-line ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP 5 — Evidence & Narrative %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div data-wizard-target="step" class="d-none">
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+            <i class="ri-file-text-line me-2"></i>5. Deklarasyon ak Prèv
+            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Statement & Evidence</span>
+          </h6>
+          <%# Narrative %>
+          <div class="mb-4">
+            <%= f.label :narrative, "Deklarasyon Ofisyèl — Déclaration des faits", class: "form-label",
+                style: "font-size: 0.82rem; font-weight: 600; color: var(--dark-gray);" %>
+            <small class="d-block mb-2 text-muted" style="font-size: 0.73rem;">
+              Décrivez exactement ce qui s'est passé, dans l'ordre chronologique. Minimum 50 caractères.
+              Ce texte constitue votre déclaration légale officielle.
+            </small>
+            <%= f.text_area :narrative,
+                class: "form-control",
+                rows: 7,
+                placeholder: "Le [date] à [heure], au lieu [lieu], l'officier [description] a...",
+                style: "font-size: 0.875rem; line-height: 1.6;",
+                required: true,
+                data: { complaint_form_target: "narrativeField",
+                        action: "input->complaint-form#updateNarrativeCount" } %>
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted" style="font-size: 0.7rem;">Minimum 50 caractères requis</small>
+              <small data-complaint-form-target="narrativeCount" style="font-size: 0.7rem; color: var(--mid-gray);">0 caractères</small>
+            </div>
+          </div>
+
+          <%# Evidence uploads %>
+          <div class="mb-4">
+            <%= f.label :evidences, "Pièces justificatives (photos, vidéos, certificats médicaux)", class: "form-label",
+                style: "font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);" %>
+            <%= f.file_field :evidences,
+                multiple: true,
+                class: "form-control form-control-sm",
+                style: "font-size: 0.8rem;",
+                accept: "image/*,video/*,.pdf" %>
+            <small class="text-muted" style="font-size: 0.72rem;">
+              Formats acceptés: JPG, PNG, MP4, PDF. Maximum 10 fichiers.
+            </small>
+          </div>
+
+          <%# Witnesses (dynamic — BonID/BonTouris autofill) %>
+          <div>
+            <label class="form-label" style="font-size: 0.82rem; font-weight: 500; color: var(--dark-gray);">
+              <i class="ri-group-line me-1"></i>Témoins (optionnel)
+            </label>
+            <small class="d-block mb-2 text-muted" style="font-size: 0.73rem;">
+              Chaque témoin doit avoir un BonID ou BonTouris vérifié.
+              Entrez les 6 à 8 derniers chiffres pour auto-compléter — un email de confirmation leur sera envoyé.
+            </small>
+
+            <div data-complaint-form-target="witnessesContainer">
+
+              <%# Initial witness row %>
+              <div class="witness-row border rounded-3 p-3 mb-3">
+
+                <%# Step 1: BonID suffix input %>
+                <div class="witness-bonid-field mb-2">
+                  <label class="form-label mb-1" style="font-size: 0.78rem; font-weight: 500; color: var(--dark-gray);">
+                    <i class="ri-shield-check-line me-1" style="color: var(--primary, #00209F);"></i>
+                    BonID ou BonTouris — 6 à 8 derniers chiffres
+                  </label>
+                  <div class="d-flex gap-2 align-items-center">
+                    <div class="input-group input-group-sm" style="max-width: 320px;">
+                      <span class="input-group-text" style="background: rgba(0,32,159,0.06); border-color: rgba(0,32,159,0.2);">
+                        <i class="ri-fingerprint-line" style="color: var(--primary, #00209F);"></i>
+                      </span>
+                      <input type="text"
+                             class="form-control form-control-sm witness-bonid-input"
+                             placeholder="Ex: 2334217 ou 654321"
+                             maxlength="10"
+                             autocomplete="off"
+                             data-action="blur->complaint-form#fetchWitness">
+                    </div>
+                    <div class="spinner-border spinner-border-sm text-primary d-none witness-spinner" role="status">
+                      <span class="visually-hidden">Recherche...</span>
+                    </div>
+                  </div>
+                  <div class="witness-feedback mt-1" style="font-size: 0.73rem;"></div>
+                </div>
+
+                <%# Step 2: Verified profile card (hidden until BonID resolved) %>
+                <div class="witness-profile d-none mb-2">
+                  <div class="d-flex align-items-center gap-3 p-2 rounded-3 mb-2"
+                       style="background: rgba(25,135,84,0.08); border: 1px solid rgba(25,135,84,0.3);">
+                    <%# Photo or initials avatar %>
+                    <div class="flex-shrink-0 position-relative" style="width:44px;height:44px;">
+                      <img class="witness-photo rounded-circle w-100 h-100 d-none"
+                           src="" alt=""
+                           style="object-fit:cover; border: 2px solid rgba(25,135,84,0.4);">
+                      <div class="witness-initials rounded-circle w-100 h-100 d-flex align-items-center justify-content-center fw-bold text-white"
+                           style="background: #198754; font-size: 1rem;"></div>
+                    </div>
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="witness-name-display fw-semibold" style="font-size: 0.875rem; color: #198754;"></div>
+                      <small class="witness-bonid-display text-muted" style="font-size: 0.7rem;"></small>
+                      <small class="witness-type-badge ms-1" style="font-size: 0.65rem;"></small>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-link text-danger flex-shrink-0 p-0"
+                            style="font-size: 0.8rem;"
+                            data-action="click->complaint-form#resetWitness"
+                            title="Changer de témoin">
+                      <i class="ri-close-circle-line"></i>
+                    </button>
+                  </div>
+
+                  <%# Hidden fields submitted with form %>
+                  <input type="hidden" class="witness-bonid-value" name="officer_complaint[witnesses][][bonid]">
+                  <input type="hidden" class="witness-name-value" name="officer_complaint[witnesses][][name]">
+                  <input type="hidden" class="witness-phone-value" name="officer_complaint[witnesses][][phone]">
+                  <input type="hidden" class="witness-email-value" name="officer_complaint[witnesses][][email]">
+                  <input type="hidden" class="witness-id-type-value" name="officer_complaint[witnesses][][id_type]">
+
+                  <%# Relation select — shown after BonID resolved %>
+                  <select class="form-select form-select-sm" name="officer_complaint[witnesses][][relation]"
+                          style="font-size: 0.8rem; max-width: 260px;">
+                    <option value="">Lien avec le plaignant...</option>
+                    <option value="ami">Ami / Amie</option>
+                    <option value="famille">Famille / Proche</option>
+                    <option value="voisin">Voisin(e)</option>
+                    <option value="collegue">Collègue</option>
+                    <option value="passant">Passant(e)</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                  <small class="d-block mt-1 text-muted" style="font-size: 0.7rem;">
+                    <i class="ri-mail-send-line me-1"></i>Un email de confirmation sera envoyé à ce témoin.
+                  </small>
+                </div>
+
+                <%# Remove button %>
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        style="font-size: 0.72rem;"
+                        data-action="click->complaint-form#removeWitness">
+                  <i class="ri-delete-bin-line me-1"></i>Retirer ce témoin
+                </button>
+              </div>
+
+            </div>
+
+            <button type="button" class="btn btn-sm btn-outline-secondary mt-1"
+                    style="font-size: 0.75rem;"
+                    data-action="click->complaint-form#addWitness">
+              <i class="ri-add-line me-1"></i>Ajouter un témoin
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <%# Navigation %>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
+                data-action="click->wizard#previous">
+          <i class="ri-arrow-left-line me-1"></i> Précédent
+        </button>
+        <button type="button" class="btn text-white fw-semibold px-4 py-2"
+                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+                data-action="click->wizard#next">
+          Réviser la Plainte <i class="ri-arrow-right-line ms-1"></i>
+        </button>
+      </div>
+    </div>
+
+    <%# ═══════════════════════════════════════════════════════ %>
+    <%# STEP 6 — Review & Submit %>
+    <%# ═══════════════════════════════════════════════════════ %>
+    <div data-wizard-target="step" class="d-none">
+      <div class="card border-0 shadow-sm rounded-4 mb-4 complaint-review-card">
+        <div class="card-body p-4">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+            <i class="ri-checkbox-circle-line me-2"></i>Récapitulatif de votre Plainte
+            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Review & Submit</span>
+          </h6>
+          <p style="font-size: 0.8rem; color: #475467; margin-bottom: 16px;">
+            <i class="ri-information-line me-1"></i>
+            Vérifiez toutes les informations avant de soumettre votre plainte.
+            Cliquez sur <strong>Modifier</strong> pour corriger une section.
+          </p>
+
+          <%# Section 1: Complainant %>
+          <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+                <i class="ri-user-3-line me-1"></i>1. Informations du Plaignant
+              </h6>
+              <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+                      data-action="click->wizard#goToStep" data-step="1">
+                <i class="ri-edit-line me-1"></i>Modifier
+              </button>
+            </div>
+            <div data-complaint-form-target="reviewComplainant" style="color: #344054;">
+              <%# Populated by JS %>
+            </div>
+          </div>
+
+          <%# Section 2: Incident Details %>
+          <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+                <i class="ri-calendar-event-line me-1"></i>2. Détails de l'Incident
+              </h6>
+              <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+                      data-action="click->wizard#goToStep" data-step="2">
+                <i class="ri-edit-line me-1"></i>Modifier
+              </button>
+            </div>
+            <div data-complaint-form-target="reviewIncident" style="color: #344054;">
+              <%# Populated by JS %>
+            </div>
+          </div>
+
+          <%# Section 3: Officer Identification %>
+          <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+                <i class="ri-user-search-line me-1"></i>3. Identification du Policier
+              </h6>
+              <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+                      data-action="click->wizard#goToStep" data-step="3">
+                <i class="ri-edit-line me-1"></i>Modifier
+              </button>
+            </div>
+            <div data-complaint-form-target="reviewOfficer" style="color: #344054;">
+              <%# Populated by JS %>
+            </div>
+          </div>
+
+          <%# Section 4: Allegations %>
+          <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+                <i class="ri-scales-3-line me-1"></i>4. Nature de la Plainte
+              </h6>
+              <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+                      data-action="click->wizard#goToStep" data-step="4">
+                <i class="ri-edit-line me-1"></i>Modifier
+              </button>
+            </div>
+            <div data-complaint-form-target="reviewAllegation" style="color: #344054;">
+              <%# Populated by JS %>
+            </div>
+          </div>
+
+          <%# Section 5: Evidence & Narrative %>
+          <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+                <i class="ri-file-text-line me-1"></i>5. Déclaration & Preuves
+              </h6>
+              <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+                      data-action="click->wizard#goToStep" data-step="5">
+                <i class="ri-edit-line me-1"></i>Modifier
+              </button>
+            </div>
+            <div data-complaint-form-target="reviewEvidence" style="color: #344054;">
+              <%# Populated by JS %>
+            </div>
+          </div>
+
+          <%# Legal declaration checkbox %>
+          <div class="mt-4 p-3 rounded-3 complaint-legal-box">
+            <div class="d-flex gap-3 align-items-start">
+              <i class="ri-government-line flex-shrink-0" style="font-size: 1.3rem; color: var(--primary, #00209F); margin-top: 2px;"></i>
+              <div>
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="legal_declaration"
+                         data-complaint-form-target="legalCheckbox"
+                         data-action="change->complaint-form#toggleSubmit"
+                         required>
+                  <label class="form-check-label" for="legal_declaration"
+                         style="font-size: 0.78rem; color: #344054; line-height: 1.6;">
+                    En soumettant cette plainte, vous déclarez que les informations fournies sont
+                    <strong>exactes et véridiques</strong>. Toute fausse déclaration est passible de poursuites
+                    selon le Code Pénal haïtien. Votre plainte sera transmise à l'<strong>Inspection Générale
+                    de la PNH (IGPNH)</strong> et, si nécessaire, à l'<strong>Office de la Protection du
+                    Citoyen (OPC)</strong>.
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <%# Navigation + Submit %>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
+                data-action="click->wizard#previous">
+          <i class="ri-arrow-left-line me-1"></i> Précédent
+        </button>
+        <%= f.submit "Soumettre la Plainte — Dépoze Plent lan",
+            class: "btn text-white fw-semibold py-2 px-4",
+            style: "background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-family: 'Montserrat', sans-serif; font-size: 0.85rem; letter-spacing: 0.02em;",
+            disabled: true,
+            data: { complaint_form_target: "submitButton" } %>
+      </div>
+      <p class="text-center mt-2 mb-0" style="font-size: 0.7rem; color: var(--mid-gray);">
+        Un certificat de dépôt vous sera remis immédiatement après soumission.
+      </p>
+    </div>
+
+  <% end %>
+
+  </div><%# close form body %>
+</div><%# close card %>
+</div>

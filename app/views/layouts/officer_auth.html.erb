@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title><%= content_for?(:title) ? yield(:title) : "POLICE NATIONALE D'HAÏTI |  Pour Proteger et Servir" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="officer-auth-body">
+  <%# Warning Banner %>
+  <div class="alert alert-warning text-center mb-0 py-2" role="alert" style="background-color: #ffeeba; border-bottom: 1px solid #ffda6a; font-size: 0.875rem;">
+    <strong>WARNING:</strong> This system is for Police Nationale d'Haïti (PNH) officers only. Access is restricted to authorized personnel and prohibited for non-officers. Unauthorized access is subject to criminal and civil penalties. All interactions are monitored and recorded.
+  </div>
+
+  <%# Flash Messages — positioned below the warning banner (~50px tall) %>
+  <div id="flash" class="flash-container position-fixed start-50 translate-middle-x" style="z-index: 1060; width: 100%; max-width: 500px; top: 58px;">
+    <%= render "shared/flash" %>
+  </div>
+
+  <div class="officer-auth-wrapper">
+    <%# Left Panel - Law Enforcement Branding %>
+    <aside class="officer-auth-left">
+      <div class="officer-auth-left-content">
+        <%# PNH Badge %>
+        <div class="officer-badge-container mb-4">
+          <%= image_tag "pnh.png", alt: "Police Nationale d'Haiti", class: "officer-badge-img" %>
+        </div>
+
+        <%# Title %>
+        <h1 class="officer-auth-title">
+          <span class="title-line">POLICE NATIONALE D'HAÏTI</span>
+        </h1>
+
+        <%# Tagline %>
+        <p class="officer-auth-tagline">
+          Pour Proteger et Servir
+        </p>
+      </div>
+
+      <%# Footer %>
+      <div class="officer-auth-left-footer">
+        <p>&copy; <%= Time.current.year %> IDPol &middot; Securing Haiti's Identity</p>
+      </div>
+    </aside>
+
+    <%# Right Panel - Form %>
+    <main class="officer-auth-right">
+      <div class="officer-auth-form-container">
+        <%= yield %>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+
+<style>
+/* ============================================
+   OFFICER AUTH LAYOUT - LAW ENFORCEMENT THEME
+   ============================================ */
+
+.officer-auth-body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Montserrat', sans-serif;
+  background: #f8f9fa;
+}
+
+.officer-auth-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+/* LEFT PANEL - DARK BLUE BRANDING */
+.officer-auth-left {
+  background: linear-gradient(165deg, #0a1628 0%, #092C73 50%, #04328C 100%);
+  color: #ffffff;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.officer-auth-left::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.03) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.officer-auth-left-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.officer-badge-container {
+  display: flex;
+  justify-content: center;
+}
+
+.officer-badge-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.2);
+  filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));
+}
+
+.officer-auth-title {
+  font-family: 'Orbitron', 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.75rem;
+  letter-spacing: 3px;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.officer-auth-title .title-line {
+  display: block;
+  color: #ffffff;
+}
+
+.officer-auth-title .title-line.accent {
+  color: #64B5F6;
+}
+
+.officer-auth-tagline {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.officer-features {
+  text-align: left;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.85);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.feature-item:last-child {
+  border-bottom: none;
+}
+
+.feature-item i {
+  font-size: 1.25rem;
+  color: #64B5F6;
+  width: 24px;
+  text-align: center;
+}
+
+.officer-auth-left-footer {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.5);
+}
+
+/* RIGHT PANEL - FORM */
+.officer-auth-right {
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.officer-auth-form-container {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* FORM CARD */
+.officer-form-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 2.5rem;
+  box-shadow: 0 4px 24px rgba(9, 44, 115, 0.08);
+  border: 1px solid rgba(9, 44, 115, 0.08);
+}
+
+.officer-form-card .form-icon {
+  width: 72px;
+  height: 72px;
+  background: rgba(9, 44, 115, 0.08);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  overflow: hidden;
+  border: 2px solid rgba(9, 44, 115, 0.1);
+}
+
+.officer-form-card .form-icon i {
+  font-size: 1.75rem;
+  color: #092C73;
+}
+
+.officer-form-card .form-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.officer-form-card h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0a1628;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.officer-form-card .form-subtitle {
+  font-size: 0.9rem;
+  color: #6c757d;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* FORM INPUTS */
+.officer-form-card .form-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #343a40;
+  margin-bottom: 0.5rem;
+}
+
+.officer-form-card .form-control {
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  border: 1.5px solid #dee2e6;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.officer-form-card .form-control:focus {
+  border-color: #092C73;
+  box-shadow: 0 0 0 3px rgba(9, 44, 115, 0.12);
+  outline: none;
+}
+
+.officer-form-card .form-control::placeholder {
+  color: #adb5bd;
+}
+
+/* BUTTONS */
+.officer-form-card .btn-officer-primary {
+  background: linear-gradient(135deg, #092C73 0%, #04328C 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.officer-form-card .btn-officer-primary:hover {
+  background: linear-gradient(135deg, #071e4a 0%, #021b56 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(9, 44, 115, 0.25);
+}
+
+.officer-form-card .btn-officer-outline {
+  background: transparent;
+  color: #092C73;
+  border: 2px solid #092C73;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.officer-form-card .btn-officer-outline:hover {
+  background: #092C73;
+  color: #ffffff;
+}
+
+/* LINKS */
+.officer-form-card .form-link {
+  color: #092C73;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+}
+
+.officer-form-card .form-link:hover {
+  color: #04328C;
+  text-decoration: underline;
+}
+
+.officer-form-card .text-muted-link {
+  color: #6c757d;
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.officer-form-card .text-muted-link:hover {
+  color: #092C73;
+}
+
+/* DIVIDER */
+.officer-form-card .form-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+}
+
+.officer-form-card .form-divider::before,
+.officer-form-card .form-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.officer-form-card .form-divider span {
+  padding: 0 1rem;
+  font-size: 0.8rem;
+  color: #adb5bd;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* CHECKBOX */
+.officer-form-card .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.officer-form-card .form-check-input {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid #dee2e6;
+  border-radius: 0.25rem;
+}
+
+.officer-form-card .form-check-input:checked {
+  background-color: #092C73;
+  border-color: #092C73;
+}
+
+.officer-form-card .form-check-label {
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+/* FLASH MESSAGES */
+.flash-container .alert {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* RESPONSIVE */
+@media (max-width: 991px) {
+  .officer-auth-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-auth-left {
+    display: none;
+  }
+
+  .officer-auth-right {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #092C73 0%, #04328C 30%, #f8f9fa 30%);
+  }
+
+  .officer-auth-form-container {
+    padding: 1rem;
+  }
+
+  .officer-form-card {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .officer-form-card {
+    padding: 1.5rem 1rem;
+  }
+}
+</style>

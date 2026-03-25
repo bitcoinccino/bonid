@@ -1,0 +1,284 @@
+<%# ================================================================
+  BonID — Land Transaction Record Form (with BonID Prefill)
+  ---------------------------------------------------------------
+  ✅ Prefills from citizen’s BonID and linked addresses
+  ✅ Supports individual / organization buyers & sellers
+  ✅ Fully Turbo-safe, responsive, and Bootstrap-styled
+================================================================== %>
+<%# ================================================================
+  BonID — Land Transaction Record Form (with BonID Prefill)
+  ---------------------------------------------------------------
+  ✅ Prefills from citizen’s BonID and linked addresses
+  ✅ Supports individual / organization buyers & sellers
+  ✅ Fully Turbo-safe, responsive, and Bootstrap-styled
+================================================================== %>
+
+<%= turbo_frame_tag "record_form_frame" do %>
+  <%= form_with model: record,
+                url: record.persisted? ? citizens_verification_record_path(record) : citizens_verification_records_path,
+                method: record.persisted? ? :patch : :post,
+                local: true,
+                data: { turbo_frame: "record_form_frame", controller: "form-autosave" },
+                class: "pb-3" do |f| %>
+
+    <%= f.hidden_field :record_type, value: "property" %>
+    <%= f.hidden_field :category, value: "land_transaction" %>
+
+    <!-- HEADER -->
+    <div class="alert alert-dismissible fade show alert-info shadow-sm rounded-3 mb-4 p-4">
+      <div class="d-flex align-items-start">
+        <i class="ri-community-line me-3 fs-3 text-primary"></i>
+        <div>
+          <strong class="d-block mb-2 fs-5">Land Transaction Record (Haiti)</strong>
+          <p class="mb-0 small text-dark">
+            This form captures the property transfer process — from preliminary agreement to DGI registration — under the BonID verification ecosystem.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔗 LINKED PROPERTY ADDRESS -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+      <div class="card-header bg-secondary text-white fw-semibold py-3">
+        <i class="ri-map-pin-line me-2"></i>Linked Property Address
+      </div>
+      <div class="card-body p-4">
+        <% if current_citizen.respond_to?(:addresses) && current_citizen.addresses.any? %>
+          <%= f.collection_select :address_id,
+              current_citizen.addresses,
+              :id,
+              :full_address,
+              { prompt: "Select linked address or add new" },
+              class: "form-select" %>
+          <small class="text-muted d-block mt-1">
+            Prefilled using your BonID-verified address.
+            <%= link_to "Add New Address",
+                        new_citizens_address_path,
+                        data: { turbo_frame: "modal" },
+                        class: "text-primary fw-semibold ms-1" %>
+          </small>
+        <% else %>
+          <div class="alert alert-dismissible fade show alert-warning small py-2 px-3 mb-0">
+            <i class="ri-map-pin-line me-1"></i>
+            No saved addresses found.
+            <%= link_to "Add one now",
+                        new_citizens_address_path,
+                        data: { turbo_frame: "modal" },
+                        class: "fw-semibold text-primary" %>.
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- 1️⃣ TRANSACTION OVERVIEW -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+      <div class="card-header bg-primary text-white fw-semibold py-3">
+        <i class="ri-file-text-line me-2"></i>Transaction Overview
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-4">
+          <%= f.label :data_transaction_id, "Transaction ID", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_transaction_id,
+                value: record.data&.dig("transaction_id"),
+                class: "form-control",
+                readonly: true %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :data_transaction_type, "Transaction Type", class: "form-label fw-semibold" %>
+          <%= f.select :data_transaction_type,
+                options_for_select([["Genuine Deed", "genuine_deed"], ["Donation", "donation"], ["Transfer", "transfer"]],
+                record.data&.dig("transaction_type")),
+                { prompt: "Select Type" },
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :data_status, "Status", class: "form-label fw-semibold" %>
+          <%= f.select :data_status,
+                options_for_select([["In Progress", "In Progress"], ["Completed", "Completed"], ["Suspended", "Suspended"]],
+                record.data&.dig("status")),
+                { prompt: "Select Status" },
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_date_initiated, "Date Initiated", class: "form-label fw-semibold" %>
+          <%= f.date_field :data_date_initiated,
+                value: record.data&.dig("date_initiated"),
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_estimated_completion, "Estimated Completion", class: "form-label fw-semibold" %>
+          <%= f.date_field :data_estimated_completion,
+                value: record.data&.dig("estimated_completion"),
+                class: "form-control" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2️⃣ COST BREAKDOWN -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+      <div class="card-header bg-success text-white fw-semibold py-3">
+        <i class="ri-cash-line me-2"></i>Cost & Fees
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-6">
+          <%= f.label :data_total_cost_htg, "Total Cost (HTG)", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_total_cost_htg,
+                value: record.data&.dig("total_cost_htg"),
+                class: "form-control", step: "any" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_cost_breakdown_notary_fees_percent, "Notary Fees (%)", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_cost_breakdown_notary_fees_percent,
+                value: record.data&.dig("cost_breakdown", "notary_fees_percent"),
+                class: "form-control", step: "0.1" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :data_cost_breakdown_survey_fees_htg, "Survey Fees (HTG)", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_cost_breakdown_survey_fees_htg,
+                value: record.data&.dig("cost_breakdown", "survey_fees_htg"),
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :data_cost_breakdown_taxes_htg, "Taxes (HTG)", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_cost_breakdown_taxes_htg,
+                value: record.data&.dig("cost_breakdown", "taxes_htg"),
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :data_cost_breakdown_transfer_fees_htg, "Transfer Fees (HTG)", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_cost_breakdown_transfer_fees_htg,
+                value: record.data&.dig("cost_breakdown", "transfer_fees_htg"),
+                class: "form-control" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3️⃣ BUYER INFO -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+      <div class="card-header bg-info text-dark fw-semibold py-3">
+        <i class="ri-user-3-line me-2"></i>Buyer Information
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-6">
+          <%= f.label :data_buyer_name, "Buyer Name / Organization", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_buyer_name,
+                value: record.data&.dig("buyer", "name") || "#{current_citizen.first_name} #{current_citizen.last_name}",
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_buyer_type, "Buyer Type", class: "form-label fw-semibold" %>
+          <%= f.select :data_buyer_type,
+                options_for_select([["Individual", "Individual"], ["NGO", "NGO"], ["Company", "Company"]],
+                record.data&.dig("buyer", "type")),
+                { prompt: "Select Type" },
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_buyer_email, "Email", class: "form-label fw-semibold" %>
+          <%= f.email_field :data_buyer_email,
+                value: record.data&.dig("buyer", "email") || current_citizen.email,
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_buyer_phone, "Phone", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_buyer_phone,
+                value: record.data&.dig("buyer", "phone") || current_citizen.phone,
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-12">
+          <%= f.label :data_buyer_address, "Address", class: "form-label fw-semibold" %>
+          <%= f.text_area :data_buyer_address,
+                value: record.data&.dig("buyer", "address") || current_citizen.addresses.first&.full_address,
+                class: "form-control", rows: 2 %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4️⃣ SELLER INFO -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+      <div class="card-header bg-danger text-white fw-semibold py-3">
+        <i class="ri-user-5-line me-2"></i>Seller Information
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-6">
+          <%= f.label :data_seller_name, "Seller Name", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_seller_name,
+                value: record.data&.dig("seller", "name"),
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_seller_type, "Seller Type", class: "form-label fw-semibold" %>
+          <%= f.select :data_seller_type,
+                options_for_select([["Individual", "Individual"], ["Company", "Company"]],
+                record.data&.dig("seller", "type")),
+                { prompt: "Select Type" },
+                class: "form-select" %>
+        </div>
+
+        <div class="col-md-12">
+          <%= f.label :data_seller_address, "Address", class: "form-label fw-semibold" %>
+          <%= f.text_area :data_seller_address,
+                value: record.data&.dig("seller", "address"),
+                class: "form-control", rows: 2 %>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5️⃣ PROPERTY DETAILS -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+      <div class="card-header bg-secondary text-white fw-semibold py-3">
+        <i class="ri-home-2-line me-2"></i>Property Details
+      </div>
+      <div class="card-body row g-3 p-4">
+        <div class="col-md-12">
+          <%= f.label :data_property_location, "Location", class: "form-label fw-semibold" %>
+          <%= f.text_field :data_property_location,
+                value: record.data&.dig("property", "location") || current_citizen.addresses.first&.full_address,
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-12">
+          <%= f.label :data_property_description, "Description", class: "form-label fw-semibold" %>
+          <%= f.text_area :data_property_description,
+                value: record.data&.dig("property", "description"),
+                class: "form-control", rows: 2 %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_property_square_footage_m2, "Area (m²)", class: "form-label fw-semibold" %>
+          <%= f.number_field :data_property_square_footage_m2,
+                value: record.data&.dig("property", "square_footage_m2"),
+                class: "form-control" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :data_property_mortgage_status, "Mortgage Status", class: "form-label fw-semibold" %>
+          <%= f.select :data_property_mortgage_status,
+                options_for_select([["Clear", "Clear"], ["Mortgaged", "Mortgaged"]],
+                record.data&.dig("property", "mortgage_status")),
+                { prompt: "Select Status" },
+                class: "form-select" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVE -->
+    <div class="text-end pt-3 mt-4 border-top">
+      <%= f.submit record.persisted? ? "Update Land Transaction" : "Save Land Transaction",
+                   class: "btn btn-primary fw-semibold px-5 py-3 rounded-3 text-white shadow-sm" %>
+    </div>
+  <% end %>
+<% end %>

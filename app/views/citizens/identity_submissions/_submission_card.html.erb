@@ -1,0 +1,86 @@
+<%= content_for :page_title, "Identity Submission Details" if local_assigns[:is_index] %>
+
+<div class="card submission-card border-0 shadow-sm rounded-4 mx-auto mb-4" style="max-width: 720px;" role="article" aria-labelledby="submission-header-<%= submission.id %>">
+  <!-- Header -->
+  <div class="card-header header-bg text-white py-3 px-4 rounded-top d-flex align-items-center justify-content-between">
+    <h5 id="submission-header-<%= submission.id %>" class="mb-0 fs-6 fw-bold d-flex align-items-center gap-2">
+      <i class="ri-fingerprint-line" aria-hidden="true"></i>
+      BonID:
+      <span class="text-white-75"><%= submission.user&.bonid.presence || t('common.not_available', default: "N/A") %></span>
+    </h5>
+  </div>
+
+  <!-- Body -->
+  <div class="card-body p-4">
+    <div class="row g-3 text-start">
+      <div class="col-sm-6">
+        <label for="name-<%= submission.id %>" class="form-label fw-semibold text-secondary small mb-1 sr-only">Full Name</label>
+        <div id="name-<%= submission.id %>" class="fw-medium text-dark" role="text">
+          <%= full_name(submission.user).presence || t('common.not_available', default: "N/A") %>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <label for="status-<%= submission.id %>" class="form-label fw-semibold text-secondary small mb-1 sr-only">Status</label>
+        <% status_info = submission_status_info(submission) %>
+        <div id="status-<%= submission.id %>" class="d-flex align-items-center">
+          <span class="badge <%= status_info[:badge_class] %> rounded-pill px-3 py-1 fw-semibold" 
+                aria-label="Status: <%= status_info[:text] %>">
+            <%= status_info[:text] %>
+          </span>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <label for="expires-<%= submission.id %>" class="form-label fw-semibold text-secondary small mb-1 sr-only">Expires</label>
+        <div id="expires-<%= submission.id %>" class="fw-medium text-dark">
+          <%= format_date(submission.expires_at) || t('common.not_applicable', default: "-") %>
+        </div>
+      </div>
+
+      <div class="col-sm-6">
+        <label for="reissued-<%= submission.id %>" class="form-label fw-semibold text-secondary small mb-1 sr-only">Reissued</label>
+        <div id="reissued-<%= submission.id %>" class="fw-medium text-dark">
+          <% if submission.submission_type == "reissue" %>
+            <%= format_date(submission.updated_at) %>
+          <% else %>
+            <%= t('common.not_applicable', default: "-") %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Alert (Conditional: Only if no active submission, per log behavior) -->
+    <% if submission.status != "pending" && !bonid_verified?(submission) %>
+      <div class="mt-3" role="alert" aria-live="polite">
+        <%= render "shared/submission_status_alert", submission: submission %>
+      </div>
+    <% end %>
+
+    <!-- Actions -->
+    <div class="d-flex flex-column flex-md-row justify-content-center align-items-center gap-2 mt-4">
+      <%= link_to "View",
+                  identity_submission_path(submission),
+                  class: "btn btn-outline-primary rounded-3 fw-semibold px-4 py-2 flex-grow-1 flex-md-grow-0",
+                  title: "View full submission details" %>
+
+      <% if bonid_verified?(submission) %>
+        <%= link_to verified_profile_identity_submission_path(submission.public_token),
+                    class: "btn btn-primary rounded-3 fw-semibold px-4 py-2 flex-grow-1 flex-md-grow-0 d-flex align-items-center justify-content-center gap-2",
+                    "aria-label": "View Verified BonID Certificate",
+                    title: "View Verified BonID Certificate" do %>
+          <i class="ri-award-line" aria-hidden="true"></i>
+          View Certificate
+        <% end %>
+      <% end %>
+      
+      <% if submission.status == "rejected" %>
+        <%= link_to "Resubmit",
+                    new_citizens_identity_submission_path(resubmission_from: submission.public_token),
+                    class: "btn btn-outline-danger rounded-3 fw-semibold px-4 py-2 flex-grow-1 flex-md-grow-0",
+                    data: { turbo: false },
+                    title: "Start a new resubmission with corrected documents" %>
+      <% end %>
+    </div>
+  </div>
+</div>

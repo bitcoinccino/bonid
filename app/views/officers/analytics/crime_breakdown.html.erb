@@ -1,0 +1,192 @@
+<%# Detailed Crime Type Breakdown %>
+<%# Unified Law Enforcement Styling %>
+
+<div class="container-fluid py-4">
+  <%# Header with gradient %>
+  <div class="card border-0 analytics-header mb-4">
+    <div class="card-body py-4">
+      <div class="d-flex align-items-center">
+        <%= link_to officers_analytics_path, class: "btn btn-sm analytics-back-btn me-3" do %>
+          <i class="ri-arrow-left-line"></i>
+        <% end %>
+        <div class="text-white">
+          <h2 class="mb-1 analytics-header-title"><i class="ri-pie-chart-2-line me-2"></i>Crime Type Breakdown</h2>
+          <p class="mb-0 analytics-header-subtitle">Detailed analysis by crime category and severity</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <%# Severity Breakdown %>
+    <div class="col-lg-4">
+      <div class="card analytics-chart-card">
+        <div class="card-header">
+          <h5><i class="ri-alert-line me-2 text-law-red"></i>By Severity</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 250px;">
+            <canvas id="severityChart"></canvas>
+          </div>
+          <div class="mt-3">
+            <% severity_colors = { "Low" => "law-green", "Medium" => "law-blue", "High" => "warning", "Severe" => "law-red", "Critical" => "dark" } %>
+            <% @severity_breakdown.each do |level, count| %>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="badge bg-<%= severity_colors[level] || 'secondary' %>"><%= level %></span>
+                <strong><%= count %></strong>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Top Crimes Chart %>
+    <div class="col-lg-8">
+      <div class="card analytics-chart-card">
+        <div class="card-header">
+          <h5><i class="ri-bar-chart-horizontal-line me-2 text-law-blue"></i>Top Crime Types</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container" style="height: 350px;">
+            <canvas id="topCrimesChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Category Breakdown %>
+    <div class="col-12">
+      <div class="card analytics-chart-card">
+        <div class="card-header" style="background: var(--law-gradient-primary); border-radius: 0.5rem 0.5rem 0 0;">
+          <h5 class="text-white"><i class="ri-folders-line me-2"></i>By Category</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="accordion analytics-accordion" id="categoryAccordion">
+            <% @crime_data.each_with_index do |(category, crimes), idx| %>
+              <%
+                total = crimes.sum { |c| c[:count] }
+                category_icon = case category.to_s
+                                when "violent_crimes" then "ri-sword-line text-law-red"
+                                when "property_crimes" then "ri-home-gear-line text-law-tan"
+                                when "organized_crime" then "ri-spy-line text-dark"
+                                when "economic_crimes" then "ri-money-dollar-circle-line text-law-green"
+                                when "social_and_emerging_crimes" then "ri-global-line text-law-blue"
+                                when "traffic_and_minor_infractions" then "ri-car-line text-secondary"
+                                else "ri-file-list-line"
+                                end
+              %>
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button <%= idx == 0 ? '' : 'collapsed' %>" type="button"
+                          data-bs-toggle="collapse" data-bs-target="#cat<%= idx %>">
+                    <i class="<%= category_icon %> me-2"></i>
+                    <strong><%= category.to_s.titleize.gsub("_", " ") %></strong>
+                    <span class="badge bg-law-blue ms-2"><%= total %> reports</span>
+                  </button>
+                </h2>
+                <div id="cat<%= idx %>" class="accordion-collapse collapse <%= idx == 0 ? 'show' : '' %>"
+                     data-bs-parent="#categoryAccordion">
+                  <div class="accordion-body">
+                    <div class="row g-2">
+                      <% crimes.sort_by { |c| -c[:count] }.each do |crime| %>
+                        <%
+                          sev_color = case crime[:severity]
+                                      when 1 then "law-green"
+                                      when 2 then "law-blue"
+                                      when 3 then "warning"
+                                      when 4 then "law-red"
+                                      when 5 then "dark"
+                                      else "secondary"
+                                      end
+                        %>
+                        <div class="col-md-4">
+                          <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                            <div>
+                              <span class="small"><%= crime[:name] %></span>
+                              <span class="badge bg-<%= sev_color %> ms-1" title="Severity <%= crime[:severity] %>">
+                                <%= crime[:severity] %>
+                              </span>
+                            </div>
+                            <strong><%= crime[:count] %></strong>
+                          </div>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Law enforcement color palette
+  const lawColors = {
+    blue: '#092C73',
+    red: '#D90718',
+    green: '#49A64F',
+    tan: '#BF8360',
+    dark: '#111827'
+  };
+
+  // Severity Chart
+  const severityData = <%= raw @severity_breakdown.to_json %>;
+  const severityColors = {
+    'Low': lawColors.green,
+    'Medium': lawColors.blue,
+    'High': lawColors.tan,
+    'Severe': lawColors.red,
+    'Critical': lawColors.dark
+  };
+  new Chart(document.getElementById('severityChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(severityData),
+      datasets: [{
+        data: Object.values(severityData),
+        backgroundColor: Object.keys(severityData).map(k => severityColors[k] || '#6B7280')
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+
+  // Top Crimes Bar Chart
+  const crimeData = <%= raw @crime_data.values.flatten.sort_by { |c| -c[:count] }.first(15).to_json %>;
+  new Chart(document.getElementById('topCrimesChart'), {
+    type: 'bar',
+    data: {
+      labels: crimeData.map(c => c.name),
+      datasets: [{
+        data: crimeData.map(c => c.count),
+        backgroundColor: crimeData.map(c => {
+          switch(c.severity) {
+            case 5: return lawColors.dark;
+            case 4: return lawColors.red;
+            case 3: return lawColors.tan;
+            case 2: return lawColors.blue;
+            default: return lawColors.green;
+          }
+        })
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } }
+    }
+  });
+});
+</script>

@@ -1,0 +1,119 @@
+<% content_for :title, "Ou sou lis la! | BonID" %>
+
+<section style="min-height: 100vh; background: linear-gradient(135deg, #111827 0%, #0B0F19 100%); display: flex; align-items: center; justify-content: center; padding: 40px 20px;">
+  <div style="max-width: 540px; width: 100%; text-align: center;">
+
+    <%# Success Icon %>
+    <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+      <i class="ri-checkbox-circle-fill" style="font-size: 42px; color: #22c55e;"></i>
+    </div>
+
+    <h1 style="font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+      Ou sou lis la!
+    </h1>
+    <p style="color: #9ca3af; font-size: 14px; margin-bottom: 30px;">
+      You're on the list! &middot; Vous etes inscrit!
+    </p>
+
+    <% if @signup.commune %>
+      <div style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 12px 20px; margin-bottom: 24px; display: inline-block;">
+        <i class="ri-group-line" style="color: #22c55e; margin-right: 6px;"></i>
+        <span style="color: #d1d5db; font-size: 14px;">
+          <strong style="color: #22c55e;"><%= @commune_count %></strong> moun deja enskri nan <strong style="color: #fff;"><%= @signup.commune.name %></strong>
+        </span>
+      </div>
+    <% end %>
+
+    <%# Referral Code Card %>
+    <div style="background: #1f2937; border: 1px solid #374151; border-radius: 16px; padding: 30px; margin-bottom: 24px;">
+      <p style="color: #9ca3af; font-size: 13px; margin: 0 0 12px;">Kod referans ou</p>
+      <div style="font-size: 32px; font-weight: 700; letter-spacing: 3px; color: #60a5fa; font-family: monospace; margin-bottom: 16px;">
+        <%= @signup.referral_code %>
+      </div>
+
+      <div style="background: #111827; border-radius: 8px; padding: 10px; margin-bottom: 20px;">
+        <code style="color: #9ca3af; font-size: 12px; word-break: break-all;"><%= @share_url %></code>
+      </div>
+
+      <%# Copy Button %>
+      <button onclick="copyLink()" id="copy-btn"
+              style="background: #3b82f6; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; margin-bottom: 8px;">
+        <i class="ri-file-copy-line me-1"></i> Kopye Lyen
+      </button>
+    </div>
+
+    <%# Mission Message %>
+    <div style="background: #1f2937; border: 1px solid #374151; border-radius: 16px; padding: 24px; margin-bottom: 24px; text-align: left;">
+      <p style="color: #e5e7eb; font-size: 15px; line-height: 1.7; margin: 0;">
+        Si ou vle yon <strong style="color: #fff;">Ayiti ki pi sekirize</strong>, kote pou
+        <strong style="color: #60a5fa;">premye fwa</strong> ou gen kontwol total sou enfomasyon ou,
+        ou ka we ki kote yo te itilize l, epi ou pataje selman sa ou vle pataje...
+      </p>
+      <p style="color: #22c55e; font-weight: 600; font-size: 14px; margin: 16px 0 0;">
+        <i class="ri-share-forward-line me-1"></i> Pataje kod sa a ak lot moun pou yo enskri tou.
+      </p>
+    </div>
+
+    <%# Share Buttons %>
+    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px;">
+      <a href="https://wa.me/?text=<%= ERB::Util.url_encode("Enskri pou BonID! Premye idantite dijital sekirize Ayiti. #{@share_url}") %>"
+         target="_blank" rel="noopener"
+         style="display: inline-flex; align-items: center; gap: 6px; background: #25D366; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+        <i class="ri-whatsapp-line"></i> WhatsApp
+      </a>
+      <a href="sms:?body=<%= ERB::Util.url_encode("Enskri pou BonID! #{@share_url}") %>"
+         style="display: inline-flex; align-items: center; gap: 6px; background: #6366f1; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+        <i class="ri-message-2-line"></i> SMS
+      </a>
+      <a href="https://twitter.com/intent/tweet?text=<%= ERB::Util.url_encode("Enskri pou BonID, premye idantite dijital sekirize Ayiti! #{@share_url}") %>"
+         target="_blank" rel="noopener"
+         style="display: inline-flex; align-items: center; gap: 6px; background: #1d9bf0; color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px;">
+        <i class="ri-twitter-x-line"></i> X
+      </a>
+    </div>
+
+    <%# English / French versions %>
+    <details style="text-align: left; margin-bottom: 20px;">
+      <summary style="color: #6b7280; font-size: 13px; cursor: pointer;">English / Francais</summary>
+      <div style="background: #1f2937; border-radius: 10px; padding: 16px; margin-top: 10px;">
+        <p style="color: #d1d5db; font-size: 13px; line-height: 1.6; margin: 0 0 12px;">
+          <strong style="color: #fff;">English:</strong> If you care about a secure and safe Haiti, where for the very first time
+          you will have full, complete control over your information, see where it was used, and share only
+          what you want to share, send this code to others so they can sign up too.
+        </p>
+        <p style="color: #d1d5db; font-size: 13px; line-height: 1.6; margin: 0;">
+          <strong style="color: #fff;">Francais:</strong> Si vous souhaitez un Haiti plus sur, ou pour la premiere fois vous aurez
+          un controle total sur vos informations, vous pourrez voir ou elles ont ete utilisees et ne partager
+          que ce que vous souhaitez, partagez ce code avec d'autres pour qu'ils s'inscrivent.
+        </p>
+      </div>
+    </details>
+
+    <%# Check email note %>
+    <div style="background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 10px; padding: 12px 20px; margin-bottom: 20px;">
+      <i class="ri-mail-check-line" style="color: #60a5fa; margin-right: 6px;"></i>
+      <span style="color: #d1d5db; font-size: 13px;">
+        Nou voye yon imel konfirmasyon ba ou ak kod ou.
+      </span>
+    </div>
+
+    <%= link_to enskri_path, style: "color: #6b7280; font-size: 13px; text-decoration: none;" do %>
+      <i class="ri-arrow-left-line me-1"></i> Retounen
+    <% end %>
+  </div>
+</section>
+
+<script>
+  function copyLink() {
+    var url = '<%= @share_url %>';
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copy-btn');
+      btn.innerHTML = '<i class="ri-check-line me-1"></i> Kopye!';
+      btn.style.background = '#22c55e';
+      setTimeout(function() {
+        btn.innerHTML = '<i class="ri-file-copy-line me-1"></i> Kopye Lyen';
+        btn.style.background = '#3b82f6';
+      }, 2000);
+    });
+  }
+</script>

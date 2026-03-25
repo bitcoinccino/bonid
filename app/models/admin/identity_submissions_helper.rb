@@ -1,7 +1,4 @@
 module Admin::IdentitySubmissionsHelper
-
-
-
   def rejection_reason_options
     [
       "Missing CIN or Passport document",

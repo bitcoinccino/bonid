@@ -1,0 +1,311 @@
+
+/****************************************/
+/*      NAVBAR — BONID GLOBAL STYLE     */
+/* Main tokens loaded from base/_tokens.scss */
+/****************************************/
+
+/* Additional navbar-specific variables only */
+:root {
+  --haitian-blue-light: #2E4DFF;
+  --haitian-gold: #FFD700;
+  --haitian-gray: #F3F4F6;
+
+  /* used in dropdowns */
+  --nav-text: #0F172A;
+  --nav-muted: #475569;
+
+  /* NEW: dark navbar text tokens */
+  --nav-on-dark: rgba(255, 255, 255, 0.92);
+  --nav-on-dark-muted: rgba(255, 255, 255, 0.72);
+  --nav-on-dark-border: rgba(255, 255, 255, 0.14);
+  --nav-on-dark-hover: rgba(255, 255, 255, 0.10);
+}
+
+/* Note: --haitian-blue, --haitian-red, --palm-green
+   are defined globally in base/_tokens.scss */
+
+/****************************************/
+/*              NAVBAR CORE             */
+/****************************************/
+.bonid-navbar {
+  padding: 0.9rem 1rem !important;
+
+  /* ✅ Solid Haitian Blue */
+  background: #00209F !important;
+
+  border-bottom: none;
+  font-family: "Inter", sans-serif;
+  z-index: 1050;
+}
+
+/* ✅ Make all links readable on dark gradient */
+.bonid-navbar .navbar-nav .nav-link,
+.bonid-navbar .navbar-nav a,
+.bonid-navbar a.nav-link,
+.navbar-nav .nav-link {
+  color: var(--nav-on-dark) !important;
+  padding: 0.65rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.93rem;
+  text-decoration: none !important;
+  transition: all .2s ease;
+}
+
+.bonid-navbar .navbar-nav .nav-link:hover,
+.bonid-navbar .navbar-nav a:hover,
+.bonid-navbar a.nav-link:hover,
+.navbar-nav .nav-link:hover {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  transform: translateY(-1px);
+}
+
+/* ✅ Active link state (subtle, not loud) */
+.bonid-navbar .navbar-nav .nav-link.active {
+  color: #ffffff !important;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+}
+
+/****************************************/
+/*              BRAND (NO FX)           */
+/****************************************/
+/* Navbar brand - prevent footer styles from bleeding */
+.bonid-navbar .navbar-brand,
+.bonid-navbar a.navbar-brand,
+.navbar-brand.font-orbitron,
+a.navbar-brand.font-orbitron,
+.font-orbitron {
+  font-family: 'Orbitron', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.7px !important;
+
+  /* ✅ NEW: brand matches dark header */
+  color: #ffffff !important;
+
+  /* ✅ no special effects */
+  text-shadow: none !important;
+  filter: none !important;
+  text-decoration: none !important;
+}
+
+.bonid-navbar .navbar-brand:hover,
+.bonid-navbar a.navbar-brand:hover,
+.navbar-brand.font-orbitron:hover,
+a.navbar-brand.font-orbitron:hover,
+.font-orbitron:hover {
+  /* ✅ still no effects */
+  color: rgba(255,255,255,0.95) !important;
+  text-shadow: none !important;
+  transform: none !important;
+  text-decoration: none !important;
+}
+
+/****************************************/
+/*            MOBILE COLLAPSE           */
+/****************************************/
+/* Collapse panel polish on mobile/tablet */
+@media (max-width: 991.98px) {
+  .bonid-navbar .navbar-collapse {
+    background: rgba(0,0,0,0.18);
+    border: 1px solid var(--nav-on-dark-border);
+    border-radius: 16px;
+    padding: .75rem;
+    margin-top: .75rem;
+  }
+
+  .bonid-navbar .navbar-nav {
+    gap: .5rem !important;
+    align-items: stretch !important;
+  }
+}
+
+/* ✅ Phone-only hamburger (hide at >= 768px) */
+@media (min-width: 768px) {
+  .bonid-navbar .navbar-toggler {
+    display: none !important;
+  }
+}
+
+/* Remove border/outline from mobile menu icon */
+.navbar-toggler {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 0;
+}
+
+.navbar-toggler:focus,
+.navbar-toggler:active {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background: transparent !important;
+}
+
+/* ✅ Make the hamburger icon inherit navbar color */
+.bonid-navbar .navbar-toggler i {
+  color: #ffffff !important;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+/****************************************/
+/*       PREMIUM DROPDOWN STYLING       */
+/****************************************/
+/* Dropdown trigger polish (Products + Language) */
+.bonid-navbar .dropdown-toggle {
+  color: var(--nav-on-dark) !important;
+}
+
+.bonid-navbar .dropdown-toggle:hover {
+  color: #ffffff !important;
+}
+
+/* ✅ remove forced blue icons inside navbar triggers */
+.bonid-navbar .nav-link i,
+.bonid-navbar .dropdown-toggle i {
+  color: currentColor !important;
+  opacity: .95;
+}
+
+/* All dropdown menus in navbar - white background */
+.bonid-navbar .dropdown-menu,
+.bonid-navbar .dropdown-menu.bonid-dropdown,
+.bonid-dropdown,
+.dropdown-menu.bonid-dropdown {
+  min-width: 420px;
+  border-radius: 14px;
+  padding: 0.75rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff !important;
+  box-shadow: 0px 14px 40px rgba(0,0,0,0.14);
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* ✅ Better dropdown spacing */
+.bonid-navbar .dropdown-menu li + li {
+  margin-top: 2px;
+}
+
+/* Language dropdown - smaller width */
+.bonid-navbar .language-switcher .dropdown-menu {
+  min-width: 220px !important;
+  background: #ffffff !important;
+  padding: 0.6rem !important;
+}
+
+/* Make Products dropdown responsive on small screens */
+@media (max-width: 768px) {
+  .bonid-navbar .dropdown-menu,
+  .bonid-navbar .dropdown-menu.bonid-dropdown {
+    min-width: auto;
+    max-width: calc(100vw - 1.5rem);
+    width: calc(100vw - 1.5rem);
+    position: fixed !important;
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    top: auto !important;
+    transform: none !important;
+  }
+
+  .bonid-navbar .dropdown-menu .dropdown-item,
+  .bonid-dropdown .dropdown-item {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: hidden;
+  }
+
+  .bonid-dropdown .dropdown-item div,
+  .bonid-dropdown .dropdown-item small {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Dropdown items - prevent footer styles from affecting */
+.bonid-navbar .dropdown-menu .dropdown-item,
+.bonid-navbar .dropdown-item,
+.bonid-navbar .dropdown-menu a,
+.bonid-dropdown .dropdown-item,
+.dropdown-menu .dropdown-item {
+  padding: 0.75rem 0.9rem;
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  border-radius: 12px;
+  color: var(--nav-text) !important;
+  background: transparent !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+}
+
+.bonid-navbar .dropdown-menu .dropdown-item:hover,
+.bonid-navbar .dropdown-item:hover,
+.bonid-navbar .dropdown-menu a:hover,
+.bonid-dropdown .dropdown-item:hover,
+.dropdown-menu .dropdown-item:hover {
+  background: var(--haitian-gray) !important;
+  color: var(--nav-text) !important;
+  text-decoration: none !important;
+}
+
+/* ✅ Products dropdown: icon bubble + description readability */
+.dropdown-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--nav-muted);
+  padding: 0.35rem 0.9rem 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bonid-navbar .dropdown-menu .dropdown-icon,
+.dropdown-menu .dropdown-icon,
+.dropdown-icon {
+  font-size: 1.15rem;
+  font-weight: 400 !important;
+  color: #94a3b8 !important;
+  flex-shrink: 0;
+}
+
+/* If your item has <small class="text-muted">, keep it readable */
+.bonid-navbar .dropdown-menu small,
+.bonid-navbar .dropdown-menu .text-muted {
+  color: rgba(15, 23, 42, 0.62) !important;
+}
+
+.dropdown-item.disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/****************************************/
+/*           LANGUAGE PILL (DARK)        */
+/****************************************/
+.bonid-navbar .lang-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  height: 1.6rem;
+  padding: 0 .55rem;
+  border-radius: 999px;
+
+  /* ✅ match dark navbar */
+  border: 1px solid var(--nav-on-dark-border);
+  background: rgba(255,255,255,.10);
+  color: rgba(255,255,255,.92);
+
+  font-size: .85rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .06em;
+}

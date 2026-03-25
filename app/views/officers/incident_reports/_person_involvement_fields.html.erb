@@ -1,0 +1,373 @@
+<%# app/views/officers/incident_reports/_person_involvement_fields.html.erb %>
+<%# BonID-ONLY mode: All persons must be verified via BonID lookup %>
+
+<% citizen_prefilled = f.object.bonid.present? && f.object.user_id.present? %>
+<% tourist_prefilled = f.object.bonid.present? && f.object.visitor_submission_id.present? %>
+
+<% if tourist_prefilled %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# BonTouris VERIFIED - Tourist Card View %>
+  <%# Shows tourist details since identity is confirmed via BonTouris %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="nested-fields card mb-3 border-0 shadow-sm" data-nested-form-target="field" data-controller="person" style="border-left: 4px solid var(--law-green) !important;">
+    <div class="card-body">
+      <div class="d-flex align-items-start gap-3 mb-3">
+        <%# Tourist Photo (from BonTouris verification) %>
+        <div class="flex-shrink-0">
+          <% visitor = f.object.visitor_submission %>
+          <% if visitor&.selfie&.attached? %>
+            <%= image_tag url_for(visitor.selfie),
+                          class: "rounded-circle",
+                          style: "width: 60px; height: 60px; object-fit: cover; border: 2px solid var(--law-green);",
+                          loading: "lazy" %>
+          <% else %>
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width: 60px; height: 60px; background: #d4edda; border: 2px solid var(--law-green);">
+              <i class="ri-passport-line" style="font-size: 1.5rem; color: var(--law-green);"></i>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Name, Nationality, Age and Days Remaining %>
+        <div class="flex-grow-1">
+          <%
+            # Build display name from first_name and last_name (without Mr./Mrs. prefix)
+            tourist_display_name = [visitor&.first_name, visitor&.last_name].compact.join(' ').presence || f.object.name
+          %>
+          <h6 class="mb-1 fw-semibold" style="color: var(--officer-text-primary); font-family: 'Montserrat', sans-serif;">
+            <%= tourist_display_name %>
+          </h6>
+          <div class="small text-muted mb-1">
+            <i class="ri-global-line me-1"></i><%= f.object.nationality %>
+            <% if f.object.date_of_birth.present? %>
+              <% age = ((Date.current - f.object.date_of_birth.to_date) / 365.25).to_i %>
+              &bull; <i class="ri-calendar-line me-1"></i><%= age %>
+            <% end %>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+            <code class="small px-2 py-1 rounded" style="font-size: 0.75rem; background: #d4edda; color: #155724;">
+              <%= f.object.bonid %>
+            </code>
+            <span class="badge" style="background: var(--law-green); font-family: 'Montserrat', sans-serif;">
+              <i class="ri-verified-badge-fill me-1"></i>BonTouris Verified
+            </span>
+          </div>
+          <%# Days Remaining Status %>
+          <% if visitor&.expires_at.present? %>
+            <% days = visitor.days_remaining %>
+            <% case visitor.stay_status %>
+            <% when :valid %>
+              <span class="badge bg-success">
+                <i class="ri-checkbox-circle-line me-1"></i><%= days %> days remaining
+              </span>
+            <% when :expiring_soon %>
+              <span class="badge bg-warning text-dark">
+                <i class="ri-alarm-warning-line me-1"></i>Expires in <%= days %> day<%= days == 1 ? '' : 's' %>
+              </span>
+            <% when :expires_today %>
+              <span class="badge bg-warning text-dark">
+                <i class="ri-alarm-warning-line me-1"></i>Expires TODAY
+              </span>
+            <% when :overstay %>
+              <span class="badge bg-danger">
+                <i class="ri-error-warning-line me-1"></i>OVERSTAY: <%= visitor.overstay_days %> day<%= visitor.overstay_days == 1 ? '' : 's' %>
+              </span>
+            <% end %>
+          <% end %>
+        </div>
+
+        <%# Remove button %>
+        <button type="button"
+                class="btn btn-sm"
+                style="color: var(--law-red); border-color: var(--law-red);"
+                data-action="nested-form#remove"
+                title="Remove person">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+
+      <%# Role and Status - the only editable fields %>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :role, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :role,
+                       PersonInvolvement.roles.keys.map { |r| [r.titleize, r] },
+                       { include_blank: "Select role..." },
+                       { class: "form-select", data: { action: "change->person#toggleStatusField change->person#toggleEmergencyAlert" } } %>
+        </div>
+        <div class="col-md-6" data-person-target="statusField"
+             style="<%= %w[suspect accomplice].include?(f.object.role) ? '' : 'display: none;' %>">
+          <%= f.label :status, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :status,
+                       PersonInvolvement::OFFICER_STATUSES.map { |s| [s.titleize, s] },
+                       { include_blank: "Select status..." },
+                       { class: "form-select" } %>
+        </div>
+      </div>
+
+      <%# Hidden fields to preserve all data %>
+      <%= f.hidden_field :_destroy, value: false %>
+      <%= f.hidden_field :bonid %>
+      <%= f.hidden_field :visitor_submission_id %>
+      <%= f.hidden_field :name %>
+      <%= f.hidden_field :first_name %>
+      <%= f.hidden_field :middle_name %>
+      <%= f.hidden_field :last_name %>
+      <%= f.hidden_field :nationality %>
+      <%= f.hidden_field :date_of_birth %>
+      <%= f.hidden_field :sex %>
+    </div>
+  </div>
+
+<% elsif citizen_prefilled %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# BonID VERIFIED - Compact Card View %>
+  <%# Shows only essential fields since identity is already confirmed %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="nested-fields card mb-3 border-0 shadow-sm" data-nested-form-target="field" data-controller="person" style="border-left: 4px solid var(--law-green) !important;">
+    <div class="card-body">
+      <div class="d-flex align-items-start gap-3 mb-3">
+        <%# User Photo (from BonID verification) %>
+        <div class="flex-shrink-0">
+          <% user = f.object.user %>
+          <% if user&.photo&.attached? %>
+            <%= image_tag url_for(user.photo),
+                          class: "rounded-circle",
+                          style: "width: 60px; height: 60px; object-fit: cover; border: 2px solid var(--law-green);",
+                          loading: "lazy" %>
+          <% else %>
+            <div class="rounded-circle d-flex align-items-center justify-content-center"
+                 style="width: 60px; height: 60px; background: var(--law-green-subtle);">
+              <i class="ri-user-check-line" style="font-size: 1.5rem; color: var(--law-green);"></i>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Name and BonID badge %>
+        <div class="flex-grow-1">
+          <%
+            # Build display name from first_name and last_name (without Mr./Mrs. prefix)
+            citizen_display_name = [user&.first_name, user&.last_name].compact.join(' ').presence || f.object.name
+          %>
+          <h6 class="mb-1 fw-semibold" style="color: var(--officer-text-primary); font-family: 'Montserrat', sans-serif;">
+            <%= citizen_display_name %>
+          </h6>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <code class="small px-2 py-1 rounded" style="font-size: 0.75rem; background: var(--law-blue-subtle); color: var(--law-blue);">
+              <%= f.object.bonid %>
+            </code>
+            <span class="badge" style="background: var(--law-green); font-family: 'Montserrat', sans-serif;">
+              <i class="ri-checkbox-circle-fill me-1"></i>BonID Verified
+            </span>
+          </div>
+        </div>
+
+        <%# Remove button %>
+        <button type="button"
+                class="btn btn-sm"
+                style="color: var(--law-red); border-color: var(--law-red);"
+                data-action="nested-form#remove"
+                title="Remove person">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+
+      <%# Role and Status - the only editable fields %>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :role, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :role,
+                       PersonInvolvement.roles.keys.map { |r| [r.titleize, r] },
+                       { include_blank: "Select role..." },
+                       { class: "form-select", data: { action: "change->person#toggleStatusField change->person#toggleEmergencyAlert" } } %>
+        </div>
+        <div class="col-md-6" data-person-target="statusField"
+             style="<%= %w[suspect accomplice].include?(f.object.role) ? '' : 'display: none;' %>">
+          <%= f.label :status, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :status,
+                       PersonInvolvement::OFFICER_STATUSES.map { |s| [s.titleize, s] },
+                       { include_blank: "Select status..." },
+                       { class: "form-select" } %>
+        </div>
+      </div>
+
+      <%# Emergency Contact Alert (only for victims/witnesses with BonID) %>
+      <div class="mt-3" data-person-target="emergencyAlertField"
+           style="<%= %w[victim witness].include?(f.object.role) ? '' : 'display: none;' %>">
+        <div class="form-check">
+          <%= f.check_box :notify_emergency_contact,
+                          class: "form-check-input",
+                          id: "notify_emergency_#{f.index}",
+                          checked: f.object.role == "victim",
+                          data: { person_target: "emergencyCheckbox" } %>
+          <%= f.label :notify_emergency_contact,
+                      class: "form-check-label",
+                      for: "notify_emergency_#{f.index}" do %>
+            <i class="ri-alarm-warning-line me-1 text-warning"></i>
+            Notify emergency contact
+          <% end %>
+          <div class="form-text small text-muted">
+            Send alert to this person's emergency contacts about their involvement
+          </div>
+        </div>
+      </div>
+
+      <%# Hidden fields to preserve all data %>
+      <%= f.hidden_field :_destroy, value: false %>
+      <%= f.hidden_field :bonid %>
+      <%= f.hidden_field :user_id %>
+      <%= f.hidden_field :name %>
+    </div>
+  </div>
+
+<% else %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <%# BonID LOOKUP - Required for all persons %>
+  <%# ═══════════════════════════════════════════════════════════════════════ %>
+  <div class="nested-fields card mb-3 border-0 shadow-sm" data-nested-form-target="field" data-controller="person">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <h6 class="fw-semibold mb-0" style="font-family: 'Montserrat', sans-serif; color: var(--officer-text-primary);">
+          <i class="ri-fingerprint-line me-1" style="color: var(--law-blue);"></i>BonID Verification Required
+        </h6>
+        <button type="button"
+                class="btn btn-sm"
+                style="color: var(--law-red); border-color: var(--law-red);"
+                data-action="nested-form#remove">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </div>
+
+      <%= f.hidden_field :_destroy, value: false %>
+      <%= f.hidden_field :user_id, data: { person_target: "userId" } %>
+      <%= f.hidden_field :visitor_submission_id %>
+      <%= f.hidden_field :first_name %>
+      <%= f.hidden_field :middle_name %>
+      <%= f.hidden_field :last_name %>
+      <%= f.hidden_field :nationality %>
+      <%= f.hidden_field :sex %>
+      <%= f.hidden_field :date_of_birth %>
+      <%= f.hidden_field :passport_number %>
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# Verified Person Card (shown after successful BonID lookup) %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <div class="align-items-start gap-3 mb-3 d-none" data-person-target="verifiedCard">
+        <%# Photo Preview (populated via JS after lookup) %>
+        <div class="flex-shrink-0" data-person-target="photoPreview" style="display: none;">
+          <img src="" alt="Person Photo"
+               class="rounded-circle"
+               data-person-target="photoImage"
+               style="width: 60px; height: 60px; object-fit: cover; border: 2px solid var(--law-green);">
+        </div>
+        <%# Photo Placeholder (shown when no photo) %>
+        <div class="flex-shrink-0" data-person-target="photoPlaceholder" style="display: none;">
+          <div class="rounded-circle d-flex align-items-center justify-content-center"
+               style="width: 60px; height: 60px; background: var(--law-green-subtle); border: 2px solid var(--law-green);">
+            <i class="ri-user-check-line" style="font-size: 1.5rem; color: var(--law-green);"></i>
+          </div>
+        </div>
+
+        <div class="flex-grow-1">
+          <h6 class="mb-1 fw-semibold" data-person-target="nameDisplay" style="color: var(--officer-text-primary); font-family: 'Montserrat', sans-serif;"></h6>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <code class="small px-2 py-1 rounded" data-person-target="bonidDisplay" style="font-size: 0.75rem; background: var(--law-blue-subtle); color: var(--law-blue);"></code>
+            <span class="badge" style="background: var(--law-green); font-family: 'Montserrat', sans-serif;">
+              <i class="ri-checkbox-circle-fill me-1"></i>Verified
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# BonID / BonTouris Lookup (Required) %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <div class="row g-3 mb-3" data-person-target="searchSection">
+        <div class="col-12">
+          <%= f.label :bonid, "BonID / BonTouris", class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <div class="input-group">
+            <%= f.text_field :bonid,
+                             placeholder: "Citizens: 8697-761 | Tourists: P-123456",
+                             class: "form-control",
+                             required: true,
+                             data: {
+                               person_target: "bonidInput",
+                               action: "keydown.enter->person#searchBonid"
+                             } %>
+            <button type="button"
+                    class="btn"
+                    style="background: var(--law-blue); color: white; font-family: 'Montserrat', sans-serif;"
+                    data-action="click->person#searchBonid"
+                    data-person-target="searchButton">
+              <i class="ri-search-line me-1"></i>Search
+            </button>
+          </div>
+          <div class="form-text">
+            <i class="ri-lightbulb-line me-1 text-warning"></i>
+            <strong>Citizens:</strong> Last 6-7 digits (e.g., <code>8697-761</code>)
+            &nbsp;|&nbsp;
+            <strong>Tourists:</strong> Last 6 passport digits (e.g., <code>P-123456</code>)
+          </div>
+          <div data-person-target="feedback" class="mt-2" style="display: none;">
+            <span data-person-target="feedbackMessage"></span>
+          </div>
+          <%# Prior record alert (populated via JS when BonID lookup finds prior suspect record) %>
+          <div data-person-target="priorRecordAlert" style="display: none;" class="mt-2"></div>
+        </div>
+      </div>
+
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <%# Role & Status (visible after BonID verification) %>
+      <%# ─────────────────────────────────────────────────────────────────── %>
+      <div class="row g-3 mb-3">
+        <div class="col-md-6">
+          <%= f.label :role, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :role,
+                       PersonInvolvement.roles.keys.map { |r| [r.titleize, r] },
+                       { include_blank: "Select role..." },
+                       { class: "form-select", data: { action: "change->person#toggleStatusField change->person#toggleEmergencyAlert" } } %>
+        </div>
+        <div class="col-md-6" data-person-target="statusField"
+             style="<%= %w[suspect accomplice].include?(f.object.role) ? '' : 'display: none;' %>">
+          <%= f.label :status, class: "form-label", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; color: var(--dark-gray);" %>
+          <span class="text-danger">*</span>
+          <%= f.select :status,
+                       PersonInvolvement::OFFICER_STATUSES.map { |s| [s.titleize, s] },
+                       { include_blank: "Select status..." },
+                       { class: "form-select" } %>
+        </div>
+      </div>
+
+      <%# Emergency Contact Alert (only for victims/witnesses with BonID) %>
+      <div class="mb-3" data-person-target="emergencyAlertField"
+           style="<%= %w[victim witness].include?(f.object.role) ? '' : 'display: none;' %>">
+        <div class="form-check">
+          <%= f.check_box :notify_emergency_contact,
+                          class: "form-check-input",
+                          id: "notify_emergency_full_#{f.index}",
+                          checked: f.object.role == "victim",
+                          data: { person_target: "emergencyCheckbox" } %>
+          <%= f.label :notify_emergency_contact,
+                      class: "form-check-label",
+                      for: "notify_emergency_full_#{f.index}" do %>
+            <i class="ri-alarm-warning-line me-1 text-warning"></i>
+            Notify emergency contact
+          <% end %>
+          <div class="form-text small text-muted">
+            Send alert to this person's emergency contacts about their involvement
+          </div>
+        </div>
+      </div>
+
+      <%# Hidden name field (populated via JS after lookup) %>
+      <%= f.hidden_field :name, data: { person_target: "nameField" } %>
+
+    </div>
+  </div>
+<% end %>

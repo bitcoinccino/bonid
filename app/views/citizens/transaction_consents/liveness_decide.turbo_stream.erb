@@ -1,0 +1,55 @@
+<%# app/views/citizens/transaction_consents/liveness_decide.turbo_stream.erb %>
+<%# Replaces the focus card with an approved confirmation after biometric verification %>
+
+<%# Replace the focus card with compact approved state %>
+<%= turbo_stream.replace "focus-consent-#{@consent.consent_token}" do %>
+  <div class="consent-focus-card d-flex align-items-center gap-3 py-3 px-3" style="border-color: #198754; background: #f0fdf4;">
+    <div class="flex-shrink-0">
+      <div class="d-flex align-items-center justify-content-center rounded-circle"
+           style="width:48px; height:48px; background:#dcfce7;">
+        <i class="ri-check-double-line text-success" style="font-size:1.5rem;"></i>
+      </div>
+    </div>
+    <div class="flex-grow-1">
+      <p class="fw-bold text-success mb-0" style="font-family:'Montserrat',sans-serif; font-size:0.95rem;">
+        <%= t("transaction_consents.tabs.approved") %>
+      </p>
+      <p class="text-muted small mb-0">
+        <%= t("transaction_consents.approved_message", partner: @consent.partner.name) %>
+      </p>
+      <% if @consent.liveness_session_id.present? %>
+        <span class="small text-muted">
+          <i class="ri-shield-check-line me-1"></i>Biometric verified
+        </span>
+      <% end %>
+    </div>
+    <% if @consent.amount.present? && @consent.amount > 0 %>
+      <div class="flex-shrink-0 text-end">
+        <span class="fw-bold" style="font-family:'Montserrat',sans-serif; color:#00209f; font-size:1.1rem;">
+          <%= number_to_currency(@consent.amount, unit: @consent.currency == "HTG" ? "G " : "$ ", precision: 0) %>
+        </span>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%# Update the consent in the history list %>
+<%= turbo_stream.replace "consent-#{@consent.consent_token}" do %>
+  <%= render "citizens/transaction_consents/history_item", consent: @consent %>
+<% end %>
+
+<%# Update filter chip counts %>
+<%= turbo_stream.update "consent-count-pending" do %><%= @pending_count %><% end %>
+<%= turbo_stream.update "consent-count-approved" do %><%= @approved_count %><% end %>
+<%= turbo_stream.update "consent-count-denied" do %><%= @denied_count %><% end %>
+<%= turbo_stream.update "consent-count-expired" do %><%= @expired_count %><% end %>
+
+<%# Show flash notice %>
+<% if flash[:notice] %>
+  <%= turbo_stream.prepend "flash-messages" do %>
+    <div class="alert alert-success alert-dismissible fade show rounded-3 mb-3" style="border: 1px solid #198754;" role="alert">
+      <i class="ri-check-double-line me-2"></i><%= flash[:notice] %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% end %>
+<% end %>

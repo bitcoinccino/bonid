@@ -1,0 +1,119 @@
+<!-- app/views/admin/partner_schemas/edit.html.erb -->
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 fw-bold">Edit Schema: <%= @schema.name %></h1>
+    <%= link_to "Back to Schemas", admin_partner_schemas_path, class: "btn btn-outline-secondary" %>
+  </div>
+
+  <%= simple_form_for @schema, url: admin_partner_schema_path(@schema), html: { class: "needs-validation" } do |f| %>
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <%= f.input :name, label: "Schema Name", required: true,
+              input_html: { class: "form-control", placeholder: "e.g., Mortgage Application Form" } %>
+        <%= f.input :record_type, collection: ["property", "health", "business", "education", "mortgage", "kyc"],
+              label: "Record Type",
+              input_html: { class: "form-select", data: { action: "change->schema-handler#updateSubTypeOptions" } } %>
+        <%= f.input :sub_type, as: :select, collection: [],
+              label: "Sub Type (Optional)",
+              input_html: { class: "form-select", data: { schema_target: "subTypeSelect" } } %>
+      </div>
+      <div class="col-md-6">
+        <%= f.input :sector, collection: Partner::SECTORS.map do |group, sectors|
+              [group.to_s, sectors.map { |label, value| [label.to_s, value.to_s] }]
+            end,
+              label: "Target Sector",
+              input_html: { class: "form-select", data: { action: "change->schema-handler#updateSectorSubOptions" } } %>
+        <%= f.input :sector_subcategory, as: :select, collection: [],
+              label: "Subcategory (Optional)",
+              input_html: { class: "form-select", data: { schema_target: "sectorSubSelect" } } %>
+        <%= f.input :visibility, collection: ["partner", "public", "internal"], label: "Visibility",
+              input_html: { class: "form-select" } %>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <%= f.input :version, label: "Version", input_html: { class: "form-control" } %>
+      </div>
+      <div class="col-md-6">
+        <%= f.input :template, as: :boolean, label: "Template (Available to Partners)?",
+              input_html: { class: "form-check-input" } %>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <h5>JSON Structure</h5>
+        <%= f.text_area :structure, rows: 15,
+              value: JSON.pretty_generate(@schema.structure || { "fields" => [] }),
+              class: "form-control",
+              placeholder: '{"fields": [{"key": "name", "label": "Name", "type": "text", "required": true}]}',
+              data: { controller: "json-editor" } %>
+        <small class="text-muted">Define fields as JSON array (e.g., {"key": "loan_amount", "label": "Loan Amount", "type": "number", "required": true}).</small>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <h5>Validation Rules (Optional)</h5>
+        <%= f.text_area :validation_rules, rows: 8,
+              value: JSON.pretty_generate(@schema.validation_rules || {}),
+              class: "form-control",
+              placeholder: '{"loan_amount": {"min": 0, "max": 100000000}}' %>
+        <small class="text-muted">Rules for fields (e.g., min/max for numbers, format for emails).</small>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <%= f.button :submit, "Save Changes", class: "btn btn-primary me-2" %>
+        <%= link_to "Cancel", admin_partner_schemas_path, class: "btn btn-outline-secondary" %>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<!-- Stimulus Controller for Dynamic Options (Scalability) -->
+<script>
+  // app/views/admin/partner_schemas/edit.js.erb or in JS file
+  import { Controller } from "@hotwired/stimulus"
+
+  export default class extends Controller {
+    static targets = ["subTypeSelect", "sectorSubSelect"]
+
+    updateSubTypeOptions(event) {
+      const selectedType = event.target.value
+      const options = this.subTypeOptions[selectedType] || []
+
+      this.subTypeSelectTarget.innerHTML = '<option value="">Select Sub Type</option>'
+      options.forEach(option => {
+        const opt = document.createElement('option')
+        opt.value = option
+        opt.textContent = option
+        this.subTypeSelectTarget.appendChild(opt)
+      })
+    }
+
+    updateSectorSubOptions(event) {
+      const selectedSector = event.target.value
+      const options = this.sectorSubOptions[selectedSector] || []
+
+      this.sectorSubSelectTarget.innerHTML = '<option value="">Select Subcategory</option>'
+      options.forEach(option => {
+        const opt = document.createElement('option')
+        opt.value = option
+        opt.textContent = option
+        this.sectorSubSelectTarget.appendChild(opt)
+      })
+    }
+
+    get subTypeOptions() {
+      // From constants (load via data attribute or fetch)
+      return <%= @sub_type_options.to_json %>  # Controller provides
+    }
+
+    get sectorSubOptions() {
+      return <%= @sector_sub_options.to_json %>  # Controller provides
+    }
+  }
+</script>

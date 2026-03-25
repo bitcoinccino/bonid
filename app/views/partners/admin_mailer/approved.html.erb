@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Inter:wght@400;500&display=swap');
+
+    body {
+      font-family: 'Inter', 'Montserrat', Arial, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      color: #111827;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 24px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #00209F; /* Haitian Blue */
+      margin-bottom: 16px;
+      font-family: 'Montserrat', Arial, sans-serif;
+    }
+    p {
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #00209F;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 25px;
+      font-weight: 600;
+      margin: 12px 0;
+      font-size: 15px;
+      font-family: 'Montserrat', Arial, sans-serif;
+    }
+    code {
+      background: #f1f5f9;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 90%;
+      color: #111827;
+    }
+    .footer {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 30px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <% if @partner&.logo&.attached? %>
+      <%= image_tag @partner.logo.variant(resize_to_limit: [80, 80]).processed,
+                    class: "logo",
+                    alt: "#{@partner.name} logo" %>
+    <% end %>
+
+    <h1>✅ Partner Application Approved</h1>
+
+    <p>Hello <%= @application.contact_person %>,</p>
+
+    <p>
+      We’re pleased to inform you that your application for
+      <strong><%= @partner.name %></strong> has been approved and is now verified on BonID.
+    </p>
+
+    <p>You can now access your Partner Dashboard here:</p>
+    <p>
+      <a href="<%= partner_portal_root_url %>" class="btn">Go to Partner Dashboard</a>
+    </p>
+
+    <p>Share this link with your users to begin verification:</p>
+    <p>
+      <code><%= start_verification_url(partner: @partner.slug) %></code>
+    </p>
+    <p>
+      <a href="<%= start_verification_url(partner: @partner.slug) %>" class="btn">Visit Start Page</a>
+    </p>
+
+    <p class="footer">
+      This is an automated message from BonID.<br>
+      &copy; <%= Time.current.year %> BonID. All rights reserved.
+    </p>
+  </div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # app/controllers/users/registrations_controller.rb
 class Users::RegistrationsController < Devise::RegistrationsController
-  before_action :configure_permitted_parameters, if: :devise_controller?
+  before_action :authenticate_user!, only: [ :edit, :update ]
 
   # GET /users/sign_up
   def new
@@ -16,12 +16,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
   # POST /users
   def create
     build_resource(sign_up_params)
-    resource.role_int ||= :user
 
-    resource.save
-    yield resource if block_given?
+    # ✅ Always enforce citizen role as default
+    resource.add_role(:citizen)
 
-    if resource.persisted?
+    if resource.save
+      yield resource if block_given?
+
       if resource.active_for_authentication?
         set_flash_message! :notice, :signed_up
         sign_up(resource_name, resource)
@@ -32,19 +33,23 @@ class Users::RegistrationsController < Devise::RegistrationsController
         respond_with resource, location: after_inactive_sign_up_path_for(resource)
       end
     else
+      # Handle email already taken but unconfirmed
+      if resource.errors.details[:email].any? { |e| e[:error] == :taken } && !User.find_by(email: resource.email)&.confirmed?
+        flash[:alert] = "Email already taken but not confirmed. Please confirm your email or resend confirmation instructions."
+        redirect_to new_user_confirmation_path(email: resource.email) and return
+      end
+
       clean_up_passwords resource
       set_minimum_password_length
       respond_with resource
     end
   end
 
-  protected
-
-  def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: [:role_int])
-  end
-
   private
+
+  def sign_up_params
+    params.require(:user).permit(:email, :password, :password_confirmation, :terms)
+  end
 
   def allow_public_signup?
     Rails.application.config.allow_public_signup == true

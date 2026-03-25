@@ -1,0 +1,201 @@
+<%# app/views/citizens/registrations/new.html.erb %>
+
+<% content_for :auth_left do %>
+  <div class="auth-left-inner d-flex flex-column justify-content-between h-100 py-4 py-lg-5 w-100">
+
+    <!-- INTRO -->
+    <div class="text-center mb-4 mb-lg-5">
+      <h2 class="display-5 fw-bold mb-3 font-heading">
+        Create Your BonID
+      </h2>
+
+      <p class="lead opacity-90 mx-auto max-w-text">
+        A private digital identity for citizens in Haiti,
+        secure, fast, and accepted everywhere that matters.
+      </p>
+    </div>
+
+    <!-- CAROUSEL -->
+    <div id="bonidCarousel"
+         class="carousel slide mb-4 mb-lg-5"
+         data-bs-ride="carousel"
+         data-bs-interval="9000">
+
+      <div class="carousel-indicators position-static justify-content-center mb-3">
+        <% 5.times do |i| %>
+          <button type="button"
+                  data-bs-target="#bonidCarousel"
+                  data-bs-slide-to="<%= i %>"
+                  class="<%= i.zero? ? 'active' : '' %>"
+                  aria-label="Slide <%= i + 1 %>"></button>
+        <% end %>
+      </div>
+
+      <div class="carousel-inner">
+
+        <% [
+          { icon: "ri-bank-line",        title: "Accepted at Major Institutions",  desc: "Recognized by banks, schools, hospitals, embassies, and police across Haiti." },
+          { icon: "ri-qr-code-line",     title: "Secure QR Sharing",               desc: "Share only what's needed using a time limited, encrypted QR code." },
+          { icon: "ri-eye-line",         title: "Full Visibility",                  desc: "See exactly when and where your BonID was used, always in your control." },
+          { icon: "ri-lock-2-line",      title: "Privacy by Design",               desc: "Your data is encrypted and never sold or shared without your explicit consent." },
+          { icon: "ri-global-line",      title: "Built for Haiti",                  desc: "Works reliably on slow networks and offline, designed for real conditions." }
+        ].each_with_index do |slide, i| %>
+          <div class="carousel-item <%= i.zero? ? 'active' : '' %> text-center px-3">
+            <i class="<%= slide[:icon] %> ri-4x text-haitian-cyan mb-3"></i>
+            <h5 class="fw-bold mb-2"><%= slide[:title] %></h5>
+            <p class="mx-auto max-w-carousel opacity-90">
+              <%= slide[:desc] %>
+            </p>
+          </div>
+        <% end %>
+
+      </div>
+    </div>
+
+    <!-- REQUIREMENTS -->
+    <div class="text-center mt-4">
+      <h5 class="fw-bold mb-3">What you will need to register</h5>
+
+      <div class="row g-3 justify-content-center mb-4">
+        <% [
+          ["ri-id-card-line",   "CIN or passport"],
+          ["ri-camera-line",    "Clear selfie"],
+          ["ri-file-text-line", "Supporting doc"],
+          ["ri-mail-line",      "Email address"]
+        ].each do |icon, label| %>
+          <div class="col-6 col-md-3">
+            <div class="text-center">
+              <div class="req-icon-wrap">
+                <i class="<%= icon %>"></i>
+              </div>
+              <div class="small fw-medium"><%= label %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <p class="small opacity-75 fst-italic">
+        BonID is a private digital identity service, not a government ID.
+        It does not replace your CIN or passport.
+      </p>
+    </div>
+
+  </div>
+<% end %>
+
+
+<div class="login-card">
+
+  <%# Partner badge — shown at the very top when a partner is present %>
+  <% if params[:partner].present? %>
+    <% partner = Partner.find_by(slug: params[:partner]) %>
+    <% if partner %>
+      <div class="text-center mb-4 pb-4" style="border-bottom: 1px solid rgba(0,32,159,0.10);">
+        <% if partner.logo.attached? %>
+          <%= image_tag url_for(partner.logo),
+                alt: partner.name,
+                style: "max-height: 64px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto;" %>
+        <% else %>
+          <div style="width: 64px; height: 64px; background: rgba(0,32,159,0.08); border-radius: 50%;
+                      display: flex; align-items: center; justify-content: center; margin: 0 auto;
+                      border: 2px solid rgba(0,32,159,0.12);">
+            <i class="ri-building-line" style="font-size: 1.5rem; color: #00209f;"></i>
+          </div>
+        <% end %>
+        <div class="small text-muted mt-2">
+          Signing up via <strong class="text-dark"><%= partner.name %></strong>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <%# Icon badge — only shown when no partner %>
+    <div class="text-center mb-4">
+      <div class="auth-icon-badge">
+        <i class="ri-user-add-line"></i>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Flash rendered by citizen_auth layout %>
+
+  <% if params[:partner].blank? %>
+    <%# No partner warning %>
+    <div class="alert alert-warning text-center py-4" role="alert">
+      <i class="ri-error-warning-line fs-3 mb-3 d-block"></i>
+      <h5 class="fw-semibold">Partner Required</h5>
+      <p class="mb-3 small">
+        You need to start your BonID sign up through a verified partner
+        (bank, hospital, government service, etc.).
+      </p>
+      <%= link_to "Browse Verified Partners", partners_path, class: "btn btn-haitian-primary w-100" %>
+    </div>
+
+  <% else %>
+    <%# Errors %>
+    <% if resource.errors.any? %>
+      <div class="alert alert-danger mb-3">
+        <ul class="mb-0 small ps-3">
+          <% resource.errors.full_messages.each do |msg| %>
+            <li><%= msg %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# Registration Form %>
+    <%= simple_form_for(resource,
+                        as: resource_name,
+                        url: registration_path(resource_name, partner: params[:partner]),
+                        html: {
+                          class: "needs-validation",
+                          novalidate: true,
+                          data: { turbo: false },
+                          id: "registration-form"
+                        }) do |f| %>
+
+      <%= hidden_field_tag :partner, params[:partner] %>
+
+      <div class="form-floating mb-3">
+        <%= f.input_field :email,
+              autofocus: true,
+              autocomplete: "email",
+              required: true,
+              placeholder: "you@example.com",
+              class: "form-control" %>
+        <%= f.label :email, "Email Address" %>
+      </div>
+
+      <%= f.button :submit, "Create Account",
+            class: "btn btn-haitian-primary w-100 mt-2",
+            id: "submit-button",
+            data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Creating account…' } %>
+
+      <div class="trust-badge">
+        <i class="ri-shield-check-line"></i>
+        <span>Secure &amp; encrypted</span>
+      </div>
+
+      <div class="auth-privacy-note">
+        <i class="ri-lock-line"></i>We'll never share your email with third parties.
+      </div>
+    <% end %>
+
+    <%# Divider %>
+    <div class="login-divider my-4">
+      <span>or</span>
+    </div>
+
+    <%# Already have an account %>
+    <div class="mb-3">
+      <%= link_to citizens_otp_sign_in_path(from_partner: params[:partner]),
+            class: "btn btn-ghost-haitian w-100" do %>
+        <i class="ri-login-box-line me-2"></i>Already have an account? Sign in
+      <% end %>
+    </div>
+
+    <div class="auth-help-link">
+      <a href="mailto:support@bonid.app">Need help?</a>
+    </div>
+  <% end %>
+</div>
+

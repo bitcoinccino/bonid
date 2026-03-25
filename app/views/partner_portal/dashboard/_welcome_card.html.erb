@@ -1,0 +1,154 @@
+<div id="welcome-wrapper" class="mt-4 mb-3">
+  <div class="card rounded-4 bg-white border shadow-sm"
+       id="welcome-card"
+       aria-label="Partner Welcome Card"
+       style="border: 1px solid rgba(0, 32, 159, 0.15);">
+
+    <!-- Header -->
+    <div class="px-4 pt-4 pb-3 border-bottom bg-light rounded-top-4 position-relative">
+      <div class="position-absolute top-0 end-0 mt-3 me-3">
+        <div class="dropdown">
+          <button class="btn btn-sm text-muted p-0 border-0"
+                  type="button"
+                  id="partnerMenuDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-label="Account Options">
+            <i class="ri-more-fill ri-lg" aria-hidden="true"></i>
+          </button>
+          <ul class="dropdown-menu shadow rounded-3" aria-labelledby="partnerMenuDropdown">
+            <li>
+              <%= link_to destroy_partner_admin_session_path,
+                          data: { turbo_method: :delete },
+                          class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
+                <i class="ri-logout-box-r-line"></i> Logout
+              <% end %>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <h4 class="text-haitian-blue fw-bold mb-2">
+        Welcome back, <%= current_portal_user&.first_name || current_partner&.contact_person || "Partner" %>!
+      </h4>
+      <p class="text-muted small mb-0">
+        Manage verifications, scan BonIDs, and monitor your partner portal.
+      </p>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+      <div class="d-flex flex-column flex-lg-row align-items-start gap-4">
+
+        <!-- Partner Logo / Avatar -->
+        <div class="flex-shrink-0 text-center text-lg-start">
+          <div class="rounded-circle partner-glow-bounce"
+               style="width: 128px; height: 128px; padding: 4px;">
+            <div class="overflow-hidden rounded-circle border border-3 border-haitian-blue"
+                 style="width: 120px; height: 120px;">
+              <% if current_partner&.logo&.attached? %>
+                <%= image_tag current_partner.logo.variant(resize_to_limit: [120, 120]),
+                              class: "w-100 h-100 object-fit-cover",
+                              alt: "#{current_partner.name} Logo" %>
+              <% else %>
+                <div class="bg-haitian-blue text-white rounded-circle d-flex justify-content-center align-items-center"
+                     style="width: 120px; height: 120px;">
+                  <i class="ri-building-2-line ri-2x"></i>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Partner Info -->
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="badge bg-secondary">
+              <%= current_partner&.name || "Partner" %>
+            </span>
+            <span class="text-muted small">
+              <%= PartnerSectorConstants.human_sector_label(current_partner&.department_sector || current_partner&.sector || "") %>
+            </span>
+          </div>
+
+          <%# Organization Profile Details %>
+          <ul class="list-unstyled small text-muted mb-3">
+            <% if current_partner&.contact_person.present? %>
+              <li><i class="ri-user-line me-1 text-haitian-blue"></i><strong>Contact:</strong> <%= current_partner.contact_person %></li>
+            <% end %>
+            <li><i class="ri-mail-line me-1 text-haitian-blue"></i><strong>Email:</strong> <%= current_portal_user&.email %></li>
+            <% if current_partner&.phone_number.present? %>
+              <li><i class="ri-phone-line me-1 text-haitian-blue"></i><strong>Phone:</strong> <%= current_partner.phone_number %></li>
+            <% end %>
+            <% if current_partner&.website.present? %>
+              <li>
+                <i class="ri-global-line me-1 text-haitian-blue"></i><strong>Website:</strong>
+                <%= link_to current_partner.website, current_partner.website, target: "_blank", rel: "noopener", class: "text-decoration-none" %>
+              </li>
+            <% end %>
+            <% if current_partner&.address.present? %>
+              <li>
+                <i class="ri-map-pin-line me-1 text-haitian-blue"></i><strong>Address:</strong>
+                <%= current_partner.address.formatted_address %>
+              </li>
+            <% end %>
+            <li><i class="ri-calendar-line me-1 text-haitian-blue"></i><strong>Joined:</strong> <%= current_portal_user&.created_at&.strftime("%b %d, %Y") || "N/A" %></li>
+            <li><i class="ri-login-box-line me-1 text-haitian-blue"></i><strong>Last Login:</strong> <%= current_portal_user&.last_sign_in_at&.strftime("%b %d, %Y %I:%M%p") || "N/A" %></li>
+          </ul>
+
+          <% if current_partner&.description.present? %>
+            <div class="mb-3 p-2 bg-light rounded-3" style="font-size: 0.8rem;">
+              <i class="ri-information-line me-1 text-haitian-blue"></i>
+              <span class="text-muted"><%= truncate(current_partner.description, length: 150) %></span>
+            </div>
+          <% end %>
+
+          <!-- Activity Summary -->
+          <div class="row row-cols-2 row-cols-md-3 g-3 mb-3 text-center text-md-start">
+            <div class="col">
+              <i class="ri-qr-scan-2-line text-palm-green me-1"></i>
+              <strong>Total Scans:</strong>
+              <%= current_partner&.qr_scans&.count || 0 %>
+            </div>
+            <div class="col">
+              <i class="ri-shield-check-line text-haitian-blue me-1"></i>
+              <strong>Verifications:</strong>
+              <%= current_partner&.verification_records&.count || 0 %>
+            </div>
+            <div class="col">
+              <i class="ri-user-heart-line text-muted me-1"></i>
+              <strong>Consents:</strong>
+              <%= current_partner&.consent_grants&.where(status: :approved)&.count || 0 %>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .text-haitian-blue { color: #00209F !important; }
+  .text-palm-green { color: #1A936F !important; }
+  .text-golden-yellow { color: #FFD700 !important; }
+  .border-haitian-blue { border-color: #00209F !important; }
+  .bg-haitian-blue { background-color: #00209F !important; }
+  .btn-partner-primary {
+    background-color: #00209F;
+    color: #fff;
+    border: none;
+    transition: background 0.2s ease;
+  }
+  .btn-partner-primary:hover {
+    background-color: #032B77;
+    color: #fff;
+  }
+  .partner-glow-bounce {
+    animation: glowBounce 2.5s infinite ease-in-out;
+  }
+  @keyframes glowBounce {
+    0%, 100% { box-shadow: 0 0 0 rgba(0, 32, 159, 0.4); transform: translateY(0); }
+    50% { box-shadow: 0 0 16px rgba(0, 32, 159, 0.4); transform: translateY(-3px); }
+  }
+</style>

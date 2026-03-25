@@ -1,0 +1,134 @@
+<div class="px-0">
+
+  <%# ── Blue Header Banner ── %>
+  <div class="complaint-header d-flex justify-content-between align-items-center px-4 py-3 rounded-4 mb-4" style="background: #00209F;">
+    <div>
+      <h4 class="mb-1 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">
+        <i class="ri-file-shield-2-line me-2"></i>Mes Plaintes
+      </h4>
+      <p class="mb-0 text-white-50" style="font-size: 0.78rem; line-height: 1.5;">Suivi en temps réel de vos dossiers auprès de l'IGPNH</p>
+    </div>
+    <%= link_to new_citizens_officer_complaint_path,
+        class: "btn btn-outline-light rounded-pill px-4 fw-bold ms-3 flex-shrink-0 d-flex align-items-center complaint-new-btn", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem;" do %>
+      <i class="ri-add-circle-line fs-5 me-2"></i> Nouvelle Plainte
+    <% end %>
+  </div>
+
+  <%# --- Summary Overview Stats --- %>
+  <% unless @complaints.empty? %>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-4 text-center">
+          <div class="text-muted small fw-bold text-uppercase ls-1 mb-1">Total</div>
+          <div class="h4 fw-bold mb-0 text-dark"><%= @complaints.count %></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="p-3 bg-white border rounded-4 text-center border-warning-subtle">
+          <div class="text-muted small fw-bold text-uppercase ls-1 mb-1">En Cours</div>
+          <div class="h4 fw-bold mb-0 text-warning"><%= @complaints.count { |c| c.status_label.match?(/En cours/i) } %></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# --- Complaints Grid --- %>
+  <% if @complaints.empty? %>
+    <div class="text-center py-5 px-4 rounded-4 complaint-empty-card">
+      <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+        <i class="ri-file-shield-line display-5 text-secondary opacity-50"></i>
+      </div>
+      <h4 class="fw-bold">Aucune plainte déposée</h4>
+      <p class="text-muted mx-auto mb-4" style="max-width: 400px;">
+        Votre historique est vide. Si vous avez été témoin d'un abus, commencez votre signalement ici.
+      </p>
+      <%= link_to "Déposer une plainte", new_citizens_officer_complaint_path, class: "btn btn-outline-primary rounded-pill px-5 fw-bold" %>
+    </div>
+  <% else %>
+    <div class="row g-4">
+      <% @complaints.each do |complaint| %>
+        <div class="col-12 col-lg-6">
+          <div class="card complaint-modern-card border rounded-4 h-100 overflow-hidden">
+            <%# Side Status Indicator %>
+            <div class="status-sidebar bg-<%= complaint.status_color %>"></div>
+
+            <div class="card-body p-4 ps-5">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h5 class="fw-bold mb-1" style="font-family: var(--font-brand);">IGPNH-<%= complaint.tracking_number %></h5>
+                  <div class="text-muted small d-flex align-items-center">
+                    <i class="ri-calendar-event-line me-1"></i>
+                    Soumis le <%= complaint.submitted_at&.strftime("%d %b %Y") %>
+                  </div>
+                </div>
+                <span class="badge rounded-pill bg-<%= complaint.status_color %>-light text-<%= complaint.status_color %> border border-<%= complaint.status_color %> px-3 py-2">
+                  <i class="ri-checkbox-blank-circle-fill me-1 small"></i> <%= complaint.status_label %>
+                </span>
+              </div>
+
+              <div class="row g-3 mb-4 bg-light rounded-3 p-3 mx-0">
+                <div class="col-6">
+                  <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Catégorie</label>
+                  <span class="small fw-semibold text-dark"><%= complaint.allegation_category %></span>
+                </div>
+                <div class="col-6">
+                  <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Département</label>
+                  <span class="small fw-semibold text-dark"><%= complaint.department&.name || "—" %></span>
+                </div>
+                <% if complaint.arrondissement.present? %>
+                  <div class="col-6">
+                    <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Arrondissement</label>
+                    <span class="small fw-semibold text-dark"><%= complaint.arrondissement.name %></span>
+                  </div>
+                <% end %>
+                <div class="col-6">
+                  <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Commune</label>
+                  <span class="small fw-semibold text-dark"><%= complaint.commune&.name || "—" %></span>
+                </div>
+                <% if complaint.communal_section.present? %>
+                  <div class="col-6">
+                    <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Section Communale</label>
+                    <span class="small fw-semibold text-dark"><%= complaint.communal_section.name %></span>
+                  </div>
+                <% end %>
+                <% if complaint.street_address.present? %>
+                  <div class="col-6">
+                    <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Adresse</label>
+                    <span class="small fw-semibold text-dark"><%= complaint.street_address %></span>
+                  </div>
+                <% end %>
+                <% if complaint.locality.present? %>
+                  <div class="col-6">
+                    <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Localité</label>
+                    <span class="small fw-semibold text-dark"><%= complaint.locality %></span>
+                  </div>
+                <% end %>
+                <% if complaint.location_description.present? %>
+                  <div class="col-12">
+                    <label class="text-muted small fw-bold text-uppercase ls-1 d-block mb-1">Description du lieu</label>
+                    <span class="small fw-semibold text-dark"><%= complaint.location_description %></span>
+                  </div>
+                <% end %>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="small text-muted">
+                  <i class="ri-map-2-line me-1"></i> <%= complaint.routed_directorate %>
+                </div>
+                <div class="d-flex gap-2 complaint-actions">
+                  <%= link_to citizens_officer_complaint_path(complaint.uuid), class: "btn btn-white btn-sm border rounded-pill px-3 fw-bold" do %>
+                    <i class="ri-eye-line me-1"></i> Suivre
+                  <% end %>
+                  <%= link_to certificate_citizens_officer_complaint_path(complaint.uuid), class: "btn btn-primary btn-sm rounded-pill px-3 fw-bold", target: "_blank" do %>
+                    <i class="ri-printer-line me-1"></i> Certificat
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+</div>

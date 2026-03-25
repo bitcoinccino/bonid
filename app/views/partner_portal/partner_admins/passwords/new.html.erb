@@ -1,0 +1,44 @@
+<%# app/views/partner_portal/partner_admin/passwords/new.html.erb %>
+<%= render "shared/flash" %>
+
+<section class="container py-5" style="max-width: 480px;">
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+      <h2 class="h4 fw-semibold text-haitian-blue mb-2 text-center">Reset your password</h2>
+      <p class="text-muted small text-center mb-4">
+        Enter your email address and we’ll send you a reset link.
+      </p>
+
+      <%= simple_form_for(resource,
+            as: resource_name,
+            url: password_path(resource_name),
+            html: { method: :post, class: "needs-validation" }) do |f| %>
+        <div class="mb-3">
+          <%= f.input :email,
+              label: "Email Address",
+              required: true,
+              autofocus: true,
+              input_html: { class: "form-control form-control-lg", placeholder: "you@example.com" } %>
+        </div>
+
+        <div class="d-grid mb-3">
+          <%= f.button :submit, "Send Reset Link",
+              class: "btn btn-primary btn-lg fw-semibold rounded-pill" %>
+        </div>
+      <% end %>
+
+      <div class="text-center mt-3">
+        <%= link_to "Back to Login", new_partner_admin_session_path, class: "text-decoration-none text-muted small" %>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  :root {
+    --haitian-blue: #00209F;
+  }
+  .text-haitian-blue {
+    color: var(--haitian-blue) !important;
+  }
+</style>

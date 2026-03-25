@@ -1,0 +1,120 @@
+<%# app/views/admin/identity_submissions/show/_biometrics.html.erb %>
+<%# Biometrics tab — combines Face Verification + Liveness Detection + Audit Images %>
+
+<%# ── Section 0: Auto-Rejection Alert ── %>
+<% auto_rejection = submission.metadata&.dig("auto_rejection") %>
+<% if auto_rejection.present? %>
+  <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3 mb-4">
+    <i class="ri-shield-cross-line fs-4 mt-1"></i>
+    <div>
+      <strong>Auto-Rejected by System</strong>
+      <p class="mb-1 small">
+        <%= auto_rejection["note"] %>
+      </p>
+      <p class="mb-0 small text-muted">
+        <i class="ri-time-line me-1"></i>
+        <%= auto_rejection["rejected_at"] ? Time.parse(auto_rejection["rejected_at"]).strftime("%b %d, %Y %I:%M %p") : "N/A" %>
+        &middot; Rejected by: <code><%= auto_rejection["rejected_by"] %></code>
+      </p>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Section 0b: Biometrics Reused Indicator ── %>
+<% reused_from_uuid = submission.metadata&.dig("liveness", "reused_from_submission_uuid") %>
+<% reused_from_id   = submission.metadata&.dig("liveness", "reused_from_submission_id") %>
+<% if reused_from_uuid.present? || reused_from_id.present? %>
+  <%# Backwards-compatible: prefer UUID, fall back to looking up UUID by integer id %>
+  <% prev_uuid = reused_from_uuid || IdentitySubmission.find_by(id: reused_from_id)&.uuid %>
+  <div class="alert alert-info d-flex align-items-start gap-2 rounded-3 mb-4">
+    <i class="ri-repeat-line fs-5 mt-1"></i>
+    <div>
+      <strong>Biometrics Reused</strong>
+      <p class="mb-0 small">
+        Liveness verification was carried forward from
+        <% if prev_uuid %>
+          <a href="<%= admin_identity_submission_path(prev_uuid) %>" class="fw-semibold">a previous submission</a>.
+        <% else %>
+          a previous submission (no longer available).
+        <% end %>
+        The citizen was not required to redo face verification because the previous rejection was document-related only.
+      </p>
+      <% reused_at = submission.metadata&.dig("liveness", "reused_at") %>
+      <% if reused_at.present? %>
+        <p class="mb-0 small text-muted mt-1">
+          <i class="ri-time-line me-1"></i>
+          Reused at: <%= Time.parse(reused_at).strftime("%b %d, %Y %I:%M %p") %>
+        </p>
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Section 1: Face Verification ── %>
+<%= render "admin/identity_submissions/show/face_match_badge", submission: submission %>
+
+<%# ── Section 2: Liveness Detection ── %>
+<%= render "admin/identity_submissions/show/liveness_badge", submission: submission %>
+
+<%# ── Section 3: Gray Zone Manual Review Alert ── %>
+<% liveness = submission.metadata&.dig("liveness") %>
+<% if liveness&.dig("needs_review") %>
+  <div class="alert alert-warning d-flex align-items-start gap-2 rounded-3 mb-4">
+    <i class="ri-eye-line fs-5 mt-1" style="color: #b8860b;"></i>
+    <div>
+      <strong>Manual Review Required</strong>
+      <p class="mb-0 small">
+        Liveness confidence (<strong><%= liveness["confidence"] %>%</strong>) is in the gray zone (65–74%).
+        The citizen passed the minimum threshold but did not reach full auto-approval.
+        Please review the audit images below and the selfie before approving.
+      </p>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Section 4: Liveness Audit Frames (up to 4) ── %>
+<% if submission.liveness_audit_images.attached? %>
+  <div class="card border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-header d-flex align-items-center rounded-top-4"
+         style="background: #00209F; color: #FFFFFF;">
+      <i class="ri-image-2-line fs-5 me-2"></i>
+      <h6 class="mb-0 fw-semibold">Liveness Audit Frames</h6>
+      <span class="badge bg-light text-dark ms-2"><%= submission.liveness_audit_images.count %></span>
+    </div>
+
+    <div class="card-body">
+      <div class="row g-3">
+        <% submission.liveness_audit_images.each_with_index do |image, i| %>
+          <div class="col-6 col-md-3">
+            <div class="position-relative">
+              <%= image_tag rails_blob_path(image, disposition: "inline"),
+                    class: "img-fluid rounded-3 border w-100",
+                    style: "object-fit: cover; aspect-ratio: 1;",
+                    alt: "Audit frame #{i + 1}" %>
+              <span class="badge bg-dark bg-opacity-75 position-absolute bottom-0 start-0 m-1"
+                    style="font-size: 0.65rem;">
+                Frame <%= i + 1 %>
+              </span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <p class="text-muted small mt-3 mb-0">
+        <i class="ri-information-line me-1"></i>
+        Captured during the liveness session for manual verification. Up to 4 frames are stored.
+      </p>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Empty State: No Biometric Data ── %>
+<% unless submission.face_match_result.present? || liveness.present? %>
+  <div class="card border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-body text-center py-5">
+      <i class="ri-shield-check-line fs-1 text-muted"></i>
+      <p class="text-muted mt-2 mb-0">
+        No biometric verification data available for this submission.
+      </p>
+    </div>
+  </div>
+<% end %>

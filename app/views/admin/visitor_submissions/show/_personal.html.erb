@@ -1,0 +1,116 @@
+<section class="mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 text-primary fw-semibold d-flex align-items-center gap-2 mb-0">
+      <i class="ri-user-3-line"></i> Personal Information
+    </h2>
+  </div>
+
+  <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+    <% visitor = visitor_submission %>
+
+    <p class="text-muted small mb-4">
+      This section contains the visitor’s personal and identification details
+      as submitted for BonTouris ID review. Information is read-only once submitted.
+    </p>
+
+    <div class="row g-4">
+
+      <!-- Identity -->
+      <div class="col-md-6">
+        <strong>Full Name:</strong><br>
+        <span>
+          <%= [visitor.title, visitor.first_name, visitor.middle_name, visitor.last_name]
+                .compact_blank.join(" ") %>
+        </span>
+        <br><small class="text-muted">As shown on the passport</small>
+      </div>
+
+      <div class="col-md-6">
+        <strong>BonTouris ID:</strong><br>
+        <span class="fw-semibold text-haitian-blue">
+          <%= visitor.bonid || "VIS-#{visitor.id}" %>
+        </span>
+        <br><small class="text-muted">Internal visitor reference</small>
+      </div>
+
+      <!-- Contact -->
+      <div class="col-md-6">
+        <strong>Email:</strong><br>
+        <span><%= visitor.email %></span>
+        <br><small class="text-muted">Verified via one-time code</small>
+      </div>
+
+      <div class="col-md-6">
+        <strong>Phone:</strong><br>
+        <span>
+          <%= [visitor.phone_country_code, visitor.phone].compact.join(" ") || "N/A" %>
+        </span>
+        <br><small class="text-muted">Primary contact number</small>
+      </div>
+
+      <!-- Demographics -->
+      <div class="col-md-6">
+        <strong>Sex:</strong><br>
+        <span><%= visitor.sex&.upcase || "N/A" %></span>
+        <br><small class="text-muted">Declared by visitor</small>
+      </div>
+
+      <div class="col-md-6">
+        <strong>Date of Birth:</strong><br>
+        <span><%= visitor.dob&.strftime("%b %d, %Y") || "N/A" %></span>
+        <br><small class="text-muted">As per passport</small>
+      </div>
+
+      <div class="col-md-6">
+        <strong>Nationality:</strong><br>
+        <span><%= visitor.nationality || "N/A" %></span>
+        <br><small class="text-muted">Country of citizenship</small>
+      </div>
+
+      <div class="col-md-6">
+        <strong>Country of Residence:</strong><br>
+        <span><%= visitor.residence_country || "N/A" %></span>
+        <br><small class="text-muted">Current country of residence</small>
+      </div>
+
+      <!-- Passport -->
+      <div class="col-md-6">
+        <strong>Passport Number:</strong><br>
+        <span class="fw-medium"><%= visitor.passport_number %></span>
+        <br><small class="text-muted">Government-issued passport</small>
+      </div>
+
+      <div class="col-md-6">
+        <strong>Passport Expiry Date:</strong><br>
+        <span><%= visitor.passport_expiry_date&.strftime("%b %d, %Y") || "N/A" %></span>
+        <br><small class="text-muted">Must be valid during stay</small>
+      </div>
+
+      <!-- Address -->
+      <div class="col-12">
+        <strong>Address in Haiti:</strong><br>
+
+        <% if visitor.address %>
+          <div class="ps-3 border-start border-3 border-primary mt-1">
+            <%= visitor.address.street_address.presence %><br>
+            <%= [
+                  visitor.address.communal_section&.name,
+                  visitor.address.commune&.name&.upcase
+                ].compact.join(", ") %><br>
+            <%= [
+                  visitor.address.postal_code,
+                  visitor.address.country&.upcase
+                ].compact.join(" ") %>
+          </div>
+
+          <small class="text-muted d-block mt-2">
+            Declared place of stay while in Haiti
+          </small>
+        <% else %>
+          <em class="text-muted">No address provided</em>
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</section>

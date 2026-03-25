@@ -1,0 +1,111 @@
+<h2 style="margin:0 0 10px;
+           font-family:'Orbitron','Montserrat',Arial,sans-serif;
+           color:#00209F; font-size:20px; letter-spacing:0.08em; text-transform:uppercase;">
+  BonTouris ID Scan Alert
+</h2>
+
+<p style="margin:0 0 14px;
+          font-family:'Inter',Arial,sans-serif;
+          color:#1b2559; font-size:14px; line-height:1.65;">
+  Your BonTouris ID was just checked.
+</p>
+
+<div style="margin:18px 0 14px;
+            padding:14px 14px;
+            border-radius:12px;
+            background:#f1f4ff;
+            border:1px solid rgba(0,32,159,0.18);">
+  <table style="width:100%; border-collapse:collapse;">
+    <tr>
+      <td style="padding:8px 0; width:170px; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        BonTouris ID
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559; font-weight:700;">
+        <%= @event.bon_touris_id %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        Time
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.occurred_at_local.strftime("%B %d, %Y • %I:%M %p %Z") %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        Method
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.input_method == "manual" ? "Manual entry" : "QR scan" %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        Result
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.ok ? "✅ VERIFIED" : "⚠️ #{@event.status.to_s.humanize}" %>
+        <% if @event.message.present? %>
+          — <%= @event.message %>
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        Checked by
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.actor_label.presence || "Public" %>
+        <% if @event.actor_verified %>
+          <span style="font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; color:rgba(27,37,89,0.8);">
+            (Verified partner)
+          </span>
+        <% end %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        IP Address
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.ip_address || "—" %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        Device
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.device_summary.presence || "—" %>
+      </td>
+    </tr>
+
+    <tr>
+      <td style="padding:8px 0; font-family:'Montserrat','Inter',Arial,sans-serif; font-size:12px; letter-spacing:0.12em; text-transform:uppercase; color:#00209F;">
+        Location
+      </td>
+      <td style="padding:8px 0; font-family:'Inter',Arial,sans-serif; font-size:14px; color:#1b2559;">
+        <%= @event.location_summary || "—" %>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p style="margin:0;
+          font-family:'Montserrat','Inter',Arial,sans-serif;
+          color:rgba(27,37,89,0.85); font-size:12.5px; line-height:1.6;">
+  If this wasn’t you, contact support immediately at <strong>support@verifyem.ht</strong>.
+</p>
+
+<p style="margin:14px 0 0;
+          font-family:'Montserrat','Inter',Arial,sans-serif;
+          color:rgba(27,37,89,0.85); font-size:12.5px; line-height:1.6;">
+  Happy Safe Traveling — welcome to Haiti 🇭🇹
+</p>

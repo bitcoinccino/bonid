@@ -1,0 +1,74 @@
+
+<!-- =============================== -->
+<!-- FAQ SECTION -->
+<!-- =============================== -->
+<section
+  class="faq-section position-relative overflow-hidden"
+  id="faq"
+  aria-labelledby="faq-heading"
+>
+  <div class="container py-5">
+
+    <!-- Header -->
+    <div class="text-center mb-5">
+      <h2 id="faq-heading" class="display-5 fw-bold mb-3">
+        <%= t("main.faq.title") %>
+      </h2>
+
+      <p class="lead opacity-90 col-lg-7 mx-auto">
+        <%= t("main.faq.subtitle") %>
+      </p>
+    </div>
+
+    <!-- Accordion -->
+    <div class="accordion faq-accordion mx-auto" id="bonidFaq" style="max-width: 880px;" role="region" aria-label="<%= t("main.faq.title") %>">
+
+      <% faq_ids = {
+        q1:  "faq1",
+        q2:  "faqBonTouris",
+        q3:  "faq2",
+        q4:  "faq3",
+        q5:  "faq4",
+        q6:  "faq5",
+        q7:  "faq6",
+        q8:  "faq7",
+        q9:  "faq8",
+        q10: "faq9",
+        q11: "faq10",
+        q12: "faq11"
+      } %>
+
+      <% faq_ids.each_with_index do |(key, collapse_id), idx| %>
+        <% is_first = (idx == 0) %>
+        <% heading_id = "heading-#{collapse_id}" %>
+
+        <article class="accordion-item">
+          <h3 class="accordion-header" id="<%= heading_id %>">
+            <button
+              class="accordion-button fw-semibold <%= 'collapsed' unless is_first %>"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#<%= collapse_id %>"
+              aria-expanded="<%= is_first ? 'true' : 'false' %>"
+              aria-controls="<%= collapse_id %>"
+            >
+              <%= t("main.faq.items.#{key}.q").html_safe %>
+            </button>
+          </h3>
+
+          <div
+            id="<%= collapse_id %>"
+            class="accordion-collapse collapse <%= 'show' if is_first %>"
+            aria-labelledby="<%= heading_id %>"
+            data-bs-parent="#bonidFaq"
+          >
+            <div class="accordion-body">
+              <%= t("main.faq.items.#{key}.a_html").html_safe %>
+            </div>
+          </div>
+        </article>
+      <% end %>
+
+    </div>
+  </div>
+</section>

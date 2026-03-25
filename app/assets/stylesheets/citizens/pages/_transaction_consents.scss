@@ -1,0 +1,484 @@
+// ============================================================
+// Transaction Consents Page — Citizen Dashboard (Redesigned)
+// Focus mode + high-contrast buttons for Caribbean sun
+// ============================================================
+
+// ── Connection Status Bar ──────────────────────────────────
+.consent-topbar {
+  padding: 0.75rem 0;
+}
+
+.connection-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #198754;
+  display: inline-block;
+  animation: pulse-live 2s infinite;
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+// ── Focus Card (legacy — kept as backup) ───────────
+.consent-focus-card {
+  background: #ffffff;
+  border: 2px solid #00209f;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+// ── Transaction Consent Card (grid layout) ──────────────────
+.consent-tx-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 32, 159, 0.1);
+  }
+
+  .card-header {
+    background: #ffffff;
+  }
+
+  .card-footer {
+    background: #ffffff;
+  }
+
+  // Smaller buttons inside cards
+  .btn-approve-lg,
+  .btn-deny-lg {
+    font-size: 0.88rem;
+    padding: 0.65rem 0.75rem;
+  }
+}
+
+// ── Countdown Progress Bar ─────────────────────────────────
+.consent-countdown-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: #e9ecef;
+  overflow: hidden;
+
+  &__fill {
+    height: 100%;
+    width: 100%;
+    background: #ffc107;
+    transition: width 1s linear;
+    border-radius: 4px;
+  }
+}
+
+// ── High-Contrast Action Buttons (Caribbean sun) ───────────
+.btn-approve-lg {
+  background: #198754;
+  color: #ffffff;
+  border: 2px solid #198754;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus {
+    background: #157347;
+    border-color: #157347;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+.btn-deny-lg {
+  background: #dc3545;
+  color: #ffffff;
+  border: 2px solid #dc3545;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus {
+    background: #bb2d3b;
+    border-color: #bb2d3b;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
+}
+
+// ── Status Badges (solid pill) ───────────────────────────────
+.consent-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 2rem;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+
+  i {
+    font-size: 0.8rem;
+  }
+
+  &--pending {
+    background: #FEF3C7;
+    color: #92400E;
+  }
+
+  &--approved {
+    background: #D1FAE5;
+    color: #065F46;
+  }
+
+  &--denied {
+    background: #FEE2E2;
+    color: #991B1B;
+  }
+
+  &--expired {
+    background: #F3F4F6;
+    color: #6B7280;
+  }
+}
+
+// ── Filter Chips ───────────────────────────────────────────
+.consent-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid #dee2e6;
+  border-radius: 2rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #ffffff;
+  color: #495057;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: #adb5bd;
+    color: #212529;
+    background: #f8f9fa;
+  }
+
+  // Count badge inside chip (inactive state)
+  .consent-chip-count {
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+    padding: 0.15rem 0.4rem;
+    background: #f1f3f5;
+    color: #6c757d;
+  }
+
+  &--active {
+    border-color: #00209f;
+    background: #00209f;
+    color: #ffffff;
+
+    &:hover {
+      background: #001a80;
+      border-color: #001a80;
+      color: #ffffff;
+    }
+
+    // Count badge inside active chip
+    .consent-chip-count {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+  }
+}
+
+// ── History Items ──────────────────────────────────────────
+.consent-history-item {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-left: 4px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #f8f9fa;
+  }
+
+  &--approved {
+    border-left-color: #065F46;
+  }
+
+  &--denied {
+    border-left-color: #991B1B;
+  }
+
+  &--expired {
+    border-left-color: #adb5bd;
+  }
+
+  &--pending {
+    border-left-color: #D97706;
+  }
+}
+
+// ── Empty State ──────────────────────────────────────────────
+.consent-empty-state {
+  background: #FAFBFC;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+// ── Liveness Overlay ───────────────────────────────────────
+// When liveness is active, hide nav elements
+body.liveness-active {
+  overflow: hidden !important;
+
+  .citizen-topbar,
+  .citizen-sidebar,
+  .offcanvas,
+  .sidebar {
+    display: none !important;
+  }
+}
+
+.consent-liveness-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.consent-liveness-container {
+  background: #0a0f1f;
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 769px) {
+    max-width: 640px;
+    height: 90vh;
+    border-radius: 16px;
+  }
+}
+
+// ── Header bar ──
+.consent-liveness-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #0d1326;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.consent-liveness-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.consent-liveness-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  font-size: 1.4rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+// =============================================
+// CONSENT LIVENESS — DARK WRAPPER
+// Simple block container. Amplify needs a plain block parent —
+// flex/grid on this wrapper breaks the oval overlay stacking.
+// =============================================
+.consent-liveness-dark {
+  flex: 1 1 auto;
+  background: #0a0f1f;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // Mount point: explicit height for Amplify containers.
+  .liveness-mount-point {
+    width: 100%;
+    height: calc(100vh - 130px);
+    min-height: 380px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    position: relative;
+
+    @media (min-width: 769px) {
+      height: calc(90vh - 130px);
+    }
+  }
+
+  // ── Amplify layout fix ──
+  // Since `all:unset` is stripped from liveness.css at install time,
+  // we only need minimal overrides. Let Amplify manage its own layout.
+
+  // 1. ThemeProvider wrapper — ensure it fills the mount point
+  .liveness-mount-point [data-amplify-theme] {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  // 2. Fix global reset: video, canvas, svg { max-width: 100% }
+  .liveness-mount-point video,
+  .liveness-mount-point canvas,
+  .liveness-mount-point svg {
+    max-width: none !important;
+  }
+
+  .liveness-status {
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+  }
+}
+
+// ── OTP fallback link ──
+.consent-liveness-fallback {
+  text-align: center;
+  padding: 1rem;
+  flex-shrink: 0;
+
+  a {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: underline;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: #ffffff;
+    }
+  }
+}
+
+// ── OTP Modal enhancements ─────────────────────────────────
+
+// Shake animation for invalid OTP input
+@keyframes shake-error {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-4px); }
+  30%, 70% { transform: translateX(4px); }
+}
+
+.shake-error {
+  animation: shake-error 0.4s ease-in-out;
+  border-color: #dc3545 !important;
+}
+
+// Spin animation for loading icons
+.ri-spin {
+  animation: ri-spin 1s linear infinite;
+}
+
+@keyframes ri-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// ── Legacy class compat (still used by _consent_card) ──────
+.txn-consent-card {
+  background: #ffffff;
+  border-left: 4px solid transparent !important;
+}
+
+.txn-border-warning { border-left-color: #ffc107 !important; }
+.txn-border-success { border-left-color: #198754 !important; }
+.txn-border-danger  { border-left-color: #dc3545 !important; }
+.txn-border-muted   { border-left-color: #adb5bd !important; }
+
+// =============================================
+// AMPLIFY DARK THEME — CSS custom properties ONLY
+// Do NOT override any Amplify internal layout/position/overflow.
+// The ThemeProvider in liveness.jsx handles primary theming.
+// These CSS vars are a fallback for any Amplify elements that
+// don't respect ThemeProvider tokens.
+// =============================================
+.consent-liveness-dark,
+.bonid-liveness-dark {
+  --amplify-colors-background-primary: #0a0f1f;
+  --amplify-colors-background-secondary: #111730;
+  --amplify-colors-font-primary: #ffffff;
+  --amplify-colors-font-secondary: #d0d4e0;
+  --amplify-colors-primary-80: #00209F;
+  --amplify-colors-neutral-100: #1a2040;
+}
+
+// =============================================
+// HAITI PREP SCREEN POLISH (Prepare ou)
+// Scoped to .bonid-get-ready only — does NOT affect Amplify
+// =============================================
+.bonid-get-ready h6 {
+  font-family: "Montserrat", sans-serif !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+}
+
+.bonid-get-ready p {
+  font-size: 0.95rem !important;
+  color: #d0d4e0 !important;
+}
+
+.consent-liveness-fallback a {
+  padding: 14px 24px !important;
+  font-size: 1rem !important;
+}
+
+// =============================================
+// LIVENESS HINT TEXT (Ou twò pre, Rapwoche ou, etc.)
+// Haitian yellow, centered, bold — only inside the detector
+// =============================================
+.consent-liveness-dark [data-amplify-liveness-detector] [class*="hint"],
+.consent-liveness-dark [data-amplify-liveness-detector] [class*="Hint"],
+.consent-liveness-dark [data-amplify-liveness-detector] [class*="instruction"],
+.consent-liveness-dark [data-amplify-liveness-detector] [class*="Instruction"] {
+  color: #FFD700 !important;
+  font-family: "Montserrat", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 1.15rem !important;
+  text-align: center !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6) !important;
+}

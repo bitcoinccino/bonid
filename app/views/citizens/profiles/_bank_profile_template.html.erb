@@ -1,0 +1,104 @@
+<%# template for nested-form to clone %>
+<template data-nested-form-target="template">
+  <%= f.fields_for :bank_profiles, BankProfile.new, child_index: "NEW_RECORD" do |bp| %>
+    <% profile = bp.object %>
+
+    <div class="border rounded-3 p-3 mb-3 nested-fields shadow-sm" data-new-record="true" data-controller="bank-selector">
+      <%= bp.hidden_field :id if profile.persisted? %>
+
+      <!-- Account Source Selector -->
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <%= bp.input :account_source,
+                collection: BankProfile.account_sources.keys.map { |key| [key.titleize.gsub('_', ' '), key] },
+                label: "Account Source",
+                prompt: "Select Type",
+                input_html: {
+                  class: "form-select rounded-3 shadow-sm",
+                  data: { action: "change->bank-selector#toggleBankFields" }
+                } %>
+        </div>
+      </div>
+
+      <!-- Bank Fields -->
+      <div data-bank-selector-target="bankFields">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <%= bp.label :bank_name, "Bank Name", class: "form-label fw-semibold" %>
+            <%= bp.text_field :bank_name,
+                  class: "form-control rounded-3 shadow-sm",
+                  placeholder: "e.g., Unibank, BNC, Sogebank" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= bp.input :account_number,
+                  placeholder: "e.g., 00390244",
+                  input_html: { class: "form-control rounded-3 shadow-sm" } %>
+          </div>
+        </div>
+
+        <!-- Rest of your fields (account_type, currency, etc.) remain the same -->
+        <div class="row g-3 mt-2">
+          <div class="col-md-4">
+            <%= bp.input :account_type,
+                  collection: BankProfile.account_types.keys.map { |k| [k.titleize, k] },
+                  prompt: "Select Type",
+                  input_html: { class: "form-select rounded-3 shadow-sm" } %>
+          </div>
+
+          <div class="col-md-4">
+            <%= bp.input :currency,
+                  collection: (BankProfile.const_defined?(:CURRENCIES) ? BankProfile::CURRENCIES.map { |k, v| [v, k] } : [['HTG','htg'],['USD','usd']]),
+                  prompt: "Currency",
+                  input_html: { class: "form-select rounded-3 shadow-sm" } %>
+          </div>
+
+          <div class="col-md-4">
+            <%= bp.input :access_level,
+                  collection: BankProfile.access_levels.keys.map { |k| [k.to_s.titleize.gsub('_', ' '), k] },
+                  prompt: "Access Level",
+                  input_html: { class: "form-select rounded-3 shadow-sm" } %>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-2">
+          <div class="col-md-4">
+            <%= bp.input :branch_name,
+                  input_html: { class: "form-control rounded-3 shadow-sm", placeholder: "e.g. Delmas 33" } %>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-2 align-items-center">
+          <div class="col-md-6">
+            <%= bp.label :swift_code, "SWIFT Code", class: "form-label fw-semibold" %>
+            <div class="input-group">
+              <%= bp.text_field :swift_code,
+                    readonly: true,
+                    class: "form-control rounded-start-3 shadow-sm bg-light",
+                    data: { bank_selector_target: "swift" },
+                    placeholder: "Optional — auto-filled if known" %>
+              <span class="input-group-text bg-white border-start-0">
+                <i class="ri-barcode-line text-secondary"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Wallet Fields (keep as is) -->
+      <div data-bank-selector-target="walletFields" class="d-none">
+        <!-- your wallet fields -->
+      </div>
+
+      <!-- Remove Button -->
+      <div class="text-end mt-3">
+        <%= bp.hidden_field :_destroy %>
+        <button type="button"
+                class="btn btn-outline-danger btn-sm rounded-pill px-3"
+                data-action="click->nested-form#removeAssociation">
+          <i class="ri-delete-bin-line"></i> Remove
+        </button>
+      </div>
+    </div>
+  <% end %>
+</template>

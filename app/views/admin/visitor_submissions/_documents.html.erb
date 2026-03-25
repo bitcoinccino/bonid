@@ -1,0 +1,69 @@
+
+<section class="mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="h5 text-primary fw-semibold d-flex align-items-center gap-2 mb-0">
+      <i class="ri-file-list-line"></i> Submitted Documents
+    </h2>
+  </div>
+
+  <div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+    <p class="text-muted small mb-4">
+      The following documents were submitted by the visitor as part of the
+      BonTouris ID application. Documents are encrypted at rest and are
+      read-only once submitted.
+    </p>
+
+    <div class="row g-4">
+
+      <!-- Selfie -->
+      <div class="col-md-6">
+        <strong>Selfie Photograph</strong>
+        <p class="small text-muted mb-2">
+          Used for facial verification and identity review.
+        </p>
+
+        <% if visitor_submission.selfie.attached? %>
+          <div class="border rounded-3 p-2 text-center bg-light">
+            <%= image_tag visitor_submission.selfie.variant(resize_to_limit: [320, 320]),
+                  class: "img-fluid rounded shadow-sm",
+                  alt: "Visitor selfie" %>
+          </div>
+        <% else %>
+          <div class="alert alert-warning small mb-0">
+            <i class="ri-alert-line me-1"></i>
+            Selfie was not uploaded.
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Passport -->
+      <div class="col-md-6">
+        <strong>Passport Identity Page</strong>
+        <p class="small text-muted mb-2">
+          Official passport page showing identity details and photograph.
+        </p>
+
+        <% if visitor_submission.passport_photo.attached? %>
+          <div class="border rounded-3 p-2 text-center bg-light">
+            <%= image_tag visitor_submission.passport_photo.variant(resize_to_limit: [320, 320]),
+                  class: "img-fluid rounded shadow-sm",
+                  alt: "Passport identity page" %>
+          </div>
+        <% else %>
+          <div class="alert alert-warning small mb-0">
+            <i class="ri-alert-line me-1"></i>
+            Passport photo was not uploaded.
+          </div>
+        <% end %>
+      </div>
+
+    </div>
+
+    <!-- Submission Lock Notice -->
+    <div class="alert alert-info small mt-4 mb-0">
+      <i class="ri-lock-line me-1"></i>
+      Documents cannot be edited or replaced after submission.
+      Any issues must be resolved through administrative review.
+    </div>
+  </div>
+</section>

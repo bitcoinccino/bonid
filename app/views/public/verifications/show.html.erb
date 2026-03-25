@@ -1,0 +1,117 @@
+<div class="container py-5" style="max-width: 720px;">
+  <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+
+    <div class="card-header bg-dark text-white text-center py-4">
+      <h4 id="verify-title" class="fw-bold mb-1">
+        Verifying BonTouris ID…
+      </h4>
+      <p id="verify-subtitle" class="mb-0 opacity-75">
+        Checking cryptographic authenticity
+      </p>
+    </div>
+
+    <div class="card-body p-4 p-md-5 text-center">
+
+      <p id="verify-message" class="lead mb-4">
+        Please wait while the QR code is verified.
+      </p>
+
+      <div id="partner-actions" class="d-none">
+        <div class="alert alert-info border-0 rounded-4 mb-4">
+          <i class="ri-lock-2-line me-2"></i>
+          Partner login is required to view official verification details.
+        </div>
+
+        <%= link_to "/partner_portal/login",
+              class: "btn btn-primary w-100 fw-semibold rounded-pill" do %>
+          <i class="ri-login-circle-line me-2"></i>
+          Partner Sign In
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(async function () {
+  const PUBLIC_KEY_BASE64 = "<%= ENV.fetch("BONID_ED25519_PUBLIC") %>";
+
+  const title    = document.getElementById("verify-title");
+  const subtitle = document.getElementById("verify-subtitle");
+  const message  = document.getElementById("verify-message");
+  const actions  = document.getElementById("partner-actions");
+
+  function base64UrlToBytes(b64) {
+    b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = b64.length % 4;
+    if (pad) b64 += '='.repeat(4 - pad);
+    return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+  }
+
+  function parsePayload() {
+    if (!location.hash) return null;
+    try {
+      return JSON.parse(atob(location.hash.slice(1)));
+    } catch {
+      return null;
+    }
+  }
+
+  async function verifySignature(payload) {
+    const { sig, ...unsigned } = payload;
+
+    const canonical = ["v","iss","sub","iat","exp","typ"]
+      .map(k => `${k}=${unsigned[k]}`)
+      .join("\n");
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      base64UrlToBytes(PUBLIC_KEY_BASE64),
+      { name: "Ed25519" },
+      false,
+      ["verify"]
+    );
+
+    return crypto.subtle.verify(
+      "Ed25519",
+      key,
+      base64UrlToBytes(sig),
+      new TextEncoder().encode(canonical)
+    );
+  }
+
+  const payload = parsePayload();
+
+  if (!payload) {
+    title.textContent = "Invalid QR Code";
+    subtitle.textContent = "No verification payload found";
+    message.textContent = "This QR code is not a valid BonTouris ID.";
+    return;
+  }
+
+  if (payload.exp < new Date().toISOString()) {
+    title.textContent = "Expired BonTouris ID";
+    subtitle.textContent = "This ID is no longer valid";
+    message.textContent = "The expiration date has passed.";
+    return;
+  }
+
+  const valid = await verifySignature(payload);
+
+  if (!valid) {
+    title.textContent = "Invalid BonTouris ID";
+    subtitle.textContent = "Signature verification failed";
+    message.textContent = "This QR code has been tampered with or is invalid.";
+    return;
+  }
+
+  // ✅ AUTHENTIC (OFFLINE)
+  title.textContent = "Authentic BonTouris ID";
+  subtitle.textContent = "Cryptographically verified";
+  message.textContent =
+    "This BonTouris ID is authentic. Partner login is required to view official verification details.";
+
+  actions.classList.remove("d-none");
+})();
+</script>

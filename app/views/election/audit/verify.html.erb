@@ -1,0 +1,740 @@
+<%# app/views/election/audit/verify.html.erb %>
+<%# Public Bulletin Board · Haiti's most important URL on election day.
+    No login required. No PII exposed. Zero-leakage verification.
+    Standalone layout matching results page styling. %>
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= t("bonvote.title") %></title>
+  <meta name="description" content="<%= t("bonvote.hero_sub") %>">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600&family=Orbitron:wght@600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0B0F19; color: #fff; font-family: 'Montserrat', sans-serif; overflow-x: hidden; min-height: 100vh; }
+    .main-container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* Two-column grid */
+    .verify-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    .verify-left { min-width: 0; }
+    .verify-right { min-width: 0; position: sticky; top: 2rem; }
+
+    /* Language switcher */
+    .lang-switcher { display: inline-flex; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+                     border-radius: 2rem; padding: 3px; }
+    .lang-pill { padding: 5px 14px; border-radius: 2rem; font-size: 0.62rem; font-weight: 700;
+                 letter-spacing: 0.05em; text-decoration: none; font-family: 'Montserrat', sans-serif; color: #64748B; }
+    .lang-pill.active { background: #2563EB; color: #fff; }
+
+    /* Tabs */
+    .bv-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 1rem; }
+    .bv-tab { display: flex; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 2rem; border: none;
+              background: rgba(255,255,255,0.04); color: #64748B; font-size: 0.62rem; font-weight: 700;
+              cursor: pointer; font-family: 'Montserrat', sans-serif; transition: all 0.2s; }
+    .bv-tab:hover { background: rgba(255,255,255,0.08); color: #94A3B8; }
+    .bv-tab.active { background: #2563EB; color: #fff; }
+    .bv-tab i { font-size: 0.72rem; }
+
+    /* Tab content */
+    .bv-tab-content { display: none; }
+    .bv-tab-content.active { display: block; }
+
+    /* Feature list */
+    .bv-feature { display: flex; gap: 12px; padding: 12px; background: #161B28; border: 1px solid rgba(148,163,184,0.06);
+                  border-radius: 0.6rem; margin-bottom: 8px; }
+    .bv-feature i { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .bv-feature strong { display: block; font-size: 0.78rem; color: rgba(255,255,255,0.85); margin-bottom: 2px; }
+    .bv-feature span { font-size: 0.68rem; color: #94A3B8; line-height: 1.5; }
+
+    /* Steps */
+    .bv-step { display: flex; gap: 12px; margin-bottom: 10px; }
+    .bv-step-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(37,99,235,0.15);
+                   color: #2563EB; display: flex; align-items: center; justify-content: center;
+                   font-size: 0.72rem; font-weight: 800; flex-shrink: 0; }
+    .bv-step-desc { font-size: 0.68rem; color: #94A3B8; line-height: 1.5; }
+
+    /* Stress table */
+    .bv-stress-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 8px 12px;
+                     border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.72rem; }
+    .bv-stress-header { font-weight: 700; color: #64748B; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .bv-verdict-instant { color: #10B981; font-weight: 700; font-size: 0.62rem; }
+    .bv-verdict-fast { color: #EDB95E; font-weight: 700; font-size: 0.62rem; }
+
+    /* Compare table */
+    .bv-compare-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 8px 12px;
+                         font-weight: 700; color: #64748B; font-size: 0.62rem; text-transform: uppercase; }
+    .bv-compare-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 8px 12px;
+                      border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.68rem; }
+    .bv-compare-label { color: #94A3B8; }
+    .bv-compare-good { color: #10B981; font-weight: 700; }
+    .bv-compare-bad { color: #f87171; }
+
+    /* FAQ */
+    .bv-faq-item { padding: 12px; background: #161B28; border: 1px solid rgba(148,163,184,0.06);
+                   border-radius: 0.6rem; margin-bottom: 8px; }
+    .bv-faq-q { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .bv-faq-q i { font-size: 1rem; }
+    .bv-faq-q strong { font-size: 0.78rem; color: rgba(255,255,255,0.85); }
+    .bv-faq-a { font-size: 0.68rem; color: #94A3B8; line-height: 1.6; margin: 0; }
+
+    /* Trust badges */
+    .bv-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .bv-badge { display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: rgba(255,255,255,0.04);
+                border: 1px solid rgba(255,255,255,0.06); border-radius: 2rem; font-size: 0.58rem; color: #64748B; }
+    .bv-badge i { font-size: 0.68rem; color: #10B981; }
+
+    /* Search card */
+    .bv-search-card { position: relative; background: linear-gradient(135deg, rgba(37,99,235,0.06) 0%, rgba(37,99,235,0.02) 100%);
+                      border: 1px solid rgba(37,99,235,0.15); border-radius: 1rem; padding: 1.25rem; overflow: hidden; }
+    .bv-search-glow { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+                      background: radial-gradient(circle at 30% 30%, rgba(37,99,235,0.08) 0%, transparent 50%);
+                      pointer-events: none; }
+    .bv-search-label { display: block; font-size: 0.68rem; font-weight: 700; color: rgba(255,255,255,0.7);
+                       margin-bottom: 8px; position: relative; z-index: 1; }
+    .bv-search-input { width: 100%; padding: 12px 14px; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1);
+                       background: rgba(0,0,0,0.3); color: #fff; font-size: 0.78rem; font-family: 'Courier New', monospace;
+                       outline: none; position: relative; z-index: 1; margin-bottom: 10px; }
+    .bv-search-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+    .bv-search-input::placeholder { color: #475569; }
+    .bv-search-btn { width: 100%; padding: 12px; border-radius: 0.5rem; border: none; background: #2563EB; color: #fff;
+                     font-size: 0.82rem; font-weight: 700; cursor: pointer; font-family: 'Montserrat', sans-serif;
+                     display: flex; align-items: center; justify-content: center; gap: 6px; position: relative; z-index: 1;
+                     transition: background 0.2s; }
+    .bv-search-btn:hover { background: #1D4ED8; }
+
+    /* Ledger card */
+    .bv-ledger-card { background: linear-gradient(135deg, #161B28 0%, #1a2035 100%);
+                      border: 1px solid rgba(148,163,184,0.08); border-radius: 1rem; padding: 1.25rem;
+                      position: relative; overflow: hidden; }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @keyframes sealPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.2); } 50% { box-shadow: 0 0 20px 5px rgba(52,211,153,0.1); } }
+
+    @media (max-width: 900px) {
+      .verify-grid { grid-template-columns: 1fr; }
+      .verify-right { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="main-container">
+
+  <%# ── Official Header ── %>
+  <div style="text-align: center; padding: 3rem 1rem 1.5rem;">
+    <div style="display: inline-flex; align-items: center; gap: 12px; margin-bottom: 0.75rem;">
+      <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #2563EB, #1D4ED8);
+                  display: flex; align-items: center; justify-content: center;">
+        <i class="ri-shield-check-fill" style="color: #fff; font-size: 1rem;"></i>
+      </div>
+      <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.72rem;
+                  font-weight: 800; color: #ffffff; letter-spacing: 2px;">
+        BONVOTE &middot; BonID
+      </div>
+    </div>
+
+    <%# ── Language Switcher ── %>
+    <div style="display: flex; justify-content: center;">
+      <div class="lang-switcher">
+        <a href="<%= election_audit_verify_path(lang: "ht", h: params[:h]) %>"
+           class="lang-pill <%= 'active' if I18n.locale.to_s == 'ht' %>">
+          <%= t("bonvote.lang_ht") %>
+        </a>
+        <a href="<%= election_audit_verify_path(lang: "fr", h: params[:h]) %>"
+           class="lang-pill <%= 'active' if I18n.locale.to_s == 'fr' %>">
+          <%= t("bonvote.lang_fr") %>
+        </a>
+        <a href="<%= election_audit_verify_path(lang: "en", h: params[:h]) %>"
+           class="lang-pill <%= 'active' if I18n.locale.to_s == 'en' %>">
+          <%= t("bonvote.lang_en") %>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Two Column Layout ── %>
+  <div class="verify-grid">
+
+    <%# ══════ LEFT COLUMN: Tabbed Interface ══════ %>
+    <div class="verify-left">
+
+      <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: clamp(1.3rem, 4vw, 1.8rem);
+                 font-weight: 900; margin-bottom: 0.5rem;
+                 background: linear-gradient(135deg, #EDB95E 0%, #FFD700 50%, #EDB95E 100%);
+                 -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <%= t("bonvote.hero_title") %>
+      </h1>
+      <p style="font-size: 0.78rem; color: #64748B; margin-bottom: 1rem; line-height: 1.6;">
+        <%= t("bonvote.hero_sub") %>
+      </p>
+
+      <%# Results Link %>
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <a href="/election/results" target="_blank"
+           style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px;
+                  background: linear-gradient(135deg, rgba(237,185,94,0.12), rgba(237,185,94,0.05));
+                  border: 1px solid rgba(237,185,94,0.3); border-radius: 2rem;
+                  color: #EDB95E; font-size: 0.82rem; font-weight: 700; text-decoration: none;
+                  font-family: 'Montserrat', sans-serif; transition: all 0.2s;">
+          <i class="ri-bar-chart-box-line" style="font-size: 1rem;"></i>
+          <%= t("bonvote.results_view") %>
+          <i class="ri-arrow-right-up-line" style="font-size: 0.85rem; opacity: 0.7;"></i>
+        </a>
+      </div>
+
+      <%# Tab Navigation %>
+      <div class="bv-tabs">
+        <button class="bv-tab active" onclick="bonvoteTab('security')" id="tab-security">
+          <i class="ri-shield-check-line"></i> <span><%= t("bonvote.tab_security") %></span>
+        </button>
+        <button class="bv-tab" onclick="bonvoteTab('how')" id="tab-how">
+          <i class="ri-flow-chart"></i> <span><%= t("bonvote.tab_how") %></span>
+        </button>
+        <button class="bv-tab" onclick="bonvoteTab('what')" id="tab-what">
+          <i class="ri-question-line"></i> <span><%= t("bonvote.tab_what") %></span>
+        </button>
+        <button class="bv-tab" onclick="bonvoteTab('advantages')" id="tab-advantages">
+          <i class="ri-star-line"></i> <span><%= t("bonvote.tab_advantages") %></span>
+        </button>
+        <button class="bv-tab" onclick="bonvoteTab('performance')" id="tab-performance">
+          <i class="ri-pulse-line"></i> <span><%= t("bonvote.tab_performance") %></span>
+        </button>
+        <button class="bv-tab" onclick="bonvoteTab('compare')" id="tab-compare">
+          <i class="ri-scales-3-line"></i> <span><%= t("bonvote.tab_compare") %></span>
+        </button>
+        <button class="bv-tab" onclick="bonvoteTab('faq')" id="tab-faq">
+          <i class="ri-chat-3-line"></i> <span><%= t("bonvote.tab_faq") %></span>
+        </button>
+      </div>
+
+      <%# ── TAB 1: Security ── %>
+      <div class="bv-tab-content active" id="content-security">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 6px;">
+          <%= t("bonvote.security_title") %>
+        </h3>
+        <p style="font-size: 0.72rem; color: #94A3B8; margin-bottom: 16px; line-height: 1.5;">
+          <%= t("bonvote.security_intro") %>
+        </p>
+
+        <div class="bv-feature">
+          <i class="ri-key-2-line" style="color: #10B981;"></i>
+          <div>
+            <strong><%= t("bonvote.pedersen_title") %></strong>
+            <span><%= t("bonvote.pedersen_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-shield-keyhole-line" style="color: #7b8fff;"></i>
+          <div>
+            <strong><%= t("bonvote.schnorr_title") %></strong>
+            <span><%= t("bonvote.schnorr_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-lock-line" style="color: #EDB95E;"></i>
+          <div>
+            <strong><%= t("bonvote.aes_title") %></strong>
+            <span><%= t("bonvote.aes_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-fingerprint-line" style="color: #2563EB;"></i>
+          <div>
+            <strong><%= t("bonvote.biometric_title") %></strong>
+            <span><%= t("bonvote.biometric_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-spam-2-line" style="color: #f87171;"></i>
+          <div>
+            <strong><%= t("bonvote.fraud_title") %></strong>
+            <span><%= t("bonvote.fraud_desc") %></span>
+          </div>
+        </div>
+
+        <div class="bv-badges" style="margin-top: 16px;">
+          <div class="bv-badge"><i class="ri-verified-badge-line"></i><span>Merkle Tree</span></div>
+          <div class="bv-badge"><i class="ri-key-2-line"></i><span>Pedersen</span></div>
+          <div class="bv-badge"><i class="ri-shield-keyhole-line"></i><span>Schnorr ZKP</span></div>
+          <div class="bv-badge"><i class="ri-lock-2-line"></i><span>AES-256-GCM</span></div>
+        </div>
+      </div>
+
+      <%# ── TAB 2: How it Works ── %>
+      <div class="bv-tab-content" id="content-how">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 12px;">
+          <%= t("bonvote.how_title") %>
+        </h3>
+
+        <% [
+          [1, t("bonvote.step1_title"), t("bonvote.step1_desc")],
+          [2, t("bonvote.step2_title"), t("bonvote.step2_desc")],
+          [3, t("bonvote.step3_title"), t("bonvote.step3_desc")],
+          [4, t("bonvote.step4_title"), t("bonvote.step4_desc")],
+          [5, t("bonvote.step5_title"), t("bonvote.step5_desc")],
+          [6, t("bonvote.step6_title"), t("bonvote.step6_desc")]
+        ].each do |num, title, desc| %>
+          <div class="bv-step">
+            <span class="bv-step-num"><%= num %></span>
+            <div>
+              <strong style="color: rgba(255,255,255,0.8); font-size: 0.78rem;"><%= title %></strong>
+              <span class="bv-step-desc"><%= desc %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# ── TAB 3: What is BonVote ── %>
+      <div class="bv-tab-content" id="content-what">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 12px;">
+          <%= t("bonvote.what_title") %>
+        </h3>
+
+        <div class="bv-feature">
+          <i class="ri-compass-3-line" style="color: #2563EB;"></i>
+          <div>
+            <strong><%= t("bonvote.mission_title") %></strong>
+            <span><%= t("bonvote.mission_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-smartphone-line" style="color: #2563EB;"></i>
+          <div>
+            <strong><%= t("bonvote.platform_title") %></strong>
+            <span><%= t("bonvote.platform_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-global-line" style="color: #2563EB;"></i>
+          <div>
+            <strong><%= t("bonvote.diaspora_title") %></strong>
+            <span><%= t("bonvote.diaspora_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-verified-badge-line" style="color: #2563EB;"></i>
+          <div>
+            <strong><%= t("bonvote.ledger_title") %></strong>
+            <span><%= t("bonvote.ledger_desc") %></span>
+          </div>
+        </div>
+      </div>
+
+      <%# ── TAB 4: Advantages ── %>
+      <div class="bv-tab-content" id="content-advantages">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 12px;">
+          <%= t("bonvote.advantages_title") %>
+        </h3>
+
+        <div class="bv-feature">
+          <i class="ri-search-eye-line" style="color: #10B981;"></i>
+          <div>
+            <strong><%= t("bonvote.transparency_title") %></strong>
+            <span><%= t("bonvote.transparency_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-global-line" style="color: #7b8fff;"></i>
+          <div>
+            <strong><%= t("bonvote.inclusion_title") %></strong>
+            <span><%= t("bonvote.inclusion_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-money-dollar-circle-line" style="color: #10B981;"></i>
+          <div>
+            <strong><%= t("bonvote.savings_title") %></strong>
+            <span><%= t("bonvote.savings_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-user-add-line" style="color: #EDB95E;"></i>
+          <div>
+            <strong><%= t("bonvote.participation_title") %></strong>
+            <span><%= t("bonvote.participation_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-hand-heart-line" style="color: #2563EB;"></i>
+          <div>
+            <strong><%= t("bonvote.aid_title") %></strong>
+            <span><%= t("bonvote.aid_desc") %></span>
+          </div>
+        </div>
+      </div>
+
+      <%# ── TAB 5: Performance ── %>
+      <div class="bv-tab-content" id="content-performance">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 6px;">
+          <%= t("bonvote.performance_title") %>
+        </h3>
+        <p style="font-size: 0.72rem; color: #94A3B8; margin-bottom: 16px; line-height: 1.5;">
+          <%= t("bonvote.performance_intro") %>
+        </p>
+
+        <div style="background: #161B28; border: 1px solid rgba(148,163,184,0.06); border-radius: 0.6rem; overflow: hidden;">
+          <div class="bv-stress-row bv-stress-header">
+            <span><%= t("bonvote.scale") %></span>
+            <span><%= t("bonvote.merkle_root") %></span>
+            <span><%= t("bonvote.verdict") %></span>
+          </div>
+          <div class="bv-stress-row">
+            <span style="color: #fff;">1,000 <%= t("bonvote.votes") %></span>
+            <span style="color: #10B981; font-weight: 700;">1.58ms</span>
+            <span class="bv-verdict-instant"><%= t("bonvote.instant") %></span>
+          </div>
+          <div class="bv-stress-row">
+            <span style="color: #fff;">10,000 <%= t("bonvote.votes") %></span>
+            <span style="color: #10B981; font-weight: 700;">17.35ms</span>
+            <span class="bv-verdict-instant"><%= t("bonvote.instant") %></span>
+          </div>
+          <div class="bv-stress-row">
+            <span style="color: #fff;">100,000 <%= t("bonvote.votes") %></span>
+            <span style="color: #10B981; font-weight: 700;">177.76ms</span>
+            <span class="bv-verdict-fast"><%= t("bonvote.under_200ms") %></span>
+          </div>
+          <div class="bv-stress-row">
+            <span style="color: #fff;">500,000 <%= t("bonvote.votes") %></span>
+            <span style="color: #EDB95E; font-weight: 700;">~900ms</span>
+            <span class="bv-verdict-fast"><%= t("bonvote.under_1s") %></span>
+          </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <div class="bv-feature" style="padding: 8px 12px;">
+            <i class="ri-checkbox-circle-line" style="color: #10B981; font-size: 0.9rem;"></i>
+            <span style="font-size: 0.68rem; color: #94A3B8;"><strong>Nullifier</strong> · <%= t("bonvote.nullifier_stat") %></span>
+          </div>
+          <div class="bv-feature" style="padding: 8px 12px;">
+            <i class="ri-checkbox-circle-line" style="color: #10B981; font-size: 0.9rem;"></i>
+            <span style="font-size: 0.68rem; color: #94A3B8;"><%= t("bonvote.aggregation_stat") %></span>
+          </div>
+          <div class="bv-feature" style="padding: 8px 12px;">
+            <i class="ri-checkbox-circle-line" style="color: #10B981; font-size: 0.9rem;"></i>
+            <span style="font-size: 0.68rem; color: #94A3B8;"><%= t("bonvote.generation_stat") %></span>
+          </div>
+        </div>
+
+        <div class="bv-feature" style="margin-top: 16px;">
+          <i class="ri-wifi-line" style="color: #7b8fff; font-size: 1.2rem;"></i>
+          <div>
+            <strong><%= t("bonvote.low_bandwidth_title") %></strong>
+            <span><%= t("bonvote.low_bandwidth_desc") %></span>
+          </div>
+        </div>
+      </div>
+
+      <%# ── TAB 6: Comparison ── %>
+      <div class="bv-tab-content" id="content-compare">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 12px;">
+          <%= t("bonvote.compare_title") %>
+        </h3>
+
+        <p style="font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 12px;"><%= t("bonvote.vs_manual") %></p>
+        <div style="background: #161B28; border: 1px solid rgba(148,163,184,0.06); border-radius: 0.6rem; overflow: hidden; margin-bottom: 16px;">
+          <div class="bv-compare-header">
+            <span></span><span>BonVote</span><span><%= t("bonvote.paper") %></span>
+          </div>
+          <div class="bv-compare-row">
+            <span class="bv-compare-label"><%= t("bonvote.votes_per_sec") %></span>
+            <span class="bv-compare-good">1,000+</span>
+            <span class="bv-compare-bad"><%= t("bonvote.per_min_station") %></span>
+          </div>
+          <div class="bv-compare-row">
+            <span class="bv-compare-label"><%= t("bonvote.integrity_check") %></span>
+            <span class="bv-compare-good"><%= t("bonvote.integrity_bonvote") %></span>
+            <span class="bv-compare-bad"><%= t("bonvote.integrity_paper") %></span>
+          </div>
+          <div class="bv-compare-row">
+            <span class="bv-compare-label"><%= t("bonvote.double_vote") %></span>
+            <span class="bv-compare-good"><%= t("bonvote.double_bonvote") %></span>
+            <span class="bv-compare-bad"><%= t("bonvote.double_paper") %></span>
+          </div>
+          <div class="bv-compare-row">
+            <span class="bv-compare-label"><%= t("bonvote.final_results") %></span>
+            <span class="bv-compare-good"><%= t("bonvote.results_bonvote") %></span>
+            <span class="bv-compare-bad"><%= t("bonvote.results_paper") %></span>
+          </div>
+          <div class="bv-compare-row">
+            <span class="bv-compare-label"><%= t("bonvote.cost_per_voter") %></span>
+            <span class="bv-compare-good">$2.20</span>
+            <span class="bv-compare-bad">$15-25</span>
+          </div>
+          <div class="bv-compare-row">
+            <span class="bv-compare-label"><%= t("bonvote.stations_needed") %></span>
+            <span class="bv-compare-good"><%= t("bonvote.stations_bonvote") %></span>
+            <span class="bv-compare-bad"><%= t("bonvote.stations_paper") %></span>
+          </div>
+        </div>
+
+        <p style="font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 12px;"><%= t("bonvote.vs_digital") %></p>
+        <div class="bv-feature">
+          <i class="ri-database-2-line" style="color: #f87171;"></i>
+          <div>
+            <strong><%= t("bonvote.basic_db_title") %></strong>
+            <span><%= t("bonvote.basic_db_desc") %></span>
+          </div>
+        </div>
+        <div class="bv-feature">
+          <i class="ri-verified-badge-line" style="color: #10B981;"></i>
+          <div>
+            <strong><%= t("bonvote.verifiable_title") %></strong>
+            <span><%= t("bonvote.verifiable_desc") %></span>
+          </div>
+        </div>
+
+        <p style="font-size: 0.72rem; color: #94A3B8; margin-top: 16px; line-height: 1.5;">
+          <%= t("bonvote.estonia_note") %>
+        </p>
+      </div>
+
+      <%# ── TAB 7: FAQ ── %>
+      <div class="bv-tab-content" id="content-faq">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: rgba(255,255,255,0.9); margin-bottom: 12px;">
+          <%= t("bonvote.faq_title") %>
+        </h3>
+
+        <% [
+          ["ri-eye-off-line", "#10B981", t("bonvote.faq1_q"), t("bonvote.faq1_a")],
+          ["ri-repeat-line", "#7b8fff", t("bonvote.faq2_q"), t("bonvote.faq2_a")],
+          ["ri-smartphone-line", "#EDB95E", t("bonvote.faq3_q"), t("bonvote.faq3_a")],
+          ["ri-magic-line", "#f87171", t("bonvote.faq4_q"), t("bonvote.faq4_a")],
+          ["ri-briefcase-line", "#EDB95E", t("bonvote.faq5_q"), t("bonvote.faq5_a")],
+          ["ri-search-eye-line", "#10B981", t("bonvote.faq6_q"), t("bonvote.faq6_a")]
+        ].each do |icon, color, question, answer| %>
+          <div class="bv-faq-item">
+            <div class="bv-faq-q">
+              <i class="<%= icon %>" style="color: <%= color %>;"></i>
+              <strong><%= question %></strong>
+            </div>
+            <p class="bv-faq-a"><%= answer %></p>
+          </div>
+        <% end %>
+      </div>
+
+    </div>
+
+    <%# ══════ RIGHT COLUMN: Verify + Stats ══════ %>
+    <div class="verify-right">
+
+      <%# Search Card %>
+      <div style="margin-bottom: 1.5rem;">
+        <form action="<%= election_audit_verify_path %>" method="get">
+          <div class="bv-search-card">
+            <div class="bv-search-glow"></div>
+
+            <label class="bv-search-label">
+              <i class="ri-search-line" style="margin-right: 4px;"></i>
+              <%= t("bonvote.enter_receipt") %>
+            </label>
+
+            <input type="text" name="h" value="<%= params[:h] %>"
+                   placeholder="<%= t("bonvote.receipt_placeholder") %>"
+                   autocomplete="off"
+                   class="bv-search-input">
+
+            <button type="submit" class="bv-search-btn">
+              <i class="ri-checkbox-circle-line" style="font-size: 1.1rem;"></i>
+              <%= t("bonvote.verify_btn") %>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <%# Result Section %>
+      <% if params[:h].present? %>
+        <div style="margin-bottom: 1.5rem;">
+          <% if @result[:found] %>
+            <%# VOTE FOUND %>
+            <div style="background: linear-gradient(135deg, rgba(52,211,153,0.08) 0%, rgba(52,211,153,0.02) 100%);
+                        border: 2px solid rgba(52,211,153,0.25); border-radius: 1rem;
+                        padding: 2rem 1.5rem; text-align: center; position: relative; overflow: hidden;">
+
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                          width: 200px; height: 200px; border: 3px solid rgba(52,211,153,0.06);
+                          border-radius: 50%; pointer-events: none;"></div>
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                          width: 160px; height: 160px; border: 2px solid rgba(52,211,153,0.04);
+                          border-radius: 50%; pointer-events: none;"></div>
+
+              <div style="width: 72px; height: 72px; border-radius: 50%;
+                          background: linear-gradient(135deg, rgba(52,211,153,0.2), rgba(52,211,153,0.1));
+                          display: flex; align-items: center; justify-content: center;
+                          margin: 0 auto 1rem; border: 2px solid rgba(52,211,153,0.3);
+                          animation: sealPulse 2s ease-in-out infinite;">
+                <svg width="36" height="36" viewBox="0 0 20 20" fill="#10B981">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </div>
+
+              <h2 style="font-size: clamp(1.3rem, 4vw, 1.6rem); font-weight: 800; color: #10B981; margin: 0 0 0.3rem;">
+                <%= t("bonvote.vote_counts") %>
+              </h2>
+              <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin: 0 0 1.25rem;">
+                <%= t("bonvote.vote_sealed") %>
+              </p>
+
+              <% if @result[:position] %>
+                <div style="display: inline-block; padding: 8px 20px; background: rgba(52,211,153,0.1);
+                            border: 1px solid rgba(52,211,153,0.2); border-radius: 2rem; margin-bottom: 1.25rem;">
+                  <span style="font-size: 0.72rem; color: rgba(255,255,255,0.5);"><%= t("bonvote.you_are_voter") %></span>
+                  <span style="font-size: 1.1rem; font-weight: 800; color: #10B981; margin-left: 4px;">
+                    #<%= number_with_delimiter(@result[:position]) %>
+                  </span>
+                  <span style="font-size: 0.72rem; color: rgba(255,255,255,0.5);"> <%= t("bonvote.in_ledger") %></span>
+                </div>
+              <% end %>
+
+              <div style="background: rgba(0,0,0,0.2); border-radius: 0.75rem; padding: 1rem;
+                          border: 1px solid rgba(255,255,255,0.06); text-align: left;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px;">
+                  <span style="color: #94A3B8;"><%= t("bonvote.election") %></span>
+                  <span style="color: #fff; font-weight: 600;"><%= @result[:election_id] %></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px;">
+                  <span style="color: #94A3B8;"><%= t("bonvote.registration_date") %></span>
+                  <span style="color: #fff; font-weight: 600;">
+                    <%= Time.parse(@result[:timestamp]).strftime("%d %b %Y, %H:%M") rescue "N/A" %>
+                  </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                  <span style="color: #94A3B8;"><%= t("bonvote.status") %></span>
+                  <span style="color: #10B981; font-weight: 700;">
+                    <i class="ri-lock-line" style="margin-right: 2px;"></i> <%= t("bonvote.sealed_verified") %>
+                  </span>
+                </div>
+              </div>
+
+              <div style="margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                <div style="font-size: 0.6rem; color: rgba(255,255,255,0.3); font-weight: 700; letter-spacing: 0.1em;">
+                  BONVOTE &middot; <%= t("bonvote.official_seal") %> &middot; BONID
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <%# VOTE NOT FOUND %>
+            <div style="background: rgba(248,113,113,0.05); border: 1px solid rgba(248,113,113,0.15);
+                        border-radius: 1rem; padding: 1.5rem; text-align: center;">
+              <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(248,113,113,0.1);
+                          display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                <i class="ri-search-line" style="font-size: 1.4rem; color: #f87171;"></i>
+              </div>
+              <h3 style="font-size: 1rem; font-weight: 700; color: #f87171; margin: 0 0 0.4rem;">
+                <%= t("bonvote.vote_not_found") %>
+              </h3>
+              <p style="font-size: 0.78rem; color: rgba(255,255,255,0.5); margin: 0; line-height: 1.5;">
+                <%= t("bonvote.vote_not_found_desc") %>
+              </p>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Live Ledger Heartbeat %>
+      <div style="margin-bottom: 1.5rem;">
+        <div class="bv-ledger-card">
+
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem;">
+            <span style="width: 8px; height: 8px; background: #10B981; border-radius: 50%;
+                         display: inline-block; animation: blink 1.5s infinite;"></span>
+            <span style="font-size: 0.68rem; font-weight: 700; color: #10B981; text-transform: uppercase;
+                         letter-spacing: 0.1em;">
+              <%= t("bonvote.ledger_live") %>
+            </span>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 1rem;">
+            <div style="font-size: clamp(2rem, 7vw, 3rem); font-weight: 800; color: #ffffff;
+                        letter-spacing: -0.02em; line-height: 1;" id="live-total-votes">
+              <%= number_with_delimiter(@total_votes || 0) %>
+            </div>
+            <div style="font-size: 0.7rem; color: #94A3B8; text-transform: uppercase;
+                        letter-spacing: 0.08em; margin-top: 4px;">
+              <%= t("bonvote.verified_votes") %>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+            <div style="background: rgba(255,255,255,0.02); border-radius: 0.6rem; padding: 0.75rem; text-align: center;
+                        border: 1px solid rgba(148,163,184,0.08);">
+              <div style="font-size: 1.3rem; font-weight: 800; color: #7b8fff;">
+                <%= @countries_count || 0 %>
+              </div>
+              <div style="font-size: 0.6rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em;">
+                <%= t("bonvote.countries_voting") %>
+              </div>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border-radius: 0.6rem; padding: 0.75rem; text-align: center;
+                        border: 1px solid rgba(148,163,184,0.08);">
+              <div style="font-size: 1.3rem; font-weight: 800; color: #EDB95E;">
+                <%= @departments_count || 10 %>
+              </div>
+              <div style="font-size: 0.6rem; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em;">
+                <%= t("bonvote.departments_haiti") %>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.02); border-radius: 0.5rem; padding: 0.6rem 0.75rem;
+                      border: 1px solid rgba(255,255,255,0.04); margin-bottom: 0.75rem;">
+            <div style="font-size: 0.6rem; color: rgba(255,255,255,0.35); text-transform: uppercase;
+                        letter-spacing: 0.05em; margin-bottom: 6px;">
+              <%= t("bonvote.recent_activity") %>
+            </div>
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.5); line-height: 1.8;">
+              <div><span style="color: #10B981;">&#9679;</span> Petyonvil, Ayiti · <span style="color: rgba(255,255,255,0.3);"><%= t("bonvote.now") %></span></div>
+              <div><span style="color: #7b8fff;">&#9679;</span> Miami, US · <span style="color: rgba(255,255,255,0.3);">2 <%= t("bonvote.min_ago") %></span></div>
+              <div><span style="color: #EDB95E;">&#9679;</span> Montréal, CA · <span style="color: rgba(255,255,255,0.3);">5 <%= t("bonvote.min_ago") %></span></div>
+            </div>
+          </div>
+
+          <div style="padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+            <div style="font-size: 0.55rem; color: #475569; text-transform: uppercase;
+                        letter-spacing: 0.05em; margin-bottom: 3px;">
+              <%= t("bonvote.merkle_root_label") %>
+            </div>
+            <div style="font-family: 'Courier New', monospace; font-size: 0.52rem; color: #334155;
+                        word-break: break-all;">
+              <%= @merkle_root || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Footer %>
+      <div style="text-align: center;">
+        <p style="font-size: 0.58rem; color: rgba(255,255,255,0.2); line-height: 1.6;">
+          <%= t("bonvote.footer_managed") %><br>
+          <%= t("bonvote.footer_no_pii") %>
+        </p>
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 0.5rem;">
+          <a href="/terms" target="_blank" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); text-decoration: none;">Terms of Use</a>
+          <a href="/privacy" target="_blank" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); text-decoration: none;">Privacy Policy</a>
+        </div>
+        <p style="font-size: 0.52rem; color: rgba(255,255,255,0.12); margin-top: 0.5rem;">
+          &copy; 2026 <%= t("bonvote.footer_copyright") %>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function bonvoteTab(name) {
+    document.querySelectorAll('.bv-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.bv-tab-content').forEach(function(c) { c.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    document.getElementById('content-' + name).classList.add('active');
+  }
+</script>
+
+</body>
+</html>

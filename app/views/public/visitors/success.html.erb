@@ -1,0 +1,162 @@
+<%# app/views/public/visitors/success.html.erb %>
+<% content_for :body_class, "visitor-certificate" %>
+
+<div class="visitor-certificate-page"
+     data-controller="certificate-toggle"
+     data-certificate-toggle-active-value="card">
+
+  <div style="max-width: 820px; width: 100%; margin: 0 auto;">
+
+    <!-- ===============================
+         HEADER
+    ================================ -->
+    <div class="text-center mb-4">
+      <div class="d-inline-flex align-items-center gap-2 mb-3">
+        <i class="ri-global-line" style="font-size: 1.6rem; color: #ffd700;"></i>
+        <span class="certificate-brand-label">BonTouris</span>
+      </div>
+      <h1 class="certificate-page-title mb-2">Your Digital Visitor ID</h1>
+      <p class="certificate-page-subtitle">
+        Secure identity verification for your stay in Haiti
+      </p>
+    </div>
+
+    <!-- ===============================
+         STATUS
+    ================================ -->
+    <div class="certificate-status-card mb-5">
+
+      <% if @visitor.approved? %>
+        <div class="d-flex align-items-start gap-3">
+          <div class="certificate-status-icon certificate-status-icon--success">
+            <i class="ri-shield-check-line"></i>
+          </div>
+          <div>
+            <h5 class="certificate-status-title">Identity Verified</h5>
+            <p class="certificate-status-text">
+              Your documents have been reviewed and approved by the BonTouris verification system.
+            </p>
+            <div class="certificate-status-detail">
+              <i class="ri-information-line me-1"></i>
+              Your BonTouris ID is now active and can be used for offline or online verification during your stay.
+            </div>
+          </div>
+        </div>
+
+      <% elsif @visitor.rejected? %>
+        <div class="d-flex align-items-start gap-3">
+          <div class="certificate-status-icon certificate-status-icon--danger">
+            <i class="ri-close-circle-line"></i>
+          </div>
+          <div>
+            <h5 class="certificate-status-title">Application Rejected</h5>
+            <p class="certificate-status-text">
+              We were unable to verify your identity based on the information and documents you submitted.
+            </p>
+
+            <% if @visitor.rejection_reason.present? %>
+              <div class="certificate-status-detail certificate-status-detail--danger mb-3">
+                <i class="ri-error-warning-line me-1"></i>
+                <strong>Reason:</strong> <%= @visitor.rejection_reason %>
+              </div>
+            <% end %>
+
+            <p class="certificate-status-text mb-3">
+              You may submit a new BonTouris ID application with clearer documents and accurate information.
+            </p>
+
+            <%= link_to new_public_visitor_path,
+                        class: "btn btn-primary rounded-pill px-4 bt-touch-target fw-semibold" do %>
+              <i class="ri-restart-line me-1"></i> Start New Application
+            <% end %>
+          </div>
+        </div>
+
+      <% else %>
+        <div class="d-flex align-items-start gap-3">
+          <div class="certificate-status-icon certificate-status-icon--warning">
+            <i class="ri-time-line"></i>
+          </div>
+          <div>
+            <h5 class="certificate-status-title">Under Review</h5>
+            <p class="certificate-status-text">
+              Your documents were successfully received and are being reviewed.
+            </p>
+            <div class="certificate-status-detail">
+              <i class="ri-information-line me-1"></i>
+              Once verification is complete, this page will automatically show your approved BonTouris ID.
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+    </div>
+
+    <!-- ===============================
+         CARD + QR (APPROVED ONLY)
+    ================================ -->
+    <% if @visitor.approved? %>
+      <% cert = VisitorCertificatePresenter.new(@visitor) %>
+
+      <!-- TOGGLE -->
+      <div class="d-flex justify-content-center mb-4">
+        <div class="certificate-toggle-wrapper"
+             data-certificate-toggle-target="toggle">
+
+          <div class="certificate-toggle-bg"></div>
+
+          <button type="button"
+                  class="certificate-toggle active"
+                  data-view="card"
+                  data-action="certificate-toggle#showCard">
+            <i class="ri-bank-card-line me-1"></i> Card
+          </button>
+
+          <button type="button"
+                  class="certificate-toggle"
+                  data-view="qr"
+                  data-action="certificate-toggle#showQR">
+            <i class="ri-qr-code-line me-1"></i> QR Code
+          </button>
+
+        </div>
+      </div>
+
+      <!-- VIEWS -->
+      <div class="certificate-views">
+
+        <!-- CARD -->
+        <div class="certificate-view active"
+             data-certificate-toggle-target="card">
+          <%= render "public/visitors/certificate_card",
+                     visitor: @visitor,
+                     cert: cert %>
+        </div>
+
+        <!-- QR -->
+        <div class="certificate-view"
+             data-certificate-toggle-target="qr">
+          <%= render "public/visitors/certificate_qr",
+                     visitor: @visitor,
+                     cert: cert %>
+        </div>
+
+      </div>
+    <% end %>
+
+    <!-- ===============================
+         EXIT
+    ================================ -->
+    <div class="mt-5 text-center">
+      <p class="small certificate-exit-hint mb-3">
+        You may safely exit and return to this page at any time using your one-time password.
+      </p>
+
+      <%= link_to get_started_public_visitors_path,
+                  class: "btn btn-outline-light rounded-pill px-4 fw-semibold bt-touch-target" do %>
+        <i class="ri-arrow-left-line me-2"></i> Exit
+      <% end %>
+    </div>
+
+  </div>
+</div>

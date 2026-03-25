@@ -1,0 +1,68 @@
+<!-- app/views/admin/identity_submissions/modals/_reject_reset_modal.html.erb -->
+<div class="modal fade"
+     id="rejectResetModal"
+     tabindex="-1"
+     aria-labelledby="rejectResetModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+
+      <!-- Modal Header -->
+      <div class="modal-header bg-gradient text-white py-3"
+           style="background: linear-gradient(90deg, #04328C, #1A73E8);">
+        <h5 class="modal-title d-flex align-items-center gap-2 fw-semibold" id="rejectResetModalLabel">
+          <i class="ri-close-circle-line fs-5"></i>
+          Reject Reset Request
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- Modal Form -->
+      <%= form_with model: [:admin, submission],
+                    url: reject_reset_admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    local: true,
+                    html: { role: "form", aria: { describedby: "rejectResetHelp" } } do |form| %>
+
+        <!-- Modal Body -->
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <%= form.label :reset_rejection_reason,
+                           "Reason for Reset Rejection",
+                           class: "form-label fw-semibold text-dark" %>
+
+            <%= form.text_area :reset_rejection_reason,
+                               rows: 4,
+                               class: "form-control rounded-3 shadow-sm",
+                               placeholder: "Provide detailed reason for rejecting this reset request...",
+                               required: true %>
+
+            <div id="rejectResetHelp" class="form-text text-muted mt-1">
+              This reason will be visible to the citizen in their dashboard notification.
+            </div>
+          </div>
+
+          <!-- Hidden flag -->
+          <%= hidden_field_tag :reject_reset, true %>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer bg-light border-0 d-flex justify-content-end gap-2 px-4 py-3">
+          <button type="button"
+                  class="btn btn-outline-secondary rounded-pill px-4"
+                  data-bs-dismiss="modal">
+            Cancel
+          </button>
+
+          <%= form.submit "Reject Reset",
+                          class: "btn btn-danger rounded-pill px-4 fw-semibold d-flex align-items-center gap-1" do %>
+            <i class="ri-close-line"></i> Reject Reset
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

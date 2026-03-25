@@ -1,0 +1,32 @@
+<!-- app/views/citizens/dashboard/_physical_modal.html.erb -->
+<div class="modal fade" id="physicalModal" tabindex="-1" aria-labelledby="physicalModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-haitian-blue text-white">
+        <h5 class="modal-title" id="physicalModalLabel">
+          <i class="ri-body-scan-line me-2"></i>
+          <%= current_citizen.physical_profile.present? ? "Edit" : "Add" %> Physical Characteristics
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= simple_form_for current_citizen,
+            as: :user,
+            url: citizens_profile_path,
+            method: :patch,
+            html: { data: { turbo: false } } do |f| %>
+
+        <%= f.simple_fields_for :physical_profile do |pp| %>
+          <div class="modal-body">
+            <%= render "citizens/profiles/physical_fields", f: pp %>
+          </div>
+        <% end %>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Save Physical Info", class: "btn btn-haitian-primary fw-semibold" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

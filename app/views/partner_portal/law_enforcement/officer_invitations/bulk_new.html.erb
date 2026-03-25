@@ -1,0 +1,132 @@
+<%# app/views/partner_portal/law_enforcement/officer_invitations/bulk_new.html.erb %>
+
+<div class="container-fluid py-4">
+  <%# Header %>
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2">
+          <li class="breadcrumb-item">
+            <%= link_to "Officers", partner_portal_law_enforcement_officers_path %>
+          </li>
+          <li class="breadcrumb-item">
+            <%= link_to "Invite", new_partner_portal_law_enforcement_officer_invitation_path %>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Bulk Invite</li>
+        </ol>
+      </nav>
+      <h1 class="h3 fw-bold text-dark mb-1">Bulk Officer Invitation</h1>
+      <p class="text-muted mb-0">Upload a CSV file to invite multiple verified citizens at once</p>
+    </div>
+    <div class="mt-3 mt-md-0">
+      <%= link_to new_partner_portal_law_enforcement_officer_invitation_path, class: "btn btn-outline-secondary rounded-pill" do %>
+        <i class="ri-arrow-left-line me-1"></i> Back to Single Invite
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <%# Important Notice %>
+      <div class="alert alert-warning border-0 shadow-sm rounded-3 mb-4">
+        <div class="d-flex">
+          <div class="flex-shrink-0">
+            <i class="ri-alert-line fs-4 text-warning"></i>
+          </div>
+          <div class="ms-3">
+            <h6 class="fw-semibold mb-1">Bulk Invitation Rules</h6>
+            <ul class="mb-0 small ps-3">
+              <li>Only citizens with <strong>verified BonID</strong> will receive invitations</li>
+              <li>Emails not found in the system will be skipped</li>
+              <li>Citizens without approved BonID will be skipped</li>
+              <li>Maximum <strong>1,000 emails</strong> per upload</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <%# Bulk Upload Form %>
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-file-upload-line text-success me-2"></i>Upload CSV File
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <%= form_with url: bulk_create_partner_portal_law_enforcement_officer_invitations_path,
+                        method: :post,
+                        multipart: true,
+                        local: true,
+                        html: { class: "needs-validation", novalidate: true } do |f| %>
+
+            <div class="mb-4">
+              <%= f.label :file, "Select CSV File", class: "form-label fw-semibold" %>
+              <%= f.file_field :file,
+                               accept: ".csv,.txt",
+                               class: "form-control",
+                               required: true %>
+              <div class="form-text text-muted">
+                Upload a CSV or TXT file with one email address per line. No column headers needed.
+              </div>
+            </div>
+
+            <div class="d-flex gap-3">
+              <%= f.submit "Upload & Send Invitations", class: "btn btn-success rounded-pill px-4" %>
+              <%= link_to "Cancel", partner_portal_law_enforcement_officers_path, class: "btn btn-outline-secondary rounded-pill px-4" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Sample Format %>
+      <div class="card border-0 shadow-sm rounded-3 mt-4">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-file-text-line text-info me-2"></i>CSV Format Example
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <pre class="bg-dark text-light p-3 rounded-3 small mb-0"><code>officer1@example.com
+officer2@example.com
+officer3@example.com
+jean.pierre@pnh.ht
+marie.louis@pnh.ht</code></pre>
+          <p class="text-muted small mt-2 mb-0">
+            One email per line. Duplicates and invalid emails will be automatically filtered out.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <%# Sidebar Info %>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-3 bg-light">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3">
+            <i class="ri-checkbox-circle-line text-success me-2"></i>What Happens Next
+          </h6>
+          <ol class="ps-3 mb-0 small text-muted">
+            <li class="mb-2">We read each email from your CSV file</li>
+            <li class="mb-2">We check if each email belongs to a verified BonID holder</li>
+            <li class="mb-2">Verified citizens receive invitation emails</li>
+            <li class="mb-2">You'll see a summary of sent vs skipped invitations</li>
+            <li>Officers accept their invitations to join</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm rounded-3 mt-3">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3">
+            <i class="ri-error-warning-line text-danger me-2"></i>Common Issues
+          </h6>
+          <ul class="ps-3 mb-0 small text-muted">
+            <li class="mb-2"><strong>Email not found:</strong> Person hasn't registered on BonID yet</li>
+            <li class="mb-2"><strong>No verified BonID:</strong> Registration pending or rejected</li>
+            <li class="mb-2"><strong>Invalid format:</strong> Email addresses must be valid</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

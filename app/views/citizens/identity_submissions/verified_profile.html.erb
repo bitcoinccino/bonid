@@ -1,0 +1,307 @@
+<!-- app/views/citizens/identity_submissions/verified_profile.html.erb -->
+<div id="print-area" class="certificate-font py-5">
+  <div class="container position-relative">
+
+    <!-- Header Bar -->
+    <div class="d-print-none d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 header-bar">
+      <%= link_to citizens_identity_submissions_path,
+                  class: "btn btn-outline-secondary rounded-pill fw-semibold d-inline-flex align-items-center gap-2 back-btn" do %>
+        <i class="ri-arrow-left-line"></i>
+        Back
+      <% end %>
+
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-light rounded-circle shadow-sm p-3 action-btn" id="share-certificate" title="Share Certificate">
+          <i class="ri-share-forward-line fs-4 text-haitian-blue"></i>
+        </button>
+        <button class="btn btn-light rounded-circle shadow-sm p-3 action-btn" id="print-certificate" title="Print Certificate">
+          <i class="ri-printer-line fs-4 text-haitian-blue"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Certificate Card -->
+    <div class="card shadow-lg border-0 certificate-card rounded-4 overflow-hidden">
+      <div class="card-body p-5 position-relative">
+
+        <!-- Header -->
+        <div class="text-center mb-4">
+          <h2 class="text-haitian-blue fw-bold mb-0 font-heading-semibold fs-3">
+            Certificate of Identity Verification
+          </h2>
+          <p class="text-muted mb-0 small font-body">
+            Issued by BonID · Digital Identity Platform of Haiti
+          </p>
+        </div>
+
+        <hr class="my-4">
+
+        <!-- Identity Info -->
+        <div class="row g-4 align-items-center mb-5">
+          <!-- Selfie -->
+          <div class="col-md-3 text-center">
+            <% if @submission.selfie.attached? %>
+              <%= image_tag @submission.selfie.variant(resize_to_fill: [150,150]),
+                            class: "rounded-circle shadow-sm border border-3 border-primary-subtle mx-auto d-block",
+                            alt: "Verified Selfie" %>
+              <p class="small text-muted mt-2 font-body">Verified Selfie</p>
+            <% else %>
+              <div class="rounded-circle bg-light border border-3 border-primary-subtle d-flex align-items-center justify-content-center mx-auto"
+                   style="width:150px; height:150px;">
+                <span class="text-muted small font-body">No Photo</span>
+              </div>
+            <% end %>
+          </div>
+
+          <!-- Details -->
+          <div class="col-md-6 text-center text-md-start">
+            <h4 class="fw-bold text-haitian-blue mb-3 font-heading-semibold">
+              <%= @submission.user.full_name %>
+            </h4>
+            <p class="mb-2 font-body">
+              <strong class="fw-semibold text-haitian-blue">DOB:</strong>
+              <%= @submission.user.dob&.strftime("%B %d, %Y") || "—" %>
+            </p>
+            <p class="mb-2 font-body">
+              <strong class="fw-semibold text-haitian-blue">Place of Birth:</strong>
+              <%= [@submission.user.birth_commune&.name, @submission.user.birth_department&.name].compact.join(", ").presence || "N/A" %>
+            </p>
+            <p class="mb-2 font-body">
+              <strong class="fw-semibold text-haitian-blue">Address:</strong>
+              <%= @submission.user.formatted_address || "—" %>
+            </p>
+          </div>
+
+          <!-- BonID -->
+          <div class="col-md-3 text-center">
+            <p class="fw-bold text-haitian-blue mb-2 font-heading-semibold">BonID</p>
+            <div class="border border-2 border-primary-subtle rounded-3 p-2 bg-white shadow-sm">
+              <span class="fw-semibold text-dark font-monospace">
+                <%= @submission.user.bonid || "N/A" %>
+              </span>
+            </div>
+
+            <% if @submission.user.bonid.present? %>
+              <% bonid_parts = @submission.user.bonid.split('-') %>
+              <% checksum = bonid_parts.last[-3..] %>
+
+              <div class="d-inline-flex align-items-center border border-2 border-primary-subtle rounded-3 bg-white shadow-sm px-3 py-2 mt-2">
+                <span id="checksum-value" class="font-monospace small me-2"><%= checksum %></span>
+                <button class="btn btn-sm btn-outline-secondary" id="copy-checksum" aria-label="Copy Checksum">
+                  <i class="ri-clipboard-line"></i>
+                </button>
+              </div>
+
+              <p class="text-muted small mt-2 font-body mb-0">
+                Checksum verifies BonID authenticity
+              </p>
+
+              <%# ⬇️ FIXED SIGNATURE CHECK — uses submission-aware verification %>
+              <% if @submission.user.verify_submission_signature(@submission) %>
+                <span class="badge bg-success-subtle text-success mt-1">✓ Valid Signature</span>
+              <% else %>
+                <span class="badge bg-danger-subtle text-danger mt-1">Invalid Signature</span>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+
+        <!-- Verification Token -->
+        <% if @submission.verification_token.present? %>
+          <div class="text-center mb-5">
+            <h6 class="fw-bold text-haitian-blue small mb-2 font-heading-semibold">Verification Code</h6>
+            <div class="d-inline-flex align-items-center border border-2 border-primary-subtle rounded-3 bg-white shadow-sm px-3 py-2">
+              <span id="verification-token" class="font-monospace small me-2"><%= @submission.verification_token %></span>
+              <button class="btn btn-sm btn-outline-secondary" id="copy-token" aria-label="Copy Verification Code">
+                <i class="ri-clipboard-line"></i>
+              </button>
+            </div>
+            <p class="text-muted small mt-2 font-body">
+              Use this code to verify authenticity at <strong>bonid.ht</strong>
+            </p>
+          </div>
+        <% end %>
+
+        <!-- QR Code + HMAC -->
+        <% qr_base64 = @submission.secure_qr_png_base64.presence || @submission.public_qr_png_base64 %>
+        <% if qr_base64.present? %>
+          <div class="text-center mb-5">
+            <h6 class="fw-bold text-haitian-blue small mb-2 font-heading-semibold">Scan to Verify</h6>
+            <a href="https://bonid.ht/verify/<%= @submission.user.bonid %>"
+               target="_blank" rel="noopener" class="d-block mx-auto">
+              <img src="data:image/png;base64,<%= qr_base64 %>"
+                   alt="BonID QR Code"
+                   class="img-fluid rounded-3 shadow-sm mx-auto"
+                   style="max-width: 200px;" />
+            </a>
+
+            <% if @submission.hmac_signature_value.present? %>
+              <div class="d-inline-flex align-items-center mt-3 border border-2 border-primary-subtle rounded-3 bg-white shadow-sm px-4 py-3">
+                <span id="hmac-signature" class="font-monospace me-2 small"><%= @submission.hmac_signature_value %></span>
+                <button class="btn btn-sm btn-outline-secondary" id="copy-hmac" aria-label="Copy HMAC Signature">
+                  <i class="ri-clipboard-line"></i>
+                </button>
+              </div>
+              <p class="text-muted small mt-2 font-body">
+                Cryptographic signature generated by BonID.
+              </p>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-center text-muted small mb-5 font-body">QR not available — submission not yet verified.</p>
+        <% end %>
+
+        <!-- Verification Dates -->
+        <div class="row text-center mb-5">
+          <div class="col-md-4">
+            <h6 class="fw-bold text-haitian-blue small font-heading-semibold">Verified On</h6>
+            <p class="font-body"><%= @submission.verified_at&.strftime("%B %d, %Y") || "—" %></p>
+          </div>
+          <div class="col-md-4">
+            <h6 class="fw-bold text-haitian-blue small font-heading-semibold">Expires</h6>
+            <p class="font-body"><%= @submission.expires_at&.strftime("%B %d, %Y") || "—" %></p>
+          </div>
+          <div class="col-md-4">
+            <h6 class="fw-bold text-haitian-blue small font-heading-semibold">Type</h6>
+            <p class="font-body">
+              <%= @submission.submission_type.humanize %>
+              <% if @submission.submission_type == "reissue" %>
+                <small class="text-muted">Reissued on <%= @submission.updated_at.strftime("%B %d, %Y") %></small>
+              <% end %>
+            </p>
+          </div>
+        </div>
+
+        <!-- Signature + Seal -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-5">
+          <div class="text-center mb-4 mb-md-0">
+            <% if @submission.signature.attached? %>
+              <%= image_tag @submission.signature.variant(resize_to_limit: [350,120]),
+                            class: "img-fluid shadow-sm mx-auto d-block",
+                            style: "max-height:120px;",
+                            alt: "User Signature" %>
+            <% else %>
+              <p class="small text-muted font-body">No signature on file</p>
+            <% end %>
+          </div>
+
+          <div class="text-center">
+            <div class="seal-circle mx-auto">
+              <i class="ri-verified-badge-line fs-2 text-white"></i>
+              <p class="seal-text">Authentic</p>
+            </div>
+            <p class="text-muted small mt-2 font-body"><%= @submission.verified_at&.strftime("%B %d, %Y") || "—" %></p>
+
+            <% if @submission.partner.present? %>
+              <p class="fw-semibold text-haitian-blue small mt-2 font-body">
+                <i class="ri-checkbox-circle-line me-1"></i>
+                Verified via <%= @submission.partner.name %>
+              </p>
+              <% if @submission.partner.logo.attached? %>
+                <div class="mt-2">
+                  <%= image_tag url_for(@submission.partner.logo),
+                                class: "rounded-circle border shadow-sm mx-auto d-block",
+                                alt: @submission.partner.name,
+                                style: "width:80px; height:80px; object-fit:cover;" %>
+                </div>
+              <% end %>
+            <% else %>
+              <p class="text-muted small font-body">Verified via BonID Central</p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+.certificate-font { font-family:'Inter',sans-serif; }
+.font-heading-semibold { font-family:'Montserrat',sans-serif; font-weight:600; letter-spacing:0.3px; }
+.font-body { font-family:'Inter',sans-serif; }
+.certificate-card { background:linear-gradient(180deg,#fff 0%,#f9f9f9 100%); border:3px double #00209F; }
+
+.header-bar .btn,
+.action-btn {
+  font-family:'Montserrat',sans-serif;
+}
+
+/* Round buttons */
+.action-btn {
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .2s ease-in-out;
+}
+
+.action-btn:hover {
+  transform:translateY(-2px);
+  background-color:#f8f9fa;
+}
+
+/* Seal */
+.seal-circle {
+  width:90px; height:90px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%,#00209F,#001a7d);
+  border:3px solid #FFD700;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:0 0 8px rgba(0,0,0,.15);
+}
+.seal-text { font-size:.6rem; font-weight:700; color:#FFD700; text-transform:uppercase; margin:0; }
+
+@media(max-width:768px){
+  .header-bar { flex-direction:column; align-items:flex-start; gap:1rem; }
+  .action-btn { width:52px; height:52px; }
+}
+
+@media print { .d-print-none { display: none !important; } }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const shareBtn = document.getElementById("share-certificate");
+  const printBtn = document.getElementById("print-certificate");
+  const copyTokenBtn = document.getElementById("copy-token");
+  const copyHmacBtn = document.getElementById("copy-hmac");
+
+  if (shareBtn) {
+    shareBtn.addEventListener("click", async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title:"BonID Certificate", text:"Verify my BonID on bonid.ht", url:window.location.href });
+        } catch(e){ console.warn(e); }
+      } else {
+        navigator.clipboard.writeText(window.location.href);
+        shareBtn.innerHTML='<i class="ri-check-line text-success"></i>';
+        setTimeout(()=>shareBtn.innerHTML='<i class="ri-share-forward-line fs-4 text-haitian-blue"></i>',2000);
+      }
+    });
+  }
+
+  if (printBtn) printBtn.addEventListener("click",()=>window.print());
+
+  if (copyTokenBtn){
+    copyTokenBtn.addEventListener("click",()=>{
+      const token=document.getElementById("verification-token").innerText.trim();
+      navigator.clipboard.writeText(token);
+      copyTokenBtn.innerHTML='<i class="ri-check-line text-success"></i>';
+      setTimeout(()=>copyTokenBtn.innerHTML='<i class="ri-clipboard-line"></i>',2000);
+    });
+  }
+
+  if (copyHmacBtn){
+    copyHmacBtn.addEventListener("click",()=>{
+      const hmac=document.getElementById("hmac-signature").innerText.trim();
+      navigator.clipboard.writeText(hmac);
+      copyHmacBtn.innerHTML='<i class="ri-check-line text-success"></i>';
+      setTimeout(()=>copyHmacBtn.innerHTML='<i class="ri-clipboard-line"></i>',2000);
+    });
+  }
+});
+</script>

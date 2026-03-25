@@ -1,0 +1,121 @@
+<!-- app/views/partner_portal/shared/components/_minimal_pnh_form.html.erb -->
+<!-- Minimal signup form for PNH (Police Nationale d'Haïti) partners only -->
+
+<div class="pnh-minimal-form">
+
+  <!-- Organization Name -->
+  <div class="mb-4">
+    <h2 class="h5 fw-bold text-primary mb-3">
+      <i class="ri-building-line me-2"></i> Organization Information
+    </h2>
+
+    <%= f.input :name,
+        label: "Unit/Department Name",
+        required: true,
+        input_html: {
+          placeholder: "e.g., UDMO Port-au-Prince",
+          class: "form-control rounded-3",
+          style: "height: 46px; padding: 0.625rem 1rem;",
+          data: { form_validation_target: "input", form_progress_target: "input" }
+        },
+        wrapper_html: { class: "mb-4" } %>
+  </div>
+
+  <!-- Primary Contact -->
+  <div class="mb-4">
+    <h2 class="h5 fw-bold text-primary mb-3">
+      <i class="ri-user-line me-2"></i> Primary Contact
+    </h2>
+
+    <%= f.input :contact_person,
+      label: "Officer Name",
+      required: true,
+      input_html: {
+        placeholder: "e.g., Commandant Jean Baptiste",
+        class: "form-control rounded-3",
+        data: { form_validation_target: "input", form_progress_target: "input" }
+      },
+      wrapper_html: { class: "mb-3" } %>
+
+    <%= f.input :email,
+      label: "Official PNH Email",
+      required: true,
+      input_html: {
+        placeholder: "e.g., udmo@pnh.gov.ht",
+        class: "form-control rounded-3",
+        data: { form_validation_target: "input", form_progress_target: "input" }
+      },
+      wrapper_html: { class: "mb-3" } %>
+
+    <%= f.input :phone_number,
+      label: "Contact Phone",
+      required: true,
+      as: :tel,
+      input_html: {
+        placeholder: "+509 3456 7890",
+        class: "form-control rounded-3",
+        data: { form_progress_target: "input" }
+      },
+      wrapper_html: { class: "mb-0" } %>
+  </div>
+
+  <!-- Sector & Unit Selection -->
+  <div class="mb-4" data-controller="sector">
+    <h2 class="h5 fw-bold text-primary mb-3">
+      <i class="ri-shield-line me-2"></i> Unit Information
+    </h2>
+
+    <!-- Hidden sector field - auto-set to "pnh" for PNH partners -->
+    <%= f.input :department_sector,
+      as: :hidden,
+      input_html: { value: "pnh" } %>
+
+    <!-- Unit Type -->
+    <div class="mb-3">
+      <%= f.input :unit_type,
+        collection: OfficerConstants::UNIT_OPTIONS.keys,
+        prompt: "Select Unit Type",
+        label: "Unit Type",
+        required: true,
+        input_html: {
+          class: "form-select rounded-3 shadow-sm",
+          style: "height:46px;padding:0.625rem 1rem;",
+          data: {
+            action: "change->sector#populateUnitNames",
+            sector_target: "unitTypeSelect"
+          }
+        } %>
+    </div>
+
+    <!-- Unit Name -->
+    <div class="mb-3">
+      <%= f.input :unit_name,
+        as: :select,
+        collection: [],
+        prompt: "Select Unit Name",
+        label: "Unit Name",
+        required: true,
+        input_html: {
+          class: "form-select rounded-3 shadow-sm",
+          style: "height:46px;padding:0.625rem 1rem;",
+          data: { sector_target: "unitNameSelect", form_progress_target: "input" }
+        } %>
+    </div>
+  </div>
+
+  <!-- Info Notice -->
+  <div class="alert alert-info rounded-4 mb-4">
+    <i class="ri-information-line me-2"></i>
+    <strong>Quick Registration for PNH</strong><br>
+    <small>
+      Additional details (address, full description) can be completed after your account is approved.
+      You'll receive an email notification once your application is reviewed.
+    </small>
+  </div>
+
+</div>
+
+<!-- Pass Officer Unit Options as JSON -->
+<%= tag.script id: "unit-options-json", type: "application/json" do %>
+  <%= OfficerConstants::UNIT_OPTIONS.to_json.html_safe %>
+<% end %>

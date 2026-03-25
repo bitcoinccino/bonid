@@ -1,0 +1,285 @@
+<%# Officer BonID Scan/Lookup Page %>
+
+<div class="container-fluid py-4" data-turbo-cache="false">
+  <%# Page Header %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; color: var(--law-blue);">
+      <i class="ri-qr-scan-2-line me-2" style="font-size: 1.125rem; font-weight: 400;"></i>BonID Verification
+    </h4>
+    <%= link_to officers_dashboard_path, class: "btn btn-outline-secondary", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
+      <i class="ri-arrow-left-line me-1" style="font-size: 1rem; font-weight: 400;"></i>Dashboard
+    <% end %>
+  </div>
+
+  <div class="row">
+    <%# Main Scanner/Lookup Section %>
+    <div class="col-lg-8 mb-4">
+      <div class="card border-0 shadow-sm" data-controller="qr-scanner">
+        <div class="card-header bg-white border-0 py-3" data-qr-scanner-target="toggleHeader">
+          <%# Toggle Buttons - Hidden after scan/lookup result %>
+          <div class="btn-group w-100" role="group">
+            <button type="button" id="scanToggleBtn"
+                    class="btn scan-toggle-btn active"
+                    data-action="click->qr-scanner#showScannerSection"
+                    style="font-family: 'Montserrat', sans-serif; font-weight: 500;">
+              <i class="ri-camera-line me-1"></i>Scan
+            </button>
+            <button type="button" id="manualToggleBtn"
+                    class="btn manual-toggle-btn"
+                    data-action="click->qr-scanner#showManualSection"
+                    style="font-family: 'Montserrat', sans-serif; font-weight: 500;">
+              <i class="ri-keyboard-line me-1"></i>Manual
+            </button>
+          </div>
+        </div>
+
+        <style>
+          .scan-toggle-btn, .manual-toggle-btn {
+            border: 1px solid var(--law-blue, #0A3A9E) !important;
+            transition: all 0.2s ease;
+          }
+          .scan-toggle-btn.active, .manual-toggle-btn.active {
+            background: var(--law-blue, #0A3A9E) !important;
+            color: white !important;
+          }
+          .scan-toggle-btn:not(.active), .manual-toggle-btn:not(.active) {
+            background: transparent !important;
+            color: var(--law-blue, #0A3A9E) !important;
+          }
+          .scan-toggle-btn:hover:not(.active), .manual-toggle-btn:hover:not(.active) {
+            background: rgba(10, 58, 158, 0.1) !important;
+          }
+        </style>
+
+        <div class="card-body">
+          <%# Scanner Section %>
+          <div id="scannerSection" data-qr-scanner-target="scannerSection">
+            <%# Camera Reader %>
+            <div id="qr-reader" data-qr-scanner-target="reader"
+                 class="mx-auto mb-3"
+                 style="max-width: 350px; border-radius: 8px; overflow: hidden;"></div>
+
+            <%# Camera Selector %>
+            <div class="mb-3 text-center">
+              <select class="form-select form-select-sm d-inline-block w-auto"
+                      data-qr-scanner-target="deviceSelector"
+                      data-action="change->qr-scanner#switchCamera"
+                      style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                <option value="" disabled selected>Select camera</option>
+              </select>
+            </div>
+
+            <%# Torch Toggle %>
+            <div class="torch-toggle text-center mb-3 d-none">
+              <div class="form-check form-switch d-inline-flex align-items-center">
+                <input class="form-check-input" type="checkbox" id="torchToggle"
+                       data-action="change->qr-scanner#toggleTorch">
+                <label class="form-check-label ms-2" for="torchToggle"
+                       style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                  <i class="ri-flashlight-line me-1"></i>Flashlight
+                </label>
+              </div>
+            </div>
+
+            <%# Image Upload Option %>
+            <div class="text-center mb-3">
+              <label class="btn btn-outline-secondary btn-sm"
+                     style="font-family: 'Montserrat', sans-serif; font-size: 0.8rem;">
+                <i class="ri-image-line me-1"></i>Upload QR Image
+                <input type="file" accept="image/*" class="d-none"
+                       data-qr-scanner-target="imageInput"
+                       data-action="change->qr-scanner#scanImage">
+              </label>
+            </div>
+          </div>
+
+          <%# Manual Entry Section %>
+          <div id="manualSection" data-qr-scanner-target="manualSection" class="d-none">
+            <div class="mb-4">
+              <label class="form-label" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;">
+                <i class="ri-fingerprint-line me-1" style="font-weight: 400;"></i>Last Digits
+              </label>
+              <input type="text"
+                     class="form-control form-control-lg text-center text-uppercase"
+                     placeholder="697XDS"
+                     maxlength="6"
+                     inputmode="text"
+                     pattern="[A-Za-z0-9]{6}"
+                     data-qr-scanner-target="bonidInput"
+                     data-action="input->qr-scanner#validateBonidInput"
+                     style="font-family: 'Courier New', monospace; font-size: 1.5rem; letter-spacing: 4px;">
+              <div class="form-text text-center" style="font-size: 0.75rem;">
+                Enter the <strong>last 6 characters</strong> of the BonID (e.g., 697XDS)
+              </div>
+            </div>
+
+            <%# Security Notice %>
+            <div class="alert alert-info py-2 mb-3" style="font-size: 0.8rem;">
+              <i class="ri-shield-check-line me-1"></i>
+              <strong>Citizens:</strong> Requires visual photo verification.
+              <br><strong>Tourists:</strong> Shows passport details directly.
+            </div>
+
+            <%# Hidden inputs for form submission %>
+            <input type="hidden" data-qr-scanner-target="verificationTokenInput">
+            <input type="hidden" data-qr-scanner-target="signatureInput">
+
+            <button type="button"
+                    class="btn w-100 text-white"
+                    data-qr-scanner-target="submitButton"
+                    data-action="click->qr-scanner#submitForm"
+                    style="font-family: 'Montserrat', sans-serif; font-weight: 500; background: var(--law-green);">
+              <i class="ri-search-line me-1"></i>Search
+            </button>
+          </div>
+
+          <%# Output/Status Messages %>
+          <div data-qr-scanner-target="output" class="alert d-none text-center small"></div>
+
+          <%# Loading Spinner %>
+          <div data-qr-scanner-target="spinner" class="text-center d-none py-3">
+            <div class="spinner-border" role="status" style="color: var(--law-green);">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 mb-0 text-muted small">Verifying...</p>
+          </div>
+        </div>
+
+        <%# Result Section %>
+        <div id="resultSection" data-qr-scanner-target="resultSection" class="d-none">
+          <div class="card-body pt-0">
+            <div id="scan_result_frame" data-qr-scanner-target="resultFrame">
+              <div class="text-center text-muted small py-4">
+                Scan result will appear here.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Footer Actions %>
+        <div class="card-footer bg-white border-0" data-qr-scanner-target="footer">
+          <div class="d-flex gap-2">
+            <button type="button"
+                    class="btn btn-outline-secondary flex-grow-1"
+                    data-qr-scanner-target="cancelButton"
+                    data-action="click->qr-scanner#cancel"
+                    style="font-family: 'Montserrat', sans-serif; font-weight: 500;">
+              <i class="ri-close-line me-1"></i>Cancel
+            </button>
+          </div>
+        </div>
+
+        <%# Rescan Button (shown after invalid result) %>
+        <div class="card-footer bg-white border-0 d-none" data-qr-scanner-target="rescanWrapper">
+          <button type="button"
+                  class="btn w-100"
+                  data-action="click->qr-scanner#rescan"
+                  style="font-family: 'Montserrat', sans-serif; font-weight: 500; background: transparent; color: var(--law-green); border: 1px solid var(--law-green);">
+            <i class="ri-refresh-line me-1"></i>Try Again
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%# Verification Tips Sidebar %>
+    <div class="col-lg-4">
+      <%# Verification Tips Card %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h6 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--law-blue);">
+            <i class="ri-lightbulb-line me-1" style="font-weight: 400;"></i>Verification Tips
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <%# Tip 1: QR Scan %>
+          <div class="d-flex align-items-start p-3 border-bottom">
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: var(--law-green-10);">
+              <i class="ri-qr-scan-2-line" style="font-size: 1.1rem; color: var(--law-green); font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                QR Scan is Best
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                Most secure method - automatically verifies digital signature
+              </div>
+            </div>
+          </div>
+
+          <%# Tip 2: Photo Matching %>
+          <div class="d-flex align-items-start p-3 border-bottom">
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: var(--law-blue-10);">
+              <i class="ri-user-search-line" style="font-size: 1.1rem; color: var(--law-blue); font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                Compare Photo
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                Always match the displayed photo with the person in front of you
+              </div>
+            </div>
+          </div>
+
+          <%# Tip 3: Manual Entry Format - Citizens %>
+          <div class="d-flex align-items-start p-3 border-bottom">
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: rgba(245, 158, 11, 0.1);">
+              <i class="ri-keyboard-line" style="font-size: 1.1rem; color: #F59E0B; font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                Citizens: <code style="font-size: 0.8rem;">697XDS</code>
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                Enter last 6 characters of BonID
+              </div>
+            </div>
+          </div>
+
+          <%# Tip 4: Manual Entry Format - Tourists %>
+          <div class="d-flex align-items-start p-3 border-bottom">
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: rgba(139, 92, 246, 0.1);">
+              <i class="ri-group-line" style="font-size: 1.1rem; color: #8B5CF6; font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                Tourists: <code style="font-size: 0.8rem;">123456</code>
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                Enter last 6 passport digits
+              </div>
+            </div>
+          </div>
+
+          <%# Tip 5: Report Issues %>
+          <div class="d-flex align-items-start p-3">
+            <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-circle me-3"
+                 style="width: 40px; height: 40px; background: var(--law-red-10);">
+              <i class="ri-alarm-warning-line" style="font-size: 1.1rem; color: var(--law-red); font-weight: 400;"></i>
+            </div>
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--dark-gray);">
+                Report Mismatches
+              </div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.75rem; color: var(--mid-gray);">
+                Report identity fraud or tampering immediately
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Audio Elements for Feedback %>
+<audio id="beep-sound-success" preload="auto">
+  <source src="/sounds/beep-success.mp3" type="audio/mpeg">
+</audio>
+<audio id="beep-sound-error" preload="auto">
+  <source src="/sounds/beep-error.mp3" type="audio/mpeg">
+</audio>

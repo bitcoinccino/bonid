@@ -1,19 +1,308 @@
-<% status_info = submission_status_info(submission) %>
-<% type_label, type_class, type_description = submission_type_badge(submission) %>
 
-<div class="mb-4">
-  <div class="d-flex align-items-center gap-3 flex-wrap">
-    <span class="badge <%= status_info[:badge_class] %> rounded-pill px-3 py-2">
-      <%= status_info[:text] %>
-    </span>
+<% submission = local_assigns[:submission] %>
+<% current = local_assigns[:user] || current_citizen %>
+<% profile_ok = current && (profile_complete?(current) || current.identity_submissions.approved.exists?) %>
 
-    <span class="badge <%= type_class %> rounded-pill px-3 py-2">
-      <%= type_label %>
-    </span>
+<% has_any_submission = current.identity_submissions.exists? %>
+<% has_pending = current.identity_submissions.pending.exists? %>
+<% rejected_submission = current.identity_submissions.rejected.first %>
+
+<%# 🚫 EXIT EARLY if there's truly nothing to show %>
+<% unless submission.present? || !profile_ok || has_any_submission %>
+  <%# Do not render anything at all %>
+  <% return %>
+<% end %>
+
+<%# =====================================================
+  🟢 CASE 1 — No Submissions Yet
+===================================================== %>
+<% if submission.nil? && !has_any_submission %>
+  <div class="card submission-status-card rounded-3 mt-2 shadow-sm animate__animated animate__fadeIn" role="region" aria-live="polite">
+    <div class="card-body p-3">
+      <h5 class="card-title fw-bold text-haitian-blue d-flex align-items-center gap-2 mb-2">
+        <i class="ri-fingerprint-line fs-5 text-warning"></i>
+        <span class="badge bg-warning text-dark rounded-pill pulse-glow small">
+          Get Started
+        </span>
+      </h5>
+      <p class="card-text small mb-2">
+        You haven’t started your BonID verification yet. Begin the process to unlock verified services.
+      </p>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <% if profile_ok %>
+          <%= link_to "Start Verification",
+                      new_citizens_identity_submission_path,
+                      class: "btn btn-sm btn-haitian-blue fw-semibold",
+                      role: "button" %>
+        <% else %>
+          <%= link_to "Complete Profile First",
+                      edit_citizens_profile_path,
+                      class: "btn btn-sm btn-outline-secondary fw-semibold",
+                      role: "button" %>
+        <% end %>
+      </div>
+    </div>
   </div>
 
-  <p class="text-muted mt-2 mb-0">
-    <%= submission_type_description(submission) %>
-  </p>
-</div>
+<%# =====================================================
+  🟡 CASE 2 — Has Previous Submissions but None Pending
+===================================================== %>
+<% elsif submission.nil? && has_any_submission && !has_pending %>
+  <div class="card submission-status-card rounded-3 mt-2 shadow-sm animate__animated animate__fadeIn" role="region" aria-live="polite">
+    <div class="card-body p-3">
+      <h5 class="card-title fw-bold text-haitian-blue d-flex align-items-center gap-2 mb-2">
+        <i class="ri-time-line fs-5 text-info"></i>
+        <span class="badge bg-info text-white rounded-pill pulse-glow small">
+          No Active Submission
+        </span>
+      </h5>
+      <p class="card-text small mb-2">
+        Your previous submission is complete or rejected. Start a new one if needed.
+      </p>
 
+      <div class="d-flex gap-2 flex-wrap">
+        <% if rejected_submission %>
+          <%= link_to "Resubmit Rejected",
+                      new_citizens_identity_submission_path(resubmission_from: rejected_submission.public_token),
+                      class: "btn btn-sm btn-warning fw-semibold",
+                      role: "button" %>
+        <% end %>
+
+        <% if eligible_for_new_bonid_request?(current, current.identity_submissions) %>
+          <%= button_tag "Request Reissue",
+                         type: "button",
+                         class: "btn btn-sm btn-outline-gold fw-semibold pulse-glow",
+                         data: {
+                           bs_toggle: "modal",
+                           bs_target: "#requestNewBonIDModal"
+                         },
+                         aria_label: "Request a new BonID reissue",
+                         id: "requestNewBonIDButton_global" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+<%# =====================================================
+  🔵 CASE 3 — Specific Submission Provided
+===================================================== %>
+<% elsif submission.present? %>
+  <% status_info = submission_status_info(submission) %>
+
+  <div class="card submission-status-card rounded-3 mt-2 shadow-sm animate__animated animate__fadeIn" role="region" aria-live="polite">
+    <div class="card-body p-3">
+      <h5 class="card-title fw-bold text-haitian-blue d-flex align-items-center gap-2 mb-2">
+        <i class="<%= status_icon(submission) %> fs-5"></i>
+        <span class="badge <%= status_info[:badge_class] %> rounded-pill pulse-glow small">
+          <%= status_info[:text] %>
+        </span>
+      </h5>
+
+      <p class="card-text small mb-2"><%= status_message(submission) %></p>
+      <p class="card-text small text-muted mb-2"><%= submission_type_description(submission) %></p>
+
+      <% if submission.rejection_reason.present? && (submission.status == "rejected" || submission.reset_request_status == "rejected") %>
+        <p class="card-text small text-muted mb-2">
+          <span class="fw-semibold">Reason:</span>
+          <%= user_friendly_rejection_reason(submission.rejection_reason) %>.
+        </p>
+      <% end %>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <% if submission.reset_request_status == "rejected" %>
+          <%= link_to "Resubmit",
+                      edit_identity_submission_path(submission),
+                      class: "btn btn-sm btn-haitian-blue fw-semibold",
+                      role: "button" %>
+        <% end %>
+
+        <% if profile_ok && eligible_for_new_bonid_request?(current, [submission]) %>
+          <%= button_tag "Request New BonID",
+                         type: "button",
+                         class: "btn btn-sm btn-outline-gold fw-semibold pulse-glow",
+                         data: {
+                           bs_toggle: "modal",
+                           bs_target: "#requestNewBonIDModal",
+                           submission_status: submission.status,
+                           submission_type: submission.submission_type
+                         },
+                         aria_label: "Request a new BonID reissue",
+                         id: "requestNewBonIDButton_#{submission.id}" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+
+<style>
+  .main-content {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+.container-fluid {
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
+}
+
+/* Sticky BonID Header */
+.bonid-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #00209F;
+  border: 1px solid #F9FBFD;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* General styles */
+.certificate-font {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.bg-white {
+  background-color: #F9FBFD !important;
+}
+
+.form-container {
+  max-width: 1000px;
+  background-color: #F9FBFD !important;
+  border: 1px solid #E8F1FF;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.header-bg {
+  background-color: #00209F;
+  border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+.text-primary {
+  color: #00209F !important;
+}
+
+.text-muted {
+  color: #5C677D !important;
+}
+
+.text-danger {
+  color: #B50322 !important;
+}
+
+/* Form and input styles */
+.form-control,
+.form-select {
+  height: 40px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #333533;
+  background-color: #E8F1FF;
+  border: 1px solid #5C677D;
+  border-radius: 0.5rem !important;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #00209F;
+  box-shadow: 0 0 0 0.2rem rgba(0, 32, 159, 0.25);
+  color: #333533;
+}
+
+.form-control::placeholder,
+.form-select:invalid {
+  color: #5C677D;
+  font-weight: 400;
+  opacity: 1;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #333533;
+}
+
+/* Button styles */
+.btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, #00209F 0%, #3366CC 100%);
+  border: none;
+  color: #F9FBFD;
+  min-height: 40px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(90deg, #001880, #2A52A8);
+  border: none;
+}
+
+.btn-outline-primary {
+  border-color: #00209F;
+  color: #00209F;
+  font-weight: 600;
+  background-color: #F9FBFD;
+}
+
+.btn-outline-primary:hover {
+  background-color: #D21034;
+  color: #F9FBFD;
+}
+
+.btn-outline-danger {
+  border-color: #B50322;
+  color: #B50322;
+  font-weight: 600;
+}
+
+.btn-outline-danger:hover {
+  background-color: #B50322;
+  color: #F9FBFD;
+}
+
+.btn-outline-secondary {
+  border-color: #5C677D;
+  color: #5C677D;
+  font-weight: 600;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #5C677D;
+  color: #F9FBFD;
+}
+
+.btn-outline-light {
+  color: #F9FBFD;
+  font-weight: 600;
+}
+
+.btn-outline-light:hover {
+  background-color: #F9FBFD;
+  color: #333533;
+}
+  </style>

@@ -1,0 +1,78 @@
+<!-- app/views/admin/identity_submissions/show/_timeline.html.erb -->
+
+<div class="card border-0 rounded-4 shadow-sm mb-4">
+  <!-- Header -->
+  <div class="card-header bg-haitian-blue text-white d-flex align-items-center rounded-top-4">
+    <i class="ri-time-line fs-5 me-2"></i>
+    <h6 class="mb-0 fw-semibold">Submission Timeline</h6>
+  </div>
+
+  <div class="card-body">
+    <p class="text-muted small mb-4">
+      This timeline lists all previous identity submissions — including new registrations,
+      resubmissions, and reissues. Each entry displays its status, attached documents,
+      and revocation reasons where applicable.
+    </p>
+
+    <% submissions = submission.user.identity_submissions.order(created_at: :desc) %>
+
+    <% if submissions.any? %>
+      <div class="accordion" id="submissionTimeline">
+        <% submissions.each_with_index do |sub, idx| %>
+          <div class="accordion-item mb-3 border-0 rounded-3 shadow-sm">
+            <h2 class="accordion-header" id="heading-<%= sub.id %>">
+              <button class="accordion-button <%= idx > 0 ? 'collapsed' : '' %>"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#collapse-<%= sub.id %>"
+                      aria-expanded="<%= idx == 0 %>"
+                      aria-controls="collapse-<%= sub.id %>"
+                      style="font-size: 0.95rem;">
+                <i class="ri-file-history-line me-2 text-primary"></i>
+                <strong><%= sub.submission_type&.to_s&.titleize || "Unknown" %></strong>
+                <span class="ms-2 badge <%= submission_status_badge(sub.status) %>">
+                  <%= sub.status.humanize %>
+                </span>
+
+                <%# 🔴 Show revoked reason inline if status is revoked %>
+                <% if sub.status == "revoked" && sub.reason.present? %>
+                  <span class="ms-2 text-danger small fw-semibold">
+                    <i class="ri-alert-line me-1"></i><%= sub.reason %>
+                  </span>
+                <% end %>
+
+                <small class="ms-auto text-muted">
+                  Submitted <%= l(sub.created_at, format: :long) %>
+                </small>
+              </button>
+            </h2>
+
+            <div id="collapse-<%= sub.id %>"
+                 class="accordion-collapse collapse <%= idx == 0 ? 'show' : '' %>"
+                 aria-labelledby="heading-<%= sub.id %>"
+                 data-bs-parent="#submissionTimeline">
+              <div class="accordion-body bg-light-subtle rounded-bottom-3">
+                <%# 🔴 Show revoked reason inside accordion as alert %>
+                <% if sub.status == "revoked" && sub.reason.present? %>
+                  <div class="alert alert-dismissible fade show alert-danger small py-2 px-3 mb-3 border-0 rounded-3">
+                    <i class="ri-error-warning-line me-1"></i>
+                    <strong>Revoked Reason:</strong> <%= sub.reason %>
+                  </div>
+                <% end %>
+
+                <div class="row g-4">
+                  <%= render "admin/identity_submissions/show/submission_documents", submission: sub %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="alert alert-dismissible fade show alert-light border text-center text-muted py-4 shadow-sm rounded-3">
+        <i class="ri-information-line fs-4 text-secondary"></i><br>
+        No previous submissions found for this user.
+      </div>
+    <% end %>
+  </div>
+</div>

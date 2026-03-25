@@ -1,0 +1,171 @@
+
+<section class="container py-4 py-md-5" role="main" aria-labelledby="partner-profile-title">
+  <div class="text-center mb-4">
+    <h1 id="partner-profile-title" class="h4 fw-bold text-primary">
+      Complete Your Partner Profile
+    </h1>
+    <p class="text-muted small mt-2">
+      Update your organization’s information, compliance, and integration details below.
+    </p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-10 col-xl-9">
+      <div class="card shadow-sm rounded-4 p-4">
+        <%= simple_form_for [:partner_admin, @partner],
+              html: {
+                multipart: true,
+                class: "needs-validation",
+                novalidate: true,
+                data: { controller: "form-validation form-handler", form_handler_target: "form" }
+              } do |f| %>
+
+          <!-- Flash Messages -->
+          <%= render "shared/flash_messages" %>
+
+          <div class="accordion accordion-flush" id="partnerProfileAccordion">
+
+            <!-- Organization Info -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingOrganization">
+                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOrganization" aria-expanded="true">
+                  Organization Information
+                </button>
+              </h2>
+              <div id="collapseOrganization" class="accordion-collapse collapse show" aria-labelledby="headingOrganization" data-bs-parent="#partnerProfileAccordion">
+                <div class="accordion-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                     <%= f.input :name, label: "Organization Name", required: true %>
+                    </div>
+                    <div class="col-md-6">
+                      <%=  label: "Sector", collection: Partner::SECTORS, prompt: "Select Sector", required: true %>
+                    </div>
+                  </div>
+                  <%= f.input :description, label: "About Your Organization", as: :text, input_html: { rows: 3, maxlength: 400 } %>
+                  <%= f.input :website, label: "Website (optional)" %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingContact">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseContact">
+                  Contact Information
+                </button>
+              </h2>
+              <div id="collapseContact" class="accordion-collapse collapse" aria-labelledby="headingContact" data-bs-parent="#partnerProfileAccordion">
+                <div class="accordion-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <%= f.input :contact_person, label: "Contact Person", required: true %>
+                    </div>
+                    <div class="col-md-6">
+                      <%= f.input :email, label: "Contact Email", required: true %>
+                    </div>
+                  </div>
+                  <%= f.input :phone_number, label: "Phone Number", required: true, input_html: { placeholder: "+509 ..." } %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Address -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingAddress">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAddress">
+                  Address
+                </button>
+              </h2>
+              <div id="collapseAddress" class="accordion-collapse collapse" aria-labelledby="headingAddress" data-bs-parent="#partnerProfileAccordion">
+                <div class="accordion-body">
+                  <%= f.simple_fields_for :address do |a| %>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <%= a.input :street_address, label: "Street Address", required: true %>
+                      </div>
+                      <div class="col-md-6">
+                        <%= a.input :locality, label: "Locality" %>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <%= a.input :department_id, label: "Department" %>
+                      </div>
+                      <div class="col-md-4">
+                        <%= a.input :commune_id, label: "Commune" %>
+                      </div>
+                      <div class="col-md-4">
+                        <%= a.input :postal_code, label: "Postal Code" %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compliance -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingCompliance">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompliance">
+                  Compliance
+                </button>
+              </h2>
+              <div id="collapseCompliance" class="accordion-collapse collapse" aria-labelledby="headingCompliance" data-bs-parent="#partnerProfileAccordion">
+                <div class="accordion-body">
+                  <% if @partner.law_enforcement_sector? %>
+                    <%= f.input :compliance_cert_upload, as: :file, label: "Compliance Certificate (PDF required)", required: true %>
+                  <% else %>
+                    <%= f.input :compliance_cert_upload, as: :file, label: "Compliance Document (optional)" %>
+                  <% end %>
+                  <% if @partner.compliance_cert_upload.attached? %>
+                    <p class="mt-2">
+                      <i class="bi bi-file-earmark-check text-success me-1"></i>
+                      Existing file: <%= link_to @partner.compliance_cert_upload.filename, rails_blob_path(@partner.compliance_cert_upload, disposition: "attachment") %>
+                    </p>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Integration Preferences -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingIntegration">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIntegration">
+                  Integration Preferences
+                </button>
+              </h2>
+              <div id="collapseIntegration" class="accordion-collapse collapse" aria-labelledby="headingIntegration" data-bs-parent="#partnerProfileAccordion">
+                <div class="accordion-body">
+                  <%= f.input :preferred_integration, label: "Preferred Integration Type", collection: ["Webhook", "API Key", "OAuth"], prompt: "Select one" %>
+                  <%= f.input :estimated_team_size, label: "Estimated Team Size", collection: ["1–5", "6–20", "21–100", "100+"], prompt: "Select size" %>
+                  <%= f.input :estimated_users_to_verify, label: "How many users do you expect to verify?", collection: ["<100", "100–1,000", "1,000–10,000", "10,000+"], prompt: "Select range" %>
+                </div>
+              </div>
+            </div>
+
+            <!-- Referral Source -->
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingReferral">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReferral">
+                  Marketing & Referral
+                </button>
+              </h2>
+              <div id="collapseReferral" class="accordion-collapse collapse" aria-labelledby="headingReferral" data-bs-parent="#partnerProfileAccordion">
+                <div class="accordion-body">
+                  <%= f.input :how_did_you_hear, label: "How did you hear about BonID?", collection: ["Digicel", "Embassy", "Government", "Event", "Referral", "Other"], prompt: "Select source" %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="mt-4 text-center">
+            <%= f.button :submit, "Save Changes", class: "btn btn-primary px-4 py-2 rounded-pill fw-semibold" %>
+          </div>
+
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

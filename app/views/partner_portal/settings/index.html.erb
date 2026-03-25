@@ -1,0 +1,107 @@
+<%# app/views/partner_portal/settings/index.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+
+      <div class="d-flex align-items-center mb-4">
+        <i class="ri-settings-3-line fs-3 text-haitian-blue me-3"></i>
+        <div>
+          <h4 class="fw-bold mb-0">Settings</h4>
+          <p class="text-muted small mb-0">Manage your partner account configuration</p>
+        </div>
+      </div>
+
+      <%= form_with model: @partner, url: partner_portal_setting_path(@partner), method: :patch, class: "needs-validation" do |f| %>
+
+        <%# Contact Information %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+            <h6 class="fw-bold text-haitian-blue mb-0">
+              <i class="ri-contacts-line me-2"></i>Contact Information
+            </h6>
+          </div>
+          <div class="card-body px-4 pb-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Contact Person</label>
+                <%= f.text_field :contact_person, class: "form-control form-control-sm rounded-3" %>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Email</label>
+                <%= f.email_field :email, class: "form-control form-control-sm rounded-3", readonly: true %>
+                <div class="form-text">Contact admin to change email</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Phone</label>
+                <%= f.text_field :phone_number, class: "form-control form-control-sm rounded-3" %>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Website</label>
+                <%= f.url_field :website, class: "form-control form-control-sm rounded-3", placeholder: "https://" %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Webhook Configuration %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+            <h6 class="fw-bold text-haitian-blue mb-0">
+              <i class="ri-webhook-line me-2"></i>Webhook Configuration
+            </h6>
+          </div>
+          <div class="card-body px-4 pb-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label small fw-semibold">Webhook URL</label>
+                <%= f.url_field :webhook_url, class: "form-control form-control-sm rounded-3", placeholder: "https://your-app.com/webhooks/bonid" %>
+                <div class="form-text">We'll send POST requests here for scan events and consent updates</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Account Info (read-only) %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+            <h6 class="fw-bold text-haitian-blue mb-0">
+              <i class="ri-information-line me-2"></i>Account Info
+            </h6>
+          </div>
+          <div class="card-body px-4 pb-4">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Partner Name</label>
+                <div class="form-control form-control-sm rounded-3 bg-light"><%= @partner.name %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Sector</label>
+                <div class="form-control form-control-sm rounded-3 bg-light"><%= @partner.sector&.titleize || "—" %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Partner ID</label>
+                <div class="form-control form-control-sm rounded-3 bg-light font-monospace"><%= @partner.slug %></div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-muted">Verified</label>
+                <div class="form-control form-control-sm rounded-3 bg-light">
+                  <% if @partner.verified_at %>
+                    <i class="ri-checkbox-circle-fill text-success me-1"></i><%= @partner.verified_at.strftime("%b %d, %Y") %>
+                  <% else %>
+                    <i class="ri-time-line text-warning me-1"></i>Pending
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-end">
+          <%= f.submit "Save Changes", class: "btn btn-haitian-blue rounded-pill px-4 py-2 fw-semibold" %>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

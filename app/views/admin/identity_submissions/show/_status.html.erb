@@ -1,0 +1,58 @@
+<!-- app/views/admin/identity_submissions/show/_status.html.erb -->
+<section class="mb-4">
+  <h2 class="h5 text-primary fw-semibold mb-3">Status Details</h2>
+  <div class="card border-0 rounded-3 shadow-sm p-3">
+
+    <!-- Status Header -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="d-flex align-items-center gap-2">
+        <i class="<%= status_icon(submission) %> fs-4" aria-label="<%= submission.status.capitalize %>"></i>
+        <span class="fw-semibold">
+          <%= status_message(submission) %>
+        </span>
+      </div>
+
+      <% if curren_admin_user %>
+        <div class="dropdown">
+          <button class="btn btn-link text-dark fs-5 p-0" type="button"
+                  id="adminActionsDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  aria-label="Admin Actions">
+            <i class="ri-more-2-fill"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="adminActionsDropdown">
+            <%= render "admin/identity_submissions/show/status_actions", submission: submission %>
+          </ul>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Status Details List -->
+    <ul class="list-unstyled small text-muted">
+    <li><strong>Type:</strong> <%= submission.submission_type&.titleize || "Unknown" %></li>
+
+
+
+      <% if submission.reason.present? %>
+        <li><strong>Reason:</strong> <%= submission.reason.to_s.humanize %></li>
+      <% end %>
+
+      <% if submission.other_reason.present? %>
+        <li><strong>Details:</strong> <%= submission.other_reason %></li>
+      <% end %>
+
+      <li><strong>Submitted:</strong>
+        <%= submission.created_at ? l(submission.created_at, format: :long) : "N/A" %>
+      </li>
+
+      <li><strong>Token:</strong>
+        <%= submission.verification_token.presence&.truncate(10) || "N/A" %>
+      </li>
+
+      <li><strong>Expires:</strong>
+        <%= submission.expires_at ? l(submission.expires_at, format: :long) : "Not verified" %>
+      </li>
+    </ul>
+  </div>
+</section>

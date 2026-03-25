@@ -1,0 +1,190 @@
+<%# ===============================================================
+  🇭🇹 BonID — Land Transaction Record View
+  ---------------------------------------------------------------
+  ✅ Full record summary card for property-based transactions
+  ✅ Clean Bootstrap 5 layout with Haitian theme
+  ✅ Shows verified badge, buyers, sellers, costs, and property details
+================================================================ %>
+
+<% data = record.data || {} %>
+<% cb = data["cost_breakdown"] || {} %>
+<% property = data["property"] || {} %>
+<% buyer = data["buyer"] || {} %>
+<% seller = data["seller"] || {} %>
+<% steps = data["steps"] || {} %>
+<% docs = data["documents"] || [] %>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+  <!-- === Header === -->
+  <div class="card-header bg-light d-flex align-items-center justify-content-between flex-wrap">
+    <h5 class="mb-0 fw-semibold text-primary d-flex align-items-center">
+      <i class="ri-home-4-line me-2 text-danger"></i>
+      Land Transaction —
+      <%= data["transaction_id"].presence || "Unregistered" %>
+    </h5>
+
+    <% if record.status == "verified" %>
+      <span class="badge bg-success-subtle text-success border border-success rounded-pill px-3 py-2">
+        <i class="ri-shield-check-line me-1"></i>
+        Verified via BonID
+      </span>
+    <% else %>
+      <span class="badge bg-warning-subtle text-warning border border-warning rounded-pill px-3 py-2">
+        <i class="ri-time-line me-1"></i>
+        Verification In Progress
+      </span>
+    <% end %>
+  </div>
+
+  <!-- === Body === -->
+  <div class="card-body">
+    <div class="row g-4">
+      <!-- 🧾 Transaction Info -->
+      <div class="col-md-4">
+        <h6 class="fw-bold text-dark mb-2"><i class="ri-draft-line me-1 text-primary"></i> Transaction Type</h6>
+        <p class="mb-1"><%= data["transaction_type"]&.titleize || "—" %></p>
+        <small class="text-muted">e.g., Sale, Donation, or Genuine Deed (Acte Véritable)</small>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="fw-bold text-dark mb-2"><i class="ri-calendar-line me-1 text-primary"></i> Date Initiated</h6>
+        <p class="mb-0"><%= data["date_initiated"] || "—" %></p>
+      </div>
+
+      <div class="col-md-4">
+        <h6 class="fw-bold text-dark mb-2"><i class="ri-calendar-event-line me-1 text-primary"></i> Estimated Completion</h6>
+        <p class="mb-0"><%= data["estimated_completion"] || "—" %></p>
+      </div>
+
+      <!-- 💰 Cost Breakdown -->
+      <div class="col-12">
+        <hr>
+        <h6 class="fw-bold mb-3"><i class="ri-money-dollar-circle-line me-1 text-primary"></i> Cost Breakdown</h6>
+        <div class="row small">
+          <div class="col-md-3">
+            <strong>Total Cost:</strong>
+            <p class="mb-0"><%= number_with_delimiter(data["total_cost_htg"].to_i) %> HTG</p>
+          </div>
+          <div class="col-md-3">
+            <strong>Notary Fees:</strong>
+            <p class="mb-0"><%= cb["notary_fees_percent"].presence || "0" %>%</p>
+          </div>
+          <div class="col-md-3">
+            <strong>Survey Fees:</strong>
+            <p class="mb-0"><%= number_with_delimiter(cb["survey_fees_htg"].to_i) %> HTG</p>
+          </div>
+          <div class="col-md-3">
+            <strong>Taxes & Transfer:</strong>
+            <p class="mb-0"><%= number_with_delimiter((cb["taxes_htg"].to_i) + (cb["transfer_fees_htg"].to_i)) %> HTG</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🏠 Property -->
+      <div class="col-12">
+        <hr>
+        <h6 class="fw-bold mb-3"><i class="ri-map-pin-2-line me-1 text-primary"></i> Property Details</h6>
+        <div class="row small">
+          <div class="col-md-6">
+            <p class="mb-1"><strong>Location:</strong> <%= property["location"] || "—" %></p>
+            <p class="mb-1"><strong>Description:</strong> <%= property["description"] || "—" %></p>
+            <p class="mb-1"><strong>Area:</strong> <%= property["square_footage_m2"].presence || "—" %> m²</p>
+            <p class="mb-1"><strong>Mortgage Status:</strong> <%= property["mortgage_status"].presence || "—" %></p>
+          </div>
+
+          <div class="col-md-6">
+            <p class="mb-1 fw-semibold">Boundaries:</p>
+            <% b = property["boundaries"] || {} %>
+            <ul class="list-unstyled ms-2 mb-0">
+              <li>⬆️ North: <%= b["north"] || "—" %></li>
+              <li>⬇️ South: <%= b["south"] || "—" %></li>
+              <li>➡️ East: <%= b["east"] || "—" %></li>
+              <li>⬅️ West: <%= b["west"] || "—" %></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 👤 Buyer -->
+      <div class="col-md-6">
+        <hr>
+        <h6 class="fw-bold mb-3"><i class="ri-user-add-line me-1 text-primary"></i> Buyer Information</h6>
+        <p class="mb-1"><strong>Name:</strong> <%= buyer["name"] || "—" %></p>
+        <p class="mb-1"><strong>Type:</strong> <%= buyer["type"] || "—" %></p>
+        <p class="mb-1"><strong>NIF:</strong> <%= buyer["nif"] || buyer["national_id"] || "—" %></p>
+        <p class="mb-1"><strong>Address:</strong> <%= buyer["address"] || "—" %></p>
+        <p class="mb-1"><strong>Contact:</strong> <%= [buyer["phone"], buyer["email"]].compact.join(" | ").presence || "—" %></p>
+        <% if buyer["representative_name"].present? %>
+          <small class="text-muted d-block">Legal Representative: <%= buyer["representative_name"] %></small>
+        <% end %>
+      </div>
+
+      <!-- 🧑‍🌾 Seller -->
+      <div class="col-md-6">
+        <hr>
+        <h6 class="fw-bold mb-3"><i class="ri-user-shared-line me-1 text-primary"></i> Seller Information</h6>
+        <p class="mb-1"><strong>Name:</strong> <%= seller["name"] || "—" %></p>
+        <p class="mb-1"><strong>NIF:</strong> <%= seller["nif"] || seller["national_id"] || "—" %></p>
+        <p class="mb-1"><strong>Address:</strong> <%= seller["address"] || "—" %></p>
+        <p class="mb-1"><strong>Contact:</strong> <%= [seller["phone"], seller["email"]].compact.join(" | ").presence || "—" %></p>
+
+        <% if seller["inheritance_details"].present? %>
+          <% inh = seller["inheritance_details"] %>
+          <small class="text-muted d-block mt-2">
+            <i class="ri-file-list-3-line me-1"></i>
+            Inheritance Act: <%= inh["acte_de_notoriete_date"] || "—" %> —
+            <%= inh["heirs_count"] || "?" %> heirs
+          </small>
+        <% end %>
+      </div>
+
+      <!-- 🗂️ Transaction Steps -->
+      <div class="col-12">
+        <hr>
+        <h6 class="fw-bold mb-3"><i class="ri-timeline-view-line me-1 text-primary"></i> Transaction Steps</h6>
+        <% if steps.present? %>
+          <ul class="list-unstyled small mb-0">
+            <% steps.each do |step, info| %>
+              <li class="mb-2">
+                <i class="ri-checkbox-circle-line text-success me-1"></i>
+                <strong><%= step.to_s.titleize.tr("_", " ") %>:</strong>
+                <%= info["signing_date"] || info["survey_date"] || info["date_signed"] || "Pending" %>
+                <% if info["notary_name"].present? %>
+                  — Notary: <%= info["notary_name"] %>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% else %>
+          <p class="text-muted mb-0">No transaction steps recorded yet.</p>
+        <% end %>
+      </div>
+
+      <!-- 📎 Documents -->
+      <% if docs.any? %>
+        <div class="col-12">
+          <hr>
+          <h6 class="fw-bold mb-3"><i class="ri-attachment-2 me-1 text-primary"></i> Attached Documents</h6>
+          <ul class="list-unstyled small mb-0">
+            <% docs.each do |doc| %>
+              <li>
+                <i class="ri-file-text-line text-primary me-1"></i>
+                <%= doc["type"]&.titleize || "Document" %>
+                <% if doc["file_id"].present? %> — ID: <%= doc["file_id"] %><% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- 📝 Notes -->
+      <% if data["notes"].present? %>
+        <div class="col-12">
+          <hr>
+          <h6 class="fw-bold mb-2"><i class="ri-sticky-note-line me-1 text-primary"></i> Notes</h6>
+          <p class="mb-0 text-muted"><%= data["notes"] %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

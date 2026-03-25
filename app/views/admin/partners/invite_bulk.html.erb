@@ -1,0 +1,266 @@
+<%# Flash rendered by admin layout %>
+
+  <!-- Partner Logo and Info -->
+  <div class="text-center mb-4">
+    <% if @partner.logo.attached? %>
+      <div class="d-flex justify-content-center">
+        <%= image_tag @partner.logo.variant(resize_to_limit: [120, 120]),
+                      class: "rounded-circle shadow mb-3",
+                      alt: "#{@partner.name} logo" %>
+      </div>
+    <% end %>
+
+    <h2 class="h5 fw-bold text-dark mb-1"><%= @partner.name %></h2>
+    <p class="text-muted small text-uppercase mb-3"><%= @partner.sector.to_s.humanize %></p>
+
+    <h1 class="h4 fw-bold text-success" id="bulk-invite-heading">
+      Bulk Invite <%= invite_role_for_sector(@partner.sector).pluralize %>
+    </h1>
+
+    <p class="text-muted small mt-2">
+      Upload a list of officer email addresses in CSV format. An invitation will be sent to each valid address.
+    </p>
+  </div>
+
+  <!-- Upload Form -->
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card shadow-sm rounded-3 bg-white p-4 p-md-5">
+        <p class="text-muted mb-4">
+          Your file should contain one email per row with no header. 
+          <%= link_to "Download sample CSV", "/sample_officers.csv", class: "text-decoration-underline text-primary", download: true, aria: { label: "Download a sample CSV" } %>
+        </p>
+
+        <%= form_with url: send_invite_bulk_admin_partner_path(@partner.uuid),
+                      method: :post,
+                      local: true,
+                      html: {
+                        multipart: true,
+                        data: {
+                          controller: "form-handler custom-file-input",
+                          action: "turbo:submit-start->form-handler#submitStart turbo:submit-end->form-handler#submitEnd turbo:submit-error->form-handler#submitError"
+                        }
+                      },
+                      class: "bulk-invite-form" do |f| %>
+
+          <div class="mb-4">
+            <%= f.label :csv, "CSV File", class: "form-label fw-semibold", for: "csv_file" %>
+            <div class="custom-file-input-wrapper position-relative">
+              <%= f.file_field :csv,
+                               accept: ".csv",
+                               class: "form-control rounded-3 custom-file-input",
+                               id: "csv_file",
+                               required: true,
+                               aria: { describedby: "csvHelp" },
+                               data: { custom_file_input_target: "input" } %>
+              <span class="custom-file-label position-absolute top-50 start-0 translate-middle-y ps-3 text-muted" data-custom-file-input-target="label">Choose CSV file...</span>
+            </div>
+            <div id="csvHelp" class="form-text text-muted mt-1">
+              Must be a .csv file with one email per line and <strong>no column headers</strong>.
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <%= f.submit "Send Bulk Invites",
+                         class: "btn btn-success rounded-pill px-4",
+                         data: { formHandlerTarget: "submit" } %>
+
+            <div class="spinner-border text-success d-none"
+                 role="status"
+                 data-form-handler-target="spinner"
+                 aria-hidden="true"></div>
+
+            <%= link_to "Cancel",
+                        admin_partner_path(@partner.uuid),
+                        class: "btn btn-outline-secondary rounded-pill px-4",
+                        role: "button" %>
+          </div>
+
+          <div class="mt-3 alert alert-danger d-none" data-form-handler-target="error"></div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    // Stimulus-like simple controller to update file input label
+    document.addEventListener("DOMContentLoaded", () => {
+      const fileInputs = document.querySelectorAll("[data-controller~='custom-file-input']");
+      fileInputs.forEach(wrapper => {
+        const input = wrapper.querySelector('input[type="file"][data-custom-file-input-target="input"]');
+        const label = wrapper.querySelector('[data-custom-file-input-target="label"]');
+        if (input && label) {
+          input.addEventListener("change", () => {
+            if (input.files.length === 1) {
+              label.textContent = input.files[0].name;
+            } else if (input.files.length > 1) {
+              label.textContent = `${input.files.length} files selected`;
+            } else {
+              label.textContent = "Choose CSV file...";
+            }
+          });
+        }
+      });
+    });
+  })();
+</script>
+
+
+<style>
+  /* Base Styles */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  background-color: #f8fafc;
+}
+
+.container {
+  max-width: 1200px;
+  padding: 0 20px;
+}
+
+/* Colors */
+.text-primary { color: #1e40af !important; }
+.text-success { color: #059669 !important; }
+.text-muted { color: #6b7280 !important; }
+.bg-success { background-color: #059669 !important; }
+
+/* Card */
+.card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Elements */
+.form-label {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #059669;
+  box-shadow: 0 0 0 0.2rem rgba(5, 150, 105, 0.25);
+  outline: none;
+}
+
+.form-text {
+  font-size: 0.85rem;
+}
+
+/* Custom File Input */
+.custom-file-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-file-input {
+  padding: 8px 12px;
+  opacity: 0; /* Hide default input */
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.custom-file-label {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background-color: #ffffff;
+  color: #6b7280;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.2s ease;
+}
+
+.custom-file-input:focus + .custom-file-label,
+.custom-file-input:hover + .custom-file-label {
+  border-color: #059669;
+}
+
+/* Buttons */
+.btn {
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50rem;
+  transition: all 0.2s ease;
+}
+
+.btn-success {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+.btn-success:hover {
+  background-color: #047857;
+  border-color: #047857;
+}
+
+.btn-outline-secondary {
+  border-color: #6b7280;
+  color: #6b7280;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6b7280;
+  color: #ffffff;
+}
+
+/* Typography */
+h1.h4 {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 15px;
+  }
+
+  h1.h4 {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    padding: 1.5rem !important;
+  }
+
+  .btn {
+    padding: 0.4rem 1.2rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 576px) {
+  h1.h4 {
+    font-size: 1.25rem;
+  }
+
+  .form-control, .custom-file-label {
+    font-size: 0.875rem;
+  }
+}
+<style>
+

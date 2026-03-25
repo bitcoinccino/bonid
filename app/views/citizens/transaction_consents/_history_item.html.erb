@@ -1,0 +1,79 @@
+<%# app/views/citizens/transaction_consents/_history_item.html.erb %>
+<%# Compact history row for the transaction consent list. %>
+
+<% effective_status = (consent.pending? && consent.expires_at <= Time.current) ? "expired" : consent.status %>
+
+<%= turbo_frame_tag "consent-#{consent.consent_token}" do %>
+  <div class="consent-history-item consent-history-item--<%= effective_status %> mb-3">
+    <div class="d-flex align-items-center gap-3">
+
+      <%# Partner logo %>
+      <% if consent.partner.logo.attached? %>
+        <%= image_tag url_for(consent.partner.logo),
+              class: "rounded-3 flex-shrink-0",
+              style: "width:40px;height:40px;object-fit:cover;" %>
+      <% else %>
+        <div class="d-flex align-items-center justify-content-center flex-shrink-0 rounded-3"
+             style="width:40px;height:40px;background:#f8f9fa;border:1px solid #dee2e6;">
+          <i class="ri-building-2-line text-muted"></i>
+        </div>
+      <% end %>
+
+      <%# Partner name + transaction type %>
+      <div class="flex-grow-1 min-width-0">
+        <span class="fw-bold small"><%= consent.partner.name %></span>
+        <span class="text-muted small ms-1">
+          — <%= t("transaction_consents.types.#{consent.transaction_type}", default: consent.transaction_type.titleize) %>
+        </span>
+      </div>
+
+      <%# Status badge %>
+      <div class="flex-shrink-0">
+        <%= render "citizens/transaction_consents/status_badge", consent: consent %>
+      </div>
+
+      <%# Amount %>
+      <% if consent.amount.present? && consent.amount > 0 %>
+        <div class="flex-shrink-0 text-end" style="min-width: 70px;">
+          <span class="fw-bold small" style="color:#00209f;">
+            <%= number_to_currency(consent.amount, unit: consent.currency == "HTG" ? "G " : "$ ", precision: 0) %>
+          </span>
+        </div>
+      <% end %>
+
+      <%# Relative time %>
+      <div class="flex-shrink-0 text-end" style="min-width: 90px;">
+        <span class="small text-muted">
+          <% if consent.decided_at.present? %>
+            <%= time_ago_in_words(consent.decided_at) %> ago
+          <% elsif consent.pending? && consent.expires_at > Time.current %>
+            <i class="ri-timer-line me-1"></i>Expires <%= time_ago_in_words(consent.expires_at) %>
+          <% else %>
+            <%= time_ago_in_words(consent.created_at) %> ago
+          <% end %>
+        </span>
+      </div>
+
+    </div>
+
+    <%# Pending: show mini approve/deny buttons %>
+    <% if consent.pending? && consent.expires_at > Time.current && consent.citizen.bonid_verified? %>
+      <div class="d-flex gap-2 mt-2 pt-2 border-top">
+        <button type="button"
+                class="btn btn-sm btn-success rounded-pill px-3 fw-bold flex-grow-1"
+                data-bs-toggle="modal"
+                data-bs-target="#otpModal-<%= consent.consent_token %>"
+                data-approve="true">
+          <i class="ri-check-line me-1"></i><%= t("transaction_consents.tabs.approved") %>
+        </button>
+        <button type="button"
+                class="btn btn-sm btn-danger rounded-pill px-3 fw-bold flex-grow-1"
+                data-bs-toggle="modal"
+                data-bs-target="#otpModal-<%= consent.consent_token %>"
+                data-deny="true">
+          <i class="ri-close-line me-1"></i><%= t("transaction_consents.deny") %>
+        </button>
+      </div>
+    <% end %>
+  </div>
+<% end %>

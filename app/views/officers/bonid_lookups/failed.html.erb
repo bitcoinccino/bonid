@@ -1,0 +1,68 @@
+<%# Officer BonID Failed Lookups %>
+
+<div class="container-fluid py-4">
+  <%# Page Header %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600; color: var(--law-blue);">
+      <i class="ri-error-warning-line me-2" style="font-size: 1.125rem; font-weight: 400; color: var(--law-red);"></i>Failed Lookups
+    </h4>
+    <div class="d-flex gap-2">
+      <%= link_to officers_scan_path, class: "btn text-white", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500; background: var(--law-green);" do %>
+        <i class="ri-qr-scan-2-line me-1" style="font-size: 1rem; font-weight: 400;"></i>New Scan
+      <% end %>
+      <%= link_to officers_bonid_lookups_path, class: "btn btn-outline-secondary", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
+        <i class="ri-arrow-left-line me-1" style="font-size: 1rem; font-weight: 400;"></i>Back
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-10">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--law-red);">
+            <i class="ri-close-circle-line me-2"></i>Recent Failed Attempts
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <% if @failed_scans.any? %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th style="font-size: 0.8rem;">Date</th>
+                    <th style="font-size: 0.8rem;">Input</th>
+                    <th style="font-size: 0.8rem;">Reason</th>
+                    <th style="font-size: 0.8rem;">IP Address</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @failed_scans.each do |failed| %>
+                    <tr>
+                      <td style="font-size: 0.85rem;"><%= failed.created_at&.strftime("%b %d, %Y %H:%M") %></td>
+                      <td style="font-size: 0.85rem;">
+                        <code><%= failed.bonid.present? ? failed.bonid.truncate(20) : "N/A" %></code>
+                      </td>
+                      <td style="font-size: 0.85rem;">
+                        <span class="badge bg-danger"><%= failed.reason&.truncate(30) || "Unknown" %></span>
+                      </td>
+                      <td style="font-size: 0.85rem; color: var(--mid-gray);">
+                        <%= failed.ip_address || "N/A" %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <div class="text-center py-5">
+              <i class="ri-checkbox-circle-line" style="font-size: 3rem; color: var(--law-green);"></i>
+              <p class="text-muted mt-2 mb-0" style="font-size: 0.9rem;">No failed lookups found.</p>
+              <p class="text-muted" style="font-size: 0.8rem;">All your recent lookups were successful!</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

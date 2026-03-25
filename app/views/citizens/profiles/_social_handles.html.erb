@@ -1,0 +1,159 @@
+<%# Social Media Handles Section %>
+<div data-controller="social-handles">
+    <%# Compact Dismissible Info Banner %>
+    <div class="alert alert-info alert-dismissible d-flex align-items-start mb-3" role="alert" style="padding: 0.6rem 1rem;">
+      <i class="ri-shield-check-line me-2 mt-1" style="color: #00209F; font-size: 1rem;"></i>
+      <span style="font-size: 0.82rem;">
+        <strong>Your social media information is encrypted and secure.</strong>
+        Link your social accounts for <strong>faster identity verification</strong> with partners. BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
+      </span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.6rem;"></button>
+    </div>
+
+    <%# Column Headers (desktop only) %>
+    <div class="row g-3 d-none d-md-flex social-col-header mb-2">
+      <div class="col-md-3">Platform</div>
+      <div class="col-md-4">Handle</div>
+      <div class="col-md-2">
+        Share?
+        <span data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              title="Private: only you can see this. Partners: shared with verified agencies for visa processing."
+              style="cursor: help;">
+          <i class="ri-information-line" style="font-size: 0.7rem; opacity: 0.6;"></i>
+        </span>
+      </div>
+      <div class="col-md-3">Status</div>
+    </div>
+
+    <%# Container for social handles - REQUIRED for Stimulus controller %>
+    <div data-social-handles-target="handles">
+    <%# Child Records %>
+    <%= f.fields_for :social_handles do |sh_form| %>
+      <% handle = sh_form.object %>
+      <% next if handle.nil? %>
+      <% status = handle.verification_status || "unverified" %>
+      <% is_verified = status == "verified" %>
+      <% row_id = handle.persisted? ? handle.id : sh_form.index %>
+      <% current_vis = handle.visibility || "partners_only" %>
+
+      <div class="border rounded-3 p-3 mb-2 nested-fields"
+           data-new-record="<%= handle.new_record? %>"
+           data-verified="<%= is_verified %>"
+           style="background: #fafbfc;">
+
+        <%# Hidden active field — active by default when row exists %>
+        <%= sh_form.hidden_field :active, value: true %>
+
+        <div class="row g-3 align-items-center">
+          <%# Platform %>
+          <div class="col-md-3">
+            <%= sh_form.input :platform,
+                  collection: SocialHandle::PLATFORMS.invert,
+                  prompt: "Select Platform",
+                  label: false,
+                  input_html: { class: "form-select" } %>
+          </div>
+
+          <%# Handle %>
+          <div class="col-md-4">
+            <%= sh_form.input :handle,
+                  placeholder: "@username",
+                  label: false,
+                  input_html: { class: "form-control" } %>
+          </div>
+
+          <%# Visibility — Segmented Toggle %>
+          <div class="col-md-2">
+            <div class="btn-group btn-group-sm w-100 social-vis-toggle" role="group" aria-label="Visibility">
+              <input type="radio"
+                     class="btn-check"
+                     name="<%= sh_form.object_name %>[visibility]"
+                     id="vis_private_<%= row_id %>"
+                     value="private"
+                     <%= current_vis == "private" ? "checked" : "" %>
+                     autocomplete="off">
+              <label class="btn btn-outline-secondary" for="vis_private_<%= row_id %>"
+                     title="Only you can see this">
+                <i class="ri-lock-line"></i> No
+              </label>
+
+              <input type="radio"
+                     class="btn-check"
+                     name="<%= sh_form.object_name %>[visibility]"
+                     id="vis_partners_<%= row_id %>"
+                     value="partners_only"
+                     <%= current_vis == "partners_only" ? "checked" : "" %>
+                     autocomplete="off">
+              <label class="btn btn-outline-secondary" for="vis_partners_<%= row_id %>"
+                     title="Shared with verified agencies">
+                <i class="ri-team-line"></i> Yes
+              </label>
+            </div>
+          </div>
+
+          <%# Status + Remove (combined) %>
+          <div class="col-md-3">
+            <div class="d-flex justify-content-between align-items-center" style="min-height: 38px;">
+              <%# Status %>
+              <% case status %>
+              <% when "verified" %>
+                <span class="social-status-verified">
+                  <i class="ri-checkbox-circle-line me-1"></i>Verified
+                </span>
+              <% when "pending" %>
+                <span class="social-status-pending">
+                  <i class="ri-time-line me-1"></i>Pending
+                </span>
+              <% when "failed" %>
+                <span class="social-status-failed">
+                  <i class="ri-close-circle-line me-1"></i>Failed
+                </span>
+              <% else %>
+                <span class="social-status-unverified" role="button" tabindex="0"
+                      title="Verify this handle to strengthen your profile">
+                  <i class="ri-error-warning-line me-1"></i>Verify
+                </span>
+              <% end %>
+
+              <%# Remove button %>
+              <%= sh_form.hidden_field :_destroy %>
+              <button type="button"
+                      class="social-remove-btn"
+                      data-action="click->social-handles#remove"
+                      title="Remove">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+    </div><%# End handles container %>
+
+    <%# Single Add Button (ghost style) %>
+    <div class="mt-3">
+      <button type="button"
+              class="btn btn-ghost-social"
+              data-action="click->social-handles#add">
+        <i class="ri-add-line me-1"></i> Add Platform
+      </button>
+    </div>
+
+    <%# Template %>
+    <%= render "citizens/profiles/social_handle_template" %>
+
+    <%# Privacy Footer %>
+    <div class="privacy-footer">
+      <i class="ri-lock-line me-1"></i>
+      Visibility controls who can see your handles.
+    </div>
+</div>
+
+<script>
+  // Initialize Bootstrap tooltips for social handles
+  document.addEventListener("DOMContentLoaded", function() {
+    var tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltipEls.forEach(function(el) { new bootstrap.Tooltip(el); });
+  });
+</script>

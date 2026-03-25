@@ -1,0 +1,498 @@
+openapi: 3.1.0
+info:
+  title: BonID Open Identity & Partner API
+  version: "1.5.0"
+  description: |
+    The BonID API ecosystem provides secure digital identity verification
+    and citizen consent flows for partners, SDKs, and mobile applications.
+
+    ---
+    ### 🔐 Authentication
+    - **Partner Endpoints:** Use `X-Partner-Api-Key` (and optional HMAC signature)
+    - **OAuth Citizen Endpoints:** Use citizen session (web) or token (mobile)
+
+    ### 🔑 Offline QR Verification (Ed25519)
+    BonID QR codes are signed with **Ed25519** asymmetric cryptography.
+    Partners can verify QR codes offline using the public key from
+    `GET /public_keys/bonid`. No shared secrets needed.
+
+externalDocs:
+  description: BonID Developer Portal
+  url: https://partners.bonid.ht/docs
+
+servers:
+  - url: https://api.bonid.ht/api/v1
+    description: Production
+  - url: https://sandbox.bonid.ht/api/v1
+    description: Sandbox
+  - url: http://localhost:3000/api/v1
+    description: Local Development
+
+security:
+  - PartnerApiKeyAuth: []
+  - PartnerHmacAuth: []
+
+tags:
+  - name: OAuth
+    description: Citizen consent and authorization endpoints
+  - name: Identity Verification
+    description: Partner endpoints for verifying citizens
+  - name: QR Verification
+    description: Ed25519 offline QR code verification
+  - name: Partners
+    description: Partner account and metrics
+
+# --------------------------------------------------------------------
+#  OAuth CONSENT ENDPOINTS
+# --------------------------------------------------------------------
+paths:
+  /oauth/consent.json:
+    get:
+      tags: [OAuth]
+      summary: Retrieve consent information for a partner
+      description: >
+        Returns the consent request details for a verified BonID citizen,
+        including partner information, requested scopes, and approval URLs.
+      parameters:
+        - name: partner
+          in: query
+          required: true
+          description: Partner slug (e.g., `unibank`)
+          schema: { type: string }
+        - name: scopes
+          in: query
+          required: false
+          description: Comma-separated list of requested scopes
+          schema: { type: string, example: "profile,email,address" }
+      responses:
+        "200":
+          description: Successful consent retrieval
+          content:
+            application/json:
+              example:
+                partner:
+                  name: "Unibank"
+                  sector: "banking"
+                  slug: "unibank"
+                  logo_url: "https://cdn.bonid.ht/uploads/unibank.png"
+                requested_scopes: ["profile", "email"]
+                citizen:
+                  bonid: "MO-1968-M-OU-P6790-H3Z"
+                  first_name: "Jean"
+                  last_name: "Louis"
+                  email: "jean@example.ht"
+                consent:
+                  approve_url: "https://api.bonid.ht/oauth/decision.json?decision=approve"
+                  deny_url: "https://api.bonid.ht/oauth/decision.json?decision=deny"
+                  expires_in: 3600
+                meta:
+                  timestamp: "2025-11-06T22:31:00Z"
+                  version: "1.0"
+                  api: "BonID Open Identity API"
+        "400": { description: Invalid partner or scope }
+        "401": { description: Unauthorized citizen session }
+
+  /oauth/decision.json:
+    post:
+      tags: [OAuth]
+      summary: Approve or deny a consent request
+      description: >
+        Citizen decision endpoint used to approve or deny partner access to their BonID data.
+        This endpoint can be called by web clients or SDKs after presenting a consent screen.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, partner_id]
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, deny]
+                  example: approve
+                partner_id:
+                  type: integer
+                  example: 46
+                grant_token:
+                  type: string
+                  example: "xyz123abc"
+      responses:
+        "200":
+          description: Consent decision processed successfully
+          content:
+            application/json:
+              example:
+                success: true
+                status: approved
+                partner:
+                  id: 46
+                  name: "Unibank"
+                citizen:
+                  bonid: "MO-1968-M-OU-P6790-H3Z"
+                grant_token: "xyz123abc"
+                timestamp: "2025-11-06T23:10:00Z"
+        "400": { description: Invalid decision or missing parameters }
+        "401": { description: Unauthorized citizen session }
+
+# --------------------------------------------------------------------
+#  PARTNER IDENTITY ENDPOINTS (from your Partner API)
+# --------------------------------------------------------------------
+  /verify_identity:
+    post:
+      tags: [Identity Verification]
+      summary: Verify a citizen’s BonID
+      description: Validates a BonID and returns both citizen summary and verification metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [bonid]
+              properties:
+                bonid:
+                  type: string
+                  example: "MO-1968-M-OU-P1001-A2B"
+      responses:
+        "200":
+          description: Verified identity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifiedIdentityResponse"
+        "404": { description: BonID not found }
+        "401": { description: Invalid API key }
+        "429": { description: Rate limit exceeded }
+
+  /bonid_status:
+    get:
+      tags: [Identity Verification]
+      summary: Retrieve BonID verification status
+      description: |
+        Checks whether a BonID exists and is verified.
+        Requires a valid `X-Partner-Api-Key` header.
+      parameters:
+        - name: bonid
+          in: query
+          required: true
+          schema: { type: string, example: "HT1234" }
+      responses:
+        "200":
+          description: Verified BonID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: verified }
+                  bonid:  { type: string, example: HT1234 }
+                  verified_at:
+                    type: string
+                    format: date-time
+        "404": { description: BonID not found or not verified }
+
+  /partners/me:
+    get:
+      tags: [Partners]
+      summary: Retrieve partner account info
+      responses:
+        "200":
+          description: Partner profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerProfileResponse"
+        "401": { description: Unauthorized }
+
+  /partner/metrics:
+    get:
+      tags: [Partners]
+      summary: Retrieve partner API usage metrics
+      responses:
+        "200":
+          description: Partner metrics summary
+          content:
+            application/json:
+              example:
+                partner:
+                  id: 24
+                  name: "Unibank Haiti"
+                  sector: "banking"
+                period: "last_24h"
+                metrics:
+                  total_requests: 157
+                  successful_requests: 152
+                  failed_requests: 5
+                  avg_latency_ms: 212.4
+        "401": { description: Unauthorized }
+
+# --------------------------------------------------------------------
+#  QR VERIFICATION ENDPOINTS (Ed25519)
+# --------------------------------------------------------------------
+  /public_keys/bonid:
+    get:
+      tags: [QR Verification]
+      summary: Get Ed25519 public key for offline QR verification
+      description: |
+        Returns the Ed25519 public key used to sign BonID QR codes.
+        Partners fetch this once, cache it (24h recommended), and use it
+        to verify QR code signatures completely offline.
+
+        **No authentication required** — this is a public key.
+      security: []
+      responses:
+        "200":
+          description: Ed25519 public key
+          headers:
+            Cache-Control:
+              schema: { type: string, example: "public, max-age=86400" }
+            X-Key-Algorithm:
+              schema: { type: string, example: "Ed25519" }
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicKeyResponse"
+              example:
+                algorithm: "Ed25519"
+                public_key: "GBCsejn5DT+48nF9cVGhIeNW952P3CxGM..."
+                encoding: "base64"
+                key_fingerprint: "a1b2c3d4e5f6..."
+                issuer: "bonid.ht"
+                usage: "BonID QR code signature verification"
+                fetched_at: "2026-03-14T04:04:22Z"
+        "503":
+          description: Ed25519 keys not configured
+          content:
+            application/json:
+              example:
+                error: "Ed25519 public key not configured"
+                hint: "Run `rails bonid:generate_ed25519_keypair` and set ENV vars"
+
+  /qr_scan:
+    post:
+      tags: [QR Verification]
+      summary: Verify a scanned BonID QR code
+      description: |
+        Accepts a scanned QR code payload (Base64 or raw JSON) and verifies it.
+        Supports both Ed25519 v2 (recommended) and legacy HMAC v1 payloads.
+
+        **v2 QR Payload (Ed25519):**
+        ```json
+        {
+          "v": 2,
+          "iss": "bonid.ht",
+          "typ": "BonID",
+          "sub": "DV-1989-M-SE-P8697-1E8",
+          "ts": 1710234567,
+          "exp": 1741770567,
+          "sig": "<base64url Ed25519 signature>"
+        }
+        ```
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qr_data]
+              properties:
+                qr_data:
+                  type: string
+                  description: Base64-encoded or raw JSON QR payload
+                  example: "eyJ2IjoyLCJpc3MiOiJib25pZC5odCIsInR5cCI6IkJvbklEIi..."
+      responses:
+        "200":
+          description: QR code verified — BonID is valid
+          content:
+            application/json:
+              example:
+                status: "verified"
+                bonid: "DV-1989-M-SE-P8697-1E8"
+                version: 2
+        "401":
+          description: Invalid signature or expired QR
+          content:
+            application/json:
+              example:
+                status: "invalid"
+                message: "QR verification failed: invalid_signature"
+                version: 2
+        "404":
+          description: BonID not found or not verified
+          content:
+            application/json:
+              example:
+                status: "invalid"
+                message: "BonID not verified or invalid"
+        "422":
+          description: Malformed QR payload
+
+# --------------------------------------------------------------------
+#  COMPONENTS
+# --------------------------------------------------------------------
+components:
+  securitySchemes:
+    PartnerApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Partner-Api-Key
+    PartnerHmacAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: "HMAC-SHA256"
+
+  schemas:
+    CitizenVerifiedProfile:
+      type: object
+      description: Full verified BonID citizen attributes
+      properties:
+        bonid:
+          type: string
+          example: "MO-1968-M-OU-P6790-H3Z"
+        first_name:
+          type: string
+          example: "Jean"
+        last_name:
+          type: string
+          example: "Louis"
+        dob:
+          type: string
+          format: date
+          example: "1990-05-21"
+        sex:
+          type: string
+          enum: [M, F, O]
+          example: "M"
+        nationality:
+          type: string
+          example: "Haitian"
+        marital_status:
+          type: string
+          example: "Single"
+        id_type:
+          type: string
+          example: "CIN"
+        id_number:
+          type: string
+          example: "09-02-1985-00234"
+        phone:
+          type: string
+          example: "+50944121212"
+        email:
+          type: string
+          example: "jean.louis@example.ht"
+        address:
+          type: object
+          description: Verified address structure
+          properties:
+            street_address: { type: string, example: "Rue Chavannes, Saint-Martin" }
+            communal_section: { type: string, example: "2e Section Saint-Martin" }
+            commune: { type: string, example: "Delmas" }
+            arrondissement: { type: string, example: "Port-au-Prince" }
+            department: { type: string, example: "Ouest" }
+            postal_code: { type: string, example: "HT6120" }
+            country: { type: string, example: "Haiti" }
+        verified_by:
+          type: string
+          example: "Officer Jean Pierre"
+        verified_at:
+          type: string
+          format: date-time
+          example: "2025-10-21T22:15:09Z"
+        qr_public_url:
+          type: string
+          example: "https://cdn.bonid.ht/qrcodes/MO-1968-M-OU-P6790-H3Z.png"
+        selfie_url:
+          type: string
+          example: "https://cdn.bonid.ht/uploads/selfies/jean-louis.png"
+        status:
+          type: string
+          example: "verified"
+
+    VerifiedIdentityResponse:
+      type: object
+      description: Complete verified identity returned to partner
+      properties:
+        status:
+          type: string
+          example: "verified"
+        citizen:
+          $ref: "#/components/schemas/CitizenVerifiedProfile"
+
+    PublicKeyResponse:
+      type: object
+      description: Ed25519 public key for offline QR verification
+      properties:
+        algorithm:
+          type: string
+          example: "Ed25519"
+        public_key:
+          type: string
+          description: Base64-encoded 32-byte Ed25519 public key
+          example: "GBCsejn5DT+48nF9cVGhIeNW952P3CxGM..."
+        encoding:
+          type: string
+          example: "base64"
+        key_fingerprint:
+          type: string
+          description: SHA-256 hex digest of the raw public key bytes
+          example: "a1b2c3d4e5f6..."
+        issuer:
+          type: string
+          example: "bonid.ht"
+        usage:
+          type: string
+          example: "BonID QR code signature verification"
+        fetched_at:
+          type: string
+          format: date-time
+
+    BonidQrPayloadV2:
+      type: object
+      description: Ed25519-signed BonID QR code payload (v2)
+      properties:
+        v:
+          type: integer
+          example: 2
+          description: Schema version (2 = Ed25519)
+        iss:
+          type: string
+          example: "bonid.ht"
+          description: Issuer identifier
+        typ:
+          type: string
+          example: "BonID"
+          description: Payload type
+        sub:
+          type: string
+          example: "DV-1989-M-SE-P8697-1E8"
+          description: BonID identifier (subject)
+        ts:
+          type: integer
+          example: 1710234567
+          description: Signing timestamp (Unix epoch)
+        exp:
+          type: integer
+          example: 1741770567
+          description: Expiration timestamp (Unix epoch)
+        sig:
+          type: string
+          example: "dGhpcyBpcyBhIGJhc2U2NHVybCBzaWduYXR1cmU..."
+          description: Base64url-encoded Ed25519 signature (no padding)
+
+    PartnerProfileResponse:
+      type: object
+      description: Authenticated partner details
+      properties:
+        id: { type: string, example: "bank-001" }
+        name: { type: string, example: "Unibank Haiti" }
+        sector: { type: string, example: "banking" }
+        email: { type: string, example: "api@unibank.ht" }
+        api_key_prefix: { type: string, example: "ubk_" }
+        sandbox_mode: { type: boolean, example: false }
+        rate_limit:
+          type: object
+          properties:
+            limit: { type: integer, example: 1000 }
+            remaining: { type: integer, example: 985 }

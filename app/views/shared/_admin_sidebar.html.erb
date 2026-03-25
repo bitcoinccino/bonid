@@ -1,0 +1,230 @@
+<%# app/views/shared/_admin_sidebar.html.erb %>
+<%# Admin sidebar — matches partner portal sidebar design %>
+
+<%# Mobile backdrop %>
+<div class="admin-sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
+
+<%# Sidebar %>
+<nav class="admin-sidebar" id="adminSidebar" aria-label="Admin Sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          id="sidebarCloseBtn"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
+
+  <%# Admin logo and info %>
+  <div class="admin-logo-section">
+    <div class="admin-logo-wrapper">
+      <div class="admin-logo-placeholder">
+        <i class="ri-shield-star-line"></i>
+      </div>
+    </div>
+    <div class="admin-name">BonID Admin</div>
+    <div class="admin-role"><%= current_admin_user&.email&.split("@")&.first&.titleize || "Administrator" %></div>
+  </div>
+
+  <%# Navigation links %>
+  <ul class="nav flex-column sidebar-nav">
+    <%# 1. Dashboard %>
+    <li class="nav-item">
+      <%= link_to admin_root_path,
+                  class: "nav-link #{'active' if current_page?(admin_root_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <%# Waitlist Section %>
+    <li class="nav-item mt-2">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Waitlist</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_waitlist_signups_path,
+                  class: "nav-link #{'active' if current_page?(admin_waitlist_signups_path)}" do %>
+        <i class="ri-list-check-3"></i>
+        <span>Signups</span>
+        <% waiting = WaitlistSignup.waiting.count %>
+        <% if waiting > 0 %>
+          <span class="badge bg-primary rounded-pill ms-auto"><%= waiting %></span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_invite_codes_path,
+                  class: "nav-link #{'active' if current_page?(admin_invite_codes_path)}" do %>
+        <i class="ri-key-2-line"></i>
+        <span>Invite Codes</span>
+      <% end %>
+    </li>
+
+    <%# 2. Partners %>
+    <li class="nav-item">
+      <%= link_to admin_partners_path,
+                  class: "nav-link #{'active' if current_page?(admin_partners_path)}" do %>
+        <i class="ri-building-line"></i>
+        <span>Partners</span>
+      <% end %>
+    </li>
+
+    <%# 3. Reviewers %>
+    <li class="nav-item">
+      <%= link_to admin_reviewers_path,
+                  class: "nav-link #{'active' if current_page?(admin_reviewers_path)}" do %>
+        <i class="ri-user-search-line"></i>
+        <span>Reviewers</span>
+      <% end %>
+    </li>
+
+    <%# 4. BonIDs (Citizens) %>
+    <li class="nav-item">
+      <%= link_to admin_identity_submissions_path,
+                  class: "nav-link #{'active' if current_page?(admin_identity_submissions_path)}" do %>
+        <i class="ri-id-card-line"></i>
+        <span>BonIDs</span>
+      <% end %>
+    </li>
+
+    <%# 5. Name Changes %>
+    <li class="nav-item">
+      <%= link_to admin_name_change_requests_path,
+                  class: "nav-link #{'active' if current_page?(admin_name_change_requests_path)}" do %>
+        <i class="ri-edit-line"></i>
+        <span>Name Changes</span>
+        <% pending_count = NameChangeRequest.pending.count %>
+        <% if pending_count > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto"><%= pending_count %></span>
+        <% end %>
+      <% end %>
+    </li>
+
+    <%# 6. Visitors / Tourists %>
+    <li class="nav-item">
+      <%= link_to admin_visitor_submissions_path,
+                  class: "nav-link #{'active' if current_page?(admin_visitor_submissions_path)}" do %>
+        <i class="ri-passport-line"></i>
+        <span>Visitors</span>
+      <% end %>
+    </li>
+
+    <%# 6. Visitor Analytics %>
+    <li class="nav-item">
+      <%= link_to admin_visitor_analytics_path,
+                  class: "nav-link #{'active' if current_page?(admin_visitor_analytics_path)}" do %>
+        <i class="ri-bar-chart-line"></i>
+        <span>Visitor Analytics</span>
+      <% end %>
+    </li>
+
+    <%# 7. Law Enforcement %>
+    <li class="nav-item">
+      <%= link_to admin_incident_reports_path,
+                  class: "nav-link #{'active' if current_page?(admin_incident_reports_path)}" do %>
+        <i class="ri-alert-line"></i>
+        <span>Law Enforcement</span>
+      <% end %>
+    </li>
+
+    <%# 8. BonID Scans %>
+    <li class="nav-item">
+      <%= link_to admin_qr_scan_logs_path,
+                  class: "nav-link #{'active' if current_page?(admin_qr_scan_logs_path)}" do %>
+        <i class="ri-scan-line"></i>
+        <span>BonID Scans</span>
+      <% end %>
+    </li>
+
+    <%# 9. Schemas %>
+    <li class="nav-item">
+      <%= link_to admin_partner_schemas_path,
+                  class: "nav-link #{'active' if current_page?(admin_partner_schemas_path)}" do %>
+        <i class="ri-folder-line"></i>
+        <span>Schemas</span>
+      <% end %>
+    </li>
+
+    <%# Divider %>
+    <li class="sidebar-divider"></li>
+
+    <%# 10. API (collapsible) %>
+    <li class="nav-item">
+      <a href="#apiSubmenu"
+         class="nav-link d-flex align-items-center justify-content-between"
+         data-bs-toggle="collapse"
+         role="button"
+         aria-expanded="false">
+        <div class="d-flex align-items-center gap-3">
+          <i class="ri-code-s-slash-line"></i>
+          <span>API</span>
+        </div>
+        <i class="ri-arrow-down-s-line rotate-icon"></i>
+      </a>
+
+      <ul class="collapse api-submenu" id="apiSubmenu">
+        <li>
+          <%= link_to admin_oauth_events_path,
+                class: "nav-link #{'active' if current_page?(admin_oauth_events_path)}" do %>
+            <i class="ri-key-2-line"></i>
+            <span>OAuth Events</span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to admin_api_usage_index_path,
+                class: "nav-link #{'active' if current_page?(admin_api_usage_index_path)}" do %>
+            <i class="ri-bar-chart-2-line"></i>
+            <span>Partner API</span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to admin_partner_access_logs_path,
+                class: "nav-link #{'active' if current_page?(admin_partner_access_logs_path)}" do %>
+            <i class="ri-file-list-3-line"></i>
+            <span>Logs</span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to admin_webhook_events_path,
+                class: "nav-link #{'active' if current_page?(admin_webhook_events_path)}" do %>
+            <i class="ri-webhook-line"></i>
+            <span>Webhooks</span>
+          <% end %>
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+  <%# Logout button %>
+  <div class="sidebar-logout">
+    <%= button_to destroy_admin_user_session_path,
+                  method: :delete,
+                  form: { data: { turbo: false } },
+                  class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Log Out</span>
+    <% end %>
+  </div>
+</nav>
+
+<script>
+document.addEventListener("turbo:load", () => {
+  const sidebar = document.getElementById("adminSidebar");
+  const backdrop = document.getElementById("sidebarBackdrop");
+  const mobileToggle = document.getElementById("sidebarToggle");
+  const closeBtn = document.getElementById("sidebarCloseBtn");
+
+  function openSidebar() {
+    sidebar?.classList.add("show");
+    backdrop?.classList.add("show");
+  }
+
+  function closeSidebar() {
+    sidebar?.classList.remove("show");
+    backdrop?.classList.remove("show");
+  }
+
+  mobileToggle?.addEventListener("click", openSidebar);
+  closeBtn?.addEventListener("click", closeSidebar);
+  backdrop?.addEventListener("click", closeSidebar);
+});
+</script>

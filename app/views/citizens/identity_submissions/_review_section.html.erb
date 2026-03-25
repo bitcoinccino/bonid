@@ -1,0 +1,110 @@
+<%# STEP 4 — Review & Confirm %>
+
+<%# ── Section 1: Government ID ── %>
+<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+      <i class="ri-id-card-line me-1"></i>Government ID
+    </h6>
+    <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+            data-action="click->wizard#goToStep" data-step="1">
+      <i class="ri-edit-line me-1"></i>Edit
+    </button>
+  </div>
+  <div data-submission-review-target="reviewId" style="color: #344054;">
+    <%# Populated by JS %>
+  </div>
+</div>
+
+<%# ── Section 2: Live Selfie ── %>
+<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+      <i class="ri-shield-check-line me-1"></i>Face Liveness Check
+    </h6>
+    <% if @skip_liveness %>
+      <span class="badge rounded-pill px-3 py-1" style="background: #e8f5e9; color: #198754; font-size: 0.72rem; font-weight: 600;">
+        <i class="ri-checkbox-circle-line me-1"></i>Verified (reused)
+      </span>
+    <% else %>
+      <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+              data-action="click->wizard#goToStep" data-step="2">
+        <i class="ri-edit-line me-1"></i>Edit
+      </button>
+    <% end %>
+  </div>
+  <div data-submission-review-target="reviewSelfie" style="color: #344054;">
+    <% if @skip_liveness %>
+      <p class="mb-0 small text-muted" data-reused="true">
+        <i class="ri-information-line me-1"></i>
+        Your face verification was carried forward from your previous submission.
+      </p>
+    <% end %>
+    <%# Also populated by JS for normal flow %>
+  </div>
+</div>
+
+<%# ── Section 3: Supporting Document ── %>
+<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+      <i class="ri-folder-3-line me-1"></i>Supporting Document
+    </h6>
+    <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+            data-action="click->wizard#goToStep" data-step="1">
+      <i class="ri-edit-line me-1"></i>Edit
+    </button>
+  </div>
+  <div data-submission-review-target="reviewSupporting" style="color: #344054;">
+    <%# Populated by JS %>
+  </div>
+</div>
+
+<%# ── Section 4: Signature ── %>
+<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+      <i class="ri-ball-pen-line me-1"></i>Signature
+    </h6>
+    <% if @skip_signature %>
+      <span class="badge rounded-pill px-3 py-1" style="background: #e8f5e9; color: #198754; font-size: 0.72rem; font-weight: 600;">
+        <i class="ri-checkbox-circle-line me-1"></i>On file (reused)
+      </span>
+    <% else %>
+      <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
+              data-action="click->wizard#goToStep" data-step="3">
+        <i class="ri-edit-line me-1"></i>Edit
+      </button>
+    <% end %>
+  </div>
+  <div data-submission-review-target="reviewSignature" style="color: #344054;">
+    <% if @skip_signature %>
+      <p class="mb-0 small text-muted" data-reused="true">
+        <i class="ri-information-line me-1"></i>
+        Your signature was carried forward from your previous submission.
+      </p>
+    <% end %>
+    <%# Also populated by JS for normal flow %>
+  </div>
+</div>
+
+<%# ── Confirmation Checkbox ── %>
+<div class="mt-4 p-3 rounded-3" style="background: #f8f9fc; border: 1px solid #e4e7ec;">
+  <div class="d-flex gap-3 align-items-start">
+    <i class="ri-shield-check-line flex-shrink-0" style="font-size: 1.3rem; color: var(--primary, #00209F); margin-top: 2px;"></i>
+    <div>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" id="submission_confirmation"
+               data-submission-review-target="confirmCheckbox"
+               data-action="change->submission-review#toggleSubmit"
+               required>
+        <label class="form-check-label" for="submission_confirmation"
+               style="font-size: 0.78rem; color: #344054; line-height: 1.6;">
+          I confirm that all information and documents provided are
+          <strong>accurate and authentic</strong>. I understand that any false information
+          may result in the rejection of my BonID application.
+        </label>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,90 @@
+<div class="card rounded-3 shadow-sm border-0 h-100">
+  <div class="card-header bg-light border-bottom">
+    <h5 class="fw-bold text-haitian-blue mb-0">
+      <i class="ri-file-list-line me-1"></i>
+      Partner Audit Logs
+    </h5>
+  </div>
+
+  <div class="card-body p-4">
+
+    <% logs = @partner.partner_audit_logs
+                      .includes(:admin_user)
+                      .order(created_at: :desc)
+                      .limit(200) %>
+
+    <% if logs.any? %>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Event</th>
+              <th>Details</th>
+              <th>Metadata</th>
+              <th>Admin User</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <% logs.each do |log| %>
+              <tr>
+
+                <!-- Event name -->
+                <td class="fw-semibold">
+                  <%= log.event.to_s.humanize %>
+                </td>
+
+                <!-- Details -->
+                <td style="max-width: 260px;">
+                  <% if log.details.present? %>
+                    <code class="small d-block bg-light p-2 rounded border">
+                      <%= truncate(log.details.to_json, length: 150) %>
+                    </code>
+                  <% else %>
+                    <span class="text-muted">N/A</span>
+                  <% end %>
+                </td>
+
+                <!-- Metadata -->
+                <td style="max-width: 260px;">
+                  <% if log.metadata.present? %>
+                    <code class="small d-block bg-light p-2 rounded border">
+                      <%= truncate(log.metadata.to_json, length: 150) %>
+                    </code>
+                  <% else %>
+                    <span class="text-muted">N/A</span>
+                  <% end %>
+                </td>
+
+                <!-- Admin User who triggered the event -->
+                <td>
+                  <% if log.admin_user.present? %>
+                    <%= log.admin_user.email %>
+                  <% else %>
+                    <span class="text-muted">System</span>
+                  <% end %>
+                </td>
+
+                <!-- Timestamp -->
+                <td>
+                  <%= log.created_at.strftime("%b %d, %Y %I:%M %p") %>
+                  <br>
+                  <small class="text-muted">
+                    <%= time_ago_in_words(log.created_at) %> ago
+                  </small>
+                </td>
+
+              </tr>
+            <% end %>
+          </tbody>
+
+        </table>
+      </div>
+
+    <% else %>
+      <p class="text-muted fst-italic">No audit logs recorded for this partner.</p>
+    <% end %>
+
+  </div>
+</div>

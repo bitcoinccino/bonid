@@ -1,0 +1,76 @@
+<div class="modal fade"
+     id="rejectModal"
+     tabindex="-1"
+     aria-labelledby="rejectModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+
+      <!-- Header -->
+      <div class="modal-header text-white py-3"
+           style="background: linear-gradient(90deg, #04328C, #1A73E8);">
+        <h5 class="modal-title d-flex align-items-center gap-2 fw-semibold" id="rejectModalLabel">
+          <i class="ri-close-circle-line fs-5"></i>
+          Reject Submission
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <!-- Form -->
+      <%= form_with model: [:admin, submission],
+                    url: reject_admin_identity_submission_path(submission.uuid),
+                    method: :patch,
+                    local: true,
+                    html: { role: "form", aria: { describedby: "rejectHelpText" } } do |form| %>
+
+        <div class="modal-body p-4">
+          <!-- Rejection reason -->
+          <div class="mb-3">
+            <%= form.label :rejection_reason,
+                           "Reason for Rejection",
+                           class: "form-label fw-semibold text-dark" %>
+
+            <%= form.select :rejection_reason,
+                            IdentitySubmission.rejection_reasons_options,
+                            { prompt: "Select a reason" },
+                            class: "form-select rounded-pill py-2 shadow-sm",
+                            required: true %>
+
+            <div id="rejectHelpText" class="form-text text-muted mt-1">
+              The selected reason will be logged in the submission history and shared with the citizen.
+            </div>
+          </div>
+
+          <!-- Additional context -->
+          <div class="mb-3">
+            <%= form.label :other_reason,
+                           "Additional Details (optional)",
+                           class: "form-label fw-semibold text-dark" %>
+
+            <%= form.text_area :other_reason,
+                               rows: 3,
+                               class: "form-control rounded-3 shadow-sm",
+                               placeholder: "Provide more context or specific feedback..." %>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer bg-light border-0 d-flex justify-content-end gap-2 px-4 py-3">
+          <button type="button"
+                  class="btn btn-outline-secondary rounded-pill px-4"
+                  data-bs-dismiss="modal">
+            Cancel
+          </button>
+
+          <%= form.submit "Reject Submission",
+                          class: "btn btn-danger rounded-pill px-4 fw-semibold d-flex align-items-center gap-1" do %>
+            <i class="ri-close-line"></i> Reject Submission
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,195 @@
+<section class="container py-4 py-md-5" role="main" aria-labelledby="partner-dashboard-title" 
+         data-controller="partner-metrics">
+
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h2 id="partner-dashboard-title" class="h4 fw-bold text-primary mb-1">
+        <i class="ri-dashboard-3-line me-2"></i>
+        Partner Analytics Dashboard
+      </h2>
+      <p class="text-muted small mb-0">
+        Insightful metrics for <strong><%= @partner.name %></strong> across API usage, KYC, and branch activity.
+      </p>
+    </div>
+    <%= link_to partner_portal_banking_dashboard_path, class: "btn btn-outline-primary rounded-pill d-flex align-items-center gap-1" do %>
+      <i class="ri-external-link-line"></i> Banking Portal
+    <% end %>
+  </div>
+
+  <!-- Live Summary Cards -->
+  <div class="row g-3 mb-4 text-center">
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm border-0 rounded-4 py-3">
+        <div class="fs-5 fw-bold text-primary" data-partner-metrics-target="total">–</div>
+        <div class="text-muted small text-uppercase">Total Requests</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm border-0 rounded-4 py-3">
+        <div class="fs-5 fw-bold text-success" data-partner-metrics-target="success">–</div>
+        <div class="text-muted small text-uppercase">Successful</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm border-0 rounded-4 py-3">
+        <div class="fs-5 fw-bold text-danger" data-partner-metrics-target="failed">–</div>
+        <div class="text-muted small text-uppercase">Failed</div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card shadow-sm border-0 rounded-4 py-3">
+        <div class="fs-5 fw-bold text-info" data-partner-metrics-target="latency">–</div>
+        <div class="text-muted small text-uppercase">Avg Latency (ms)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rate Limit / Quota Progress -->
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="fw-semibold mb-0 text-primary">
+        <i class="ri-speed-up-line me-1"></i> API Usage Quota
+      </h6>
+      <small class="text-muted" data-partner-metrics-target="quotaLabel">– / –</small>
+    </div>
+    <div class="progress" style="height: 12px; border-radius: 8px;">
+      <div class="progress-bar bg-success" role="progressbar"
+           data-partner-metrics-target="quotaBar"
+           style="width: 0%; transition: width 0.5s ease;"></div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Charts Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3 text-primary">
+            <i class="ri-bar-chart-grouped-line me-1"></i> Requests per Endpoint
+          </h6>
+          <canvas data-partner-metrics-target="endpointChart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0 rounded-4 h-100">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3 text-primary">
+            <i class="ri-donut-chart-fill me-1"></i> Success vs Failed
+          </h6>
+          <canvas data-partner-metrics-target="statusChart" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Logs -->
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3 text-primary">
+        <i class="ri-history-line me-1"></i> Recent API Access Logs
+      </h6>
+      <table class="table align-middle table-hover mb-0">
+        <thead class="small text-muted">
+          <tr>
+            <th>Timestamp</th>
+            <th>Endpoint</th>
+            <th>Status</th>
+            <th>Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @recent_activity.each do |log| %>
+            <tr>
+              <td><%= log.created_at.strftime("%b %d, %Y %I:%M %p") %></td>
+              <td><code><%= log.endpoint %></code></td>
+              <td>
+                <span class="badge rounded-pill <%= log.status_code.to_i >= 400 ? 'bg-danger' : 'bg-success' %>">
+                  <%= log.status_code %>
+                </span>
+              </td>
+              <td><%= truncate(log.response_body, length: 40) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- Scripts -->
+<script>
+  document.addEventListener("turbo:load", () => {
+    const makeChart = (id, type, labels, data, label, colors) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      new Chart(el, {
+        type,
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1,
+            fill: type === "line"
+          }]
+        },
+        options: { plugins: { legend: { display: type !== "bar" } } }
+      });
+    };
+
+    makeChart(
+      "kycVerificationsChart", "line",
+      <%= @kyc_verifications_by_day.keys.map { |d| d.strftime("%b %d") }.to_json.html_safe %>,
+      <%= @kyc_verifications_by_day.values.to_json.html_safe %>,
+      "Verified KYC", ["#00209F"]
+    );
+
+    makeChart(
+      "branchScansChart", "bar",
+      <%= @scan_counts_by_branch.keys.to_json.html_safe %>,
+      <%= @scan_counts_by_branch.values.to_json.html_safe %>,
+      "Branch Scans", ["#00209F"]
+    );
+
+    makeChart(
+      "tellerScansChart", "bar",
+      <%= @scan_counts_by_teller.keys.map { |t| t.split('@').first }.to_json.html_safe %>,
+      <%= @scan_counts_by_teller.values.to_json.html_safe %>,
+      "Teller Scans", ["#FFD700"]
+    );
+
+    makeChart(
+      "apiEndpointChart", "pie",
+      <%= @api_endpoint_distribution.keys.to_json.html_safe %>,
+      <%= @api_endpoint_distribution.values.to_json.html_safe %>,
+      "API Usage",
+      ["#00209F","#0A4ABF","#FFD700","#1A936F","#E53E3E","#ED8936"]
+    );
+
+    // Leaflet Heatmap
+    const geoData = <%= @geo_scan_data.to_json.html_safe %>;
+    const map = L.map("geoMap").setView([18.55, -72.34], 8);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18, attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
+
+    geoData.forEach((point) => {
+      L.circleMarker([point.lat, point.lng], {
+        radius: 6,
+        fillColor: "#00209F",
+        color: "#00209F",
+        weight: 1,
+        opacity: 0.9,
+        fillOpacity: 0.5
+      }).addTo(map);
+    });
+  });
+</script>

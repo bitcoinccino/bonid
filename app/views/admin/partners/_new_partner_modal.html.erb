@@ -1,0 +1,31 @@
+<!-- app/views/admin/partners/_new_partner_modal.html.erb -->
+<div class="modal fade" id="newPartnerModal" tabindex="-1" aria-labelledby="newPartnerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-haitian-blue text-white rounded-top-4">
+        <h5 class="modal-title fw-semibold" id="newPartnerModalLabel">
+          <i class="ri-building-line me-1"></i> Create New Partner
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with model: Partner.new,
+                    url: admin_partners_path,
+                    method: :post,
+                    html: { class: "p-3", data: { controller: "form-validation" } } do |f| %>
+
+        <div class="modal-body">
+          <%= render "partner_portal/shared/components/minimal_form", f: f %>
+        </div>
+
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <%= f.submit "Create Partner", class: "btn btn-primary rounded-pill" %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+</div>

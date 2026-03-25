@@ -1,0 +1,130 @@
+<!-- app/views/admin/identity_submissions/show/_social_handles.html.erb -->
+
+<div class="card border-0 rounded-3 shadow-sm mb-4">
+  <div class="card-header bg-light d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center">
+      <i class="ri-share-forward-line text-primary me-2"></i>
+      <h6 class="mb-0 fw-semibold">Social Media Handles</h6>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <% user = submission&.user %>
+
+    <% if user&.social_handles&.any? %>
+      <p class="text-muted small mb-4">
+        This section lists verified or declared social media profiles linked to the citizen’s BonID.  
+        Verified accounts help strengthen cross-platform trust for communication, identity, and reputation checks.
+      </p>
+
+      <ul class="list-group list-group-flush">
+        <% user.social_handles.each do |sh| %>
+          <li class="list-group-item py-3">
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+              <div class="d-flex align-items-start flex-wrap">
+                <i class="<%= platform_icon(sh.platform) %> text-primary fs-5 me-2 mt-1"></i>
+                <div>
+                  <strong><%= sh.display_platform %>:</strong>
+                  <% if sh.social_url.present? %>
+                    <a href="<%= sh.social_url %>" target="_blank" rel="noopener" class="text-decoration-none text-dark">
+                      @<%= sh.handle %>
+                    </a>
+                  <% else %>
+                    @<%= sh.handle %>
+                  <% end %>
+
+                  <% if sh.since.present? %>
+                    <small class="text-muted">(since <%= sh.since.year %>)</small>
+                  <% end %>
+                  <% if sh.until.present? %>
+                    <small class="text-muted">– until <%= sh.until.year %></small>
+                  <% end %>
+
+                  <% if sh.uid.present? %>
+                    <div class="small text-success mt-1">
+                      <i class="ri-shield-check-line me-1"></i>
+                      Connected via OAuth (<%= sh.updated_at.strftime("%b %d, %Y") %>)
+                    </div>
+                  <% else %>
+                    <div class="small text-muted mt-1">
+                      <i class="ri-link text-secondary me-1"></i>
+                      Manually linked profile
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+
+              <div class="text-end">
+                <!-- === Activity Badge === -->
+                <% if sh.active? %>
+                  <span class="badge bg-success-subtle text-success me-1">
+                    <i class="ri-time-line me-1"></i>Active
+                  </span>
+                <% else %>
+                  <span class="badge bg-secondary-subtle text-secondary me-1">
+                    <i class="ri-pause-line me-1"></i>Inactive
+                  </span>
+                <% end %>
+
+                <!-- === Verification Badge === -->
+                <% case sh.verification_status %>
+                <% when "verified" %>
+                  <span class="badge bg-primary-subtle text-primary me-1">
+                    <i class="ri-check-line me-1"></i>Verified
+                  </span>
+                <% when "pending" %>
+                  <span class="badge bg-warning text-dark me-1">
+                    <i class="ri-time-line me-1"></i>Pending
+                  </span>
+                <% when "failed" %>
+                  <span class="badge bg-danger-subtle text-danger me-1">
+                    <i class="ri-close-line me-1"></i>Failed
+                  </span>
+                <% else %>
+                  <span class="badge bg-light text-muted border me-1">
+                    <i class="ri-eye-off-line me-1"></i>Unverified
+                  </span>
+                <% end %>
+
+                <!-- === Visibility Badge === -->
+                <% case sh.visibility %>
+                <% when "public" %>
+                  <span class="badge bg-info-subtle text-info ms-1">
+                    <i class="ri-earth-line me-1"></i>Public
+                  </span>
+                <% when "partners_only" %>
+                  <span class="badge bg-warning-subtle text-dark ms-1">
+                    <i class="ri-building-4-line me-1"></i>Partners Only
+                  </span>
+                <% else %>
+                  <span class="badge bg-secondary-subtle text-secondary ms-1">
+                    <i class="ri-lock-line me-1"></i>Private
+                  </span>
+                <% end %>
+
+                <!-- === Trust Score === -->
+                <div class="small text-muted mt-2">
+                  Trust Score:
+                  <% score = sh.trust_weight || 0 %>
+                  <% full_stars = score.round %>
+                  <% full_stars.times do %>
+                    <i class="ri-star-fill text-warning"></i>
+                  <% end %>
+                  <% (10 - full_stars).times do %>
+                    <i class="ri-star-line text-muted"></i>
+                  <% end %>
+                  <span class="ms-1"><%= score %>/10</span>
+                </div>
+              </div>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-muted mb-0">
+        No linked social media profiles found for this citizen.  
+        <small class="d-block">Linked accounts help verify digital presence and cross-platform authenticity.</small>
+      </p>
+    <% end %>
+  </div>
+</div>

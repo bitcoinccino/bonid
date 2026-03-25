@@ -18,7 +18,7 @@
                  class: "btn btn-outline-success",
                  onclick: "window.print(); return false;" %>
 
-  <% unless @incident_report.approved? %>
+  <% unless @incident_report.status_approved? %>
     <%= link_to "Approve",
                 approve_admin_incident_report_path(@incident_report),
                 method: :post,
@@ -52,6 +52,13 @@
     <div class="card-body">
       <h5 class="card-title text-danger"><i class="ri-police-line me-2"></i> Crime Details</h5>
       <p><strong>Type:</strong> <%= @incident_report.crime_type %></p>
+      <% if @incident_report.penal_code_articles.present? %>
+        <p>
+          <strong><i class="ri-scales-3-line me-1"></i>Penal Code Reference:</strong>
+          <span class="badge bg-primary px-2 py-1">Articles <%= @incident_report.penal_code_articles %></span>
+          <small class="text-muted">(Code Pénal Haïtien 2020)</small>
+        </p>
+      <% end %>
       <p><strong>Description:</strong><br><%= simple_format(@incident_report.description) %></p>
       <p><strong>Reported At:</strong> <%= l(@incident_report.created_at, format: :long) %></p>
     </div>
