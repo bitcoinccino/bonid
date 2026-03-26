@@ -1,0 +1,183 @@
+<%# app/views/partner_portal/shared/sidebars/_sidebar_dgi_content.html.erb %>
+<%# Sidebar for Direction Generale des Impots (DGI) %>
+
+<%# Mobile backdrop %>
+<div class="partner-sidebar-backdrop d-lg-none"
+     data-action="click->partner-sidebar#close"
+     id="partnerSidebarBackdrop"></div>
+
+<%# Sidebar %>
+<div class="partner-sidebar" id="partnerSidebar" data-controller="partner-sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          data-action="click->partner-sidebar#close"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
+
+  <%# Partner logo and name %>
+  <div class="partner-logo-section">
+    <div class="partner-logo-wrapper">
+      <% if @current_partner&.logo&.attached? %>
+        <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [120, 120])),
+                      class: "partner-logo-img",
+                      alt: "#{@current_partner.name || 'DGI'} logo" %>
+      <% else %>
+        <div class="partner-logo-placeholder">
+          <i class="ri-government-line"></i>
+        </div>
+      <% end %>
+    </div>
+    <div class="partner-name"><%= @current_partner&.name || "Direction Generale des Impots" %></div>
+    <div class="partner-sector">Administrasyon Fiskal</div>
+  </div>
+
+  <%# Navigation links %>
+  <ul class="nav flex-column sidebar-nav">
+
+    <%# ── OPERATIONS ────────────────────────────── %>
+    <li class="sidebar-section-label">Operasyon</li>
+
+    <%# 1. Dashboard %>
+    <li class="nav-item">
+      <%= link_to partner_portal_dashboard_path,
+                  class: "nav-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <%# 2. Scan BonID %>
+    <li class="nav-item">
+      <%= link_to partner_portal_scans_path,
+                  class: "nav-link #{'active' if request.path.include?('scans')}" do %>
+        <i class="ri-qr-scan-2-line"></i>
+        <span>Scan BonID</span>
+      <% end %>
+    </li>
+
+    <%# 3. Fiscal Receipts (Kes Fiskal) %>
+    <li class="nav-item">
+      <%= link_to partner_portal_verifications_path(record_type: "fiscal_receipt"),
+                  class: "nav-link #{'active' if request.path.include?('verifications') && params[:record_type] == 'fiscal_receipt'}" do %>
+        <i class="ri-receipt-line"></i>
+        <span>Kes Fiskal</span>
+      <% end %>
+    </li>
+
+    <%# 4. Verifications %>
+    <li class="nav-item">
+      <%= link_to partner_portal_verifications_path,
+                  class: "nav-link #{'active' if request.path.include?('verifications') && params[:record_type].blank?}" do %>
+        <i class="ri-user-search-line"></i>
+        <span>Verifikasyon</span>
+      <% end %>
+    </li>
+
+    <%# 5. Team %>
+    <li class="nav-item">
+      <%= link_to partner_portal_team_path,
+                  class: "nav-link #{'active' if request.path.include?('team')}" do %>
+        <i class="ri-team-line"></i>
+        <span>Ekip</span>
+      <% end %>
+    </li>
+
+    <%# ── FISCAL ──────────────────────────────────── %>
+    <li class="sidebar-section-label">Fiskal</li>
+
+    <%# 6. Fiscal Reports %>
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path(view: "fiscal"),
+                  class: "nav-link #{'active' if request.path.include?('analytics') && params[:view] == 'fiscal'}" do %>
+        <i class="ri-file-chart-line"></i>
+        <span>Rapo Fiskal</span>
+      <% end %>
+    </li>
+
+    <%# 7. Reconciliation %>
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path(view: "reconciliation"),
+                  class: "nav-link #{'active' if params[:view] == 'reconciliation'}" do %>
+        <i class="ri-scales-3-line"></i>
+        <span>Rekonsilyasyon</span>
+      <% end %>
+    </li>
+
+    <%# 8. Schemas (fiscal receipt templates) %>
+    <li class="nav-item">
+      <%= link_to partner_portal_schemas_path,
+                  class: "nav-link #{'active' if request.path.include?('schemas')}" do %>
+        <i class="ri-file-code-line"></i>
+        <span>Schema</span>
+      <% end %>
+    </li>
+
+    <%# 9. Analytics %>
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path,
+                  class: "nav-link #{'active' if request.path.include?('analytics') && params[:view].blank?}" do %>
+        <i class="ri-bar-chart-box-line"></i>
+        <span>Analitik</span>
+      <% end %>
+    </li>
+
+    <%# ── API & BILLING ─────────────────────────── %>
+    <li class="sidebar-section-label">API & Faktirasyon</li>
+
+    <%# 10. API Keys %>
+    <li class="nav-item">
+      <%= link_to partner_portal_api_keys_path,
+                  class: "nav-link #{'active' if request.path.include?('api_keys')}" do %>
+        <i class="ri-code-s-slash-line"></i>
+        <span>API</span>
+      <% end %>
+    </li>
+
+    <%# 11. Settings %>
+    <li class="nav-item">
+      <%= link_to partner_portal_settings_path,
+                  class: "nav-link #{'active' if request.path.include?('settings')}" do %>
+        <i class="ri-settings-3-line"></i>
+        <span>Paramèt</span>
+      <% end %>
+    </li>
+
+    <%# Divider %>
+    <li class="sidebar-divider"></li>
+
+    <%# 12. Credits %>
+    <li class="nav-item">
+      <%= link_to partner_portal_credits_path,
+                  class: "nav-link #{'active' if request.path.include?('credits')}" do %>
+        <i class="ri-coin-line"></i>
+        <span>Kredi</span>
+        <% if @current_partner&.credit_balance.to_d > 0 %>
+          <span class="badge bg-success rounded-pill ms-auto" style="font-size: 0.65rem;">
+            $<%= number_with_precision(@current_partner.credit_balance, precision: 2) %>
+          </span>
+        <% end %>
+      <% end %>
+    </li>
+
+    <%# 13. Billing %>
+    <li class="nav-item">
+      <%= link_to partner_portal_billing_path,
+                  class: "nav-link #{'active' if request.path.include?('billing')}" do %>
+        <i class="ri-money-dollar-circle-line"></i>
+        <span>Faktirasyon</span>
+      <% end %>
+    </li>
+  </ul>
+
+  <%# Logout button %>
+  <div class="sidebar-logout">
+    <%= button_to destroy_partner_admin_session_path,
+                  method: :delete,
+                  class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Dekonekte</span>
+    <% end %>
+  </div>
+</div>
