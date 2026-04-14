@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_14_224500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -167,6 +167,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.date "closed_on", comment: "Date when account or wallet was closed"
     t.string "account_source", default: "bank", null: false
     t.string "chain"
+    t.string "cashtag"
     t.index ["account_number"], name: "index_bank_profiles_on_account_number"
     t.index ["account_source"], name: "index_bank_profiles_on_account_source"
     t.index ["bank_id"], name: "index_bank_profiles_on_bank_id"
@@ -201,6 +202,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.index ["new_bonid"], name: "index_bonid_aliases_on_new_bonid"
     t.index ["old_bonid"], name: "index_bonid_aliases_on_old_bonid", unique: true
     t.index ["user_id"], name: "index_bonid_aliases_on_user_id"
+  end
+
+  create_table "bonvote_elections", force: :cascade do |t|
+    t.string "title", null: false
+    t.string "election_type", null: false
+    t.integer "round", default: 1, null: false
+    t.bigint "parent_election_id"
+    t.string "status", default: "draft", null: false
+    t.date "election_date", null: false
+    t.datetime "opened_at"
+    t.datetime "closed_at"
+    t.datetime "certified_at"
+    t.string "cep_public_key"
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_type", "round"], name: "index_bonvote_elections_on_election_type_and_round"
+    t.index ["parent_election_id"], name: "index_bonvote_elections_on_parent_election_id"
+    t.index ["status"], name: "index_bonvote_elections_on_status"
   end
 
   create_table "border_entries", force: :cascade do |t|
@@ -404,6 +424,344 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.string "slug"
     t.index ["name"], name: "index_departments_on_name", unique: true
     t.index ["slug"], name: "index_departments_on_slug", unique: true
+  end
+
+  create_table "dgi_payments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.uuid "verification_record_id"
+    t.string "order_id", null: false
+    t.decimal "amount_htg", precision: 15, scale: 2, null: false
+    t.decimal "fee_htg", precision: 10, scale: 2, default: "0.0"
+    t.decimal "total_htg", precision: 15, scale: 2, null: false
+    t.string "currency", default: "HTG", null: false
+    t.string "payment_method", null: false
+    t.string "status", default: "pending", null: false
+    t.string "transaction_id"
+    t.string "payment_token"
+    t.jsonb "provider_response", default: {}
+    t.string "form_type"
+    t.string "declaration_number"
+    t.datetime "paid_at"
+    t.string "failure_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["form_type"], name: "index_dgi_payments_on_form_type"
+    t.index ["order_id"], name: "index_dgi_payments_on_order_id", unique: true
+    t.index ["transaction_id"], name: "index_dgi_payments_on_transaction_id"
+    t.index ["user_id", "status"], name: "index_dgi_payments_on_user_id_and_status"
+    t.index ["user_id"], name: "index_dgi_payments_on_user_id"
+    t.index ["verification_record_id", "status"], name: "index_dgi_payments_on_verification_record_id_and_status"
+    t.index ["verification_record_id"], name: "index_dgi_payments_on_verification_record_id"
+  end
+
+  create_table "election_accreditations", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.bigint "user_id"
+    t.string "accreditation_type", null: false
+    t.string "bonid"
+    t.string "full_name", null: false
+    t.string "cin_number"
+    t.string "organization", null: false
+    t.string "organization_acronym"
+    t.string "photo_url"
+    t.string "accreditation_code", null: false
+    t.bigint "assigned_body_id"
+    t.string "assigned_station_code"
+    t.string "department_code"
+    t.string "status", default: "pending", null: false
+    t.boolean "identity_verified", default: false
+    t.string "issued_by"
+    t.datetime "issued_at"
+    t.datetime "revoked_at"
+    t.string "revocation_reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_body_id"], name: "index_election_accreditations_on_assigned_body_id"
+    t.index ["election_id", "accreditation_code"], name: "idx_accreditations_code", unique: true
+    t.index ["election_id", "accreditation_type"], name: "idx_on_election_id_accreditation_type_67ca1597e4"
+    t.index ["election_id", "bonid"], name: "idx_accreditations_bonid", unique: true
+    t.index ["election_id"], name: "index_election_accreditations_on_election_id"
+    t.index ["organization"], name: "index_election_accreditations_on_organization"
+    t.index ["user_id"], name: "index_election_accreditations_on_user_id"
+  end
+
+  create_table "election_ballots", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "nullifier", null: false
+    t.string "position", null: false
+    t.text "encrypted_choice", null: false
+    t.text "encrypted_key"
+    t.string "iv"
+    t.string "auth_tag"
+    t.string "zkp_commitment", null: false
+    t.jsonb "zkp_proof", default: {}
+    t.string "ballot_hash", null: false
+    t.string "receipt_id", null: false
+    t.string "channel", default: "remote", null: false
+    t.string "consulate_id"
+    t.string "station_id"
+    t.string "department_code"
+    t.string "ip_country"
+    t.boolean "location_flagged", default: false
+    t.datetime "cast_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ballot_hash"], name: "index_election_ballots_on_ballot_hash", unique: true
+    t.index ["cast_at"], name: "index_election_ballots_on_cast_at"
+    t.index ["election_id", "channel"], name: "index_election_ballots_on_election_id_and_channel"
+    t.index ["election_id", "department_code"], name: "index_election_ballots_on_election_id_and_department_code"
+    t.index ["election_id", "nullifier"], name: "idx_ballots_election_nullifier", unique: true
+    t.index ["election_id", "position"], name: "index_election_ballots_on_election_id_and_position"
+    t.index ["election_id"], name: "index_election_ballots_on_election_id"
+    t.index ["receipt_id"], name: "index_election_ballots_on_receipt_id", unique: true
+  end
+
+  create_table "election_bodies", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "body_type", null: false
+    t.string "code", null: false
+    t.string "name", null: false
+    t.string "department_code"
+    t.string "department_name"
+    t.integer "commune_id"
+    t.integer "arrondissement_id"
+    t.bigint "parent_body_id"
+    t.string "address"
+    t.string "phone"
+    t.string "status", default: "active", null: false
+    t.integer "registered_voters", default: 0
+    t.integer "stations_count", default: 0
+    t.jsonb "metadata", default: {}
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["commune_id"], name: "index_election_bodies_on_commune_id"
+    t.index ["election_id", "body_type"], name: "index_election_bodies_on_election_id_and_body_type"
+    t.index ["election_id", "code"], name: "index_election_bodies_on_election_id_and_code", unique: true
+    t.index ["election_id", "department_code"], name: "index_election_bodies_on_election_id_and_department_code"
+    t.index ["election_id"], name: "index_election_bodies_on_election_id"
+    t.index ["parent_body_id"], name: "index_election_bodies_on_parent_body_id"
+  end
+
+  create_table "election_candidates", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.bigint "election_constituency_id", null: false
+    t.string "position", null: false
+    t.string "full_name", null: false
+    t.string "party_name"
+    t.string "party_acronym"
+    t.string "photo_url"
+    t.string "department_code"
+    t.integer "commune_id"
+    t.integer "ballot_number"
+    t.integer "votes_round1", default: 0
+    t.integer "votes_round2", default: 0
+    t.boolean "qualified_runoff", default: false
+    t.boolean "winner", default: false
+    t.string "status", default: "active"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.string "bonid"
+    t.string "cin_number"
+    t.string "registration_status", default: "draft"
+    t.text "platform_statement"
+    t.text "rejection_reason"
+    t.datetime "submitted_at"
+    t.datetime "approved_at"
+    t.datetime "rejected_at"
+    t.bigint "approved_by_id"
+    t.bigint "rejected_by_id"
+    t.bigint "party_registration_id"
+    t.date "date_of_birth"
+    t.string "place_of_birth"
+    t.string "nationality", default: "haitian"
+    t.string "sex"
+    t.string "marital_status"
+    t.string "profession"
+    t.string "residence_department"
+    t.string "residence_commune"
+    t.string "residence_address"
+    t.integer "residence_years"
+    t.string "candidacy_type", default: "party"
+    t.text "support_petition_details"
+    t.boolean "doc_birth_certificate", default: false
+    t.boolean "doc_cin_oni", default: false
+    t.boolean "doc_casier_judiciaire", default: false
+    t.boolean "doc_dgi_receipt", default: false
+    t.boolean "doc_property_proof", default: false
+    t.boolean "doc_residence_attestation", default: false
+    t.boolean "doc_immigration_cert", default: false
+    t.boolean "doc_discharge", default: false
+    t.boolean "doc_passport_photos", default: false
+    t.boolean "doc_party_mandate", default: false
+    t.boolean "doc_support_petition", default: false
+    t.boolean "doc_profession_proof", default: false
+    t.integer "registration_fee_gourdes"
+    t.string "dgi_receipt_number"
+    t.boolean "fee_paid", default: false
+    t.boolean "fee_reduced", default: false
+    t.string "fee_reduction_reason"
+    t.string "recepisse_number"
+    t.datetime "recepisse_issued_at"
+    t.index ["candidacy_type"], name: "index_election_candidates_on_candidacy_type"
+    t.index ["election_constituency_id"], name: "index_election_candidates_on_election_constituency_id"
+    t.index ["election_id", "bonid"], name: "idx_candidate_election_bonid"
+    t.index ["election_id", "department_code"], name: "index_election_candidates_on_election_id_and_department_code"
+    t.index ["election_id", "position"], name: "index_election_candidates_on_election_id_and_position"
+    t.index ["election_id"], name: "index_election_candidates_on_election_id"
+    t.index ["party_registration_id"], name: "index_election_candidates_on_party_registration_id"
+    t.index ["recepisse_number"], name: "index_election_candidates_on_recepisse_number", unique: true, where: "(recepisse_number IS NOT NULL)"
+    t.index ["registration_status"], name: "index_election_candidates_on_registration_status"
+    t.index ["user_id"], name: "index_election_candidates_on_user_id"
+  end
+
+  create_table "election_constituencies", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "position", null: false
+    t.string "department_code"
+    t.string "department_name"
+    t.integer "commune_id"
+    t.integer "arrondissement_id"
+    t.string "constituency_name", null: false
+    t.integer "seats", default: 1, null: false
+    t.boolean "up_for_election", default: true, null: false
+    t.string "electoral_system", default: "absolute_majority_two_round", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_id", "department_code"], name: "idx_on_election_id_department_code_231ace3839"
+    t.index ["election_id", "position"], name: "index_election_constituencies_on_election_id_and_position"
+    t.index ["election_id"], name: "index_election_constituencies_on_election_id"
+  end
+
+  create_table "election_disputes", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "dispute_type", null: false
+    t.string "reference_code", null: false
+    t.string "filed_by_type", null: false
+    t.string "filed_by_name", null: false
+    t.string "filed_by_bonid"
+    t.string "filed_by_organization"
+    t.bigint "constituency_id"
+    t.bigint "election_body_id"
+    t.string "department_code"
+    t.integer "commune_id"
+    t.string "subject", null: false
+    t.text "description"
+    t.text "evidence_summary"
+    t.jsonb "attachments", default: []
+    t.string "status", default: "filed", null: false
+    t.string "priority", default: "normal"
+    t.string "assigned_to"
+    t.string "assigned_to_bonid"
+    t.text "decision"
+    t.string "decision_type"
+    t.datetime "filed_at"
+    t.datetime "hearing_at"
+    t.datetime "decided_at"
+    t.datetime "appeal_deadline"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["constituency_id"], name: "index_election_disputes_on_constituency_id"
+    t.index ["department_code"], name: "index_election_disputes_on_department_code"
+    t.index ["election_body_id"], name: "index_election_disputes_on_election_body_id"
+    t.index ["election_id", "dispute_type"], name: "index_election_disputes_on_election_id_and_dispute_type"
+    t.index ["election_id", "reference_code"], name: "idx_disputes_reference", unique: true
+    t.index ["election_id", "status"], name: "index_election_disputes_on_election_id_and_status"
+    t.index ["election_id"], name: "index_election_disputes_on_election_id"
+  end
+
+  create_table "election_party_registrations", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.bigint "user_id"
+    t.string "registration_type", default: "party", null: false
+    t.string "party_name", null: false
+    t.string "party_acronym"
+    t.string "representative_name", null: false
+    t.string "representative_bonid"
+    t.string "representative_cin"
+    t.boolean "is_mandataire", default: false
+    t.jsonb "member_parties", default: []
+    t.boolean "doc_acte_constitutif", default: false
+    t.boolean "doc_acte_reconnaissance", default: false
+    t.boolean "doc_statuts", default: false
+    t.boolean "doc_pv_assemblee", default: false
+    t.boolean "doc_acte_mandataire", default: false
+    t.boolean "doc_lettre_ministere", default: false
+    t.boolean "doc_sigle", default: false
+    t.boolean "doc_embleme", default: false
+    t.boolean "doc_cin_representant", default: false
+    t.boolean "doc_logo_numerique", default: false
+    t.boolean "doc_liste_partis_signataires", default: false
+    t.boolean "doc_accord_embleme_unique", default: false
+    t.boolean "doc_actes_reconnaissance_membres", default: false
+    t.string "status", default: "submitted", null: false
+    t.text "rejection_reason"
+    t.string "reviewed_by"
+    t.datetime "submitted_at"
+    t.datetime "reviewed_at"
+    t.datetime "approved_at"
+    t.datetime "rejected_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_id", "party_name"], name: "idx_party_reg_name", unique: true
+    t.index ["election_id", "status"], name: "idx_party_reg_status"
+    t.index ["election_id"], name: "index_election_party_registrations_on_election_id"
+    t.index ["registration_type"], name: "index_election_party_registrations_on_registration_type"
+    t.index ["user_id"], name: "index_election_party_registrations_on_user_id"
+  end
+
+  create_table "election_signatures", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "bonid", null: false
+    t.string "role", null: false
+    t.string "signatory_name", null: false
+    t.string "liveness_session_id"
+    t.boolean "liveness_verified", default: false
+    t.string "key_shard_hash"
+    t.datetime "signed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_id", "bonid"], name: "index_election_signatures_on_election_id_and_bonid", unique: true
+    t.index ["election_id", "role"], name: "index_election_signatures_on_election_id_and_role", unique: true
+    t.index ["election_id"], name: "index_election_signatures_on_election_id"
+  end
+
+  create_table "election_staff_assignments", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.bigint "user_id", null: false
+    t.bigint "election_body_id", null: false
+    t.string "role", null: false
+    t.string "bonid"
+    t.string "status", default: "assigned", null: false
+    t.boolean "identity_verified", default: false
+    t.datetime "assigned_at"
+    t.datetime "checked_in_at"
+    t.datetime "checked_out_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_body_id", "role"], name: "index_election_staff_assignments_on_election_body_id_and_role"
+    t.index ["election_body_id"], name: "index_election_staff_assignments_on_election_body_id"
+    t.index ["election_id", "role"], name: "index_election_staff_assignments_on_election_id_and_role"
+    t.index ["election_id", "user_id", "election_body_id"], name: "idx_staff_election_body", unique: true
+    t.index ["election_id"], name: "index_election_staff_assignments_on_election_id"
+    t.index ["user_id"], name: "index_election_staff_assignments_on_user_id"
+  end
+
+  create_table "electoral_calendars", force: :cascade do |t|
+    t.bigint "bonvote_election_id", null: false
+    t.string "phase", null: false
+    t.string "name", null: false
+    t.date "start_date", null: false
+    t.date "end_date", null: false
+    t.text "description"
+    t.string "responsible_body"
+    t.boolean "public_visible", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bonvote_election_id", "phase"], name: "index_electoral_calendars_on_bonvote_election_id_and_phase"
+    t.index ["bonvote_election_id"], name: "index_electoral_calendars_on_bonvote_election_id"
+    t.index ["phase"], name: "index_electoral_calendars_on_phase"
+    t.index ["start_date", "end_date"], name: "index_electoral_calendars_on_start_date_and_end_date"
   end
 
   create_table "emergency_contacts", force: :cascade do |t|
@@ -933,7 +1291,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
   end
 
   create_table "partner_audit_logs", force: :cascade do |t|
-    t.bigint "partner_id", null: false
+    t.bigint "partner_id"
     t.bigint "admin_user_id"
     t.string "event", null: false
     t.text "details"
@@ -1032,7 +1390,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.boolean "template", default: false
     t.string "sector"
     t.text "description"
+    t.string "pricing_type", default: "free"
+    t.integer "price_cents", default: 0
+    t.string "currency", default: "HTG"
+    t.string "service_icon", default: "ri-file-text-line"
+    t.string "service_category", default: "verification"
+    t.integer "position", default: 0
+    t.boolean "citizen_facing", default: false
+    t.boolean "requires_signature", default: false
+    t.boolean "auto_stamp", default: false
+    t.jsonb "draft_structure"
+    t.datetime "published_at"
+    t.string "schema_status", default: "draft"
+    t.string "form_code"
+    t.string "form_revision"
+    t.integer "capacity"
+    t.datetime "starts_at"
+    t.datetime "ends_at"
     t.index ["approved_by_id"], name: "index_partner_schemas_on_approved_by_id"
+    t.index ["citizen_facing", "active"], name: "index_partner_schemas_on_citizen_facing_and_active"
+    t.index ["form_code"], name: "index_partner_schemas_on_form_code"
+    t.index ["partner_id", "citizen_facing"], name: "index_partner_schemas_on_partner_id_and_citizen_facing"
+    t.index ["partner_id", "record_type", "schema_status"], name: "idx_schemas_partner_record_status"
     t.index ["partner_id"], name: "index_partner_schemas_on_partner_id"
     t.index ["sector"], name: "index_partner_schemas_on_sector"
     t.index ["template"], name: "index_partner_schemas_on_template"
@@ -1108,11 +1487,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.datetime "critical_incident_activated_at"
     t.jsonb "allowed_transaction_types", default: [], null: false
     t.decimal "credit_balance", precision: 10, scale: 2, default: "0.0", null: false
+    t.string "settlement_cashtag"
+    t.string "settlement_method"
+    t.jsonb "settlement_bank_details"
+    t.datetime "guidelines_accepted_at"
+    t.string "guidelines_version"
+    t.bigint "guidelines_accepted_by_id"
     t.index ["allowed_scopes"], name: "index_partners_on_allowed_scopes", using: :gin
     t.index ["allowed_transaction_types"], name: "index_partners_on_allowed_transaction_types", using: :gin
     t.index ["api_key_digest"], name: "index_partners_on_api_key_digest"
     t.index ["billing_period_end"], name: "index_partners_on_billing_period_end"
     t.index ["deleted_at"], name: "index_partners_on_deleted_at"
+    t.index ["guidelines_accepted_at"], name: "index_partners_on_guidelines_accepted_at"
     t.index ["moncash_customer_id"], name: "index_partners_on_moncash_customer_id"
     t.index ["partner_plan_id"], name: "index_partners_on_partner_plan_id"
     t.index ["payment_method"], name: "index_partners_on_payment_method"
@@ -1198,6 +1584,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.datetime "updated_at", null: false
     t.string "hair_style"
     t.index ["user_id"], name: "index_physical_profiles_on_user_id"
+  end
+
+  create_table "pilot_feedbacks", force: :cascade do |t|
+    t.string "election_id", null: false
+    t.string "receipt_id"
+    t.string "ballot_hash"
+    t.integer "time_to_vote", null: false
+    t.integer "photo_clarity", null: false
+    t.integer "trust_level", null: false
+    t.text "comment"
+    t.string "lang", default: "ht"
+    t.string "channel"
+    t.string "consulate_id"
+    t.string "ip_country"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_id"], name: "index_pilot_feedbacks_on_election_id"
+    t.index ["receipt_id"], name: "index_pilot_feedbacks_on_receipt_id", unique: true
+    t.index ["trust_level"], name: "index_pilot_feedbacks_on_trust_level"
   end
 
   create_table "plan_add_ons", force: :cascade do |t|
@@ -1297,6 +1703,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.index ["person_involvement_id"], name: "index_review_comments_on_person_involvement_id"
   end
 
+  create_table "reviewer_activities", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "action", null: false
+    t.string "target_type"
+    t.bigint "target_id"
+    t.jsonb "metadata", default: {}
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_reviewer_activities_on_action"
+    t.index ["created_at"], name: "index_reviewer_activities_on_created_at"
+    t.index ["target_type", "target_id"], name: "index_reviewer_activities_on_target_type_and_target_id"
+    t.index ["user_id"], name: "index_reviewer_activities_on_user_id"
+  end
+
   create_table "reviewers", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -1320,6 +1741,81 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.bigint "role_id", null: false
     t.index ["role_id", "user_id"], name: "index_roles_users_on_role_id_and_user_id"
     t.index ["user_id", "role_id"], name: "index_roles_users_on_user_id_and_role_id", unique: true
+  end
+
+  create_table "service_applications", force: :cascade do |t|
+    t.bigint "citizen_id", null: false
+    t.bigint "partner_id", null: false
+    t.bigint "partner_schema_id", null: false
+    t.integer "schema_version", null: false
+    t.jsonb "schema_snapshot", default: {}, null: false
+    t.jsonb "form_data", default: {}, null: false
+    t.jsonb "calculated_values", default: {}
+    t.boolean "signature_consented", default: false
+    t.datetime "signature_applied_at"
+    t.boolean "sealed", default: false
+    t.datetime "sealed_at"
+    t.string "seal_checksum"
+    t.string "status", default: "draft", null: false
+    t.text "rejection_reason"
+    t.bigint "reviewed_by_id"
+    t.datetime "reviewed_at"
+    t.datetime "submitted_at"
+    t.string "pdf_checksum"
+    t.datetime "pdf_generated_at"
+    t.integer "total_price_cents", default: 0
+    t.string "currency", default: "HTG"
+    t.boolean "paid", default: false
+    t.datetime "paid_at"
+    t.string "verification_code", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.jsonb "price_snapshot", default: {}
+    t.jsonb "staff_notes", default: []
+    t.string "payment_method"
+    t.string "payment_token"
+    t.string "payment_transaction_id"
+    t.datetime "checked_in_at"
+    t.index ["citizen_id", "status"], name: "index_service_applications_on_citizen_id_and_status"
+    t.index ["citizen_id"], name: "index_service_applications_on_citizen_id"
+    t.index ["partner_id", "status"], name: "index_service_applications_on_partner_id_and_status"
+    t.index ["partner_id"], name: "index_service_applications_on_partner_id"
+    t.index ["partner_schema_id", "schema_version"], name: "idx_svc_app_schema_version"
+    t.index ["partner_schema_id"], name: "index_service_applications_on_partner_schema_id"
+    t.index ["payment_token"], name: "index_service_applications_on_payment_token", unique: true, where: "(payment_token IS NOT NULL)"
+    t.index ["reviewed_by_id"], name: "index_service_applications_on_reviewed_by_id"
+    t.index ["status"], name: "index_service_applications_on_status"
+    t.index ["verification_code"], name: "index_service_applications_on_verification_code", unique: true
+  end
+
+  create_table "settlements", force: :cascade do |t|
+    t.bigint "partner_id", null: false
+    t.bigint "dgi_payment_id"
+    t.string "payment_order_id"
+    t.decimal "total_collected", precision: 15, scale: 2, null: false
+    t.decimal "partner_amount", precision: 15, scale: 2, null: false
+    t.decimal "bonid_fee", precision: 15, scale: 2, null: false
+    t.string "currency", default: "HTG", null: false
+    t.string "form_type"
+    t.string "description"
+    t.string "status", default: "pending", null: false
+    t.string "settlement_method"
+    t.string "settlement_reference"
+    t.datetime "settled_at"
+    t.bigint "settled_by_admin_id"
+    t.text "notes"
+    t.string "batch_id"
+    t.date "period_start"
+    t.date "period_end"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["batch_id"], name: "index_settlements_on_batch_id"
+    t.index ["dgi_payment_id"], name: "index_settlements_on_dgi_payment_id"
+    t.index ["partner_id", "status"], name: "idx_settlements_partner_status"
+    t.index ["partner_id"], name: "index_settlements_on_partner_id"
+    t.index ["payment_order_id"], name: "index_settlements_on_payment_order_id"
+    t.index ["period_start", "period_end"], name: "idx_settlements_period"
+    t.index ["status"], name: "index_settlements_on_status"
   end
 
   create_table "severity_rules", force: :cascade do |t|
@@ -1500,6 +1996,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.string "prefix"
     t.string "suffix"
     t.string "ninu", limit: 10
+    t.datetime "last_seen_at"
     t.index ["active"], name: "index_users_on_active"
     t.index ["address_id"], name: "index_users_on_address_id"
     t.index ["agent_rank"], name: "index_users_on_agent_rank"
@@ -1666,6 +2163,30 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
     t.index ["user_id"], name: "index_visitor_submissions_on_user_id"
   end
 
+  create_table "voter_eligibility_records", force: :cascade do |t|
+    t.bigint "bonvote_election_id", null: false
+    t.bigint "user_id", null: false
+    t.string "bonid", null: false
+    t.string "cin_number"
+    t.string "department_code", null: false
+    t.integer "commune_id"
+    t.string "constituency_name"
+    t.string "status", default: "eligible", null: false
+    t.string "channel", default: "domestic"
+    t.string "ineligibility_reason"
+    t.boolean "has_voted", default: false, null: false
+    t.datetime "voted_at"
+    t.datetime "verified_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bonvote_election_id", "bonid"], name: "idx_voter_election_bonid", unique: true
+    t.index ["bonvote_election_id", "department_code"], name: "idx_voter_election_dept"
+    t.index ["bonvote_election_id"], name: "index_voter_eligibility_records_on_bonvote_election_id"
+    t.index ["has_voted"], name: "index_voter_eligibility_records_on_has_voted"
+    t.index ["status"], name: "index_voter_eligibility_records_on_status"
+    t.index ["user_id"], name: "index_voter_eligibility_records_on_user_id"
+  end
+
   create_table "waitlist_signups", force: :cascade do |t|
     t.string "first_name"
     t.string "last_name"
@@ -1705,6 +2226,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
   add_foreign_key "bank_profiles", "banks"
   add_foreign_key "bank_profiles", "users"
   add_foreign_key "bonid_aliases", "users"
+  add_foreign_key "bonvote_elections", "bonvote_elections", column: "parent_election_id"
   add_foreign_key "border_entries", "officers"
   add_foreign_key "border_entries", "partners"
   add_foreign_key "border_entries", "visitor_submissions"
@@ -1722,6 +2244,31 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
   add_foreign_key "crime_hotspots", "communes"
   add_foreign_key "crime_hotspots", "crime_categories"
   add_foreign_key "crime_types", "crime_categories"
+  add_foreign_key "dgi_payments", "users"
+  add_foreign_key "dgi_payments", "verification_records"
+  add_foreign_key "election_accreditations", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_accreditations", "election_bodies", column: "assigned_body_id"
+  add_foreign_key "election_accreditations", "users"
+  add_foreign_key "election_ballots", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_bodies", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_bodies", "election_bodies", column: "parent_body_id"
+  add_foreign_key "election_candidates", "admin_users", column: "approved_by_id"
+  add_foreign_key "election_candidates", "admin_users", column: "rejected_by_id"
+  add_foreign_key "election_candidates", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_candidates", "election_constituencies"
+  add_foreign_key "election_candidates", "election_party_registrations", column: "party_registration_id"
+  add_foreign_key "election_candidates", "users"
+  add_foreign_key "election_constituencies", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_disputes", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_disputes", "election_bodies"
+  add_foreign_key "election_disputes", "election_constituencies", column: "constituency_id"
+  add_foreign_key "election_party_registrations", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_party_registrations", "users"
+  add_foreign_key "election_signatures", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_staff_assignments", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_staff_assignments", "election_bodies"
+  add_foreign_key "election_staff_assignments", "users"
+  add_foreign_key "electoral_calendars", "bonvote_elections", on_delete: :cascade
   add_foreign_key "emergency_contacts", "users"
   add_foreign_key "failed_bonid_lookups", "officers"
   add_foreign_key "family_members", "communes", column: "birth_commune_id"
@@ -1798,6 +2345,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
   add_foreign_key "review_comments", "admin_users"
   add_foreign_key "review_comments", "incident_reviews"
   add_foreign_key "review_comments", "person_involvements"
+  add_foreign_key "reviewer_activities", "users"
+  add_foreign_key "service_applications", "partner_schemas"
+  add_foreign_key "service_applications", "partners"
+  add_foreign_key "service_applications", "users", column: "citizen_id"
+  add_foreign_key "service_applications", "users", column: "reviewed_by_id"
+  add_foreign_key "settlements", "dgi_payments"
+  add_foreign_key "settlements", "partners"
   add_foreign_key "severity_rules", "crime_types"
   add_foreign_key "signature_logs", "identity_submissions"
   add_foreign_key "signature_logs", "users"
@@ -1817,5 +2371,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_03_24_223510) do
   add_foreign_key "visitor_scan_events", "visitor_submissions"
   add_foreign_key "visitor_submissions", "identity_submissions"
   add_foreign_key "visitor_submissions", "users"
+  add_foreign_key "voter_eligibility_records", "bonvote_elections", on_delete: :cascade
+  add_foreign_key "voter_eligibility_records", "users"
   add_foreign_key "waitlist_signups", "communes"
 end
