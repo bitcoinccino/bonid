@@ -41,6 +41,8 @@ class User < ApplicationRecord
   has_one  :officer,          dependent: :destroy
   has_many :citizen_sessions, dependent: :destroy
   has_many :identity_submissions, dependent: :destroy
+  has_many :reviewer_activities, dependent: :destroy
+  has_many :voter_eligibility_records, dependent: :destroy
   has_many :name_change_requests, dependent: :destroy
   has_many :managed_partners, class_name: "Partner", foreign_key: :admin_user_id
   has_many :person_involvements, dependent: :nullify
@@ -49,6 +51,8 @@ class User < ApplicationRecord
   has_many :family_members,     dependent: :destroy
   has_many :family_links,       class_name: "FamilyMember", foreign_key: :linked_user_id
   has_many :verification_records, dependent: :destroy
+  has_many :service_applications, foreign_key: :citizen_id, dependent: :destroy
+  has_many :dgi_payments, dependent: :destroy
   has_many :consent_grants,    foreign_key: :citizen_id, dependent: :destroy
   has_many :transaction_consents, foreign_key: :citizen_id, dependent: :destroy
   has_many :bonid_aliases, dependent: :destroy

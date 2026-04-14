@@ -1,0 +1,148 @@
+<%# Override Approve Modal — required when Security Summary has fraud flags %>
+<%# Forces reviewer/admin to acknowledge the risk and provide justification %>
+
+<%
+  face_dedup = submission.metadata&.dig("face_dedup")
+  face_match = submission.face_match_result
+  dedup_flagged = face_dedup.present? && face_dedup["duplicate"] == true
+  match_failed  = face_match.present? && face_match["status"] == "no_match"
+
+  approve_path = (defined?(current_reviewer) && current_reviewer.present?) ?
+    reviewers_identity_submission_path(submission, approve: true) :
+    admin_identity_submission_path(submission.uuid, approve: true)
+%>
+
+<div class="modal fade"
+     id="overrideApproveModal"
+     tabindex="-1"
+     aria-labelledby="overrideApproveModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+
+      <!-- Header — danger gradient -->
+      <div class="modal-header text-white py-3"
+           style="background: linear-gradient(90deg, #dc3545, #c82333);">
+        <h5 class="modal-title d-flex align-items-center gap-2 fw-semibold" id="overrideApproveModalLabel">
+          <i class="ri-shield-cross-line fs-5"></i>
+          Security Override Required
+        </h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: approve_path,
+                    method: :patch,
+                    local: true,
+                    html: { id: "overrideApproveForm" } do |form| %>
+
+        <div class="modal-body p-4">
+
+          <%# ── Warning Summary ── %>
+          <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3 mb-4">
+            <i class="ri-alarm-warning-line fs-4 mt-1"></i>
+            <div>
+              <strong>Ou ap apwouve yon soumisyon ki gen avètisman sekirite.</strong>
+              <p class="mb-0 small mt-1">
+                Aksyon sa a pral anrejistre nan jounal aktivite ou epi li vizib pou administratè yo.
+                Tanpri bay yon jistifikasyon klè anvan ou kontinye.
+              </p>
+            </div>
+          </div>
+
+          <%# ── Active Flags ── %>
+          <div class="mb-4">
+            <label class="form-label fw-semibold text-dark small text-uppercase">Active Security Flags</label>
+
+            <% if dedup_flagged %>
+              <div class="d-flex align-items-center gap-2 p-2 mb-2 rounded-3" style="background: rgba(220,53,69,0.06);">
+                <i class="ri-shield-cross-line text-danger"></i>
+                <div>
+                  <strong class="text-danger" style="font-size: 0.85rem;">Face 1:N Duplicate</strong>
+                  <small class="text-muted d-block">
+                    Matches User #<%= face_dedup["matched_user_id"] %> at <%= face_dedup["similarity"] %>% similarity
+                  </small>
+                </div>
+              </div>
+            <% end %>
+
+            <% if match_failed %>
+              <div class="d-flex align-items-center gap-2 p-2 mb-2 rounded-3" style="background: rgba(220,53,69,0.06);">
+                <i class="ri-close-circle-line text-danger"></i>
+                <div>
+                  <strong class="text-danger" style="font-size: 0.85rem;">Face 1:1 Mismatch</strong>
+                  <small class="text-muted d-block">
+                    Selfie does not match ID document (<%= face_match["similarity"] %>%)
+                  </small>
+                </div>
+              </div>
+            <% end %>
+          </div>
+
+          <%# ── Mandatory Justification ── %>
+          <div class="mb-3">
+            <label for="override_reason" class="form-label fw-semibold text-dark">
+              Jistifikasyon <span class="text-danger">*</span>
+            </label>
+            <%= select_tag :override_reason,
+                  options_for_select([["— Chwazi yon rezon —", ""]] + OverrideReasons.options_for_select),
+                  class: "form-select rounded-pill py-2 shadow-sm mb-2",
+                  required: true,
+                  onchange: "toggleOverrideOther(this)" %>
+          </div>
+
+          <%# ── Additional Details ── %>
+          <div class="mb-3" id="overrideOtherWrapper" style="display: none;">
+            <label for="override_notes" class="form-label fw-semibold text-dark">
+              Detay Siplemantè <span class="text-danger">*</span>
+            </label>
+            <textarea name="override_notes" id="override_notes"
+                      rows="3"
+                      class="form-control rounded-3 shadow-sm"
+                      placeholder="Esplike poukisa ou kwè sa a se yon fo pozitif..."></textarea>
+          </div>
+
+          <%# ── Confirmation Checkbox ── %>
+          <div class="form-check mb-0">
+            <input type="checkbox" class="form-check-input" id="overrideConfirmCheck" required>
+            <label class="form-check-label small" for="overrideConfirmCheck">
+              Mwen konprann ke aksyon sa a pral anrejistre epi mwen pran responsablite pou desizyon sa a.
+            </label>
+          </div>
+
+          <%= hidden_field_tag :security_override, true %>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer bg-light border-0 d-flex justify-content-end gap-2 px-4 py-3">
+          <button type="button"
+                  class="btn btn-outline-secondary rounded-pill px-4"
+                  data-bs-dismiss="modal">
+            Anile
+          </button>
+
+          <button type="submit"
+                  class="btn btn-danger rounded-pill px-4 fw-semibold d-flex align-items-center gap-1">
+            <i class="ri-shield-cross-line"></i> Konfime Override & Apwouve
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleOverrideOther(select) {
+    const wrapper = document.getElementById('overrideOtherWrapper');
+    const textarea = document.getElementById('override_notes');
+    if (select.value === 'other') {
+      wrapper.style.display = 'block';
+      textarea.required = true;
+    } else {
+      wrapper.style.display = 'none';
+      textarea.required = false;
+    }
+  }
+</script>

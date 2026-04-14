@@ -1,12 +1,14 @@
 <%# Step 1: ID Type, Upload & Supporting Document %>
 
-<%# ── Country of Residence ── %>
+<%# ── Country of Residence (pre-filled from profile address) ── %>
+<% profile_country = current_citizen.address&.country&.upcase == "HAITI" ? "HT" : (current_citizen.address&.country || "HT") %>
+<% resolved_country = submission.country_of_residence.presence || profile_country %>
 <div class="mb-3">
   <%= f.input :country_of_residence,
         required: true,
         label: "Ki peyi ou ap viv kounye a?",
         collection: grouped_country_options.flat_map { |group, countries| countries.map { |name, code| [name, code] } }.sort_by(&:first).unshift(["Haiti", "HT"]),
-        selected: submission.country_of_residence || "HT",
+        selected: resolved_country,
         input_html: {
           id: "country_of_residence_select",
           class: "form-select",
@@ -15,10 +17,11 @@
 </div>
 
 <%# ── Diaspora Document Section (hidden when Haiti is selected) ── %>
+<% is_diaspora = resolved_country.present? && resolved_country != "HT" %>
 <div id="diaspora_fields"
      data-id-switcher-target="diasporaFields"
      class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1); display: none;">
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= ' display: none;' unless is_diaspora %>">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
       class="mb-3">
     <i class="ri-global-line me-1"></i> Dokiman Rezidans (Diaspora)
@@ -61,7 +64,7 @@
 <div id="diaspora_proof_fields"
      data-id-switcher-target="diasporaProofFields"
      class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1); display: none;">
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= ' display: none;' unless is_diaspora %>">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
       class="mb-3">
     <i class="ri-home-4-line me-1"></i> Prèv Adrès (Peyi Rezidans)
@@ -98,27 +101,42 @@
 
 <%# Diaspora toggle handled by id-switcher Stimulus controller %>
 
-<div class="mb-3">
-  <%= f.input :id_type,
-        required: true,
-        label: "Select an identification type",
-        collection: [["CIN", "cin"], ["Passport", "passport"]],
-        prompt: "Select ID Type",
-        input_html: {
-          id: "id_type_select",
-          class: "form-select",
-          data: {
-            action: "change->id-switcher#toggle",
-            "id-switcher-target": "idType"
-          }
-        } %>
-</div>
+<% prefilled_id_type = submission.id_type.presence || current_citizen.id_type.presence %>
+<% id_type_labels = { "cin" => "CIN", "passport" => "Passport", "license" => "Driver's License", "voter_id" => "Voter ID", "driver_license" => "Driver's License", "national_card" => "National Card", "nif" => "NIF" } %>
+<% if prefilled_id_type %>
+  <%# ID type already known from profile — pass as hidden, show subtle badge %>
+  <input type="hidden" name="identity_submission[id_type]" value="<%= prefilled_id_type %>">
+  <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-2"
+       style="background: rgba(0, 32, 159, 0.05); border: 1px solid rgba(0, 32, 159, 0.1);">
+    <i class="ri-shield-check-line" style="color: #00209F;"></i>
+    <span style="font-size: 0.82rem; color: #344054;">
+      <strong><%= id_type_labels[prefilled_id_type] || prefilled_id_type.titleize %></strong>
+      — pre-filled from your profile
+    </span>
+  </div>
+<% else %>
+  <div class="mb-3">
+    <%= f.input :id_type,
+          required: true,
+          label: "Select an identification type",
+          collection: [["CIN", "cin"], ["Passport", "passport"]],
+          prompt: "Select ID Type",
+          input_html: {
+            id: "id_type_select",
+            class: "form-select",
+            data: {
+              action: "change->id-switcher#toggle",
+              "id-switcher-target": "idType"
+            }
+          } %>
+  </div>
+<% end %>
 
 <%# CIN Uploads %>
 <div id="cin_fields"
      data-id-switcher-target="cinFields"
      class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);">
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= ' display: none;' unless prefilled_id_type == 'cin' || prefilled_id_type.blank? %>">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
       class="mb-3">
     <i class="ri-contacts-book-line me-1"></i> Upload Your CIN (Both Sides)
@@ -154,7 +172,7 @@
 <div id="passport_field"
      data-id-switcher-target="passportField"
      class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1); display: none;">
+     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= prefilled_id_type == 'passport' ? '' : ' display: none;' %>">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F);"
       class="mb-3">
     <i class="ri-passport-line me-1"></i> Upload Your Passport
@@ -172,7 +190,9 @@
 
 </div>
 
-<%# ── Document Number & Dates (single set, label changes based on ID type) ── %>
+<%# ── Document Number & Dates — skip if profile already has this data ── %>
+<% profile_has_doc = current_citizen.id_number.present? && current_citizen.id_type.present? %>
+<% unless profile_has_doc || submission.submission_type.to_s == "resubmission" %>
 <div id="document_details_fields"
      data-id-switcher-target="documentFields"
      class="p-3 rounded-3 mb-3"
@@ -214,29 +234,33 @@
     </div>
   </div>
 </div>
+<% end %>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var idSelect = document.getElementById("id_type_select");
-    if (!idSelect) return;
+    // Pre-filled id_type (resubmission) — read from hidden input
+    var prefilledType = document.querySelector("input[type='hidden'][name='identity_submission[id_type]']");
+    var idValue = idSelect ? idSelect.value : (prefilledType ? prefilledType.value : null);
 
     function updateDocFields() {
       var label = document.getElementById("document_number_label");
       var input = document.getElementById("document_number_input");
       var hint = input ? input.closest(".form-group, .mb-3")?.querySelector(".form-text") : null;
+      var val = idSelect ? idSelect.value : idValue;
 
-      if (idSelect.value === "cin") {
+      if (val === "cin") {
         if (label) label.textContent = "CIN Number *";
         if (input) { input.placeholder = "Ex: 1234567890"; input.inputMode = "numeric"; input.maxLength = 20; input.style.textTransform = ""; }
         if (hint) hint.textContent = "10 digits (new NINU), 14 or 17 digits (old CIN)";
-      } else if (idSelect.value === "passport") {
+      } else if (val === "passport") {
         if (label) label.textContent = "Passport Number *";
         if (input) { input.placeholder = "Ex: AB123456"; input.inputMode = "text"; input.maxLength = 9; input.style.textTransform = "uppercase"; }
         if (hint) hint.textContent = "6–9 alphanumeric characters";
       }
     }
 
-    idSelect.addEventListener("change", updateDocFields);
+    if (idSelect) idSelect.addEventListener("change", updateDocFields);
     updateDocFields();
   });
 </script>
@@ -245,11 +269,17 @@
 <div class="mb-3">
   <%= f.input :additional_proof_type,
         required: true,
+        as: :grouped_select,
         label: "Select one document to validate your address or identity",
-        collection: ["Digicel Bill", "Natcom Bill", "DINEPA Bill", "EDH Bill", "Internet Bill",
-                     "Birth Certificate", "Baptismal Certificate",
-                     "Driver's License", "PNH Record", "Bank Record", "Western Union", "MoneyGram",
-                     "Sendwave", "Unitransfer", "Car Registration", "Car Rental Receipt", "Other"],
+        collection: [
+          ["Bòdwo / Bills", [["Digicel Bill", "Digicel Bill"], ["Natcom Bill", "Natcom Bill"], ["DINEPA Bill", "DINEPA Bill"], ["EDH Bill", "EDH Bill"], ["Internet Bill", "Internet Bill"]]],
+          ["Dokiman Sivil / Civil Documents", [["Birth Certificate", "Birth Certificate"], ["Baptismal Certificate", "Baptismal Certificate"], ["Marriage Certificate", "Marriage Certificate"]]],
+          ["Dokiman Ofisyèl / Official Documents", [["NIF / Matricule Fiscal", "NIF / Matricule Fiscal"], ["Driver's License", "Driver's License"], ["PNH Record", "PNH Record"]]],
+          ["Finansye / Financial", [["Bank Record", "Bank Record"], ["Western Union", "Western Union"], ["MoneyGram", "MoneyGram"], ["Sendwave", "Sendwave"], ["Unitransfer", "Unitransfer"]]],
+          ["Lòt / Other", [["Car Registration", "Car Registration"], ["Car Rental Receipt", "Car Rental Receipt"], ["Other", "Other"]]]
+        ],
+        group_method: :second,
+        group_label_method: :first,
         prompt: "Select document type",
         input_html: { class: "form-select", id: "additional_proof_type_select" },
         label_html: { class: "form-label" } %>
@@ -270,6 +300,25 @@
   </div>
 </div>
 
+<%# Marriage Certificate info %>
+<div id="marriage-certificate-warning" class="alert alert-info small rounded-3 mb-3 d-none d-flex align-items-start">
+  <i class="ri-hearts-line me-2 mt-1"></i>
+  <div>
+    <strong>Acte de Mariage:</strong> Upload your official marriage certificate issued by the
+    <strong>Officier d'État Civil</strong>. This is required for name change requests on CIN or Passport.
+  </div>
+</div>
+
+<%# NIF / Matricule Fiscal info %>
+<div id="nif-warning" class="alert alert-info small rounded-3 mb-3 d-none d-flex align-items-start">
+  <i class="ri-money-dollar-circle-line me-2 mt-1"></i>
+  <div>
+    <strong>NIF / Matricule Fiscal:</strong> Upload your NIF card or matricule fiscal document
+    issued by the <strong>DGI (Direction Générale des Impôts)</strong>. This proves you are
+    registered in the tax system — required for Passport applications.
+  </div>
+</div>
+
 <div class="mb-3">
   <%= f.input :additional_proof,
         as: :file,
@@ -283,9 +332,19 @@
   document.addEventListener("DOMContentLoaded", function () {
     var sel = document.getElementById("additional_proof_type_select");
     if (!sel) return;
+
+    var warnings = {
+      "Birth Certificate":      "birth-certificate-warning",
+      "Marriage Certificate":   "marriage-certificate-warning",
+      "NIF / Matricule Fiscal": "nif-warning"
+    };
+
     sel.addEventListener("change", function () {
-      var warning = document.getElementById("birth-certificate-warning");
-      warning.classList.toggle("d-none", sel.value !== "Birth Certificate");
+      // Toggle all warnings
+      Object.keys(warnings).forEach(function (key) {
+        var el = document.getElementById(warnings[key]);
+        if (el) el.classList.toggle("d-none", sel.value !== key);
+      });
     });
   });
 </script>

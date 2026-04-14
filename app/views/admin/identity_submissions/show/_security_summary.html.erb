@@ -1,0 +1,208 @@
+<%# app/views/admin/identity_submissions/show/_security_summary.html.erb %>
+<%# Security Summary — sticky header showing Double Lock status at a glance %>
+<%# Visible on ALL tabs so reviewers never miss a fraud flag %>
+
+<%
+  # ── Layer 0: CIN Gate (document number uniqueness) ──
+  cin_clear = true  # if they got this far, they passed validation
+
+  # ── Layer 1: Face 1:N Dedup ──
+  face_dedup    = submission.metadata&.dig("face_dedup")
+  dedup_checked = face_dedup.present?
+  dedup_clear   = dedup_checked && face_dedup["duplicate"] != true
+  dedup_flagged = dedup_checked && face_dedup["duplicate"] == true
+  dedup_same_user = dedup_checked && face_dedup["same_user"] == true
+  matched_user_id = face_dedup&.dig("matched_user_id")
+  dedup_similarity = face_dedup&.dig("similarity")
+
+  # ── Layer 2: Face 1:1 Match (selfie vs ID) ──
+  face_match    = submission.face_match_result
+  match_checked = face_match.present?
+  match_pass    = match_checked && face_match["status"] == "match"
+  match_fail    = match_checked && face_match["status"] == "no_match"
+  match_similarity = face_match&.dig("similarity")
+
+  # ── Liveness ──
+  liveness       = submission.metadata&.dig("liveness")
+  liveness_checked = liveness.present?
+  liveness_pass  = liveness_checked && liveness["passed"] == true
+  liveness_confidence = liveness&.dig("confidence")
+  liveness_gray  = liveness_checked && liveness["needs_review"] == true
+
+  # ── Auto-rejected? ──
+  auto_rejected = submission.metadata&.dig("auto_rejection").present?
+
+  # ── Overall threat level ──
+  has_any_flag = dedup_flagged || match_fail || liveness_gray || auto_rejected
+%>
+
+<% if submission.status_pending? || has_any_flag || auto_rejected %>
+  <div class="card border-0 shadow-sm mb-4 rounded-3"
+       style="<%= has_any_flag ? 'border-left: 4px solid #dc3545 !important; background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);' : 'border-left: 4px solid #1A936F !important;' %>">
+    <div class="card-body py-3 px-4">
+
+      <%# ── Header ── %>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h6 class="fw-bold mb-0 <%= has_any_flag ? 'text-danger' : 'text-success' %>">
+          <i class="<%= has_any_flag ? 'ri-shield-cross-line' : 'ri-shield-check-line' %> me-1"></i>
+          Security Summary
+          <% if has_any_flag %>
+            <span class="badge bg-danger ms-2">Action Required</span>
+          <% end %>
+        </h6>
+        <small class="text-muted">Double Lock</small>
+      </div>
+
+      <%# ── Fraud Alert Banner (if 1:N flagged) ── %>
+      <% if dedup_flagged %>
+        <div class="alert alert-danger d-flex align-items-start gap-2 rounded-3 mb-3 py-2">
+          <i class="ri-alarm-warning-line fs-4 mt-1"></i>
+          <div>
+            <strong>DUPLICATE IDENTITY DETECTED</strong>
+            <p class="mb-0 small">
+              Face 1:N search matched this person to
+              <strong>User #<%= matched_user_id %></strong>
+              with <strong><%= dedup_similarity %>%</strong> similarity.
+              This submission was
+              <% if auto_rejected %>
+                <span class="badge bg-danger">auto-rejected</span>
+              <% else %>
+                <span class="badge bg-warning text-dark">flagged for manual review</span>
+              <% end %>
+              by the Double Lock system.
+            </p>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── 4 Security Indicators ── %>
+      <div class="row g-3">
+
+        <%# CIN Gate %>
+        <div class="col-6 col-md-3">
+          <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(26,147,111,0.06);">
+            <i class="ri-checkbox-circle-fill text-success"></i>
+            <div>
+              <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">CIN Gate</small>
+              <strong class="text-success" style="font-size: 0.85rem;">Passed</strong>
+            </div>
+          </div>
+        </div>
+
+        <%# Face 1:N Dedup %>
+        <div class="col-6 col-md-3">
+          <% if dedup_flagged %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(220,53,69,0.08);">
+              <i class="ri-close-circle-fill text-danger"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:N</small>
+                <strong class="text-danger" style="font-size: 0.85rem;">
+                  Match <%= dedup_similarity %>%
+                </strong>
+              </div>
+            </div>
+          <% elsif dedup_same_user %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(59,130,246,0.06);">
+              <i class="ri-checkbox-circle-fill text-info"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:N</small>
+                <strong class="text-info" style="font-size: 0.85rem;">Reissue</strong>
+              </div>
+            </div>
+          <% elsif dedup_clear %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(26,147,111,0.06);">
+              <i class="ri-checkbox-circle-fill text-success"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:N</small>
+                <strong class="text-success" style="font-size: 0.85rem;">Clear</strong>
+              </div>
+            </div>
+          <% else %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(108,117,125,0.06);">
+              <i class="ri-time-line text-muted"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:N</small>
+                <strong class="text-muted" style="font-size: 0.85rem;">Pending</strong>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Face 1:1 Match %>
+        <div class="col-6 col-md-3">
+          <% if match_pass %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(26,147,111,0.06);">
+              <i class="ri-checkbox-circle-fill text-success"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:1</small>
+                <strong class="text-success" style="font-size: 0.85rem;"><%= match_similarity %>%</strong>
+              </div>
+            </div>
+          <% elsif match_fail %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(220,53,69,0.08);">
+              <i class="ri-close-circle-fill text-danger"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:1</small>
+                <strong class="text-danger" style="font-size: 0.85rem;">Fail <%= match_similarity %>%</strong>
+              </div>
+            </div>
+          <% elsif match_checked %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(237,185,94,0.1);">
+              <i class="ri-error-warning-fill text-warning"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:1</small>
+                <strong class="text-warning" style="font-size: 0.85rem;">Error</strong>
+              </div>
+            </div>
+          <% else %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(108,117,125,0.06);">
+              <i class="ri-time-line text-muted"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Face 1:1</small>
+                <strong class="text-muted" style="font-size: 0.85rem;">Pending</strong>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Liveness %>
+        <div class="col-6 col-md-3">
+          <% if liveness_pass && !liveness_gray %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(26,147,111,0.06);">
+              <i class="ri-checkbox-circle-fill text-success"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Liveness</small>
+                <strong class="text-success" style="font-size: 0.85rem;"><%= liveness_confidence %>%</strong>
+              </div>
+            </div>
+          <% elsif liveness_gray %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(237,185,94,0.1);">
+              <i class="ri-error-warning-fill text-warning"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Liveness</small>
+                <strong class="text-warning" style="font-size: 0.85rem;">Gray <%= liveness_confidence %>%</strong>
+              </div>
+            </div>
+          <% elsif liveness_checked && !liveness_pass %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(220,53,69,0.08);">
+              <i class="ri-close-circle-fill text-danger"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Liveness</small>
+                <strong class="text-danger" style="font-size: 0.85rem;">Failed</strong>
+              </div>
+            </div>
+          <% else %>
+            <div class="d-flex align-items-center gap-2 p-2 rounded-3" style="background: rgba(108,117,125,0.06);">
+              <i class="ri-time-line text-muted"></i>
+              <div>
+                <small class="text-muted d-block" style="font-size: 0.7rem; line-height: 1;">Liveness</small>
+                <strong class="text-muted" style="font-size: 0.85rem;">Pending</strong>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>

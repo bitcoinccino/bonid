@@ -53,6 +53,23 @@ class FaceMatchJob < ApplicationJob
       return
     end
 
+    # ── LAYER 1: 1:N face deduplication (before 1:1 match) ──
+    # Search the Rekognition collection for this face across ALL verified users.
+    # If the face belongs to a different user → auto-reject as duplicate.
+    # If it belongs to the same user → legitimate reissue, continue.
+    selfie_bytes = download_selfie_bytes(submission)
+    if selfie_bytes
+      dedup_result = FaceCollectionService.search(selfie_bytes, submission.user_id)
+      if dedup_result[:duplicate]
+        auto_reject_duplicate!(submission, dedup_result)
+        return
+      end
+
+      # Store dedup result in metadata for admin visibility
+      store_dedup_result!(submission, dedup_result)
+    end
+
+    # ── LAYER 2: 1:1 face match (selfie vs ID document) ──
     result = FaceMatchService.call(submission)
 
     # Reload to pick up metadata changes written by FaceMatchService
@@ -115,6 +132,64 @@ class FaceMatchJob < ApplicationJob
     else
       Rails.logger.warn "[FaceMatchJob] Submission ##{submission.id}: Unknown face match status '#{face_status}', leaving as pending."
     end
+  end
+
+  def download_selfie_bytes(submission)
+    return nil unless submission.selfie.attached?
+
+    blob = submission.selfie.blob
+    blob.download
+  rescue StandardError => e
+    Rails.logger.warn "[FaceMatchJob] Failed to download selfie for 1:N search: #{e.message}"
+    nil
+  end
+
+  def auto_reject_duplicate!(submission, dedup_result)
+    matched_user_id = dedup_result[:matched_user_id]
+    similarity = dedup_result[:similarity]
+
+    Rails.logger.warn "[FaceMatchJob] DUPLICATE FACE — Auto-rejecting submission ##{submission.id}: " \
+      "matches user_id=#{matched_user_id} (#{similarity}% similarity)"
+
+    current_metadata = submission.metadata || {}
+    current_metadata["face_dedup"] = {
+      "status" => "duplicate",
+      "matched_user_id" => matched_user_id,
+      "matched_face_id" => dedup_result[:matched_face_id],
+      "similarity" => similarity,
+      "checked_at" => Time.current.iso8601
+    }
+    current_metadata["auto_rejection"] = {
+      "rejected_by" => "system:face_dedup",
+      "reason" => "duplicate_identity",
+      "note" => "Auto-rejected: This face is already registered under a different BonID account " \
+                "(user_id: #{matched_user_id}, similarity: #{similarity}%). " \
+                "A person can only have one BonID.",
+      "rejected_at" => Time.current.iso8601
+    }
+
+    submission.update!(
+      status: :rejected,
+      rejection_reason: "duplicate_identity",
+      metadata: current_metadata
+    )
+
+    Citizens::IdentitySubmissionMailer.rejected_email(submission).deliver_later
+
+    # Notify admin team of the fraud attempt
+    Admin::AdminMailer.fraud_alert(submission: submission).deliver_later
+    Rails.cache.delete("admin/fraud_alerts_count")
+  rescue StandardError => e
+    Rails.logger.error "[FaceMatchJob] Failed to auto-reject duplicate submission ##{submission.id}: #{e.class} - #{e.message}"
+  end
+
+  def store_dedup_result!(submission, dedup_result)
+    current_metadata = submission.metadata || {}
+    current_metadata["face_dedup"] = {
+      "status" => dedup_result[:same_user] ? "same_user" : "clear",
+      "checked_at" => Time.current.iso8601
+    }
+    submission.update_column(:metadata, current_metadata)
   end
 
   def auto_reject!(submission, reason:, note:)

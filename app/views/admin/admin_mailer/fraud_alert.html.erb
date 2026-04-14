@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 40px auto; padding: 0; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #dc3545 0%, #991b1b 100%); color: #fff; padding: 24px 30px; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .header p { margin: 6px 0 0; opacity: 0.85; font-size: 13px; }
+    .body { padding: 30px; }
+    .alert-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    .detail-label { color: #6b7280; }
+    .detail-value { font-weight: 600; color: #111827; }
+    .btn {
+      display: inline-block; padding: 12px 24px; background: #dc3545;
+      color: #ffffff; text-decoration: none; border-radius: 25px;
+      font-weight: 600; font-size: 14px; margin-top: 16px;
+    }
+    .footer { font-size: 12px; color: #6b7280; padding: 20px 30px; background: #f8fafc; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Duplicate Identity Detected</h1>
+      <p>BonID Face Deduplication System &mdash; Automatic Fraud Alert</p>
+    </div>
+
+    <div class="body">
+      <div class="alert-box">
+        <strong>A new identity submission was auto-rejected</strong> because the selfie matches
+        a face already registered under a different BonID account.
+      </div>
+
+      <h3 style="font-size: 15px; color: #374151; margin-bottom: 12px;">Rejected Submission</h3>
+
+      <div class="detail-row">
+        <span class="detail-label">Name</span>
+        <span class="detail-value"><%= @user&.full_name || "Unknown" %></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">User ID</span>
+        <span class="detail-value">#<%= @user&.id %></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Document Type</span>
+        <span class="detail-value"><%= @submission.id_type&.upcase || "N/A" %></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Submitted</span>
+        <span class="detail-value"><%= @submission.created_at.strftime("%B %d, %Y at %I:%M %p") %></span>
+      </div>
+
+      <h3 style="font-size: 15px; color: #374151; margin: 20px 0 12px;">Matched Existing Account</h3>
+
+      <div class="detail-row">
+        <span class="detail-label">Matched User</span>
+        <span class="detail-value"><%= @matched_user&.full_name || "User ##{@dedup_data['matched_user_id']}" %></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Matched User ID</span>
+        <span class="detail-value">#<%= @dedup_data["matched_user_id"] %></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Face Similarity</span>
+        <span class="detail-value" style="color: #dc3545;"><%= @dedup_data["similarity"] %>%</span>
+      </div>
+
+      <p style="margin-top: 20px; font-size: 14px; color: #374151;">
+        This could indicate an attempt to create a fraudulent second identity.
+        Review both accounts to determine if further action is needed.
+      </p>
+
+      <a href="<%= admin_identity_submission_url(@submission.uuid) %>" class="btn">
+        Review Submission
+      </a>
+    </div>
+
+    <div class="footer">
+      This is an automated security alert from BonID Face Deduplication System.<br>
+      &copy; <%= Time.current.year %> BonID. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

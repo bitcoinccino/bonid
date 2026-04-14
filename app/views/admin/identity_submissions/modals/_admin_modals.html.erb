@@ -1,9 +1,11 @@
 <!-- Reject Submission Modal -->
+<% reject_url = (defined?(current_reviewer) && current_reviewer.present?) ?
+     reviewers_identity_submission_path(submission, reject: true) :
+     admin_identity_submission_path(submission.uuid) %>
 <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-3 bg-white">
-      <%= form_with model: [:admin, submission],
-                    url: admin_identity_submission_path(submission.uuid),
+      <%= form_with url: reject_url,
                     method: :patch,
                     local: true,
                     data: { controller: "admin-rejection" } do |form| %>
@@ -38,7 +40,10 @@
 <div class="modal fade" id="rejectResetModal" tabindex="-1" aria-labelledby="rejectResetModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-3 bg-white">
-      <%= form_with url: reject_reset_admin_identity_submission_path(submission.uuid),
+      <% reject_reset_url = (defined?(current_reviewer) && current_reviewer.present?) ?
+           reject_reset_reviewers_identity_submission_path(submission) :
+           reject_reset_admin_identity_submission_path(submission.uuid) %>
+      <%= form_with url: reject_reset_url,
                     method: :patch,
                     local: true,
                     data: { controller: "admin-rejection" } do |form| %>
@@ -73,3 +78,6 @@
     </div>
   </div>
 </div>
+
+<!-- Override Approve Modal (Security Safety Lock) -->
+<%= render "admin/identity_submissions/modals/override_approve_modal", submission: submission %>

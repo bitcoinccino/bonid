@@ -152,7 +152,7 @@ is_edit         = submission.persisted?
 
         <%# ══════════ STEP 4 — Review & Confirm ══════════ %>
         <section data-wizard-target="step" data-step="4" class="wizard-step d-none">
-          <%= render "citizens/identity_submissions/review_section" %>
+          <%= render "citizens/identity_submissions/review_section", submission: submission %>
 
           <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 pt-3 border-top">
             <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
@@ -182,3 +182,11 @@ is_edit         = submission.persisted?
 
   </div>
 </div>
+
+<%# Reset wizard to Step 1 after server-side validation errors.
+    Without this, sessionStorage restores Step 4 but all form data is lost. %>
+<% if flash[:alert].present? || (submission.errors.any? rescue false) %>
+  <script>
+    sessionStorage.removeItem("wizard-step:" + window.location.pathname);
+  </script>
+<% end %>

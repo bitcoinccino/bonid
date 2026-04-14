@@ -73,6 +73,9 @@ class IdentitySubmission < ApplicationRecord
   has_one_attached :adoption_certificate
   has_one_attached :naturalization_monitor_copy
   has_one_attached :archives_extract
+  has_one_attached :marriage_certificate
+  has_one_attached :police_report
+  has_one_attached :nif_document
   has_one_attached :pnh_record
   has_one_attached :bank_record
   has_one_attached :western_union_record
@@ -107,6 +110,7 @@ class IdentitySubmission < ApplicationRecord
   after_commit  :regenerate_combined_qr_if_approved,   if: -> { status_approved? }
   after_commit :generate_secure_qr_if_approved, if: -> { saved_change_to_status? && status_approved? }
   after_commit :copy_selfie_to_user_photo, if: -> { saved_change_to_status? && status_approved? }
+  after_commit :index_face_in_collection,  if: -> { saved_change_to_status? && status_approved? }
 
 
   # === VIRTUAL ATTRIBUTES ===================================================
@@ -435,7 +439,9 @@ end
   end
 
   # === LOOKUP / IDENTIFIERS ================================================
-  def certificate_number = "BONID-#{created_at.year}-#{id.to_s.rjust(5, '0')}"
+  def certificate_number
+    @certificate_number ||= "BONID-#{created_at.year}-#{Digest::SHA256.hexdigest("cert-#{id}-#{created_at.to_i}")[0, 8].upcase}"
+  end
 
     def verification_qr_url
       helpers = Rails.application.routes.url_helpers
@@ -576,9 +582,11 @@ end
   end
 
   def validate_document_number_uniqueness
+    # Check approved AND pending submissions — prevents two concurrent signups
+    # with the same CIN from both getting through the gate.
     existing = IdentitySubmission
       .where(document_number: document_number)
-      .where(status: :approved)
+      .where(status: [ :approved, :pending ])
       .where.not(user_id: user_id)
     existing = existing.where.not(id: id) if persisted?
 
@@ -656,6 +664,29 @@ end
     Rails.logger.info "📸 Copied approved selfie to user photo for User ##{user.id}"
   rescue => e
     Rails.logger.error "❌ Failed to copy selfie to user photo: #{e.message}"
+  end
+
+  # === INDEX FACE IN REKOGNITION COLLECTION ON APPROVAL =====================
+  # Stores the verified selfie in the 1:N face collection so future
+  # submissions from different accounts can be caught as duplicates.
+  # The face_id is stored in metadata["face_collection"]["face_id"].
+  def index_face_in_collection
+    return unless selfie.attached?
+
+    selfie_bytes = selfie.blob.download
+    face_id = FaceCollectionService.index(selfie_bytes, user_id)
+
+    if face_id
+      current_metadata = metadata || {}
+      current_metadata["face_collection"] = {
+        "face_id" => face_id,
+        "indexed_at" => Time.current.iso8601,
+        "collection_id" => FaceCollectionService::COLLECTION_ID
+      }
+      update_column(:metadata, current_metadata)
+    end
+  rescue StandardError => e
+    Rails.logger.error "[FaceCollectionService] Failed to index face for submission ##{id}: #{e.class} - #{e.message}"
   end
 
   def set_verified_fields_if_approved

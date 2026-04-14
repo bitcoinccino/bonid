@@ -11,6 +11,11 @@ FactoryBot.define do
 
     bonid { user.bonid }
     verification_token { SecureRandom.hex(16) }
+    sequence(:document_number) { |n| format("%010d", 1000000000 + n) } # Valid 10-digit NINU format
+    country_of_residence { "HT" }
+
+    # Bypass selfie attachment validation by marking liveness as reused
+    metadata { { "liveness" => { "reused" => true } } }
 
     verified_at { nil }
     expires_at  { nil }

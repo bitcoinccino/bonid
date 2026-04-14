@@ -78,9 +78,18 @@ module Citizens
         else "initial"
         end
 
+        # Pre-fill country of residence from waitlist signup (so citizen
+        # doesn't answer the same question twice)
+        waitlist = WaitlistSignup.find_by(email: current_citizen.email)
+        prefill_country = waitlist&.country_of_residence.presence ||
+                          current_citizen.address&.country.presence || "HT"
+
         @identity_submission = current_citizen.identity_submissions.build(
           submission_type: resolved_type,
-          partner: @partner
+          partner: @partner,
+          id_type: current_citizen.id_type,
+          document_number: current_citizen.id_number,
+          country_of_residence: prefill_country
         )
 
         # Smart Resubmission: skip liveness + signature if last submission's data is reusable
@@ -133,6 +142,18 @@ module Citizens
       @identity_submission.status = :pending
       @identity_submission.submission_type ||= :initial
       @suppress_submission_alert = true
+
+      # Auto-fill document details from citizen profile when the form hides those fields
+      # (profile_has_doc = true means the document_details section was not rendered)
+      if @identity_submission.document_number.blank? && current_citizen.id_number.present?
+        @identity_submission.document_number = current_citizen.id_number
+      end
+      if @identity_submission.document_issue_date.blank? && current_citizen.id_issued_on.present?
+        @identity_submission.document_issue_date = current_citizen.id_issued_on
+      end
+      if @identity_submission.document_expiry_date.blank? && current_citizen.id_expires_on.present?
+        @identity_submission.document_expiry_date = current_citizen.id_expires_on
+      end
 
       # Optional: Sync personal to user on create
       personal_params = identity_submission_params.slice("first_name", "middle_name", "last_name", "dob", "sex", "marital_status")

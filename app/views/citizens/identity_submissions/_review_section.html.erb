@@ -1,4 +1,7 @@
 <%# STEP 4 — Review & Confirm %>
+<%# Server renders fallback content; JS overwrites with live form data when available %>
+
+<% id_type_label = { "cin" => "CIN", "passport" => "Passport" }[submission.id_type.to_s] || submission.id_type.to_s.titleize %>
 
 <%# ── Section 1: Government ID ── %>
 <div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
@@ -12,7 +15,34 @@
     </button>
   </div>
   <div data-submission-review-target="reviewId" style="color: #344054;">
-    <%# Populated by JS %>
+    <%# Server-side fallback (JS overwrites on normal flow) %>
+    <div class="row g-2" style="font-size:0.82rem;">
+      <div class="col-12"><strong>ID Type:</strong> <%= id_type_label.presence || "—" %></div>
+      <% if submission.id_type.to_s == "cin" %>
+        <div class="col-sm-6"><strong>CIN Front:</strong>
+          <% if submission.persisted? && submission.cin_front.attached? %>
+            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</span>
+          <% else %>
+            <span class="text-muted">Select file in Step 1</span>
+          <% end %>
+        </div>
+        <div class="col-sm-6"><strong>CIN Back:</strong>
+          <% if submission.persisted? && submission.cin_back.attached? %>
+            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</span>
+          <% else %>
+            <span class="text-muted">Select file in Step 1</span>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="col-sm-6"><strong>Passport:</strong>
+          <% if submission.persisted? && submission.passport.attached? %>
+            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</span>
+          <% else %>
+            <span class="text-muted">Select file in Step 1</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 
@@ -39,8 +69,13 @@
         <i class="ri-information-line me-1"></i>
         Your face verification was carried forward from your previous submission.
       </p>
+    <% else %>
+      <%# Server-side fallback %>
+      <div style="font-size:0.82rem;">
+        <strong>Face Liveness:</strong>
+        <span class="text-muted"><i class="ri-information-line me-1"></i>Complete in Step 2</span>
+      </div>
     <% end %>
-    <%# Also populated by JS for normal flow %>
   </div>
 </div>
 
@@ -56,7 +91,11 @@
     </button>
   </div>
   <div data-submission-review-target="reviewSupporting" style="color: #344054;">
-    <%# Populated by JS %>
+    <%# Server-side fallback %>
+    <div class="row g-2" style="font-size:0.82rem;">
+      <div class="col-sm-6"><strong>Document Type:</strong> <span class="text-muted">Select in Step 1</span></div>
+      <div class="col-sm-6"><strong>File:</strong> <span class="text-muted">Select file in Step 1</span></div>
+    </div>
   </div>
 </div>
 
@@ -83,8 +122,13 @@
         <i class="ri-information-line me-1"></i>
         Your signature was carried forward from your previous submission.
       </p>
+    <% else %>
+      <%# Server-side fallback %>
+      <div style="font-size:0.82rem;">
+        <strong>Signature:</strong>
+        <span class="text-muted"><i class="ri-information-line me-1"></i>Provide in Step 3</span>
+      </div>
     <% end %>
-    <%# Also populated by JS for normal flow %>
   </div>
 </div>
 

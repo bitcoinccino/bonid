@@ -21,6 +21,9 @@ class Admin::IdentitySubmissionsController < Admin::ApplicationController
     @submissions = IdentitySubmission.includes(:user).order(created_at: :desc)
     @submissions = @submissions.where(status: params[:status]) if params[:status].present?
     @submissions = @submissions.where(submission_type: params[:submission_type]) if params[:submission_type].present?
+    if params[:rejection_reason].present?
+      @submissions = @submissions.where(status: :rejected, rejection_reason: params[:rejection_reason])
+    end
     @submissions = @submissions.page(params[:page]).per(20)
 
     @status_counts = Rails.cache.fetch("admin/submissions/status_counts", expires_in: 2.minutes) do
@@ -95,7 +98,47 @@ class Admin::IdentitySubmissionsController < Admin::ApplicationController
       return
     end
 
+    # ── Security Safety Lock: require override justification for flagged submissions ──
+    face_dedup = @submission.metadata&.dig("face_dedup")
+    face_match = @submission.face_match_result
+    has_fraud_flag = (face_dedup.present? && face_dedup["duplicate"] == true) ||
+                     (face_match.present? && face_match["status"] == "no_match")
+
+    if has_fraud_flag && params[:security_override] != "true"
+      redirect_to admin_identity_submission_path(@submission.uuid),
+                  alert: "This submission has security flags. Use the override modal to approve."
+      return
+    end
+
+    if has_fraud_flag && !OverrideReasons.valid?(params[:override_reason])
+      redirect_to admin_identity_submission_path(@submission.uuid),
+                  alert: "Override justification is required to approve a flagged submission."
+      return
+
+    elsif has_fraud_flag && params[:override_reason] == "other" && params[:override_notes].blank?
+      redirect_to admin_identity_submission_path(@submission.uuid),
+                  alert: "Please provide additional details when selecting 'Other' as override reason."
+      return
+    end
+
     approver = current_admin_user || (current_user if current_user&.reviewer?)
+
+    # Store override metadata if this was a security override
+    if has_fraud_flag && params[:security_override] == "true"
+      override_data = @submission.metadata || {}
+      override_data["security_override"] = {
+        "approved_by"     => approver&.email || approver&.id,
+        "approver_type"   => approver.class.name,
+        "override_reason" => params[:override_reason],
+        "override_notes"  => params[:override_notes],
+        "overridden_at"   => Time.current.iso8601,
+        "flags_overridden" => {
+          "face_dedup"  => face_dedup.present? && face_dedup["duplicate"] == true,
+          "face_1to1"   => face_match.present? && face_match["status"] == "no_match"
+        }
+      }
+      @submission.metadata = override_data
+    end
 
     @submission.update!(
       status:              :approved,

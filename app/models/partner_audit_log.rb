@@ -10,7 +10,8 @@ class PartnerAuditLog < ApplicationRecord
       partner: partner,
       admin_user: actor.is_a?(AdminUser) ? actor : nil,
       event: event,
-      details: details
+      details: details.is_a?(Hash) ? details.to_json : details,
+      metadata: details.is_a?(Hash) ? details : {}
     )
   end
 end

@@ -1,14 +1,42 @@
-<% if current_admin_user %>
+<% is_admin = defined?(current_admin_user) && current_admin_user.present? %>
+<% is_reviewer = defined?(current_reviewer) && current_reviewer.present? %>
+
+<%# Detect fraud flags — if any are red, approval requires override justification %>
+<% face_dedup = submission.metadata&.dig("face_dedup") %>
+<% face_match = submission.face_match_result %>
+<% has_fraud_flag = (face_dedup.present? && face_dedup["duplicate"] == true) ||
+                    (face_match.present? && face_match["status"] == "no_match") %>
+
+<% if is_admin || is_reviewer %>
   <% if submission.status_pending? %>
-    <!-- Normal approve / reject -->
-    <li>
-      <%= button_to admin_identity_submission_path(submission.uuid, approve: true),
-                    method: :patch,
-                    class: "dropdown-item d-flex align-items-center gap-2" do %>
-        <i class="ri-check-line text-success"></i>
-        Approve
-      <% end %>
-    </li>
+    <% approve_path = is_reviewer ?
+         reviewers_identity_submission_path(submission, approve: true) :
+         admin_identity_submission_path(submission.uuid, approve: true) %>
+    <% approve_bin_path = is_reviewer ?
+         approve_bin_reviewers_identity_submission_path(submission) :
+         approve_bin_admin_identity_submission_path(submission.uuid) %>
+
+    <%# ── Approve: direct if clean, modal if flagged ── %>
+    <% if has_fraud_flag %>
+      <li>
+        <button class="dropdown-item d-flex align-items-center gap-2 text-warning"
+                data-bs-toggle="modal"
+                data-bs-target="#overrideApproveModal">
+          <i class="ri-alert-line"></i>
+          Approve (Override Required)
+        </button>
+      </li>
+    <% else %>
+      <li>
+        <%= button_to approve_path,
+                      method: :patch,
+                      class: "dropdown-item d-flex align-items-center gap-2" do %>
+          <i class="ri-check-line text-success"></i>
+          Approve
+        <% end %>
+      </li>
+    <% end %>
+
     <li>
       <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
               data-bs-toggle="modal"
@@ -18,15 +46,28 @@
       </button>
     </li>
 
-    <!-- Stage to bins -->
-    <li>
-      <%= button_to approve_bin_admin_identity_submission_path(submission.uuid),
-                    method: :patch,
-                    class: "dropdown-item d-flex align-items-center gap-2" do %>
-        <i class="ri-verified-badge-line text-success"></i>
-        Move to BonBin
-      <% end %>
-    </li>
+    <%# ── Bin actions: also gated if flagged ── %>
+    <% if has_fraud_flag %>
+      <li>
+        <button class="dropdown-item d-flex align-items-center gap-2 text-warning"
+                data-bs-toggle="modal"
+                data-bs-target="#overrideApproveModal"
+                data-override-target="bonbin">
+          <i class="ri-verified-badge-line"></i>
+          Move to BonBin (Override Required)
+        </button>
+      </li>
+    <% else %>
+      <li>
+        <%= button_to approve_bin_path,
+                      method: :patch,
+                      class: "dropdown-item d-flex align-items-center gap-2" do %>
+          <i class="ri-verified-badge-line text-success"></i>
+          Move to BonBin
+        <% end %>
+      </li>
+    <% end %>
+
     <li>
       <button class="dropdown-item d-flex align-items-center gap-2 text-danger"
               data-bs-toggle="modal"
@@ -35,8 +76,8 @@
         Move to BadBin (with reason)
       </button>
     </li>
-  <% elsif submission.status_approved? %>
-    <!-- Regenerate QR if expired or on-demand -->
+
+  <% elsif submission.status_approved? && is_admin %>
     <li>
       <%= button_to regenerate_qr_admin_identity_submission_path(submission.uuid),
                     method: :patch,
@@ -49,10 +90,13 @@
         <% end %>
       <% end %>
     </li>
+
   <% elsif submission.reset_requested_at.present? && submission.reset_request_status.blank? %>
-    <!-- Reset approval/rejection -->
+    <% reset_approve_path = is_reviewer ?
+         approve_reset_reviewers_identity_submission_path(submission) :
+         approve_reset_admin_identity_submission_path(submission.uuid) %>
     <li>
-      <%= button_to approve_reset_admin_identity_submission_path(submission.uuid),
+      <%= button_to reset_approve_path,
                     method: :patch,
                     class: "dropdown-item d-flex align-items-center gap-2" do %>
         <i class="ri-refresh-line text-primary"></i>

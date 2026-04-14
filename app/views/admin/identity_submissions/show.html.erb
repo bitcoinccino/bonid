@@ -47,8 +47,13 @@
       <i class="ri-fingerprint-line ms-2 me-1"></i> <%= user.bonid || "N/A" %>
     </p>
 
-    <!-- Dropdown (only when pending) -->
-    <% if @submission.status_pending? && policy(@submission).approve? %>
+    <!-- Dropdown (pending, approved w/ QR regen, or reset requests) -->
+    <% show_actions = policy(@submission).approve? && (
+         @submission.status_pending? ||
+         @submission.status_approved? ||
+         (@submission.reset_requested_at.present? && @submission.reset_request_status.blank?)
+       ) %>
+    <% if show_actions %>
       <div class="dropdown mt-3">
         <button class="btn btn-outline-secondary btn-sm rounded-pill"
                 id="adminActionsDropdown"
@@ -67,6 +72,9 @@
       </div>
     <% end %>
   </header>
+
+  <!-- === Security Summary — always visible above tabs === -->
+  <%= render "admin/identity_submissions/show/security_summary", submission: @submission %>
 
   <!-- === Tab Navigation === -->
  <ul class="nav nav-tabs justify-content-center mb-4 flex-wrap" id="submissionTabs" role="tablist">
