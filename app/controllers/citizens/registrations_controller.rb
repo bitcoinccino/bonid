@@ -38,11 +38,6 @@ module Citizens
         end
       end
 
-      # OTP-only: inject a random password so Devise validations pass
-      random_pw = SecureRandom.hex(32)
-      params[:citizen][:password] = random_pw
-      params[:citizen][:password_confirmation] = random_pw
-
       super do |citizen|
         if citizen.persisted?
           # Assign citizen role
@@ -77,7 +72,7 @@ module Citizens
 
     # Redirect to OTP verification after successful signup
     def after_sign_up_path_for(resource)
-      new_citizen_otp_session_path(
+      citizens_verify_otp_path(
         email: resource.email,
         signup: "true",
         partner_slug: @partner&.slug
@@ -90,6 +85,11 @@ module Citizens
       slug = params[:partner].presence || params.dig(:citizen, :partner)
       @partner = Partner.find_by(slug: slug)
       @partner = nil unless @partner&.verified_at?
+    end
+
+    def build_resource(hash = {})
+      super
+      resource.skip_password = true
     end
 
     def sign_up_params

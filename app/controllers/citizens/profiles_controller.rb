@@ -154,7 +154,7 @@ module Citizens
           :branch_name, :opened_on, :closed_on,
           :access_level, :currently_open,
           :linked_at, :swift_code,
-          :wallet_address, :wallet_provider,
+          :wallet_address, :wallet_provider, :cashtag,
           :chain, :status, :_destroy
         ]
       )

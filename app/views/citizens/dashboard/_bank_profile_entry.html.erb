@@ -117,16 +117,28 @@
               label: "Wallet Provider",
               prompt: "Select Provider",
               valid_class: nil,
-              input_html: { class: "form-select" } %>
+              input_html: {
+                class: "form-select",
+                data: { action: "change->bank-selector#toggleWalletProvider" }
+              } %>
       </div>
 
-      <%# Phone Number (wallet address for mobile wallets) %>
-      <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields">
+      <%# Phone Number (hidden when Zellus is selected) %>
+      <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields phoneField">
         <%= f.input :wallet_address,
               label: "Phone Number",
               placeholder: "e.g., +509 3456 7890",
               valid_class: nil,
               input_html: { class: "form-control", type: "tel" } %>
+      </div>
+
+      <%# Cashtag (only shown when Zellus is selected) %>
+      <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields cashtagField">
+        <%= f.input :cashtag,
+              label: "Cashtag",
+              placeholder: "e.g., $marc",
+              valid_class: nil,
+              input_html: { class: "form-control font-monospace" } %>
       </div>
 
       <%# ========================================== %>
@@ -235,6 +247,11 @@
               <small class="text-muted font-monospace">
                 <i class="ri-phone-line me-1"></i><%= masked %>
               </small>
+              <% if profile.cashtag.present? %>
+                <small class="ms-3 fw-bold font-monospace" style="color:#00209F;">
+                  <i class="ri-at-line me-1"></i><%= profile.cashtag %>
+                </small>
+              <% end %>
             <% elsif profile.account_source_crypto_wallet? && profile.wallet_address.present? %>
               <%# Mask wallet address - show first 4 and last 4 characters %>
               <% addr = profile.wallet_address.to_s %>
@@ -258,8 +275,16 @@
         <%= f.hidden_field :account_type %>
         <%= f.hidden_field :wallet_provider %>
         <%= f.hidden_field :wallet_address %>
+        <%= f.hidden_field :cashtag %>
         <%= f.hidden_field :chain %>
         <%= f.hidden_field :_destroy, class: "destroy-flag" %>
+
+        <%# Edit Button — toggles inline edit fields %>
+        <button type="button"
+                class="btn btn-sm btn-outline-primary rounded-pill px-3 edit-profile-btn"
+                onclick="toggleEditProfile(this)">
+          <i class="ri-pencil-line me-1"></i> Edit
+        </button>
 
         <%# Remove Button %>
         <button type="button"
@@ -269,5 +294,53 @@
         </button>
       </div>
     </div>
+
+    <%# Inline edit fields (hidden by default) %>
+    <div class="edit-fields d-none mt-3 pt-3 border-top">
+      <div class="row g-3">
+        <% if profile.account_source_mobile_wallet? %>
+          <div class="col-md-6">
+            <%= f.input :wallet_address,
+                  label: "Telefòn",
+                  valid_class: nil,
+                  input_html: { class: "form-control", type: "tel" } %>
+          </div>
+          <div class="col-md-6">
+            <%= f.input :cashtag,
+                  label: "Cashtag (Zellus)",
+                  placeholder: "e.g., $marc",
+                  valid_class: nil,
+                  input_html: { class: "form-control font-monospace" } %>
+          </div>
+        <% elsif profile.account_source_bank? %>
+          <div class="col-md-6">
+            <%= f.input :account_number,
+                  label: "Account Number",
+                  valid_class: nil,
+                  input_html: { class: "form-control" } %>
+          </div>
+        <% elsif profile.account_source_crypto_wallet? %>
+          <div class="col-md-6">
+            <%= f.input :wallet_address,
+                  label: "Wallet Address",
+                  valid_class: nil,
+                  input_html: { class: "form-control font-monospace" } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
   </div>
 <% end %>
+
+<script>
+function toggleEditProfile(btn) {
+  var card = btn.closest('.nested-fields');
+  var fields = card.querySelector('.edit-fields');
+  if (fields) {
+    fields.classList.toggle('d-none');
+    btn.innerHTML = fields.classList.contains('d-none')
+      ? '<i class="ri-pencil-line me-1"></i> Edit'
+      : '<i class="ri-close-line me-1"></i> Cancel';
+  }
+}
+</script>

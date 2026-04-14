@@ -1,0 +1,168 @@
+<%# app/views/citizens/service_applications/index.html.erb %>
+<% content_for(:title) { "Aktivite Mwen — BonID" } %>
+
+<style>
+  .ma-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+  .ma-header h1 { font-family: 'Montserrat', sans-serif; font-size: 1.3rem; font-weight: 700; color: #1a1a2e; margin: 0; }
+  .ma-header h1 i { color: #00209F; }
+  .ma-browse-btn {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.45rem 1rem; font-size: 0.78rem; font-weight: 600;
+    color: #fff; background: #00209F; border-radius: 8px;
+    text-decoration: none; transition: background 0.15s;
+  }
+  .ma-browse-btn:hover { background: #001570; color: #fff; }
+
+  /* Stats */
+  .ma-stats { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .ma-stat {
+    flex: 1; min-width: 80px; padding: 0.6rem 0.75rem;
+    background: #fff; border: 1px solid #E5E7EB; border-radius: 10px; text-align: center;
+    text-decoration: none; transition: border-color 0.15s;
+  }
+  .ma-stat:hover { border-color: #00209F; }
+  .ma-stat--active { border-color: #00209F; background: #F0F4FF; }
+  .ma-stat-num { font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 700; color: #1a1a2e; }
+  .ma-stat-label { font-size: 0.65rem; color: #6B7280; text-transform: uppercase; font-weight: 500; }
+
+  /* Application cards */
+  .ma-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .ma-app-card {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.85rem 1rem; background: #fff; border: 1px solid #E5E7EB;
+    border-radius: 10px; text-decoration: none; color: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ma-app-card:hover { border-color: #00209F; box-shadow: 0 2px 8px rgba(0,32,159,0.06); }
+
+  .ma-app-icon {
+    width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; flex-shrink: 0;
+  }
+  .ma-app-icon--draft { background: #F3F4F6; color: #6B7280; }
+  .ma-app-icon--submitted { background: #FEF3C7; color: #D97706; }
+  .ma-app-icon--under_review { background: #EFF6FF; color: #1D4ED8; }
+  .ma-app-icon--approved { background: #ECFDF5; color: #059669; }
+  .ma-app-icon--rejected { background: #FEF2F2; color: #DC2626; }
+
+  .ma-app-info { flex: 1; min-width: 0; }
+  .ma-app-name { font-size: 0.85rem; font-weight: 600; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ma-app-partner { font-size: 0.7rem; color: #6B7280; }
+
+  .ma-app-meta { text-align: right; flex-shrink: 0; }
+  .ma-app-status {
+    font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 6px; display: inline-block;
+  }
+  .ma-app-status--draft { background: #F3F4F6; color: #6B7280; }
+  .ma-app-status--submitted { background: #FEF3C7; color: #92400E; }
+  .ma-app-status--under_review { background: #EFF6FF; color: #1D4ED8; }
+  .ma-app-status--approved { background: #ECFDF5; color: #065F46; }
+  .ma-app-status--rejected { background: #FEF2F2; color: #991B1B; }
+  .ma-app-date { font-size: 0.65rem; color: #9CA3AF; margin-top: 0.2rem; }
+
+  .ma-empty { text-align: center; padding: 3rem 1rem; }
+  .ma-empty i { font-size: 2.5rem; color: #CBD5E1; display: block; margin-bottom: 0.75rem; }
+  .ma-empty h3 { font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+  .ma-empty p { font-size: 0.82rem; color: #6B7280; margin-bottom: 1rem; }
+
+  @media (max-width: 640px) {
+    .ma-stat { min-width: 60px; padding: 0.5rem; }
+    .ma-stat-num { font-size: 0.95rem; }
+    .ma-app-meta { display: none; }
+  }
+</style>
+
+<div class="ma-header">
+  <h1><i class="ri-file-list-3-line"></i> Aktivite Mwen</h1>
+  <%= link_to citizens_services_path, class: "ma-browse-btn" do %>
+    <i class="ri-apps-2-line"></i> Jwenn Sèvis
+  <% end %>
+</div>
+
+<%# ── Stats Row ── %>
+<div class="ma-stats">
+  <%= link_to citizens_service_applications_path,
+        class: "ma-stat #{'ma-stat--active' if @filter.blank?}" do %>
+    <div class="ma-stat-num"><%= @stats[:total] %></div>
+    <div class="ma-stat-label">Total</div>
+  <% end %>
+  <%= link_to citizens_service_applications_path(status: "draft"),
+        class: "ma-stat #{'ma-stat--active' if @filter == 'draft'}" do %>
+    <div class="ma-stat-num"><%= @stats[:drafts] %></div>
+    <div class="ma-stat-label">Bouyon</div>
+  <% end %>
+  <%= link_to citizens_service_applications_path(status: "submitted"),
+        class: "ma-stat #{'ma-stat--active' if @filter == 'submitted'}" do %>
+    <div class="ma-stat-num"><%= @stats[:submitted] %></div>
+    <div class="ma-stat-label">Soumèt</div>
+  <% end %>
+  <%= link_to citizens_service_applications_path(status: "approved"),
+        class: "ma-stat #{'ma-stat--active' if @filter == 'approved'}" do %>
+    <div class="ma-stat-num"><%= @stats[:approved] %></div>
+    <div class="ma-stat-label">Apwouve</div>
+  <% end %>
+  <%= link_to citizens_service_applications_path(status: "rejected"),
+        class: "ma-stat #{'ma-stat--active' if @filter == 'rejected'}" do %>
+    <div class="ma-stat-num"><%= @stats[:rejected] %></div>
+    <div class="ma-stat-label">Rejte</div>
+  <% end %>
+</div>
+
+<%# ── Application List ── %>
+<% if @applications.any? %>
+  <div class="ma-list">
+    <% @applications.each do |app| %>
+      <% path = citizens_service_application_path(app) %>
+      <%= link_to path, class: "ma-app-card" do %>
+        <div class="ma-app-icon ma-app-icon--<%= app.status %>">
+          <% case app.status
+             when "draft" %><i class="ri-draft-line"></i>
+          <% when "submitted" %><i class="ri-time-line"></i>
+          <% when "under_review" %><i class="ri-search-eye-line"></i>
+          <% when "approved" %><i class="ri-checkbox-circle-line"></i>
+          <% when "rejected" %><i class="ri-close-circle-line"></i>
+          <% else %><i class="ri-file-text-line"></i>
+          <% end %>
+        </div>
+
+        <div class="ma-app-info">
+          <div class="ma-app-name"><%= app.partner_schema.name %></div>
+          <div class="ma-app-partner">
+            <%= app.partner.name %>
+            <% cat = app.partner_schema.service_category %>
+            <% cat_styles = {
+              "transaction" => { label: "Tikè", bg: "#ECFDF5", color: "#059669" },
+              "appointment" => { label: "Randevou", bg: "#FEF3C7", color: "#92400E" },
+              "survey"      => { label: "Sondaj", bg: "#F5F3FF", color: "#7C3AED" },
+              "application" => { label: "Aplikasyon", bg: "#EFF6FF", color: "#1D4ED8" }
+            } %>
+            <% cs = cat_styles[cat] %>
+            <% if cs %>
+              <span style="font-size:0.6rem;font-weight:600;color:<%= cs[:color] %>;background:<%= cs[:bg] %>;padding:1px 5px;border-radius:4px;margin-left:0.3rem;"><%= cs[:label] %></span>
+            <% end %>
+          </div>
+        </div>
+
+        <div class="ma-app-meta">
+          <span class="ma-app-status ma-app-status--<%= app.status %>"><%= app.status_label %></span>
+          <div class="ma-app-date">
+            <% if app.draft? %>
+              <%= app.updated_at.strftime("%d/%m/%Y") %>
+            <% elsif app.submitted_at.present? %>
+              <%= app.submitted_at.strftime("%d/%m/%Y") %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+<% else %>
+  <div class="ma-empty">
+    <i class="ri-file-list-3-line"></i>
+    <h3>Pa gen aktivite ankò</h3>
+    <p>Eksplore sèvis patnè yo epi achte oswa aplike pou youn.</p>
+    <%= link_to citizens_services_path, class: "ma-browse-btn" do %>
+      <i class="ri-apps-2-line"></i> Jwenn Sèvis
+    <% end %>
+  </div>
+<% end %>

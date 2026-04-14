@@ -1,0 +1,313 @@
+<%# app/views/citizens/services/detail.html.erb %>
+<%# Service detail / product page — citizen sees this before applying %>
+<% content_for(:title) { "#{@schema.name} — #{@partner.name}" } %>
+
+<style>
+  .sd-container { max-width: 640px; margin: 0 auto; padding: 0 1rem 2rem; }
+
+  /* Back */
+  .sd-back {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; font-weight: 500; color: #6B7280;
+    text-decoration: none; padding: 0.75rem 0;
+    transition: color 0.15s;
+  }
+  .sd-back:hover { color: #00209F; }
+
+  /* Cover Image */
+  .sd-cover {
+    width: 100%; max-height: 220px; object-fit: cover;
+    border-radius: 14px; display: block; margin-bottom: 1rem;
+  }
+
+  /* Header Card */
+  .sd-header {
+    text-align: center; padding: 1.25rem 0 1rem;
+    border-bottom: 1px solid #E5E7EB; margin-bottom: 1.25rem;
+  }
+  .sd-logo {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #E5E7EB; margin: 0 auto 0.5rem; display: block;
+  }
+  .sd-logo-placeholder {
+    width: 52px; height: 52px; border-radius: 50%;
+    margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; font-weight: 700;
+  }
+  .sd-partner-name { font-size: 0.75rem; color: #6B7280; font-weight: 500; }
+  .sd-service-name {
+    font-family: 'Montserrat', sans-serif; font-size: 1.3rem; font-weight: 700;
+    color: #1a1a2e; margin: 0.15rem 0 0.25rem;
+  }
+  .sd-code { font-size: 0.72rem; color: #9CA3AF; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em; }
+  .sd-desc { font-size: 0.85rem; color: #6B7280; margin-top: 0.4rem; line-height: 1.5; }
+
+  /* Price Badge */
+  .sd-price {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.88rem; font-weight: 700; color: #059669;
+    margin-top: 0.6rem;
+  }
+  .sd-price i { font-size: 1rem; }
+  .sd-price--free { color: #059669; }
+  .sd-price--paid { color: #00209F; }
+
+  /* Info Cards */
+  .sd-info-section { margin-bottom: 1rem; }
+  .sd-info-card {
+    background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 12px;
+    padding: 1rem; margin-bottom: 0.75rem;
+  }
+  .sd-info-title {
+    font-size: 0.78rem; font-weight: 700; color: #374151;
+    display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem;
+  }
+  .sd-info-title i { color: #00209F; font-size: 0.95rem; }
+  .sd-info-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: #374151; padding: 0.35rem 0;
+  }
+  .sd-info-row i { color: #6B7280; font-size: 0.95rem; width: 1.1rem; text-align: center; }
+  .sd-info-row + .sd-info-row { border-top: 1px solid #E5E7EB; }
+
+  /* Pricing Table */
+  .sd-pricing-table { width: 100%; }
+  .sd-pricing-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.5rem 0; font-size: 0.82rem;
+  }
+  .sd-pricing-row + .sd-pricing-row { border-top: 1px solid #E5E7EB; }
+  .sd-pricing-label { color: #374151; }
+  .sd-pricing-value { font-weight: 600; color: #1a1a2e; }
+
+  /* CTA */
+  .sd-cta {
+    position: sticky; bottom: 0; padding: 1rem 0; background: #fff;
+    border-top: 1px solid #E5E7EB; margin-top: 1rem;
+  }
+  .sd-cta-btn {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    width: 100%; padding: 0.85rem; background: #00209F; color: #fff;
+    border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
+    font-family: 'Montserrat', sans-serif; cursor: pointer;
+    text-decoration: none; transition: all 0.2s;
+    min-height: 52px;
+  }
+  .sd-cta-btn:hover { background: #001570; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,32,159,0.2); }
+  .sd-cta-btn:active { transform: translateY(0); }
+  .sd-cta-btn i { font-size: 1.1rem; }
+
+  .sd-cta-btn--disabled {
+    background: #E5E7EB; color: #9CA3AF; cursor: default;
+    pointer-events: none;
+  }
+
+  /* Category badge — color-coded per type */
+  .sd-category-badge {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    font-size: 0.68rem; font-weight: 600; border-radius: 6px; padding: 3px 8px;
+    margin-top: 0.5rem;
+  }
+  .sd-category-badge--application { background: #EFF6FF; color: #1D4ED8; }
+  .sd-category-badge--transaction { background: #ECFDF5; color: #059669; }
+  .sd-category-badge--appointment { background: #FEF3C7; color: #92400E; }
+  .sd-category-badge--survey { background: #F5F3FF; color: #7C3AED; }
+
+  /* Capacity */
+  .sd-capacity-badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.75rem; font-weight: 600; color: #EA580C;
+    background: #FFF7ED; border: 1px solid #FED7AA;
+    padding: 3px 10px; border-radius: 10px; margin-top: 0.35rem;
+  }
+  .sd-capacity-badge i { font-size: 0.85rem; }
+
+  @media (max-width: 576px) {
+    .sd-service-name { font-size: 1.15rem; }
+    .sd-cover { max-height: 180px; border-radius: 12px; }
+  }
+</style>
+
+<div class="sd-container">
+
+  <%# ── Back ── %>
+  <%= link_to citizens_service_path(slug: @partner.slug), class: "sd-back", data: { turbo: false } do %>
+    <i class="ri-arrow-left-s-line"></i> Retounen nan Sèvis
+  <% end %>
+
+  <%# ── Cover Image ── %>
+  <% if @schema.cover_image.attached? %>
+    <%= image_tag url_for(@schema.cover_image), class: "sd-cover", alt: @schema.name %>
+  <% end %>
+
+  <%# ── Header ── %>
+  <div class="sd-header">
+    <% if @partner.logo.attached? %>
+      <%= image_tag url_for(@partner.logo), class: "sd-logo", alt: @partner.name %>
+    <% else %>
+      <div class="sd-logo-placeholder" style="background: <%= @sector_color %>;">
+        <%= @partner.name.first(2).upcase %>
+      </div>
+    <% end %>
+    <div class="sd-partner-name"><%= @partner.name %></div>
+    <h1 class="sd-service-name"><%= @schema.name %></h1>
+    <% if @schema.form_code_display.present? %>
+      <div class="sd-code"><%= @schema.form_code_display %></div>
+    <% end %>
+    <% if @schema.description.present? %>
+      <p class="sd-desc"><%= @schema.description %></p>
+    <% end %>
+
+    <%# Price %>
+    <div class="sd-price <%= @has_pricing ? 'sd-price--paid' : 'sd-price--free' %>">
+      <i class="<%= @has_pricing ? 'ri-price-tag-3-line' : 'ri-gift-line' %>"></i>
+      <%= @schema.price_display %>
+    </div>
+
+    <%# Category — color-coded badge %>
+    <% cat = @schema.service_category %>
+    <% category_meta = {
+      "application" => { label: "Aplikasyon", icon: "ri-file-list-3-line" },
+      "transaction" => { label: "Tranzaksyon", icon: "ri-exchange-dollar-line" },
+      "appointment" => { label: "Randevou", icon: "ri-calendar-check-line" },
+      "survey"      => { label: "Sondaj", icon: "ri-questionnaire-line" }
+    } %>
+    <% cm = category_meta[cat] || { label: "Sèvis", icon: "ri-price-tag-line" } %>
+    <div class="sd-category-badge sd-category-badge--<%= cat %>">
+      <i class="<%= cm[:icon] %>"></i>
+      <%= cm[:label] %>
+    </div>
+
+    <%# Capacity %>
+    <% if @schema.capacity.present? %>
+      <% available = @schema.respond_to?(:available_capacity) ? @schema.available_capacity : @schema.capacity %>
+      <% if available && available > 0 %>
+        <div class="sd-capacity-badge">
+          <i class="ri-group-line"></i>
+          <%= available %> plas rete
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# ── Pricing Breakdown ── %>
+  <% if @has_pricing %>
+    <div class="sd-info-card">
+      <div class="sd-info-title"><i class="ri-price-tag-3-line"></i> Detay Pri</div>
+      <div class="sd-pricing-table">
+        <% if @schema.price_cents.to_i > 0 %>
+          <div class="sd-pricing-row">
+            <span class="sd-pricing-label">Pri Debaz</span>
+            <span class="sd-pricing-value"><%= (@schema.price_cents.to_d / 100).round(2) %> <%= @schema.currency || "HTG" %></span>
+          </div>
+        <% end %>
+
+        <%# Show priced options %>
+        <% Array(@schema.structure&.dig("fields")).select { |f| f["has_pricing"] }.each do |field| %>
+          <% opts = field["options"] %>
+          <% if opts.is_a?(Array) %>
+            <% opts.select { |o| o["extra_price"].to_f > 0 }.each do |opt| %>
+              <div class="sd-pricing-row">
+                <span class="sd-pricing-label"><%= field["label"] %>: <%= opt["label"] %></span>
+                <span class="sd-pricing-value"><%= opt["extra_price"] %> <%= @schema.currency || "HTG" %></span>
+              </div>
+            <% end %>
+          <% end %>
+        <% end %>
+
+        <%# Fees %>
+        <% fees = @schema.structure&.dig("price_metadata", "fees") %>
+        <% if fees.is_a?(Array) && fees.any? %>
+          <% fees.each do |fee| %>
+            <div class="sd-pricing-row">
+              <span class="sd-pricing-label"><%= fee["name"] %></span>
+              <span class="sd-pricing-value"><%= fee["amount"] %> <%= @schema.currency || "HTG" %></span>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Event / Partner-filled Details ── %>
+  <% all_fields = Array(@schema.structure&.dig("fields")) %>
+  <% partner_fields = all_fields.select { |f| f["filled_by"] == "partner" } %>
+  <% partner_fields_with_data = partner_fields.select do |f|
+    if f["type"] == "address"
+      f["partner_street"].present? || f["partner_commune"].present? || f["use_partner_bonid_address"]
+    else
+      f["partner_value"].present?
+    end
+  end %>
+  <% if partner_fields_with_data.any? %>
+    <div class="sd-info-card">
+      <div class="sd-info-title"><i class="ri-calendar-event-line"></i> Detay Evènman</div>
+      <% partner_fields_with_data.each do |pf| %>
+        <div class="sd-info-row">
+          <i class="<%= pf["type"] == "datetime" ? "ri-time-line" : (pf["type"] == "address" ? "ri-map-pin-line" : "ri-information-line") %>"></i>
+          <span>
+            <strong style="font-size:0.72rem;color:#6B7280;"><%= pf["label"] %></strong><br>
+            <% if pf["type"] == "datetime" && pf["partner_value"].present? %>
+              <%= begin; DateTime.parse(pf["partner_value"]).strftime("%d/%m/%Y à %H:%M"); rescue; pf["partner_value"]; end %>
+            <% elsif pf["type"] == "address" %>
+              <% if pf["use_partner_bonid_address"] %>
+                <% addr_parts = [@partner.try(:street_address), @partner.try(:commune)&.name, @partner.try(:department)&.name].compact %>
+                <%= addr_parts.any? ? addr_parts.join(", ") : "Adrès patnè" %>
+              <% else %>
+                <%= [pf["partner_street"], pf["partner_locality"], pf["partner_commune"], pf["partner_department"]].compact.reject(&:blank?).join(", ") %>
+              <% end %>
+            <% else %>
+              <%= pf["partner_value"] %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Partner Info ── %>
+  <% if @partner.commune.present? || @partner.phone_number.present? || @partner.email.present? %>
+    <div class="sd-info-card">
+      <div class="sd-info-title"><i class="ri-building-line"></i> Enfòmasyon Patnè</div>
+      <% if @partner.commune.present? || @partner.department.present? %>
+        <div class="sd-info-row">
+          <i class="ri-map-pin-line"></i>
+          <span><%= [@partner.commune, @partner.department].compact.join(", ") %></span>
+        </div>
+      <% end %>
+      <div style="display:flex;gap:0.6rem;margin-top:0.4rem;">
+        <% if @partner.phone_number.present? %>
+          <%= link_to "tel:#{@partner.phone_number}", class: "sd-info-row", style: "border:none;padding:0.35rem 0.5rem;background:#F3F4F6;border-radius:8px;display:inline-flex;text-decoration:none;" do %>
+            <i class="ri-phone-line" style="font-size:1.1rem;color:#00209F;"></i>
+          <% end %>
+        <% end %>
+        <% if @partner.email.present? %>
+          <%= link_to "mailto:#{@partner.email}", class: "sd-info-row", style: "border:none;padding:0.35rem 0.5rem;background:#F3F4F6;border-radius:8px;display:inline-flex;text-decoration:none;" do %>
+            <i class="ri-mail-line" style="font-size:1.1rem;color:#00209F;"></i>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── CTA — per-type labels ── %>
+  <% cta_map = {
+    "application" => { icon: "ri-file-edit-line", label: "Aplike" },
+    "transaction" => { icon: "ri-shopping-cart-line", label: "Achte" },
+    "appointment" => { icon: "ri-calendar-check-line", label: "Pran Randevou" },
+    "survey"      => { icon: "ri-edit-2-line", label: "Ranpli" }
+  } %>
+  <% cta = cta_map[cat] || { icon: "ri-arrow-right-line", label: "Kòmanse" } %>
+  <div class="sd-cta">
+    <% if @verified %>
+      <%= link_to @apply_path, class: "sd-cta-btn", data: { turbo: false } do %>
+        <i class="<%= cta[:icon] %>"></i> <%= cta[:label] %>
+      <% end %>
+    <% else %>
+      <div class="sd-cta-btn sd-cta-btn--disabled">
+        <i class="ri-shield-check-line"></i> Verifye BonID ou anvan
+      </div>
+    <% end %>
+  </div>
+
+</div>

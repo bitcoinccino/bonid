@@ -1,0 +1,418 @@
+<%# app/views/citizens/services/show.html.erb %>
+<% content_for(:title) { "#{@partner.name} — Sèvis BonID" } %>
+
+<style>
+  /* ── Back Link ── */
+  .sevis-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #6B7280;
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: color 0.15s;
+  }
+  .sevis-back:hover {
+    color: #00209F;
+  }
+
+  /* ── Partner Header ── */
+  .sevis-partner-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .sevis-partner-logo-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .sevis-partner-logo {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #E5E7EB;
+  }
+  .sevis-partner-logo-placeholder {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    font-weight: 700;
+  }
+  .sevis-verified-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .sevis-verified-badge i {
+    font-size: 0.9rem;
+    color: #00209F;
+  }
+  .sevis-partner-info h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 0.25rem;
+  }
+  .sevis-partner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    color: #fff;
+  }
+
+  /* ── Verification Alert ── */
+  .sevis-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .sevis-alert--warning {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+  }
+  .sevis-alert i { font-size: 1.2rem; flex-shrink: 0; }
+  .sevis-alert a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  /* ── Services Section ── */
+  .sevis-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sevis-section-title i {
+    color: #00209F;
+  }
+
+  /* ── Service Cards ── */
+  .sevis-service-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .sevis-service-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.125rem 1.25rem;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.875rem;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: all 0.2s ease;
+  }
+  .sevis-service-cover {
+    width: 100%; max-height: 120px; object-fit: cover;
+    border-radius: 8px; display: block;
+  }
+  .sevis-service-card--live {
+    cursor: pointer;
+  }
+  .sevis-service-card--live:hover {
+    border-color: #00209F;
+    box-shadow: 0 4px 16px rgba(0, 32, 159, 0.1);
+    transform: translateY(-1px);
+  }
+  .sevis-service-card--soon {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .sevis-service-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .sevis-service-card--live .sevis-service-icon {
+    background: rgba(0, 32, 159, 0.1);
+    color: #00209F;
+  }
+  .sevis-service-card--soon .sevis-service-icon {
+    background: #F3F4F6;
+    color: #9CA3AF;
+  }
+
+  .sevis-service-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .sevis-service-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 0.15rem;
+  }
+  .sevis-service-desc {
+    font-size: 0.76rem;
+    color: #6B7280;
+    line-height: 1.4;
+  }
+
+  .sevis-service-action {
+    flex-shrink: 0;
+  }
+  .sevis-service-btn {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: none;
+    white-space: nowrap;
+  }
+  .sevis-service-btn--live {
+    background: #00209F;
+    color: #fff;
+  }
+  .sevis-service-card--live:hover .sevis-service-btn--live {
+    background: #001570;
+  }
+  .sevis-service-btn--soon {
+    background: #FEF3C7;
+    color: #92400E;
+    font-size: 0.65rem;
+  }
+
+  /* Category badges on service cards */
+  .sevis-service-cat {
+    font-size: 0.6rem; font-weight: 600; padding: 2px 6px;
+    border-radius: 4px; display: inline-block; margin-top: 0.2rem;
+  }
+  .sevis-service-cat--application { background: #EFF6FF; color: #1D4ED8; }
+  .sevis-service-cat--transaction { background: #ECFDF5; color: #059669; }
+  .sevis-service-cat--appointment { background: #FEF3C7; color: #92400E; }
+  .sevis-service-cat--survey { background: #F5F3FF; color: #7C3AED; }
+
+  /* ── Partner Info Section ── */
+  .sevis-partner-details {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: #F8FAFC;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.875rem;
+  }
+  .sevis-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
+    font-size: 0.82rem;
+    color: #374151;
+  }
+  .sevis-detail-row + .sevis-detail-row {
+    border-top: 1px solid #E5E7EB;
+  }
+  .sevis-detail-row i {
+    color: #6B7280;
+    font-size: 1rem;
+    width: 1.25rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .sevis-detail-label {
+    font-weight: 600;
+    min-width: 80px;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 576px) {
+    .sevis-partner-header {
+      flex-direction: column;
+      text-align: center;
+      gap: 0.75rem;
+      padding: 1.25rem;
+    }
+    .sevis-partner-info h1 { font-size: 1.1rem; }
+    .sevis-service-card { padding: 0.875rem 1rem; }
+    .sevis-service-btn { padding: 5px 10px; font-size: 0.68rem; }
+  }
+</style>
+
+<%# ── Back Link ── %>
+<%= link_to citizens_services_path, class: "sevis-back" do %>
+  <i class="ri-arrow-left-s-line"></i> Retounen nan Sèvis
+<% end %>
+
+<%# ── Partner Header ── %>
+<div class="sevis-partner-header">
+  <div class="sevis-partner-logo-wrap">
+    <% if @partner.logo.attached? %>
+      <%= image_tag url_for(@partner.logo), class: "sevis-partner-logo", alt: @partner.name %>
+    <% else %>
+      <div class="sevis-partner-logo-placeholder" style="background: <%= @sector_color %>;">
+        <%= @partner.name.first(2).upcase %>
+      </div>
+    <% end %>
+    <% if @partner.verified_at.present? %>
+      <div class="sevis-verified-badge" title="Patnè Verifye">
+        <i class="ri-verified-badge-fill"></i>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="sevis-partner-info">
+    <h1><%= @partner.name %></h1>
+    <span class="sevis-partner-badge" style="background: <%= @sector_color %>;">
+      <i class="<%= @sector_icon %>" style="font-size: 0.7rem;"></i>
+      <%= @sector_group %>
+    </span>
+  </div>
+</div>
+
+<%# ── Verification Alert ── %>
+<% unless @verified %>
+  <div class="sevis-alert sevis-alert--warning">
+    <i class="ri-error-warning-line"></i>
+    <span>
+      Ou bezwen verifye idantite ou anvan ou ka itilize sèvis sa yo.
+      <%= link_to "Verifye kounye a", new_citizens_identity_submission_path %>
+    </span>
+  </div>
+<% end %>
+
+<%# ── Available Services ── %>
+<h2 class="sevis-section-title">
+  <i class="ri-service-line"></i>
+  Sèvis Disponib
+</h2>
+
+<% cta_map = {
+  "application" => "Aplike",
+  "transaction" => "Achte",
+  "appointment" => "Pran Randevou",
+  "survey"      => "Ranpli"
+} %>
+<% cat_label_map = {
+  "application" => "Aplikasyon",
+  "transaction" => "Tranzaksyon",
+  "appointment" => "Randevou",
+  "survey"      => "Sondaj"
+} %>
+<div class="sevis-service-list">
+  <% @services.each do |service| %>
+    <% is_live = service[:status] == :live && @verified %>
+    <% scat = service[:category] || "application" %>
+
+    <% if is_live && service[:path].present? %>
+      <%= link_to service[:path], class: "sevis-service-card sevis-service-card--live" do %>
+        <% if service[:cover_image].present? %>
+          <%= image_tag url_for(service[:cover_image]), class: "sevis-service-cover", alt: service[:name] %>
+        <% end %>
+        <div class="sevis-service-icon">
+          <i class="<%= service[:icon] %>"></i>
+        </div>
+        <div class="sevis-service-info">
+          <div class="sevis-service-name"><%= service[:name] %></div>
+          <div class="sevis-service-desc"><%= service[:desc] %></div>
+          <span class="sevis-service-cat sevis-service-cat--<%= scat %>"><%= cat_label_map[scat] || "Sèvis" %></span>
+        </div>
+        <div class="sevis-service-action">
+          <span class="sevis-service-btn sevis-service-btn--live"><%= cta_map[scat] || "Kòmanse" %></span>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="sevis-service-card sevis-service-card--soon">
+        <% if service[:cover_image].present? %>
+          <%= image_tag url_for(service[:cover_image]), class: "sevis-service-cover", alt: service[:name] %>
+        <% end %>
+        <div class="sevis-service-icon">
+          <i class="<%= service[:icon] %>"></i>
+        </div>
+        <div class="sevis-service-info">
+          <div class="sevis-service-name"><%= service[:name] %></div>
+          <div class="sevis-service-desc"><%= service[:desc] %></div>
+          <span class="sevis-service-cat sevis-service-cat--<%= scat %>"><%= cat_label_map[scat] || "Sèvis" %></span>
+        </div>
+        <div class="sevis-service-action">
+          <% if service[:status] == :live && !@verified %>
+            <span class="sevis-service-btn sevis-service-btn--soon">Verifye BonID</span>
+          <% else %>
+            <span class="sevis-service-btn sevis-service-btn--soon">Byento</span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<%# ── Partner Details ── %>
+<% if @partner.commune.present? || @partner.department.present? || @partner.phone_number.present? %>
+  <div class="sevis-partner-details">
+    <h3 class="sevis-section-title" style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+      <i class="ri-information-line"></i>
+      Enfòmasyon Patnè
+    </h3>
+
+    <% if @partner.commune.present? || @partner.department.present? %>
+      <div class="sevis-detail-row">
+        <i class="ri-map-pin-line"></i>
+        <span><%= [@partner.commune, @partner.department].compact.join(", ") %></span>
+      </div>
+    <% end %>
+
+    <% if @partner.phone_number.present? %>
+      <div class="sevis-detail-row">
+        <i class="ri-phone-line"></i>
+        <span><%= @partner.phone_number %></span>
+      </div>
+    <% end %>
+
+    <% if @partner.email.present? %>
+      <div class="sevis-detail-row">
+        <i class="ri-mail-line"></i>
+        <span><%= @partner.email %></span>
+      </div>
+    <% end %>
+  </div>
+<% end %>

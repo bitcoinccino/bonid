@@ -1,26 +1,30 @@
-<!-- Citizen Topbar -->
-<nav id="citizen-topbar" class="navbar fixed-top px-3">
+<%# Citizen Topbar — matches partner navbar style %>
+<nav id="citizen-topbar" class="navbar fixed-top px-3"
+     style="background: linear-gradient(135deg, #00209F 0%, #001570 100%); border-bottom: 4px solid #D21034;">
   <div class="container-fluid justify-content-between align-items-center">
 
-    <!-- Left: Mobile Sidebar Toggle -->
+    <%# Left: Mobile Sidebar Toggle %>
     <div class="d-flex align-items-center gap-3">
-      <button class="btn btn-sm d-lg-none text-white p-0"
+      <button class="btn d-lg-none text-white p-0"
               type="button"
               data-bs-toggle="offcanvas"
               data-bs-target="#sidebarOffcanvas"
               aria-controls="sidebarOffcanvas"
               aria-label="Toggle sidebar">
-        <i class="ri-menu-line fs-3"></i>
+        <i class="ri-menu-line ri-xl"></i>
       </button>
     </div>
 
-    <!-- Right: Notifications + Profile -->
+    <%# Right: Greeting + Notifications + Profile %>
     <% if current_citizen %>
       <div class="d-flex align-items-center gap-3">
 
-        <!-- 🔔 Notifications — single cached count -->
+        <span class="d-none d-md-inline" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);">
+          Byenveni, <strong style="color: #fff;"><%= current_citizen.first_name || "Sitwayen" %></strong>
+        </span>
+
+        <%# Notifications %>
         <%
-          # Cache for 30s to avoid hitting DB on every page load
           total_alerts = Rails.cache.fetch("citizen_alerts_#{current_citizen.id}", expires_in: 30.seconds) do
             n = current_citizen.notifications.unread.count rescue 0
             t = current_citizen.transaction_consents.where(status: :pending).where("expires_at > ?", Time.current).count rescue 0
@@ -28,7 +32,7 @@
             n + t + b
           end
         %>
-        <%= link_to citizens_transaction_consents_path, class: "text-white position-relative" do %>
+        <%= link_to citizens_transaction_consents_path, class: "text-white position-relative text-decoration-none" do %>
           <i class="ri-notification-3-line fs-4"></i>
           <% if total_alerts.positive? %>
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
@@ -37,7 +41,7 @@
           <% end %>
         <% end %>
 
-        <!-- 👤 Profile Menu (NO CARET) -->
+        <%# Profile Dropdown %>
         <div class="dropdown">
           <a class="d-flex align-items-center text-white text-decoration-none"
              href="#"
@@ -45,38 +49,44 @@
              role="button"
              data-bs-toggle="dropdown"
              aria-expanded="false">
-
-            <%= image_tag(
-              current_citizen.photo.attached? ? url_for(current_citizen.photo) : asset_path("default-user.png"),
-              class: "rounded-circle shadow-sm",
-              style: "width: 38px; height: 38px; object-fit: cover; border: 2px solid #fff;",
-              alt: "#{current_citizen.full_name || 'Citizen'}'s profile photo"
-            ) %>
+            <% if current_citizen.photo.attached? %>
+              <%= image_tag url_for(current_citizen.photo),
+                    class: "rounded-circle shadow-sm",
+                    style: "width: 36px; height: 36px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3);",
+                    alt: "#{current_citizen.full_name || 'Citizen'}" %>
+            <% else %>
+              <div class="rounded-circle d-flex justify-content-center align-items-center shadow-sm"
+                   style="width: 36px; height: 36px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15);">
+                <i class="ri-user-line ri-lg text-white"></i>
+              </div>
+            <% end %>
           </a>
 
-          <ul class="dropdown-menu dropdown-menu-end mt-2 border-0 shadow-sm rounded-4"
-              aria-labelledby="citizenDropdown">
-
+          <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm" aria-labelledby="citizenDropdown"
+              style="border: 1px solid rgba(0,32,159,0.12); border-radius: 0.75rem;">
+            <li class="px-3 py-2 border-bottom">
+              <div class="fw-semibold"><%= current_citizen.full_name || "Sitwayen" %></div>
+              <small class="text-muted">BonID Portal</small>
+            </li>
             <li>
-              <%= link_to edit_citizens_profile_path,
-                          class: "dropdown-item d-flex align-items-center gap-2 py-2 px-3 fw-medium" do %>
-                <i class="ri-user-settings-line text-haitian-blue"></i>
-                Profile
+              <%= link_to citizens_dashboard_path, class: "dropdown-item" do %>
+                <i class="ri-dashboard-line me-2"></i> Dashboard
               <% end %>
             </li>
-
-            <li><hr class="dropdown-divider my-1"></li>
-
+            <li>
+              <%= link_to edit_citizens_profile_path, class: "dropdown-item" do %>
+                <i class="ri-user-line me-2"></i> Profile
+              <% end %>
+            </li>
+            <li><hr class="dropdown-divider"></li>
             <li>
               <%= button_to destroy_citizen_session_path,
                   method: :delete,
-                  class: "dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-danger fw-semibold",
+                  class: "dropdown-item text-danger",
                   data: { turbo: false } do %>
-                <i class="ri-logout-box-r-line"></i>
-                Log Out
+                <i class="ri-logout-box-r-line me-2"></i> Log Out
               <% end %>
             </li>
-
           </ul>
         </div>
       </div>

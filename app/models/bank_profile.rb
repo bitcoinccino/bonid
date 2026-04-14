@@ -90,10 +90,11 @@ class BankProfile < ApplicationRecord
     validates :account_type, presence: true
   end
 
-  # --- Mobile Wallet (MonCash, NatCash, Digicel Wallet) ---
+  # --- Mobile Wallet (MonCash, NatCash, Zellus, Digicel Wallet) ---
   with_options if: :account_source_mobile_wallet? do
-    validates :wallet_provider, presence: true         # ex: MonCash
-    validates :wallet_address,  presence: true         # phone number
+    validates :wallet_provider, presence: true
+    validates :wallet_address,  presence: true, unless: :zellus_wallet?  # phone number (not needed for Zellus)
+    validates :cashtag,         presence: true, if: :zellus_wallet?      # cashtag required for Zellus
   end
 
   # --- Crypto Wallet (Solana, Ethereum, etc.) ---
@@ -108,6 +109,7 @@ class BankProfile < ApplicationRecord
   # =========================================================
   before_validation :auto_fill_bank_name
   before_validation :set_default_currency
+  before_validation :normalize_cashtag
 
   # =========================================================
   # HELPERS
@@ -128,12 +130,23 @@ class BankProfile < ApplicationRecord
     account_source_crypto_wallet?
   end
 
+  def zellus_wallet?
+    account_source_mobile_wallet? && wallet_provider.to_s.downcase == "zellus"
+  end
+
   private
 
   # Auto-fill bank_name from Bank table if present
   def auto_fill_bank_name
     return unless bank.present?
     self.bank_name ||= bank.name
+  end
+
+  # Auto-prepend $ to cashtag if user types just the name
+  def normalize_cashtag
+    return if cashtag.blank?
+    self.cashtag = cashtag.strip
+    self.cashtag = "$#{cashtag}" unless cashtag.start_with?("$")
   end
 
   def set_default_currency

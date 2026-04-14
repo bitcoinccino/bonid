@@ -8,7 +8,9 @@ export default class extends Controller {
     "mobileWalletFields", // Fields for mobile wallets (MonCash, NatCash)
     "cryptoWalletFields", // Fields for crypto wallets (Phantom, Coinbase)
     "accountTypeField",   // Account type (checking/savings) - only for banks
-    "swift"              // SWIFT code field
+    "swift",             // SWIFT code field
+    "phoneField",        // Phone number (hidden for Zellus)
+    "cashtagField"       // Cashtag (only for Zellus)
   ]
 
   connect() {
@@ -62,6 +64,36 @@ export default class extends Controller {
 
     // Crypto wallet fields: provider, chain, wallet address
     toggleFields(this.cryptoWalletFieldsTargets, isCryptoWallet)
+
+    // If mobile wallet, check which provider is selected
+    if (isMobileWallet) {
+      const providerSelect = this.element.querySelector('[name*="[wallet_provider]"]:not([type="hidden"])')
+      if (providerSelect) {
+        this.toggleZellusFields(providerSelect.value)
+      }
+    }
+  }
+
+  toggleWalletProvider(event) {
+    this.toggleZellusFields(event?.target?.value || "")
+  }
+
+  toggleZellusFields(provider) {
+    const isZellus = provider.toLowerCase() === "zellus"
+
+    // Hide phone for Zellus, show cashtag
+    if (this.hasPhoneFieldTarget) {
+      this.phoneFieldTargets.forEach(el => {
+        el.classList.toggle("d-none", isZellus)
+        el.querySelectorAll("input").forEach(i => { i.disabled = isZellus })
+      })
+    }
+    if (this.hasCashtagFieldTarget) {
+      this.cashtagFieldTargets.forEach(el => {
+        el.classList.toggle("d-none", !isZellus)
+        el.querySelectorAll("input").forEach(i => { i.disabled = !isZellus })
+      })
+    }
   }
 
   async updateSwift(event) {

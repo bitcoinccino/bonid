@@ -1,32 +1,11 @@
 <%# app/views/citizens/shared/_sidebar_content.html.erb %>
 
-<%# Profile section - centered vertically %>
-<div class="citizen-logo-section">
-  <div class="citizen-logo-wrapper">
-    <% if current_citizen&.photo&.attached? %>
-      <%= image_tag url_for(current_citizen.photo),
-                    class: "citizen-logo-img",
-                    alt: "#{current_citizen&.full_name} photo",
-                    style: "width: 120px; height: 120px; object-fit: cover; object-position: center top;" %>
-    <% else %>
-      <div class="citizen-logo-placeholder">
-        <i class="ri-user-line"></i>
-      </div>
-    <% end %>
-  </div>
-  <div class="citizen-name"><%= current_citizen&.full_name || "Citizen" %></div>
-  <% if current_citizen&.identity_submissions&.approved&.exists? %>
-    <div class="citizen-status">
-      <i class="ri-verified-badge-fill text-success me-1"></i>Verified
-    </div>
-  <% else %>
-    <div class="citizen-status text-muted">Pending Verification</div>
-  <% end %>
-</div>
-
-<%# Navigation links %>
+<%# Navigation links — matches partner portal sidebar style %>
 <ul class="nav flex-column sidebar-nav">
-  <%# 1. Dashboard %>
+
+  <%# ── OPERASYON ────────────────────────────── %>
+  <li class="sidebar-section-label">Operasyon</li>
+
   <li class="nav-item">
     <%= link_to citizens_dashboard_path,
                 class: "nav-link #{'active' if current_page?(citizens_dashboard_path) || current_page?(citizens_root_path)}" do %>
@@ -35,7 +14,26 @@
     <% end %>
   </li>
 
-  <%# 2. BonID Scans %>
+  <li class="nav-item">
+    <%= link_to citizens_services_path,
+                class: "nav-link #{'active' if request.path.start_with?(citizens_services_path)}" do %>
+      <i class="ri-apps-2-line"></i>
+      <span>Sèvis</span>
+    <% end %>
+  </li>
+
+  <li class="nav-item">
+    <%= link_to citizens_service_applications_path,
+                class: "nav-link #{'active' if request.path.start_with?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
+      <i class="ri-file-list-3-line"></i>
+      <span>Aplikasyon Mwen</span>
+      <% draft_count = current_citizen&.service_applications&.drafts&.count || 0 %>
+      <% if draft_count > 0 %>
+        <span class="badge bg-warning text-dark ms-auto"><%= draft_count %></span>
+      <% end %>
+    <% end %>
+  </li>
+
   <li class="nav-item">
     <%= link_to scan_history_citizens_identity_submissions_path,
                 class: "nav-link #{'active' if current_page?(scan_history_citizens_identity_submissions_path)}" do %>
@@ -47,7 +45,6 @@
     <% end %>
   </li>
 
-  <%# 3. Manage BonID %>
   <li class="nav-item">
     <%= link_to citizens_consents_path,
                 class: "nav-link #{'active' if request.path.start_with?(citizens_consents_path)}" do %>
@@ -56,7 +53,6 @@
     <% end %>
   </li>
 
-  <%# 4. Transaction Approvals %>
   <li class="nav-item">
     <%= link_to citizens_transaction_consents_path,
                 class: "nav-link #{'active' if request.path.start_with?(citizens_transaction_consents_path)}" do %>
@@ -69,32 +65,57 @@
     <% end %>
   </li>
 
-  <%# 5. Name Change (only for verified citizens) %>
-  <% if current_citizen&.identity_submissions&.approved&.exists? %>
-    <li class="nav-item">
-      <%= link_to new_citizens_name_change_request_path,
-                  class: "nav-link #{'active' if request.path.start_with?('/citizens/name_change_requests')}" do %>
-        <i class="ri-edit-line"></i>
-        <span>Name Change</span>
-      <% end %>
-    </li>
-  <% end %>
+  <%# ── ELEKSYON ────────────────────────────── %>
+  <li class="sidebar-section-label">Eleksyon</li>
 
-  <%# 5. File a Complaint %>
+  <li class="nav-item">
+    <%= link_to citizens_election_vote_path,
+                class: "nav-link #{'active' if request.path.include?('election/vote')}" do %>
+      <i class="ri-checkbox-circle-line"></i>
+      <span>Vote</span>
+    <% end %>
+  </li>
+
+  <li class="nav-item">
+    <%= link_to citizens_election_calendar_path,
+                class: "nav-link #{'active' if request.path.include?('election/kalandriye')}" do %>
+      <i class="ri-calendar-event-line"></i>
+      <span>Kalandriye</span>
+    <% end %>
+  </li>
+
+  <li class="nav-item">
+    <%= link_to citizens_election_verify_path,
+                class: "nav-link #{'active' if request.path.include?('election/verifye')}" do %>
+      <i class="ri-shield-check-line"></i>
+      <span>Verifye Vòt Mwen</span>
+    <% end %>
+  </li>
+
+  <li class="nav-item">
+    <%= link_to citizens_election_results_path,
+                class: "nav-link #{'active' if request.path.include?('election/rezilta')}" do %>
+      <i class="ri-bar-chart-box-line"></i>
+      <span>Rezilta</span>
+    <% end %>
+  </li>
+
+  <%# ── SIPÒ ────────────────────────────── %>
+  <li class="sidebar-section-label">Sipò</li>
+
   <li class="nav-item">
     <%= link_to citizens_officer_complaints_path,
                 class: "nav-link #{'active' if request.path.start_with?(citizens_officer_complaints_path)}" do %>
       <i class="ri-file-shield-2-line"></i>
-      <span>File a Complaint</span>
+      <span>Plent</span>
     <% end %>
   </li>
 
-  <%# 5. Support %>
   <li class="nav-item">
     <%= link_to citizens_support_path,
                 class: "nav-link #{'active' if current_page?(citizens_support_path)}" do %>
       <i class="ri-customer-service-2-line"></i>
-      <span>Support</span>
+      <span>Sipò</span>
     <% end %>
   </li>
 </ul>
@@ -106,6 +127,6 @@
                 class: "logout-btn",
                 data: { turbo: false } do %>
     <i class="ri-logout-box-r-line"></i>
-    <span>Log Out</span>
+    <span>Dekonekte</span>
   <% end %>
 </div>

@@ -1,0 +1,365 @@
+<%# Citizen Portal — Kont Labank (Bank Account Services) %>
+<%# Gateway for partner banks KYC process via BonID %>
+
+<div class="bongouv-dashboard" id="bank-services-main">
+
+  <%# ── Welcome Header ── %>
+  <div class="sèvis-welcome-header">
+    <div class="sèvis-welcome-header__left">
+      <h4 class="sèvis-welcome-header__greeting">
+        <i class="ri-bank-line me-2" style="color: #00209F;"></i>Kont Labank
+      </h4>
+      <p class="sèvis-welcome-header__subtitle">
+        Ouvri yon kont labank ak BonID ou — san papye, san fè liy.
+      </p>
+    </div>
+    <div class="sèvis-welcome-header__right">
+      <span class="dgi-verification-badge dgi-verification-badge--<%= @verified ? 'verified' : 'pending' %>">
+        <i class="<%= @verified ? 'ri-verified-badge-fill' : 'ri-time-line' %> me-1"></i>
+        BonID <%= @verified ? 'Verifye' : 'Annatant' %>
+      </span>
+    </div>
+  </div>
+
+  <% unless @verified %>
+    <div class="sèvis-alert sèvis-alert--warning">
+      <i class="ri-error-warning-line"></i>
+      <div>
+        <strong>BonID ou poko verifye.</strong>
+        Ou dwe genyen yon BonID verifye anvan ou ka ouvri yon kont labank.
+        <%= link_to "Kòmanse verifikasyon", new_citizens_identity_submission_path, class: "fw-semibold" %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── How it works ── %>
+  <div class="sèvis-how-it-works">
+    <h6 class="sèvis-section-title"><i class="ri-road-map-line me-2"></i>Kijan sa Fonksyone</h6>
+    <div class="sèvis-steps-row">
+      <div class="sèvis-step-card">
+        <div class="sèvis-step-card__number">1</div>
+        <div class="sèvis-step-card__content">
+          <strong>Chwazi yon Bank</strong>
+          <p>Chwazi bank patnè ou vle ouvri kont la.</p>
+        </div>
+      </div>
+      <div class="sèvis-step-connector"><i class="ri-arrow-right-line"></i></div>
+      <div class="sèvis-step-card">
+        <div class="sèvis-step-card__number">2</div>
+        <div class="sèvis-step-card__content">
+          <strong>Pataje BonID Ou</strong>
+          <p>BonID ou verifye idantite ou — pa bezwen papye.</p>
+        </div>
+      </div>
+      <div class="sèvis-step-connector"><i class="ri-arrow-right-line"></i></div>
+      <div class="sèvis-step-card">
+        <div class="sèvis-step-card__number">3</div>
+        <div class="sèvis-step-card__content">
+          <strong>Kont Ouvri</strong>
+          <p>Bank la ouvri kont ou direk — san fè liy.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Partner Banks ── %>
+  <h6 class="sèvis-section-title mt-4"><i class="ri-bank-line me-2"></i>Bank Patnè yo</h6>
+
+  <div class="sèvis-provider-grid">
+    <% @banks.each do |bank| %>
+      <div class="sèvis-provider-card">
+        <div class="sèvis-provider-card__header" style="border-left: 4px solid <%= bank[:color] %>;">
+          <div class="sèvis-provider-card__icon" style="background: <%= bank[:color] %>15; color: <%= bank[:color] %>;">
+            <i class="<%= bank[:icon] %>"></i>
+          </div>
+          <div>
+            <h6 class="sèvis-provider-card__name"><%= bank[:name] %></h6>
+            <% if bank[:status] == :coming_soon %>
+              <span class="sèvis-coming-soon-badge">Byento disponib</span>
+            <% end %>
+          </div>
+        </div>
+        <p class="sèvis-provider-card__desc"><%= bank[:description] %></p>
+        <div class="sèvis-provider-card__services">
+          <% bank[:services].each do |svc| %>
+            <span class="sèvis-service-tag"><%= svc %></span>
+          <% end %>
+        </div>
+        <div class="sèvis-provider-card__footer">
+          <% if bank[:status] == :coming_soon %>
+            <button class="btn sèvis-btn-disabled" disabled>
+              <i class="ri-time-line me-1"></i>Byento
+            </button>
+          <% else %>
+            <button class="btn sèvis-btn-primary" <%= 'disabled' unless @verified %>>
+              Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Trust Footer ── %>
+  <div class="sèvis-trust-footer" role="contentinfo">
+    <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
+      <span><i class="ri-lock-line me-1"></i>Done ou yo chifre ak pwoteje</span>
+      <span class="sèvis-trust-footer__divider"></span>
+      <span><i class="ri-shield-check-line me-1"></i>Verifye pa BonID</span>
+      <span class="sèvis-trust-footer__divider"></span>
+      <span>Powered by <strong>BonGouv</strong>, a product of <strong>Verifyem</strong></span>
+    </div>
+  </div>
+</div>
+
+<%# ── Scoped Styles ── %>
+<style>
+  /* ── Shared Sèvis Styles ── */
+  .sèvis-welcome-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%);
+    border: 1px solid rgba(0, 32, 159, 0.08);
+    border-radius: 12px;
+  }
+  .sèvis-welcome-header__greeting {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .sèvis-welcome-header__subtitle {
+    font-size: 0.82rem;
+    color: #4b5563;
+    margin: 6px 0 0;
+  }
+  .sèvis-welcome-header__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .sèvis-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+  }
+  .sèvis-alert--warning {
+    background: #FEF3C7;
+    border: 1px solid #FBBF24;
+    color: #92400E;
+  }
+  .sèvis-alert--warning i { color: #D97706; font-size: 1.1rem; margin-top: 1px; }
+  .sèvis-alert a { color: #00209F; text-decoration: underline; }
+
+  .sèvis-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+  }
+
+  /* ── How it Works ── */
+  .sèvis-how-it-works {
+    background: #f8f9fc;
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  .sèvis-steps-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sèvis-step-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+    min-width: 180px;
+    padding: 14px;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e4e7ec;
+  }
+  .sèvis-step-card__number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #00209F;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .sèvis-step-card__content strong {
+    font-size: 0.82rem;
+    color: #1a1a2e;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .sèvis-step-card__content p {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.4;
+  }
+  .sèvis-step-connector {
+    color: #9ca3af;
+    font-size: 1rem;
+  }
+
+  /* ── Provider Cards ── */
+  .sèvis-provider-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .sèvis-provider-card {
+    background: white;
+    border: 1px solid #e4e7ec;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .sèvis-provider-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+  .sèvis-provider-card__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-left: 12px;
+    margin-bottom: 12px;
+  }
+  .sèvis-provider-card__icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+  .sèvis-provider-card__name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .sèvis-coming-soon-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #D97706;
+    background: #FEF3C7;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+  .sèvis-provider-card__desc {
+    font-size: 0.8rem;
+    color: #4b5563;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    flex-grow: 1;
+  }
+  .sèvis-provider-card__services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .sèvis-service-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #374151;
+    background: #f3f4f6;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+  .sèvis-provider-card__footer {
+    border-top: 1px solid #f3f4f6;
+    padding-top: 12px;
+  }
+  .sèvis-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    background: #00209F;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: none;
+    min-height: 44px;
+    transition: background 0.2s;
+  }
+  .sèvis-btn-primary:hover { background: #001a7a; color: white; }
+  .sèvis-btn-disabled {
+    display: inline-flex;
+    align-items: center;
+    background: #e5e7eb;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: none;
+    min-height: 44px;
+    cursor: not-allowed;
+  }
+
+  /* ── Trust Footer ── */
+  .sèvis-trust-footer {
+    margin-top: 32px;
+    padding: 14px 20px;
+    background: #f8f9fc;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    color: #6b7280;
+    text-align: center;
+  }
+  .sèvis-trust-footer__divider {
+    width: 1px;
+    height: 14px;
+    background: #d1d5db;
+    display: inline-block;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .sèvis-welcome-header { flex-direction: column; align-items: flex-start; padding: 16px; }
+    .sèvis-welcome-header__right { width: 100%; }
+    .sèvis-steps-row { flex-direction: column; }
+    .sèvis-step-connector { transform: rotate(90deg); align-self: center; }
+    .sèvis-provider-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sèvis-provider-card { transition: none; }
+    .sèvis-provider-card:hover { transform: none; }
+  }
+</style>

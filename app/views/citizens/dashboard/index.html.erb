@@ -74,11 +74,11 @@
               <h2 class="wallet-name">
                 <%= [current_citizen.first_name, current_citizen.last_name].compact.join(" ") %>
               </h2>
-              <%# Mask BonID: show initials + mask middle + show entity+checksum %>
-              <% bonid_parts = current_citizen.bonid.to_s.split("-") %>
-              <% if bonid_parts.length >= 5 %>
-                <% tail = bonid_parts.last %>
-                <% masked_bonid = "#{bonid_parts.first}-****-*-**-#{tail[0]}****#{tail[-3..]}" %>
+              <%# Mask BonID: show initials + mask middle + show lookup suffix (last 6 stripped chars) %>
+              <% bonid_stripped = current_citizen.bonid.to_s.gsub("-", "") %>
+              <% if bonid_stripped.length >= 8 %>
+                <% lookup_suffix = bonid_stripped.last(6) %>
+                <% masked_bonid = "#{bonid_stripped[0..1]}-****-*-**-#{lookup_suffix}" %>
               <% else %>
                 <% masked_bonid = current_citizen.bonid %>
               <% end %>
@@ -510,8 +510,12 @@
           <div class="get-started-icon">
             <i class="ri-shield-check-line"></i>
           </div>
-          <h3>Get Your BonID</h3>
-          <p>Your private digital identity accepted at banks, hospitals, embassies, and services across Haiti.</p>
+          <h3>Jwenn BonID Ou</h3>
+          <% if @is_diaspora %>
+            <p>Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti — menm depi aletranje.</p>
+          <% else %>
+            <p>Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti.</p>
+          <% end %>
           <% if current_citizen.profile_complete? %>
             <%= link_to new_citizens_identity_submission_path,
                         class: "gs-cta-btn" do %>
@@ -529,36 +533,75 @@
 
         <%# Two-column layout: What You'll Need + How It Works %>
         <div class="gs-columns">
-          <%# What You'll Need %>
+          <%# What You'll Need — tailored for domestic vs diaspora %>
           <div class="gs-section">
             <h5 class="gs-section-title">
-              <i class="ri-file-list-3-line"></i> What You'll Need
+              <i class="ri-file-list-3-line"></i> Sa Ou Bezwen
             </h5>
-            <% [
-              { icon: "ri-mail-line",      label: "Email address",        detail: "For account verification and OTP login" },
-              { icon: "ri-id-card-line",    label: "CIN or Passport",     detail: "Front and back of your national ID or passport" },
-              { icon: "ri-camera-line",     label: "Clear selfie",        detail: "A recent photo for face verification" },
-              { icon: "ri-file-text-line",  label: "Supporting document", detail: "Proof of address or utility bill" }
-            ].each do |req| %>
-              <div class="gs-row">
-                <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
-                <div class="gs-row-text">
-                  <span class="gs-row-label"><%= req[:label] %></span>
-                  <span class="gs-row-detail"><%= req[:detail] %></span>
-                </div>
+
+            <% if @is_diaspora %>
+              <%# ── Diaspora checklist ── %>
+              <div style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);
+                          border-radius: 0.6rem; padding: 8px 12px; margin-bottom: 12px;">
+                <span style="font-size: 0.72rem; font-weight: 600; color: #00209F;">
+                  <i class="ri-global-line me-1"></i> Aplikasyon Dyaspora
+                </span>
+                <% if @residence_country && @residence_country != "HT" %>
+                  <span style="font-size: 0.68rem; color: #64748B; margin-left: 4px;">
+                    (<%= ISO3166::Country[@residence_country]&.translations&.dig("en") || @residence_country %>)
+                  </span>
+                <% end %>
               </div>
+              <% [
+                { icon: "ri-mail-line",      label: "Adrès imel",               detail: "Pou verifikasyon kont ak koneksyon OTP" },
+                { icon: "ri-id-card-line",   label: "CIN oswa Paspò",           detail: "Devan ak dèyè kat idantite nasyonal ou oswa paspò" },
+                { icon: "ri-camera-line",    label: "Selfie klè",               detail: "Yon foto resan pou verifikasyon figi" },
+                { icon: "ri-bank-card-line", label: "ID peyi rezidans ou",       detail: "Green Card, State ID, Driver's License, Cedula, oswa Residence Permit" },
+                { icon: "ri-file-text-line", label: "Prèv adrès peyi rezidans", detail: "Bòdwo elektrisite, bòdwo telefòn, oswa bank statement (mwens pase 3 mwa)" }
+              ].each do |req| %>
+                <div class="gs-row">
+                  <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
+                  <div class="gs-row-text">
+                    <span class="gs-row-label"><%= req[:label] %></span>
+                    <span class="gs-row-detail"><%= req[:detail] %></span>
+                  </div>
+                </div>
+              <% end %>
+
+            <% else %>
+              <%# ── Domestic (Haiti) checklist ── %>
+              <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1);
+                          border-radius: 0.6rem; padding: 8px 12px; margin-bottom: 12px;">
+                <span style="font-size: 0.72rem; font-weight: 600; color: #065F46;">
+                  <i class="ri-map-pin-line me-1"></i> Aplikasyon Ayiti
+                </span>
+              </div>
+              <% [
+                { icon: "ri-mail-line",      label: "Adrès imel",           detail: "Pou verifikasyon kont ak koneksyon OTP" },
+                { icon: "ri-id-card-line",   label: "CIN oswa Paspò",      detail: "Devan ak dèyè kat idantite nasyonal ou oswa paspò" },
+                { icon: "ri-camera-line",    label: "Selfie klè",          detail: "Yon foto resan pou verifikasyon figi" },
+                { icon: "ri-file-text-line", label: "Prèv adrès",         detail: "Bòdwo elektrisite, kontra lokasyon, oswa lèt gouvènman" }
+              ].each do |req| %>
+                <div class="gs-row">
+                  <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
+                  <div class="gs-row-text">
+                    <span class="gs-row-label"><%= req[:label] %></span>
+                    <span class="gs-row-detail"><%= req[:detail] %></span>
+                  </div>
+                </div>
+              <% end %>
             <% end %>
           </div>
 
           <%# How It Works %>
           <div class="gs-section">
             <h5 class="gs-section-title">
-              <i class="ri-route-line"></i> How It Works
+              <i class="ri-route-line"></i> Kijan Li Fonksyone
             </h5>
             <% [
-              { step: "1", label: "Complete your profile",    detail: "Fill in personal details and upload documents." },
-              { step: "2", label: "Submit for verification",  detail: "A BonID reviewer verifies your identity." },
-              { step: "3", label: "Receive your BonID",       detail: "Get your digital ID with a secure QR code." }
+              { step: "1", label: "Ranpli pwofil ou",           detail: "Antre enfòmasyon pèsonèl ou epi telechaje dokiman yo." },
+              { step: "2", label: "Soumèt pou verifikasyon",    detail: "Yon revizè BonID verifye idantite ou." },
+              { step: "3", label: "Resevwa BonID ou",           detail: "Resevwa ID dijital ou ak yon kòd QR sekirize." }
             ].each do |s| %>
               <div class="gs-row">
                 <div class="gs-step-num"><%= s[:step] %></div>
@@ -576,15 +619,21 @@
         <%# Why BonID? — 4-column on wide layout %>
         <div class="gs-section">
           <h5 class="gs-section-title">
-            <i class="ri-star-line"></i> Why BonID?
+            <i class="ri-star-line"></i> Poukisa BonID?
           </h5>
           <div class="gs-advantage-grid">
-            <% [
-              { icon: "ri-qr-code-line",  title: "QR Sharing",    desc: "Share only what's needed via encrypted, time-limited QR." },
-              { icon: "ri-eye-line",       title: "Full Control",  desc: "See when and where your BonID was scanned." },
-              { icon: "ri-lock-2-line",    title: "Private",       desc: "Data encrypted, never shared without consent." },
-              { icon: "ri-global-line",    title: "Works Offline", desc: "Reliable on slow networks, built for Haiti." }
-            ].each do |adv| %>
+            <% advantages = [
+              { icon: "ri-qr-code-line",  title: "Pataj QR",          desc: "Pataje sèlman sa ki nesesè ak yon QR chifre, limite nan tan." },
+              { icon: "ri-eye-line",       title: "Kontwòl Total",    desc: "Wè ki lè ak ki kote yo eskane BonID ou." },
+              { icon: "ri-lock-2-line",    title: "Prive",            desc: "Done chifre, pa janm pataje san konsantman ou." }
+            ]
+            if @is_diaspora
+              advantages << { icon: "ri-global-line", title: "Vote Depi Aletranje", desc: "Vote nan eleksyon Ayiti dirèkteman sou telefòn ou." }
+            else
+              advantages << { icon: "ri-global-line", title: "Fonksyone Offline",   desc: "Fyab sou rezo ki lan, bati pou Ayiti." }
+            end
+            %>
+            <% advantages.each do |adv| %>
               <div class="gs-advantage">
                 <i class="<%= adv[:icon] %>"></i>
                 <span class="gs-adv-title"><%= adv[:title] %></span>

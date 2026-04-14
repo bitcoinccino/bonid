@@ -1,0 +1,521 @@
+<%# app/views/citizens/services/index.html.erb %>
+<% content_for(:title) { "Sèvis — BonID" } %>
+
+<style>
+  /* ── Page Header ── */
+  .sevis-header {
+    margin-bottom: 2rem;
+  }
+  .sevis-header h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 0.25rem;
+  }
+  .sevis-header p {
+    font-size: 0.9rem;
+    color: #6B7280;
+    margin: 0;
+  }
+
+  /* ── Verification Alert ── */
+  .sevis-alert {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  .sevis-alert--warning {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+  }
+  .sevis-alert--success {
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+  }
+  .sevis-alert i {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .sevis-alert a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  /* ── Search & Filter Bar ── */
+  .sevis-search-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.875rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .sevis-search-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+  .sevis-search-row .sevis-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 0.9rem;
+    color: #1a1a2e;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    min-width: 0;
+  }
+  .sevis-search-row .sevis-search-input::placeholder {
+    color: #9CA3AF;
+  }
+  .sevis-search-row .sevis-search-icon {
+    color: #9CA3AF;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+  .sevis-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem 0.75rem;
+    border-top: 1px solid #F1F5F9;
+  }
+  .sevis-filter-row select {
+    flex: 1;
+    border: 1px solid #E5E7EB;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.82rem;
+    color: #374151;
+    background: #F8FAFC;
+    outline: none;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    border-radius: 0.5rem;
+  }
+  .sevis-filter-row .sevis-filter-btn {
+    padding: 0.45rem 1.25rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    background: #00209F;
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .sevis-filter-row .sevis-filter-btn:hover {
+    background: #001570;
+  }
+  .sevis-clear-link {
+    font-size: 0.78rem;
+    color: #6B7280;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .sevis-clear-link:hover {
+    color: #00209F;
+  }
+  .sevis-results-count {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #6B7280;
+    margin-bottom: 1.25rem;
+    padding: 0.625rem 1rem;
+    background: #F8FAFC;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.625rem;
+  }
+  .sevis-results-count strong {
+    color: #1a1a2e;
+  }
+  .sevis-results-count i {
+    color: #00209F;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 576px) {
+    .sevis-search-row {
+      padding: 0.625rem 0.75rem;
+    }
+    .sevis-filter-row {
+      padding: 0.375rem 0.75rem 0.625rem;
+    }
+  }
+
+  /* ── Sector Group ── */
+  .sevis-group {
+    margin-bottom: 2rem;
+  }
+  .sevis-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #F1F5F9;
+  }
+  .sevis-group-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .sevis-group-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .sevis-group-count {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6B7280;
+    background: #F1F5F9;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+
+  /* ── Partner Card Grid ── */
+  .sevis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .sevis-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.875rem;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .sevis-card:hover {
+    border-color: #00209F;
+    box-shadow: 0 4px 16px rgba(0, 32, 159, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .sevis-card-logo-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .sevis-card-logo {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #E5E7EB;
+  }
+  .sevis-card-logo-placeholder {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: #fff;
+    font-weight: 700;
+  }
+  .sevis-card-verified {
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .sevis-card-verified i {
+    font-size: 0.72rem;
+    color: #00209F;
+  }
+
+  .sevis-card-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .sevis-card-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    line-height: 1.3;
+    margin-bottom: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sevis-card-sector {
+    font-size: 0.72rem;
+    color: #6B7280;
+    line-height: 1.3;
+  }
+
+  .sevis-card-arrow {
+    font-size: 1rem;
+    color: #CBD5E1;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .sevis-card:hover .sevis-card-arrow {
+    color: #00209F;
+  }
+
+  /* ── Empty State ── */
+  .sevis-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6B7280;
+  }
+  .sevis-empty i {
+    font-size: 3rem;
+    color: #CBD5E1;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .sevis-empty h3 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+  }
+  .sevis-empty-clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    padding: 0.45rem 1.25rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #00209F;
+    background: #fff;
+    border: 1.5px solid #00209F;
+    border-radius: 50px;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    line-height: 1.3;
+  }
+  .sevis-empty-clear i {
+    font-size: 0.85rem;
+  }
+  .sevis-empty-clear:hover {
+    background: #00209F;
+    color: #fff;
+  }
+
+  /* ── Load More ── */
+  .sevis-load-more {
+    text-align: center;
+    margin-top: 2rem;
+  }
+  .sevis-load-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 2rem;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #00209F;
+    background: #fff;
+    border: 2px solid #00209F;
+    border-radius: 50px;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+  }
+  .sevis-load-more-btn:hover {
+    background: #00209F;
+    color: #fff;
+  }
+  .sevis-load-more-btn i {
+    font-size: 1.1rem;
+  }
+  .sevis-showing-count {
+    font-size: 0.75rem;
+    color: #9CA3AF;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 576px) {
+    .sevis-header h1 { font-size: 1.3rem; }
+    .sevis-grid {
+      grid-template-columns: 1fr;
+    }
+    .sevis-card {
+      padding: 0.875rem 1rem;
+    }
+    .sevis-load-more-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem;
+    }
+  }
+</style>
+
+<div class="sevis-header">
+  <h1><i class="ri-apps-2-line me-2" style="color: #00209F;"></i>Sèvis</h1>
+  <p>Chwazi yon patnè pou w ka aksede sèvis yo.</p>
+</div>
+
+<%# ── Verification Status ── %>
+<% unless @verified %>
+  <div class="sevis-alert sevis-alert--warning">
+    <i class="ri-error-warning-line"></i>
+    <span>
+      Ou bezwen verifye idantite ou pou w ka itilize sèvis yo.
+      <%= link_to "Verifye kounye a", new_citizens_identity_submission_path %>
+    </span>
+  </div>
+<% end %>
+
+<%# ── Search + Sector Filter ── %>
+<form action="<%= citizens_services_path %>" method="get" class="sevis-search-bar" data-turbo="false">
+  <div class="sevis-search-row">
+    <i class="ri-search-line sevis-search-icon"></i>
+    <input type="text" name="search" value="<%= @search %>" placeholder="Chèche yon patnè..." class="sevis-search-input">
+  </div>
+
+  <div class="sevis-filter-row">
+    <select name="sector" onchange="this.form.submit()">
+      <option value="">Tout Sektè</option>
+      <% @sector_groups.each do |group| %>
+        <option value="<%= group %>" <%= "selected" if @sector_filter == group %>><%= group %></option>
+      <% end %>
+    </select>
+
+    <button type="submit" class="sevis-filter-btn">Filtre</button>
+
+    <% if @search.present? || @sector_filter.present? %>
+      <a href="<%= citizens_services_path %>" class="sevis-clear-link">
+        <i class="ri-close-line"></i> Efase
+      </a>
+    <% end %>
+  </div>
+</form>
+
+<% if @search.present? || @sector_filter.present? %>
+  <div class="sevis-results-count">
+    <i class="ri-filter-3-line"></i>
+    <span>
+      <strong><%= @total_count %></strong> rezilta jwenn
+      <% if @search.present? %> pou "<strong><%= @search %></strong>"<% end %>
+      <% if @sector_filter.present? %> nan <strong><%= @sector_filter %></strong><% end %>
+    </span>
+  </div>
+<% end %>
+
+<% if @grouped_partners.any? %>
+  <% @grouped_partners.each do |group_name, partners| %>
+    <div class="sevis-group">
+      <div class="sevis-group-header">
+        <div class="sevis-group-icon" style="background: <%= @sector_colors[group_name] || '#6B7280' %>;">
+          <i class="<%= @sector_icons[group_name] || 'ri-building-line' %>"></i>
+        </div>
+        <h2 class="sevis-group-title"><%= group_name %></h2>
+        <span class="sevis-group-count"><%= partners.size %></span>
+      </div>
+
+      <div class="sevis-grid">
+        <% partners.each do |partner| %>
+          <%= link_to citizens_service_path(slug: partner.slug), class: "sevis-card" do %>
+            <div class="sevis-card-logo-wrap">
+              <% if partner.logo.attached? %>
+                <%= image_tag url_for(partner.logo), class: "sevis-card-logo", alt: partner.name %>
+              <% else %>
+                <div class="sevis-card-logo-placeholder"
+                     style="background: <%= @sector_colors[group_name] || '#6B7280' %>;">
+                  <%= partner.name.first(2).upcase %>
+                </div>
+              <% end %>
+              <% if partner.verified_at.present? %>
+                <div class="sevis-card-verified" title="Patnè Verifye">
+                  <i class="ri-verified-badge-fill"></i>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="sevis-card-info">
+              <div class="sevis-card-name"><%= partner.name %></div>
+              <div class="sevis-card-sector">
+                <%= PartnerSectorConstants.human_sector_label(partner.sector) %>
+              </div>
+            </div>
+
+            <i class="ri-arrow-right-s-line sevis-card-arrow"></i>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Wè Plis / Load More ── %>
+  <% shown = @grouped_partners.values.sum(&:size) %>
+  <div class="sevis-load-more">
+    <% if @has_more %>
+      <%= link_to citizens_services_path(page: @page + 1, search: @search.presence, sector: @sector_filter.presence),
+            class: "sevis-load-more-btn", data: { turbo_action: "replace" } do %>
+        <i class="ri-arrow-down-line"></i> Wè Plis
+      <% end %>
+    <% end %>
+    <div class="sevis-showing-count">
+      <%= shown %> sou <%= @total_count %> patnè
+    </div>
+  </div>
+<% else %>
+  <div class="sevis-empty">
+    <i class="ri-building-line"></i>
+    <% if @search.present? || @sector_filter.present? %>
+      <h3>Pa gen rezilta</h3>
+      <p>Eseye chanje rechèch ou oswa filtre a.</p>
+      <a href="<%= citizens_services_path %>" class="sevis-empty-clear">
+        <i class="ri-close-line"></i> Efase Filtre
+      </a>
+    <% else %>
+      <h3>Pa gen sèvis disponib pou kounya</h3>
+      <p>Retounen pi ta pou w ka jwenn sèvis ki disponib.</p>
+    <% end %>
+  </div>
+<% end %>

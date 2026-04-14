@@ -21,6 +21,12 @@ module Citizens
                                   .includes(:partner)
                                   .order(expires_at: :asc)
                                   .limit(5)
+
+      # Waitlist data — used to tailor the "What You'll Need" checklist
+      # for domestic vs diaspora applicants
+      @waitlist = WaitlistSignup.find_by(email: @citizen.email)
+      @is_diaspora = @waitlist&.diaspora? || @citizen.address&.country.present? && @citizen.address.country.upcase != "HAITI" && @citizen.address.country.upcase != "HT"
+      @residence_country = @waitlist&.country_of_residence || (@is_diaspora ? @citizen.address&.country : "HT")
     end
 
     private

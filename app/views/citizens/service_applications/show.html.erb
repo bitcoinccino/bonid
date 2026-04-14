@@ -1,0 +1,309 @@
+<%# app/views/citizens/service_applications/show.html.erb %>
+<%# Status view for submitted/reviewed applications %>
+<% is_txn = @schema.service_category == "transaction" %>
+<% content_for(:title) { "#{@schema.name} — Estati" } %>
+
+<style>
+  .sa-container { max-width: 640px; margin: 0 auto; }
+  .sa-back { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: #6B7280; text-decoration: none; margin-bottom: 1rem; }
+  .sa-back:hover { color: #00209F; }
+
+  .sa-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .sa-card-title { font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+  .sa-card-title i { color: #00209F; }
+
+  .sa-status-banner {
+    padding: 1rem; border-radius: 10px; text-align: center; margin-bottom: 1rem;
+    font-family: 'Montserrat', sans-serif;
+  }
+  .sa-status-banner--submitted { background: #FEF3C7; border: 1px solid #FDE68A; color: #92400E; }
+  .sa-status-banner--under_review { background: #EFF6FF; border: 1px solid #BFDBFE; color: #1D4ED8; }
+  .sa-status-banner--approved { background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; }
+  .sa-status-banner--rejected { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+  .sa-status-icon { font-size: 2rem; display: block; margin-bottom: 0.35rem; }
+  .sa-status-text { font-size: 1rem; font-weight: 700; }
+  .sa-status-sub { font-size: 0.75rem; font-weight: 400; margin-top: 0.25rem; }
+
+  .sa-info-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #F1F5F9; font-size: 0.82rem; }
+  .sa-info-row:last-child { border-bottom: none; }
+  .sa-info-label { color: #6B7280; font-weight: 500; }
+  .sa-info-value { color: #1a1a2e; font-weight: 600; text-align: right; }
+
+  .sa-field-group { margin-bottom: 0.75rem; }
+  .sa-field-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: #6B7280; font-weight: 600; margin-bottom: 0.15rem; }
+  .sa-field-value { font-size: 0.85rem; color: #1a1a2e; }
+
+  .sa-verification-code {
+    text-align: center; padding: 1rem; background: #F7FAFC; border-radius: 10px;
+    margin-top: 0.75rem;
+  }
+  .sa-verification-code-label { font-size: 0.68rem; text-transform: uppercase; color: #6B7280; font-weight: 600; }
+  .sa-verification-code-value { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 700; color: #00209F; letter-spacing: 2px; margin-top: 0.25rem; }
+
+  .sa-rejection-reason { padding: 0.75rem; background: #FEF2F2; border-radius: 8px; font-size: 0.82rem; color: #991B1B; margin-top: 0.75rem; }
+
+  .sa-pdf-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 1.25rem; background: #00209F; color: #fff;
+    border-radius: 8px; font-size: 0.82rem; font-weight: 600;
+    text-decoration: none; transition: background 0.15s;
+  }
+  .sa-pdf-btn:hover { background: #001570; color: #fff; }
+</style>
+
+<div class="sa-container">
+  <%= link_to citizens_service_applications_path, class: "sa-back" do %>
+    <i class="ri-arrow-left-line"></i> Aktivite Mwen
+  <% end %>
+
+  <%# ── Status Banner ── %>
+  <div class="sa-status-banner sa-status-banner--<%= @application.status %>">
+    <span class="sa-status-icon">
+      <% if is_txn %>
+        <% case @application.status when "submitted" %><i class="ri-ticket-line"></i>
+        <% when "approved" %><i class="ri-checkbox-circle-line"></i>
+        <% when "rejected" %><i class="ri-close-circle-line"></i>
+        <% else %><i class="ri-ticket-line"></i>
+        <% end %>
+      <% else %>
+        <% case @application.status when "submitted" %><i class="ri-time-line"></i>
+        <% when "under_review" %><i class="ri-search-eye-line"></i>
+        <% when "approved" %><i class="ri-checkbox-circle-line"></i>
+        <% when "rejected" %><i class="ri-close-circle-line"></i>
+        <% end %>
+      <% end %>
+    </span>
+    <div class="sa-status-text">
+      <% if is_txn %>
+        <%= @application.paid? ? "Tikè Konfime" : @application.status_label %>
+      <% else %>
+        <%= @application.status_label %>
+      <% end %>
+    </div>
+    <div class="sa-status-sub">
+      <% if is_txn %>
+        <% if @application.paid? %>Tikè ou pou <%= @schema.name %> konfime. Prezante kòd verifikasyon ou.
+        <% else %>Tikè ou ap tann peman.
+        <% end %>
+      <% else %>
+        <% case @application.status when "submitted" %>Aplikasyon ou ap tann revizyon pa <%= @partner.name %>.
+        <% when "under_review" %><%= @partner.name %> ap revize aplikasyon ou kounye a.
+        <% when "approved" %>Aplikasyon ou apwouve! Ou ka telechaje dokiman ou anba a.
+        <% when "rejected" %>Malerezman, aplikasyon ou te rejte.
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Application Info ── %>
+  <div class="sa-card">
+    <div class="sa-card-title"><i class="ri-information-line"></i> <%= is_txn ? "Detay Tikè" : "Detay Aplikasyon" %></div>
+
+    <div class="sa-info-row">
+      <span class="sa-info-label">Sèvis</span>
+      <span class="sa-info-value"><%= @schema.name %></span>
+    </div>
+    <div class="sa-info-row">
+      <span class="sa-info-label">Patnè</span>
+      <span class="sa-info-value" style="display:flex;align-items:center;gap:0.5rem;">
+        <%= @partner.name %>
+        <% if @partner.phone_number.present? %>
+          <%= link_to "tel:#{@partner.phone_number}", style: "color:#00209F;font-size:1rem;line-height:1;" do %><i class="ri-phone-line"></i><% end %>
+        <% end %>
+        <% if @partner.email.present? %>
+          <%= link_to "mailto:#{@partner.email}", style: "color:#00209F;font-size:1rem;line-height:1;" do %><i class="ri-mail-line"></i><% end %>
+        <% end %>
+      </span>
+    </div>
+    <div class="sa-info-row">
+      <span class="sa-info-label">Soumèt</span>
+      <span class="sa-info-value"><%= @application.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></span>
+    </div>
+
+    <%# ── Event Details (partner-filled fields) ── %>
+    <% if @partner_filled.present? %>
+      <% @partner_filled.each do |pf| %>
+        <div class="sa-info-row">
+          <span class="sa-info-label"><%= pf["label"] %></span>
+          <span class="sa-info-value">
+            <% if pf["type"] == "datetime" && pf["partner_value"].present? %>
+              <i class="ri-calendar-event-line" style="color:#6B7280;margin-right:0.25rem;"></i>
+              <%= begin; DateTime.parse(pf["partner_value"]).strftime("%d/%m/%Y à %H:%M"); rescue; pf["partner_value"]; end %>
+            <% elsif pf["type"] == "address" %>
+              <i class="ri-map-pin-line" style="color:#6B7280;margin-right:0.25rem;"></i>
+              <% if pf["use_partner_bonid_address"] %>
+                <% addr_parts = [@partner.try(:street_address), @partner.try(:commune)&.name, @partner.try(:department)&.name].compact %>
+                <%= addr_parts.any? ? addr_parts.join(", ") : "Adrès patnè" %>
+              <% else %>
+                <%= [pf["partner_street"], pf["partner_locality"], pf["partner_commune"], pf["partner_department"]].compact.reject(&:blank?).join(", ") %>
+              <% end %>
+            <% else %>
+              <%= pf["partner_value"] %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+    <% end %>
+    <% snap = @application.price_snapshot %>
+    <% has_breakdown = snap.present? && (snap["fees"].present? || snap["quantity"].present? || snap["addons"].present? || snap["repeaters"].present? || snap["base_cents"].to_i > 0) %>
+    <% if @application.total_price_cents.to_i > 0 && has_breakdown %>
+      <% cur = snap["currency"] || "HTG" %>
+      <% fmt = ->(cents) { v = (cents.to_f / 100).round(2); "#{v.to_i == v ? v.to_i : v} #{cur}" } %>
+
+      <% if snap["quantity"].present? %>
+        <div class="sa-info-row">
+          <span class="sa-info-label"><%= snap["quantity"]["field"] %></span>
+          <span class="sa-info-value">
+            <%= fmt.call(snap["base_cents"]) %> × <%= snap["quantity"]["quantity"].to_i %><%= " #{snap["quantity"]["unit"]}" if snap["quantity"]["unit"].present? %>
+            = <%= fmt.call(snap["effective_base_cents"]) %>
+          </span>
+        </div>
+      <% elsif snap["base_cents"].to_i > 0 %>
+        <div class="sa-info-row">
+          <span class="sa-info-label">Pri Debaz</span>
+          <span class="sa-info-value"><%= fmt.call(snap["base_cents"]) %></span>
+        </div>
+      <% end %>
+      <% (snap["fees"] || []).each do |fee| %>
+        <div class="sa-info-row">
+          <span class="sa-info-label"><%= fee["name"] %><%= " (#{fee["rate"]}%)" if fee["rate"] %></span>
+          <span class="sa-info-value"><%= fmt.call(fee["amount_cents"]) %></span>
+        </div>
+      <% end %>
+      <% (snap["addons"] || []).each do |addon| %>
+        <div class="sa-info-row">
+          <span class="sa-info-label">
+            <%= addon["field"] %>: <%= addon["option"] %>
+            <% if addon["quantity"] && addon["per_unit_cents"] %>
+              (<%= fmt.call(addon["per_unit_cents"]) %> × <%= addon["quantity"].to_i %>)
+            <% end %>
+          </span>
+          <span class="sa-info-value"><%= fmt.call(addon["amount_cents"]) %></span>
+        </div>
+      <% end %>
+      <% (snap["repeaters"] || []).each do |rep| %>
+        <div class="sa-info-row">
+          <span class="sa-info-label"><%= rep["field"] %> (<%= fmt.call(rep["per_row_cents"]) %> × <%= rep["row_count"] %>)</span>
+          <span class="sa-info-value"><%= fmt.call(rep["amount_cents"]) %></span>
+        </div>
+      <% end %>
+      <div class="sa-info-row" style="border-top: 2px solid #0F172A; padding-top: 0.5rem;">
+        <span class="sa-info-label" style="font-weight: 700;">Total</span>
+        <span class="sa-info-value" style="font-weight: 700; color: #00209F;"><%= fmt.call(snap["total_cents"]) %></span>
+      </div>
+      <% if @zellus_balance.present? %>
+        <div class="sa-info-row" style="border-top: none;">
+          <span class="sa-info-label" style="color:#059669;"><i class="ri-wallet-3-line"></i> Balans Zellus</span>
+          <span class="sa-info-value" style="color:#059669;"><%= number_with_delimiter(@zellus_balance) %> <%= cur %></span>
+        </div>
+      <% end %>
+    <% elsif @application.total_price_cents.to_i > 0 %>
+      <div class="sa-info-row">
+        <span class="sa-info-label">Montan</span>
+        <span class="sa-info-value"><%= @application.price_display %></span>
+      </div>
+    <% end %>
+    <% if @application.reviewed_at.present? %>
+      <div class="sa-info-row">
+        <span class="sa-info-label">Revize</span>
+        <span class="sa-info-value"><%= @application.reviewed_at.strftime("%d/%m/%Y %H:%M") %></span>
+      </div>
+    <% end %>
+
+    <%# Rejection reason %>
+    <% if @application.rejected? && @application.rejection_reason.present? %>
+      <div class="sa-rejection-reason">
+        <strong>Rezon:</strong> <%= @application.rejection_reason %>
+      </div>
+    <% end %>
+
+    <%# Verification code %>
+    <div class="sa-verification-code">
+      <div class="sa-verification-code-label">Kòd Verifikasyon</div>
+      <div class="sa-verification-code-value"><%= @application.verification_code %></div>
+    </div>
+  </div>
+
+  <%# ── Submitted Data (hide for transactions — no form data to show) ── %>
+  <% unless is_txn %>
+  <div class="sa-card">
+    <div class="sa-card-title"><i class="ri-file-list-3-line"></i> Done Soumèt</div>
+
+    <% @form_fields.each do |step| %>
+      <% if @form_fields.length > 1 %>
+        <div style="font-size: 0.75rem; font-weight: 700; color: #00209F; text-transform: uppercase;
+          letter-spacing: 0.03em; margin: 0.75rem 0 0.5rem; padding-top: 0.5rem; border-top: 1px solid #F1F5F9;">
+          <%= step[:name] %>
+        </div>
+      <% end %>
+
+      <% step[:fields].each do |field| %>
+        <% next if field["type"].in?(%w[bonid_signature seal_placeholder]) %>
+        <% key = field["key"] %>
+        <% value = @application.form_data[key] %>
+        <% calc_value = @application.calculated_values[key] if field["type"] == "calculated" %>
+
+        <div class="sa-field-group">
+          <div class="sa-field-label"><%= field["label"] || key %></div>
+          <div class="sa-field-value">
+            <% case field["type"] when "file" %>
+              <%= value.present? ? "Fichye atache" : "—" %>
+            <% when "calculated" %>
+              <%= calc_value.present? ? "#{calc_value} #{field['currency'] || 'HTG'}" : "—" %>
+            <% when "checkbox" %>
+              <%= value == "true" || value == true ? "Wi" : "Non" %>
+            <% when "date" %>
+              <% if value.present? %>
+                <% begin %><%= Date.parse(value.to_s).strftime("%d/%m/%Y") %><% rescue %><%= value %><% end %>
+              <% else %>—<% end %>
+            <% when "datetime" %>
+              <% if value.present? %>
+                <% begin %><%= DateTime.parse(value.to_s).strftime("%d/%m/%Y %H:%M") %><% rescue %><%= value %><% end %>
+              <% else %>—<% end %>
+            <% when "currency" %>
+              <%= value.present? ? "#{value} #{field['currency'] || 'HTG'}" : "—" %>
+            <% when "repeater" %>
+              <% rows = value.is_a?(Array) ? value : [] %>
+              <% sub_fields = field["fields"] || [] %>
+              <% if rows.any? %>
+                <% rows.each_with_index do |row, row_idx| %>
+                  <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0.6rem; margin-bottom: 0.4rem;">
+                    <div style="font-size: 0.68rem; font-weight: 700; color: #00209F; margin-bottom: 0.35rem;">#<%= row_idx + 1 %></div>
+                    <% sub_fields.each do |sf| %>
+                      <% sf_val = row.is_a?(Hash) ? row[sf["key"]] : nil %>
+                      <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding: 0.15rem 0;">
+                        <span style="color: #6B7280;"><%= sf["label"] || sf["key"] %></span>
+                        <span style="color: #1a1a2e; font-weight: 500;"><%= sf_val.present? ? sf_val : "—" %></span>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% else %>
+                —
+              <% end %>
+            <% else %>
+              <%= value.present? ? value : "—" %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+  <% end %>
+
+  <%# ── PDF Download (approved only) ── %>
+  <% if @application.approved? && @application.pdf_ready? %>
+    <div class="sa-card" style="text-align: center;">
+      <div class="sa-card-title" style="justify-content: center;">
+        <i class="ri-file-pdf-2-line"></i> Dokiman Ofisyèl
+      </div>
+      <p style="font-size: 0.78rem; color: #6B7280; margin-bottom: 0.75rem;">
+        Dokiman ou siyen, sele, epi verifye.
+      </p>
+      <%= link_to rails_blob_path(@application.pdf_document, disposition: "attachment"),
+            class: "sa-pdf-btn" do %>
+        <i class="ri-download-2-line"></i> Telechaje PDF
+      <% end %>
+    </div>
+  <% end %>
+</div>

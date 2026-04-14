@@ -1,0 +1,2988 @@
+<%# app/views/citizens/service_applications/new.html.erb %>
+<%# Dynamic multi-step form wizard — rendered from PartnerSchema structure %>
+<% content_for(:title) { "#{@schema.name} — #{@partner.name}" } %>
+
+<%#
+  ── Label Strategy (Minority Rule) ──
+  Count required vs optional across ALL fields.
+  If most fields are required → mark only optional ones with "(opsyonèl)"
+  If most fields are optional → mark required ones with "(obligatwa)"
+  If equal                    → mark optional ones
+%>
+<% all_form_fields = @fields_by_step.flat_map { |s| s[:fields] }.reject { |f| f["type"].in?(%w[bonid_signature seal_placeholder calculated section instructional_text address]) } %>
+<% required_count = all_form_fields.count { |f| f["required"] } %>
+<% optional_count = all_form_fields.size - required_count %>
+<% mark_optional = required_count >= optional_count %>
+
+<style>
+  /* ══════════════════════════════════════════════════════
+     BonID Service Form — Premium Mobile Checkout
+     Accent: Haitian Blue #00209F
+     ══════════════════════════════════════════════════════ */
+
+  .sf-container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 1rem 2rem;
+    background: #fff;
+    min-height: 100dvh;
+    position: relative;
+  }
+
+  /* ── Cover Image — full-bleed hero (matches sd-cover) ── */
+  .sf-cover-banner {
+    width: calc(100% + 2rem);
+    margin-left: -1rem;
+    max-height: 220px;
+    object-fit: cover;
+    display: block;
+    border-radius: 0;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Capacity badge ── */
+  .sf-capacity-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.72rem; font-weight: 600; color: #EA580C;
+    background: #FFF7ED; border: 1px solid #FDBA74;
+    padding: 0.3rem 0.75rem; border-radius: 20px; margin-top: 0.5rem;
+    letter-spacing: 0.01em;
+  }
+  .sf-capacity-badge i { font-size: 0.8rem; }
+
+  /* ── Branded header — clean card style (matches sd-header) ── */
+  .sf-header {
+    text-align: center;
+    padding: 1.25rem 0 1rem;
+    border-bottom: 1px solid #E5E7EB;
+    margin-bottom: 1.25rem;
+    background: #fff;
+    position: relative;
+  }
+  .sf-header-logo {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #E5E7EB;
+    margin: 0 auto 0.5rem; display: block;
+  }
+  .sf-header-logo-placeholder {
+    width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 0.5rem;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.1rem; font-weight: 700;
+  }
+  .sf-header-partner {
+    font-size: 0.75rem; color: #6B7280; font-weight: 500;
+  }
+  .sf-header-service {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.3rem; font-weight: 700; color: #1a1a2e;
+    margin: 0.15rem 0 0.25rem; letter-spacing: -0.01em; line-height: 1.2;
+  }
+  .sf-header-meta {
+    font-size: 0.72rem; color: #9CA3AF; margin-top: 0.4rem;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;
+  }
+
+  /* ── Resume banner ── */
+  .sf-resume-banner {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.75rem 1rem; margin: 0 0 1rem;
+    background: linear-gradient(135deg, #EFF6FF 0%, #E0ECFF 100%);
+    border: 1px solid #BFDBFE; border-radius: 14px;
+    font-size: 0.8rem; color: #1D4ED8; font-weight: 500;
+  }
+  .sf-resume-banner i { font-size: 1.1rem; opacity: 0.8; }
+
+  /* ── Progress dots — minimal & clear ── */
+  .sf-progress {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin: 1.5rem 0 1.75rem; padding: 0 2rem;
+  }
+  .sf-progress-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0; /* hide numbers — dots only */
+    flex-shrink: 0; transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .sf-progress-dot--active {
+    background: #00209F; width: 28px; border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,32,159,0.3);
+  }
+  .sf-progress-dot--completed {
+    background: #00209F; opacity: 0.4;
+  }
+  .sf-progress-dot--upcoming {
+    background: #CBD5E1;
+  }
+  .sf-progress-dot--skipped {
+    background: #E2E8F0; opacity: 0.35;
+  }
+  .sf-progress-line {
+    flex: 1; height: 2px; background: #E2E8F0;
+    min-width: 12px; max-width: 40px;
+    border-radius: 1px;
+  }
+  .sf-progress-line--completed { background: rgba(0,32,159,0.25); }
+
+  .sf-step-label {
+    text-align: center; font-size: 0.7rem; color: #94A3B8;
+    font-weight: 600; margin-bottom: 0.35rem; padding: 0;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .sf-step-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.15rem; font-weight: 800; color: #0F172A;
+    text-align: center; margin-bottom: 1.5rem; padding: 0;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Save status ── */
+  .sf-save-status {
+    text-align: center; font-size: 0.68rem; color: #059669;
+    margin-bottom: 0.75rem; opacity: 0.7; transition: opacity 0.3s;
+    padding: 0;
+  }
+
+  /* ── Form card wrapper (fields live inside padding) ── */
+  .sf-field-wrap {
+    margin-bottom: 1.35rem;
+    padding: 0;
+  }
+  .sf-field-wrap.sf-field--error .sf-input,
+  .sf-field-wrap.sf-field--error .sf-select,
+  .sf-field-wrap.sf-field--error .sf-textarea {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.08);
+  }
+
+  /* ── Labels ── */
+  .sf-label {
+    display: flex; align-items: baseline; gap: 0.35rem;
+    font-size: 0.8rem; font-weight: 600; color: #334155;
+    margin-bottom: 0.5rem; line-height: 1.3;
+  }
+  .sf-label-text { }
+  .sf-label-indicator {
+    font-size: 0.68rem; font-weight: 500; white-space: nowrap;
+  }
+  .sf-label-indicator--optional { color: #94A3B8; }
+  .sf-label-indicator--required { color: #EF4444; font-weight: 600; }
+  .sf-label-hint {
+    display: block; font-size: 0.72rem; color: #94A3B8;
+    margin-top: 2px; margin-bottom: 0.4rem; font-weight: 400; line-height: 1.45;
+  }
+
+  /* ── Inputs — soft, rounded, generous ── */
+  .sf-input, .sf-select, .sf-textarea {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    font-size: 16px;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 14px;
+    background: #F8FAFC;
+    color: #0F172A;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    min-height: 52px;
+    font-family: 'Inter', sans-serif;
+    box-shadow: none;
+  }
+  .sf-input::placeholder, .sf-select::placeholder, .sf-textarea::placeholder {
+    color: #94A3B8;
+  }
+  .sf-input:not([type="date"]):not([type="time"]),
+  .sf-select, .sf-textarea {
+    -webkit-appearance: none; appearance: none;
+  }
+  .sf-input[type="date"],
+  .sf-input[type="time"] {
+    -webkit-appearance: auto; appearance: auto;
+    cursor: pointer;
+    min-height: 52px;
+  }
+  .sf-input[type="date"]::-webkit-date-and-time-value,
+  .sf-input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+  }
+  .sf-datetime-row {
+    display: flex; gap: 0.65rem; width: 100%;
+  }
+  .sf-datetime-part { display: flex; flex-direction: column; }
+  .sf-datetime-part:first-child { flex: 1.2; min-width: 0; }
+  .sf-datetime-part:last-child { flex: 0.8; min-width: 0; }
+  .sf-datetime-part-label {
+    font-size: 0.68rem; font-weight: 700; color: #64748B;
+    margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .sf-datetime-date, .sf-datetime-time { width: 100%; }
+
+  .sf-input:focus, .sf-select:focus, .sf-textarea:focus {
+    outline: none;
+    border-color: #00209F;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(0,32,159,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .sf-textarea { min-height: 100px; resize: vertical; border-radius: 14px; }
+  .sf-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+  }
+  .sf-autofilled {
+    background: #F0FDF4; border-color: #86EFAC;
+  }
+
+  .sf-field-error {
+    display: none; font-size: 0.72rem; color: #EF4444;
+    margin-top: 0.35rem; font-weight: 500; padding-left: 0.25rem;
+  }
+  .sf-error-shake { animation: sfShake 0.4s ease-in-out; }
+  @keyframes sfShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /* ── Quantity stepper — clean capsule ── */
+  .sf-qty-stepper {
+    display: inline-flex; align-items: center;
+    border: 1.5px solid #E2E8F0; border-radius: 16px;
+    overflow: hidden; background: #F8FAFC;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .sf-qty-btn {
+    width: 52px; height: 52px; border: none;
+    background: transparent;
+    font-size: 1.3rem; font-weight: 600; color: #00209F;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .sf-qty-btn:hover { background: rgba(0,32,159,0.06); }
+  .sf-qty-btn:active { background: rgba(0,32,159,0.12); transform: scale(0.95); }
+  .sf-input--qty {
+    width: 56px; text-align: center; border: none !important;
+    border-left: 1.5px solid #E2E8F0 !important;
+    border-right: 1.5px solid #E2E8F0 !important;
+    -moz-appearance: textfield;
+  }
+  .sf-input--qty::-webkit-outer-spin-button,
+  .sf-input--qty::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+    border-radius: 0 !important;
+    font-size: 1.1rem; font-weight: 700; color: #0F172A;
+    height: 52px; padding: 0; background: #fff;
+  }
+  .sf-label-unit { font-size: 0.72rem; color: #64748B; font-weight: 500; margin-top: 0.35rem; }
+
+  /* ── Pricing Cart — receipt style ── */
+  .sf-pricing-cart {
+    background: #fff;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 20px;
+    padding: 0;
+    margin: 1.5rem 0;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+  }
+  .sf-cart-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.9rem 1.25rem;
+    background: #FAFBFC;
+    border-bottom: 1px solid #F1F5F9;
+    font-size: 0.8rem; font-weight: 700; color: #334155;
+    letter-spacing: 0.01em;
+  }
+  .sf-cart-header i { color: #00209F; font-size: 1rem; }
+  .sf-cart-lines { padding: 0.25rem 0; }
+  .sf-cart-line {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.65rem 1.25rem; font-size: 0.84rem; color: #475569;
+  }
+  .sf-cart-line:last-child { border-bottom: none; }
+  .sf-cart-line-label { display: flex; align-items: center; gap: 0.35rem; }
+  .sf-cart-line-qty { font-size: 0.72rem; color: #94A3B8; font-weight: 500; }
+  .sf-cart-line-amount { font-weight: 700; color: #0F172A; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sf-cart-line--fee { font-size: 0.78rem; color: #64748B; }
+  .sf-cart-line--addon { font-style: italic; font-size: 0.78rem; }
+  .sf-cart-line--discount .sf-cart-line-amount { color: #059669; }
+  .sf-cart-line--repeater { font-size: 0.78rem; }
+  .sf-cart-line--repeater .sf-cart-line-label { color: #7C3AED; }
+  .sf-cart-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #00209F 0%, #0035D4 100%);
+    color: #fff; font-size: 0.95rem; font-weight: 600;
+  }
+  .sf-cart-total strong {
+    font-size: 1.25rem; font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Checkbox ── */
+  .sf-checkbox-wrap {
+    display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0;
+  }
+  .sf-checkbox {
+    width: 22px; height: 22px; border-radius: 6px;
+    accent-color: #00209F; flex-shrink: 0; cursor: pointer;
+  }
+  .sf-checkbox-label { font-size: 0.84rem; color: #334155; line-height: 1.45; }
+
+  /* ── Radio — selectable cards ── */
+  .sf-radio-group {
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .sf-radio-option {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1.5px solid #E2E8F0; border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    background: #FAFBFC;
+  }
+  .sf-radio-option:hover {
+    border-color: #93C5FD; background: #fff;
+    box-shadow: 0 2px 8px rgba(0,32,159,0.06);
+  }
+  .sf-radio-option:has(input:checked) {
+    border-color: #00209F; background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,32,159,0.1), 0 2px 8px rgba(0,32,159,0.06);
+  }
+  .sf-radio {
+    width: 20px; height: 20px; accent-color: #00209F; flex-shrink: 0;
+    cursor: pointer;
+  }
+  .sf-radio-label { font-size: 0.84rem; color: #334155; font-weight: 500; }
+
+  /* ── Multi-checkbox cards ── */
+  .sf-multi-checkbox-group {
+    display: flex; flex-direction: column; gap: 0.5rem;
+  }
+  .sf-checkbox-option {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1.5px solid #E2E8F0; border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    background: #FAFBFC;
+  }
+  .sf-checkbox-option:hover {
+    border-color: #93C5FD; background: #fff;
+    box-shadow: 0 2px 8px rgba(0,32,159,0.06);
+  }
+  .sf-checkbox-option:has(input:checked) {
+    border-color: #00209F; background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,32,159,0.1), 0 2px 8px rgba(0,32,159,0.06);
+  }
+
+  /* ── File upload zone ── */
+  .sf-file-zone {
+    border: 2px dashed #CBD5E1; border-radius: 18px; padding: 2rem 1.5rem;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    background: #FAFBFC;
+  }
+  .sf-file-zone:hover {
+    border-color: #00209F; background: #F0F4FF;
+    box-shadow: 0 4px 12px rgba(0,32,159,0.06);
+  }
+  .sf-file-zone i { font-size: 1.75rem; color: #94A3B8; display: block; margin-bottom: 0.5rem; }
+  .sf-file-zone-text { font-size: 0.82rem; color: #64748B; font-weight: 500; }
+  .sf-file-name {
+    font-size: 0.75rem; color: #059669; margin-top: 0.5rem;
+    font-weight: 600; letter-spacing: 0.01em;
+  }
+  .sf-file-preview { margin-top: 0.65rem; }
+
+  /* ── Calculated field ── */
+  .sf-calculated {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #F8FAFC 0%, #F0F4FF 100%);
+    border: 1.5px solid #E2E8F0;
+    border-radius: 14px;
+    font-family: 'Montserrat', sans-serif; font-weight: 800;
+    font-size: 1.25rem; color: #00209F; text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── BonID Signature ── */
+  .sf-signature-block {
+    padding: 1.5rem; background: #FAFBFC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 18px; text-align: center;
+  }
+  .sf-signature-block i {
+    font-size: 2.25rem; color: #00209F; display: block; margin-bottom: 0.65rem;
+    opacity: 0.85;
+  }
+  .sf-signature-label { font-size: 0.85rem; color: #0F172A; font-weight: 700; margin-bottom: 0.5rem; }
+  .sf-signature-desc { font-size: 0.75rem; color: #64748B; margin-bottom: 0.85rem; line-height: 1.5; }
+
+  /* ── Seal placeholder ── */
+  .sf-seal-block {
+    padding: 1rem; background: #ECFDF5;
+    border: 1.5px dashed #6EE7B7;
+    border-radius: 16px; text-align: center;
+  }
+  .sf-seal-block i { font-size: 1.65rem; color: #059669; }
+  .sf-seal-label { font-size: 0.75rem; color: #065F46; margin-top: 0.35rem; font-weight: 600; }
+
+  /* ── Section headers ── */
+  .sf-section-header {
+    padding: 1.25rem 0 0.5rem;
+    margin: 0.75rem 0 0.35rem;
+    border-top: none;
+    position: relative;
+  }
+  .sf-section-header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #E2E8F0, transparent);
+  }
+  .sf-section-header:first-child { margin-top: 0; padding-top: 0; }
+  .sf-section-header:first-child::before { display: none; }
+  .sf-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem; font-weight: 800; color: #0F172A;
+    letter-spacing: -0.01em;
+  }
+  .sf-section-desc {
+    font-size: 0.78rem; color: #64748B; margin-top: 0.25rem; line-height: 1.5;
+  }
+
+  /* ── Instructional text ── */
+  .sf-instruction {
+    border-radius: 14px;
+    padding: 0.85rem 1.1rem;
+    margin: 0.35rem 0;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  .sf-instruction-title {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+  }
+  .sf-instruction-body {
+    span { display: inline; }
+  }
+  .sf-instruction--plain { color: #475569; }
+  .sf-instruction--info {
+    background: linear-gradient(135deg, #EFF6FF 0%, #E0ECFF 100%);
+    border: 1px solid #BFDBFE; color: #1E40AF;
+    .sf-instruction-title { color: #1E3A8A; }
+  }
+  .sf-instruction--warning {
+    background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+    border: 1px solid #FDE68A; color: #92400E;
+    .sf-instruction-title { color: #78350F; }
+  }
+  .sf-instruction--success {
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+    border: 1px solid #BBF7D0; color: #166534;
+    .sf-instruction-title { color: #14532D; }
+  }
+
+  /* ── Address block — elegant card ── */
+  .sf-address-block {
+    background: #fff;
+    border: 1.5px solid #E2E8F0;
+    border-left: none;
+    border-radius: 18px;
+    padding: 1.25rem;
+    margin: 0.5rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  .sf-address-block::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #00209F 0%, #059669 100%);
+    border-radius: 4px 0 0 4px;
+  }
+  .sf-address-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem; font-weight: 800; color: #0F172A;
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .sf-address-title i { font-size: 1.05rem; color: #00209F; }
+  .sf-address-field {
+    margin-bottom: 0.85rem;
+  }
+  .sf-address-field:last-of-type { margin-bottom: 0; }
+  .sf-address-field .sf-label { font-size: 0.75rem; color: #64748B; }
+  .sf-address-field .sf-input,
+  .sf-address-field .sf-select {
+    font-size: 0.88rem;
+    min-height: 48px;
+    border-radius: 12px;
+  }
+  .sf-address-autofill-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    font-size: 0.68rem; font-weight: 700; color: #059669;
+    background: #ECFDF5; border: 1px solid #A7F3D0;
+    border-radius: 20px; padding: 0.35rem 0.75rem; margin-top: 0.65rem;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Required legend ── */
+  .sf-required-legend {
+    font-size: 0.7rem; color: #94A3B8; text-align: center;
+    margin: 0 0 1.25rem; padding: 0.5rem 0.85rem;
+    background: #FAFBFC; border-radius: 10px; border: 1px solid #F1F5F9;
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Payment section ── */
+  .sf-payment-section {
+    background: #fff; border: 1.5px solid #E2E8F0; border-radius: 16px;
+    padding: 1rem; margin: 1.25rem 0;
+  }
+  .sf-payment-header {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.88rem; font-weight: 700; color: #0F172A;
+    margin-bottom: 0.75rem; padding-bottom: 0.6rem;
+    border-bottom: 1px solid #F1F5F9;
+  }
+  .sf-payment-header i { color: #6B7280; font-size: 1rem; }
+  .sf-radio-option--recommended {
+    border-color: #00209F !important;
+    background: #F0F4FF !important;
+    box-shadow: 0 0 0 2px rgba(0,32,159,0.1);
+  }
+
+  /* ── Navigation bar ── */
+  .sf-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 0 2rem;
+    margin-top: 0.75rem;
+    border-top: none;
+    gap: 0.85rem;
+    position: relative;
+  }
+  .sf-nav::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #E2E8F0, transparent);
+  }
+  .sf-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.85rem 1.75rem;
+    font-size: 0.88rem; font-weight: 700;
+    border-radius: 14px; border: none; cursor: pointer;
+    min-height: 52px;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+  .sf-btn--prev {
+    background: #F1F5F9; color: #475569;
+    border: 1.5px solid #E2E8F0;
+  }
+  .sf-btn--prev:hover {
+    background: #E2E8F0; border-color: #CBD5E1;
+  }
+  .sf-btn--next {
+    background: #00209F; color: #fff; margin-left: auto;
+    box-shadow: 0 2px 8px rgba(0,32,159,0.2);
+  }
+  .sf-btn--next:hover {
+    background: #001A80;
+    box-shadow: 0 4px 16px rgba(0,32,159,0.3);
+    transform: translateY(-1px);
+  }
+  .sf-btn--next:active { transform: translateY(0); box-shadow: 0 1px 4px rgba(0,32,159,0.2); }
+  .sf-btn--submit {
+    background: linear-gradient(135deg, #00209F 0%, #0035D4 100%);
+    color: #fff; margin-left: auto;
+    font-size: 0.95rem; padding: 0.95rem 2.25rem;
+    box-shadow: 0 4px 16px rgba(0,32,159,0.25);
+    letter-spacing: 0.02em;
+    min-height: 56px;
+  }
+  .sf-btn--submit:hover {
+    background: linear-gradient(135deg, #001A80 0%, #002BB0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,32,159,0.3);
+  }
+  .sf-btn--submit:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0,32,159,0.2);
+  }
+
+  /* ── Close / back link ── */
+  .sf-close-link {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; color: #94A3B8; text-decoration: none;
+    padding: 0.85rem 0; min-height: 44px;
+    font-weight: 500; transition: color 0.15s;
+  }
+  .sf-close-link:hover { color: #00209F; }
+  .sf-close-link:active { color: #001A80; }
+
+  /* ── Repeater ── */
+  .sf-repeater { margin-top: 0.65rem; }
+  .sf-repeater-row {
+    background: #FAFBFC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 1rem;
+    margin-bottom: 0.65rem;
+    position: relative;
+    animation: sf-row-enter 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  @keyframes sf-row-enter {
+    from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .sf-repeater-row-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.75rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid #F1F5F9;
+  }
+  .sf-repeater-row-num {
+    font-size: 0.68rem; font-weight: 800; color: #00209F;
+    background: rgba(0,32,159,0.06);
+    padding: 0.2rem 0.6rem; border-radius: 8px;
+    letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .sf-repeater-remove {
+    background: none; border: none; color: #EF4444; cursor: pointer;
+    font-size: 0.9rem; padding: 0.35rem; border-radius: 8px;
+    transition: all 0.15s;
+  }
+  .sf-repeater-remove:hover { background: #FEE2E2; }
+  .sf-repeater-field { margin-bottom: 0.65rem; }
+  .sf-repeater-field:last-child { margin-bottom: 0; }
+  .sf-label--sub { font-size: 0.72rem !important; margin-bottom: 0.15rem !important; }
+  .sf-repeater-add-btn {
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    width: 100%; padding: 0.85rem;
+    border: 2px dashed #CBD5E1; border-radius: 14px;
+    background: none; color: #00209F;
+    font-size: 0.82rem; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  .sf-repeater-add-btn:hover {
+    border-color: #00209F; background: rgba(0,32,159,0.03);
+    box-shadow: 0 2px 8px rgba(0,32,159,0.06);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 576px) {
+    .sf-header-service { font-size: 1.15rem; }
+    .sf-cover-banner { max-height: 180px; }
+    .sf-btn { padding: 0.75rem 1.15rem; font-size: 0.85rem; }
+    .sf-progress-dot { width: 8px; height: 8px; }
+    .sf-progress-dot--active { width: 24px; }
+  }
+  @media (min-width: 641px) {
+    .sf-cover-banner {
+      width: calc(100% + 2rem);
+      margin-left: -1rem;
+      border-radius: 14px 14px 0 0;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════
+     Transaction Layout — Two-Column Product Page
+     ══════════════════════════════════════════════════════ */
+  .sf-container--txn { max-width: 1080px; }
+
+  .sf-txn-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .sf-txn-left { min-width: 0; }
+
+  .sf-txn-right {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.02);
+  }
+
+  /* ── Left column: cover image ── */
+  .sf-txn-cover {
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    display: block;
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+  }
+
+  /* ── Left column: header card ── */
+  .sf-txn-header {
+    margin-bottom: 1.5rem;
+  }
+  .sf-txn-header-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+  }
+  .sf-txn-header-logo {
+    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #E5E7EB; flex-shrink: 0;
+  }
+  .sf-txn-header-logo-placeholder {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; font-weight: 700; flex-shrink: 0;
+  }
+  .sf-txn-partner-name {
+    font-size: 0.82rem; color: #6B7280; font-weight: 500;
+  }
+  .sf-txn-service-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.55rem; font-weight: 800; color: #0F172A;
+    letter-spacing: -0.02em; line-height: 1.2;
+    margin-bottom: 0.25rem;
+  }
+  .sf-txn-form-code {
+    font-family: monospace; font-size: 0.75rem; color: #64748B;
+    letter-spacing: 0.5px; margin-bottom: 0.35rem;
+  }
+  .sf-txn-description {
+    font-size: 0.88rem; color: #475569; line-height: 1.6;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Left column: info cards (partner-filled fields) ── */
+  .sf-txn-info-card {
+    background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 12px;
+    padding: 1rem; margin-bottom: 0.75rem;
+  }
+  .sf-txn-info-title {
+    font-size: 0.78rem; font-weight: 700; color: #374151;
+    display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem;
+  }
+  .sf-txn-info-title i { color: #00209F; font-size: 0.95rem; }
+  .sf-txn-info-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: #374151; padding: 0.35rem 0;
+  }
+  .sf-txn-info-row i { color: #6B7280; font-size: 0.95rem; width: 1.1rem; text-align: center; }
+
+  /* ── Left column: partner contact ── */
+  .sf-txn-contact-card {
+    background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 12px;
+    padding: 1rem; margin-top: 1rem;
+  }
+  .sf-txn-contact-card .sf-txn-info-title { margin-bottom: 0.5rem; }
+  .sf-txn-contact-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: #374151; padding: 0.3rem 0;
+  }
+  .sf-txn-contact-row i { color: #6B7280; font-size: 0.95rem; width: 1.1rem; text-align: center; }
+  .sf-txn-contact-row a { color: #00209F; text-decoration: none; }
+  .sf-txn-contact-row a:hover { text-decoration: underline; }
+
+  /* ── Right column: price hero ── */
+  .sf-txn-price-hero {
+    text-align: center; padding: 0.75rem 0 1rem;
+    border-bottom: 1px solid #F1F5F9; margin-bottom: 1rem;
+  }
+  .sf-txn-price-hero-amount {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.85rem; font-weight: 800; color: #0F172A;
+    font-variant-numeric: tabular-nums;
+  }
+  .sf-txn-price-hero-label {
+    font-size: 0.72rem; color: #94A3B8; margin-top: 0.15rem;
+  }
+
+  /* ── Right column: capacity ── */
+  .sf-txn-capacity {
+    display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    font-size: 0.72rem; font-weight: 600; color: #EA580C;
+    background: #FFF7ED; border: 1px solid #FDBA74;
+    padding: 0.35rem 0.75rem; border-radius: 20px;
+    margin-bottom: 1rem;
+  }
+  .sf-txn-capacity i { font-size: 0.8rem; }
+
+  /* ── Right column: buy button override ── */
+  .sf-txn-right .sf-btn--submit {
+    width: 100%; justify-content: center;
+    margin-left: 0; margin-top: 1rem;
+  }
+
+  /* ── Right column: section labels ── */
+  .sf-txn-section-label {
+    font-size: 0.78rem; font-weight: 700; color: #334155;
+    margin-bottom: 0.65rem; margin-top: 0.75rem;
+    display: flex; align-items: center; gap: 0.35rem;
+  }
+  .sf-txn-section-label i { color: #00209F; font-size: 0.95rem; }
+
+  /* ── Responsive: stack on mobile ── */
+  @media (max-width: 768px) {
+    .sf-txn-layout {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .sf-txn-right {
+      position: static;
+      border-radius: 16px;
+    }
+    .sf-txn-cover {
+      border-radius: 10px;
+      max-height: 220px;
+    }
+    .sf-txn-service-name {
+      font-size: 1.25rem;
+    }
+    .sf-txn-price-hero-amount {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+
+<div class="sf-container <%= 'sf-container--txn' if @schema.service_category == 'transaction' %>"
+     data-controller="service-form"
+     data-service-form-current-step-value="<%= @current_step %>"
+     data-service-form-total-steps-value="<%= @total_steps %>"
+     data-service-form-application-id-value="<%= @application.id %>"
+     data-service-form-auto-save-url-value="<%= auto_save_citizens_service_applications_path %>"
+     data-service-form-saved-data-value="<%= @saved_data.to_json %>"
+     data-service-form-auto-fill-value="<%= @auto_fill.to_json %>"
+     data-service-form-pricing-value="<%= {
+       base_cents: @schema.price_cents.to_i,
+       currency: @schema.currency || 'HTG',
+       pricing_type: (@schema.pricing_type == 'free' && @application.frozen_fields.any? { |f| f['has_pricing'] }) ? 'paid' : @schema.pricing_type,
+       mandatory_fees: @schema.price_metadata['mandatory_fees'] || [],
+       priced_fields: @application.frozen_fields.select { |f| f['has_pricing'] || f['is_quantity'] }.map { |f|
+         pf = { key: f['key'], label: f['label'], type: f['type'], is_quantity: f['is_quantity'],
+           linked_to_field: f['linked_to_field'], unit: f['unit'], min: f['min'],
+           options: f['options'] }
+         if f['type'] == 'repeater'
+           pf[:price_per_row] = f['price_per_row']
+           pf[:min_rows] = f['min_rows']
+           pf[:max_rows] = f['max_rows']
+           pf[:pricing_mode] = f['pricing_mode']
+           pf[:pricing_rules] = f['pricing_rules'] if f['pricing_rules'].present?
+           pf[:fields] = f['fields'] # sub-field definitions for rule evaluation
+         end
+         pf
+       }
+     }.to_json %>">
+
+  <% if @schema.service_category == "transaction" %>
+    <%# ══════════════════════════════════════════════════════════════
+        TWO-COLUMN TRANSACTION LAYOUT (Product Page)
+        Left: Event/service details + partner-filled info
+        Right: Purchase panel (sticky)
+       ══════════════════════════════════════════════════════════════ %>
+
+    <%# ── Back Link ── %>
+    <%= link_to citizens_services_path, class: "sf-close-link", data: { turbo: false } do %>
+      <i class="ri-arrow-left-line"></i> Retounen nan Sèvis
+    <% end %>
+
+    <%# ── Save Status (hidden but functional) ── %>
+    <div class="sf-save-status" data-service-form-target="saveStatus" style="display:none;">
+      <i class="ri-save-line"></i> <span>—</span>
+    </div>
+
+    <%# ── Form wraps both columns ── %>
+    <%= form_with url: submit_citizens_service_application_path(@application),
+                  method: :post,
+                  data: { service_form_target: "form", turbo: false },
+                  multipart: true do |f| %>
+
+      <div class="sf-txn-layout">
+        <%# ════════════ LEFT COLUMN — Event/Service Details ════════════ %>
+        <div class="sf-txn-left">
+
+          <%# Cover Image %>
+          <% if @schema.cover_image.attached? %>
+            <%= image_tag url_for(@schema.cover_image), class: "sf-txn-cover", alt: @schema.name %>
+          <% end %>
+
+          <%# Header: Logo + Partner + Service Name + Code + Description %>
+          <div class="sf-txn-header">
+            <div class="sf-txn-header-top">
+              <% if @partner.logo.attached? %>
+                <%= image_tag url_for(@partner.logo), class: "sf-txn-header-logo" %>
+              <% else %>
+                <div class="sf-txn-header-logo-placeholder">
+                  <i class="<%= @schema.service_icon || 'ri-file-text-line' %>"></i>
+                </div>
+              <% end %>
+              <div class="sf-txn-partner-name"><%= @partner.name %></div>
+            </div>
+            <h1 class="sf-txn-service-name"><%= @schema.name %></h1>
+            <% if @schema.form_code.present? %>
+              <div class="sf-txn-form-code"><%= @schema.form_code_display %></div>
+            <% end %>
+            <% if @schema.description.present? %>
+              <div class="sf-txn-description"><%= @schema.description %></div>
+            <% end %>
+          </div>
+
+          <%# ── Partner-Filled Fields as Read-Only Info Cards ── %>
+          <% all_fields = @fields_by_step.flat_map { |s| s[:fields] } %>
+          <% partner_fields = all_fields.select { |f| f["filled_by"] == "partner" } %>
+          <% if partner_fields.any? %>
+            <% partner_fields.each do |field| %>
+              <% key = field["key"] %>
+              <% label = field["label"] || key %>
+              <% field_type = field["type"] %>
+
+              <% if field_type == "address" %>
+                <%# Address info card %>
+                <div class="sf-txn-info-card">
+                  <div class="sf-txn-info-title">
+                    <i class="ri-map-pin-line"></i> <%= label %>
+                  </div>
+                  <% if field["use_partner_bonid_address"] && @partner_address.present? %>
+                    <div class="sf-txn-info-row">
+                      <i class="ri-map-pin-2-fill"></i>
+                      <span>
+                        <%= [@partner_address["street"], @partner_address["locality"]].compact_blank.join(", ") %>
+                        <% if @partner_address["commune"].present? || @partner_address["department"].present? %>
+                          <br><span style="color:#6B7280;"><%= [@partner_address["commune"], @partner_address["arrondissement"], @partner_address["department"]].compact_blank.join(", ") %></span>
+                        <% end %>
+                      </span>
+                    </div>
+                    <% prefix = key %>
+                    <input type="hidden" name="form_data[<%= prefix %>_street]" value="<%= @partner_address["street"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_locality]" value="<%= @partner_address["locality"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_communal_section]" value="<%= @partner_address["communal_section"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_department]" value="<%= @partner_address["department"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_arrondissement]" value="<%= @partner_address["arrondissement"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_commune]" value="<%= @partner_address["commune"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_postal_code]" value="<%= @partner_address["postal_code"] %>">
+                  <% elsif field["partner_street"].present? || field["partner_department"].present? %>
+                    <div class="sf-txn-info-row">
+                      <i class="ri-map-pin-2-fill"></i>
+                      <span>
+                        <%= [field["partner_street"], field["partner_locality"]].compact_blank.join(", ") %>
+                        <% if field["partner_commune"].present? || field["partner_department"].present? %>
+                          <br><span style="color:#6B7280;"><%= [field["partner_commune"], field["partner_arrondissement"], field["partner_department"]].compact_blank.join(", ") %></span>
+                        <% end %>
+                      </span>
+                    </div>
+                    <% prefix = key %>
+                    <input type="hidden" name="form_data[<%= prefix %>_street]" value="<%= field["partner_street"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_locality]" value="<%= field["partner_locality"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_communal_section]" value="<%= field["partner_communal_section"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_department]" value="<%= field["partner_department"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_arrondissement]" value="<%= field["partner_arrondissement"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_commune]" value="<%= field["partner_commune"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_postal_code]" value="<%= field["partner_postal_code"] %>">
+                  <% end %>
+                </div>
+
+              <% else %>
+                <%# Non-address partner field: datetime, text, etc. %>
+                <% partner_val = field["partner_value"] %>
+                <% if partner_val.present? %>
+                  <div class="sf-txn-info-card">
+                    <div class="sf-txn-info-title">
+                      <i class="<%= case field_type
+                                    when 'datetime' then 'ri-calendar-event-line'
+                                    when 'date' then 'ri-calendar-line'
+                                    when 'time' then 'ri-time-line'
+                                    else 'ri-information-line'
+                                    end %>"></i>
+                      <%= label %>
+                    </div>
+                    <div class="sf-txn-info-row">
+                      <% if field_type == "datetime" %>
+                        <i class="ri-calendar-event-line"></i>
+                        <span><%= begin; DateTime.parse(partner_val.to_s).strftime("%d/%m/%Y %H:%M"); rescue; partner_val; end %></span>
+                      <% else %>
+                        <i class="ri-file-text-line"></i>
+                        <span><%= partner_val %></span>
+                      <% end %>
+                    </div>
+                  </div>
+                  <input type="hidden" name="form_data[<%= key %>]" value="<%= partner_val %>">
+                <% end %>
+              <% end %>
+            <% end %>
+          <% end %>
+
+          <%# ── Partner Contact Info ── %>
+          <% partner_phone = @partner.phone_number.presence %>
+          <% partner_email = @partner.email.presence %>
+          <% if partner_phone || partner_email %>
+            <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+              <% if partner_phone %>
+                <a href="tel:<%= partner_phone %>" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;background:#F3F4F6;border-radius:10px;color:#00209F;font-size:1.15rem;text-decoration:none;transition:background 0.15s;" title="<%= partner_phone %>">
+                  <i class="ri-phone-line"></i>
+                </a>
+              <% end %>
+              <% if partner_email %>
+                <a href="mailto:<%= partner_email %>" style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;background:#F3F4F6;border-radius:10px;color:#00209F;font-size:1.15rem;text-decoration:none;transition:background 0.15s;" title="<%= partner_email %>">
+                  <i class="ri-mail-line"></i>
+                </a>
+              <% end %>
+            </div>
+          <% end %>
+
+        </div>
+
+        <%# ════════════ RIGHT COLUMN — Purchase Panel ════════════ %>
+        <div class="sf-txn-right">
+
+          <%# ── Price Hero ── %>
+          <% if @schema.price_display != "Gratis" %>
+            <div class="sf-txn-price-hero">
+              <div class="sf-txn-price-hero-amount"><%= @schema.price_display %></div>
+              <div class="sf-txn-price-hero-label">pa moun</div>
+            </div>
+          <% end %>
+
+          <%# ── Capacity Badge ── %>
+          <% if @schema.available_capacity.present? %>
+            <div class="sf-txn-capacity">
+              <i class="ri-ticket-line"></i> <%= @schema.available_capacity %> plas rete
+            </div>
+          <% end %>
+
+          <%# No required fields legend for transactions — keep it clean %>
+
+          <%# ── Citizen-Facing Form Fields (single step panel for transaction) ── %>
+          <%# For transactions: hide identity fields (auto-filled from BonID) and datetime (partner's job) %>
+          <% txn_hidden_types = %w[text email phone datetime] %>
+          <% citizen_fields = all_fields.reject { |f|
+            f["filled_by"] == "partner" ||
+            txn_hidden_types.include?(f["type"]) ||
+            f["type"] == "address"
+          } %>
+
+          <%# Auto-fill hidden fields for identity/datetime/address from BonID profile %>
+          <% all_fields.each do |f| %>
+            <% next unless txn_hidden_types.include?(f["type"]) || f["type"] == "address" %>
+            <% next if f["filled_by"] == "partner" %>
+            <% k = f["key"] %>
+            <% auto_val = case f["type"]
+              when "text" then @auto_fill["first_name"].to_s + " " + @auto_fill["last_name"].to_s
+              when "email" then @auto_fill["email"]
+              when "phone" then @auto_fill["phone"]
+              else @saved_data[k]
+            end %>
+            <input type="hidden" name="form_data[<%= k %>]" value="<%= auto_val %>">
+          <% end %>
+
+          <div data-service-form-target="stepPanel" style="display: block;">
+            <% citizen_fields.each do |field| %>
+              <% key = field["key"] %>
+              <% field_type = field["type"] %>
+              <% label = field["label"] || key %>
+              <% required = field["required"] %>
+              <% value = @saved_data[key] %>
+              <% visible_if = field["visible_if"] %>
+
+              <% next if field_type == "seal_placeholder" && !@schema.auto_stamp? %>
+
+              <%# Smart Label Indicator %>
+              <% is_special = field_type.in?(%w[bonid_signature seal_placeholder calculated checkbox section instructional_text address]) %>
+              <% show_indicator = !is_special %>
+              <% if show_indicator %>
+                <% if mark_optional && !required %>
+                  <% indicator_text = "(opsyonèl)" %>
+                  <% indicator_class = "sf-label-indicator--optional" %>
+                <% elsif !mark_optional && required %>
+                  <% indicator_text = "(obligatwa)" %>
+                  <% indicator_class = "sf-label-indicator--required" %>
+                <% else %>
+                  <% indicator_text = nil %>
+                <% end %>
+              <% end %>
+
+              <% field_wrap_attrs = { class: "sf-field-wrap", data: { service_form_target: "fieldWrap", required: required, field_key: key } } %>
+              <% field_wrap_attrs[:data][:visible_if] = visible_if.to_json if visible_if.present? %>
+              <% if field_type == "datetime" && field["after_field"].present? %>
+                <% field_wrap_attrs[:data][:after_field] = field["after_field"] %>
+              <% end %>
+              <%= tag.div(**field_wrap_attrs) do %>
+
+                <% case field_type
+                   when "section" %>
+                  <div class="sf-section-header" role="heading" aria-level="3">
+                    <div class="sf-section-title"><%= label %></div>
+                    <% if field["description"].present? %>
+                      <div class="sf-section-desc"><%= field["description"] %></div>
+                    <% end %>
+                  </div>
+
+                <% when "instructional_text" %>
+                  <% style_class = case field["style"]
+                                   when "info" then "sf-instruction--info"
+                                   when "warning" then "sf-instruction--warning"
+                                   when "success" then "sf-instruction--success"
+                                   else "sf-instruction--plain"
+                                   end %>
+                  <div class="sf-instruction <%= style_class %>">
+                    <% if label.present? %>
+                      <div class="sf-instruction-title"><%= label %></div>
+                    <% end %>
+                    <div class="sf-instruction-body"><%= simple_format(field["description"] || "", {}, wrapper_tag: "span") %></div>
+                  </div>
+
+                <% when "address" %>
+                  <%# Citizen address: interactive cascading selects %>
+                  <div class="sf-address-block">
+                    <div class="sf-address-title">
+                      <i class="ri-map-pin-line"></i> <%= label %>
+                    </div>
+                    <% prefix = key %>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_communal_section"><span class="sf-label-text">Seksyon Kominal</span></label>
+                      <select name="form_data[<%= prefix %>_communal_section]" id="field_<%= prefix %>_communal_section"
+                              class="sf-select" data-address-field="communal_section"
+                              data-action="change->service-form#fieldChanged">
+                        <option value="">— Chwazi —</option>
+                        <% if @auto_fill["communal_section"].present? %>
+                          <option value="<%= @auto_fill["communal_section"] %>" selected><%= @auto_fill["communal_section"] %></option>
+                        <% end %>
+                      </select>
+                    </div>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_street_address"><span class="sf-label-text">Ri / Adrès</span></label>
+                      <input type="text" name="form_data[<%= prefix %>_street_address]" id="field_<%= prefix %>_street_address"
+                             class="sf-input" placeholder="Ri, nimewo kay..."
+                             value="<%= @saved_data["#{prefix}_street_address"] || @auto_fill["street_address"] %>"
+                             data-action="input->service-form#fieldChanged">
+                    </div>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_locality"><span class="sf-label-text">Lokalite</span></label>
+                      <input type="text" name="form_data[<%= prefix %>_locality]" id="field_<%= prefix %>_locality"
+                             class="sf-input" placeholder="Katye, zòn..."
+                             value="<%= @saved_data["#{prefix}_locality"] || @auto_fill["locality"] %>"
+                             data-action="input->service-form#fieldChanged">
+                    </div>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_department"><span class="sf-label-text">Depatman</span></label>
+                      <select name="form_data[<%= prefix %>_department]" id="field_<%= prefix %>_department"
+                              class="sf-select" data-address-cascade="department"
+                              data-address-prefix="<%= prefix %>"
+                              data-action="change->service-form#addressDepartmentChanged change->service-form#fieldChanged">
+                        <option value="">— Chwazi —</option>
+                        <% Department.order(:name).each do |dept| %>
+                          <option value="<%= dept.id %>" data-slug="<%= dept.slug %>"
+                                  <%= "selected" if @saved_data["#{prefix}_department"] == dept.id.to_s || @auto_fill["department_id"] == dept.id %>><%= dept.name %></option>
+                        <% end %>
+                      </select>
+                    </div>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_arrondissement"><span class="sf-label-text">Awondisman</span></label>
+                      <select name="form_data[<%= prefix %>_arrondissement]" id="field_<%= prefix %>_arrondissement"
+                              class="sf-select" data-address-cascade="arrondissement"
+                              data-address-prefix="<%= prefix %>"
+                              data-action="change->service-form#addressArrondissementChanged change->service-form#fieldChanged">
+                        <option value="">— Chwazi —</option>
+                      </select>
+                    </div>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_commune"><span class="sf-label-text">Komin</span></label>
+                      <select name="form_data[<%= prefix %>_commune]" id="field_<%= prefix %>_commune"
+                              class="sf-select" data-address-cascade="commune"
+                              data-address-prefix="<%= prefix %>"
+                              data-action="change->service-form#addressCommuneChanged change->service-form#fieldChanged">
+                        <option value="">— Chwazi —</option>
+                      </select>
+                    </div>
+                    <div class="sf-address-field">
+                      <label class="sf-label" for="field_<%= prefix %>_postal_code"><span class="sf-label-text">Kòd Postal</span></label>
+                      <input type="text" name="form_data[<%= prefix %>_postal_code]" id="field_<%= prefix %>_postal_code"
+                             class="sf-input" placeholder="HT0000"
+                             value="<%= @saved_data["#{prefix}_postal_code"] || @auto_fill["postal_code"] %>"
+                             data-action="input->service-form#fieldChanged" readonly>
+                    </div>
+                    <% if @auto_fill["department_id"].present? %>
+                      <div class="sf-address-autofill-badge">
+                        <i class="ri-shield-check-line"></i> Pre-ranpli ak BonID
+                      </div>
+                    <% end %>
+                  </div>
+
+                <% when "bonid_signature" %>
+                  <div class="sf-signature-block">
+                    <i class="ri-quill-pen-line"></i>
+                    <div class="sf-signature-label">Siyati BonID</div>
+                    <div class="sf-signature-desc">Siyati dijital ou ap aplike otomatikman lè ou soumèt fòm sa a.</div>
+                    <div class="sf-checkbox-wrap" style="justify-content: center;">
+                      <input type="checkbox" name="signature_consent" value="1"
+                             class="sf-checkbox" id="sig_consent_txn"
+                             <%= "checked" if @application.signature_consented? %>>
+                      <label for="sig_consent_txn" class="sf-checkbox-label">Mwen bay konsantman pou aplike siyati BonID mwen</label>
+                    </div>
+                  </div>
+
+                <% when "seal_placeholder" %>
+                  <div class="sf-seal-block">
+                    <i class="ri-stamp-line"></i>
+                    <div class="sf-seal-label">Sèl ofisyèl <%= @partner.name %> ap aplike apre apwobasyon.</div>
+                  </div>
+
+                <% when "calculated" %>
+                  <label class="sf-label" for="field_<%= key %>"><span class="sf-label-text"><%= label %></span></label>
+                  <div class="sf-calculated" data-calculated-formula="<%= field['formula'] %>"
+                       data-field-key="<%= key %>" data-currency="<%= field['currency'] || 'HTG' %>">
+                    <%= @calculated[key].present? ? "#{@calculated[key]} #{field['currency'] || 'HTG'}" : "—" %>
+                  </div>
+                  <input type="hidden" name="form_data[<%= key %>]" value="<%= @calculated[key] %>">
+
+                <% when "file" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint" id="hint_<%= key %>"><%= field["hint"] %></span><% end %>
+                  <div class="sf-file-zone" data-action="click->service-form#triggerFileUpload" role="button" tabindex="0">
+                    <i class="ri-upload-cloud-2-line"></i>
+                    <div class="sf-file-zone-text">Klike oswa pran foto</div>
+                    <div class="sf-file-name"></div>
+                    <div class="sf-file-preview"></div>
+                  </div>
+                  <input type="file" name="form_data[<%= key %>]" id="field_<%= key %>"
+                         accept="image/*,.pdf,.doc,.docx" capture="environment" style="display: none;"
+                         aria-required="<%= required ? 'true' : 'false' %>"
+                         <%= "aria-describedby=hint_#{key}" if field["hint"].present? %>
+                         data-action="change->service-form#fileSelected">
+                  <div class="sf-field-error" id="error_<%= key %>" role="alert">Chan sa a obligatwa.</div>
+
+                <% when "checkbox" %>
+                  <div class="sf-checkbox-wrap">
+                    <input type="checkbox" name="form_data[<%= key %>]" value="true"
+                           class="sf-checkbox" id="field_<%= key %>"
+                           <%= "checked" if value == "true" || value == true %>
+                           data-action="change->service-form#fieldChanged">
+                    <label for="field_<%= key %>" class="sf-checkbox-label"><%= label %></label>
+                  </div>
+
+                <% when "select" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint"><%= field["hint"] %></span><% end %>
+                  <% raw_options = field["options"]
+                     parsed_options = if raw_options.is_a?(Array)
+                       raw_options.map { |o| o.is_a?(Hash) ? o : { "label" => o.to_s, "value" => o.to_s } }
+                     elsif raw_options.is_a?(String)
+                       raw_options.split(",").map(&:strip).reject(&:blank?).map do |s|
+                         parts = s.split(":", 2)
+                         parts.length >= 2 ? { "label" => parts[0].strip, "value" => parts[1].strip } : { "label" => s, "value" => s }
+                       end
+                     else
+                       []
+                     end
+                     parsed_options = parsed_options.sort_by { |o| o["label"] } if field["sort_alpha"]
+                     prompt_text = field["placeholder"].presence || "— Chwazi —"
+                  %>
+                  <select name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-select"
+                          data-action="change->service-form#fieldChanged"
+                          <% if field["searchable"] %>data-searchable="true"<% end %>>
+                    <% select_effective = value.presence || field["default_value"] %>
+                    <option value=""><%= prompt_text %></option>
+                    <% parsed_options.each do |opt| %>
+                      <option value="<%= opt["value"] %>" <%= "selected" if select_effective == opt["value"] %>><%= opt["label"] %><%= " — #{opt["extra_price"].to_f % 1 == 0 ? opt["extra_price"].to_i : opt["extra_price"]} #{@schema.currency || "HTG"}" if opt["extra_price"].to_f > 0 %></option>
+                    <% end %>
+                  </select>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "textarea" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint"><%= field["hint"] %></span><% end %>
+                  <textarea name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-textarea"
+                            placeholder="<%= field['placeholder'] %>"
+                            data-action="input->service-form#fieldChanged"><%= value %></textarea>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "date" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <input type="date" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                         value="<%= value %>" data-action="change->service-form#fieldChanged">
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "time" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <input type="time" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                         value="<%= value %>" data-action="change->service-form#fieldChanged">
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "datetime" %>
+                  <label class="sf-label" for="field_<%= key %>_date">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <input type="hidden" name="form_data[<%= key %>]" id="field_<%= key %>"
+                         value="<%= value %>" data-service-form-target="datetimeHidden">
+                  <div class="sf-datetime-row">
+                    <div class="sf-datetime-part">
+                      <span class="sf-datetime-part-label">Dat</span>
+                      <input type="date" id="field_<%= key %>_date" class="sf-input sf-datetime-date"
+                             value="<%= value.present? ? value.to_s.split('T').first : '' %>"
+                             data-datetime-target="field_<%= key %>"
+                             data-action="change->service-form#datetimePartChanged input->service-form#datetimePartChanged">
+                    </div>
+                    <div class="sf-datetime-part">
+                      <span class="sf-datetime-part-label">Lè</span>
+                      <input type="time" id="field_<%= key %>_time" class="sf-input sf-datetime-time"
+                             value="<%= value.present? ? value.to_s.split('T').last : '' %>"
+                             data-datetime-target="field_<%= key %>"
+                             data-action="change->service-form#datetimePartChanged input->service-form#datetimePartChanged">
+                    </div>
+                  </div>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "radio" %>
+                  <label class="sf-label">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint"><%= field["hint"] %></span><% end %>
+                  <% raw_options = field["options"]
+                     parsed_options = if raw_options.is_a?(Array)
+                       raw_options.map { |o| o.is_a?(Hash) ? o : { "label" => o.to_s, "value" => o.to_s } }
+                     elsif raw_options.is_a?(String)
+                       raw_options.split(",").map(&:strip).reject(&:blank?).map do |s|
+                         parts = s.split(":", 2)
+                         parts.length >= 2 ? { "label" => parts[0].strip, "value" => parts[1].strip } : { "label" => s, "value" => s }
+                       end
+                     else
+                       []
+                     end
+                  %>
+                  <% effective_value = value.presence || field["default_value"] %>
+                  <div class="sf-radio-group">
+                    <% parsed_options.each_with_index do |opt, oi| %>
+                      <label class="sf-radio-option" for="field_<%= key %>_<%= oi %>">
+                        <input type="radio" name="form_data[<%= key %>]" id="field_<%= key %>_<%= oi %>"
+                               value="<%= opt["value"] %>" class="sf-radio"
+                               <%= "checked" if effective_value == opt["value"] %>
+                               data-action="change->service-form#fieldChanged">
+                        <span class="sf-radio-label" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+                          <span><%= opt["label"] %></span>
+                          <% if opt["extra_price"].to_f > 0 %>
+                            <span style="font-size:0.78rem;font-weight:700;color:#00209F;"><%= opt["extra_price"].to_f % 1 == 0 ? opt["extra_price"].to_i : opt["extra_price"] %> <%= @schema.currency || "HTG" %></span>
+                          <% end %>
+                        </span>
+                      </label>
+                    <% end %>
+                  </div>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "multi_checkbox" %>
+                  <label class="sf-label">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint"><%= field["hint"] %></span><% end %>
+                  <% raw_options = field["options"]
+                     parsed_options = if raw_options.is_a?(Array)
+                       raw_options.map { |o| o.is_a?(Hash) ? o : { "label" => o.to_s, "value" => o.to_s } }
+                     elsif raw_options.is_a?(String)
+                       raw_options.split(",").map(&:strip).reject(&:blank?).map do |s|
+                         parts = s.split(":", 2)
+                         parts.length >= 2 ? { "label" => parts[0].strip, "value" => parts[1].strip } : { "label" => s, "value" => s }
+                       end
+                     else
+                       []
+                     end
+                     selected_values = if value.is_a?(Array)
+                       value
+                     elsif value.present?
+                       value.to_s.split(",").map(&:strip)
+                     else
+                       field["default_values"].is_a?(Array) ? field["default_values"] : []
+                     end
+                  %>
+                  <div class="sf-multi-checkbox-group">
+                    <% parsed_options.each_with_index do |opt, oi| %>
+                      <label class="sf-checkbox-option" for="field_<%= key %>_<%= oi %>">
+                        <input type="checkbox" name="form_data[<%= key %>][]" id="field_<%= key %>_<%= oi %>"
+                               value="<%= opt["value"] %>" class="sf-checkbox"
+                               <%= "checked" if selected_values.include?(opt["value"]) %>
+                               data-action="change->service-form#fieldChanged">
+                        <span class="sf-checkbox-label"><%= opt["label"] %></span>
+                      </label>
+                    <% end %>
+                  </div>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "currency" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <div style="position: relative;">
+                    <input type="number" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                           value="<%= value %>" step="0.01" min="0" placeholder="0.00"
+                           style="padding-right: 3.5rem;" data-action="input->service-form#fieldChanged">
+                    <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+                      font-size: 0.75rem; color: #6B7280; font-weight: 600;"><%= field["currency"] || "HTG" %></span>
+                  </div>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "number" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if field["unit"].present? %><span class="sf-label-unit">(<%= field["unit"] %>)</span><% end %>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["is_quantity"] %>
+                    <div class="sf-qty-stepper">
+                      <button type="button" class="sf-qty-btn sf-qty-btn--minus"
+                              data-action="click->service-form#decrementQty"
+                              data-field="<%= key %>" data-min="<%= field['min'] || 1 %>">−</button>
+                      <input type="number" name="form_data[<%= key %>]" id="field_<%= key %>"
+                             class="sf-input sf-input--qty"
+                             value="<%= value.presence || field['min'] || 1 %>"
+                             min="<%= field['min'] || 1 %>"
+                             <%= "max=#{field['max']}" if field['max'].present? %>
+                             step="1"
+                             data-action="input->service-form#fieldChanged"
+                             data-qty-field="true"
+                             data-linked-to="<%= field['linked_to_field'] %>">
+                      <button type="button" class="sf-qty-btn sf-qty-btn--plus"
+                              data-action="click->service-form#incrementQty"
+                              data-field="<%= key %>" data-max="<%= field['max'] %>"
+                              data-step="1">+</button>
+                    </div>
+                  <% else %>
+                    <input type="number" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                           value="<%= value %>" step="any" placeholder="<%= field['placeholder'] %>"
+                           data-action="input->service-form#fieldChanged">
+                  <% end %>
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "repeater" %>
+                  <label class="sf-label">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint"><%= field["hint"] %></span><% end %>
+                  <% sub_fields = field["fields"] || [] %>
+                  <% min_rows = (field["min_rows"] || 1).to_i %>
+                  <% max_rows = (field["max_rows"] || 10).to_i %>
+                  <% repeater_data = (value.is_a?(Array) ? value : []) %>
+                  <% repeater_data = [{}] * min_rows if repeater_data.empty? %>
+                  <div class="sf-repeater" data-repeater-key="<%= key %>"
+                       data-repeater-min="<%= min_rows %>" data-repeater-max="<%= max_rows %>"
+                       data-action="click->service-form#handleRepeaterClick">
+                    <% repeater_data.each_with_index do |row_data, row_idx| %>
+                      <div class="sf-repeater-row" data-repeater-row>
+                        <div class="sf-repeater-row-header">
+                          <span class="sf-repeater-row-num">#<%= row_idx + 1 %></span>
+                          <% if repeater_data.length > min_rows %>
+                            <button type="button" class="sf-repeater-remove"
+                                    data-action="click->service-form#removeRepeaterRow"
+                                    data-repeater-key="<%= key %>"><i class="ri-delete-bin-line"></i></button>
+                          <% end %>
+                        </div>
+                        <% sub_fields.each do |sf| %>
+                          <% sf_key = sf["key"] %>
+                          <% sf_value = row_data.is_a?(Hash) ? row_data[sf_key] : nil %>
+                          <% sf_label = sf["label"] || sf_key %>
+                          <% sf_required = sf["required"] %>
+                          <% sf_name = "form_data[#{key}][#{row_idx}][#{sf_key}]" %>
+                          <div class="sf-repeater-field">
+                            <% unless sf["type"] == "checkbox" %>
+                              <label class="sf-label sf-label--sub" for="field_<%= key %>_<%= row_idx %>_<%= sf_key %>">
+                                <%= sf_label %><% if sf_required %><span style="color: #EF4444;">*</span><% end %>
+                              </label>
+                            <% end %>
+                            <% case sf["type"] when "select" %>
+                              <% sf_options = sf["options"] || [] %>
+                              <select name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                      data-action="input->service-form#fieldChanged">
+                                <option value="">Chwazi...</option>
+                                <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                                  <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                                  <option value="<%= opt["value"] %>" <%= "selected" if sf_value == opt["value"] %>><%= opt["label"] %></option>
+                                <% end %>
+                              </select>
+                            <% when "radio" %>
+                              <% sf_options = sf["options"] || [] %>
+                              <div class="sf-radio-group">
+                                <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                                  <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                                  <label class="sf-radio-option">
+                                    <input type="radio" name="<%= sf_name %>" value="<%= opt["value"] %>"
+                                           <%= "checked" if sf_value == opt["value"] %>
+                                           data-action="change->service-form#fieldChanged">
+                                    <span><%= opt["label"] %></span>
+                                  </label>
+                                <% end %>
+                              </div>
+                            <% when "checkbox" %>
+                              <label class="sf-checkbox-label">
+                                <input type="checkbox" name="<%= sf_name %>" value="true"
+                                       <%= "checked" if sf_value == "true" || sf_value == true %>
+                                       data-action="change->service-form#fieldChanged">
+                                <span><%= sf_label %></span>
+                              </label>
+                            <% when "date" %>
+                              <input type="date" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                     value="<%= sf_value %>" data-action="input->service-form#fieldChanged">
+                            <% when "datetime" %>
+                              <input type="datetime-local" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                     value="<%= sf_value %>" data-action="input->service-form#fieldChanged">
+                            <% when "number" %>
+                              <input type="number" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                     value="<%= sf_value %>" step="any" data-action="input->service-form#fieldChanged">
+                            <% when "currency" %>
+                              <div style="position: relative;">
+                                <input type="number" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                       value="<%= sf_value %>" step="0.01" placeholder="0.00"
+                                       style="padding-right: 3.5rem;" data-action="input->service-form#fieldChanged">
+                                <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+                                  font-size: 0.75rem; color: #6B7280; font-weight: 600;"><%= sf["currency"] || "HTG" %></span>
+                              </div>
+                            <% when "email" %>
+                              <input type="email" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                     value="<%= sf_value %>" placeholder="imel@egzanp.ht" data-action="input->service-form#fieldChanged">
+                            <% when "phone" %>
+                              <input type="tel" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                     value="<%= sf_value %>" placeholder="+509 ..." data-action="input->service-form#fieldChanged">
+                            <% when "file" %>
+                              <div class="sf-file-zone" style="padding: 0.6rem;">
+                                <input type="file" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>"
+                                       data-action="change->service-form#fileSelected" style="display: none;">
+                                <button type="button" class="sf-file-btn" style="font-size: 0.75rem;"
+                                        onclick="this.parentElement.querySelector('input[type=file]').click()">
+                                  <i class="ri-upload-2-line"></i> Fichye
+                                </button>
+                              </div>
+                            <% else %>
+                              <input type="text" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                     value="<%= sf_value %>" data-action="input->service-form#fieldChanged">
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </div>
+                    <% end %>
+                    <template data-repeater-template="<%= key %>">
+                      <div class="sf-repeater-row" data-repeater-row>
+                        <div class="sf-repeater-row-header">
+                          <span class="sf-repeater-row-num">#__IDX__</span>
+                          <button type="button" class="sf-repeater-remove"
+                                  data-action="click->service-form#removeRepeaterRow"
+                                  data-repeater-key="<%= key %>"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                        <% sub_fields.each do |sf| %>
+                          <% sf_key = sf["key"] %>
+                          <% sf_label = sf["label"] || sf_key %>
+                          <div class="sf-repeater-field">
+                            <% unless sf["type"] == "checkbox" %>
+                              <label class="sf-label sf-label--sub"><%= sf_label %><% if sf["required"] %><span style="color: #EF4444;">*</span><% end %></label>
+                            <% end %>
+                            <% case sf["type"] when "select" %>
+                              <% sf_options = sf["options"] || [] %>
+                              <select name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                      data-action="input->service-form#fieldChanged">
+                                <option value="">Chwazi...</option>
+                                <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                                  <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                                  <option value="<%= opt["value"] %>"><%= opt["label"] %></option>
+                                <% end %>
+                              </select>
+                            <% when "radio" %>
+                              <% sf_options = sf["options"] || [] %>
+                              <div class="sf-radio-group">
+                                <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                                  <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                                  <label class="sf-radio-option">
+                                    <input type="radio" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" value="<%= opt["value"] %>"
+                                           data-action="change->service-form#fieldChanged">
+                                    <span><%= opt["label"] %></span>
+                                  </label>
+                                <% end %>
+                              </div>
+                            <% when "checkbox" %>
+                              <label class="sf-checkbox-label">
+                                <input type="checkbox" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" value="true"
+                                       data-action="change->service-form#fieldChanged">
+                                <span><%= sf_label %></span>
+                              </label>
+                            <% when "date" %>
+                              <input type="date" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                     data-action="input->service-form#fieldChanged">
+                            <% when "datetime" %>
+                              <input type="datetime-local" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                     data-action="input->service-form#fieldChanged">
+                            <% when "number" %>
+                              <input type="number" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                     step="any" data-action="input->service-form#fieldChanged">
+                            <% when "currency" %>
+                              <div style="position: relative;">
+                                <input type="number" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                       step="0.01" placeholder="0.00" style="padding-right: 3.5rem;"
+                                       data-action="input->service-form#fieldChanged">
+                                <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+                                  font-size: 0.75rem; color: #6B7280; font-weight: 600;"><%= sf["currency"] || "HTG" %></span>
+                              </div>
+                            <% when "email" %>
+                              <input type="email" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                     placeholder="imel@egzanp.ht" data-action="input->service-form#fieldChanged">
+                            <% when "phone" %>
+                              <input type="tel" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                     placeholder="+509 ..." data-action="input->service-form#fieldChanged">
+                            <% when "file" %>
+                              <div class="sf-file-zone" style="padding: 0.6rem;">
+                                <input type="file" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]"
+                                       data-action="change->service-form#fileSelected" style="display: none;">
+                                <button type="button" class="sf-file-btn" style="font-size: 0.75rem;"
+                                        onclick="this.parentElement.querySelector('input[type=file]').click()">
+                                  <i class="ri-upload-2-line"></i> Fichye
+                                </button>
+                              </div>
+                            <% else %>
+                              <input type="text" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                     data-action="input->service-form#fieldChanged">
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </div>
+                    </template>
+                    <% if repeater_data.length < max_rows %>
+                      <button type="button" class="sf-repeater-add-btn"
+                              data-action="click->service-form#addRepeaterRow"
+                              data-repeater-key="<%= key %>">
+                        <i class="ri-add-line"></i> <%= field["add_button_text"] || "+ Ajoute yon lòt" %>
+                      </button>
+                    <% end %>
+                  </div>
+
+                <% when "email" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <input type="email" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                         value="<%= value %>" placeholder="<%= field['placeholder'] || 'imel@egzanp.ht' %>"
+                         data-action="input->service-form#fieldChanged">
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% when "phone" %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <input type="tel" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                         value="<%= value %>" placeholder="<%= field['placeholder'] || '+509 ...' %>"
+                         data-action="input->service-form#fieldChanged">
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% else %>
+                  <label class="sf-label" for="field_<%= key %>">
+                    <span class="sf-label-text"><%= label %></span>
+                    <% if indicator_text %><span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span><% end %>
+                  </label>
+                  <% if field["hint"].present? %><span class="sf-label-hint"><%= field["hint"] %></span><% end %>
+                  <input type="text" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                         value="<%= value %>" placeholder="<%= field['placeholder'] %>"
+                         data-action="input->service-form#fieldChanged">
+                  <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+                <% end %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <%# ── Pricing Cart ── %>
+          <% has_any_pricing = @schema.price_cents.to_i > 0 || @application.frozen_fields.any? { |f| f["has_pricing"] } %>
+          <% if has_any_pricing %>
+            <div class="sf-pricing-cart" data-service-form-target="pricingCart">
+              <div class="sf-cart-header">
+                <i class="ri-shopping-cart-line"></i> <span>Rezime Pri</span>
+              </div>
+              <div class="sf-cart-lines" data-service-form-target="cartLines"></div>
+              <div class="sf-cart-total" data-service-form-target="cartTotal">
+                <span>Total</span>
+                <strong><%= @schema.price_display %></strong>
+              </div>
+            </div>
+          <% end %>
+
+          <%# ── Payment Method ── %>
+          <% if has_any_pricing %>
+            <% wallet_profiles = @payment_methods.select(&:account_source_mobile_wallet?) %>
+            <% bank_profiles = @payment_methods.select(&:account_source_bank?) %>
+            <% zellus_profile = wallet_profiles.find { |wp| wp.wallet_provider&.downcase == "zellus" } %>
+            <% other_wallets = wallet_profiles.reject { |wp| wp.wallet_provider&.downcase == "zellus" } %>
+
+            <div class="sf-payment-section" style="border:none;padding:0;margin:1rem 0 0;">
+              <div class="sf-payment-header">
+                <i class="ri-wallet-3-line"></i>
+                <span>Chwazi Metòd Peman</span>
+              </div>
+
+              <%# Zellus — Recommended %>
+              <% if zellus_profile %>
+                <div style="margin-bottom:0.5rem;">
+                  <span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.65rem;font-weight:700;color:#00209F;background:#EEF2FF;padding:2px 8px;border-radius:4px;margin-bottom:0.4rem;">
+                    <i class="ri-star-line"></i> Rekòmande
+                  </span>
+                  <label class="sf-radio-option sf-radio-option--recommended">
+                    <input type="radio" name="payment_method_id" value="<%= zellus_profile.id %>" class="sf-radio" checked>
+                    <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;width:100%;">
+                      <i class="ri-smartphone-line" style="color:#00209F;font-size:1.1rem;"></i>
+                      <span style="flex:1;">
+                        <strong>Zellus</strong>
+                        <span style="color:#6B7280;font-size:0.72rem;margin-left:0.3rem;">
+                          <%= zellus_profile.cashtag.present? ? zellus_profile.cashtag : "••••#{zellus_profile.wallet_address&.last(4)}" %>
+                        </span>
+                        <% if @zellus_balance.present? %>
+                          <br><span style="font-size:0.7rem;color:#059669;font-weight:600;">Balans: <%= number_with_delimiter(@zellus_balance) %> HTG</span>
+                        <% end %>
+                      </span>
+                      <span style="font-size:0.6rem;font-weight:600;color:#059669;background:#ECFDF5;padding:2px 6px;border-radius:4px;">Enstantane</span>
+                    </span>
+                  </label>
+                </div>
+              <% end %>
+
+              <%# Other mobile wallets %>
+              <% other_wallets.each do |wp| %>
+                <label class="sf-radio-option" style="margin-bottom:0.35rem;">
+                  <input type="radio" name="payment_method_id" value="<%= wp.id %>" class="sf-radio"
+                         <%= "checked" if !zellus_profile && other_wallets.first == wp %>>
+                  <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;width:100%;">
+                    <i class="ri-smartphone-line" style="color:#6B7280;"></i>
+                    <span style="flex:1;"><%= wp.wallet_provider&.titleize %>
+                      <span style="color:#6B7280;font-size:0.72rem;margin-left:0.3rem;">
+                        <%= wp.cashtag.present? ? wp.cashtag : "••••#{wp.wallet_address&.last(4)}" %>
+                      </span>
+                    </span>
+                  </span>
+                </label>
+              <% end %>
+
+              <%# No wallets — show generic %>
+              <% if wallet_profiles.empty? %>
+                <div style="margin-bottom:0.5rem;">
+                  <span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.65rem;font-weight:700;color:#00209F;background:#EEF2FF;padding:2px 8px;border-radius:4px;margin-bottom:0.4rem;">
+                    <i class="ri-star-line"></i> Rekòmande
+                  </span>
+                  <label class="sf-radio-option sf-radio-option--recommended">
+                    <input type="radio" name="payment_method" value="zellus" class="sf-radio" checked>
+                    <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;width:100%;">
+                      <i class="ri-smartphone-line" style="color:#00209F;font-size:1.1rem;"></i>
+                      <span style="flex:1;"><strong>Zellus</strong></span>
+                      <span style="font-size:0.6rem;font-weight:600;color:#059669;background:#ECFDF5;padding:2px 6px;border-radius:4px;">Enstantane</span>
+                    </span>
+                  </label>
+                </div>
+                <label class="sf-radio-option" style="margin-bottom:0.35rem;">
+                  <input type="radio" name="payment_method" value="moncash" class="sf-radio">
+                  <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;">
+                    <i class="ri-smartphone-line" style="color:#6B7280;"></i>
+                    <span>MonCash</span>
+                  </span>
+                </label>
+              <% end %>
+
+              <%# Bank accounts %>
+              <% if bank_profiles.any? %>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0;">
+                  <div style="flex:1;height:1px;background:#E5E7EB;"></div>
+                  <span style="font-size:0.68rem;color:#9CA3AF;">oswa</span>
+                  <div style="flex:1;height:1px;background:#E5E7EB;"></div>
+                </div>
+                <% bank_profiles.each do |bp| %>
+                  <label class="sf-radio-option" style="margin-bottom:0.35rem;">
+                    <input type="radio" name="payment_method_id" value="<%= bp.id %>" class="sf-radio">
+                    <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;">
+                      <i class="ri-bank-line" style="color:#6B7280;"></i>
+                      <span><%= bp.bank_name %> — ••••<%= bp.account_number.to_s.last(4) %></span>
+                    </span>
+                  </label>
+                <% end %>
+              <% end %>
+
+              <%# Trust footer %>
+              <div style="display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:0.75rem;padding-top:0.6rem;border-top:1px solid #F3F4F6;">
+                <span style="display:flex;align-items:center;gap:0.25rem;font-size:0.62rem;color:#64748B;">
+                  <i class="ri-lock-line" style="color:#00209F;"></i> SSL
+                </span>
+                <span style="display:flex;align-items:center;gap:0.25rem;font-size:0.62rem;color:#64748B;">
+                  <i class="ri-shield-check-line" style="color:#059669;"></i> BonID Verifye
+                </span>
+              </div>
+            </div>
+          <% end %>
+
+          <%# ── Buy Button ── %>
+          <button type="submit" class="sf-btn sf-btn--submit"
+                  data-service-form-target="submitBtn">
+            <i class="ri-secure-payment-line"></i> Peye
+          </button>
+
+        </div>
+      </div>
+    <% end %>
+
+  <% else %>
+    <%# ══════════════════════════════════════════════════════════════
+        EXISTING WIZARD LAYOUT (non-transaction services)
+       ══════════════════════════════════════════════════════════════ %>
+
+  <%# ── Close / Back Link ── %>
+  <%= link_to citizens_services_path, class: "sf-close-link", data: { turbo: false } do %>
+    <i class="ri-arrow-left-line"></i> Retounen nan Sèvis
+  <% end %>
+
+  <%# ── Header ── %>
+  <div class="sf-header">
+    <% if @schema.cover_image.attached? %>
+      <%= image_tag url_for(@schema.cover_image), class: "sf-cover-banner", alt: @schema.name %>
+    <% end %>
+    <% if @partner.logo.attached? %>
+      <%= image_tag url_for(@partner.logo), class: "sf-header-logo" %>
+    <% else %>
+      <div class="sf-header-logo-placeholder">
+        <i class="<%= @schema.service_icon || 'ri-file-text-line' %>"></i>
+      </div>
+    <% end %>
+    <div class="sf-header-partner"><%= @partner.name %></div>
+    <h1 class="sf-header-service"><%= @schema.name %></h1>
+    <% if @schema.form_code.present? %>
+      <div class="sf-header-meta" style="font-family: monospace; font-size: 0.78rem; color: #64748B; letter-spacing: 0.5px;"><%= @schema.form_code_display %></div>
+    <% end %>
+    <% if @schema.description.present? %>
+      <div class="sf-header-meta"><%= @schema.description %></div>
+    <% end %>
+    <% if @schema.price_display != "Gratis" %>
+      <div class="sf-header-meta" style="color: #059669; font-weight: 600; margin-top: 0.35rem;">
+        <i class="ri-money-dollar-circle-line"></i> <%= @schema.price_display %>
+      </div>
+    <% end %>
+    <% if @schema.available_capacity.present? %>
+      <div class="sf-capacity-badge">
+        <i class="ri-ticket-line"></i> <%= @schema.available_capacity %> plas rete
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Resume Banner (dismissible) ── %>
+  <% if @resuming %>
+    <div class="sf-resume-banner" id="resumeBanner">
+      <i class="ri-refresh-line"></i>
+      <span>Ou gen yon bouyon ki sove. Kontinye kote ou te rete.</span>
+      <button type="button" onclick="document.getElementById('resumeBanner').remove()" style="background:none;border:none;color:inherit;font-size:1.1rem;cursor:pointer;margin-left:auto;padding:0 0.25rem;" aria-label="Fèmen">&times;</button>
+    </div>
+  <% end %>
+
+  <%# ── Progress Bar (multi-step only) ── %>
+  <% if @total_steps > 1 %>
+    <div class="sf-progress" data-service-form-target="progressBar">
+      <% @fields_by_step.each_with_index do |step, i| %>
+        <div class="sf-progress-dot sf-progress-dot--<%= i == @current_step ? 'active' : (i < @current_step ? 'completed' : 'upcoming') %>"
+             data-action="click->service-form#goToStep"
+             data-step="<%= i %>"
+             style="cursor: <%= i <= @current_step ? 'pointer' : 'default' %>;">
+          <% if i < @current_step %>
+            <i class="ri-check-line"></i>
+          <% else %>
+            <%= i + 1 %>
+          <% end %>
+        </div>
+        <% if i < @fields_by_step.length - 1 %>
+          <div class="sf-progress-line sf-progress-line--<%= i < @current_step ? 'completed' : '' %>"></div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Save Status ── %>
+  <div class="sf-save-status" data-service-form-target="saveStatus">
+    <i class="ri-save-line"></i> <span>—</span>
+  </div>
+
+  <%# ── Step Label ── %>
+  <% if @total_steps > 1 %>
+    <div class="sf-step-label" data-service-form-target="stepLabel">
+      Etap <%= @current_step + 1 %> sou <%= @total_steps %>
+    </div>
+  <% end %>
+
+  <%# ── Form ── %>
+  <%= form_with url: submit_citizens_service_application_path(@application),
+                method: :post,
+                data: { service_form_target: "form", turbo: false },
+                multipart: true do |f| %>
+
+    <%# ── Required Fields Legend ── %>
+    <% if !mark_optional && required_count > 0 %>
+      <div class="sf-required-legend">
+        <span class="sf-label-indicator sf-label-indicator--required">(obligatwa)</span>
+        endike chan ou dwe ranpli
+      </div>
+    <% elsif mark_optional && optional_count > 0 %>
+      <div class="sf-required-legend">
+        Chan ki make <span class="sf-label-indicator sf-label-indicator--optional">(opsyonèl)</span>
+        pa obligatwa
+      </div>
+    <% end %>
+
+    <%# ── Step Panels ── %>
+    <% @fields_by_step.each_with_index do |step, step_idx| %>
+      <div data-service-form-target="stepPanel"
+           style="display: <%= step_idx == @current_step ? 'block' : 'none' %>;">
+
+        <%# Step name %>
+        <% if @total_steps > 1 %>
+          <div class="sf-step-name"><%= step[:name] %></div>
+        <% end %>
+
+        <%# Fields %>
+        <% step[:fields].each do |field| %>
+          <% key = field["key"] %>
+          <% field_type = field["type"] %>
+          <% label = field["label"] || key %>
+          <% required = field["required"] %>
+          <% value = @saved_data[key] %>
+          <% visible_if = field["visible_if"] %>
+
+          <% next if field_type == "seal_placeholder" && !@schema.auto_stamp? %>
+          <% if field["filled_by"] == "partner" && !%w[address].include?(field_type) %>
+            <%# Partner-filled fields: show read-only if value exists, skip entirely if not %>
+            <% partner_val = field["partner_value"] %>
+            <% if partner_val.present? %>
+              <div class="sf-field-wrap" style="opacity:0.85;">
+                <label class="sf-label">
+                  <span class="sf-label-text"><%= label %></span>
+                  <span style="font-size:0.7rem;color:#6B7280;margin-left:0.3rem;">— Ranpli pa patnè</span>
+                </label>
+                <% if field_type == "datetime" %>
+                  <div style="padding:0.5rem 0.75rem;background:#f3f4f6;border-radius:0.375rem;border:1px solid #e5e7eb;color:#374151;">
+                    <i class="ri-calendar-event-line" style="color:#00209F;"></i>
+                    <%= begin; DateTime.parse(partner_val.to_s).strftime("%d/%m/%Y %H:%M"); rescue; partner_val; end %>
+                  </div>
+                <% else %>
+                  <div style="padding:0.5rem 0.75rem;background:#f3f4f6;border-radius:0.375rem;border:1px solid #e5e7eb;color:#374151;">
+                    <%= partner_val %>
+                  </div>
+                <% end %>
+                <input type="hidden" name="form_data[<%= key %>]" value="<%= partner_val %>">
+              </div>
+            <% end %>
+          <% next %>
+          <% end %>
+
+          <%#
+            ── Smart Label Indicator (Minority Rule) ──
+            mark_optional=true  → show "(opsyonèl)" on non-required fields
+            mark_optional=false → show "(obligatwa)" on required fields
+            Special types (signature, seal, calculated) get no indicator.
+          %>
+          <% is_special = field_type.in?(%w[bonid_signature seal_placeholder calculated checkbox section instructional_text address]) %>
+          <% show_indicator = !is_special %>
+          <% if show_indicator %>
+            <% if mark_optional && !required %>
+              <% indicator_text = "(opsyonèl)" %>
+              <% indicator_class = "sf-label-indicator--optional" %>
+            <% elsif !mark_optional && required %>
+              <% indicator_text = "(obligatwa)" %>
+              <% indicator_class = "sf-label-indicator--required" %>
+            <% else %>
+              <% indicator_text = nil %>
+            <% end %>
+          <% end %>
+
+          <% field_wrap_attrs = { class: "sf-field-wrap", data: { service_form_target: "fieldWrap", required: required, field_key: key } } %>
+          <% field_wrap_attrs[:data][:visible_if] = visible_if.to_json if visible_if.present? %>
+          <% if field_type == "datetime" && field["after_field"].present? %>
+            <% field_wrap_attrs[:data][:after_field] = field["after_field"] %>
+          <% end %>
+          <%= tag.div(**field_wrap_attrs) do %>
+
+            <% case field_type
+               when "section" %> <%# ── Section Header ── %>
+              <div class="sf-section-header" role="heading" aria-level="3">
+                <div class="sf-section-title"><%= label %></div>
+                <% if field["description"].present? %>
+                  <div class="sf-section-desc"><%= field["description"] %></div>
+                <% end %>
+              </div>
+
+            <%# ── Instructional Text (inline help/context) ── %>
+            <% when "instructional_text" %>
+              <% style_class = case field["style"]
+                               when "info" then "sf-instruction--info"
+                               when "warning" then "sf-instruction--warning"
+                               when "success" then "sf-instruction--success"
+                               else "sf-instruction--plain"
+                               end %>
+              <div class="sf-instruction <%= style_class %>">
+                <% if label.present? %>
+                  <div class="sf-instruction-title"><%= label %></div>
+                <% end %>
+                <div class="sf-instruction-body"><%= simple_format(field["description"] || "", {}, wrapper_tag: "span") %></div>
+              </div>
+
+            <%# ── Address (Haiti composite) ── %>
+            <% when "address" %>
+              <% is_partner_address = field["filled_by"] == "partner" %>
+              <div class="sf-address-block">
+                <div class="sf-address-title">
+                  <i class="ri-map-pin-line"></i> <%= label %>
+                  <% if is_partner_address %>
+                    <span style="font-size:0.7rem;color:#6B7280;font-weight:400;margin-left:0.4rem;">— Adrès Patnè</span>
+                  <% end %>
+                </div>
+                <% prefix = key %>
+
+                <% if is_partner_address %>
+                  <%# Partner address: use BonID address or custom event address %>
+                  <% if field["use_partner_bonid_address"] && @partner_address.present? %>
+                    <div class="sf-address-field" style="padding:0.75rem;background:#f8f9fa;border-radius:0.5rem;border:1px solid #e5e7eb;">
+                      <div style="display:flex;align-items:flex-start;gap:0.5rem;color:#374151;font-size:0.95rem;">
+                        <i class="ri-map-pin-2-fill" style="color:#00209F;flex-shrink:0;margin-top:0.15rem;"></i>
+                        <div>
+                          <% if @partner_address["street"].present? %><div><%= @partner_address["street"] %></div><% end %>
+                          <% if @partner_address["locality"].present? %><div><%= @partner_address["locality"] %></div><% end %>
+                          <% if @partner_address["communal_section"].present? %><div style="color:#6B7280;font-size:0.85rem;"><%= @partner_address["communal_section"] %></div><% end %>
+                          <div style="color:#6B7280;">
+                            <%= [@partner_address["commune"], @partner_address["arrondissement"], @partner_address["department"]].compact_blank.join(", ") %>
+                          </div>
+                          <% if @partner_address["postal_code"].present? %><div style="color:#9CA3AF;font-size:0.8rem;"><%= @partner_address["postal_code"] %></div><% end %>
+                        </div>
+                      </div>
+                    </div>
+                    <input type="hidden" name="form_data[<%= prefix %>_street]" value="<%= @partner_address["street"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_locality]" value="<%= @partner_address["locality"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_communal_section]" value="<%= @partner_address["communal_section"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_department]" value="<%= @partner_address["department"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_arrondissement]" value="<%= @partner_address["arrondissement"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_commune]" value="<%= @partner_address["commune"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_postal_code]" value="<%= @partner_address["postal_code"] %>">
+                  <% elsif field["partner_street"].present? || field["partner_department"].present? %>
+                    <div class="sf-address-field" style="padding:0.75rem;background:#f8f9fa;border-radius:0.5rem;border:1px solid #e5e7eb;">
+                      <div style="display:flex;align-items:flex-start;gap:0.5rem;color:#374151;font-size:0.95rem;">
+                        <i class="ri-map-pin-2-fill" style="color:#00209F;flex-shrink:0;margin-top:0.15rem;"></i>
+                        <div>
+                          <% if field["partner_street"].present? %><div><%= field["partner_street"] %></div><% end %>
+                          <% if field["partner_locality"].present? %><div><%= field["partner_locality"] %></div><% end %>
+                          <% if field["partner_communal_section"].present? %><div style="color:#6B7280;font-size:0.85rem;"><%= field["partner_communal_section"] %></div><% end %>
+                          <div style="color:#6B7280;">
+                            <%= [field["partner_commune"], field["partner_arrondissement"], field["partner_department"]].compact_blank.join(", ") %>
+                          </div>
+                          <% if field["partner_postal_code"].present? %><div style="color:#9CA3AF;font-size:0.8rem;"><%= field["partner_postal_code"] %></div><% end %>
+                        </div>
+                      </div>
+                    </div>
+                    <input type="hidden" name="form_data[<%= prefix %>_street]" value="<%= field["partner_street"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_locality]" value="<%= field["partner_locality"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_communal_section]" value="<%= field["partner_communal_section"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_department]" value="<%= field["partner_department"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_arrondissement]" value="<%= field["partner_arrondissement"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_commune]" value="<%= field["partner_commune"] %>">
+                    <input type="hidden" name="form_data[<%= prefix %>_postal_code]" value="<%= field["partner_postal_code"] %>">
+                  <% else %>
+                    <div class="sf-address-field" style="padding:0.75rem;background:#fef3c7;border-radius:0.5rem;border:1px solid #fbbf24;">
+                      <span style="color:#92400e;font-size:0.85rem;"><i class="ri-information-line"></i> Patnè pa t mete adrès la.</span>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <%# Citizen address: interactive cascading selects %>
+                  <%# Seksyon Kominal %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_communal_section">
+                      <span class="sf-label-text">Seksyon Kominal</span>
+                    </label>
+                    <select name="form_data[<%= prefix %>_communal_section]" id="field_<%= prefix %>_communal_section"
+                            class="sf-select"
+                            data-address-field="communal_section"
+                            data-action="change->service-form#fieldChanged">
+                      <option value="">— Chwazi —</option>
+                      <% if @auto_fill["communal_section"].present? %>
+                        <option value="<%= @auto_fill["communal_section"] %>" selected><%= @auto_fill["communal_section"] %></option>
+                      <% end %>
+                    </select>
+                  </div>
+
+                  <%# Ri / Adrès %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_street_address">
+                      <span class="sf-label-text">Ri / Adrès</span>
+                    </label>
+                    <input type="text" name="form_data[<%= prefix %>_street_address]" id="field_<%= prefix %>_street_address"
+                           class="sf-input" placeholder="Ri, nimewo kay..."
+                           value="<%= @saved_data["#{prefix}_street_address"] || @auto_fill["street_address"] %>"
+                           data-action="input->service-form#fieldChanged">
+                  </div>
+
+                  <%# Lokalite %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_locality">
+                      <span class="sf-label-text">Lokalite</span>
+                    </label>
+                    <input type="text" name="form_data[<%= prefix %>_locality]" id="field_<%= prefix %>_locality"
+                           class="sf-input" placeholder="Katye, zòn..."
+                           value="<%= @saved_data["#{prefix}_locality"] || @auto_fill["locality"] %>"
+                           data-action="input->service-form#fieldChanged">
+                  </div>
+
+                  <%# Depatman (cascade start) %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_department">
+                      <span class="sf-label-text">Depatman</span>
+                    </label>
+                    <select name="form_data[<%= prefix %>_department]" id="field_<%= prefix %>_department"
+                            class="sf-select"
+                            data-address-cascade="department"
+                            data-address-prefix="<%= prefix %>"
+                            data-action="change->service-form#addressDepartmentChanged change->service-form#fieldChanged">
+                      <option value="">— Chwazi —</option>
+                      <% Department.order(:name).each do |dept| %>
+                        <option value="<%= dept.id %>"
+                                data-slug="<%= dept.slug %>"
+                                <%= "selected" if @saved_data["#{prefix}_department"] == dept.id.to_s || @auto_fill["department_id"] == dept.id %>><%= dept.name %></option>
+                      <% end %>
+                    </select>
+                  </div>
+
+                  <%# Awondisman %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_arrondissement">
+                      <span class="sf-label-text">Awondisman</span>
+                    </label>
+                    <select name="form_data[<%= prefix %>_arrondissement]" id="field_<%= prefix %>_arrondissement"
+                            class="sf-select"
+                            data-address-cascade="arrondissement"
+                            data-address-prefix="<%= prefix %>"
+                            data-action="change->service-form#addressArrondissementChanged change->service-form#fieldChanged">
+                      <option value="">— Chwazi —</option>
+                    </select>
+                  </div>
+
+                  <%# Komin %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_commune">
+                      <span class="sf-label-text">Komin</span>
+                    </label>
+                    <select name="form_data[<%= prefix %>_commune]" id="field_<%= prefix %>_commune"
+                            class="sf-select"
+                            data-address-cascade="commune"
+                            data-address-prefix="<%= prefix %>"
+                            data-action="change->service-form#addressCommuneChanged change->service-form#fieldChanged">
+                      <option value="">— Chwazi —</option>
+                    </select>
+                  </div>
+
+                  <%# Kòd Postal %>
+                  <div class="sf-address-field">
+                    <label class="sf-label" for="field_<%= prefix %>_postal_code">
+                      <span class="sf-label-text">Kòd Postal</span>
+                    </label>
+                    <input type="text" name="form_data[<%= prefix %>_postal_code]" id="field_<%= prefix %>_postal_code"
+                           class="sf-input" placeholder="HT0000"
+                           value="<%= @saved_data["#{prefix}_postal_code"] || @auto_fill["postal_code"] %>"
+                           data-action="input->service-form#fieldChanged"
+                           readonly>
+                  </div>
+
+                  <% if @auto_fill["department_id"].present? %>
+                    <div class="sf-address-autofill-badge">
+                      <i class="ri-shield-check-line"></i> Pre-ranpli ak BonID
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+
+            <%# ── BonID Signature ── %>
+            <% when "bonid_signature" %>
+              <div class="sf-signature-block">
+                <i class="ri-quill-pen-line"></i>
+                <div class="sf-signature-label">Siyati BonID</div>
+                <div class="sf-signature-desc">
+                  Siyati dijital ou ap aplike otomatikman lè ou soumèt fòm sa a.
+                </div>
+                <div class="sf-checkbox-wrap" style="justify-content: center;">
+                  <input type="checkbox" name="signature_consent" value="1"
+                         class="sf-checkbox" id="sig_consent"
+                         <%= "checked" if @application.signature_consented? %>>
+                  <label for="sig_consent" class="sf-checkbox-label">
+                    Mwen bay konsantman pou aplike siyati BonID mwen
+                  </label>
+                </div>
+              </div>
+
+            <%# ── Seal Placeholder ── %>
+            <% when "seal_placeholder" %>
+              <div class="sf-seal-block">
+                <i class="ri-stamp-line"></i>
+                <div class="sf-seal-label">Sèl ofisyèl <%= @partner.name %> ap aplike apre apwobasyon.</div>
+              </div>
+
+            <%# ── Calculated Field ── %>
+            <% when "calculated" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+              </label>
+              <div class="sf-calculated"
+                   data-calculated-formula="<%= field['formula'] %>"
+                   data-field-key="<%= key %>"
+                   data-currency="<%= field['currency'] || 'HTG' %>">
+                <%= @calculated[key].present? ? "#{@calculated[key]} #{field['currency'] || 'HTG'}" : "—" %>
+              </div>
+              <input type="hidden" name="form_data[<%= key %>]" value="<%= @calculated[key] %>">
+
+            <%# ── File Upload ── %>
+            <% when "file" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint" id="hint_<%= key %>"><%= field["hint"] %></span>
+              <% end %>
+              <div class="sf-file-zone" data-action="click->service-form#triggerFileUpload"
+                   role="button" tabindex="0">
+                <i class="ri-upload-cloud-2-line"></i>
+                <div class="sf-file-zone-text">Klike oswa pran foto</div>
+                <div class="sf-file-name"></div>
+                <div class="sf-file-preview"></div>
+              </div>
+              <input type="file" name="form_data[<%= key %>]" id="field_<%= key %>"
+                     accept="image/*,.pdf,.doc,.docx"
+                     capture="environment"
+                     style="display: none;"
+                     aria-required="<%= required ? 'true' : 'false' %>"
+                     <%= "aria-describedby=hint_#{key}" if field["hint"].present? %>
+                     data-action="change->service-form#fileSelected">
+              <div class="sf-field-error" id="error_<%= key %>" role="alert">Chan sa a obligatwa.</div>
+
+            <%# ── Checkbox ── %>
+            <% when "checkbox" %>
+              <div class="sf-checkbox-wrap">
+                <input type="checkbox" name="form_data[<%= key %>]" value="true"
+                       class="sf-checkbox" id="field_<%= key %>"
+                       <%= "checked" if value == "true" || value == true %>
+                       data-action="change->service-form#fieldChanged">
+                <label for="field_<%= key %>" class="sf-checkbox-label"><%= label %></label>
+              </div>
+
+            <%# ── Select / Dropdown ── %>
+            <% when "select" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint"><%= field["hint"] %></span>
+              <% end %>
+              <%
+                # Parse options — supports both legacy string and new array format
+                raw_options = field["options"]
+                parsed_options = if raw_options.is_a?(Array)
+                  raw_options.map { |o| o.is_a?(Hash) ? o : { "label" => o.to_s, "value" => o.to_s } }
+                elsif raw_options.is_a?(String)
+                  raw_options.split(",").map(&:strip).reject(&:blank?).map do |s|
+                    parts = s.split(":", 2)
+                    parts.length >= 2 ? { "label" => parts[0].strip, "value" => parts[1].strip } : { "label" => s, "value" => s }
+                  end
+                else
+                  []
+                end
+                parsed_options = parsed_options.sort_by { |o| o["label"] } if field["sort_alpha"]
+                prompt_text = field["placeholder"].presence || "— Chwazi —"
+              %>
+              <select name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-select"
+                      data-action="change->service-form#fieldChanged"
+                      <% if field["searchable"] %>data-searchable="true"<% end %>>
+                <% select_effective = value.presence || field["default_value"] %>
+                <option value=""><%= prompt_text %></option>
+                <% parsed_options.each do |opt| %>
+                  <option value="<%= opt["value"] %>" <%= "selected" if select_effective == opt["value"] %>><%= opt["label"] %></option>
+                <% end %>
+              </select>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Textarea ── %>
+            <% when "textarea" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint"><%= field["hint"] %></span>
+              <% end %>
+              <textarea name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-textarea"
+                        placeholder="<%= field['placeholder'] %>"
+                        data-action="input->service-form#fieldChanged"><%= value %></textarea>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Date ── %>
+            <% when "date" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <input type="date" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                     value="<%= value %>"
+                     data-action="change->service-form#fieldChanged">
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Time ── %>
+            <% when "time" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <input type="time" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                     value="<%= value %>"
+                     data-action="change->service-form#fieldChanged">
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── DateTime (combined date + time) ── %>
+            <% when "datetime" %>
+              <label class="sf-label" for="field_<%= key %>_date">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <%# Split into date + time for iOS compatibility, combined via JS into hidden field %>
+              <input type="hidden" name="form_data[<%= key %>]" id="field_<%= key %>"
+                     value="<%= value %>"
+                     data-service-form-target="datetimeHidden">
+              <div class="sf-datetime-row">
+                <div class="sf-datetime-part">
+                  <span class="sf-datetime-part-label">Dat</span>
+                  <input type="date" id="field_<%= key %>_date" class="sf-input sf-datetime-date"
+                         value="<%= value.present? ? value.to_s.split('T').first : '' %>"
+                         data-datetime-target="field_<%= key %>"
+                         data-action="change->service-form#datetimePartChanged input->service-form#datetimePartChanged">
+                </div>
+                <div class="sf-datetime-part">
+                  <span class="sf-datetime-part-label">Lè</span>
+                  <input type="time" id="field_<%= key %>_time" class="sf-input sf-datetime-time"
+                         value="<%= value.present? ? value.to_s.split('T').last : '' %>"
+                         data-datetime-target="field_<%= key %>"
+                         data-action="change->service-form#datetimePartChanged input->service-form#datetimePartChanged">
+                </div>
+              </div>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Radio (single choice) ── %>
+            <% when "radio" %>
+              <label class="sf-label">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint"><%= field["hint"] %></span>
+              <% end %>
+              <%
+                raw_options = field["options"]
+                parsed_options = if raw_options.is_a?(Array)
+                  raw_options.map { |o| o.is_a?(Hash) ? o : { "label" => o.to_s, "value" => o.to_s } }
+                elsif raw_options.is_a?(String)
+                  raw_options.split(",").map(&:strip).reject(&:blank?).map do |s|
+                    parts = s.split(":", 2)
+                    parts.length >= 2 ? { "label" => parts[0].strip, "value" => parts[1].strip } : { "label" => s, "value" => s }
+                  end
+                else
+                  []
+                end
+              %>
+              <% effective_value = value.presence || field["default_value"] %>
+              <div class="sf-radio-group">
+                <% parsed_options.each_with_index do |opt, oi| %>
+                  <label class="sf-radio-option" for="field_<%= key %>_<%= oi %>">
+                    <input type="radio" name="form_data[<%= key %>]" id="field_<%= key %>_<%= oi %>"
+                           value="<%= opt["value"] %>"
+                           class="sf-radio"
+                           <%= "checked" if effective_value == opt["value"] %>
+                           data-action="change->service-form#fieldChanged">
+                    <span class="sf-radio-label"><%= opt["label"] %></span>
+                  </label>
+                <% end %>
+              </div>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Multi Checkbox (multiple choices) ── %>
+            <% when "multi_checkbox" %>
+              <label class="sf-label">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint"><%= field["hint"] %></span>
+              <% end %>
+              <%
+                raw_options = field["options"]
+                parsed_options = if raw_options.is_a?(Array)
+                  raw_options.map { |o| o.is_a?(Hash) ? o : { "label" => o.to_s, "value" => o.to_s } }
+                elsif raw_options.is_a?(String)
+                  raw_options.split(",").map(&:strip).reject(&:blank?).map do |s|
+                    parts = s.split(":", 2)
+                    parts.length >= 2 ? { "label" => parts[0].strip, "value" => parts[1].strip } : { "label" => s, "value" => s }
+                  end
+                else
+                  []
+                end
+                selected_values = if value.is_a?(Array)
+                  value
+                elsif value.present?
+                  value.to_s.split(",").map(&:strip)
+                else
+                  # Fall back to defaults if no saved value
+                  field["default_values"].is_a?(Array) ? field["default_values"] : []
+                end
+              %>
+              <div class="sf-multi-checkbox-group">
+                <% parsed_options.each_with_index do |opt, oi| %>
+                  <label class="sf-checkbox-option" for="field_<%= key %>_<%= oi %>">
+                    <input type="checkbox" name="form_data[<%= key %>][]" id="field_<%= key %>_<%= oi %>"
+                           value="<%= opt["value"] %>"
+                           class="sf-checkbox"
+                           <%= "checked" if selected_values.include?(opt["value"]) %>
+                           data-action="change->service-form#fieldChanged">
+                    <span class="sf-checkbox-label"><%= opt["label"] %></span>
+                  </label>
+                <% end %>
+              </div>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Currency ── %>
+            <% when "currency" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <div style="position: relative;">
+                <input type="number" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                       value="<%= value %>" step="0.01" min="0"
+                       placeholder="0.00"
+                       style="padding-right: 3.5rem;"
+                       data-action="input->service-form#fieldChanged">
+                <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+                  font-size: 0.75rem; color: #6B7280; font-weight: 600;">
+                  <%= field["currency"] || "HTG" %>
+                </span>
+              </div>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Number (with optional Quantity mode) ── %>
+            <% when "number" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if field["unit"].present? %>
+                  <span class="sf-label-unit">(<%= field["unit"] %>)</span>
+                <% end %>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["is_quantity"] %>
+                <div class="sf-qty-stepper">
+                  <button type="button" class="sf-qty-btn sf-qty-btn--minus"
+                          data-action="click->service-form#decrementQty"
+                          data-field="<%= key %>"
+                          data-min="<%= field['min'] || 1 %>">−</button>
+                  <input type="number" name="form_data[<%= key %>]" id="field_<%= key %>"
+                         class="sf-input sf-input--qty"
+                         value="<%= value.presence || field['min'] || 1 %>"
+                         min="<%= field['min'] || 1 %>"
+                         <%= "max=#{field['max']}" if field['max'].present? %>
+                         step="1"
+                         data-action="input->service-form#fieldChanged"
+                         data-qty-field="true"
+                         data-linked-to="<%= field['linked_to_field'] %>">
+                  <button type="button" class="sf-qty-btn sf-qty-btn--plus"
+                          data-action="click->service-form#incrementQty"
+                          data-field="<%= key %>"
+                          data-max="<%= field['max'] %>"
+                          data-step="1">+</button>
+                </div>
+              <% else %>
+                <input type="number" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                       value="<%= value %>" step="any"
+                       placeholder="<%= field['placeholder'] %>"
+                       data-action="input->service-form#fieldChanged">
+              <% end %>
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Repeater (sub-field groups) ── %>
+            <% when "repeater" %>
+              <label class="sf-label">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint"><%= field["hint"] %></span>
+              <% end %>
+
+              <% sub_fields = field["fields"] || [] %>
+              <% min_rows = (field["min_rows"] || 1).to_i %>
+              <% max_rows = (field["max_rows"] || 10).to_i %>
+              <% repeater_data = (value.is_a?(Array) ? value : []) %>
+              <% repeater_data = [{}] * min_rows if repeater_data.empty? %>
+
+              <div class="sf-repeater"
+                   data-repeater-key="<%= key %>"
+                   data-repeater-min="<%= min_rows %>"
+                   data-repeater-max="<%= max_rows %>"
+                   data-action="click->service-form#handleRepeaterClick">
+
+                <% repeater_data.each_with_index do |row_data, row_idx| %>
+                  <div class="sf-repeater-row" data-repeater-row>
+                    <div class="sf-repeater-row-header">
+                      <span class="sf-repeater-row-num">#<%= row_idx + 1 %></span>
+                      <% if repeater_data.length > min_rows %>
+                        <button type="button" class="sf-repeater-remove"
+                                data-action="click->service-form#removeRepeaterRow"
+                                data-repeater-key="<%= key %>">
+                          <i class="ri-delete-bin-line"></i>
+                        </button>
+                      <% end %>
+                    </div>
+                    <% sub_fields.each do |sf| %>
+                      <% sf_key = sf["key"] %>
+                      <% sf_value = row_data.is_a?(Hash) ? row_data[sf_key] : nil %>
+                      <% sf_label = sf["label"] || sf_key %>
+                      <% sf_required = sf["required"] %>
+                      <% sf_name = "form_data[#{key}][#{row_idx}][#{sf_key}]" %>
+                      <div class="sf-repeater-field">
+                        <% unless sf["type"] == "checkbox" %>
+                          <label class="sf-label sf-label--sub" for="field_<%= key %>_<%= row_idx %>_<%= sf_key %>">
+                            <%= sf_label %>
+                            <% if sf_required %><span style="color: #EF4444;">*</span><% end %>
+                          </label>
+                        <% end %>
+                        <% case sf["type"] when "select" %>
+                          <% sf_options = sf["options"] || [] %>
+                          <select name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                  data-action="input->service-form#fieldChanged">
+                            <option value="">Chwazi...</option>
+                            <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                              <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                              <option value="<%= opt["value"] %>" <%= "selected" if sf_value == opt["value"] %>><%= opt["label"] %></option>
+                            <% end %>
+                          </select>
+                        <% when "radio" %>
+                          <% sf_options = sf["options"] || [] %>
+                          <div class="sf-radio-group">
+                            <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                              <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                              <label class="sf-radio-option">
+                                <input type="radio" name="<%= sf_name %>" value="<%= opt["value"] %>"
+                                       <%= "checked" if sf_value == opt["value"] %>
+                                       data-action="change->service-form#fieldChanged">
+                                <span><%= opt["label"] %></span>
+                              </label>
+                            <% end %>
+                          </div>
+                        <% when "checkbox" %>
+                          <label class="sf-checkbox-label">
+                            <input type="checkbox" name="<%= sf_name %>" value="true"
+                                   <%= "checked" if sf_value == "true" || sf_value == true %>
+                                   data-action="change->service-form#fieldChanged">
+                            <span><%= sf_label %></span>
+                          </label>
+                        <% when "date" %>
+                          <input type="date" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                 value="<%= sf_value %>" data-action="input->service-form#fieldChanged">
+                        <% when "datetime" %>
+                          <input type="datetime-local" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                 value="<%= sf_value %>" data-action="input->service-form#fieldChanged">
+                        <% when "number" %>
+                          <input type="number" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                 value="<%= sf_value %>" step="any" data-action="input->service-form#fieldChanged">
+                        <% when "currency" %>
+                          <div style="position: relative;">
+                            <input type="number" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                   value="<%= sf_value %>" step="0.01" placeholder="0.00"
+                                   style="padding-right: 3.5rem;" data-action="input->service-form#fieldChanged">
+                            <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+                              font-size: 0.75rem; color: #6B7280; font-weight: 600;">
+                              <%= sf["currency"] || "HTG" %>
+                            </span>
+                          </div>
+                        <% when "email" %>
+                          <input type="email" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                 value="<%= sf_value %>" placeholder="imel@egzanp.ht" data-action="input->service-form#fieldChanged">
+                        <% when "phone" %>
+                          <input type="tel" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                 value="<%= sf_value %>" placeholder="+509 ..." data-action="input->service-form#fieldChanged">
+                        <% when "file" %>
+                          <div class="sf-file-zone" style="padding: 0.6rem;">
+                            <input type="file" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>"
+                                   data-action="change->service-form#fileSelected" style="display: none;">
+                            <button type="button" class="sf-file-btn" style="font-size: 0.75rem;"
+                                    onclick="this.parentElement.querySelector('input[type=file]').click()">
+                              <i class="ri-upload-2-line"></i> Fichye
+                            </button>
+                          </div>
+                        <% else %>
+                          <input type="text" name="<%= sf_name %>" id="field_<%= key %>_<%= row_idx %>_<%= sf_key %>" class="sf-input"
+                                 value="<%= sf_value %>" data-action="input->service-form#fieldChanged">
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <template data-repeater-template="<%= key %>">
+                  <div class="sf-repeater-row" data-repeater-row>
+                    <div class="sf-repeater-row-header">
+                      <span class="sf-repeater-row-num">#__IDX__</span>
+                      <button type="button" class="sf-repeater-remove"
+                              data-action="click->service-form#removeRepeaterRow"
+                              data-repeater-key="<%= key %>">
+                        <i class="ri-delete-bin-line"></i>
+                      </button>
+                    </div>
+                    <% sub_fields.each do |sf| %>
+                      <% sf_key = sf["key"] %>
+                      <% sf_label = sf["label"] || sf_key %>
+                      <div class="sf-repeater-field">
+                        <% unless sf["type"] == "checkbox" %>
+                          <label class="sf-label sf-label--sub"><%= sf_label %><% if sf["required"] %><span style="color: #EF4444;">*</span><% end %></label>
+                        <% end %>
+                        <% case sf["type"] when "select" %>
+                          <% sf_options = sf["options"] || [] %>
+                          <select name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                  data-action="input->service-form#fieldChanged">
+                            <option value="">Chwazi...</option>
+                            <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                              <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                              <option value="<%= opt["value"] %>"><%= opt["label"] %></option>
+                            <% end %>
+                          </select>
+                        <% when "radio" %>
+                          <% sf_options = sf["options"] || [] %>
+                          <div class="sf-radio-group">
+                            <% (sf_options.is_a?(Array) ? sf_options : sf_options.to_s.split(",").map { |o| { "label" => o.strip, "value" => o.strip } }).each do |opt| %>
+                              <% opt = { "label" => opt, "value" => opt } if opt.is_a?(String) %>
+                              <label class="sf-radio-option">
+                                <input type="radio" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" value="<%= opt["value"] %>"
+                                       data-action="change->service-form#fieldChanged">
+                                <span><%= opt["label"] %></span>
+                              </label>
+                            <% end %>
+                          </div>
+                        <% when "checkbox" %>
+                          <label class="sf-checkbox-label">
+                            <input type="checkbox" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" value="true"
+                                   data-action="change->service-form#fieldChanged">
+                            <span><%= sf_label %></span>
+                          </label>
+                        <% when "date" %>
+                          <input type="date" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                 data-action="input->service-form#fieldChanged">
+                        <% when "datetime" %>
+                          <input type="datetime-local" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                 data-action="input->service-form#fieldChanged">
+                        <% when "number" %>
+                          <input type="number" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                 step="any" data-action="input->service-form#fieldChanged">
+                        <% when "currency" %>
+                          <div style="position: relative;">
+                            <input type="number" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                   step="0.01" placeholder="0.00" style="padding-right: 3.5rem;"
+                                   data-action="input->service-form#fieldChanged">
+                            <span style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+                              font-size: 0.75rem; color: #6B7280; font-weight: 600;">
+                              <%= sf["currency"] || "HTG" %>
+                            </span>
+                          </div>
+                        <% when "email" %>
+                          <input type="email" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                 placeholder="imel@egzanp.ht" data-action="input->service-form#fieldChanged">
+                        <% when "phone" %>
+                          <input type="tel" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                 placeholder="+509 ..." data-action="input->service-form#fieldChanged">
+                        <% when "file" %>
+                          <div class="sf-file-zone" style="padding: 0.6rem;">
+                            <input type="file" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]"
+                                   data-action="change->service-form#fileSelected" style="display: none;">
+                            <button type="button" class="sf-file-btn" style="font-size: 0.75rem;"
+                                    onclick="this.parentElement.querySelector('input[type=file]').click()">
+                              <i class="ri-upload-2-line"></i> Fichye
+                            </button>
+                          </div>
+                        <% else %>
+                          <input type="text" name="form_data[<%= key %>][__IDX__][<%= sf_key %>]" class="sf-input"
+                                 data-action="input->service-form#fieldChanged">
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                </template>
+
+                <% if repeater_data.length < max_rows %>
+                  <button type="button" class="sf-repeater-add-btn"
+                          data-action="click->service-form#addRepeaterRow"
+                          data-repeater-key="<%= key %>">
+                    <i class="ri-add-line"></i> <%= field["add_button_text"] || "+ Ajoute yon lòt" %>
+                  </button>
+                <% end %>
+              </div>
+
+            <%# ── Email ── %>
+            <% when "email" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <input type="email" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                     value="<%= value %>"
+                     placeholder="<%= field['placeholder'] || 'imel@egzanp.ht' %>"
+                     data-action="input->service-form#fieldChanged">
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Phone ── %>
+            <% when "phone" %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <input type="tel" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                     value="<%= value %>"
+                     placeholder="<%= field['placeholder'] || '+509 ...' %>"
+                     data-action="input->service-form#fieldChanged">
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <%# ── Default: Text ── %>
+            <% else %>
+              <label class="sf-label" for="field_<%= key %>">
+                <span class="sf-label-text"><%= label %></span>
+                <% if indicator_text %>
+                  <span class="sf-label-indicator <%= indicator_class %>"><%= indicator_text %></span>
+                <% end %>
+              </label>
+              <% if field["hint"].present? %>
+                <span class="sf-label-hint"><%= field["hint"] %></span>
+              <% end %>
+              <input type="text" name="form_data[<%= key %>]" id="field_<%= key %>" class="sf-input"
+                     value="<%= value %>"
+                     placeholder="<%= field['placeholder'] %>"
+                     data-action="input->service-form#fieldChanged">
+              <div class="sf-field-error">Chan sa a obligatwa.</div>
+
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Sticky Pricing Summary ── %>
+    <% has_any_pricing = @schema.price_cents.to_i > 0 || @application.frozen_fields.any? { |f| f["has_pricing"] } %>
+    <% if has_any_pricing %>
+      <div class="sf-pricing-cart" data-service-form-target="pricingCart">
+        <div class="sf-cart-header">
+          <i class="ri-shopping-cart-line"></i> <span>Rezime Pri</span>
+        </div>
+        <div class="sf-cart-lines" data-service-form-target="cartLines">
+          <%# JS will populate this dynamically %>
+        </div>
+        <div class="sf-cart-total" data-service-form-target="cartTotal">
+          <span>Total</span>
+          <strong><%= @schema.price_display %></strong>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Payment Method ── %>
+    <% if has_any_pricing %>
+      <% wallet_profiles = @payment_methods.select(&:account_source_mobile_wallet?) %>
+      <% bank_profiles = @payment_methods.select(&:account_source_bank?) %>
+      <% zellus_profile = wallet_profiles.find { |wp| wp.wallet_provider&.downcase == "zellus" } %>
+      <% other_wallets = wallet_profiles.reject { |wp| wp.wallet_provider&.downcase == "zellus" } %>
+
+      <div class="sf-payment-section">
+        <div class="sf-payment-header">
+          <i class="ri-wallet-3-line"></i>
+          <span>Chwazi Metòd Peman</span>
+        </div>
+
+        <%# Zellus — Recommended %>
+        <% if zellus_profile %>
+          <div style="margin-bottom:0.5rem;">
+            <span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.65rem;font-weight:700;color:#00209F;background:#EEF2FF;padding:2px 8px;border-radius:4px;margin-bottom:0.4rem;">
+              <i class="ri-star-line"></i> Rekòmande
+            </span>
+            <label class="sf-radio-option sf-radio-option--recommended">
+              <input type="radio" name="payment_method_id" value="<%= zellus_profile.id %>" class="sf-radio" checked>
+              <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;width:100%;">
+                <i class="ri-smartphone-line" style="color:#00209F;font-size:1.1rem;"></i>
+                <span style="flex:1;">
+                  <strong>Zellus</strong>
+                  <span style="color:#6B7280;font-size:0.72rem;margin-left:0.3rem;">
+                    <%= zellus_profile.cashtag.present? ? zellus_profile.cashtag : "••••#{zellus_profile.wallet_address&.last(4)}" %>
+                  </span>
+                  <% if @zellus_balance.present? %>
+                    <br><span style="font-size:0.7rem;color:#059669;font-weight:600;">Balans: <%= number_with_delimiter(@zellus_balance) %> HTG</span>
+                  <% end %>
+                </span>
+                <span style="font-size:0.6rem;font-weight:600;color:#059669;background:#ECFDF5;padding:2px 6px;border-radius:4px;">Enstantane</span>
+              </span>
+            </label>
+          </div>
+        <% end %>
+
+        <%# Other mobile wallets (MonCash, NatCash, etc.) %>
+        <% other_wallets.each do |wp| %>
+          <label class="sf-radio-option" style="margin-bottom:0.35rem;">
+            <input type="radio" name="payment_method_id" value="<%= wp.id %>" class="sf-radio"
+                   <%= "checked" if !zellus_profile && other_wallets.first == wp %>>
+            <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;width:100%;">
+              <i class="ri-smartphone-line" style="color:#6B7280;"></i>
+              <span style="flex:1;">
+                <%= wp.wallet_provider&.titleize %>
+                <span style="color:#6B7280;font-size:0.72rem;margin-left:0.3rem;">
+                  <%= wp.cashtag.present? ? wp.cashtag : "••••#{wp.wallet_address&.last(4)}" %>
+                </span>
+              </span>
+            </span>
+          </label>
+        <% end %>
+
+        <%# No wallets at all — show generic Zellus as default %>
+        <% if wallet_profiles.empty? %>
+          <div style="margin-bottom:0.5rem;">
+            <span style="display:inline-flex;align-items:center;gap:0.25rem;font-size:0.65rem;font-weight:700;color:#00209F;background:#EEF2FF;padding:2px 8px;border-radius:4px;margin-bottom:0.4rem;">
+              <i class="ri-star-line"></i> Rekòmande
+            </span>
+            <label class="sf-radio-option sf-radio-option--recommended">
+              <input type="radio" name="payment_method" value="zellus" class="sf-radio" checked>
+              <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;width:100%;">
+                <i class="ri-smartphone-line" style="color:#00209F;font-size:1.1rem;"></i>
+                <span style="flex:1;"><strong>Zellus</strong></span>
+                <span style="font-size:0.6rem;font-weight:600;color:#059669;background:#ECFDF5;padding:2px 6px;border-radius:4px;">Enstantane</span>
+              </span>
+            </label>
+          </div>
+
+          <label class="sf-radio-option" style="margin-bottom:0.35rem;">
+            <input type="radio" name="payment_method" value="moncash" class="sf-radio">
+            <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;">
+              <i class="ri-smartphone-line" style="color:#6B7280;"></i>
+              <span>MonCash</span>
+            </span>
+          </label>
+        <% end %>
+
+        <%# Separator %>
+        <% if bank_profiles.any? %>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin:0.6rem 0;">
+            <div style="flex:1;height:1px;background:#E5E7EB;"></div>
+            <span style="font-size:0.68rem;color:#9CA3AF;">oswa</span>
+            <div style="flex:1;height:1px;background:#E5E7EB;"></div>
+          </div>
+
+          <%# Bank accounts %>
+          <% bank_profiles.each do |bp| %>
+            <label class="sf-radio-option" style="margin-bottom:0.35rem;">
+              <input type="radio" name="payment_method_id" value="<%= bp.id %>" class="sf-radio">
+              <span class="sf-radio-label" style="display:flex;align-items:center;gap:0.4rem;">
+                <i class="ri-bank-line" style="color:#6B7280;"></i>
+                <span><%= bp.bank_name %> — ••••<%= bp.account_number.to_s.last(4) %></span>
+              </span>
+            </label>
+          <% end %>
+        <% end %>
+
+        <%# Trust footer %>
+        <div style="display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:0.75rem;padding-top:0.6rem;border-top:1px solid #F3F4F6;">
+          <span style="display:flex;align-items:center;gap:0.25rem;font-size:0.62rem;color:#64748B;">
+            <i class="ri-lock-line" style="color:#00209F;"></i> SSL
+          </span>
+          <span style="display:flex;align-items:center;gap:0.25rem;font-size:0.62rem;color:#64748B;">
+            <i class="ri-shield-check-line" style="color:#059669;"></i> BonID Verifye
+          </span>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Navigation ── %>
+    <div class="sf-nav">
+      <button type="button" class="sf-btn sf-btn--prev"
+              data-service-form-target="prevBtn"
+              data-action="click->service-form#prevStep"
+              style="display: <%= @current_step == 0 ? 'none' : 'inline-flex' %>;">
+        <i class="ri-arrow-left-line"></i> Retounen
+      </button>
+
+      <% if @total_steps > 1 %>
+        <button type="button" class="sf-btn sf-btn--next"
+                data-service-form-target="nextBtn"
+                data-action="click->service-form#nextStep"
+                style="display: <%= @current_step == @total_steps - 1 ? 'none' : 'inline-flex' %>;">
+          Kontinye <i class="ri-arrow-right-line"></i>
+        </button>
+      <% end %>
+
+      <%
+         has_pricing = @schema.price_cents.to_i > 0 || Array(@fields_by_step.flat_map { |s| s[:fields] }).any? { |f| f["has_pricing"] }
+
+         submit_labels = if has_pricing
+           { icon: "ri-shopping-cart-line", text: "Achte Kounye a" }
+         else
+           {
+             "application" => { icon: "ri-send-plane-line", text: "Soumèt Aplikasyon" },
+             "appointment" => { icon: "ri-calendar-check-line", text: "Konfime Randevou" },
+             "transaction" => { icon: "ri-shopping-cart-line", text: "Peye Kounye a" },
+             "survey"      => { icon: "ri-check-double-line", text: "Voye Repons" }
+           }[@schema.service_category] || { icon: "ri-send-plane-line", text: "Soumèt Aplikasyon" }
+         end
+         submit_info = submit_labels
+      %>
+      <button type="submit" class="sf-btn sf-btn--submit"
+              data-service-form-target="submitBtn"
+              style="display: <%= @current_step == @total_steps - 1 || @total_steps == 1 ? 'inline-flex' : 'none' %>;">
+        <i class="<%= submit_info[:icon] %>"></i> <%= submit_info[:text] %>
+      </button>
+    </div>
+  <% end %>
+
+  <% end %> <%# end if/else transaction vs wizard %>
+</div>
