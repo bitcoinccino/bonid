@@ -1,0 +1,235 @@
+<%# Partner Audit Log — Detail View %>
+
+<div class="bongouv-dashboard">
+  <div class="audit-detail-header">
+    <%= link_to partner_portal_partner_audit_logs_path, class: "audit-back-link" do %>
+      <i class="ri-arrow-left-line me-1"></i>Retounen nan Istwa
+    <% end %>
+
+    <h1 class="audit-detail-title">
+      <% case @log.event
+         when "identity_mismatch" %>
+        <span class="audit-badge audit-badge--danger"><i class="ri-alarm-warning-line me-1"></i>Idantite Pa Matche</span>
+      <% else %>
+        <span class="audit-badge audit-badge--gray"><i class="ri-file-list-line me-1"></i><%= @log.event&.titleize %></span>
+      <% end %>
+    </h1>
+  </div>
+
+  <div class="audit-detail-grid">
+    <%# ── Meta Info Card ── %>
+    <div class="audit-detail-card">
+      <div class="audit-detail-card-header">
+        <i class="ri-information-line me-2"></i>Enfòmasyon Jeneral
+      </div>
+      <div class="audit-detail-card-body">
+        <div class="audit-kv">
+          <span class="audit-kv-label">ID</span>
+          <span class="audit-kv-value">#<%= @log.id %></span>
+        </div>
+        <div class="audit-kv">
+          <span class="audit-kv-label">Dat & Lè</span>
+          <span class="audit-kv-value"><%= @log.created_at.strftime("%d/%m/%Y à %H:%M:%S") %></span>
+        </div>
+        <div class="audit-kv">
+          <span class="audit-kv-label">Evènman</span>
+          <span class="audit-kv-value"><%= @log.event&.titleize %></span>
+        </div>
+        <div class="audit-kv">
+          <span class="audit-kv-label">Ajan</span>
+          <span class="audit-kv-value">
+            <% if @log.admin_user %>
+              <%= @log.admin_user.full_name rescue @log.admin_user.email %>
+            <% elsif @log.metadata&.dig("agent_name") %>
+              <%= @log.metadata["agent_name"] %> (ID: <%= @log.metadata["agent_id"] %>)
+            <% else %>
+              Sistèm
+            <% end %>
+          </span>
+        </div>
+        <% if @log.metadata&.dig("ip_address") %>
+          <div class="audit-kv">
+            <span class="audit-kv-label">Adrès IP</span>
+            <span class="audit-kv-value"><code><%= @log.metadata["ip_address"] %></code></span>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Details Card ── %>
+    <% if @log.event == "identity_mismatch" && @log.metadata.present? %>
+      <div class="audit-detail-card audit-detail-card--danger">
+        <div class="audit-detail-card-header audit-detail-card-header--danger">
+          <i class="ri-alarm-warning-line me-2"></i>Detay Ensidan
+        </div>
+        <div class="audit-detail-card-body">
+          <% if @log.metadata["bonid"] %>
+            <div class="audit-kv">
+              <span class="audit-kv-label">BonID</span>
+              <span class="audit-kv-value"><code class="audit-bonid"><%= @log.metadata["bonid"] %></code></span>
+            </div>
+          <% end %>
+          <% if @log.metadata["citizen_name"] %>
+            <div class="audit-kv">
+              <span class="audit-kv-label">Sitwayen</span>
+              <span class="audit-kv-value"><%= @log.metadata["citizen_name"] %> (ID: <%= @log.metadata["citizen_id"] %>)</span>
+            </div>
+          <% end %>
+          <% if @log.metadata["agent_name"] %>
+            <div class="audit-kv">
+              <span class="audit-kv-label">Rapòte pa</span>
+              <span class="audit-kv-value"><%= @log.metadata["agent_name"] %></span>
+            </div>
+          <% end %>
+          <% if @log.metadata["reported_at"] %>
+            <div class="audit-kv">
+              <span class="audit-kv-label">Rapòte lè</span>
+              <span class="audit-kv-value"><%= Time.parse(@log.metadata["reported_at"]).strftime("%d/%m/%Y à %H:%M:%S") rescue @log.metadata["reported_at"] %></span>
+            </div>
+          <% end %>
+          <% if @log.metadata["action_taken"] %>
+            <div class="audit-kv">
+              <span class="audit-kv-label">Aksyon</span>
+              <span class="audit-kv-value"><%= @log.metadata["action_taken"].titleize %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Raw Details ── %>
+    <% if @log.details.present? && @log.details != @log.metadata.to_s %>
+      <div class="audit-detail-card">
+        <div class="audit-detail-card-header">
+          <i class="ri-code-line me-2"></i>Detay Brut
+        </div>
+        <div class="audit-detail-card-body">
+          <pre class="audit-raw-json"><%= JSON.pretty_generate(@log.details) rescue @log.details %></pre>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Raw Metadata ── %>
+    <% if @log.metadata.present? %>
+      <div class="audit-detail-card">
+        <div class="audit-detail-card-header">
+          <i class="ri-database-2-line me-2"></i>Metadata
+        </div>
+        <div class="audit-detail-card-body">
+          <pre class="audit-raw-json"><%= JSON.pretty_generate(@log.metadata) rescue @log.metadata %></pre>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+  .audit-detail-header { margin-bottom: 20px; }
+  .audit-back-link {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #00209F;
+    text-decoration: none;
+    margin-bottom: 8px;
+  }
+  .audit-back-link:hover { text-decoration: underline; }
+  .audit-detail-title { margin: 8px 0 0; }
+
+  .audit-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .audit-detail-card {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .audit-detail-card--danger { border-color: #FECACA; }
+
+  .audit-detail-card-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 16px;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+  }
+  .audit-detail-card-header i { font-size: 0.85rem; color: #00209F; }
+  .audit-detail-card-header--danger {
+    background: #FEF2F2;
+    border-color: #FECACA;
+    color: #991B1B;
+  }
+  .audit-detail-card-header--danger i { color: #DC2626; }
+
+  .audit-detail-card-body { padding: 14px 16px; }
+
+  .audit-kv {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #F1F5F9;
+  }
+  .audit-kv:last-child { border-bottom: none; }
+  .audit-kv-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+  .audit-kv-value {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #0F172A;
+  }
+  .audit-kv-value code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    background: #F1F5F9;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .audit-raw-json {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 0;
+    overflow-x: auto;
+    color: #334155;
+    line-height: 1.6;
+  }
+
+  /* Reuse badges from index */
+  .audit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .audit-badge--danger { background: #FEE2E2; color: #991B1B; }
+  .audit-badge--gray { background: #F1F5F9; color: #475569; }
+  .audit-bonid {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+  }
+</style>

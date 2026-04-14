@@ -1,0 +1,293 @@
+<%# Partner Portal — Review Citizen Submission %>
+<%# Adapts per service type: approve/reject (apps), check-in (txn/apt), analytics context (survey) %>
+
+<% is_app = @service_category == "application" %>
+<% is_txn = @service_category == "transaction" %>
+<% is_apt = @service_category == "appointment" %>
+<% is_survey = @service_category == "survey" %>
+
+<% type_label = { "application" => "Aplikasyon", "transaction" => "Tranzaksyon",
+     "appointment" => "Randevou", "survey" => "Sondaj" }[@service_category] || "Soumisyon" %>
+<% type_icon = { "application" => "ri-file-list-3-line", "transaction" => "ri-exchange-dollar-line",
+     "appointment" => "ri-calendar-check-line", "survey" => "ri-questionnaire-line" }[@service_category] || "ri-file-search-line" %>
+
+<div class="dash-page">
+  <div class="dash-page-header">
+    <div>
+      <h1 class="dash-page-title">
+        <i class="<%= type_icon %>"></i>
+        <% if is_txn %>Detay Tikè<% elsif is_apt %>Detay Randevou<% elsif is_survey %>Repons Sondaj<% else %>Revize Soumisyon<% end %>
+      </h1>
+      <p class="dash-page-subtitle">
+        <code class="dash-mono"><%= @submission.verification_code %></code>
+        &mdash; <%= @submission.partner_schema.name %>
+        <span class="dash-badge dash-badge--<%= { 'application' => 'info', 'transaction' => 'success', 'appointment' => 'warning', 'survey' => 'muted' }[@service_category] || 'muted' %>"
+              style="font-size:0.6rem;padding:2px 8px;margin-left:6px;">
+          <%= type_label %>
+        </span>
+      </p>
+    </div>
+    <%= link_to partner_portal_submissions_path(category: @service_category), class: "dash-btn dash-btn--outline" do %>
+      <i class="ri-arrow-left-line"></i> Retounen
+    <% end %>
+  </div>
+
+  <div class="sub-review-layout">
+
+    <%# ══════════════════════════════════════════ %>
+    <%# LEFT — Submission Data                    %>
+    <%# ══════════════════════════════════════════ %>
+    <div class="sub-review-main">
+
+      <%# ── Citizen Info Card ── %>
+      <% unless is_survey %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-user-line"></i> Sitwayen</h3></div>
+          <div class="dash-card-body">
+            <div class="sub-citizen-info">
+              <div><strong>Non:</strong> <%= @submission.citizen.last_name %> <%= @submission.citizen.first_name %></div>
+              <div><strong>Telefòn:</strong> <%= @submission.citizen.phone || "—" %></div>
+              <div><strong>Imèl:</strong> <%= @submission.citizen.email || "—" %></div>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <%# Survey: anonymous — no citizen details %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-spy-line"></i> Repons Anonim</h3></div>
+          <div class="dash-card-body">
+            <p style="font-size:0.82rem;color:#64748B;margin:0;">Repons sondaj yo anonim. Enfòmasyon sitwayen an pa afiche.</p>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Form Data Card ── %>
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h3><i class="ri-file-list-3-line"></i>
+            <% if is_survey %>Repons<% elsif is_txn %>Detay Opsyon<% else %>Done Fòm<% end %>
+          </h3>
+        </div>
+        <div class="dash-card-body">
+          <% @fields.each do |field| %>
+            <% next if %w[section instructional_text bonid_signature seal_placeholder].include?(field["type"]) %>
+            <% next if field["filled_by"] == "partner" %>
+            <% key = field["key"] %>
+            <% value = @form_data[key] %>
+            <% label = field["label"] || key %>
+
+            <div class="sub-field-row">
+              <div class="sub-field-label"><%= label %></div>
+              <div class="sub-field-value">
+                <% if field["type"] == "file" && value.present? %>
+                  <span class="dash-badge dash-badge--info"><i class="ri-attachment-line"></i> Fichye atache</span>
+                <% elsif field["type"] == "address" %>
+                  <% if value.is_a?(Hash) %>
+                    <div class="sub-address-display">
+                      <% %w[street_address locality communal_section commune arrondissement department postal_code].each do |sub| %>
+                        <% sub_val = @form_data["#{key}_#{sub}"] || value[sub] %>
+                        <% next if sub_val.blank? %>
+                        <div><span class="sub-address-sub"><%= sub.titleize %>:</span> <%= sub_val %></div>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <%= value.presence || "—" %>
+                  <% end %>
+                <% elsif value.is_a?(Array) %>
+                  <%= value.join(", ") %>
+                <% else %>
+                  <%= value.presence || "<em class='text-muted'>Vid</em>".html_safe %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%# ── Calculated Values ── %>
+          <% if @submission.calculated_values.present? && @submission.calculated_values.any? %>
+            <div class="sub-section-divider">Valè Kalkile</div>
+            <% @submission.calculated_values.each do |key, val| %>
+              <% field = @fields.find { |f| f["key"] == key } %>
+              <div class="sub-field-row sub-field-row--calc">
+                <div class="sub-field-label"><%= field&.dig("label") || key %></div>
+                <div class="sub-field-value"><strong><%= val %> <%= field&.dig("currency") || "HTG" %></strong></div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Pricing Breakdown ── %>
+      <% if @submission.price_snapshot.present? && @submission.price_snapshot.any? %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-price-tag-3-line"></i> Detay Pri</h3></div>
+          <div class="dash-card-body">
+            <% snap = @submission.price_snapshot %>
+            <div class="sub-price-breakdown">
+              <% if snap["base_cents"].to_i > 0 %>
+                <div class="sub-price-line">
+                  <span>Pri Debaz</span>
+                  <span><%= (snap["base_cents"].to_f / 100).round(2) %> <%= snap["currency"] %></span>
+                </div>
+              <% end %>
+              <% (snap["fees"] || []).each do |fee| %>
+                <div class="sub-price-line">
+                  <span><%= fee["name"] %> <%= fee["rate"] ? "(#{fee["rate"]}%)" : "" %></span>
+                  <span><%= (fee["amount_cents"].to_f / 100).round(2) %> <%= snap["currency"] %></span>
+                </div>
+              <% end %>
+              <% (snap["addons"] || []).each do |addon| %>
+                <div class="sub-price-line sub-price-line--addon">
+                  <span><%= addon["field"] %>: <%= addon["option"] %></span>
+                  <span><%= (addon["amount_cents"].to_f / 100).round(2) %> <%= snap["currency"] %></span>
+                </div>
+              <% end %>
+              <% if snap["quantity"].present? %>
+                <div class="sub-price-line sub-price-line--addon">
+                  <span><%= snap["quantity"]["field"] %> (<%= snap["quantity"]["quantity"] %><%= " #{snap["quantity"]["unit"]}" if snap["quantity"]["unit"].present? %>)</span>
+                  <span><%= (snap["effective_base_cents"].to_f / 100).round(2) %> <%= snap["currency"] %></span>
+                </div>
+              <% end %>
+              <div class="sub-price-line sub-price-line--total">
+                <span><strong>Total</strong></span>
+                <span><strong><%= @submission.price_display %></strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Signature ── %>
+      <% if @submission.signature_consented? %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-quill-pen-line"></i> Siyati</h3></div>
+          <div class="dash-card-body">
+            <span class="dash-badge dash-badge--success"><i class="ri-check-line"></i> Siyati BonID aplike</span>
+            <small class="text-muted"><%= @submission.signature_applied_at&.strftime("%d/%m/%Y %H:%M") %></small>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ══════════════════════════════════════════ %>
+    <%# RIGHT — Actions & Notes                   %>
+    <%# ══════════════════════════════════════════ %>
+    <div class="sub-review-sidebar">
+
+      <%# ── Status Card ── %>
+      <div class="dash-card">
+        <div class="dash-card-body">
+          <div class="sub-status-display">
+            <% status_class = { "submitted" => "warning", "under_review" => "info",
+                 "approved" => "success", "rejected" => "danger", "draft" => "muted" }[@submission.status] || "muted" %>
+            <span class="dash-badge dash-badge--lg dash-badge--<%= status_class %>">
+              <%= @submission.status_label %>
+            </span>
+            <div class="sub-status-meta">
+              <div><strong>Soumèt:</strong> <%= @submission.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></div>
+              <% if @submission.reviewed_at.present? %>
+                <div><strong>Revize:</strong> <%= @submission.reviewed_at.strftime("%d/%m/%Y %H:%M") %></div>
+                <div><strong>Pa:</strong> <%= @submission.reviewed_by&.email || "—" %></div>
+              <% end %>
+              <% if @submission.checked_in_at.present? %>
+                <div><strong>Tcheke:</strong> <%= @submission.checked_in_at.strftime("%d/%m/%Y %H:%M") %></div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# ══════════════════════════════════════ %>
+      <%# ── TYPE-SPECIFIC ACTIONS ── %>
+      <%# ══════════════════════════════════════ %>
+
+      <% if is_app && @submission.status.in?(%w[submitted under_review]) %>
+        <%# ── APPLICATION: Approve / Reject ── %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-checkbox-circle-line"></i> Aksyon</h3></div>
+          <div class="dash-card-body">
+            <div class="sub-actions">
+              <%= button_to "Apwouve", approve_partner_portal_submission_path(@submission),
+                  method: :patch, class: "dash-btn dash-btn--success dash-btn--full",
+                  data: { turbo_confirm: "Ou sèten ou vle apwouve aplikasyon sa a?" } %>
+
+              <%= form_with url: reject_partner_portal_submission_path(@submission),
+                  method: :patch, class: "sub-reject-form" do %>
+                <textarea name="rejection_reason" class="dash-input sub-reject-reason"
+                          rows="2" placeholder="Rezon rejeksyon (obligatwa)..."></textarea>
+                <%= submit_tag "Rejte", class: "dash-btn dash-btn--danger dash-btn--full",
+                    data: { turbo_confirm: "Ou sèten ou vle rejte aplikasyon sa a?" } %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+      <% elsif (is_txn || is_apt) %>
+        <%# ── TRANSACTION / APPOINTMENT: Check-In ── %>
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <h3><i class="ri-user-received-line"></i>
+              <%= is_txn ? "Verifikasyon" : "Prezans" %>
+            </h3>
+          </div>
+          <div class="dash-card-body">
+            <% if @submission.checked_in_at.present? %>
+              <div class="sub-checkin-done">
+                <i class="ri-checkbox-circle-fill"></i>
+                <div>
+                  <strong><%= is_txn ? "Tikè Verifye" : "Moun Rive" %></strong>
+                  <span><%= @submission.checked_in_at.strftime("%d/%m/%Y à %H:%M") %></span>
+                </div>
+              </div>
+            <% else %>
+              <%= button_to check_in_partner_portal_submission_path(@submission),
+                  method: :patch, class: "dash-btn dash-btn--success dash-btn--full",
+                  data: { turbo_confirm: is_txn ? "Konfime tcheke tikè sa a?" : "Konfime moun nan rive?" } do %>
+                <i class="ri-user-received-line"></i>
+                <%= is_txn ? "Tcheke Tikè" : "Make kòm Rive" %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Rejection Reason (if rejected) ── %>
+      <% if @submission.status == "rejected" && @submission.rejection_reason.present? %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-close-circle-line"></i> Rezon Rejeksyon</h3></div>
+          <div class="dash-card-body">
+            <p class="sub-rejection-text"><%= @submission.rejection_reason %></p>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Internal Notes (not for surveys) ── %>
+      <% unless is_survey %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-sticky-note-line"></i> Nòt Entèn</h3></div>
+          <div class="dash-card-body">
+            <% notes = @submission.staff_notes || [] %>
+            <% if notes.any? %>
+              <div class="sub-notes-list">
+                <% notes.each do |note| %>
+                  <div class="sub-note">
+                    <div class="sub-note-meta">
+                      <strong><%= note["author_name"] %></strong>
+                      <span><%= Time.parse(note["created_at"]).strftime("%d/%m/%Y %H:%M") rescue note["created_at"] %></span>
+                    </div>
+                    <p><%= note["text"] %></p>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <%= form_with url: add_note_partner_portal_submission_path(@submission),
+                method: :post, class: "sub-note-form" do %>
+              <textarea name="note" class="dash-input" rows="2" placeholder="Ajoute yon nòt entèn (sitwayen pa wè sa)..."></textarea>
+              <%= submit_tag "Ajoute Nòt", class: "dash-btn dash-btn--sm" %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

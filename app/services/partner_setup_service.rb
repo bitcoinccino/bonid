@@ -22,15 +22,8 @@ class PartnerSetupService
         status: :approved
       )
 
-      case @partner.sector
-      when "law_enforcement"
-        setup_officer_admin!
-      when "banking"
-        setup_partner_admin!
-        setup_default_teller!
-      else
-        setup_partner_admin!
-      end
+      setup_partner_admin!
+      setup_default_teller! if @partner.sector == "banking"
     end
 
     true
@@ -165,14 +158,25 @@ class PartnerSetupService
     user.add_role(:officer) unless user.has_role?(:officer)
     user.add_role(:partner_admin) unless user.has_role?(:partner_admin)
 
-    officer = user.officer || user.build_officer(partner: @partner)
+    # Partner form stores unit keys (DCPJ, CIMO) in unit_type and sub-specialties
+    # in unit_name, but Officer model expects the reverse:
+    #   Officer.unit_name = UNIT_OPTIONS.keys (e.g. "CIMO")
+    #   Officer.unit_type = UNIT_OPTIONS.values.flatten (e.g. "Contrôle des Foules")
+    resolved_unit_name = @partner.unit_type.presence || "CIMO"
+    resolved_unit_type = @partner.unit_name.presence || OfficerConstants::UNIT_OPTIONS[resolved_unit_name]&.first || "Contrôle des Foules"
+
+    officer = Officer.find_or_initialize_by(email: @partner.email)
     officer.assign_attributes(
       first_name: user.first_name,
       last_name:  user.last_name,
       partner:    @partner,
-      unit_type:  @partner.unit_type,
-      unit_name:  @partner.unit_name
+      user:       user,
+      unit_name:  resolved_unit_name,
+      unit_type:  resolved_unit_type,
+      badge_id:   "PNH-#{SecureRandom.hex(4).upcase}",
+      rank:       "Agent I"
     )
+    ensure_password(officer)
     officer.save!
 
     send_invite_email(user, :officer)

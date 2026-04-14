@@ -1,0 +1,762 @@
+<%# Shared Submissions Section — embedded in every sector dashboard %>
+<%# 4 sections: 1) Pulse Metrics  2) Quick Actions  3) Category Tabs + Filters  4) Submissions Table %>
+
+<% if @sub_active_services&.any? || (@sub_category_counts && @sub_category_counts[:total] > 0) %>
+<section class="dash-submissions-section" aria-label="Soumisyon sitwayen">
+
+  <%# ================================================================ %>
+  <%# 1. THE PULSE — Dynamic Metric Bar %>
+  <%# ================================================================ %>
+  <div class="sub-pulse" role="region" aria-label="Metrik">
+    <% if @sub_category == "application" && @sub_pulse %>
+      <div class="sub-pulse-card sub-pulse-card--blue">
+        <div class="sub-pulse-icon"><i class="ri-time-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:pending_review] %></span>
+          <span class="sub-pulse-label">Ap Tann Revizyon</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--green">
+        <div class="sub-pulse-icon"><i class="ri-check-double-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:approved_today] %></span>
+          <span class="sub-pulse-label">Apwouve Jodi a</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--red">
+        <div class="sub-pulse-icon"><i class="ri-close-circle-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:rejected] %></span>
+          <span class="sub-pulse-label">Rejte</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card">
+        <div class="sub-pulse-icon"><i class="ri-file-list-3-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:total] %></span>
+          <span class="sub-pulse-label">Total</span>
+        </div>
+      </div>
+
+    <% elsif @sub_category == "transaction" && @sub_pulse %>
+      <div class="sub-pulse-card sub-pulse-card--green">
+        <div class="sub-pulse-icon"><i class="ri-money-dollar-circle-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= (@sub_pulse[:total_revenue].to_f / 100).round(0).to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1,').reverse %></span>
+          <span class="sub-pulse-label">Revni (<%= @sub_pulse[:currency] %>)</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--blue">
+        <div class="sub-pulse-icon"><i class="ri-ticket-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:tickets_sold] %></span>
+          <span class="sub-pulse-label">Tikè Vann</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--teal">
+        <div class="sub-pulse-icon"><i class="ri-user-follow-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:checked_in] %></span>
+          <span class="sub-pulse-label">Tcheke</span>
+        </div>
+      </div>
+
+    <% elsif @sub_category == "appointment" && @sub_pulse %>
+      <div class="sub-pulse-card sub-pulse-card--amber">
+        <div class="sub-pulse-icon"><i class="ri-calendar-todo-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:today_booked] %></span>
+          <span class="sub-pulse-label">Jodi a</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--blue">
+        <div class="sub-pulse-icon"><i class="ri-calendar-check-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:upcoming] %></span>
+          <span class="sub-pulse-label">Ap Vini</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--green">
+        <div class="sub-pulse-icon"><i class="ri-user-follow-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:checked_in] %></span>
+          <span class="sub-pulse-label">Rive</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--red">
+        <div class="sub-pulse-icon"><i class="ri-user-unfollow-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:no_show] %></span>
+          <span class="sub-pulse-label">Pa Rive</span>
+        </div>
+      </div>
+
+    <% elsif @sub_category == "survey" && @sub_pulse %>
+      <div class="sub-pulse-card sub-pulse-card--purple">
+        <div class="sub-pulse-icon"><i class="ri-questionnaire-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:total_responses] %></span>
+          <span class="sub-pulse-label">Repons Total</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--blue">
+        <div class="sub-pulse-icon"><i class="ri-calendar-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:this_week] %></span>
+          <span class="sub-pulse-label">Semèn sa a</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--green">
+        <div class="sub-pulse-icon"><i class="ri-pie-chart-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:completion_rate] %>%</span>
+          <span class="sub-pulse-label">To Konplesyon</span>
+        </div>
+      </div>
+
+    <% elsif @sub_pulse %>
+      <%# Default pulse — all categories %>
+      <div class="sub-pulse-card sub-pulse-card--blue">
+        <div class="sub-pulse-icon"><i class="ri-inbox-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:total] %></span>
+          <span class="sub-pulse-label">Total Soumisyon</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--green">
+        <div class="sub-pulse-icon"><i class="ri-calendar-check-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:today] %></span>
+          <span class="sub-pulse-label">Jodi a</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--amber">
+        <div class="sub-pulse-icon"><i class="ri-time-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:pending] %></span>
+          <span class="sub-pulse-label">Annatant</span>
+        </div>
+      </div>
+      <div class="sub-pulse-card sub-pulse-card--teal">
+        <div class="sub-pulse-icon"><i class="ri-check-double-line"></i></div>
+        <div class="sub-pulse-info">
+          <span class="sub-pulse-num"><%= @sub_pulse[:approved] %></span>
+          <span class="sub-pulse-label">Apwouve</span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ================================================================ %>
+  <%# 2. AKSYON RAPID — Active Service Cards %>
+  <%# ================================================================ %>
+  <% services_to_show = @sub_active_services %>
+  <% if @sub_category.present? %>
+    <% services_to_show = services_to_show.select { |s| s.service_category == @sub_category } %>
+  <% end %>
+
+  <% if services_to_show.any? %>
+    <%
+      cat_config = {
+        "application" => { color: "blue",   icon: "ri-file-list-3-line",      cta: "Jere",   cta_icon: "ri-settings-3-line" },
+        "transaction" => { color: "green",  icon: "ri-exchange-dollar-line",  cta: "Achte",  cta_icon: "ri-shopping-cart-line" },
+        "appointment" => { color: "amber",  icon: "ri-calendar-check-line",   cta: "Pran",   cta_icon: "ri-calendar-line" },
+        "survey"      => { color: "purple", icon: "ri-questionnaire-line",    cta: "Ranpli", cta_icon: "ri-edit-line" }
+      }
+    %>
+    <div class="sub-services-header">
+      <h3 class="sub-services-title"><i class="ri-apps-2-line me-2"></i>Aksyon Rapid</h3>
+    </div>
+    <div class="sub-service-cards">
+      <% services_to_show.first(6).each do |service| %>
+        <% cfg = cat_config[service.service_category] || cat_config["application"] %>
+        <div class="sub-svc-card sub-svc-card--<%= cfg[:color] %>">
+          <div class="sub-svc-icon sub-svc-icon--<%= cfg[:color] %>">
+            <i class="<%= cfg[:icon] %>"></i>
+          </div>
+          <div class="sub-svc-body">
+            <h4 class="sub-svc-name"><%= service.name %></h4>
+            <div class="sub-svc-meta">
+              <span class="sub-svc-price"><%= service.price_display %></span>
+              <% if service.capacity.present? %>
+                <span class="sub-svc-capacity">
+                  <i class="ri-group-line"></i> <%= service.sold_count %>/<%= service.capacity %>
+                </span>
+              <% end %>
+            </div>
+          </div>
+          <div class="sub-svc-actions">
+            <%= link_to partner_portal_submissions_path(service_id: service.id),
+                class: "sub-svc-cta sub-svc-cta--#{cfg[:color]}" do %>
+              <i class="<%= cfg[:cta_icon] %> me-1"></i><%= cfg[:cta] %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ================================================================ %>
+  <%# 3. LIS SOUMISYON — Category Tabs + Filters + Table %>
+  <%# ================================================================ %>
+  <% if @sub_category_counts && @sub_category_counts[:total] > 0 %>
+    <div class="sub-list-header">
+      <h3 class="sub-list-title"><i class="ri-list-check-2 me-2"></i>Lis Soumisyon</h3>
+      <% if @sub_category == "survey" || @sub_category == "transaction" %>
+        <%= link_to export_partner_portal_submissions_path(category: @sub_category),
+            class: "dash-btn dash-btn--outline dash-btn--sm", data: { turbo: false } do %>
+          <i class="ri-download-line"></i> CSV
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Category Tabs %>
+    <div class="sub-category-tabs">
+      <%= link_to partner_portal_dashboard_path,
+          class: "sub-cat-tab #{'sub-cat-tab--active' unless @sub_category.present?}" do %>
+        <i class="ri-inbox-line"></i>
+        <span>Tout</span>
+        <span class="sub-cat-count"><%= @sub_category_counts[:total] %></span>
+      <% end %>
+      <% if @sub_category_counts[:application] > 0 %>
+        <%= link_to partner_portal_dashboard_path(category: "application"),
+            class: "sub-cat-tab sub-cat-tab--application #{'sub-cat-tab--active' if @sub_category == 'application'}" do %>
+          <i class="ri-file-list-3-line"></i>
+          <span>Aplikasyon</span>
+          <span class="sub-cat-count"><%= @sub_category_counts[:application] %></span>
+        <% end %>
+      <% end %>
+      <% if @sub_category_counts[:transaction] > 0 %>
+        <%= link_to partner_portal_dashboard_path(category: "transaction"),
+            class: "sub-cat-tab sub-cat-tab--transaction #{'sub-cat-tab--active' if @sub_category == 'transaction'}" do %>
+          <i class="ri-exchange-dollar-line"></i>
+          <span>Tranzaksyon</span>
+          <span class="sub-cat-count"><%= @sub_category_counts[:transaction] %></span>
+        <% end %>
+      <% end %>
+      <% if @sub_category_counts[:appointment] > 0 %>
+        <%= link_to partner_portal_dashboard_path(category: "appointment"),
+            class: "sub-cat-tab sub-cat-tab--appointment #{'sub-cat-tab--active' if @sub_category == 'appointment'}" do %>
+          <i class="ri-calendar-check-line"></i>
+          <span>Randevou</span>
+          <span class="sub-cat-count"><%= @sub_category_counts[:appointment] %></span>
+        <% end %>
+      <% end %>
+      <% if @sub_category_counts[:survey] > 0 %>
+        <%= link_to partner_portal_dashboard_path(category: "survey"),
+            class: "sub-cat-tab sub-cat-tab--survey #{'sub-cat-tab--active' if @sub_category == 'survey'}" do %>
+          <i class="ri-questionnaire-line"></i>
+          <span>Sondaj</span>
+          <span class="sub-cat-count"><%= @sub_category_counts[:survey] %></span>
+        <% end %>
+      <% end %>
+    </div>
+
+    <%# Survey Analytics %>
+    <% if @sub_category == "survey" && @sub_survey_aggregations.present? %>
+      <div class="sub-analytics-grid">
+        <% @sub_survey_aggregations.each do |agg| %>
+          <div class="dash-card">
+            <div class="dash-card-header"><h3 style="font-size:0.82rem;font-weight:700;margin:0;"><i class="ri-bar-chart-2-line me-1"></i> <%= agg[:label] %></h3></div>
+            <div class="dash-card-body">
+              <div class="sub-chart-bars">
+                <% agg[:options].each do |opt| %>
+                  <div class="sub-chart-bar-row">
+                    <div class="sub-chart-label"><%= opt[:label] %></div>
+                    <div class="sub-chart-track">
+                      <div class="sub-chart-fill sub-chart-fill--purple" style="width: <%= opt[:pct] %>%;"></div>
+                    </div>
+                    <div class="sub-chart-value"><%= opt[:count] %> (<%= opt[:pct] %>%)</div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# ── Status Filter + Search + Date Range ── %>
+    <% unless @sub_category == "survey" %>
+      <div class="sub-tabs">
+        <%= link_to "Tout (#{@sub_status_counts.values.sum})",
+            partner_portal_dashboard_path(category: @sub_category),
+            class: "sub-tab #{'sub-tab--active' unless params[:sub_status].present?}" %>
+        <% statuses = case @sub_category
+             when "transaction" then %w[submitted approved]
+             when "appointment" then %w[submitted approved]
+             else %w[submitted under_review approved rejected]
+           end %>
+        <% statuses.each do |st| %>
+          <% label = { "submitted" => "Soumèt", "under_review" => "Ap Revize", "approved" => "Apwouve", "rejected" => "Rejte" }[st] %>
+          <% count = @sub_status_counts[st] || 0 %>
+          <%= link_to "#{label} (#{count})",
+              partner_portal_dashboard_path(sub_status: st, category: @sub_category),
+              class: "sub-tab #{'sub-tab--active' if params[:sub_status] == st}" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Enhanced Filter Bar %>
+    <div class="sub-filter-bar">
+      <%= form_tag partner_portal_dashboard_path, method: :get, class: "sub-filter-form" do %>
+        <%= hidden_field_tag :sub_status, params[:sub_status] %>
+        <%= hidden_field_tag :category, @sub_category %>
+        <div class="sub-filter-row">
+          <div class="sub-filter-field sub-filter-field--search">
+            <i class="ri-search-line"></i>
+            <%= text_field_tag :sub_q, params[:sub_q], placeholder: "Chache pa kòd, non sitwayen...", class: "sub-filter-input" %>
+          </div>
+          <div class="sub-filter-field">
+            <%= select_tag :service_id,
+                options_for_select(
+                  [["Tout Sèvis", ""]] + @sub_services.select { |s| @sub_category.blank? || s.service_category == @sub_category }.map { |s| [s.name, s.id] },
+                  params[:service_id]
+                ), class: "sub-filter-select" %>
+          </div>
+          <div class="sub-filter-field sub-filter-field--date">
+            <i class="ri-calendar-line"></i>
+            <%= date_field_tag :date_from, params[:date_from], class: "sub-filter-date", placeholder: "Depi" %>
+          </div>
+          <div class="sub-filter-field sub-filter-field--date">
+            <i class="ri-calendar-line"></i>
+            <%= date_field_tag :date_to, params[:date_to], class: "sub-filter-date", placeholder: "Jiska" %>
+          </div>
+          <%= submit_tag "Filtre", class: "sub-filter-btn" %>
+          <% if params[:sub_q].present? || params[:service_id].present? || params[:date_from].present? || params[:date_to].present? %>
+            <%= link_to partner_portal_dashboard_path(category: @sub_category), class: "sub-filter-clear" do %>
+              <i class="ri-close-line"></i>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ── Submissions Table ── %>
+    <div class="dash-card">
+      <div class="dash-card-body p-0">
+        <% if @submissions.any? %>
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Kòd</th>
+                <% if @sub_category != "survey" %>
+                  <th>Sitwayen</th>
+                <% end %>
+                <th>Sèvis</th>
+                <% if @sub_category == "transaction" %>
+                  <th>Montan</th>
+                  <th>Peman</th>
+                  <th>Tcheke</th>
+                <% elsif @sub_category == "appointment" %>
+                  <th>Dat Randevou</th>
+                  <th>Lè</th>
+                  <th>Rive</th>
+                <% elsif @sub_category == "application" %>
+                  <th>Estati</th>
+                  <th>Revizyonè</th>
+                <% elsif @sub_category == "survey" %>
+                  <th>Dat Soumèt</th>
+                <% else %>
+                  <th>Estati</th>
+                  <th>Pri</th>
+                <% end %>
+                <th>Dat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @submissions.each do |sub| %>
+                <tr>
+                  <td><code class="dash-mono"><%= sub.verification_code %></code></td>
+
+                  <%# Hide citizen name for anonymous surveys %>
+                  <% if @sub_category != "survey" %>
+                    <td>
+                      <div class="dash-cell-name">
+                        <strong><%= sub.citizen.last_name %> <%= sub.citizen.first_name %></strong>
+                      </div>
+                    </td>
+                  <% end %>
+
+                  <td>
+                    <%= sub.partner_schema.name %>
+                    <% unless @sub_category.present? %>
+                      <% scat = sub.partner_schema.service_category %>
+                      <% cat_colors = { "application" => "info", "transaction" => "success", "appointment" => "warning", "survey" => "muted" } %>
+                      <% cat_labels = { "application" => "App", "transaction" => "Txn", "appointment" => "Rdv", "survey" => "Snd" } %>
+                      <span class="dash-badge dash-badge--<%= cat_colors[scat] || 'muted' %>" style="font-size:0.58rem;padding:2px 6px;margin-left:4px;">
+                        <%= cat_labels[scat] || scat %>
+                      </span>
+                    <% end %>
+                  </td>
+
+                  <% if @sub_category == "transaction" %>
+                    <td><strong><%= sub.price_display %></strong></td>
+                    <td>
+                      <% if sub.total_price_cents.to_i > 0 %>
+                        <span class="dash-badge dash-badge--success">Peye</span>
+                      <% else %>
+                        <span class="dash-badge dash-badge--muted">Gratis</span>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if sub.checked_in_at.present? %>
+                        <span class="dash-badge dash-badge--success"><i class="ri-check-line"></i> Wi</span>
+                      <% else %>
+                        <span class="dash-badge dash-badge--muted">Non</span>
+                      <% end %>
+                    </td>
+
+                  <% elsif @sub_category == "appointment" %>
+                    <td>
+                      <% apt_date = sub.form_data&.dig("appointment_date") %>
+                      <% if apt_date.present? %>
+                        <%= begin; Date.parse(apt_date).strftime("%d/%m/%Y"); rescue; apt_date; end %>
+                      <% else %>
+                        —
+                      <% end %>
+                    </td>
+                    <td>
+                      <% apt_time = sub.form_data&.dig("appointment_time") %>
+                      <%= apt_time.present? ? apt_time : "—" %>
+                    </td>
+                    <td>
+                      <% if sub.checked_in_at.present? %>
+                        <span class="dash-badge dash-badge--success"><i class="ri-check-line"></i> Rive</span>
+                      <% else %>
+                        <span class="dash-badge dash-badge--muted">Ap tann</span>
+                      <% end %>
+                    </td>
+
+                  <% elsif @sub_category == "application" %>
+                    <td>
+                      <% status_class = { "submitted" => "warning", "under_review" => "info",
+                           "approved" => "success", "rejected" => "danger", "draft" => "muted",
+                           "cancelled" => "muted" }[sub.status] || "muted" %>
+                      <span class="dash-badge dash-badge--<%= status_class %>"><%= sub.status_label %></span>
+                    </td>
+                    <td>
+                      <% if sub.reviewed_by.present? %>
+                        <span class="dash-cell-reviewer"><%= sub.reviewed_by.email.split("@").first %></span>
+                      <% else %>
+                        <span class="text-muted">—</span>
+                      <% end %>
+                    </td>
+
+                  <% elsif @sub_category == "survey" %>
+                    <td class="dash-cell-date"><%= sub.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
+
+                  <% else %>
+                    <td>
+                      <% status_class = { "submitted" => "warning", "under_review" => "info",
+                           "approved" => "success", "rejected" => "danger", "draft" => "muted",
+                           "cancelled" => "muted" }[sub.status] || "muted" %>
+                      <span class="dash-badge dash-badge--<%= status_class %>"><%= sub.status_label %></span>
+                    </td>
+                    <td><%= sub.price_display %></td>
+                  <% end %>
+
+                  <% unless @sub_category == "survey" %>
+                    <td class="dash-cell-date"><%= sub.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
+                  <% end %>
+                  <td>
+                    <%= link_to partner_portal_submission_path(sub), class: "dash-btn dash-btn--sm dash-btn--outline" do %>
+                      <i class="ri-eye-line"></i> Wè
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <div class="dash-empty">
+            <% case @sub_category
+               when "transaction" %>
+              <i class="ri-exchange-dollar-line"></i>
+              <p>Pa gen tranzaksyon pou moman sa a.</p>
+            <% when "appointment" %>
+              <i class="ri-calendar-check-line"></i>
+              <p>Pa gen randevou pou moman sa a.</p>
+            <% when "survey" %>
+              <i class="ri-questionnaire-line"></i>
+              <p>Pa gen repons sondaj pou moman sa a.</p>
+            <% when "application" %>
+              <i class="ri-file-list-3-line"></i>
+              <p>Pa gen aplikasyon pou moman sa a.</p>
+            <% else %>
+              <i class="ri-inbox-line"></i>
+              <p>Pa gen soumisyon pou moman sa a.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</section>
+
+<%# ================================================================ %>
+<%# Submissions Section Styles %>
+<%# ================================================================ %>
+<style>
+  /* ── Pulse Metric Bar ── */
+  .sub-pulse {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+    margin-top: 1.5rem;
+  }
+  .sub-pulse-card {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-left: 3px solid #CBD5E1;
+  }
+  .sub-pulse-card--blue   { border-left-color: #00209F; }
+  .sub-pulse-card--green  { border-left-color: #059669; }
+  .sub-pulse-card--amber  { border-left-color: #D97706; }
+  .sub-pulse-card--red    { border-left-color: #DC2626; }
+  .sub-pulse-card--teal   { border-left-color: #0891B2; }
+  .sub-pulse-card--purple { border-left-color: #7C3AED; }
+
+  .sub-pulse-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    background: #F1F5F9;
+    color: #475569;
+    flex-shrink: 0;
+  }
+  .sub-pulse-card--blue .sub-pulse-icon   { background: rgba(0,32,159,0.08); color: #00209F; }
+  .sub-pulse-card--green .sub-pulse-icon  { background: rgba(5,150,105,0.08); color: #059669; }
+  .sub-pulse-card--amber .sub-pulse-icon  { background: rgba(217,119,6,0.08); color: #D97706; }
+  .sub-pulse-card--red .sub-pulse-icon    { background: rgba(220,38,38,0.08); color: #DC2626; }
+  .sub-pulse-card--teal .sub-pulse-icon   { background: rgba(8,145,178,0.08); color: #0891B2; }
+  .sub-pulse-card--purple .sub-pulse-icon { background: rgba(124,58,237,0.08); color: #7C3AED; }
+
+  .sub-pulse-info { display: flex; flex-direction: column; }
+  .sub-pulse-num {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 1.35rem; color: #0F172A;
+    line-height: 1.2;
+  }
+  .sub-pulse-label {
+    font-size: 0.7rem; color: #94A3B8; font-weight: 500;
+  }
+
+  /* ── Service Cards (Aksyon Rapid) ── */
+  .sub-services-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .sub-services-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.92rem; font-weight: 700; color: #0F172A;
+    margin: 0; display: flex; align-items: center;
+  }
+  .sub-services-title i { color: #64748B; }
+
+  .sub-service-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .sub-svc-card {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .sub-svc-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    border-color: #CBD5E1;
+  }
+  .sub-svc-card--blue:hover   { border-color: #00209F; }
+  .sub-svc-card--green:hover  { border-color: #059669; }
+  .sub-svc-card--amber:hover  { border-color: #D97706; }
+  .sub-svc-card--purple:hover { border-color: #7C3AED; }
+
+  .sub-svc-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .sub-svc-icon--blue   { background: rgba(0,32,159,0.08); color: #00209F; }
+  .sub-svc-icon--green  { background: rgba(5,150,105,0.08); color: #059669; }
+  .sub-svc-icon--amber  { background: rgba(217,119,6,0.08); color: #D97706; }
+  .sub-svc-icon--purple { background: rgba(124,58,237,0.08); color: #7C3AED; }
+
+  .sub-svc-body { flex: 1; min-width: 0; }
+  .sub-svc-name {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.82rem; font-weight: 700; color: #0F172A;
+    margin: 0 0 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sub-svc-meta {
+    display: flex; gap: 8px; align-items: center;
+    font-size: 0.68rem; color: #64748B;
+  }
+  .sub-svc-price { font-weight: 600; }
+  .sub-svc-capacity {
+    display: inline-flex; align-items: center; gap: 2px;
+    background: #F1F5F9; padding: 1px 6px; border-radius: 4px;
+  }
+
+  .sub-svc-actions { flex-shrink: 0; }
+  .sub-svc-cta {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 600;
+    padding: 6px 14px; border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex; align-items: center;
+    transition: all 0.15s;
+  }
+  .sub-svc-cta--blue   { background: #00209F; color: #FFF; }
+  .sub-svc-cta--blue:hover   { background: #001A7A; color: #FFF; }
+  .sub-svc-cta--green  { background: #059669; color: #FFF; }
+  .sub-svc-cta--green:hover  { background: #047857; color: #FFF; }
+  .sub-svc-cta--amber  { background: #D97706; color: #FFF; }
+  .sub-svc-cta--amber:hover  { background: #B45309; color: #FFF; }
+  .sub-svc-cta--purple { background: #7C3AED; color: #FFF; }
+  .sub-svc-cta--purple:hover { background: #6D28D9; color: #FFF; }
+
+  /* ── List Header ── */
+  .sub-list-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px; margin-top: 8px;
+  }
+  .sub-list-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.92rem; font-weight: 700; color: #0F172A;
+    margin: 0; display: flex; align-items: center;
+  }
+  .sub-list-title i { color: #64748B; }
+
+  /* ── Enhanced Filter Bar ── */
+  .sub-filter-bar {
+    margin-bottom: 1rem;
+  }
+  .sub-filter-form { width: 100%; }
+  .sub-filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .sub-filter-field {
+    flex: 1;
+    min-width: 140px;
+    max-width: 240px;
+  }
+  .sub-filter-field--search {
+    position: relative;
+    max-width: 280px;
+  }
+  .sub-filter-field--search i {
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 0.85rem; color: #94A3B8;
+    pointer-events: none;
+  }
+  .sub-filter-field--search .sub-filter-input {
+    padding-left: 32px;
+  }
+  .sub-filter-field--date {
+    position: relative;
+    max-width: 160px;
+    flex: 0 1 auto;
+  }
+  .sub-filter-field--date i {
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 0.8rem; color: #94A3B8;
+    pointer-events: none;
+  }
+  .sub-filter-input,
+  .sub-filter-select,
+  .sub-filter-date {
+    width: 100%;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    background: #FFF;
+    color: #334155;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.15s;
+  }
+  .sub-filter-input:focus,
+  .sub-filter-select:focus,
+  .sub-filter-date:focus {
+    border-color: #00209F;
+  }
+  .sub-filter-date {
+    padding-left: 30px;
+  }
+  .sub-filter-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem; font-weight: 600;
+    padding: 8px 18px;
+    border: none; border-radius: 8px;
+    background: #00209F; color: #FFF;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .sub-filter-btn:hover { background: #001A7A; }
+  .sub-filter-clear {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: #FEF2F2; color: #DC2626;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background 0.15s;
+  }
+  .sub-filter-clear:hover { background: #FECACA; color: #DC2626; }
+
+  /* ── Reviewer cell ── */
+  .dash-cell-reviewer {
+    font-size: 0.72rem;
+    color: #475569;
+    font-weight: 500;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 767.98px) {
+    .sub-pulse {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .sub-pulse-num { font-size: 1.1rem; }
+    .sub-pulse-card { padding: 12px 14px; }
+    .sub-service-cards {
+      grid-template-columns: 1fr;
+    }
+    .sub-filter-row {
+      flex-direction: column;
+    }
+    .sub-filter-field,
+    .sub-filter-field--search,
+    .sub-filter-field--date {
+      max-width: 100%;
+      width: 100%;
+    }
+  }
+</style>
+<% end %>

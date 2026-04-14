@@ -1,0 +1,80 @@
+<%# Shared row for team index — works across all sector layouts %>
+<%# Locals: member (User), show_role_badge (bool, optional), can_manage (bool) %>
+<% can_manage = local_assigns.fetch(:can_manage, false) %>
+<% show_role_badge = local_assigns.fetch(:show_role_badge, false) %>
+<tr class="<%= 'table-secondary' unless member.active? %>">
+  <td class="fw-medium">
+    <%= member.full_name %>
+    <% unless member.active? %>
+      <span class="badge bg-danger-subtle text-danger pp-badge-sm ms-1">Sispann</span>
+    <% end %>
+  </td>
+  <td><%= member.email %></td>
+  <td><code class="pp-text-brand"><%= member.bonid %></code></td>
+  <% if show_role_badge %>
+    <td>
+      <% if member.has_role?(:partner_admin) %>
+        <span class="badge bg-primary-subtle text-primary pp-badge-sm">Administratè</span>
+      <% elsif member.has_role?(:partner_agent_surveyor) %>
+        <span class="badge bg-info-subtle text-info pp-badge-sm">Apantè</span>
+      <% elsif member.has_role?(:partner_agent_notary) %>
+        <span class="badge bg-dark-subtle text-dark pp-badge-sm">Notè</span>
+      <% elsif member.has_role?(:bank_agent) %>
+        <span class="badge bg-info-subtle text-info pp-badge-sm">Ajan Bank</span>
+      <% elsif member.has_role?(:bank_teller) %>
+        <span class="badge bg-secondary-subtle text-secondary pp-badge-sm">Kesye</span>
+      <% elsif member.has_role?(:bank_supervisor) %>
+        <span class="badge bg-success-subtle text-success pp-badge-sm">Sipèvizè Bank</span>
+      <% elsif member.has_role?(:partner_supervisor) %>
+        <span class="badge bg-success-subtle text-success pp-badge-sm">Sipèvizè</span>
+      <% else %>
+        <span class="badge bg-secondary-subtle text-secondary pp-badge-sm">Ajan</span>
+      <% end %>
+    </td>
+  <% end %>
+  <td>
+    <% if member.active? %>
+      <% if member.invitation_accepted_at.present? %>
+        <span class="badge bg-success-subtle text-success pp-badge-sm">Aktif</span>
+      <% else %>
+        <span class="badge bg-warning-subtle text-warning pp-badge-sm">An Atant</span>
+      <% end %>
+    <% else %>
+      <span class="badge bg-danger-subtle text-danger pp-badge-sm">Sispann</span>
+    <% end %>
+  </td>
+  <td>
+    <% if can_manage && member != current_user %>
+      <div class="d-flex gap-1 justify-content-end">
+        <% if member.active? %>
+          <%= button_to suspend_partner_portal_team_path(member),
+              method: :patch,
+              class: "btn btn-sm btn-outline-warning",
+              title: "Sispann",
+              data: { turbo_confirm: "Sispann #{member.full_name}?" } do %>
+            <i class="ri-pause-circle-line"></i>
+          <% end %>
+        <% else %>
+          <%= button_to reactivate_partner_portal_team_path(member),
+              method: :patch,
+              class: "btn btn-sm btn-outline-success",
+              title: "Reaktive",
+              data: { turbo_confirm: "Reaktive #{member.full_name}?" } do %>
+            <i class="ri-play-circle-line"></i>
+          <% end %>
+        <% end %>
+        <% if current_user.has_role?(:partner_admin) %>
+          <%= button_to partner_portal_team_path(member),
+              method: :delete,
+              class: "btn btn-sm btn-outline-danger",
+              title: "Retire",
+              data: { turbo_confirm: "Retire #{member.full_name} nan ekip la?" } do %>
+            <i class="ri-delete-bin-line"></i>
+          <% end %>
+        <% end %>
+      </div>
+    <% elsif member == current_user %>
+      <span class="badge bg-info-subtle text-info pp-badge-sm">Ou</span>
+    <% end %>
+  </td>
+</tr>

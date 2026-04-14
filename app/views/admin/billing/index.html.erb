@@ -1,0 +1,213 @@
+<section class="certificate-font py-2" role="main">
+  <div class="container">
+
+    <%# ── Header ── %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          <i class="ri-money-dollar-circle-line me-2"></i> Billing Dashboard
+        </h2>
+        <p class="text-muted small mb-0">Revenue overview, credit balances, and usage trends.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to admin_billing_credit_ledger_path, class: "btn btn-outline-primary btn-sm" do %>
+          <i class="ri-file-list-3-line me-1"></i> Credit Ledger
+        <% end %>
+        <%= link_to admin_billing_payments_path, class: "btn btn-outline-primary btn-sm" do %>
+          <i class="ri-bank-card-line me-1"></i> Payments
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Summary Cards ── %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Total Revenue</div>
+            <h3 class="fw-bold text-success mb-0">$<%= number_with_delimiter(@total_revenue.to_f.round(2)) %></h3>
+            <small class="text-muted">All time</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Revenue This Month</div>
+            <h3 class="fw-bold text-primary mb-0">$<%= number_with_delimiter(@revenue_this_month.to_f.round(2)) %></h3>
+            <small class="text-muted"><%= Time.current.strftime("%B %Y") %></small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Active Credit Balance</div>
+            <h3 class="fw-bold text-warning mb-0">$<%= number_with_delimiter(@total_active_credits.to_f.round(2)) %></h3>
+            <small class="text-muted"><%= @total_partners %> verified partners</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Credit Tiers</div>
+            <div class="text-start mt-2">
+              <% CreditLedgerEntry::CREDIT_TIERS.each do |tier, info| %>
+                <div class="d-flex justify-content-between" style="font-size: 0.72rem;">
+                  <span class="text-muted"><%= tier %></span>
+                  <span class="fw-semibold">$<%= info[:cost] %></span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <%# ── Revenue Chart ── %>
+      <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-bottom-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="ri-line-chart-line me-1"></i> Revenue vs Usage (30 Days)</h6>
+          </div>
+          <div class="card-body">
+            <% if @revenue_by_day.any? || @usage_by_day.any? %>
+              <div style="height: 250px; display: flex; align-items: end; gap: 2px; padding-top: 20px;">
+                <% all_days = (30.days.ago.to_date..Date.current).to_a %>
+                <% max_val = [(@usage_by_day.values.max || 1), (@revenue_by_day.values.max || 1)].max.to_f %>
+                <% all_days.each do |day| %>
+                  <% usage = (@usage_by_day[day] || 0).to_f %>
+                  <% revenue = (@revenue_by_day[day] || 0).to_f %>
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px;" title="<%= day.strftime('%b %d') %>: Usage $<%= usage.round(2) %> / Revenue $<%= revenue.round(2) %>">
+                    <div style="width: 100%; background: #0d6efd; border-radius: 2px 2px 0 0; height: <%= [(usage / max_val * 200).round, 2].max %>px;" data-bs-toggle="tooltip" data-bs-placement="top" title="$<%= usage.round(2) %>"></div>
+                    <div style="width: 100%; background: #198754; border-radius: 0 0 2px 2px; height: <%= [(revenue / max_val * 200).round, 2].max %>px;"></div>
+                  </div>
+                <% end %>
+              </div>
+              <div class="d-flex gap-3 mt-2 justify-content-center" style="font-size: 0.75rem;">
+                <span><span style="display:inline-block;width:10px;height:10px;background:#0d6efd;border-radius:2px;"></span> Credit Usage</span>
+                <span><span style="display:inline-block;width:10px;height:10px;background:#198754;border-radius:2px;"></span> Revenue</span>
+              </div>
+            <% else %>
+              <div class="text-center text-muted py-5">
+                <i class="ri-bar-chart-line display-4"></i>
+                <p class="mt-2">No billing data yet</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Top Spenders ── %>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-white border-bottom-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="ri-trophy-line me-1"></i> Top Spenders (30 Days)</h6>
+          </div>
+          <div class="card-body p-0">
+            <% if @top_spenders.any? %>
+              <table class="table table-sm mb-0" style="font-size: 0.8rem;">
+                <% @top_spenders.each_with_index do |(partner_id, amount), idx| %>
+                  <% partner = @top_spender_partners[partner_id] %>
+                  <tr>
+                    <td class="ps-3">
+                      <span class="badge bg-light text-dark rounded-pill me-1"><%= idx + 1 %></span>
+                      <%= partner&.name || "Unknown" %>
+                    </td>
+                    <td class="text-end pe-3 fw-semibold">$<%= amount.to_f.round(2) %></td>
+                  </tr>
+                <% end %>
+              </table>
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <small>No spending data yet</small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <%# ── Recent Payments ── %>
+      <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-bottom-0 pt-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold mb-0"><i class="ri-bank-card-line me-1"></i> Recent Payments</h6>
+            <%= link_to "View All", admin_billing_payments_path, class: "btn btn-sm btn-outline-primary" %>
+          </div>
+          <div class="card-body p-0">
+            <% if @recent_payments.any? %>
+              <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">Partner</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th class="pe-3">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @recent_payments.each do |payment| %>
+                    <tr>
+                      <td class="ps-3"><%= payment.partner&.name %></td>
+                      <td>
+                        <span class="badge bg-<%= payment.payment_method == 'moncash' ? 'warning text-dark' : 'info' %> rounded-pill">
+                          <%= payment.payment_method.capitalize %>
+                        </span>
+                      </td>
+                      <td class="fw-semibold"><%= payment.formatted_amount %></td>
+                      <td>
+                        <span class="badge bg-<%= { 'completed' => 'success', 'pending' => 'warning text-dark', 'failed' => 'danger', 'refunded' => 'secondary' }[payment.status] %>">
+                          <%= payment.status.capitalize %>
+                        </span>
+                      </td>
+                      <td class="pe-3 text-muted"><%= payment.created_at.strftime("%b %d, %H:%M") %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <small>No payments recorded yet</small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Low Balance Partners ── %>
+      <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-bottom-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="ri-alert-line me-1 text-danger"></i> Low Balance Partners</h6>
+          </div>
+          <div class="card-body p-0">
+            <% if @low_balance_partners.any? %>
+              <table class="table table-sm mb-0" style="font-size: 0.8rem;">
+                <% @low_balance_partners.each do |partner| %>
+                  <tr>
+                    <td class="ps-3"><%= partner.name %></td>
+                    <td class="text-end pe-3">
+                      <span class="fw-semibold text-<%= partner.credit_balance <= 0 ? 'danger' : 'warning' %>">
+                        $<%= partner.credit_balance.to_f.round(2) %>
+                      </span>
+                    </td>
+                  </tr>
+                <% end %>
+              </table>
+            <% else %>
+              <div class="text-center text-muted py-4">
+                <small>All partners have healthy balances</small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>

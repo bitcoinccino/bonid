@@ -1,0 +1,69 @@
+<%# app/views/partner_portal/services/edit.html.erb %>
+<% content_for(:title) { "Modifye #{@service.name} — #{@current_partner.name}" } %>
+
+<%# ── Immersive Top Bar (fixed) ── %>
+<div class="ib-topbar">
+  <div class="ib-topbar-left">
+    <%= link_to partner_portal_services_path, class: "ib-topbar-back" do %>
+      <i class="ri-arrow-left-line"></i> Sèvis
+    <% end %>
+    <span class="ib-topbar-title">
+      <i class="ri-pencil-line"></i> <%= @service.name %>
+    </span>
+    <span class="ib-topbar-badge ib-topbar-badge--<%= @service.published? ? 'published' : (@service.archived? ? 'archived' : 'draft') %>">
+      <% if @service.published? %>
+        <i class="ri-check-line"></i> v<%= @service.version %> Pibliye
+      <% elsif @service.archived? %>
+        v<%= @service.version %> Achive
+      <% else %>
+        v<%= @service.version %> Bouyon
+      <% end %>
+    </span>
+    <% if @has_draft %>
+      <span class="ib-topbar-badge ib-topbar-badge--draft">
+        <i class="ri-edit-2-line"></i> Chanjman
+      </span>
+    <% end %>
+  </div>
+
+  <div class="ib-topbar-right">
+    <% if @service.published? %>
+      <%= link_to version_history_partner_portal_service_path(@service), class: "ib-history-btn" do %>
+        <i class="ri-history-line"></i> Istorik
+      <% end %>
+    <% end %>
+
+    <button type="submit" form="service-form" class="ib-save-btn">
+      <i class="ri-save-line"></i> Sove
+    </button>
+
+    <%# Publish button — for drafts: first publish; for published: publish new draft changes %>
+    <% if @service.draft? || (@service.published? && @has_draft) %>
+      <%= link_to publish_partner_portal_service_path(@service),
+            data: { turbo_method: :patch, turbo_confirm: @service.draft? ? "Pibliye sèvis sa a? Sitwayen yo ap kapab wè li." : "Pibliye vèsyon sa a? Sitwayen yo ap wè nouvo fòm nan." },
+            class: "ib-publish-btn" do %>
+        <i class="ri-upload-2-line"></i> Pibliye
+      <% end %>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Draft Warning ── %>
+<% if @is_published %>
+  <div class="ib-draft-warning" id="draftWarning">
+    <i class="ri-alert-line"></i>
+    <span>
+      <strong>Sèvis aktif.</strong> Chanjman yo sove kòm bouyon jiskaske ou pibliye.
+      <% if @has_draft %>
+        · <strong>Ou gen chanjman ki poko pibliye.</strong>
+      <% end %>
+    </span>
+    <button type="button" class="ib-draft-warning-close" onclick="this.parentElement.remove()" aria-label="Fèmen">&times;</button>
+  </div>
+<% end %>
+
+<%= render "form_builder",
+           service: @service,
+           url: partner_portal_service_path(@service),
+           method: :patch,
+           editing_structure: @editing_structure %>

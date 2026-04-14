@@ -1,58 +1,44 @@
 <div class="container-fluid py-4">
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-      <h1 class="h3 fw-bold mb-1">Ekip</h1>
-      <p class="text-muted mb-0">Jere manm ekip ou yo</p>
+      <h4 class="pp-page-title">
+        <i class="ri-team-line me-2 pp-text-brand"></i>Ekip
+      </h4>
+      <p class="pp-page-subtitle">Jere manm ekip ou yo</p>
     </div>
-    <a href="<%= new_partner_portal_team_path %>" class="btn btn-primary">
-      <i class="ri-user-add-line me-1"></i> Envite Manm
-    </a>
+    <% if current_user.has_role?(:partner_admin) %>
+      <a href="<%= new_partner_portal_team_path %>" class="btn pp-btn-brand px-4">
+        <i class="ri-user-add-line me-1"></i> Envite Manm
+      </a>
+    <% end %>
   </div>
+
+  <% can_manage = current_user.has_role?(:partner_admin) || current_user.has_role?(:partner_supervisor) || current_user.has_role?(:bank_supervisor) %>
 
   <%# === PENDING INVITATIONS === %>
   <% if @pending.any? %>
-    <div class="card shadow-sm border-0 rounded-4 mb-4">
-      <div class="card-header bg-warning-subtle border-0 rounded-top-4 px-4 py-3">
-        <h5 class="fw-semibold mb-0">
+    <div class="pp-card card mb-4">
+      <div class="card-header bg-warning-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
           <i class="ri-time-line me-1"></i> Envitasyon an Atant (<%= @pending.size %>)
-        </h5>
+        </h6>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-hover mb-0">
+          <table class="table table-hover pp-table">
             <thead class="table-light">
               <tr>
                 <th>Non</th>
                 <th>Imèl</th>
                 <th>BonID</th>
                 <th>Wòl</th>
-                <th>Envite</th>
+                <th>Estati</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               <% @pending.each do |member| %>
-                <tr>
-                  <td class="fw-medium"><%= member.full_name %></td>
-                  <td><%= member.email %></td>
-                  <td><code class="text-primary"><%= member.bonid %></code></td>
-                  <td>
-                    <% if member.has_role?(:partner_admin) %>
-                      <span class="badge bg-primary-subtle text-primary">Administratè</span>
-                    <% else %>
-                      <span class="badge bg-secondary-subtle text-secondary">Ajan</span>
-                    <% end %>
-                  </td>
-                  <td class="text-muted"><%= time_ago_in_words(member.invitation_sent_at) %> de sa</td>
-                  <td>
-                    <%= button_to partner_portal_team_path(member),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger",
-                        data: { turbo_confirm: "Retire #{member.full_name} nan ekip la?" } do %>
-                      <i class="ri-close-line"></i>
-                    <% end %>
-                  </td>
-                </tr>
+                <%= render "partner_portal/team/member_row", member: member, show_role_badge: true, can_manage: can_manage %>
               <% end %>
             </tbody>
           </table>
@@ -62,16 +48,16 @@
   <% end %>
 
   <%# === ADMINISTRATORS === %>
-  <div class="card shadow-sm border-0 rounded-4 mb-4">
-    <div class="card-header bg-primary-subtle border-0 rounded-top-4 px-4 py-3">
-      <h5 class="fw-semibold mb-0">
+  <div class="pp-card card mb-4">
+    <div class="card-header bg-primary-subtle px-4 py-3">
+      <h6 class="fw-semibold mb-0 pp-text-sm">
         <i class="ri-shield-user-line me-1"></i> Administratè (<%= @admins.size %>)
-      </h5>
+      </h6>
     </div>
     <div class="card-body p-0">
       <% if @admins.any? %>
         <div class="table-responsive">
-          <table class="table table-hover mb-0">
+          <table class="table table-hover pp-table">
             <thead class="table-light">
               <tr>
                 <th>Non</th>
@@ -82,93 +68,285 @@
               </tr>
             </thead>
             <tbody>
-              <% @admins.each do |admin| %>
-                <tr>
-                  <td class="fw-medium"><%= admin.full_name %></td>
-                  <td><%= admin.email %></td>
-                  <td><code class="text-primary"><%= admin.bonid %></code></td>
-                  <td>
-                    <% if admin.invitation_accepted_at.present? %>
-                      <span class="badge bg-success-subtle text-success">Aktif</span>
-                    <% else %>
-                      <span class="badge bg-warning-subtle text-warning">An Atant</span>
-                    <% end %>
-                  </td>
-                  <td>
-                    <% unless admin == current_user %>
-                      <%= button_to partner_portal_team_path(admin),
-                          method: :delete,
-                          class: "btn btn-sm btn-outline-danger",
-                          data: { turbo_confirm: "Retire #{admin.full_name}?" } do %>
-                        <i class="ri-delete-bin-line"></i>
-                      <% end %>
-                    <% else %>
-                      <span class="badge bg-info-subtle text-info">Ou</span>
-                    <% end %>
-                  </td>
-                </tr>
+              <% @admins.each do |member| %>
+                <%= render "partner_portal/team/member_row", member: member, can_manage: current_user.has_role?(:partner_admin) %>
               <% end %>
             </tbody>
           </table>
         </div>
       <% else %>
-        <div class="text-center py-4 text-muted">Pa gen administratè.</div>
+        <div class="pp-empty-state">
+          <p>Pa gen administratè.</p>
+        </div>
       <% end %>
     </div>
   </div>
 
-  <%# === AGENTS === %>
-  <div class="card shadow-sm border-0 rounded-4">
-    <div class="card-header bg-secondary-subtle border-0 rounded-top-4 px-4 py-3">
-      <h5 class="fw-semibold mb-0">
-        <i class="ri-user-line me-1"></i> Ajan (<%= @agents.size %>)
-      </h5>
+  <% if onaca_sector? %>
+    <%# === ONACA: SURVEYORS (Apantè) === %>
+    <div class="pp-card card mb-4">
+      <div class="card-header bg-info-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-compass-3-line me-1"></i> Apantè (<%= @surveyors.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @surveyors.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @surveyors.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: can_manage %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-compass-3-line"></i>
+            <h6>Pa gen apantè</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon apantè</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
     </div>
-    <div class="card-body p-0">
-      <% if @agents.any? %>
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Non</th>
-                <th>Imèl</th>
-                <th>BonID</th>
-                <th>Estati</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @agents.each do |agent| %>
-                <tr>
-                  <td class="fw-medium"><%= agent.full_name %></td>
-                  <td><%= agent.email %></td>
-                  <td><code class="text-primary"><%= agent.bonid %></code></td>
-                  <td>
-                    <% if agent.invitation_accepted_at.present? %>
-                      <span class="badge bg-success-subtle text-success">Aktif</span>
-                    <% else %>
-                      <span class="badge bg-warning-subtle text-warning">An Atant</span>
-                    <% end %>
-                  </td>
-                  <td>
-                    <%= button_to partner_portal_team_path(agent),
-                        method: :delete,
-                        class: "btn btn-sm btn-outline-danger",
-                        data: { turbo_confirm: "Retire #{agent.full_name} nan ekip la?" } do %>
-                      <i class="ri-delete-bin-line"></i>
-                    <% end %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </div>
-      <% else %>
-        <div class="text-center py-4 text-muted">
-          <i class="ri-user-add-line ri-2x mb-2 d-block"></i>
-          Pa gen ajan. <a href="<%= new_partner_portal_team_path %>">Envite premye ajan ou a</a>.
-        </div>
-      <% end %>
+
+    <%# === ONACA: NOTARIES (Notè) === %>
+    <div class="pp-card card mb-4">
+      <div class="card-header bg-dark-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-quill-pen-line me-1"></i> Notè (<%= @notaries.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @notaries.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @notaries.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: can_manage %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-quill-pen-line"></i>
+            <h6>Pa gen notè</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon notè</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
     </div>
-  </div>
+
+    <%# === ONACA: SUPERVISORS (Sipèvizè) === %>
+    <div class="pp-card card">
+      <div class="card-header bg-success-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-eye-line me-1"></i> Sipèvizè (<%= @supervisors.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @supervisors.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @supervisors.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: current_user.has_role?(:partner_admin) %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-eye-line"></i>
+            <h6>Pa gen sipèvizè</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon sipèvizè</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+  <% elsif banking_sector? %>
+    <%# === BANKING: AGENTS (Ajan Bank) === %>
+    <div class="pp-card card mb-4">
+      <div class="card-header bg-info-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-user-star-line me-1"></i> Ajan Bank (<%= @bank_agents.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @bank_agents.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @bank_agents.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: can_manage %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-user-star-line"></i>
+            <h6>Pa gen ajan bank</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon ajan bank</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# === BANKING: TELLERS (Kesye) === %>
+    <div class="pp-card card mb-4">
+      <div class="card-header bg-secondary-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-money-dollar-box-line me-1"></i> Kesye (<%= @bank_tellers.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @bank_tellers.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @bank_tellers.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: can_manage %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-money-dollar-box-line"></i>
+            <h6>Pa gen kesye</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon kesye</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# === BANKING: SUPERVISORS (Sipèvizè Bank) === %>
+    <div class="pp-card card">
+      <div class="card-header bg-success-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-eye-line me-1"></i> Sipèvizè Bank (<%= @bank_supervisors.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @bank_supervisors.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @bank_supervisors.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: current_user.has_role?(:partner_admin) %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-eye-line"></i>
+            <h6>Pa gen sipèvizè bank</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon sipèvizè</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+  <% else %>
+    <%# === DEFAULT: AGENTS === %>
+    <div class="pp-card card mb-4">
+      <div class="card-header bg-secondary-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-user-line me-1"></i> Ajan (<%= @agents.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @agents.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @agents.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: can_manage %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-user-add-line"></i>
+            <h6>Pa gen ajan</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite premye ajan ou a</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# === DEFAULT: SUPERVISORS === %>
+    <div class="pp-card card">
+      <div class="card-header bg-success-subtle px-4 py-3">
+        <h6 class="fw-semibold mb-0 pp-text-sm">
+          <i class="ri-eye-line me-1"></i> Sipèvizè (<%= @supervisors.size %>)
+        </h6>
+      </div>
+      <div class="card-body p-0">
+        <% if @supervisors.any? %>
+          <div class="table-responsive">
+            <table class="table table-hover pp-table">
+              <thead class="table-light">
+                <tr><th>Non</th><th>Imèl</th><th>BonID</th><th>Estati</th><th></th></tr>
+              </thead>
+              <tbody>
+                <% @supervisors.each do |member| %>
+                  <%= render "partner_portal/team/member_row", member: member, can_manage: current_user.has_role?(:partner_admin) %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <div class="pp-empty-state">
+            <i class="ri-eye-line"></i>
+            <h6>Pa gen sipèvizè</h6>
+            <% if current_user.has_role?(:partner_admin) %>
+              <p><a href="<%= new_partner_portal_team_path %>">Envite yon sipèvizè</a>.</p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 </div>

@@ -12,23 +12,17 @@ module PartnerPortal
     before_action :ensure_correct_sector
     before_action :ensure_partner_portal_access!
     before_action :ensure_profile_complete!
+    before_action :ensure_guidelines_accepted!
 
     helper_method :current_partner, :current_portal_user
     layout :resolve_layout
 
     # ✅ ALLOWED SECTORS FOR PARTNER PORTAL
-    # Law enforcement has specialized features (officers, incident reports)
-    # Other sectors use the default dashboard
-    ALLOWED_SECTORS = %w[
-      law_enforcement pnh
-      banking fintech insurance credit_union microfinance cryptocurrency
-      hospital clinic pharmacy healthcare public_health_campaigns
-      embassy consulate international_org embassy_services
-      hotel transport telecom energy hospitality tourism retail
-      humanitarian nonprofit development ngos social_services
-      school university training_center education online_education
-      dgi immigration oni onaca cep archives_nationales mairie municipality ministry customs
-    ].freeze
+    # All sectors from PartnerSectorConstants + legacy values
+    ALLOWED_SECTORS = (
+      PartnerSectorConstants::SECTORS.values.flatten +
+      %w[law_enforcement banking healthcare embassy_services telecom ngo education insurance tourism]
+    ).uniq.freeze
 
     # Maps DB-stored sector values to their portal namespace.
     # Needed when the stored sector value differs from the namespace name
@@ -44,7 +38,11 @@ module PartnerPortal
 
     # Controllers shared across portals (NOT sector-gated)
     GLOBAL_CONTROLLERS = %w[
-      dashboard access_logs support settings api_docs api_keys reports partners schemas
+      dashboard access_logs support settings api_docs api_keys reports partners schemas services
+      fiscal_receipts verifications analytics scans bonid_lookups team credits billing submissions
+      nif_registrations business_registrations patente_declarations tca_declarations ras_ir_declarations
+      dgi_review dgi_cash_payments election_dashboard electoral_calendar voter_eligibility
+      voter_registry candidate_registrations party_registrations partner_audit_logs
     ].freeze
 
     private
@@ -168,6 +166,65 @@ module PartnerPortal
       partner.description.present? &&
         partner.contact_person.present? &&
         partner.phone_number.present?
+    end
+
+    # ============================================================
+    # GUIDELINES ACCEPTANCE GATE
+    # ============================================================
+    def ensure_guidelines_accepted!
+      return unless @current_partner.present?
+
+      # Skip check for guidelines controller itself
+      return if self.class.name.include?("GuidelinesAcceptance")
+
+      # Skip check for profile completion & session controllers
+      return if self.class.name.include?("ProfileCompletion")
+      return if self.class.name.include?("Sessions")
+
+      unless guidelines_accepted?(@current_partner)
+        redirect_to partner_portal_guidelines_path,
+                    alert: "Tanpri li epi aksepte direktiv BonID yo anvan ou ka itilize Portal Patnè a."
+      end
+    end
+
+    def guidelines_accepted?(partner)
+      return false unless partner.present?
+
+      partner.guidelines_accepted_at.present? &&
+        partner.guidelines_version == PartnerPortal::GuidelinesAcceptanceController::CURRENT_VERSION
+    end
+
+    # ============================================================
+    # BONID AUTO-FILL (shared across DGI form controllers)
+    # ============================================================
+    def build_auto_fill(citizen)
+      return {} unless citizen
+
+      addr = citizen.address
+      nif_record = citizen.verification_records
+                     .where(record_type: "nif_registration", status: "verified")
+                     .order(created_at: :desc).first
+      {
+        first_name:        citizen.first_name,
+        last_name:         citizen.last_name,
+        full_name:         "#{citizen.last_name} #{citizen.first_name}".strip,
+        phone:             citizen.phone,
+        email:             citizen.email,
+        street_address:    addr&.street_address || citizen.street_address,
+        locality:          addr&.locality || citizen.locality,
+        department:        addr&.department&.name || citizen.birth_department&.name,
+        commune:           addr&.commune&.name || citizen.birth_commune&.name,
+        section_communale: addr&.communal_section&.name,
+        postal_code:       addr&.postal_code || citizen.postal_code,
+        country:           addr&.country || "Haiti",
+        birth_department:  addr&.department&.name || citizen.birth_department&.name,
+        birth_commune:     addr&.commune&.name || citizen.birth_commune&.name,
+        date_of_birth:     citizen.dob,
+        sex:               { "male" => "M", "female" => "F" }[citizen.sex] || citizen.sex,
+        nationality:       citizen.nationality || "Ayisyen",
+        cin:               citizen.id_number,
+        nif:               nif_record&.nif_genere
+      }
     end
 
     # ============================================================

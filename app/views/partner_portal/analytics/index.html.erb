@@ -1,16 +1,711 @@
+<%# Partner Portal — Analytics (API, Fiscal, Reconciliation) %>
+<%# Uses Chartkick + Chart.js for modern interactive graphs %>
+
 <div class="container-fluid py-4">
+
+  <%# ── Header ── %>
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-      <h1 class="h3 fw-bold mb-1">Analytics</h1>
-      <p class="text-muted mb-0">Monitor your API usage and activity</p>
+      <h1 class="h3 fw-bold mb-1">
+        <% case @view %>
+        <% when "fiscal" %>
+          <i class="ri-file-chart-line me-2"></i>Rapo Fiskal
+        <% when "payments" %>
+          <i class="ri-bank-card-line me-2"></i>Analitik Peman
+        <% when "reconciliation" %>
+          <i class="ri-scales-3-line me-2"></i>Rekonsilyasyon
+        <% else %>
+          <i class="ri-bar-chart-box-line me-2"></i>Analitik API
+        <% end %>
+      </h1>
+      <p class="text-muted mb-0">
+        <% case @view %>
+        <% when "fiscal" %>
+          Tout done sou kes fiskal, revni, ak distribisyon jewografik
+        <% when "payments" %>
+          Peman DGI, revni pa metòd, ak estatistik deklarasyon
+        <% when "reconciliation" %>
+          Rapwochman ant kes kreye ak kes konsome pa ajans
+        <% else %>
+          Analize itilizasyon API ak pèfòmans
+        <% end %>
+      </p>
     </div>
   </div>
 
-  <div class="card shadow-sm border-0 rounded-4 p-4">
-    <div class="text-center py-5">
-      <i class="ri-bar-chart-box-line ri-3x text-muted mb-3"></i>
-      <h5 class="fw-semibold text-dark">Analytics Dashboard</h5>
-      <p class="text-muted">Your analytics data will appear here.</p>
+  <%# ── View Tabs ── %>
+  <ul class="nav nav-pills mb-4" style="gap: 8px;">
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path,
+          class: "nav-link #{'active' if @view.blank?}",
+          style: @view.blank? ? "background: #00209F;" : "" do %>
+        <i class="ri-bar-chart-box-line me-1"></i>API
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path(view: "payments"),
+          class: "nav-link #{'active' if @view == 'payments'}",
+          style: @view == "payments" ? "background: #00209F;" : "" do %>
+        <i class="ri-bank-card-line me-1"></i>Peman
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path(view: "fiscal"),
+          class: "nav-link #{'active' if @view == 'fiscal'}",
+          style: @view == "fiscal" ? "background: #00209F;" : "" do %>
+        <i class="ri-file-chart-line me-1"></i>Fiskal
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to partner_portal_analytics_path(view: "reconciliation"),
+          class: "nav-link #{'active' if @view == 'reconciliation'}",
+          style: @view == "reconciliation" ? "background: #00209F;" : "" do %>
+        <i class="ri-scales-3-line me-1"></i>Rekonsilyasyon
+      <% end %>
+    </li>
+  </ul>
+
+  <% case @view
+     # ════════════════════════════════════════════════════════════
+     # FISCAL ANALYTICS — Full Dashboard with Chartkick graphs
+     # ════════════════════════════════════════════════════════════
+     when "fiscal" %>
+
+    <%# ── KPI Cards ── %>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-receipt-line text-primary mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-primary"><%= number_with_delimiter(@fiscal_stats[:total_receipts]) %></div>
+            <div class="text-muted small">Total Kes</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-money-dollar-circle-line text-success mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-success"><%= number_with_delimiter(@fiscal_stats[:total_revenue_htg]) %></div>
+            <div class="text-muted small">Revni Total (HTG)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-lock-line text-danger mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-danger"><%= @fiscal_stats[:consumed_count] %></div>
+            <div class="text-muted small">Konsome</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-coins-line text-info mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-info"><%= number_with_delimiter(@fiscal_stats[:avg_receipt_htg]) %></div>
+            <div class="text-muted small">Mwayèn pa Kes (HTG)</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </div>
+
+    <%# ── Row 1: Revenue Over Time + Paid vs Consumed ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-line-chart-line me-2 text-primary"></i>Revni pa Mwa (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <%= area_chart @revenue_monthly, colors: ["#00209F"], library: { height: "280px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-pie-chart-line me-2 text-success"></i>Peye vs Konsome</h6>
+          </div>
+          <div class="card-body">
+            <%= pie_chart @paid_vs_consumed, colors: ["#00209F", "#dc3545", "#22c55e"], library: { height: "280px" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 2: Daily + Weekly Receipts ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-bar-chart-2-line me-2 text-primary"></i>Kes pa Jou (30 dènye jou)</h6>
+          </div>
+          <div class="card-body">
+            <%= column_chart @receipts_daily, colors: ["#00209F"], library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-timeline-view me-2 text-info"></i>Kes pa Semèn (12 dènye semèn)</h6>
+          </div>
+          <div class="card-body">
+            <%= line_chart @receipts_weekly, colors: ["#1a73e8"], library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 3: Monthly Receipts + Yearly ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-calendar-line me-2 text-success"></i>Kes pa Mwa (12 dènye mwa)</h6>
+          </div>
+          <div class="card-body">
+            <%= column_chart @receipts_monthly, colors: ["#34a853"], library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-calendar-check-line me-2 text-warning"></i>Kes pa Ane</h6>
+          </div>
+          <div class="card-body">
+            <%= column_chart @receipts_yearly, colors: ["#fbbc04", "#00209F"], library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 4: Revenue by Tax Type + Count by Tax Type ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-funds-line me-2 text-primary"></i>Revni pa Tip Taks (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <%= bar_chart @revenue_by_tax_type, colors: ["#00209F"], library: { height: "320px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-pie-chart-2-line me-2 text-danger"></i>Kantite Kes pa Tip Taks</h6>
+          </div>
+          <div class="card-body">
+            <%= pie_chart @count_by_tax_type.first(10),
+                colors: ["#00209F", "#1a73e8", "#34a853", "#ea4335", "#fbbc04", "#9334e6", "#ff6d01", "#46bdc6", "#e8710a", "#7c4dff"],
+                library: { height: "320px" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 5: Geography — Department + Commune + DGI Office ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-map-pin-line me-2 text-primary"></i>Pa Depatman</h6>
+          </div>
+          <div class="card-body">
+            <%= bar_chart @receipts_by_department, colors: ["#00209F"], library: { height: "300px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-community-line me-2 text-success"></i>Top 15 Komín</h6>
+          </div>
+          <div class="card-body">
+            <%= bar_chart @receipts_by_commune, colors: ["#34a853"], library: { height: "300px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-government-line me-2 text-info"></i>Pa Biwo DGI</h6>
+          </div>
+          <div class="card-body">
+            <%= bar_chart @receipts_by_office, colors: ["#1a73e8"], library: { height: "300px" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 6: Revenue by Office + Payment Methods + Consuming Agencies ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-money-dollar-circle-line me-2 text-success"></i>Revni pa Biwo (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <%= column_chart @revenue_by_office, colors: ["#34a853"], library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-bank-card-line me-2 text-warning"></i>Metòd Peman</h6>
+          </div>
+          <div class="card-body">
+            <%= pie_chart @receipts_by_payment_method,
+                colors: ["#00209F", "#34a853", "#fbbc04", "#ea4335", "#9334e6", "#ff6d01"],
+                donut: true, library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-government-line me-2 text-danger"></i>Ajans ki Konsome</h6>
+          </div>
+          <div class="card-body">
+            <% if @consuming_agencies.any? %>
+              <%= bar_chart @consuming_agencies, colors: ["#dc3545"], library: { height: "260px" } %>
+            <% else %>
+              <div class="text-center py-4">
+                <i class="ri-shield-check-line text-muted" style="font-size: 2rem;"></i>
+                <p class="text-muted mt-2 small">Okenn kes pa konsome ankò</p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 7: Revenue Daily Trend ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-stock-line me-2 text-primary"></i>Revni Chak Jou — 30 Dènye Jou (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <%= area_chart @revenue_daily, colors: ["#00209F"], library: { height: "260px" } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <% # ════════════════════════════════════════════════════════════
+     # PAYMENT ANALYTICS VIEW
+     # ════════════════════════════════════════════════════════════
+     when "payments" %>
+
+    <%# ── KPI Cards ── %>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-bank-card-line text-primary mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-primary"><%= @payment_stats[:completed_payments] %></div>
+            <div class="text-muted small">Peman Konplete</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-money-dollar-circle-line text-success mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-success"><%= number_with_delimiter(@payment_stats[:total_revenue_htg]) %></div>
+            <div class="text-muted small">Revni Total (HTG)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-government-line mb-2" style="font-size: 1.5rem; color:#00209F;"></i>
+            <div class="fs-3 fw-bold" style="color:#00209F;"><%= number_with_delimiter(@payment_stats[:dgi_revenue_htg]) %></div>
+            <div class="text-muted small">Pati DGI (HTG)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-shield-star-line mb-2" style="font-size: 1.5rem; color:#7c3aed;"></i>
+            <div class="fs-3 fw-bold" style="color:#7c3aed;"><%= number_with_delimiter(@payment_stats[:bonid_fees_htg]) %></div>
+            <div class="text-muted small">Frè BonID (HTG)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 1: Revenue Over Time + By Payment Method ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-line-chart-line me-2 text-primary"></i>Revni pa Mwa (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <% if @revenue_monthly.any? %>
+              <%= area_chart @revenue_monthly, colors: ["#00209F"], library: { height: "280px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-pie-chart-line me-2 text-success"></i>Pa Metòd Peman</h6>
+          </div>
+          <div class="card-body">
+            <% if @payments_by_method.any? %>
+              <%= pie_chart @payments_by_method,
+                  colors: ["#7c3aed", "#f59e0b", "#1a73e8", "#ff6600", "#34a853"],
+                  donut: true, library: { height: "280px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 2: Daily Payments + Revenue by Method ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-bar-chart-2-line me-2 text-primary"></i>Peman pa Jou (30 dènye jou)</h6>
+          </div>
+          <div class="card-body">
+            <% if @payments_daily.any? %>
+              <%= column_chart @payments_daily, colors: ["#00209F"], library: { height: "260px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-funds-line me-2 text-success"></i>Revni pa Metòd (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <% if @revenue_by_method.any? %>
+              <%= bar_chart @revenue_by_method, colors: ["#10B981"], library: { height: "260px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 3: By Form Type + Revenue by Form ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-file-text-line me-2 text-primary"></i>Peman pa Tip Fòm</h6>
+          </div>
+          <div class="card-body">
+            <% if @payments_by_form.any? %>
+              <%= pie_chart @payments_by_form,
+                  colors: ["#00209F", "#1a73e8", "#34a853", "#ea4335", "#fbbc04", "#9334e6"],
+                  library: { height: "300px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-money-dollar-circle-line me-2 text-success"></i>Revni pa Tip Fòm (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <% if @revenue_by_form.any? %>
+              <%= bar_chart @revenue_by_form, colors: ["#00209F"], library: { height: "300px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Row 4: Declaration Stats ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-file-list-3-line me-2 text-info"></i>Deklarasyon Sitwayen</h6>
+          </div>
+          <div class="card-body">
+            <table class="table table-lg mb-0">
+              <tbody>
+                <tr>
+                  <td class="text-muted py-3">Total Deklarasyon</td>
+                  <td class="text-end fw-bold fs-4 py-3"><%= @declaration_stats[:total] %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted py-3">
+                    <span class="d-inline-block rounded-circle bg-warning me-2" style="width:10px;height:10px;"></span>Annatant
+                  </td>
+                  <td class="text-end fw-bold fs-4 text-warning py-3"><%= @declaration_stats[:pending] %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted py-3">
+                    <span class="d-inline-block rounded-circle bg-success me-2" style="width:10px;height:10px;"></span>Verifye
+                  </td>
+                  <td class="text-end fw-bold fs-4 text-success py-3"><%= @declaration_stats[:verified] %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted py-3">
+                    <span class="d-inline-block rounded-circle bg-danger me-2" style="width:10px;height:10px;"></span>Rejte
+                  </td>
+                  <td class="text-end fw-bold fs-4 text-danger py-3"><%= @declaration_stats[:rejected] %></td>
+                </tr>
+                <tr class="table-light">
+                  <td class="text-muted py-3 fw-semibold">To Apwobasyon</td>
+                  <td class="text-end py-3">
+                    <span class="badge fs-5 px-3 py-2 bg-success"><%= @declaration_stats[:approval_rate] %>%</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-pie-chart-2-line me-2 text-primary"></i>Pa Tip Fòm</h6>
+          </div>
+          <div class="card-body">
+            <% if @declarations_by_form.any? %>
+              <%= pie_chart @declarations_by_form,
+                  colors: ["#00209F", "#1a73e8", "#34a853", "#ea4335", "#fbbc04", "#9334e6"],
+                  library: { height: "320px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Revenue Trend (daily) ── %>
+    <div class="row g-4 mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-stock-line me-2 text-primary"></i>Revni Chak Jou — 30 Dènye Jou (HTG)</h6>
+          </div>
+          <div class="card-body">
+            <% if @revenue_daily.any? %>
+              <%= area_chart @revenue_daily, colors: ["#00209F"], library: { height: "260px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <% # ════════════════════════════════════════════════════════════
+     # RECONCILIATION VIEW
+     # ════════════════════════════════════════════════════════════
+     when "reconciliation" %>
+
+    <div class="row g-4">
+      <%# Left: Summary Table %>
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3 fw-semibold">
+            <i class="ri-scales-3-line me-2 text-primary"></i>Rezime Rekonsilyasyon
+          </div>
+          <div class="card-body">
+            <table class="table table-lg mb-0">
+              <tbody>
+                <tr>
+                  <td class="text-muted py-3">Total Kes Kreye</td>
+                  <td class="text-end fw-bold fs-4 py-3"><%= number_with_delimiter(@reconciliation[:total_issued]) %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted py-3">
+                    <span class="d-inline-block rounded-circle bg-danger me-2" style="width: 10px; height: 10px;"></span>
+                    Kes Konsome
+                  </td>
+                  <td class="text-end fw-bold fs-4 text-danger py-3"><%= number_with_delimiter(@reconciliation[:total_consumed]) %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted py-3">
+                    <span class="d-inline-block rounded-circle bg-success me-2" style="width: 10px; height: 10px;"></span>
+                    Kes Disponib
+                  </td>
+                  <td class="text-end fw-bold fs-4 text-success py-3"><%= number_with_delimiter(@reconciliation[:total_available]) %></td>
+                </tr>
+                <tr class="table-light">
+                  <td class="text-muted py-3 fw-semibold">To Konsomasyon</td>
+                  <td class="text-end py-3">
+                    <span class="badge fs-5 px-3 py-2
+                      <%= @reconciliation[:consumption_rate] > 75 ? 'bg-danger' :
+                          @reconciliation[:consumption_rate] > 50 ? 'bg-warning text-dark' :
+                          @reconciliation[:consumption_rate] > 25 ? 'bg-info' : 'bg-success' %>">
+                      <%= @reconciliation[:consumption_rate] %>%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <%# Visual bar %>
+            <div class="mt-4">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Konsome</span>
+                <span>Disponib</span>
+              </div>
+              <div class="progress" style="height: 24px; border-radius: 12px;">
+                <div class="progress-bar bg-danger" style="width: <%= @reconciliation[:consumption_rate] %>%;">
+                  <%= @reconciliation[:consumption_rate] %>%
+                </div>
+                <div class="progress-bar bg-success" style="width: <%= 100 - @reconciliation[:consumption_rate] %>%;">
+                  <%= (100 - @reconciliation[:consumption_rate]).round(1) %>%
+                </div>
+              </div>
+            </div>
+
+            <%# Pie chart %>
+            <div class="mt-4">
+              <%= pie_chart(
+                { "Konsome" => @reconciliation[:total_consumed], "Disponib" => @reconciliation[:total_available] },
+                colors: ["#dc3545", "#22c55e"],
+                donut: true,
+                library: { height: "250px" }
+              ) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Right: Revenue Breakdown %>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+          <div class="card-body text-center py-4">
+            <i class="ri-money-dollar-circle-line text-primary mb-2" style="font-size: 2rem;"></i>
+            <div class="text-muted small mb-1">Total Revni</div>
+            <div class="fs-2 fw-bold text-primary">
+              <%= number_with_delimiter(@reconciliation[:total_revenue_htg]) %>
+              <span class="fs-6 fw-normal">HTG</span>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+          <div class="card-body text-center py-4">
+            <i class="ri-lock-line text-danger mb-2" style="font-size: 2rem;"></i>
+            <div class="text-muted small mb-1">Revni Konsome</div>
+            <div class="fs-2 fw-bold text-danger">
+              <%= number_with_delimiter(@reconciliation[:consumed_revenue_htg]) %>
+              <span class="fs-6 fw-normal">HTG</span>
+            </div>
+          </div>
+        </div>
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-4">
+            <i class="ri-shield-check-line text-success mb-2" style="font-size: 2rem;"></i>
+            <div class="text-muted small mb-1">Revni Disponib</div>
+            <div class="fs-2 fw-bold text-success">
+              <%= number_with_delimiter(@reconciliation[:available_revenue_htg]) %>
+              <span class="fs-6 fw-normal">HTG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <% # ════════════════════════════════════════════════════════════
+     # DEFAULT API ANALYTICS VIEW
+     # ════════════════════════════════════════════════════════════
+     else %>
+
+    <%# KPI Cards %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-send-plane-line text-primary mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-primary"><%= number_with_delimiter(@total_requests) %></div>
+            <div class="text-muted small">Total Reket</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-check-double-line text-success mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-success"><%= number_with_delimiter(@successful_calls) %></div>
+            <div class="text-muted small">Siksè</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-body text-center py-3">
+            <i class="ri-error-warning-line text-warning mb-2" style="font-size: 1.5rem;"></i>
+            <div class="fs-3 fw-bold text-warning"><%= number_with_delimiter(@throttled_calls) %></div>
+            <div class="text-muted small">Echwe</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <%# API Calls by Day %>
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-line-chart-line me-2 text-primary"></i>Reket pa Jou (14 dènye jou)</h6>
+          </div>
+          <div class="card-body">
+            <% if @calls_by_day&.any? %>
+              <%= line_chart @calls_by_day, colors: ["#00209F"], library: { height: "280px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# API Calls by Endpoint %>
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h6 class="fw-semibold mb-0"><i class="ri-links-line me-2 text-info"></i>Pa Endpoint</h6>
+          </div>
+          <div class="card-body">
+            <% if @calls_by_endpoint&.any? %>
+              <%= pie_chart @calls_by_endpoint.first(8),
+                  colors: ["#00209F", "#1a73e8", "#34a853", "#ea4335", "#fbbc04", "#9334e6", "#ff6d01", "#46bdc6"],
+                  donut: true, library: { height: "280px" } %>
+            <% else %>
+              <div class="text-center py-4 text-muted">Pa gen done ankò</div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <% end %>
 </div>

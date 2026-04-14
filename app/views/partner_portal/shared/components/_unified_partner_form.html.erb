@@ -86,6 +86,19 @@
       } %>
   </div>
 
+  <!-- Country Field (shown only for embassy/consulate/international sectors) -->
+  <div data-sector-target="countryWrapper" class="d-none mb-3">
+    <%= f.input :country,
+      as: :country,
+      priority_countries: HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES,
+      label: "Country Represented",
+      required: true,
+      input_html: {
+        class: "form-select",
+        data: { sector_target: "countrySelect" }
+      } %>
+  </div>
+
   <!-- Description & Website (hidden for PNH on signup, shown after approval) -->
   <div data-sector-target="additionalFieldsWrapper" class="mb-3">
     <%= f.input :description,
@@ -154,6 +167,10 @@
 
   <%= tag.script id: "use-cases-json", type: "application/json" do %>
     <%= PartnerUseCases::USE_CASES.to_json.html_safe %>
+  <% end %>
+
+  <%= tag.script id: "country-required-sectors-json", type: "application/json" do %>
+    <%= PartnerSectorConstants::COUNTRY_REQUIRED_SECTORS.to_json.html_safe %>
   <% end %>
 
 </div> <%# close data-controller="sector" %>

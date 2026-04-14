@@ -1,0 +1,97 @@
+<%# Shared Scan Center — used by all partner dashboards %>
+<%
+  today_scans     = @current_partner.qr_scan_logs.where("created_at >= ?", Time.current.beginning_of_day).count rescue 0
+  total_citizens  = @current_partner.service_applications.select(:citizen_id).distinct.count rescue 0
+  total_services  = @current_partner.partner_schemas.citizen_services.where(schema_status: "published").count rescue 0
+  today_submitted = @current_partner.service_applications.where("submitted_at >= ?", Time.current.beginning_of_day).where.not(status: "draft").count rescue 0
+  mismatch_today  = @current_partner.partner_audit_logs.where(event: "identity_mismatch").where("created_at >= ?", Time.current.beginning_of_day).count rescue 0
+  pending_review  = @current_partner.service_applications.where(status: %w[submitted under_review]).count rescue 0
+%>
+
+<%# ── ALERTS ── %>
+<% if pending_review > 0 || mismatch_today > 0 %>
+  <div class="dgi-alerts">
+    <% if pending_review > 0 %>
+      <div class="dgi-alert-item dgi-alert-item--review">
+        <div class="dgi-alert-icon"><i class="ri-inbox-line"></i></div>
+        <div class="dgi-alert-body">
+          <strong><%= pending_review %> demann</strong> annatant revizyon
+        </div>
+        <%= link_to "Revize", partner_portal_submissions_path(sub_status: "submitted"), class: "dgi-alert-action" %>
+      </div>
+    <% end %>
+    <% if mismatch_today > 0 %>
+      <div class="dgi-alert-item dgi-alert-item--danger">
+        <div class="dgi-alert-icon"><i class="ri-alarm-warning-line"></i></div>
+        <div class="dgi-alert-body">
+          <strong><%= mismatch_today %> idantite pa matche</strong> jodi a
+        </div>
+        <%= link_to "Wè", partner_portal_partner_audit_logs_path(event: "identity_mismatch"), class: "dgi-alert-action" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+
+<%# ── SCAN CENTER ── %>
+<div class="dgi-scan-center">
+  <div class="dgi-scan-card">
+    <div class="dgi-scan-visual">
+      <div class="dgi-scan-ring">
+        <div class="dgi-scan-ring-inner">
+          <i class="ri-qr-scan-2-line"></i>
+        </div>
+      </div>
+      <h2 class="dgi-scan-title">Verifye Sitwayen</h2>
+      <p class="dgi-scan-desc">Eskane kòd QR BonID oswa antre 6 dènye karaktè a</p>
+
+      <%= form_tag partner_portal_scans_path, method: :get, class: "dgi-scan-form", data: { turbo: false } do %>
+        <div class="dgi-scan-input-wrap">
+          <input type="text" name="bonid" class="dgi-scan-input"
+                 placeholder="Ex: 697XDS" maxlength="6" pattern="[A-Za-z0-9]{6}"
+                 autocomplete="off" autofocus>
+          <button type="submit" class="dgi-scan-submit">
+            <i class="ri-search-line"></i>
+          </button>
+        </div>
+      <% end %>
+
+      <div class="dgi-scan-divider"><span>oswa</span></div>
+
+      <%= link_to partner_portal_scans_path, class: "dgi-scan-qr-btn", data: { turbo: false } do %>
+        <i class="ri-camera-line me-2"></i>Ouvri Kamera QR
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── METRIC CARDS ── %>
+<div class="dgi-metrics">
+  <div class="dgi-metric-card">
+    <div class="dgi-metric-icon dgi-metric-icon--blue"><i class="ri-qr-scan-line"></i></div>
+    <div class="dgi-metric-data">
+      <span class="dgi-metric-num"><%= today_scans %></span>
+      <span class="dgi-metric-label">Eskanaj Jodi a</span>
+    </div>
+  </div>
+  <div class="dgi-metric-card">
+    <div class="dgi-metric-icon dgi-metric-icon--green"><i class="ri-user-follow-line"></i></div>
+    <div class="dgi-metric-data">
+      <span class="dgi-metric-num"><%= total_citizens %></span>
+      <span class="dgi-metric-label">Sitwayen Sèvi</span>
+    </div>
+  </div>
+  <div class="dgi-metric-card">
+    <div class="dgi-metric-icon dgi-metric-icon--amber"><i class="ri-file-check-line"></i></div>
+    <div class="dgi-metric-data">
+      <span class="dgi-metric-num"><%= today_submitted %></span>
+      <span class="dgi-metric-label">Soumisyon Jodi a</span>
+    </div>
+  </div>
+  <div class="dgi-metric-card">
+    <div class="dgi-metric-icon dgi-metric-icon--purple"><i class="ri-service-line"></i></div>
+    <div class="dgi-metric-data">
+      <span class="dgi-metric-num"><%= total_services %></span>
+      <span class="dgi-metric-label">Sèvis Aktif</span>
+    </div>
+  </div>
+</div>

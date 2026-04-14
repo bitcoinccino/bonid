@@ -1,0 +1,245 @@
+<section class="certificate-font py-2" role="main">
+  <div class="container">
+
+    <%# ── Header ── %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          <i class="ri-exchange-funds-line me-2"></i> Regleman Patnè
+        </h2>
+        <p class="text-muted small mb-0">Swivi peman patnè, balans, ak revni BonID.</p>
+      </div>
+    </div>
+
+    <%# ── Summary Cards ── %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Total Annatant</div>
+            <h3 class="fw-bold text-warning mb-0"><%= number_with_delimiter(@total_pending.to_i) %> HTG</h3>
+            <small class="text-muted">Dwe peye patnè</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Total Regle</div>
+            <h3 class="fw-bold text-success mb-0"><%= number_with_delimiter(@total_settled.to_i) %> HTG</h3>
+            <small class="text-muted">Deja transfere</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body text-center">
+            <div class="text-muted small mb-1">Revni BonID</div>
+            <h3 class="fw-bold text-primary mb-0"><%= number_with_delimiter(@bonid_revenue.to_i) %> HTG</h3>
+            <small class="text-muted">Total frè sèvis</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Per-Partner Balance Cards ── %>
+    <% if @partners.any? %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-3">
+          <h6 class="fw-bold mb-0"><i class="ri-group-line me-1"></i> Balans pa Patnè</h6>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0" style="font-size: 0.8rem;">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Patnè</th>
+                <th>Metòd Peman</th>
+                <th>CashTag</th>
+                <th class="text-end pe-3">Balans Annatant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @partners.each do |partner| %>
+                <tr>
+                  <td class="ps-3 fw-semibold"><%= partner.name %></td>
+                  <td>
+                    <% if partner.respond_to?(:settlement_method) && partner.settlement_method.present? %>
+                      <span class="badge bg-info rounded-pill"><%= partner.settlement_method.humanize %></span>
+                    <% else %>
+                      <span class="text-muted">-</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if partner.respond_to?(:settlement_cashtag) && partner.settlement_cashtag.present? %>
+                      <code><%= partner.settlement_cashtag %></code>
+                    <% else %>
+                      <span class="text-muted">-</span>
+                    <% end %>
+                  </td>
+                  <td class="text-end pe-3">
+                    <% balance = @partner_balances[partner.id] || 0 %>
+                    <span class="fw-bold text-<%= balance > 0 ? 'warning' : 'muted' %>">
+                      <%= number_with_delimiter(balance.to_i) %> HTG
+                    </span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Filters ── %>
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body py-2">
+        <%= form_tag admin_settlements_path, method: :get, class: "row g-2 align-items-end" do %>
+          <div class="col-md-3">
+            <label class="form-label small text-muted mb-0">Patnè</label>
+            <%= select_tag :partner_id,
+                options_from_collection_for_select(@partner_options, :id, :name, params[:partner_id]),
+                include_blank: "Tout patnè",
+                class: "form-select form-select-sm" %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small text-muted mb-0">Estati</label>
+            <%= select_tag :status,
+                options_for_select([["Tout", ""], ["Annatant", "pending"], ["Regle", "settled"], ["Konteste", "disputed"]], params[:status]),
+                class: "form-select form-select-sm" %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small text-muted mb-0">De</label>
+            <%= date_field_tag :from, params[:from], class: "form-control form-control-sm" %>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label small text-muted mb-0">Jiska</label>
+            <%= date_field_tag :to, params[:to], class: "form-control form-control-sm" %>
+          </div>
+          <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="ri-filter-3-line me-1"></i> Filtre
+            </button>
+            <%= link_to admin_settlements_path, class: "btn btn-outline-secondary btn-sm" do %>
+              <i class="ri-refresh-line me-1"></i> Reset
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Settle Batch Button + Modal ── %>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0"><i class="ri-list-check-2 me-1"></i> Regleman yo</h6>
+      <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#settleBatchModal">
+        <i class="ri-check-double-line me-1"></i> Regle Batch
+      </button>
+    </div>
+
+    <%# ── Settlements Table ── %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <% if @settlements.any? %>
+          <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Dat</th>
+                <th>Patnè</th>
+                <th>Batch</th>
+                <th>Fòm Tip</th>
+                <th class="text-end">Total</th>
+                <th class="text-end">Patnè Montan</th>
+                <th class="text-end">Frè BonID</th>
+                <th class="text-center">Estati</th>
+                <th class="text-center pe-3">Aksyon</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @settlements.each do |settlement| %>
+                <tr>
+                  <td class="ps-3 text-muted"><%= settlement.created_at.strftime("%b %d, %H:%M") %></td>
+                  <td class="fw-semibold"><%= settlement.partner&.name %></td>
+                  <td><code class="small"><%= settlement.batch_id %></code></td>
+                  <td>
+                    <% if settlement.form_type.present? %>
+                      <span class="badge bg-light text-dark rounded-pill"><%= settlement.form_type.humanize %></span>
+                    <% else %>
+                      <span class="text-muted">-</span>
+                    <% end %>
+                  </td>
+                  <td class="text-end"><%= settlement.formatted_total %></td>
+                  <td class="text-end fw-semibold"><%= settlement.formatted_partner_amount %></td>
+                  <td class="text-end text-primary"><%= settlement.formatted_bonid_fee %></td>
+                  <td class="text-center">
+                    <span class="badge <%= settlement.status_badge_class %> rounded-pill">
+                      <%= settlement.status_label %>
+                    </span>
+                  </td>
+                  <td class="text-center pe-3">
+                    <%= link_to admin_settlement_path(settlement), class: "btn btn-outline-primary btn-sm py-0 px-2" do %>
+                      <i class="ri-eye-line"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+
+          <% if @settlements.respond_to?(:total_pages) && @settlements.total_pages > 1 %>
+            <div class="d-flex justify-content-center py-3">
+              <%= paginate @settlements %>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="text-center text-muted py-5">
+            <i class="ri-exchange-funds-line display-4"></i>
+            <p class="mt-2">Pa gen regleman ankò</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<%# ── Settle Batch Modal ── %>
+<div class="modal fade" id="settleBatchModal" tabindex="-1" aria-labelledby="settleBatchModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <%= form_tag settle_batch_admin_settlements_path, method: :post do %>
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="settleBatchModalLabel">
+            <i class="ri-check-double-line me-2 text-success"></i> Regle Batch
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="batch_id" class="form-label fw-semibold">Batch ID</label>
+            <%= text_field_tag :batch_id, nil, class: "form-control", placeholder: "BATCH-2026-W13-DGI", required: true %>
+            <div class="form-text">Antre batch ID pou make kòm regle.</div>
+          </div>
+          <div class="mb-3">
+            <label for="settlement_method" class="form-label fw-semibold">Metòd Peman</label>
+            <%= select_tag :settlement_method,
+                options_for_select(Settlement::SETTLEMENT_METHODS.map { |m| [m.humanize, m] }),
+                class: "form-select", required: true %>
+          </div>
+          <div class="mb-3">
+            <label for="settlement_reference" class="form-label fw-semibold">Referans Transfè</label>
+            <%= text_field_tag :settlement_reference, nil, class: "form-control", placeholder: "TXN-123456 / Nimewo Chèk", required: true %>
+          </div>
+          <div class="mb-3">
+            <label for="notes" class="form-label fw-semibold">Nòt (opsyonèl)</label>
+            <%= text_area_tag :notes, nil, class: "form-control", rows: 3, placeholder: "Detay adisyonèl..." %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Anile</button>
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="ri-check-line me-1"></i> Konfime Regleman
+          </button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

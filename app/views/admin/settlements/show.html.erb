@@ -1,0 +1,132 @@
+<section class="certificate-font py-2" role="main">
+  <div class="container">
+
+    <%# ── Header ── %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          <i class="ri-file-list-3-line me-2"></i> Detay Regleman #<%= @settlement.id %>
+        </h2>
+        <p class="text-muted small mb-0">
+          <%= @settlement.partner&.name %> &middot; <%= @settlement.created_at.strftime("%B %d, %Y %H:%M") %>
+        </p>
+      </div>
+      <div>
+        <%= link_to admin_settlements_path, class: "btn btn-outline-primary btn-sm" do %>
+          <i class="ri-arrow-left-line me-1"></i> Retounen
+        <% end %>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <%# ── Settlement Info ── %>
+      <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-bottom-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="ri-information-line me-1"></i> Enfòmasyon Regleman</h6>
+          </div>
+          <div class="card-body">
+            <table class="table table-sm mb-0" style="font-size: 0.85rem;">
+              <tbody>
+                <tr>
+                  <td class="text-muted" style="width: 40%;">Estati</td>
+                  <td>
+                    <span class="badge <%= @settlement.status_badge_class %> rounded-pill">
+                      <%= @settlement.status_label %>
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Patnè</td>
+                  <td class="fw-semibold"><%= @settlement.partner&.name %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Batch ID</td>
+                  <td><code><%= @settlement.batch_id %></code></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Fòm Tip</td>
+                  <td><%= @settlement.form_type&.humanize || "-" %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Deskripsyon</td>
+                  <td><%= @settlement.description || "-" %></td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Peryòd</td>
+                  <td>
+                    <% if @settlement.period_start && @settlement.period_end %>
+                      <%= @settlement.period_start.strftime("%b %d") %> - <%= @settlement.period_end.strftime("%b %d, %Y") %>
+                    <% else %>
+                      -
+                    <% end %>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Lajan</td>
+                  <td><%= @settlement.currency || "HTG" %></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Financial Breakdown ── %>
+      <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-bottom-0 pt-3">
+            <h6 class="fw-bold mb-0"><i class="ri-money-dollar-circle-line me-1"></i> Montan</h6>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Total Kolekte</span>
+              <span class="fw-bold"><%= @settlement.formatted_total %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2 border-bottom">
+              <span class="text-muted">Montan Patnè</span>
+              <span class="fw-bold text-success"><%= @settlement.formatted_partner_amount %></span>
+            </div>
+            <div class="d-flex justify-content-between py-2">
+              <span class="text-muted">Frè BonID</span>
+              <span class="fw-bold text-primary"><%= @settlement.formatted_bonid_fee %></span>
+            </div>
+          </div>
+        </div>
+
+        <% if @settlement.settled? %>
+          <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-white border-bottom-0 pt-3">
+              <h6 class="fw-bold mb-0"><i class="ri-check-double-line me-1 text-success"></i> Detay Peman</h6>
+            </div>
+            <div class="card-body">
+              <table class="table table-sm mb-0" style="font-size: 0.85rem;">
+                <tbody>
+                  <tr>
+                    <td class="text-muted">Metòd</td>
+                    <td><%= @settlement.settlement_method&.humanize %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Referans</td>
+                    <td><code><%= @settlement.settlement_reference %></code></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Regle Le</td>
+                    <td><%= @settlement.settled_at&.strftime("%B %d, %Y %H:%M") %></td>
+                  </tr>
+                  <% if @settlement.notes.present? %>
+                    <tr>
+                      <td class="text-muted">Nòt</td>
+                      <td><%= @settlement.notes %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+</section>

@@ -9,19 +9,28 @@
 # Lookup by last 6 chars of BonID — name + email auto-pulled from verified record.
 # No email input = no spoofing.
 #
-# Roles: partner_admin / partner_agent (flat, same for all sectors)
+# Authorization matrix:
+#   partner_admin  → can invite, assign roles, suspend, reactivate, revoke anyone except self
+#   *_supervisor   → can suspend and reactivate agents/tellers in their sector (NOT admins)
+#   agents/tellers → can only view team list
 #
 # Actions:
-#   GET    /partner_portal/team           → index   (list team members)
-#   GET    /partner_portal/team/new       → new     (invite form — BonID last 6)
-#   POST   /partner_portal/team/lookup    → lookup  (preview user before invite)
-#   POST   /partner_portal/team           → create  (send invitation)
-#   DELETE /partner_portal/team/:id       → destroy (revoke access)
+#   GET    /partner_portal/team               → index       (list team members)
+#   GET    /partner_portal/team/new           → new         (invite form — BonID last 6)
+#   POST   /partner_portal/team/lookup        → lookup      (preview user before invite)
+#   POST   /partner_portal/team               → create      (send invitation)
+#   PATCH  /partner_portal/team/:id/suspend   → suspend     (deactivate member access)
+#   PATCH  /partner_portal/team/:id/reactivate→ reactivate  (restore member access)
+#   PATCH  /partner_portal/team/:id/role      → update_role (reassign member role)
+#   DELETE /partner_portal/team/:id           → destroy     (revoke access entirely)
 
 module PartnerPortal
-  class TeamController < PartnerPortal::ApplicationController
+  class TeamController < PartnerPortal::BaseController
+    before_action :set_partner_alias
     before_action :redirect_law_enforcement
-    before_action :set_member, only: [:destroy]
+    before_action :set_member, only: [:destroy, :suspend, :reactivate, :update_role]
+    before_action :require_admin!, only: [:new, :lookup, :create, :destroy, :update_role]
+    before_action :require_admin_or_supervisor!, only: [:suspend, :reactivate]
 
     # === LIST TEAM MEMBERS ===
     def index
@@ -31,8 +40,23 @@ module PartnerPortal
                         .order(created_at: :desc)
 
       @admins  = @team_members.select { |u| u.has_role?(:partner_admin) }
-      @agents  = @team_members.select { |u| u.has_role?(:partner_agent) && !u.has_role?(:partner_admin) }
       @pending = @team_members.select { |u| u.invitation_accepted_at.nil? && u.invitation_sent_at.present? }
+
+      # Sectors with specialized roles get their own groups
+      if onaca_sector?
+        @surveyors   = @team_members.select { |u| u.has_role?(:partner_agent_surveyor) && !u.has_role?(:partner_admin) }
+        @notaries    = @team_members.select { |u| u.has_role?(:partner_agent_notary) && !u.has_role?(:partner_admin) }
+        @supervisors = @team_members.select { |u| u.has_role?(:partner_supervisor) && !u.has_role?(:partner_admin) }
+        @agents = []
+      elsif banking_sector?
+        @bank_agents      = @team_members.select { |u| u.has_role?(:bank_agent) && !u.has_role?(:partner_admin) }
+        @bank_tellers     = @team_members.select { |u| u.has_role?(:bank_teller) && !u.has_role?(:partner_admin) }
+        @bank_supervisors = @team_members.select { |u| u.has_role?(:bank_supervisor) && !u.has_role?(:partner_admin) }
+        @agents = []
+      else
+        @agents      = @team_members.select { |u| u.has_role?(:partner_agent) && !u.has_role?(:partner_admin) }
+        @supervisors = @team_members.select { |u| u.has_role?(:partner_supervisor) && !u.has_role?(:partner_admin) }
+      end
     end
 
     # === INVITE FORM ===
@@ -90,17 +114,18 @@ module PartnerPortal
       end
 
       ActiveRecord::Base.transaction do
-        @member.remove_role(:partner_admin)
-        @member.remove_role(:partner_agent)
+        # Remove all possible partner roles
+        all_partner_role_keys.each { |r| @member.remove_role(r) if @member.has_role?(r) }
         @member.update!(partner_id: nil)
 
         PartnerAuditLog.create!(
           partner:    @partner,
-          admin_user: current_user,
           event:      "team_member_revoked",
           details: {
             revoked_email: @member.email,
             revoked_name:  @member.full_name,
+            revoked_by:    current_user.full_name,
+            revoked_by_id: current_user.id,
             ip:            request.remote_ip
           }
         )
@@ -116,7 +141,146 @@ module PartnerPortal
       redirect_to partner_portal_team_index_path
     end
 
+    # === SUSPEND MEMBER ===
+    def suspend
+      if @member == current_user
+        flash[:error] = "Ou pa ka sispann tèt ou."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      # Supervisors can only suspend agents/tellers, not admins
+      if supervisor_only? && @member.has_role?(:partner_admin)
+        flash[:error] = "Sèlman administratè ka sispann yon lòt administratè."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      unless @member.active?
+        flash[:warning] = "#{@member.full_name} deja sispann."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      ActiveRecord::Base.transaction do
+        @member.update!(active: false)
+
+        PartnerAuditLog.create!(
+          partner:    @partner,
+          event:      "team_member_suspended",
+          details: {
+            suspended_email: @member.email,
+            suspended_name:  @member.full_name,
+            suspended_by:    current_user.full_name,
+            suspended_by_id: current_user.id,
+            reason:          params[:reason],
+            ip:              request.remote_ip
+          }
+        )
+
+        TeamMailer.suspended(
+          user:    @member,
+          partner: @partner,
+          reason:  params[:reason]
+        ).deliver_later
+      end
+
+      flash[:success] = "#{@member.full_name} sispann."
+      redirect_to partner_portal_team_index_path
+    end
+
+    # === REACTIVATE MEMBER ===
+    def reactivate
+      if supervisor_only? && @member.has_role?(:partner_admin)
+        flash[:error] = "Sèlman administratè ka reaktive yon lòt administratè."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      if @member.active?
+        flash[:warning] = "#{@member.full_name} deja aktif."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      ActiveRecord::Base.transaction do
+        @member.update!(active: true)
+
+        PartnerAuditLog.create!(
+          partner:    @partner,
+          event:      "team_member_reactivated",
+          details: {
+            reactivated_email: @member.email,
+            reactivated_name:  @member.full_name,
+            reactivated_by:    current_user.full_name,
+            reactivated_by_id: current_user.id,
+            ip:                request.remote_ip
+          }
+        )
+
+        TeamMailer.reactivated(
+          user:    @member,
+          partner: @partner
+        ).deliver_later
+      end
+
+      flash[:success] = "#{@member.full_name} reaktive."
+      redirect_to partner_portal_team_index_path
+    end
+
+    # === REASSIGN ROLE ===
+    def update_role
+      if @member == current_user
+        flash[:error] = "Ou pa ka chanje wòl tèt ou."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      new_role = params[:role].to_s
+      sector = partner_sector_key
+      valid_keys = GovernmentRoleConstants.valid_role_keys_for(sector)
+
+      unless valid_keys.include?(new_role)
+        flash[:error] = "Wòl \"#{new_role}\" pa valid pou sektè sa a."
+        return redirect_to partner_portal_team_index_path
+      end
+
+      old_roles = all_partner_role_keys.select { |r| @member.has_role?(r) }
+
+      ActiveRecord::Base.transaction do
+        # Remove all existing partner roles
+        all_partner_role_keys.each { |r| @member.remove_role(r) if @member.has_role?(r) }
+
+        # Assign new role
+        @member.add_role(new_role)
+
+        new_label = GovernmentRoleConstants.role_label(sector, new_role)
+
+        PartnerAuditLog.create!(
+          partner:    @partner,
+          event:      "team_member_role_changed",
+          details: {
+            member_email:  @member.email,
+            member_name:   @member.full_name,
+            old_roles:     old_roles,
+            new_role:      new_role,
+            new_role_label: new_label,
+            changed_by:    current_user.full_name,
+            ip:            request.remote_ip
+          }
+        )
+      end
+
+      new_label = GovernmentRoleConstants.role_label(sector, new_role)
+      flash[:success] = "#{@member.full_name} se #{new_label} kounye a."
+      redirect_to partner_portal_team_index_path
+    end
+
     private
+
+    # Alias so controller + views can use current_user consistently
+    def current_user
+      current_portal_user
+    end
+    helper_method :current_user
+
+    def set_partner_alias
+      @partner = @current_partner
+    end
 
     # PNH has their own officer invitation system — don't use this controller
     def redirect_law_enforcement
@@ -137,5 +301,56 @@ module PartnerPortal
       sector = (@partner.department_sector || @partner.sector).to_s.downcase
       GovernmentRoleConstants.role_options_for(sector)
     end
+
+    # ============================================================
+    # AUTHORIZATION
+    # ============================================================
+    def require_admin!
+      return if current_user.has_role?(:partner_admin)
+
+      flash[:error] = "Sèlman administratè ka fè aksyon sa a."
+      redirect_to partner_portal_team_index_path
+    end
+
+    def require_admin_or_supervisor!
+      return if current_user.has_role?(:partner_admin)
+      return if current_user.has_role?(:partner_supervisor)
+      return if current_user.has_role?(:bank_supervisor)
+
+      flash[:error] = "Sèlman administratè oswa sipèvizè ka fè aksyon sa a."
+      redirect_to partner_portal_team_index_path
+    end
+
+    # True when user is a supervisor but NOT an admin
+    def supervisor_only?
+      !current_user.has_role?(:partner_admin) &&
+        (current_user.has_role?(:partner_supervisor) || current_user.has_role?(:bank_supervisor))
+    end
+
+    # ============================================================
+    # SECTOR HELPERS
+    # ============================================================
+    def partner_sector_key
+      (@partner.department_sector || @partner.sector).to_s.downcase
+    end
+
+    def onaca_sector?
+      partner_sector_key == "onaca"
+    end
+
+    def banking_sector?
+      GovernmentRoleConstants::BANKING_SECTORS.include?(partner_sector_key)
+    end
+
+    ALL_PARTNER_ROLES = %i[
+      partner_admin partner_agent partner_agent_surveyor partner_agent_notary partner_supervisor
+      bank_agent bank_teller bank_supervisor
+    ].freeze
+
+    def all_partner_role_keys
+      ALL_PARTNER_ROLES
+    end
+
+    helper_method :onaca_sector?, :banking_sector?
   end
 end

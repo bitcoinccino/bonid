@@ -1,0 +1,837 @@
+<%# app/views/partner_portal/guidelines_acceptance/index.html.erb %>
+<% content_for(:title) { "Direktiv Patnè — BonID" } %>
+
+<div class="gl-page">
+
+  <%# ═══════════════════════════════════════════════════════════
+      TOP NAV BAR — Institutional header (logged-in context)
+  ═══════════════════════════════════════════════════════════ %>
+  <nav class="gl-topbar">
+    <div class="gl-topbar-inner">
+      <div class="gl-topbar-left">
+        <div class="gl-monogram">B</div>
+        <span class="gl-logo-sep"></span>
+        <span class="gl-logo-text">Portal Patnè</span>
+      </div>
+      <div class="gl-topbar-right">
+        <span class="gl-status-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          An Atant
+        </span>
+        <div class="gl-user-pill">
+          <div class="gl-user-avatar">
+            <%= (@current_portal_user&.full_name || "P").first.upcase %>
+          </div>
+          <span class="gl-user-name d-none d-md-inline">
+            <%= @current_portal_user&.full_name || @current_portal_user&.email %>
+          </span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <%# ═══════════════════════════════════════════════════════════
+      MAIN CONTENT — Constrained width for readability
+  ═══════════════════════════════════════════════════════════ %>
+  <div class="gl-content">
+    <div class="gl-container">
+
+      <%# Flash Messages %>
+      <% if flash[:alert].present? %>
+        <div class="alert alert-danger rounded-3 mb-4 d-flex align-items-center" role="alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <%= flash[:alert] %>
+        </div>
+      <% end %>
+
+      <%# Title Block %>
+      <div class="gl-title-block">
+        <h1 class="gl-title">Direktiv Patnè BonID</h1>
+        <p class="gl-subtitle">
+          Anvan ou ka itilize Portal Patnè a, tanpri li epi aksepte direktiv sa yo.
+          Yo garanti sekirite ak konfyans nan platfòm idantite dijital Ayiti a.
+        </p>
+      </div>
+
+      <%# Partner Context Card %>
+      <div class="gl-context-card">
+        <div class="gl-context-left">
+          <% if @partner.logo.attached? %>
+            <%= image_tag @partner.logo.variant(resize_to_limit: [48, 48]),
+                          class: "gl-partner-logo" %>
+          <% else %>
+            <div class="gl-partner-logo-placeholder">
+              <%= @partner.name.first(2).upcase %>
+            </div>
+          <% end %>
+          <div>
+            <strong class="gl-partner-name"><%= @partner.name %></strong>
+            <span class="gl-partner-meta">
+              <%= @partner.sector&.titleize || "N/A" %> &middot;
+              <%= @current_portal_user&.full_name || @current_portal_user&.email %>
+            </span>
+          </div>
+        </div>
+        <span class="gl-version-tag">v<%= @version %></span>
+      </div>
+
+      <%# ═══════════════════════════════════════════════════════
+          GUIDELINES CARDS — Accordion-based progressive disclosure
+      ═══════════════════════════════════════════════════════ %>
+      <div class="gl-cards-grid">
+        <% @guidelines.each_with_index do |g, idx| %>
+          <div class="gl-card" data-guideline="<%= g[:key] %>">
+            <%# Card Header (always visible) %>
+            <button class="gl-card-header" type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#gl-collapse-<%= g[:key] %>"
+                    aria-expanded="false"
+                    aria-controls="gl-collapse-<%= g[:key] %>">
+              <div class="gl-card-header-left">
+                <div class="gl-card-icon" style="background: <%= g[:color] %>15; color: <%= g[:color] %>;">
+                  <% case g[:key] %>
+                  <% when "sekirite" %>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  <% when "konfidansyalite" %>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><rect x="8" y="12" width="8" height="6" rx="1"></rect><path d="M10 12v-2a2 2 0 1 1 4 0v2"></path></svg>
+                  <% when "etik" %>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                  <% when "ensidan" %>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                  <% when "api" %>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                  <% end %>
+                </div>
+                <div>
+                  <span class="gl-card-title"><%= g[:title] %></span>
+                  <span class="gl-card-summary"><%= g[:summary] %></span>
+                </div>
+              </div>
+              <div class="gl-card-chevron">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
+            </button>
+
+            <%# Card Body (collapsible) %>
+            <div class="collapse" id="gl-collapse-<%= g[:key] %>">
+              <div class="gl-card-body">
+                <% g[:items].each do |item| %>
+                  <div class="gl-item">
+                    <svg class="gl-item-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="<%= g[:color] %>" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span class="gl-item-text"><%= raw item %></span>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <%# Read indicator %>
+            <div class="gl-card-read-indicator d-none" id="gl-read-<%= g[:key] %>">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Li
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Expand All Link %>
+      <div class="text-center mt-3 mb-4">
+        <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" id="glExpandAll">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg>
+          Louvri tout seksyon
+        </button>
+      </div>
+
+    </div><%# / gl-container %>
+  </div><%# / gl-content %>
+
+  <%# ═══════════════════════════════════════════════════════════
+      STICKY FOOTER — Signature + Accept
+  ═══════════════════════════════════════════════════════════ %>
+  <%= form_with url: partner_portal_guidelines_accept_path, method: :post, local: true, id: "glAcceptForm" do %>
+    <div class="gl-sticky-footer" id="glFooter">
+      <div class="gl-footer-inner">
+
+        <%# Left: Signature + Checkbox %>
+        <div class="gl-footer-left">
+
+          <%# BonID Signature %>
+          <div class="gl-sig-block">
+            <% if @signature_available %>
+              <div class="gl-sig-frame">
+                <%= image_tag url_for(@bonid_signature),
+                              alt: "Siyati BonID",
+                              class: "gl-sig-img" %>
+              </div>
+            <% else %>
+              <div class="gl-sig-frame gl-sig-placeholder">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              </div>
+            <% end %>
+            <span class="gl-sig-name"><%= @current_portal_user&.full_name || @current_portal_user&.email %></span>
+          </div>
+
+          <%# Checkbox %>
+          <div class="gl-checkbox-wrap">
+            <input type="checkbox" name="confirmed" value="1"
+                   class="form-check-input" id="guidelinesConfirm">
+            <label class="form-check-label" for="guidelinesConfirm">
+              Mwen, <strong><%= @current_portal_user&.full_name || @current_portal_user&.email %></strong>,
+              nan non <strong><%= @partner.name %></strong>,
+              deklare ke mwen li epi aksepte tout direktiv yo.
+            </label>
+          </div>
+        </div>
+
+        <%# Right: Button %>
+        <div class="gl-footer-right">
+          <button type="submit" class="gl-accept-btn" id="acceptBtn" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11.5 14.5 16 10"></polyline></svg>
+            <span class="d-none d-md-inline">Mwen konprann epi mwen aksepte</span>
+            <span class="d-md-none">Aksepte</span>
+          </button>
+          <span class="gl-footer-note">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            Anrejistre nan jounal odit
+          </span>
+        </div>
+
+      </div>
+    </div>
+  <% end %>
+
+</div><%# / gl-page %>
+
+<%# ═══════════════════════════════════════════════════════════
+    STYLES
+═══════════════════════════════════════════════════════════ %>
+<style>
+  /* ─── Reset & Page ────────────────────────────────── */
+  .gl-page {
+    min-height: 100vh;
+    background: #f5f6fa;
+    padding-bottom: 140px; /* space for sticky footer */
+    font-family: "Inter", "Montserrat", -apple-system, sans-serif;
+  }
+
+  /* ─── Top Nav Bar ─────────────────────────────────── */
+  .gl-topbar {
+    background: #0d132d;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .gl-topbar-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .gl-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .gl-monogram {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.02em;
+  }
+  .gl-logo-sep {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.2);
+  }
+  .gl-logo-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.02em;
+  }
+  .gl-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .gl-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .gl-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gl-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .gl-user-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* ─── Content Container ───────────────────────────── */
+  .gl-content {
+    padding: 32px 16px 0;
+  }
+  .gl-container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* ─── Title Block ─────────────────────────────────── */
+  .gl-title-block {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .gl-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0d132d;
+    margin: 0 0 10px;
+    letter-spacing: -0.02em;
+  }
+  .gl-subtitle {
+    font-size: 15px;
+    color: #6b7280;
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* ─── Context Card ────────────────────────────────── */
+  .gl-context-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .gl-context-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .gl-partner-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 1px solid #e5e7eb;
+  }
+  .gl-partner-logo-placeholder {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #0d132d;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+  }
+  .gl-partner-name {
+    display: block;
+    font-size: 15px;
+    color: #111827;
+  }
+  .gl-partner-meta {
+    display: block;
+    font-size: 12px;
+    color: #9ca3af;
+  }
+  .gl-version-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  /* ─── Cards Grid ──────────────────────────────────── */
+  .gl-cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .gl-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .gl-card:hover {
+    border-color: #c7d2fe;
+  }
+  .gl-card.gl-card--read {
+    border-color: #a7f3d0;
+  }
+
+  /* Card Header (clickable accordion trigger) */
+  .gl-card-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: background 0.15s;
+  }
+  .gl-card-header:hover {
+    background: #f9fafb;
+  }
+  .gl-card-header[aria-expanded="true"] {
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .gl-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+    min-width: 0;
+  }
+  .gl-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .gl-card-title {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+  }
+  .gl-card-summary {
+    display: block;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+  .gl-card-chevron {
+    color: #9ca3af;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+  }
+  .gl-card-header[aria-expanded="true"] .gl-card-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Card Body (expandable) */
+  .gl-card-body {
+    padding: 4px 20px 20px;
+  }
+  .gl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f9fafb;
+  }
+  .gl-item:last-child { border-bottom: none; }
+  .gl-item-check {
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .gl-item-text {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .gl-item-text strong {
+    color: #0d132d;
+    font-weight: 600;
+  }
+
+  /* Read indicator */
+  .gl-card-read-indicator {
+    position: absolute;
+    top: 18px;
+    right: 50px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ─── Sticky Footer ───────────────────────────────── */
+  .gl-sticky-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .gl-sticky-footer.gl-footer--visible {
+    transform: translateY(0);
+  }
+  .gl-footer-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .gl-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Signature block in footer */
+  .gl-sig-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .gl-sig-frame {
+    width: 120px;
+    height: 48px;
+    background: #fafbfc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .gl-sig-img {
+    max-width: 110px;
+    max-height: 40px;
+    object-fit: contain;
+  }
+  .gl-sig-placeholder {
+    color: #d1d5db;
+    font-size: 20px;
+  }
+  .gl-sig-name {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-top: 3px;
+    max-width: 120px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Checkbox in footer */
+  .gl-checkbox-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  .gl-checkbox-wrap .form-check-input {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 2px solid #d1d5db;
+  }
+  .gl-checkbox-wrap .form-check-input:checked {
+    background-color: #0d132d;
+    border-color: #0d132d;
+  }
+  .gl-checkbox-wrap .form-check-label {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+  .gl-checkbox-wrap .form-check-label strong {
+    color: #111827;
+  }
+
+  /* Accept button */
+  .gl-footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+  .gl-accept-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 28px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    background: #0d132d;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    min-height: 48px;
+  }
+  .gl-accept-btn:hover:not(:disabled) {
+    background: #1a2340;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(13, 19, 45, 0.3);
+  }
+  .gl-accept-btn:disabled {
+    background: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .gl-accept-btn:not(:disabled) {
+    animation: gl-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes gl-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(13, 19, 45, 0.2); }
+    50% { box-shadow: 0 0 0 8px rgba(13, 19, 45, 0); }
+  }
+  .gl-footer-note {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 4px;
+  }
+
+  /* ─── Success Overlay ─────────────────────────────── */
+  .gl-success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(255,255,255,0.97);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .gl-success-overlay.gl-show {
+    display: flex;
+    animation: gl-fadeIn 0.3s ease;
+  }
+  @keyframes gl-fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  .gl-success-icon {
+    width: 80px;
+    height: 80px;
+    background: #ecfdf5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    animation: gl-scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes gl-scaleIn {
+    from { transform: scale(0); } to { transform: scale(1); }
+  }
+  .gl-success-icon i {
+    font-size: 40px;
+    color: #059669;
+  }
+  .gl-success-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 8px;
+  }
+  .gl-success-sub {
+    font-size: 14px;
+    color: #6b7280;
+  }
+
+  /* ─── Mobile Responsive ───────────────────────────── */
+  @media (max-width: 767.98px) {
+    .gl-title { font-size: 22px; }
+    .gl-subtitle { font-size: 14px; }
+    .gl-content { padding-top: 20px; }
+    .gl-footer-inner {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 14px 16px;
+      gap: 12px;
+    }
+    .gl-footer-left {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .gl-sig-block {
+      flex-direction: row;
+      gap: 10px;
+      align-items: center;
+    }
+    .gl-sig-frame { width: 80px; height: 36px; }
+    .gl-sig-img { max-width: 70px; max-height: 30px; }
+    .gl-sig-name { margin-top: 0; }
+    .gl-footer-right {
+      align-items: stretch;
+    }
+    .gl-accept-btn {
+      width: 100%;
+      font-size: 16px;
+      padding: 14px;
+    }
+    .gl-card-header { padding: 14px 16px; }
+    .gl-card-body { padding: 4px 16px 16px; }
+    .gl-card-summary { display: none; }
+    .gl-page { padding-bottom: 220px; }
+  }
+</style>
+
+<%# ═══════════════════════════════════════════════════════════
+    JAVASCRIPT
+═══════════════════════════════════════════════════════════ %>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const checkbox = document.getElementById("guidelinesConfirm");
+    const btn = document.getElementById("acceptBtn");
+    const footer = document.getElementById("glFooter");
+    const form = document.getElementById("glAcceptForm");
+    const expandAllBtn = document.getElementById("glExpandAll");
+    const cards = document.querySelectorAll(".gl-card");
+    const collapses = document.querySelectorAll(".gl-cards-grid .collapse");
+
+    // ─── Track which sections have been opened ───
+    const readSections = new Set();
+
+    collapses.forEach(function(el) {
+      el.addEventListener("shown.bs.collapse", function() {
+        const card = this.closest(".gl-card");
+        const key = card.dataset.guideline;
+        readSections.add(key);
+
+        // Show "Li" (Read) indicator
+        const indicator = document.getElementById("gl-read-" + key);
+        if (indicator) indicator.classList.remove("d-none");
+
+        // Add read state to card
+        card.classList.add("gl-card--read");
+      });
+    });
+
+    // ─── Expand All ───
+    if (expandAllBtn) {
+      expandAllBtn.addEventListener("click", function() {
+        const allOpen = readSections.size === cards.length;
+        collapses.forEach(function(c) {
+          const bsCollapse = bootstrap.Collapse.getOrCreateInstance(c, { toggle: false });
+          if (allOpen) {
+            bsCollapse.hide();
+          } else {
+            bsCollapse.show();
+          }
+        });
+        this.innerHTML = allOpen
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="17 11 12 6 7 11"></polyline><polyline points="17 18 12 13 7 18"></polyline></svg> Louvri tout seksyon'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="7 13 12 18 17 13"></polyline><polyline points="7 6 12 11 17 6"></polyline></svg> Fèmen tout seksyon';
+      });
+    }
+
+    // ─── Sticky Footer: show after user scrolls past 200px ───
+    function checkScroll() {
+      if (window.scrollY > 200) {
+        footer.classList.add("gl-footer--visible");
+      } else {
+        footer.classList.remove("gl-footer--visible");
+      }
+    }
+    window.addEventListener("scroll", checkScroll, { passive: true });
+    // Show immediately if page is already scrolled (e.g. back button)
+    checkScroll();
+
+    // ─── Checkbox → Enable Button ───
+    if (checkbox && btn) {
+      checkbox.addEventListener("change", function() {
+        btn.disabled = !this.checked;
+      });
+    }
+
+    // ─── Success Animation on Submit ───
+    if (form) {
+      form.addEventListener("submit", function(e) {
+        if (!checkbox.checked) {
+          e.preventDefault();
+          return;
+        }
+
+        // Show success overlay briefly before actual submit
+        e.preventDefault();
+        const overlay = document.createElement("div");
+        overlay.className = "gl-success-overlay gl-show";
+        overlay.innerHTML = [
+          '<div class="gl-success-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>',
+          '<div class="gl-success-text">Direktiv yo aksepte!</div>',
+          '<div class="gl-success-sub">N ap redirije ou nan Portal la...</div>'
+        ].join("");
+        document.body.appendChild(overlay);
+
+        // Submit after animation
+        setTimeout(function() {
+          form.removeEventListener("submit", arguments.callee);
+          form.submit();
+        }, 1200);
+      });
+    }
+  });
+</script>
+
+<%# Success overlay placeholder (rendered via JS) %>

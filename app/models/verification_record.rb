@@ -8,6 +8,12 @@ class VerificationRecord < ApplicationRecord
   include RecordSchemas::LandTransactionSchema
   include RecordSchemas::BusinessSchema
   include RecordSchemas::FiscalReceiptSchema
+  include RecordSchemas::PatenteDeclarationSchema
+  include RecordSchemas::TcaDeclarationSchema
+  include RecordSchemas::RasIrDeclarationSchema
+  include RecordSchemas::NifRegistrationSchema
+  include RecordSchemas::BusinessRegistrationSchema
+  include RecordSchemas::FermageSchema
 
   # ============================================================
   # Associations
@@ -18,6 +24,9 @@ class VerificationRecord < ApplicationRecord
   belongs_to :partner_schema, optional: true
 
   has_one :address, as: :addressable, dependent: :destroy
+  has_one :dgi_payment, dependent: :nullify
+
+  has_many_attached :supporting_documents
 
   accepts_nested_attributes_for :address, update_only: true, allow_destroy: true
 
@@ -39,7 +48,7 @@ class VerificationRecord < ApplicationRecord
   # ============================================================
   validates :record_type, presence: true
   validates :data, presence: true
-  validates :status, inclusion: { in: %w[pending verified rejected revoked] }
+  validates :status, inclusion: { in: %w[draft pending verified rejected revoked] }
 
   validate :validate_against_partner_schema, if: -> { partner_schema.present? && data.is_a?(Hash) }
   validate :property_schema, if: -> { record_type == "property" && partner.blank? }

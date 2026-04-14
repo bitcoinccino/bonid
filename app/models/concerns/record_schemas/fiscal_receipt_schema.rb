@@ -29,23 +29,86 @@ module RecordSchemas
     end
 
     # === DGI Tax Types (from dgi.gouv.ht/textes-de-loi) ===
+    # Covers all services and taxes a citizen might pay at DGI
     VALID_TAX_TYPES = %w[
       timbre_passeport
+      timbre_visa
+      timbre_acte_naissance
+      timbre_mariage
+      timbre_notaire
+      timbre_judiciaire
       contribution_fonciere
       patente
       impot_revenu
+      impot_locatif
       acompte_provisionnel
       cfgdct
       caisse_assistance_sociale
       droit_licence_etranger
       droit_fonctionnement
       droit_non_fonctionnement
+      droit_douane
+      droit_enregistrement
+      droit_succession
+      droit_mutation
       legalisation_pieces
       carte_identite_professionnelle
+      certificat_decharge_fiscale
+      quitus_fiscal
+      taxe_transfer_propriete
+      taxe_vehicule
+      taxe_telecommunication
+      taxe_assurance
+      penalite_retard
+      amende_fiscale
       other
     ].freeze
 
-    VALID_PAYMENT_METHODS = %w[cash check transfer mobile_money].freeze
+    # Human-readable labels for display (Haitian Creole)
+    TAX_TYPE_LABELS = {
+      "timbre_passeport"              => "Tènb Paspò",
+      "timbre_visa"                   => "Tènb Viza",
+      "timbre_acte_naissance"         => "Tènb Ak Nesans",
+      "timbre_mariage"                => "Tènb Maryaj",
+      "timbre_notaire"                => "Tènb Notè",
+      "timbre_judiciaire"             => "Tènb Jidisyè",
+      "contribution_fonciere"         => "Kontribisyon Fonsyè",
+      "patente"                       => "Patant",
+      "impot_revenu"                  => "Enpò sou Revni",
+      "impot_locatif"                 => "Enpò Lokatif",
+      "acompte_provisionnel"          => "Akont Pwovizyon",
+      "cfgdct"                        => "CFGDCT",
+      "caisse_assistance_sociale"     => "Kès Asistans Sosyal",
+      "droit_licence_etranger"        => "Dwa Lisans Etranje",
+      "droit_fonctionnement"          => "Dwa Fonksyonman",
+      "droit_non_fonctionnement"      => "Dwa Non-Fonksyonman",
+      "droit_douane"                  => "Dwa Ladwàn",
+      "droit_enregistrement"          => "Dwa Anrejistreman",
+      "droit_succession"              => "Dwa Siksesyon",
+      "droit_mutation"                => "Dwa Mitasyon",
+      "legalisation_pieces"           => "Legalizasyon Pyès",
+      "carte_identite_professionnelle" => "Kat Idantite Pwofesyonèl",
+      "certificat_decharge_fiscale"   => "Sètifika Dechaj Fiskal",
+      "quitus_fiscal"                 => "Kitis Fiskal",
+      "taxe_transfer_propriete"       => "Taks Transfè Pwopriyete",
+      "taxe_vehicule"                 => "Taks Veyikil",
+      "taxe_telecommunication"        => "Taks Telekominikasyon",
+      "taxe_assurance"                => "Taks Asirans",
+      "penalite_retard"               => "Penalite Reta",
+      "amende_fiscale"                => "Amand Fiskal",
+      "other"                         => "Lòt"
+    }.freeze
+
+    VALID_PAYMENT_METHODS = %w[cash check transfer mobile_money natcash moncash].freeze
+
+    PAYMENT_METHOD_LABELS = {
+      "cash"         => "Kach",
+      "check"        => "Chèk",
+      "transfer"     => "Transfè Bankè",
+      "mobile_money" => "Lajan Mobil",
+      "natcash"      => "NatCash",
+      "moncash"      => "MonCash"
+    }.freeze
 
     # === Required Fields ===
     FISCAL_RECEIPT_REQUIRED_FIELDS = %w[
@@ -183,14 +246,31 @@ module RecordSchemas
     def receipt_documents = data["documents"] || []
 
     # === Display Helpers ===
+    def tax_type_label
+      TAX_TYPE_LABELS[tax_type] || tax_type&.titleize || "—"
+    end
+
+    def payment_method_label
+      PAYMENT_METHOD_LABELS[payment_method] || payment_method&.titleize || "—"
+    end
+
     def receipt_summary
-      "#{tax_type&.titleize} — #{amount_htg&.to_i} HTG — #{payment_date}"
+      "#{tax_type_label} — #{amount_htg&.to_i} HTG — #{payment_date}"
     end
 
     def consumption_summary
-      return "Available" unless consumed?
+      return "Disponib" unless consumed?
 
-      "Consumed by #{consumed_by_agency} on #{consumed_at} (Officer: #{consumed_by_officer_id})"
+      "Konsome pa #{consumed_by_agency} le #{consumed_at} (Ofisye: #{consumed_by_officer_id})"
+    end
+
+    # Class-level helpers for forms
+    def self.tax_type_options
+      TAX_TYPE_LABELS.map { |key, label| [label, key] }
+    end
+
+    def self.payment_method_options
+      PAYMENT_METHOD_LABELS.map { |key, label| [label, key] }
     end
   end
 end

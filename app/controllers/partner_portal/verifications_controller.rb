@@ -6,10 +6,16 @@ module PartnerPortal
 
     def index
       @partner = @current_partner
-      @verifications = @partner.verification_records
-                          .order(created_at: :desc)
-                          .page(params[:page])
-                          .per(20)
+      scope = @partner.verification_records
+
+      # Filter by record_type if specified (e.g., ?record_type=fiscal_receipt)
+      if params[:record_type].present?
+        scope = scope.where(record_type: params[:record_type])
+      end
+
+      @verifications = scope.order(created_at: :desc)
+                            .page(params[:page])
+                            .per(20)
     end
 
     def show
@@ -41,25 +47,17 @@ module PartnerPortal
     private
 
     def require_verified_partner!
-      # Adjust this based on your partner auth model
-      partner = current_partner_from_session
-      unless partner&.verified?
+      unless @current_partner&.verified_at?
         redirect_to partner_portal_dashboard_path,
                     alert: "Your organization is not verified to perform scans."
       end
-    end
-
-    def current_partner_from_session
-      # If you store partner in session via PartnerSessionService:
-      # session[:partner_id]
-      Partner.find_by(id: session[:partner_id]) || nil
     end
 
     def log_verification_attempt(submission, ok:, reason: nil)
       return unless submission
 
       PartnerAccessLog.create!(
-        partner_id: current_partner_from_session&.id,
+        partner_id: @current_partner&.id,
         action: "bon_touris_verify",
         target_type: "VisitorSubmission",
         target_id: submission.id,

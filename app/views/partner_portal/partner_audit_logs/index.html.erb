@@ -1,0 +1,406 @@
+<%# Partner Audit Logs — Activity History %>
+
+<div class="bongouv-dashboard">
+  <div class="audit-page-header">
+    <div>
+      <h1 class="audit-page-title"><i class="ri-history-line me-2"></i>Istwa Aktivite</h1>
+      <p class="audit-page-desc">Tout aksyon, verifikasyon, ak ensidan ki pase nan kont patnè sa a.</p>
+    </div>
+  </div>
+
+  <%# ── Filter Bar ── %>
+  <div class="audit-filters">
+    <%= form_tag partner_portal_partner_audit_logs_path, method: :get, class: "audit-filter-form", data: { turbo: false } do %>
+      <div class="audit-filter-row">
+        <div class="audit-filter-group">
+          <label class="audit-filter-label">Tip Evènman</label>
+          <select name="event" class="audit-filter-select">
+            <option value="">Tout</option>
+            <option value="identity_mismatch" <%= 'selected' if params[:event] == 'identity_mismatch' %>>
+              🚨 Idantite Pa Matche (<%= @mismatch_count %>)
+            </option>
+            <% @event_counts.keys.sort.each do |evt| %>
+              <% next if evt == "identity_mismatch" %>
+              <option value="<%= evt %>" <%= 'selected' if params[:event] == evt %>><%= evt.titleize %> (<%= @event_counts[evt] %>)</option>
+            <% end %>
+          </select>
+        </div>
+
+        <div class="audit-filter-group">
+          <label class="audit-filter-label">Dat Kòmanse</label>
+          <input type="date" name="from" value="<%= params[:from] %>" class="audit-filter-input">
+        </div>
+
+        <div class="audit-filter-group">
+          <label class="audit-filter-label">Dat Fini</label>
+          <input type="date" name="to" value="<%= params[:to] %>" class="audit-filter-input">
+        </div>
+
+        <div class="audit-filter-group">
+          <label class="audit-filter-label">Rechèch</label>
+          <input type="text" name="search" value="<%= params[:search] %>" placeholder="BonID, non, aksyon..." class="audit-filter-input">
+        </div>
+
+        <div class="audit-filter-actions">
+          <button type="submit" class="audit-filter-btn">
+            <i class="ri-filter-3-line me-1"></i>Filtre
+          </button>
+          <% if params[:event].present? || params[:from].present? || params[:to].present? || params[:search].present? %>
+            <%= link_to partner_portal_partner_audit_logs_path, class: "audit-filter-reset" do %>
+              <i class="ri-close-line"></i>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Mismatch Alert Banner ── %>
+  <% if @mismatch_count > 0 && params[:event].blank? %>
+    <div class="audit-alert audit-alert--danger">
+      <i class="ri-alarm-warning-line"></i>
+      <div>
+        <strong><%= @mismatch_count %> rapò idantite pa matche</strong>
+        <span class="audit-alert-sub">
+          <%= link_to "Wè tout", partner_portal_partner_audit_logs_path(event: "identity_mismatch"), class: "audit-alert-link" %>
+        </span>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Log Table ── %>
+  <% if @logs.any? %>
+    <div class="audit-table-wrap">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>Dat & Lè</th>
+            <th>Evènman</th>
+            <th>Ajan</th>
+            <th>Detay</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @logs.each do |log| %>
+            <tr class="<%= 'audit-row--danger' if log.event == 'identity_mismatch' %>">
+              <td class="audit-cell-date">
+                <div class="audit-date"><%= log.created_at.strftime("%d/%m/%Y") %></div>
+                <div class="audit-time"><%= log.created_at.strftime("%H:%M") %></div>
+              </td>
+              <td>
+                <% case log.event
+                   when "identity_mismatch" %>
+                  <span class="audit-badge audit-badge--danger">
+                    <i class="ri-alarm-warning-line me-1"></i>Idantite Pa Matche
+                  </span>
+                <% when "service_created" %>
+                  <span class="audit-badge audit-badge--blue">
+                    <i class="ri-add-circle-line me-1"></i>Sèvis Kreye
+                  </span>
+                <% when "submission_approved" %>
+                  <span class="audit-badge audit-badge--green">
+                    <i class="ri-check-line me-1"></i>Apwouve
+                  </span>
+                <% when "submission_rejected" %>
+                  <span class="audit-badge audit-badge--amber">
+                    <i class="ri-close-circle-line me-1"></i>Rejte
+                  </span>
+                <% else %>
+                  <span class="audit-badge audit-badge--gray">
+                    <i class="ri-file-list-line me-1"></i><%= log.event&.titleize %>
+                  </span>
+                <% end %>
+              </td>
+              <td class="audit-cell-agent">
+                <% if log.admin_user %>
+                  <span class="audit-agent-name"><%= log.admin_user.full_name rescue log.admin_user.email %></span>
+                <% elsif log.metadata&.dig("agent_name") %>
+                  <span class="audit-agent-name"><%= log.metadata["agent_name"] %></span>
+                <% else %>
+                  <span class="audit-agent-name audit-agent-name--system">Sistèm</span>
+                <% end %>
+              </td>
+              <td class="audit-cell-details">
+                <% if log.event == "identity_mismatch" %>
+                  <div class="audit-detail-line">
+                    <strong>BonID:</strong>
+                    <code class="audit-bonid"><%= log.metadata&.dig("bonid") || log.details&.slice(0, 40) %></code>
+                  </div>
+                  <% if log.metadata&.dig("citizen_name") %>
+                    <div class="audit-detail-line">
+                      <strong>Sitwayen:</strong> <%= log.metadata["citizen_name"] %>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <div class="audit-detail-line"><%= log.details.to_s.truncate(80) %></div>
+                <% end %>
+              </td>
+              <td>
+                <%= link_to partner_portal_partner_audit_log_path(log), class: "audit-view-btn" do %>
+                  <i class="ri-eye-line"></i>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%# Pagination %>
+    <div class="audit-pagination">
+      <%= paginate @logs %>
+    </div>
+  <% else %>
+    <div class="audit-empty">
+      <div class="audit-empty-icon"><i class="ri-history-line"></i></div>
+      <h4>Okenn aktivite poko</h4>
+      <p>Lè ajan yo fè aksyon (verifikasyon, mismatch, apwobasyon), yo ap parèt isit la.</p>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .audit-page-header {
+    margin-bottom: 20px;
+  }
+  .audit-page-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: #0F172A;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+  }
+  .audit-page-title i { color: #00209F; }
+  .audit-page-desc {
+    font-size: 0.82rem;
+    color: #64748B;
+    margin: 0;
+  }
+
+  /* ── Filter Bar ── */
+  .audit-filters {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+  .audit-filter-form { margin: 0; }
+  .audit-filter-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .audit-filter-group { flex: 1; min-width: 140px; }
+  .audit-filter-label {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .audit-filter-select,
+  .audit-filter-input {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    background: #FFF;
+    color: #0F172A;
+    font-family: 'Inter', sans-serif;
+  }
+  .audit-filter-select:focus,
+  .audit-filter-input:focus {
+    outline: none;
+    border-color: #00209F;
+    box-shadow: 0 0 0 2px rgba(0,32,159,0.1);
+  }
+  .audit-filter-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .audit-filter-btn {
+    padding: 8px 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    background: #00209F;
+    color: #FFF;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .audit-filter-btn:hover { background: #001A7A; }
+  .audit-filter-reset {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    color: #DC2626;
+    background: #FEF2F2;
+    text-decoration: none;
+    font-size: 1rem;
+  }
+  .audit-filter-reset:hover { background: #FEE2E2; }
+
+  /* ── Alert Banner ── */
+  .audit-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 0.82rem;
+  }
+  .audit-alert i { font-size: 1.2rem; flex-shrink: 0; }
+  .audit-alert--danger {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+  }
+  .audit-alert-sub { font-weight: 400; margin-left: 4px; }
+  .audit-alert-link {
+    color: #DC2626;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  /* ── Table ── */
+  .audit-table-wrap {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+  .audit-table thead th {
+    padding: 10px 14px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    text-align: left;
+  }
+  .audit-table tbody td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #F1F5F9;
+    color: #334155;
+    vertical-align: top;
+  }
+  .audit-table tbody tr:last-child td { border-bottom: none; }
+  .audit-table tbody tr:hover { background: #F8FAFC; }
+  .audit-row--danger { background: #FFF5F5; }
+  .audit-row--danger:hover { background: #FEF2F2 !important; }
+
+  .audit-cell-date { white-space: nowrap; width: 90px; }
+  .audit-date { font-weight: 600; color: #0F172A; font-size: 0.78rem; }
+  .audit-time { font-size: 0.68rem; color: #94A3B8; }
+
+  /* Badges */
+  .audit-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .audit-badge--danger { background: #FEE2E2; color: #991B1B; }
+  .audit-badge--green { background: #DCFCE7; color: #166534; }
+  .audit-badge--blue { background: #DBEAFE; color: #1E40AF; }
+  .audit-badge--amber { background: #FEF3C7; color: #92400E; }
+  .audit-badge--gray { background: #F1F5F9; color: #475569; }
+
+  .audit-cell-agent { width: 120px; }
+  .audit-agent-name { font-weight: 600; color: #0F172A; font-size: 0.78rem; }
+  .audit-agent-name--system { color: #94A3B8; font-style: italic; }
+
+  .audit-cell-details { min-width: 200px; }
+  .audit-detail-line {
+    font-size: 0.75rem;
+    color: #475569;
+    line-height: 1.5;
+  }
+  .audit-detail-line + .audit-detail-line { margin-top: 2px; }
+  .audit-bonid {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    background: #FEF2F2;
+    color: #DC2626;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  .audit-view-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    color: #00209F;
+    background: #EFF6FF;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background 0.15s ease;
+  }
+  .audit-view-btn:hover { background: #DBEAFE; }
+
+  /* Pagination */
+  .audit-pagination { margin-top: 16px; text-align: center; }
+
+  /* Empty State */
+  .audit-empty {
+    text-align: center;
+    padding: 48px 24px;
+    background: #F8FAFC;
+    border: 2px dashed #CBD5E1;
+    border-radius: 12px;
+  }
+  .audit-empty-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #EFF6FF;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .audit-empty-icon i { font-size: 1.5rem; color: #00209F; }
+  .audit-empty h4 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #0F172A;
+    margin: 0 0 6px;
+  }
+  .audit-empty p {
+    font-size: 0.78rem;
+    color: #64748B;
+    margin: 0;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    .audit-filter-row { flex-direction: column; }
+    .audit-filter-group { min-width: 100%; }
+    .audit-table { font-size: 0.72rem; }
+    .audit-cell-details { display: none; }
+  }
+</style>

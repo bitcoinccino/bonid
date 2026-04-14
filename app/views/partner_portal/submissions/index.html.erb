@@ -1,0 +1,291 @@
+<%# Partner Portal — Unified Submissions Dashboard %>
+<%# Shapeshifts per service type: queue (apps), sales (txn), calendar (apt), analytics (survey) %>
+
+<div class="dash-page">
+  <div class="dash-page-header">
+    <div>
+      <h1 class="dash-page-title"><i class="ri-inbox-line"></i> Soumisyon</h1>
+      <p class="dash-page-subtitle">Jere tout soumisyon sitwayen yo nan yon sèl plas.</p>
+    </div>
+    <% if @category == "survey" || @category == "transaction" %>
+      <%= link_to export_partner_portal_submissions_path(category: @category, service_id: params[:service_id]),
+          class: "dash-btn dash-btn--outline", data: { turbo: false } do %>
+        <i class="ri-download-line"></i> Ekspòte CSV
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# ═══════════════════════════════════════ %>
+  <%# ── Category Tabs (view mode selector) ── %>
+  <%# ═══════════════════════════════════════ %>
+  <div class="sub-category-tabs">
+    <%= link_to partner_portal_submissions_path,
+        class: "sub-cat-tab #{'sub-cat-tab--active' unless @category.present?}" do %>
+      <i class="ri-inbox-line"></i>
+      <span>Tout</span>
+      <span class="sub-cat-count"><%= @category_counts[:total] %></span>
+    <% end %>
+    <%= link_to partner_portal_submissions_path(category: "application"),
+        class: "sub-cat-tab sub-cat-tab--application #{'sub-cat-tab--active' if @category == 'application'}" do %>
+      <i class="ri-file-list-3-line"></i>
+      <span>Aplikasyon</span>
+      <span class="sub-cat-count"><%= @category_counts[:application] %></span>
+    <% end %>
+    <%= link_to partner_portal_submissions_path(category: "transaction"),
+        class: "sub-cat-tab sub-cat-tab--transaction #{'sub-cat-tab--active' if @category == 'transaction'}" do %>
+      <i class="ri-exchange-dollar-line"></i>
+      <span>Tranzaksyon</span>
+      <span class="sub-cat-count"><%= @category_counts[:transaction] %></span>
+    <% end %>
+    <%= link_to partner_portal_submissions_path(category: "appointment"),
+        class: "sub-cat-tab sub-cat-tab--appointment #{'sub-cat-tab--active' if @category == 'appointment'}" do %>
+      <i class="ri-calendar-check-line"></i>
+      <span>Randevou</span>
+      <span class="sub-cat-count"><%= @category_counts[:appointment] %></span>
+    <% end %>
+    <%= link_to partner_portal_submissions_path(category: "survey"),
+        class: "sub-cat-tab sub-cat-tab--survey #{'sub-cat-tab--active' if @category == 'survey'}" do %>
+      <i class="ri-questionnaire-line"></i>
+      <span>Sondaj</span>
+      <span class="sub-cat-count"><%= @category_counts[:survey] %></span>
+    <% end %>
+  </div>
+
+  <%# ═══════════════════════════════════════ %>
+  <%# ── Type-Specific Stats Banner ── %>
+  <%# ═══════════════════════════════════════ %>
+  <% if @category == "transaction" && @tx_stats %>
+    <div class="sub-stats-row">
+      <div class="sub-stat sub-stat--green">
+        <div class="sub-stat-num"><%= (@tx_stats[:total_revenue].to_f / 100).round(0).to_s.reverse.gsub(/(\d{3})(?=\d)/, '\1,').reverse %> <%= @tx_stats[:currency] %></div>
+        <div class="sub-stat-label">Revni Total</div>
+      </div>
+      <div class="sub-stat">
+        <div class="sub-stat-num"><%= @tx_stats[:total_sold] %></div>
+        <div class="sub-stat-label">Tikè Vann</div>
+      </div>
+      <div class="sub-stat">
+        <div class="sub-stat-num"><%= @tx_stats[:checked_in] %></div>
+        <div class="sub-stat-label">Tcheke</div>
+      </div>
+    </div>
+  <% elsif @category == "appointment" && @apt_stats %>
+    <div class="sub-stats-row">
+      <div class="sub-stat sub-stat--amber">
+        <div class="sub-stat-num"><%= @apt_stats[:today] %></div>
+        <div class="sub-stat-label">Jodi a</div>
+      </div>
+      <div class="sub-stat">
+        <div class="sub-stat-num"><%= @apt_stats[:upcoming] %></div>
+        <div class="sub-stat-label">Ap Vini</div>
+      </div>
+      <div class="sub-stat">
+        <div class="sub-stat-num"><%= @apt_stats[:checked_in] %></div>
+        <div class="sub-stat-label">Rive</div>
+      </div>
+      <div class="sub-stat sub-stat--red">
+        <div class="sub-stat-num"><%= @apt_stats[:no_show] %></div>
+        <div class="sub-stat-label">Pa Rive</div>
+      </div>
+    </div>
+  <% elsif @category == "survey" && @survey_stats %>
+    <div class="sub-stats-row">
+      <div class="sub-stat sub-stat--purple">
+        <div class="sub-stat-num"><%= @survey_stats[:total_responses] %></div>
+        <div class="sub-stat-label">Repons Total</div>
+      </div>
+      <div class="sub-stat">
+        <div class="sub-stat-num"><%= @survey_stats[:this_week] %></div>
+        <div class="sub-stat-label">Semèn sa a</div>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ═══════════════════════════════════════ %>
+  <%# ── Survey Analytics (charts) ── %>
+  <%# ═══════════════════════════════════════ %>
+  <% if @category == "survey" && @survey_aggregations.present? %>
+    <div class="sub-analytics-grid">
+      <% @survey_aggregations.each do |agg| %>
+        <div class="dash-card">
+          <div class="dash-card-header"><h3><i class="ri-bar-chart-2-line"></i> <%= agg[:label] %></h3></div>
+          <div class="dash-card-body">
+            <div class="sub-chart-bars">
+              <% agg[:options].each do |opt| %>
+                <div class="sub-chart-bar-row">
+                  <div class="sub-chart-label"><%= opt[:label] %></div>
+                  <div class="sub-chart-track">
+                    <div class="sub-chart-fill sub-chart-fill--purple" style="width: <%= opt[:pct] %>%;"></div>
+                  </div>
+                  <div class="sub-chart-value"><%= opt[:count] %> (<%= opt[:pct] %>%)</div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ═══════════════════════════════════════ %>
+  <%# ── Status Filter + Search ── %>
+  <%# ═══════════════════════════════════════ %>
+  <% unless @category == "survey" %>
+    <%# Status filter tabs %>
+    <div class="sub-tabs">
+      <%= link_to "Tout (#{@status_counts.values.sum})",
+          partner_portal_submissions_path(category: @category),
+          class: "sub-tab #{'sub-tab--active' unless params[:status].present?}" %>
+      <% statuses = case @category
+           when "transaction" then %w[submitted approved]
+           when "appointment" then %w[submitted approved]
+           else %w[submitted under_review approved rejected]
+         end %>
+      <% statuses.each do |st| %>
+        <% label = { "submitted" => "Soumèt", "under_review" => "Ap Revize", "approved" => "Apwouve", "rejected" => "Rejte" }[st] %>
+        <% count = @status_counts[st] || 0 %>
+        <%= link_to "#{label} (#{count})",
+            partner_portal_submissions_path(status: st, category: @category),
+            class: "sub-tab #{'sub-tab--active' if params[:status] == st}" %>
+      <% end %>
+    </div>
+
+    <%# Search & Service Filter %>
+    <div class="dash-filters">
+      <%= form_tag partner_portal_submissions_path, method: :get, class: "dash-filter-form" do %>
+        <%= hidden_field_tag :status, params[:status] %>
+        <%= hidden_field_tag :category, @category %>
+        <div class="dash-filter-row">
+          <div class="dash-filter-field">
+            <%= text_field_tag :q, params[:q], placeholder: "Chache pa kòd, non sitwayen...", class: "dash-input" %>
+          </div>
+          <div class="dash-filter-field">
+            <%= select_tag :service_id,
+                options_for_select(
+                  [["Tout Sèvis", ""]] + @services.select { |s| @category.blank? || s.service_category == @category }.map { |s| [s.name, s.id] },
+                  params[:service_id]
+                ), class: "dash-input" %>
+          </div>
+          <%= submit_tag "Filtre", class: "dash-btn dash-btn--sm" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ═══════════════════════════════════════ %>
+  <%# ── Submissions Table ── %>
+  <%# ═══════════════════════════════════════ %>
+  <div class="dash-card">
+    <div class="dash-card-body p-0">
+      <% if @submissions.any? %>
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>Kòd</th>
+              <th>Sitwayen</th>
+              <th>Sèvis</th>
+              <% if @category == "transaction" %>
+                <th>Montan</th>
+                <th>Tcheke</th>
+              <% elsif @category == "appointment" %>
+                <th>Dat Randevou</th>
+                <th>Rive</th>
+              <% else %>
+                <th>Estati</th>
+                <th>Pri</th>
+              <% end %>
+              <th>Dat</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @submissions.each do |sub| %>
+              <tr>
+                <td>
+                  <code class="dash-mono"><%= sub.verification_code %></code>
+                </td>
+                <td>
+                  <div class="dash-cell-name">
+                    <strong><%= sub.citizen.last_name %> <%= sub.citizen.first_name %></strong>
+                  </div>
+                </td>
+                <td>
+                  <%= sub.partner_schema.name %>
+                  <% unless @category.present? %>
+                    <% scat = sub.partner_schema.service_category %>
+                    <% cat_colors = { "application" => "info", "transaction" => "success", "appointment" => "warning", "survey" => "muted" } %>
+                    <% cat_labels = { "application" => "App", "transaction" => "Txn", "appointment" => "Rdv", "survey" => "Snd" } %>
+                    <span class="dash-badge dash-badge--<%= cat_colors[scat] || 'muted' %>" style="font-size:0.58rem;padding:2px 6px;margin-left:4px;">
+                      <%= cat_labels[scat] || scat %>
+                    </span>
+                  <% end %>
+                </td>
+
+                <% if @category == "transaction" %>
+                  <td><strong><%= sub.price_display %></strong></td>
+                  <td>
+                    <% if sub.checked_in_at.present? %>
+                      <span class="dash-badge dash-badge--success"><i class="ri-check-line"></i> Wi</span>
+                    <% else %>
+                      <span class="dash-badge dash-badge--muted">Non</span>
+                    <% end %>
+                  </td>
+                <% elsif @category == "appointment" %>
+                  <td>
+                    <% apt_date = sub.form_data&.dig("appointment_date") %>
+                    <% if apt_date.present? %>
+                      <%= begin; Date.parse(apt_date).strftime("%d/%m/%Y"); rescue; apt_date; end %>
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if sub.checked_in_at.present? %>
+                      <span class="dash-badge dash-badge--success"><i class="ri-check-line"></i> Rive</span>
+                    <% else %>
+                      <span class="dash-badge dash-badge--muted">Ap tann</span>
+                    <% end %>
+                  </td>
+                <% else %>
+                  <td>
+                    <% status_class = { "submitted" => "warning", "under_review" => "info",
+                         "approved" => "success", "rejected" => "danger", "draft" => "muted",
+                         "cancelled" => "muted" }[sub.status] || "muted" %>
+                    <span class="dash-badge dash-badge--<%= status_class %>">
+                      <%= sub.status_label %>
+                    </span>
+                  </td>
+                  <td><%= sub.price_display %></td>
+                <% end %>
+
+                <td class="dash-cell-date"><%= sub.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
+                <td>
+                  <%= link_to partner_portal_submission_path(sub), class: "dash-btn dash-btn--sm dash-btn--outline" do %>
+                    <i class="ri-eye-line"></i> Wè
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <div class="dash-empty">
+          <% case @category
+             when "transaction" %>
+            <i class="ri-exchange-dollar-line"></i>
+            <p>Pa gen tranzaksyon pou moman sa a.</p>
+          <% when "appointment" %>
+            <i class="ri-calendar-check-line"></i>
+            <p>Pa gen randevou pou moman sa a.</p>
+          <% when "survey" %>
+            <i class="ri-questionnaire-line"></i>
+            <p>Pa gen repons sondaj pou moman sa a.</p>
+          <% else %>
+            <i class="ri-inbox-line"></i>
+            <p>Pa gen soumisyon pou moman sa a.</p>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

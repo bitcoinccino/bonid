@@ -51,7 +51,8 @@ module PartnersHelper
   # Returns appropriate icon class for a partner sector
   def sector_icon(sector)
     case sector.to_s.downcase
-    when "banking", "fintech", "cryptocurrency"
+    when "banking", "fintech", "cryptocurrency", "commercial_bank", "microfinance", "credit_union",
+         "money_transfer", "mobile_wallet", "payment_processor", "crypto_exchange", "remittance"
       "ri-bank-line"
     when "healthcare", "hospital", "public_health_campaigns"
       "ri-hospital-line"
@@ -89,37 +90,81 @@ module PartnersHelper
   end
 
   # Returns array of benefits for each sector - more descriptive and compelling
+  # Returns the parent group name for a given sector value
+  # e.g. "mobile_wallet" => "Fintech & Mobile Money", "pnh" => "Law Enforcement"
+  def sector_group_label(sector)
+    sector_key = sector.to_s.downcase
+    group = PartnerSectorConstants::SECTORS.find { |_g, values| values.include?(sector_key) }&.first
+    group || sector_key.tr("_", " ").split.map(&:capitalize).join(" ")
+  end
+
   def partner_benefits(sector)
     case sector.to_s.downcase
-    when "banking", "fintech"
+    when "banking", "fintech", "commercial_bank", "microfinance", "credit_union", "money_transfer"
       [
         "Open bank accounts instantly with your verified BonID",
         "Get faster approval for loans, credit cards & mortgages",
         "Enjoy seamless KYC — no repeated document uploads",
         "Access mobile banking & digital wallets securely"
       ]
-    when "healthcare", "hospital", "public_health_campaigns"
+    when "mobile_wallet", "payment_processor", "crypto_exchange", "remittance"
+      [
+        "Instant KYC for mobile money & crypto accounts",
+        "Secure digital wallet activation with verified ID",
+        "Compliant identity verification for transactions",
+        "Faster onboarding — no repeated document uploads"
+      ]
+    when "healthcare", "hospital", "public_health_campaigns", "clinic", "pharmacy", "lab", "medical_insurance"
       [
         "Skip paperwork — instant patient registration",
         "Access your medical history across any partner hospital",
         "Emergency services can verify your identity immediately",
         "Secure prescription tracking & health records"
       ]
-    when "law_enforcement", "border_control"
+    when "law_enforcement", "border_control", "pnh"
       [
         "Faster, transparent ID verification during stops",
         "Digital proof of identity — no physical documents needed",
         "Reduced wait times at checkpoints",
         "Audit trail protects both citizens & officers"
       ]
-    when "embassy_services", "government", "local_governance"
+    when "cep"
+      [
+        "Verified voter identity for elections",
+        "Secure, transparent electoral participation",
+        "Digital voter card linked to your BonID",
+        "Faster check-in at polling stations"
+      ]
+    when "dgi"
+      [
+        "File taxes with verified identity — no paperwork",
+        "Instant NIF registration with your BonID",
+        "Track tax payments and fiscal receipts digitally",
+        "Secure access to your tax records"
+      ]
+    when "oni"
+      [
+        "Streamlined national ID card application",
+        "Digital identity verification for CIN requests",
+        "Track your ID application status online",
+        "Secure biometric enrollment"
+      ]
+    when "embassy", "consulate", "international_org", "embassy_services"
       [
         "Expedited visa & passport processing",
-        "One-click document submission for permits",
-        "Reduced bureaucracy for government services",
+        "One-click document submission for consular services",
+        "Verified identity for travel authorizations",
         "Secure digital signature for official forms"
       ]
-    when "telecommunications"
+    when "government", "local_governance", "onaca", "archives_nationales", "mairie", "municipality",
+         "ministry", "customs", "immigration"
+      [
+        "Faster access to government services",
+        "One-click document submission for permits",
+        "Reduced bureaucracy with verified digital ID",
+        "Secure digital signature for official forms"
+      ]
+    when "telecommunications", "mobile_carrier", "isp", "cable_provider"
       [
         "Instant SIM card registration & activation",
         "Quick mobile money account setup",

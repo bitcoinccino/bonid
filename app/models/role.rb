@@ -4,9 +4,6 @@ class Role < ApplicationRecord
 
   has_and_belongs_to_many :users, join_table: :users_roles
   belongs_to :resource, polymorphic: true, optional: true
-  has_and_belongs_to_many :permissions,
-                          join_table: :roles_permissions,
-                          optional: true
 
   # ==========================================================================
   # 🚨 MASTER ROLE LIST — CLEAN, CONSISTENT, FUTURE-PROOF
@@ -16,6 +13,12 @@ class Role < ApplicationRecord
     citizen
     partner_admin
     partner_agent
+    partner_agent_surveyor
+    partner_agent_notary
+    partner_supervisor
+    bank_agent
+    bank_supervisor
+    bank_teller
     officer
     reviewer
     admin_user

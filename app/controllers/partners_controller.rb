@@ -73,6 +73,7 @@ class PartnersController < ApplicationController
       :how_did_you_hear,
       :description,
       :logo,
+      :country,
 
       # ✅ FIX: allow the checkbox from the form
       :terms_accepted,

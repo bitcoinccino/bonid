@@ -106,9 +106,10 @@ class TeamInvitationService
       # Audit trail
       PartnerAuditLog.create!(
         partner:    @partner,
-        admin_user: @invited_by,
         event:      "team_invitation_sent",
         details: {
+          invited_by:    @invited_by.full_name,
+          invited_by_id: @invited_by.id,
           invitee_email: user.email,
           invitee_name:  user.full_name,
           invitee_bonid: user.bonid,

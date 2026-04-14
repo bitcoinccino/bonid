@@ -1,0 +1,106 @@
+<section class="certificate-font py-2" role="main">
+  <div class="container">
+
+    <%# ── Header ── %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          <i class="ri-file-list-3-line me-2"></i> Credit Ledger
+        </h2>
+        <p class="text-muted small mb-0">Immutable audit trail of all credit transactions.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to admin_billing_path, class: "btn btn-outline-secondary btn-sm" do %>
+          <i class="ri-arrow-left-line me-1"></i> Dashboard
+        <% end %>
+        <%= link_to admin_billing_credit_ledger_path(format: :csv, **request.query_parameters), class: "btn btn-outline-primary btn-sm" do %>
+          <i class="ri-download-line me-1"></i> Export CSV
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Filters ── %>
+    <%= form_with url: admin_billing_credit_ledger_path, method: :get, local: true, class: "mb-4" do |f| %>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <%= f.label :partner_id, "Partner", class: "form-label small" %>
+          <%= f.select :partner_id, options_from_collection_for_select(@partner_options, :id, :name, params[:partner_id]), { include_blank: "All Partners" }, class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :entry_type, "Type", class: "form-label small" %>
+          <%= f.select :entry_type, options_for_select(CreditLedgerEntry::ENTRY_TYPES.map { |t| [t.titleize, t] }, params[:entry_type]), { include_blank: "All Types" }, class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :from, "From", class: "form-label small" %>
+          <%= f.date_field :from, value: params[:from], class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :to, "To", class: "form-label small" %>
+          <%= f.date_field :to, value: params[:to], class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-1 align-self-end">
+          <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
+        </div>
+        <div class="col-md-1 align-self-end">
+          <%= link_to "Reset", admin_billing_credit_ledger_path, class: "btn btn-secondary btn-sm w-100" %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Ledger Table ── %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Timestamp</th>
+              <th>Partner</th>
+              <th>Type</th>
+              <th class="text-end">Amount</th>
+              <th class="text-end">Balance After</th>
+              <th>Endpoint</th>
+              <th class="pe-3">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @entries.each do |entry| %>
+              <tr>
+                <td class="ps-3 text-muted"><%= entry.created_at.strftime("%b %d, %H:%M:%S") %></td>
+                <td><%= entry.partner&.name || "—" %></td>
+                <td>
+                  <% badge_color = { "top_up" => "success", "deduction" => "danger", "bonus" => "info", "refund" => "warning text-dark", "adjustment" => "secondary", "free_lookup" => "light text-dark" }[entry.entry_type] || "secondary" %>
+                  <span class="badge bg-<%= badge_color %> rounded-pill"><%= entry.entry_type.titleize %></span>
+                </td>
+                <td class="text-end fw-semibold text-<%= entry.top_up? ? 'success' : 'danger' %>">
+                  <%= entry.formatted_amount %>
+                </td>
+                <td class="text-end">$<%= entry.balance_after.to_f.round(2) %></td>
+                <td class="text-muted" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <%= entry.endpoint_key || "—" %>
+                </td>
+                <td class="pe-3 text-muted" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <%= entry.description || "—" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @entries.empty? %>
+          <div class="text-center text-muted py-5">
+            <i class="ri-file-list-3-line display-4"></i>
+            <p class="mt-2">No ledger entries found</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Pagination ── %>
+    <% if @entries.respond_to?(:total_pages) && @entries.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-3">
+        <%= paginate @entries %>
+      </div>
+    <% end %>
+
+  </div>
+</section>

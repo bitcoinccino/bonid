@@ -1,0 +1,560 @@
+<%# Shared DGI Wizard CSS + JS — include at bottom of any multi-step form view %>
+<%# Locals: total_steps (integer), summary_fields (array of {label:, sel:, join: bool}) %>
+<%# Follows USWDS "Complete a complex form" patterns: %>
+<%#   - Progress easily: Step Indicator, inline validation, no-blame errors %>
+<%#   - Keep a record: print stylesheet for submission summary %>
+<%#   - Accessibility: ARIA live regions, focus management, reduced motion %>
+
+<style>
+  /* ================================================================
+     STEP INDICATOR — USWDS usa-step-indicator pattern
+     ================================================================ */
+  .dgi-wizard-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    role: group;
+  }
+  .wizard-step-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 4px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .wizard-step-indicator:focus-visible {
+    outline: 2px solid #00209F;
+    outline-offset: 2px;
+  }
+  .wizard-step-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #dee2e6;
+    color: #4b5563;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem;
+    transition: background 0.2s, color 0.2s;
+    border: 2px solid transparent;
+  }
+  .wizard-step-indicator.active .wizard-step-dot {
+    background: #00209F; color: #fff; border-color: #00209F;
+  }
+  .wizard-step-indicator.completed .wizard-step-dot {
+    background: #047857; color: #fff; border-color: #047857;
+  }
+  .wizard-step-label {
+    font-size: 0.65rem; color: #4b5563; font-weight: 500;
+    white-space: nowrap; max-width: 60px; overflow: hidden; text-overflow: ellipsis;
+    text-align: center;
+    display: none;
+  }
+  /* Show labels only on wide screens */
+  @media (min-width: 768px) {
+    .dgi-wizard-progress:not(.many-steps) .wizard-step-label { display: block; }
+  }
+  .wizard-step-indicator.active .wizard-step-label { color: #00209F; font-weight: 700; }
+  .wizard-step-indicator.completed .wizard-step-label { color: #047857; }
+  .wizard-step-line {
+    flex: 1; height: 2px; background: #dee2e6;
+    margin: 0 4px; max-width: 60px;
+    transition: background 0.2s;
+  }
+  .wizard-step-line.completed { background: #047857; }
+
+  /* ================================================================
+     FORM VALIDATION — USWDS inline validation, no-blame messaging
+     ================================================================ */
+  .wizard-step-panel .form-control.is-invalid,
+  .wizard-step-panel .form-select.is-invalid {
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 1px #b91c1c;
+  }
+  .wizard-validation-msg {
+    font-size: 0.78rem;
+    color: #b91c1c;
+    font-weight: 600;
+    margin-top: 4px;
+    display: none;
+  }
+  .wizard-step-panel .is-invalid ~ .wizard-validation-msg {
+    display: block;
+  }
+
+  /* ================================================================
+     CONNECTED INTRO CARD — header + trust intro as one unit
+     ================================================================ */
+  .wizard-intro-card {
+    margin-bottom: 24px;
+  }
+  .wizard-intro-card__body {
+    background: #f0f4ff;
+    border: 1px solid #c7d2fe;
+    border-left: 4px solid #00209F;
+    border-radius: 4px;
+    padding: 16px 20px;
+  }
+  .wizard-intro-card__body .wizard-trust-intro__heading {
+    margin-top: 0;
+  }
+  .wizard-intro-card__body .wizard-trust-intro__list {
+    margin-bottom: 12px;
+  }
+
+  /* ================================================================
+     TRUST INTRO — USWDS "Establish trust" pattern
+     ================================================================ */
+  .wizard-trust-intro {
+    background: #f0f4ff;
+    border: 1px solid #c7d2fe;
+    border-left: 4px solid #00209F;
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .wizard-trust-intro__heading {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 8px;
+  }
+  .wizard-trust-intro__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 8px;
+    font-size: 0.82rem;
+    color: #4b5563;
+  }
+  .wizard-trust-intro__list li {
+    padding: 3px 0;
+  }
+  .wizard-trust-intro__list li i {
+    color: #047857;
+    margin-right: 6px;
+  }
+  .wizard-trust-intro__meta {
+    font-size: 0.72rem;
+    color: #4b5563;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 0;
+    border-top: 1px solid #e0e7ff;
+    padding-top: 8px;
+  }
+  .wizard-trust-intro__meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ================================================================
+     SUMMARY (Keep a record) — review before submit
+     ================================================================ */
+  .wizard-summary {
+    background: #f8f9fa;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+  }
+  .wizard-summary__heading {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 12px;
+  }
+  .wizard-summary__item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.82rem;
+  }
+  .wizard-summary__item:last-child { border-bottom: none; }
+  .wizard-summary__label { color: #4b5563; }
+  .wizard-summary__value { font-weight: 600; color: #1a1a2e; }
+
+  /* Collapsible summary groups */
+  .wizard-summary-group.collapsed .wizard-summary-group__body { display: none; }
+  .wizard-summary-group.collapsed .wizard-summary-group__chevron { transform: rotate(-90deg); }
+
+  /* ================================================================
+     PRINT STYLESHEET — USWDS "Keep a record" pattern
+     ================================================================ */
+  @media print {
+    /* Hide navigation, sidebar, buttons */
+    .partner-sidebar, .citizen-sidebar,
+    .dash-header, .sidebar-toggle,
+    .wizard-next-btn, .wizard-prev-btn,
+    .wizard-step-indicator, .wizard-step-line,
+    .dgi-wizard-progress, .wizard-trust-intro,
+    button[type="submit"], .btn,
+    nav, header, footer { display: none !important; }
+
+    /* Show only summary content */
+    .wizard-step-panel { display: none !important; }
+    .wizard-step-panel:last-of-type { display: block !important; }
+
+    /* Print title block */
+    .wizard-print-header { display: block !important; }
+
+    /* Clean print layout */
+    body { background: #fff !important; color: #000 !important; font-family: Georgia, serif; font-size: 12pt; }
+    .partner-dashboard, .bongouv-dashboard { background: #fff !important; padding: 0 !important; }
+    .dash-card, .wizard-summary { border: 1px solid #ccc !important; break-inside: avoid; }
+    .col-lg-4 { display: none !important; }
+    .col-lg-8 { width: 100% !important; max-width: 100% !important; }
+
+    /* Print margins */
+    @page { margin: 0.75in; }
+
+    /* URLs after links */
+    a[href]:after { content: " (" attr(href) ")"; font-size: 0.8em; color: #666; }
+    a[href^="#"]:after, a[href^="javascript"]:after { content: ""; }
+
+    /* Fixed-width for reference numbers */
+    code { font-family: 'Courier New', monospace; }
+  }
+
+  /* Hidden print header — shown only in print */
+  .wizard-print-header {
+    display: none;
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #000;
+  }
+  .wizard-print-header__title {
+    font-size: 16pt;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .wizard-print-header__meta {
+    font-size: 10pt;
+    color: #666;
+    margin: 0;
+  }
+
+  /* ================================================================
+     HELP LINK — "Progress easily" provide help option
+     ================================================================ */
+  .wizard-help-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: #00209F;
+    text-decoration: underline;
+    min-height: 44px;
+  }
+  .wizard-help-link:hover { color: #001570; }
+  .wizard-help-link:focus-visible {
+    outline: 2px solid #00209F;
+    outline-offset: 2px;
+  }
+
+  /* ================================================================
+     MOBILE — USWDS mobile-first responsive
+     ================================================================ */
+  @media (max-width: 767px) {
+    .wizard-step-dot { width: 28px; height: 28px; font-size: 0.75rem; }
+    .wizard-step-line { max-width: 30px; }
+    /* WCAG 2.1 AA: min 44px touch targets, 16px prevents iOS zoom */
+    .wizard-step-panel input.form-control,
+    .wizard-step-panel select.form-select,
+    .wizard-step-panel textarea.form-control { min-height: 44px; font-size: 16px; }
+    .wizard-step-panel .btn { min-height: 48px; }
+  }
+
+  /* ================================================================
+     REDUCED MOTION
+     ================================================================ */
+  @media (prefers-reduced-motion: reduce) {
+    .wizard-step-dot,
+    .wizard-step-line {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var totalSteps = <%= total_steps %>;
+  var currentStep = 1;
+  var summaryFields = <%= raw (summary_fields || []).to_json %>;
+
+  // Expose showStep globally for draft restoration
+  window.__wizardShowStep = null;
+
+  // ---- USWDS Step Indicator: show/hide steps with ARIA updates ----
+  function showStep(step) {
+    window.__wizardShowStep = showStep;
+    document.querySelectorAll('.wizard-step-panel').forEach(function(p) {
+      p.style.display = 'none';
+      p.setAttribute('aria-hidden', 'true');
+    });
+    var panel = document.getElementById('wizardStep' + step);
+    if (panel) {
+      panel.style.display = 'block';
+      panel.setAttribute('aria-hidden', 'false');
+    }
+
+    // Update step indicators with ARIA
+    document.querySelectorAll('.wizard-step-indicator').forEach(function(ind, i) {
+      ind.classList.remove('active', 'completed');
+      if (i + 1 < step) {
+        ind.classList.add('completed');
+        ind.setAttribute('aria-current', 'false');
+      } else if (i + 1 === step) {
+        ind.classList.add('active');
+        ind.setAttribute('aria-current', 'step');
+      } else {
+        ind.setAttribute('aria-current', 'false');
+      }
+    });
+
+    document.querySelectorAll('.wizard-step-line').forEach(function(line, i) {
+      line.classList.toggle('completed', i + 1 < step);
+    });
+
+    // Update live region for screen readers
+    var liveRegion = document.getElementById('wizardLiveRegion');
+    if (liveRegion) {
+      var stepLabel = document.querySelector('.wizard-step-indicator[data-step="' + step + '"] .wizard-step-label');
+      var label = stepLabel ? stepLabel.textContent : ('Etap ' + step);
+      liveRegion.textContent = 'Etap ' + step + ' nan ' + totalSteps + ': ' + label;
+    }
+
+    // Update step hint text
+    var hintEl = document.getElementById('wizardStepHint');
+    var activeIndicator = document.querySelector('.wizard-step-indicator[data-step="' + step + '"]');
+    if (hintEl && activeIndicator && activeIndicator.dataset.hint) {
+      hintEl.textContent = activeIndicator.dataset.hint;
+    }
+
+    currentStep = step;
+    // Auto-save draft on step transition
+    saveDraft(step);
+    // Focus management: move focus to step heading
+    var heading = panel ? panel.querySelector('h6, h5, h4, .dash-card-title') : null;
+    if (heading) {
+      heading.setAttribute('tabindex', '-1');
+      heading.focus();
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    // Build summary on review step (2 steps before end: Revize → Siyati → Peyman)
+    // and on last step as fallback
+    if (step === totalSteps - 2 || step === totalSteps) buildSummary();
+  }
+
+  // ---- USWDS Validation: inline, no-blame error messaging ----
+  function validateStep(step) {
+    var panel = document.getElementById('wizardStep' + step);
+    if (!panel) return true;
+    var valid = true;
+    var firstInvalid = null;
+
+    panel.querySelectorAll('[required]').forEach(function(input) {
+      // Remove previous state
+      input.classList.remove('is-invalid');
+      input.removeAttribute('aria-invalid');
+      var msg = input.parentElement.querySelector('.wizard-validation-msg');
+
+      if (!input.value.trim()) {
+        input.classList.add('is-invalid');
+        input.setAttribute('aria-invalid', 'true');
+        // Create validation message if not exists
+        if (!msg) {
+          msg = document.createElement('div');
+          msg.className = 'wizard-validation-msg';
+          msg.setAttribute('role', 'alert');
+          var label = input.parentElement.querySelector('.form-label');
+          var fieldName = label ? label.textContent.replace('*', '').trim() : 'chan sa a';
+          msg.textContent = 'Tanpri ranpli ' + fieldName + '.';
+          input.parentElement.appendChild(msg);
+        }
+        msg.style.display = 'block';
+        if (!firstInvalid) firstInvalid = input;
+        valid = false;
+      } else {
+        if (msg) msg.style.display = 'none';
+      }
+    });
+
+    // Focus first invalid field
+    if (firstInvalid) firstInvalid.focus();
+
+    // Announce error count to screen readers
+    if (!valid) {
+      var errorCount = panel.querySelectorAll('.is-invalid').length;
+      var liveRegion = document.getElementById('wizardLiveRegion');
+      if (liveRegion) {
+        liveRegion.textContent = errorCount + ' erè. Tanpri korije chan ki obligatwa yo.';
+      }
+    }
+
+    return valid;
+  }
+
+  // Clear validation on input
+  document.querySelectorAll('.wizard-step-panel [required]').forEach(function(input) {
+    input.addEventListener('input', function() {
+      if (this.value.trim()) {
+        this.classList.remove('is-invalid');
+        this.removeAttribute('aria-invalid');
+        var msg = this.parentElement.querySelector('.wizard-validation-msg');
+        if (msg) msg.style.display = 'none';
+      }
+    });
+  });
+
+  // ---- Navigation buttons ----
+  document.querySelectorAll('.wizard-next-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (validateStep(currentStep)) showStep(parseInt(this.dataset.next));
+    });
+  });
+  document.querySelectorAll('.wizard-prev-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { showStep(parseInt(this.dataset.prev)); });
+  });
+
+  // Allow clicking completed steps to go back
+  document.querySelectorAll('.wizard-step-indicator').forEach(function(ind) {
+    ind.addEventListener('click', function() {
+      var t = parseInt(this.dataset.step);
+      if (t < currentStep) showStep(t);
+    });
+    // Keyboard support
+    ind.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        var t = parseInt(this.dataset.step);
+        if (t < currentStep) showStep(t);
+      }
+    });
+  });
+
+  // ---- Auto-save draft on step transitions ----
+  var draftSaveUrl = document.querySelector('meta[name="draft-save-url"]');
+  var draftIndicator = document.getElementById('draftIndicator');
+  var draftDebounce = null;
+
+  function saveDraft(step) {
+    if (!draftSaveUrl) return;
+    var form = document.getElementById('wizardForm');
+    if (!form) return;
+
+    clearTimeout(draftDebounce);
+    draftDebounce = setTimeout(function() {
+      var formData = new FormData(form);
+      var data = {};
+      formData.forEach(function(value, key) {
+        // Skip file inputs and authenticity token
+        if (key === 'authenticity_token' || key === 'utf8') return;
+        var input = form.querySelector('[name="' + key + '"]');
+        if (input && input.type === 'file') return;
+        data[key] = value;
+      });
+
+      var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+      fetch(draftSaveUrl.content, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          form_type: data['form_type'],
+          current_step: step,
+          draft_data: data
+        })
+      }).then(function(r) {
+        if (r.ok && draftIndicator) {
+          draftIndicator.textContent = 'Sovgade';
+          draftIndicator.style.opacity = '1';
+          setTimeout(function() { draftIndicator.style.opacity = '0.6'; }, 2000);
+        }
+      }).catch(function() { /* silent fail — draft save is best-effort */ });
+    }, 500);
+  }
+
+  // ---- USWDS Keep a Record: build summary with structured data ----
+  function getFieldValue(f) {
+    var val;
+    if (f.join) {
+      var parts = [];
+      f.sel.split(', ').forEach(function(s) {
+        var e = document.querySelector(s);
+        if (e && e.value) parts.push(e.value);
+      });
+      val = parts.join(' ');
+    } else {
+      var e = document.querySelector(f.sel);
+      if (e) val = e.tagName === 'SELECT' ? (e.options[e.selectedIndex] ? e.options[e.selectedIndex].text : '') : e.value;
+    }
+    if (val && val.trim() && val !== '— Chwazi —' && val !== '-- Chwazi --') return val.trim();
+    return null;
+  }
+
+  function buildFieldRows(fields) {
+    var html = '';
+    fields.forEach(function(f) {
+      var val = getFieldValue(f);
+      if (val) {
+        html += '<div class="wizard-summary__item">' +
+          '<span class="wizard-summary__label">' + f.label + '</span>' +
+          '<span class="wizard-summary__value">' + val + '</span>' +
+          '</div>';
+      }
+    });
+    return html;
+  }
+
+  function buildSummary() {
+    var el = document.getElementById('summaryContent');
+    if (!el) return;
+    var html = '';
+
+    // Check if grouped format (has .group property) or flat
+    if (summaryFields.length > 0 && summaryFields[0].group) {
+      summaryFields.forEach(function(section, idx) {
+        var rows = buildFieldRows(section.fields);
+        if (!rows) return;
+        var id = 'summarySection' + idx;
+        html += '<div class="wizard-summary-group" style="border:1px solid #e5e7eb; border-radius:8px; margin-bottom:12px; overflow:hidden;">' +
+          '<button type="button" class="wizard-summary-group__toggle" onclick="this.parentElement.classList.toggle(\'collapsed\')" ' +
+          'style="width:100%; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#f8fafc; border:none; cursor:pointer; font-size:0.85rem; font-weight:600; color:#1a1a2e;">' +
+          '<span><i class="' + (section.icon || 'ri-file-list-line') + ' me-2" style="color:#00209F;"></i>' + section.group + '</span>' +
+          '<i class="ri-arrow-down-s-line wizard-summary-group__chevron" style="transition:transform 0.2s;"></i>' +
+          '</button>' +
+          '<div class="wizard-summary-group__body" style="padding:4px 16px 12px;">' + rows + '</div>' +
+          '</div>';
+      });
+    } else {
+      // Flat format (backwards compatible)
+      html = buildFieldRows(summaryFields);
+    }
+
+    el.innerHTML = html || '<p class="text-muted">Pa gen done.</p>';
+  }
+
+  // ---- Print button handler ----
+  var printBtn = document.getElementById('wizardPrintBtn');
+  if (printBtn) {
+    printBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      window.print();
+    });
+  }
+});
+</script>

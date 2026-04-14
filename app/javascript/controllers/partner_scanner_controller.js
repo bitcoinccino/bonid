@@ -55,7 +55,43 @@ export default class extends Controller {
 
     this.switchCamera = this.debounce(this.switchCamera.bind(this), 300);
     this.bindTurboEvents();
-    this.initializeScanner();
+
+    // Check for ?bonid= param (from dashboard quick-entry redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillBonid = urlParams.get("bonid");
+    if (prefillBonid && prefillBonid.trim().length > 0) {
+      this.autoLookupFromParam(prefillBonid.trim().toUpperCase());
+    } else {
+      this.initializeScanner();
+    }
+  }
+
+  // Auto-fill pin boxes and submit when redirected from dashboard with ?bonid= param
+  autoLookupFromParam(bonid) {
+    // Switch to manual section
+    this.showManualSection();
+
+    // Fill pin boxes with characters
+    const chars = bonid.split("");
+    if (this.hasPinBoxTarget) {
+      this.pinBoxTargets.forEach((box, i) => {
+        box.value = chars[i] || "";
+      });
+    }
+
+    // Set the hidden bonid input
+    if (this.hasBonidInputTarget) {
+      this.bonidInputTarget.value = bonid;
+    }
+
+    // Clean up URL (remove ?bonid= so refresh doesn't re-trigger)
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, "", cleanUrl);
+
+    // Auto-submit after a brief delay for visual feedback
+    setTimeout(() => {
+      this.submitForm(new Event("auto-submit"));
+    }, 300);
   }
 
   initializeScanner() {

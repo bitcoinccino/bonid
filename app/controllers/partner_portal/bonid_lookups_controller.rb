@@ -111,13 +111,17 @@ module PartnerPortal
                   metadata: { via: token.present? ? "qr" : "manual", partner_id: @current_partner&.id }
                 )
 
+                # Auto-check voter eligibility if an election is active
+                voter_record = auto_check_voter_eligibility(result.user)
+
                 render turbo_stream: [
                   turbo_stream.update("scan_result_frame",
                     partial: "partner_portal/bonid_lookups/scan_result_valid",
                     locals: {
                       submission: result.submission,
                       user: result.user,
-                      partner: @current_partner
+                      partner: @current_partner,
+                      voter_record: voter_record
                     }),
                   *credit_badge_streams
                 ]
@@ -155,6 +159,39 @@ module PartnerPortal
           end
 
           unless confirmed
+            # ── Log identity mismatch for audit trail & fraud detection ──
+            FailedBonidLookup.create!(
+              bonid: submission.bonid,
+              officer_id: nil,
+              reason: "identity_mismatch",
+              ip_address: request.remote_ip,
+              user_agent: request.user_agent
+            )
+
+            PartnerAuditLog.log!(
+              @current_partner,
+              current_user,
+              "identity_mismatch",
+              {
+                bonid: submission.bonid,
+                citizen_id: submission.user_id,
+                citizen_name: submission.user&.full_name,
+                submission_id: submission.id,
+                agent_id: current_user&.id,
+                agent_name: current_user&.full_name,
+                ip_address: request.remote_ip,
+                reported_at: Time.current.iso8601,
+                action_taken: "mismatch_reported"
+              }
+            )
+
+            Rails.logger.warn(
+              "🚨 [IDENTITY_MISMATCH] BonID=#{submission.bonid} " \
+              "Citizen=#{submission.user&.full_name} (ID:#{submission.user_id}) " \
+              "Agent=#{current_user&.full_name} (ID:#{current_user&.id}) " \
+              "Partner=#{@current_partner&.name} IP=#{request.remote_ip}"
+            )
+
             return render turbo_stream: turbo_stream.update(
               "scan_result_frame",
               partial: "partner_portal/bonid_lookups/scan_result_mismatch",
@@ -185,13 +222,16 @@ module PartnerPortal
 
           reset_failure_count
 
+          voter_record = auto_check_voter_eligibility(submission.user)
+
           render turbo_stream: [
             turbo_stream.update("scan_result_frame",
               partial: "partner_portal/bonid_lookups/scan_result_valid",
               locals: {
                 submission: submission,
                 user: submission.user,
-                partner: @current_partner
+                partner: @current_partner,
+                voter_record: voter_record
               }),
             *credit_badge_streams
           ]
@@ -200,6 +240,21 @@ module PartnerPortal
     end
 
     private
+
+    # ── Voter Eligibility ─────────────────────────────────────
+    # Auto-register and check voter eligibility if there's an active election.
+    # Returns nil if no election is active or on any error (non-blocking).
+    def auto_check_voter_eligibility(user)
+      return nil unless user&.bonid.present?
+
+      election = BonvoteElection.where(status: "active").order(created_at: :desc).first
+      return nil unless election
+
+      VoterEligibilityRecord.register_voter!(election: election, user: user)
+    rescue StandardError => e
+      Rails.logger.warn("[VoterEligibility] Auto-check failed for #{user&.bonid}: #{e.message}")
+      nil
+    end
 
     # ── Credit Enforcement ──────────────────────────────────────
 

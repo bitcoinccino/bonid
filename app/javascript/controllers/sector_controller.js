@@ -14,6 +14,8 @@ export default class extends Controller {
     "otherUseCaseInput",
     "additionalFieldsWrapper",
     "addressWrapper",
+    "countryWrapper",
+    "countrySelect",
     "pnhNotice"
   ];
 
@@ -22,6 +24,7 @@ export default class extends Controller {
 
     this.unitOptions = this.loadUnitOptions();
     this.useCaseOptions = this.loadUseCaseOptions();
+    this.countryRequiredSectors = this.loadCountryRequiredSectors();
 
     // Only run if targets exist
     if (this.hasSectorSelectTarget) {
@@ -78,6 +81,15 @@ export default class extends Controller {
     if (!isPNH && this.hasUnitTypeSelectTarget && this.hasUnitNameSelectTarget) {
       this.unitTypeSelectTarget.value = "";
       this.unitNameSelectTarget.innerHTML = '<option value="">Select Unit Name</option>';
+    }
+
+    // Show/hide country field for embassy/consulate/international sectors
+    const needsCountry = this.countryRequiredSectors.includes(value);
+    if (this.hasCountryWrapperTarget) {
+      this.countryWrapperTarget.classList.toggle("d-none", !needsCountry);
+    }
+    if (!needsCountry && this.hasCountrySelectTarget) {
+      this.countrySelectTarget.value = "";
     }
   }
 
@@ -161,6 +173,15 @@ export default class extends Controller {
     if (!script) {
       console.warn("⚠️ use-cases-json not found");
       return {};
+    }
+    return JSON.parse(script.textContent);
+  }
+
+  loadCountryRequiredSectors() {
+    const script = document.getElementById("country-required-sectors-json");
+    if (!script) {
+      console.warn("⚠️ country-required-sectors-json not found");
+      return [];
     }
     return JSON.parse(script.textContent);
   }

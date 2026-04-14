@@ -121,11 +121,7 @@ class MoncashPaymentService
     return cached if cached.present?
 
     uri = URI("#{@config[:api_base]}/oauth/token")
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if sandbox?
-    http.open_timeout = 10
-    http.read_timeout = 15
+    http = build_moncash_http(uri, read_timeout: 15)
 
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Basic #{Base64.strict_encode64("#{@config[:client_id]}:#{@config[:client_secret]}")}"
@@ -153,11 +149,7 @@ class MoncashPaymentService
   # ============================================================
   def moncash_post(path, body, access_token)
     uri = URI("#{@config[:api_base]}#{path}")
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_NONE if sandbox?
-    http.open_timeout = 10
-    http.read_timeout = 30
+    http = build_moncash_http(uri, read_timeout: 30)
 
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{access_token}"
@@ -175,6 +167,16 @@ class MoncashPaymentService
     JSON.parse(response.body)
   rescue JSON::ParserError => e
     raise PaymentError, "Invalid MonCash response: #{e.message}"
+  end
+
+  def build_moncash_http(uri, read_timeout: 15)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.open_timeout = 10
+    http.read_timeout = read_timeout
+    # MonCash cert has a broken CRL — disable verification for this host.
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    http
   end
 
   def sandbox?

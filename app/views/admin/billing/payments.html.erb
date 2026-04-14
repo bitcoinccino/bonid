@@ -1,0 +1,159 @@
+<section class="certificate-font py-2" role="main">
+  <div class="container">
+
+    <%# ── Header ── %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-primary mb-1">
+          <i class="ri-bank-card-line me-2"></i> Payments
+        </h2>
+        <p class="text-muted small mb-0">Partner top-up payments via MonCash and Stripe.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <%= link_to admin_billing_path, class: "btn btn-outline-secondary btn-sm" do %>
+          <i class="ri-arrow-left-line me-1"></i> Dashboard
+        <% end %>
+        <%= link_to admin_billing_payments_path(format: :csv, **request.query_parameters), class: "btn btn-outline-primary btn-sm" do %>
+          <i class="ri-download-line me-1"></i> Export CSV
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Summary Metrics ── %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <div class="text-muted" style="font-size: 0.7rem;">Total</div>
+            <h5 class="fw-bold mb-0"><%= @metrics[:total] %></h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <div class="text-muted" style="font-size: 0.7rem;">Completed</div>
+            <h5 class="fw-bold text-success mb-0"><%= @metrics[:completed] %></h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <div class="text-muted" style="font-size: 0.7rem;">Pending</div>
+            <h5 class="fw-bold text-warning mb-0"><%= @metrics[:pending] %></h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <div class="text-muted" style="font-size: 0.7rem;">Revenue</div>
+            <h5 class="fw-bold text-primary mb-0">$<%= @metrics[:total_amount].to_f.round(2) %></h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <div class="text-muted" style="font-size: 0.7rem;">MonCash</div>
+            <h5 class="fw-bold mb-0" style="color: #FF6B00;">$<%= @metrics[:moncash_amount].to_f.round(2) %></h5>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-2">
+            <div class="text-muted" style="font-size: 0.7rem;">Stripe</div>
+            <h5 class="fw-bold mb-0" style="color: #635BFF;">$<%= @metrics[:stripe_amount].to_f.round(2) %></h5>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Filters ── %>
+    <%= form_with url: admin_billing_payments_path, method: :get, local: true, class: "mb-4" do |f| %>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <%= f.label :partner_id, "Partner", class: "form-label small" %>
+          <%= f.select :partner_id, options_from_collection_for_select(@partner_options, :id, :name, params[:partner_id]), { include_blank: "All Partners" }, class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :payment_method, "Method", class: "form-label small" %>
+          <%= f.select :payment_method, options_for_select([["MonCash", "moncash"], ["Stripe", "stripe"]], params[:payment_method]), { include_blank: "All" }, class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :status, "Status", class: "form-label small" %>
+          <%= f.select :status, options_for_select(PartnerPayment::STATUSES.map { |s| [s.capitalize, s] }, params[:status]), { include_blank: "All" }, class: "form-select form-select-sm" %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :from, "From", class: "form-label small" %>
+          <%= f.date_field :from, value: params[:from], class: "form-control form-control-sm" %>
+        </div>
+        <div class="col-md-1 align-self-end">
+          <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
+        </div>
+        <div class="col-md-1 align-self-end">
+          <%= link_to "Reset", admin_billing_payments_path, class: "btn btn-secondary btn-sm w-100" %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Payments Table ── %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0" style="font-size: 0.8rem;">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Date</th>
+              <th>Partner</th>
+              <th>Order ID</th>
+              <th>Method</th>
+              <th class="text-end">Amount</th>
+              <th>Status</th>
+              <th>Transaction ID</th>
+              <th class="pe-3">Paid At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @payments.each do |payment| %>
+              <tr>
+                <td class="ps-3 text-muted"><%= payment.created_at.strftime("%b %d, %H:%M") %></td>
+                <td><%= payment.partner&.name || "—" %></td>
+                <td><code style="font-size: 0.7rem;"><%= payment.order_id %></code></td>
+                <td>
+                  <span class="badge bg-<%= payment.payment_method == 'moncash' ? 'warning text-dark' : 'info' %> rounded-pill">
+                    <i class="ri-<%= payment.payment_method == 'moncash' ? 'phone-line' : 'bank-card-line' %> me-1"></i>
+                    <%= payment.payment_method.capitalize %>
+                  </span>
+                </td>
+                <td class="text-end fw-semibold"><%= payment.formatted_amount %></td>
+                <td>
+                  <% status_colors = { "completed" => "success", "pending" => "warning text-dark", "failed" => "danger", "refunded" => "secondary" } %>
+                  <span class="badge bg-<%= status_colors[payment.status] %>"><%= payment.status.capitalize %></span>
+                </td>
+                <td class="text-muted" style="font-size: 0.7rem;"><%= payment.transaction_id || "—" %></td>
+                <td class="pe-3 text-muted"><%= payment.paid_at&.strftime("%b %d, %H:%M") || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <% if @payments.empty? %>
+          <div class="text-center text-muted py-5">
+            <i class="ri-bank-card-line display-4"></i>
+            <p class="mt-2">No payments found</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Pagination ── %>
+    <% if @payments.respond_to?(:total_pages) && @payments.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-3">
+        <%= paginate @payments %>
+      </div>
+    <% end %>
+
+  </div>
+</section>

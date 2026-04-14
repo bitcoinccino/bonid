@@ -191,7 +191,282 @@
       </div>
     <% end %>
 
-    <%# ── 5. New Scan Button ── %>
+    <%# ── 5. DGI Fiscal Receipts (Immigration sector only) ── %>
+    <% if partner&.department_sector == "immigration" || partner&.sector == "immigration" %>
+      <% citizen_receipts = VerificationRecord.where(record_type: "fiscal_receipt", user: user).order(created_at: :desc) %>
+      <div class="receipts-subcard">
+        <div class="receipts-subcard-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-receipt-line"></i>
+            DGI — Kes Fiskal
+          </div>
+          <% available_count = citizen_receipts.where(status: "verified").where.not("data->'consumption'->>'consumed' = ?", "true").count %>
+          <% if available_count > 0 %>
+            <span class="receipt-count-badge receipt-count-badge--available"><%= available_count %> disponib</span>
+          <% else %>
+            <span class="receipt-count-badge receipt-count-badge--none">0 disponib</span>
+          <% end %>
+        </div>
+        <div class="receipts-subcard-body">
+          <% if citizen_receipts.any? %>
+            <table class="receipts-table">
+              <thead>
+                <tr>
+                  <th>Nimewo Resi</th>
+                  <th>Tip Taks</th>
+                  <th>Montan</th>
+                  <th>Dat</th>
+                  <th>Estati</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% citizen_receipts.limit(10).each do |receipt| %>
+                  <% consumed = receipt.data.dig("consumption", "consumed") == "true" || receipt.data.dig("consumption", "consumed") == true %>
+                  <tr class="<%= consumed ? 'receipt-row--consumed' : '' %>">
+                    <td class="receipt-number"><%= receipt.receipt_number || receipt.data.dig("receipt", "receipt_number") || "—" %></td>
+                    <td><%= (receipt.data.dig("receipt", "tax_type") || "—").titleize %></td>
+                    <td class="receipt-amount"><%= number_with_delimiter(receipt.data.dig("receipt", "amount_htg").to_i) %> HTG</td>
+                    <td><%= receipt.created_at.strftime("%d/%m/%Y") %></td>
+                    <td>
+                      <% if consumed %>
+                        <span class="status-pill status-pill--expired">
+                          <i class="ri-close-circle-line me-1"></i>Konsome
+                        </span>
+                      <% elsif receipt.status == "verified" %>
+                        <span class="status-pill status-pill--valid">
+                          <i class="ri-checkbox-circle-line me-1"></i>Disponib
+                        </span>
+                      <% else %>
+                        <span class="status-pill status-pill--warning">
+                          <i class="ri-time-line me-1"></i><%= receipt.status&.capitalize %>
+                        </span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% else %>
+            <div class="receipts-empty">
+              <i class="ri-receipt-line"></i>
+              <p>Okenn kes fiskal DGI pou sitwayen sa a</p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── 6. Citizen Applications OR Start New Service ── %>
+    <% citizen_apps = ServiceApplication.where(citizen: user, partner: partner)
+                        .includes(:partner_schema)
+                        .where.not(status: "draft")
+                        .order(created_at: :desc) %>
+    <% available_services = partner&.partner_schemas&.citizen_services&.where(schema_status: "published")&.order(:name) || [] %>
+
+    <% if citizen_apps.any? %>
+      <%# ── Has existing applications — show history + "New Service" button ── %>
+      <div class="citizen-history-subcard">
+        <div class="citizen-history-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ri-file-list-3-line"></i>
+            Aplikasyon Sitwayen
+          </div>
+          <span class="citizen-history-count"><%= citizen_apps.count %></span>
+        </div>
+        <div class="citizen-history-body">
+          <table class="citizen-history-table">
+            <thead>
+              <tr>
+                <th>Sèvis</th>
+                <th>Kòd</th>
+                <th>Dat</th>
+                <th>Estati</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% citizen_apps.limit(10).each do |app| %>
+                <tr>
+                  <td class="history-service-name"><%= app.partner_schema&.name || "—" %></td>
+                  <td class="history-code"><%= app.verification_code %></td>
+                  <td><%= app.created_at.strftime("%d/%m/%Y") %></td>
+                  <td>
+                    <% case app.status
+                       when "submitted" %>
+                      <span class="status-pill status-pill--warning"><i class="ri-time-line me-1"></i>Soumèt</span>
+                    <% when "under_review" %>
+                      <span class="status-pill status-pill--warning"><i class="ri-search-eye-line me-1"></i>Ap Revize</span>
+                    <% when "approved" %>
+                      <span class="status-pill status-pill--valid"><i class="ri-checkbox-circle-line me-1"></i>Apwouve</span>
+                    <% when "rejected" %>
+                      <span class="status-pill status-pill--expired"><i class="ri-close-circle-line me-1"></i>Rejte</span>
+                    <% else %>
+                      <span class="status-pill"><%= app.status_label %></span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <%= link_to partner_portal_submission_path(app), class: "history-view-link", data: { turbo: false } do %>
+                      <i class="ri-eye-line"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%# ── "New Service" button at bottom of history ── %>
+        <% if available_services.any? %>
+          <div class="citizen-history-footer">
+            <button type="button" class="btn-new-service-toggle" onclick="this.closest('.citizen-history-subcard').querySelector('.render-service-drawer').classList.toggle('render-service-drawer--open'); this.classList.toggle('btn-new-service-toggle--open');">
+              <i class="ri-add-circle-line me-1"></i>Nouvo Sèvis
+              <i class="ri-arrow-down-s-line toggle-chevron"></i>
+            </button>
+
+            <div class="render-service-drawer">
+              <% available_services.each do |schema| %>
+                <div class="render-service-card">
+                  <div class="render-service-info">
+                    <div class="render-service-name"><%= schema.name %></div>
+                    <div class="render-service-meta">
+                      <span class="render-service-category render-service-category--<%= schema.service_category %>">
+                        <% case schema.service_category
+                           when "application" %><i class="ri-file-text-line me-1"></i>Aplikasyon
+                        <% when "transaction" %><i class="ri-exchange-funds-line me-1"></i>Tranzaksyon
+                        <% when "appointment" %><i class="ri-calendar-check-line me-1"></i>Randevou
+                        <% when "survey" %><i class="ri-questionnaire-line me-1"></i>Sondaj
+                        <% end %>
+                      </span>
+                      <span class="render-service-price"><%= schema.price_display %></span>
+                    </div>
+                  </div>
+                  <%= link_to agent_form_partner_portal_submissions_path(citizen_id: user.id, schema_id: schema.id),
+                              class: "btn-render-service",
+                              data: { turbo: false } do %>
+                    <i class="ri-play-circle-line me-1"></i>Kòmanse
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+    <% else %>
+      <%# ── No existing applications — go straight to available services ── %>
+      <% if available_services.any? %>
+        <div class="render-service-subcard">
+          <div class="render-service-header">
+            <div class="d-flex align-items-center gap-2">
+              <i class="ri-add-circle-line"></i>
+              Kòmanse yon Sèvis
+            </div>
+          </div>
+          <div class="render-service-body">
+            <div class="render-service-prompt">
+              <i class="ri-information-line"></i>
+              Okenn aplikasyon pou sitwayen sa a. Chwazi yon sèvis pou kòmanse.
+            </div>
+            <% available_services.each do |schema| %>
+              <div class="render-service-card">
+                <div class="render-service-info">
+                  <div class="render-service-name"><%= schema.name %></div>
+                  <div class="render-service-meta">
+                    <span class="render-service-category render-service-category--<%= schema.service_category %>">
+                      <% case schema.service_category
+                         when "application" %><i class="ri-file-text-line me-1"></i>Aplikasyon
+                      <% when "transaction" %><i class="ri-exchange-funds-line me-1"></i>Tranzaksyon
+                      <% when "appointment" %><i class="ri-calendar-check-line me-1"></i>Randevou
+                      <% when "survey" %><i class="ri-questionnaire-line me-1"></i>Sondaj
+                      <% end %>
+                    </span>
+                    <span class="render-service-price"><%= schema.price_display %></span>
+                    <% if schema.form_code_display.present? %>
+                      <span class="render-service-form-code"><%= schema.form_code_display %></span>
+                    <% end %>
+                  </div>
+                </div>
+                <%= link_to agent_form_partner_portal_submissions_path(citizen_id: user.id, schema_id: schema.id),
+                            class: "btn-render-service",
+                            data: { turbo: false } do %>
+                  <i class="ri-play-circle-line me-1"></i>Kòmanse
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% else %>
+        <%# ── No services created yet ── %>
+        <div class="no-services-subcard">
+          <div class="no-services-icon">
+            <i class="ri-service-line"></i>
+          </div>
+          <h4 class="no-services-title">Ou poko kreye okenn sèvis</h4>
+          <p class="no-services-desc">Kreye yon sèvis (fòm, tranzaksyon, randevou, oswa sondaj) pou kòmanse sèvi sitwayen yo.</p>
+          <%= link_to new_partner_portal_partner_schema_path, class: "no-services-cta" do %>
+            <i class="ri-add-circle-line me-1"></i>Kreye yon Sèvis
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <%# ── 8. Voter Eligibility Card (auto-checked) ── %>
+    <% if local_assigns[:voter_record] && voter_record.present? %>
+      <div class="voter-eligibility-subcard voter-eligibility--<%= voter_record.eligible? ? 'eligible' : 'ineligible' %>">
+        <div class="voter-eligibility-header">
+          <div class="d-flex align-items-center gap-2">
+            <% if voter_record.eligible? %>
+              <i class="ri-checkbox-circle-fill" style="color: #059669; font-size: 20px;"></i>
+              <span style="font-weight: 700; color: #065F46;">Elijib pou Vote</span>
+            <% else %>
+              <i class="ri-close-circle-fill" style="color: #DC2626; font-size: 20px;"></i>
+              <span style="font-weight: 700; color: #991B1B;">Pa Elijib</span>
+            <% end %>
+          </div>
+          <span class="voter-eligibility-badge voter-eligibility-badge--<%= voter_record.channel %>">
+            <i class="ri-global-line me-1"></i><%= voter_record.channel&.capitalize || "—" %>
+          </span>
+        </div>
+
+        <div class="voter-eligibility-body">
+          <div class="voter-eligibility-grid">
+            <div class="voter-eligibility-item">
+              <span class="voter-eligibility-label">Sikonskripsyon</span>
+              <span class="voter-eligibility-value"><%= voter_record.constituency_name || "—" %></span>
+            </div>
+            <div class="voter-eligibility-item">
+              <span class="voter-eligibility-label">Depatman</span>
+              <span class="voter-eligibility-value"><%= voter_record.department_code || "—" %></span>
+            </div>
+            <% if voter_record.eligible? %>
+              <div class="voter-eligibility-item">
+                <span class="voter-eligibility-label">Vote Deja?</span>
+                <span class="voter-eligibility-value">
+                  <% if voter_record.has_voted? %>
+                    <span style="color: #059669; font-weight: 600;">
+                      <i class="ri-checkbox-circle-line me-1"></i>Wi — <%= voter_record.voted_at&.strftime("%d/%m/%Y %H:%M") %>
+                    </span>
+                  <% else %>
+                    <span style="color: #D97706; font-weight: 600;">
+                      <i class="ri-time-line me-1"></i>Poko vote
+                    </span>
+                  <% end %>
+                </span>
+              </div>
+            <% else %>
+              <div class="voter-eligibility-item">
+                <span class="voter-eligibility-label">Rezon</span>
+                <span class="voter-eligibility-value" style="color: #DC2626; font-weight: 600;">
+                  <%= voter_record.ineligibility_label %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── 9. New Scan Button ── %>
     <div class="verified-actions">
       <button type="button" class="btn-new-scan"
               data-action="click->partner-scanner#rescan">
@@ -451,7 +726,68 @@
     display: flex; align-items: center;
   }
 
-  /* ── 5. New Scan Button ── */
+  /* ── 5. DGI Receipts Sub-Card ── */
+  .receipts-subcard {
+    background: #FAFBFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .receipts-subcard-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700; color: #1e3a5f;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 8px 14px;
+    background: #FFF7ED;
+    border-bottom: 1px solid #FED7AA;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .receipts-subcard-header i { font-size: 0.85rem; color: #9a3412; }
+  .receipts-subcard-body { padding: 0; }
+  .receipt-count-badge {
+    font-size: 0.65rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: none; letter-spacing: 0;
+  }
+  .receipt-count-badge--available { background: #D1FAE5; color: #064E3B; }
+  .receipt-count-badge--none { background: #FEE2E2; color: #7F1D1D; }
+
+  .receipts-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+  .receipts-table thead th {
+    padding: 8px 14px;
+    font-size: 0.65rem; font-weight: 700; color: #64748B;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    text-align: left;
+  }
+  .receipts-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #F1F5F9;
+    color: #334155;
+  }
+  .receipts-table tbody tr:last-child td { border-bottom: none; }
+  .receipts-table tbody tr:hover { background: #F8FAFC; }
+  .receipt-row--consumed { opacity: 0.55; }
+  .receipt-row--consumed td { text-decoration: line-through; }
+  .receipt-row--consumed td:last-child { text-decoration: none; }
+  .receipt-number {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.75rem; font-weight: 600; color: #00209F;
+  }
+  .receipt-amount { font-weight: 700; color: #0F172A; white-space: nowrap; }
+
+  .receipts-empty {
+    padding: 24px; text-align: center;
+  }
+  .receipts-empty i { font-size: 2rem; color: #CBD5E1; display: block; margin-bottom: 8px; }
+  .receipts-empty p { color: #94A3B8; font-size: 0.82rem; margin: 0; }
+
+  /* ── 6. New Scan Button ── */
   .verified-actions {
     margin-bottom: 12px;
   }
@@ -479,6 +815,225 @@
   }
   .scan-timestamp i { font-size: 0.8rem; }
 
+  /* ── 6. Citizen History ── */
+  .citizen-history-subcard {
+    background: #FAFBFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .citizen-history-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700; color: #1e3a5f;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 8px 14px;
+    background: #EFF6FF;
+    border-bottom: 1px solid #DBEAFE;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .citizen-history-header i { font-size: 0.85rem; color: #00209F; }
+  .citizen-history-count {
+    font-size: 0.65rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    background: #DBEAFE; color: #1E40AF;
+  }
+  .citizen-history-body { padding: 0; }
+  .citizen-history-table {
+    width: 100%; border-collapse: collapse; font-size: 0.78rem;
+  }
+  .citizen-history-table thead th {
+    padding: 8px 14px;
+    font-size: 0.65rem; font-weight: 700; color: #64748B;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    background: #F8FAFC; border-bottom: 1px solid #E2E8F0;
+    text-align: left;
+  }
+  .citizen-history-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #F1F5F9;
+    color: #334155;
+  }
+  .citizen-history-table tbody tr:last-child td { border-bottom: none; }
+  .citizen-history-table tbody tr:hover { background: #F8FAFC; }
+  .history-service-name { font-weight: 600; color: #0F172A; }
+  .history-code {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.72rem; font-weight: 600; color: #00209F;
+  }
+  .history-view-link {
+    color: #00209F; font-size: 0.9rem;
+    display: inline-flex; align-items: center;
+    opacity: 0.6; transition: opacity 0.15s ease;
+  }
+  .history-view-link:hover { opacity: 1; }
+
+  /* History footer with toggle */
+  .citizen-history-footer {
+    padding: 10px 14px;
+    border-top: 1px solid #E2E8F0;
+  }
+  .btn-new-service-toggle {
+    width: 100%; padding: 10px;
+    display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.78rem;
+    color: #059669; background: #ECFDF5;
+    border: 1.5px solid #A7F3D0; border-radius: 8px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .btn-new-service-toggle:hover { background: #D1FAE5; }
+  .btn-new-service-toggle .toggle-chevron {
+    transition: transform 0.2s ease;
+  }
+  .btn-new-service-toggle--open .toggle-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Collapsible service drawer */
+  .render-service-drawer {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0;
+  }
+  .render-service-drawer--open {
+    max-height: 500px;
+    padding-top: 10px;
+  }
+
+  /* Prompt message for no-history state */
+  .render-service-prompt {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; margin-bottom: 10px;
+    background: #FFF7ED; border: 1px solid #FDBA74;
+    border-radius: 8px;
+    font-size: 0.78rem; font-weight: 500; color: #9A3412;
+  }
+  .render-service-prompt i { font-size: 1rem; flex-shrink: 0; }
+
+  /* ── 7. Render Service ── */
+  .render-service-subcard {
+    background: #FAFBFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .render-service-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700; color: #065F46;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 8px 14px;
+    background: #ECFDF5;
+    border-bottom: 1px solid #A7F3D0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .render-service-header i { font-size: 0.85rem; color: #059669; }
+  .render-service-body { padding: 10px 14px; }
+  .render-service-card {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    background: #FFF;
+    transition: border-color 0.15s ease;
+  }
+  .render-service-card + .render-service-card { margin-top: 8px; }
+  .render-service-card:hover { border-color: #00209F; }
+  .render-service-info { flex: 1; min-width: 0; }
+  .render-service-name {
+    font-weight: 700; font-size: 0.82rem; color: #0F172A;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .render-service-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .render-service-category {
+    font-size: 0.62rem; font-weight: 600;
+    padding: 1px 6px; border-radius: 4px;
+    display: inline-flex; align-items: center;
+  }
+  .render-service-category--application { background: #EFF6FF; color: #1E40AF; }
+  .render-service-category--transaction { background: #ECFDF5; color: #065F46; }
+  .render-service-category--appointment { background: #FFF7ED; color: #9A3412; }
+  .render-service-category--survey { background: #F5F3FF; color: #5B21B6; }
+  .render-service-price {
+    font-size: 0.72rem; font-weight: 700; color: #0F172A;
+  }
+  .render-service-form-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem; font-weight: 500; color: #64748B;
+  }
+  .btn-render-service {
+    display: inline-flex; align-items: center;
+    padding: 6px 14px;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.75rem;
+    color: #FFF;
+    background: #00209F;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .btn-render-service:hover { background: #001A7A; color: #FFF; text-decoration: none; }
+
+  /* ── No Services Empty State ── */
+  .no-services-subcard {
+    background: #F8FAFC;
+    border: 2px dashed #CBD5E1;
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .no-services-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #EFF6FF;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .no-services-icon i {
+    font-size: 1.5rem;
+    color: #00209F;
+  }
+  .no-services-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #0F172A;
+    margin: 0 0 6px;
+  }
+  .no-services-desc {
+    font-size: 0.78rem;
+    color: #64748B;
+    margin: 0 0 16px;
+    line-height: 1.5;
+  }
+  .no-services-cta {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: #00209F;
+    color: #FFF;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .no-services-cta:hover {
+    background: #001A7A;
+    color: #FFF;
+    text-decoration: none;
+  }
+
   /* ── Mobile ── */
   @media (max-width: 575.98px) {
     .profile-layout { flex-direction: column; align-items: center; }
@@ -489,5 +1044,82 @@
     .profile-address { text-align: left; }
     .profile-photo { width: 110px; height: 140px; }
     .profile-photo-placeholder { width: 110px; height: 140px; }
+  }
+
+  /* ── 8. Voter Eligibility Card ── */
+  .voter-eligibility-subcard {
+    margin: 16px 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #E2E8F0;
+  }
+  .voter-eligibility--eligible {
+    border-color: rgba(5,150,105,0.25);
+    background: #F0FDF4;
+  }
+  .voter-eligibility--ineligible {
+    border-color: rgba(220,38,38,0.25);
+    background: #FEF2F2;
+  }
+  .voter-eligibility-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .voter-eligibility--eligible .voter-eligibility-header {
+    background: #ECFDF5;
+  }
+  .voter-eligibility--ineligible .voter-eligibility-header {
+    background: #FEF2F2;
+  }
+  .voter-eligibility-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .voter-eligibility-badge--domestic {
+    background: #DBEAFE;
+    color: #1E40AF;
+  }
+  .voter-eligibility-badge--diaspora {
+    background: #F3E8FF;
+    color: #6B21A8;
+  }
+  .voter-eligibility-body {
+    padding: 14px 16px;
+  }
+  .voter-eligibility-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .voter-eligibility-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .voter-eligibility-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .voter-eligibility-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1E293B;
+  }
+  @media (max-width: 575.98px) {
+    .voter-eligibility-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

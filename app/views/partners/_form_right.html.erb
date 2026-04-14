@@ -4,6 +4,17 @@
 <div class="partner-form-column">
   <h2 class="form-section-title">Partner Application</h2>
 
+  <% if @partner.errors.any? %>
+    <div class="alert alert-danger mb-3">
+      <strong><%= pluralize(@partner.errors.count, "error") %> prevented your application from being submitted:</strong>
+      <ul class="mb-0 mt-2">
+        <% @partner.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <!-- Unified Partner Form Fields -->
   <%= render "partner_portal/shared/components/unified_partner_form", f: f %>
 

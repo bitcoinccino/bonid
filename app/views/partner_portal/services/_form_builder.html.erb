@@ -1,0 +1,445 @@
+<%# app/views/partner_portal/services/_form_builder.html.erb %>
+<%# Visual Form Builder — two-column immersive layout %>
+<%# Left: builder controls | Right: sticky live preview %>
+
+<%= form_with model: service, url: url, method: method, class: "fb-form fb-form--immersive",
+    id: "service-form",
+    data: { controller: "form-builder" } do |f| %>
+
+  <div class="fb-immersive">
+    <%# ════════════════════════════════════════════════ %>
+    <%# LEFT COLUMN — Builder Controls                  %>
+    <%# ════════════════════════════════════════════════ %>
+    <div class="fb-builder-col">
+
+      <%# ══════════════════════════════════════════════════════════ %>
+      <%# ── BUILDER WIZARD — Step 1: Detay Sèvis ──────────────── %>
+      <%# ══════════════════════════════════════════════════════════ %>
+      <div class="fb-wizard-step" id="builderStep1">
+
+        <%# ── Service Identity ── %>
+        <div class="fb-identity-bar">
+          <div class="fb-details-group" style="margin-bottom: 0.75rem;">
+            <label class="fb-details-label">Non Sèvis</label>
+            <%= f.text_field :name, class: "fb-identity-name", placeholder: "Ex: DGI Exclusive Party...", required: true,
+                data: { action: "input->form-builder#nameChanged" } %>
+          </div>
+
+          <div class="fb-details-group" style="margin-bottom: 0.75rem;">
+            <label class="fb-details-label">Deskripsyon</label>
+            <%= f.text_field :description, class: "fb-identity-desc", placeholder: "Ti deskripsyon pou sitwayen an (opsyonèl)..." %>
+          </div>
+
+          <div class="fb-details-row">
+            <div class="fb-details-group">
+              <label class="fb-details-label">Kategori</label>
+              <%= f.select :service_category,
+                  options_for_select([
+                    ["Aplikasyon", "application"],
+                    ["Randevou", "appointment"],
+                    ["Tranzaksyon", "transaction"],
+                    ["Sondaj", "survey"]
+                  ], service.service_category),
+                  {}, class: "fb-details-input",
+                  data: { action: "change->form-builder#categoryChanged" } %>
+            </div>
+            <div class="fb-details-group">
+              <label class="fb-details-label">Kòd Fòm</label>
+              <%= f.text_field :form_code, class: "fb-details-input", placeholder: "Ex: DGI-F008" %>
+            </div>
+          </div>
+        </div>
+
+        <%# ── Cover Image ── %>
+        <div class="fb-details-group" style="margin-top: 1rem;">
+          <label class="fb-details-label">Imaj Kouvèti</label>
+          <div class="fb-upload-zone" onclick="this.querySelector('input').click()">
+            <% if service.cover_image.attached? %>
+              <div class="fb-upload-preview">
+                <%= image_tag url_for(service.cover_image) %>
+                <div class="fb-upload-overlay">
+                  <i class="ri-image-edit-line"></i> Chanje imaj
+                </div>
+              </div>
+            <% else %>
+              <div class="fb-upload-empty">
+                <i class="ri-image-add-line"></i>
+                <span>Klike pou ajoute yon imaj kouvèti</span>
+                <span class="fb-upload-hint">1200 × 400px rekòmande</span>
+              </div>
+            <% end %>
+            <%= f.file_field :cover_image, accept: "image/*", style: "display: none;",
+                onchange: "const p=this.closest('.fb-upload-zone'); const img=document.createElement('img'); img.src=URL.createObjectURL(this.files[0]); p.innerHTML=''; const d=document.createElement('div'); d.className='fb-upload-preview'; d.appendChild(img); p.appendChild(d); p.appendChild(this);" %>
+          </div>
+        </div>
+
+        <%# ── Category Hint (Stimulus renders here) ── %>
+        <div data-form-builder-target="categoryHint" class="fb-cat-hint-container" style="margin-top: 1rem;"></div>
+
+        <%# ── Power Features (toggle per category) ── %>
+        <div data-form-builder-target="powerFeatures" class="fb-power-features" style="margin-top: 1rem;">
+          <%# Transaction: capacity + event dates %>
+          <div data-form-builder-target="featureCapacity" class="fb-power-group" style="display:none;">
+            <h3 class="fb-details-label" style="margin-bottom:0.5rem;">
+              <i class="ri-group-line" style="color:#00209F;"></i> Kapasite & Evènman
+            </h3>
+            <div class="fb-details-row">
+              <div class="fb-details-group">
+                <label class="fb-details-label">Kapasite Maksimòm</label>
+                <%= f.number_field :capacity, class: "fb-details-input", placeholder: "Ex: 500", min: 0 %>
+                <span class="fb-hint">Kantite moun ki ka achte (kite vid = ilimite)</span>
+              </div>
+            </div>
+            <div class="fb-details-row">
+              <div class="fb-details-group">
+                <label class="fb-details-label">Kòmanse</label>
+                <%= f.datetime_local_field :starts_at, class: "fb-details-input" %>
+              </div>
+              <div class="fb-details-group">
+                <label class="fb-details-label">Fini</label>
+                <%= f.datetime_local_field :ends_at, class: "fb-details-input" %>
+              </div>
+            </div>
+          </div>
+
+          <%# Appointment: calendar note %>
+          <div data-form-builder-target="featureCalendar" class="fb-power-group" style="display:none;">
+            <div class="fb-cat-card fb-cat-card--appointment" style="padding:0.75rem;border-radius:10px;background:#FEF3C7;border:1px solid #FDE68A;">
+              <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+                <i class="ri-calendar-check-line" style="color:#92400E;font-size:1.1rem;margin-top:2px;"></i>
+                <div style="font-size:0.8rem;color:#92400E;">
+                  <strong>Randevou</strong>
+                  <p style="margin:0.2rem 0 0;">Ajoute yon chan "Dat" ak/oswa "Lè" nan fòm ou pou sitwayen an chwazi dat randevou.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%# Survey: anonymous toggle %>
+          <div data-form-builder-target="featureAnonymous" class="fb-power-group" style="display:none;">
+            <div class="fb-cat-card fb-cat-card--survey" style="padding:0.75rem;border-radius:10px;background:#F5F3FF;border:1px solid #DDD6FE;">
+              <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+                <i class="ri-spy-line" style="color:#7C3AED;font-size:1.1rem;margin-top:2px;"></i>
+                <div style="font-size:0.8rem;color:#7C3AED;">
+                  <strong>Sondaj</strong>
+                  <p style="margin:0.2rem 0 0;">Repons yo jeneralman anonim. Pa gen peman pou sondaj.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# ── Continue Button ── %>
+        <div class="fb-wizard-nav" style="margin-top: 1.5rem;">
+          <button type="button" class="fb-wizard-continue-btn" onclick="document.getElementById('builderStep1').style.display='none'; document.getElementById('builderStep2').style.display='block';">
+            Kontinye <i class="ri-arrow-right-line"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <%# ══════════════════════════════════════════════════════════ %>
+      <%# ── BUILDER WIZARD — Step 2: Chan Fòm ─────────────────── %>
+      <%# ══════════════════════════════════════════════════════════ %>
+      <div class="fb-wizard-step" id="builderStep2" style="display: none;">
+
+        <%# ── Back Button ── %>
+        <div class="fb-wizard-nav fb-wizard-nav--back">
+          <button type="button" class="fb-wizard-back-btn" onclick="document.getElementById('builderStep2').style.display='none'; document.getElementById('builderStep1').style.display='block';">
+            <i class="ri-arrow-left-line"></i> Retounen nan Detay
+          </button>
+        </div>
+
+        <%# ── Templates (from database) — quick start ── %>
+        <% if @templates.present? %>
+          <div class="fb-section fb-section--templates">
+            <div class="fb-section-header">
+              <h2 class="fb-section-title"><i class="ri-file-copy-line"></i> Modèl</h2>
+            </div>
+            <div class="fb-templates">
+              <% @templates.each do |tmpl| %>
+                <button type="button" class="fb-template-btn"
+                        data-action="form-builder#loadTemplate"
+                        data-template-fields="<%= tmpl[:fields].to_json %>">
+                  <i class="<%= tmpl[:icon] || 'ri-file-text-line' %>"></i>
+                  <span><%= tmpl[:name] %></span>
+                  <% if tmpl[:own] %>
+                    <span class="fb-template-own-badge">Pa ou</span>
+                  <% end %>
+                </button>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+      <%# ══════════════════════════════════════════════════════ %>
+      <%# ── CHAN FÒM — The Builder (primary focus area) ────── %>
+      <%# ══════════════════════════════════════════════════════ %>
+      <div class="fb-section fb-section--builder">
+        <div class="fb-section-header">
+          <h2 class="fb-section-title">
+            <i class="ri-layout-grid-line"></i> Chan Fòm
+            <span class="fb-count-badge" data-form-builder-target="fieldCount">0</span>
+          </h2>
+          <button type="button" class="fb-step-btn" data-action="form-builder#addStep" title="Ajoute yon nouvo paj/etap">
+            <i class="ri-pages-line"></i> Nouvo Paj
+          </button>
+        </div>
+
+        <%# Step tabs — Stimulus renders these %>
+        <div data-form-builder-target="stepTabs" class="fb-step-tabs"></div>
+
+        <%# Add Field Buttons %>
+        <div class="fb-add-buttons">
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="text">
+            <i class="ri-text"></i> Tèks
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="number">
+            <i class="ri-hashtag"></i> Nimewo
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="currency">
+            <i class="ri-money-dollar-circle-line"></i> Lajan
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="select">
+            <i class="ri-list-check"></i> Lis Dewoulan
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="radio">
+            <i class="ri-radio-button-line"></i> Radyo
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="multi_checkbox">
+            <i class="ri-checkbox-multiple-line"></i> Plizyè Chwa
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="file">
+            <i class="ri-attachment-line"></i> Fichye
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="date">
+            <i class="ri-calendar-line"></i> Dat
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="time">
+            <i class="ri-time-line"></i> Lè
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="datetime">
+            <i class="ri-calendar-schedule-line"></i> Dat & Lè
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="email">
+            <i class="ri-mail-line"></i> Imèl
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="phone">
+            <i class="ri-phone-line"></i> Telefòn
+          </button>
+          <button type="button" class="fb-add-btn" data-action="form-builder#addField" data-field-type="textarea">
+            <i class="ri-file-text-line"></i> Tèks Long
+          </button>
+          <button type="button" class="fb-add-btn fb-add-btn--logic" data-action="form-builder#addField" data-field-type="calculated">
+            <i class="ri-calculator-line"></i> Kalkile
+          </button>
+          <button type="button" class="fb-add-btn fb-add-btn--address" data-action="form-builder#addField" data-field-type="address">
+            <i class="ri-map-pin-line"></i> Adrès
+          </button>
+          <span class="fb-add-separator"></span>
+          <button type="button" class="fb-add-btn fb-add-btn--section" data-action="form-builder#addField" data-field-type="section">
+            <i class="ri-separator"></i> Seksyon
+          </button>
+          <button type="button" class="fb-add-btn fb-add-btn--instructional" data-action="form-builder#addField" data-field-type="instructional_text">
+            <i class="ri-chat-quote-line"></i> Tèks Enstriksyon
+          </button>
+          <button type="button" class="fb-add-btn fb-add-btn--repeater" data-action="form-builder#addField" data-field-type="repeater">
+            <i class="ri-repeat-line"></i> Repetè
+          </button>
+          <span class="fb-add-separator"></span>
+          <button type="button" class="fb-add-btn fb-add-btn--signature" data-action="form-builder#addField" data-field-type="bonid_signature">
+            <i class="ri-quill-pen-line"></i> Siyati BonID
+          </button>
+          <button type="button" class="fb-add-btn fb-add-btn--seal" data-action="form-builder#addField" data-field-type="seal_placeholder">
+            <i class="ri-stamp-line"></i> Sèl Ofisyèl
+          </button>
+        </div>
+
+        <%# Empty State %>
+        <div data-form-builder-target="emptyState" class="fb-empty-fields">
+          <i class="ri-drag-drop-line"></i>
+          <p>Klike sou yon bouton anwo pou ajoute chan nan fòm ou.</p>
+        </div>
+
+        <%# Field Cards Container (Stimulus populates this) %>
+        <div data-form-builder-target="fieldList" class="fb-field-list"></div>
+
+        <%# Hidden JSON input — Stimulus syncs this automatically %>
+        <input type="hidden" name="partner_schema[structure_json]"
+               data-form-builder-target="structureJson"
+               value="<%= (defined?(editing_structure) && editing_structure.present? ? editing_structure : service.structure).to_json %>">
+
+        <%# Department data for address cascade in builder %>
+        <script type="application/json" data-form-builder-target="departmentsData">
+          <%= Department.order(:name).select(:id, :name, :slug).map { |d| { id: d.id, name: d.name, slug: d.slug } }.to_json.html_safe %>
+        </script>
+      </div>
+
+      <%# ══════════════════════════════════════════════════════ %>
+      <%# ── PARAMÈT AVANSE (Collapsible Advanced Settings) ── %>
+      <%# ══════════════════════════════════════════════════════ %>
+      <details class="fb-advanced">
+        <summary class="fb-advanced-toggle">
+          <i class="ri-settings-3-line"></i>
+          <span>Paramèt Avanse</span>
+          <i class="ri-arrow-down-s-line fb-advanced-chevron"></i>
+        </summary>
+
+        <div class="fb-advanced-body">
+
+          <%# ── Metadata ── %>
+          <div class="fb-advanced-group">
+            <h3 class="fb-advanced-group-title"><i class="ri-file-info-line"></i> Metadata</h3>
+            <div class="fb-row">
+              <div class="fb-col">
+                <label class="fb-label">Ikòn Sèvis</label>
+                <%= f.select :service_icon,
+                    options_for_select([
+                      ["Dokiman", "ri-file-text-line"],
+                      ["Bank", "ri-bank-line"],
+                      ["ID Kat", "ri-id-card-line"],
+                      ["Gouvènman", "ri-government-line"],
+                      ["Boutik", "ri-store-2-line"],
+                      ["Lajan", "ri-money-dollar-circle-line"],
+                      ["Kle", "ri-shield-keyhole-line"],
+                      ["Kat", "ri-map-2-line"],
+                      ["Paspò", "ri-passport-line"],
+                      ["Upload", "ri-upload-2-line"],
+                      ["Kalandriye", "ri-calendar-check-line"],
+                      ["Lopital", "ri-hospital-line"],
+                      ["Telefòn", "ri-phone-line"]
+                    ], service.service_icon),
+                    {}, class: "fb-input" %>
+                <span class="fb-hint">Ikòn ki parèt nan lis sèvis sitwayen an</span>
+              </div>
+              <div class="fb-col">
+                <label class="fb-label">Pozisyon</label>
+                <%= f.number_field :position, class: "fb-input", value: service.position || 0, min: 0 %>
+              </div>
+            </div>
+            <div class="fb-row">
+              <div class="fb-col">
+                <label class="fb-label">Tip Dosye</label>
+                <%= f.text_field :record_type, class: "fb-input", placeholder: "Ex: nif_registration" %>
+              </div>
+            </div>
+          </div>
+
+          <%# ── Signature & Seal Settings ── %>
+          <div class="fb-advanced-group">
+            <h3 class="fb-advanced-group-title"><i class="ri-quill-pen-line"></i> Siyati & Sèl</h3>
+
+            <div class="fb-row">
+              <div class="fb-col">
+                <div class="fb-seal-setting">
+                  <label class="fb-toggle">
+                    <%= f.check_box :requires_signature, class: "fb-seal-checkbox", data: { action: "change->form-builder#render" } %>
+                    <span class="fb-toggle-slider"></span>
+                    <span class="fb-toggle-label">
+                      <strong>Mande Siyati BonID</strong>
+                      <span class="fb-hint">Sitwayen an dwe bay konsantman pou itilize siyati BonID li.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="fb-row">
+              <div class="fb-col">
+                <div class="fb-seal-setting">
+                  <label class="fb-toggle">
+                    <%= f.check_box :auto_stamp, class: "fb-seal-checkbox", data: { action: "change->form-builder#render" } %>
+                    <span class="fb-toggle-slider"></span>
+                    <span class="fb-toggle-label">
+                      <strong>Otomatikman Aplike Sèl sou Apwobasyon</strong>
+                      <span class="fb-hint">Sistèm nan otomatikman mete sèl ofisyèl patnè a sou PDF final la.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <% if @current_partner.seal_image.attached? %>
+              <div class="fb-seal-preview-row">
+                <div class="fb-seal-current">
+                  <span class="fb-label">Sèl Aktyèl Ou</span>
+                  <div class="fb-seal-thumb">
+                    <%= image_tag @current_partner.seal_image, class: "fb-seal-img" %>
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <div class="fb-seal-upload-hint">
+                <i class="ri-upload-cloud-line"></i>
+                <p>Ou poko upload sèl ofisyèl ou. Ale nan <strong>Settings</strong> pou ajoute imaj sèl ou (PNG/JPEG).</p>
+              </div>
+            <% end %>
+          </div>
+
+        </div>
+      </details>
+
+      <%# ══════════════════════════════════════════ %>
+      <%# ── KONFIGIRASYON PRI (Pricing Config) ─── %>
+      <%# ══════════════════════════════════════════ %>
+      <div class="fb-section fb-section--pricing">
+        <h2 class="fb-section-title">
+          <i class="ri-price-tag-3-line"></i> Konfigirasyon Pri
+        </h2>
+
+        <%# Base price + currency %>
+        <div class="fb-row">
+          <div class="fb-col">
+            <label class="fb-label">Pri Debaz <span class="fb-hint">(kite vid oubyen 0 = gratis)</span></label>
+            <div class="fb-price-input-group">
+              <div class="fb-price-currency-toggle">
+                <label class="fb-currency-pill">
+                  <input type="radio" name="partner_schema[currency]" value="HTG"
+                         <%= service.currency != "USD" ? "checked" : "" %>>
+                  <span>HTG</span>
+                </label>
+                <label class="fb-currency-pill">
+                  <input type="radio" name="partner_schema[currency]" value="USD"
+                         <%= service.currency == "USD" ? "checked" : "" %>>
+                  <span>USD</span>
+                </label>
+              </div>
+              <%= f.number_field :price_cents, class: "fb-input fb-price-input",
+                  value: service.price_cents.to_i > 0 ? (service.price_cents.to_i / 100.0).round(2) : "",
+                  min: 0, step: "0.01",
+                  placeholder: "0.00",
+                  data: { form_builder_target: "priceInput", action: "input->form-builder#priceChanged" } %>
+            </div>
+          </div>
+        </div>
+
+        <%# Fees & taxes — Stimulus manages this dynamically %>
+        <div data-form-builder-target="pricingConfig" class="fb-pricing-config"></div>
+
+        <%# Live price breakdown %>
+        <div data-form-builder-target="pricingPreview" class="fb-pricing-preview-wrap"></div>
+
+        <%= f.hidden_field :pricing_type, value: service.pricing_type.presence || "free",
+            data: { form_builder_target: "pricingType" } %>
+      </div>
+
+      <%# Submit button is in the topbar header — no bottom submit needed %>
+
+      </div> <%# /builderStep2 %>
+
+    </div>
+
+    <%# ════════════════════════════════════════════════ %>
+    <%# RIGHT COLUMN — Live Preview (sticky)            %>
+    <%# ════════════════════════════════════════════════ %>
+    <div class="fb-preview-col">
+      <div class="fb-preview-col-header">
+        <i class="ri-eye-line"></i> Apèsi — sa sitwayen an ap wè
+      </div>
+      <div class="fb-preview-col-body">
+        <div class="fb-preview-box" data-form-builder-target="preview"></div>
+      </div>
+    </div>
+  </div>
+
+<% end %>

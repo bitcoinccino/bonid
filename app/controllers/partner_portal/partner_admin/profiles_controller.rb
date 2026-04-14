@@ -3,8 +3,11 @@
 module PartnerPortal
   module PartnerAdmin
     class ProfilesController < PartnerPortal::BaseController
+      layout "partner_portal/default"
+
       def edit
         @partner = @current_partner
+        @partner.build_address unless @partner.address
       end
 
       def update

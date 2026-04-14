@@ -97,12 +97,19 @@ class BonidLookupService
     patterns = []
 
     if digits.length == 6
-      # 6 chars: last 6 of the suffix after P (last 3 of id digits + 3 checksum chars)
-      # BonID format: DV-1989-M-SE-P8697XDS → last 6 = "697XDS"
-      # Pattern: bonid ends with these 6 chars
-      patterns << "%#{digits}"
+      # BonID has two possible formats:
+      #   1. No dash before checksum: MB-1968-M-OU-P8697XDS → ends with "697XDS"
+      #   2. Dash before checksum:    MB-1968-M-OU-P8697-XDS → ends with "697-XDS"
+      #
+      # User enters last 3 id digits + 3 checksum chars (e.g., "697XDS")
+      # We search both patterns to handle either BonID format.
+      id_part = digits[0..2]       # "697"
+      checksum_part = digits[3..5] # "XDS"
 
-      Rails.logger.info("[BonidLookupService#find_citizen_by_digits] Trying 6-char pattern: %#{digits}")
+      patterns << "%#{digits}"                     # no-dash format: %697XDS
+      patterns << "%#{id_part}-#{checksum_part}"   # dash format:    %697-XDS
+
+      Rails.logger.info("[BonidLookupService#find_citizen_by_digits] Trying patterns: %#{digits}, %#{id_part}-#{checksum_part}")
     end
 
     # Build the query with all patterns

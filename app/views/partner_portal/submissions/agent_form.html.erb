@@ -1,0 +1,456 @@
+<%# Agent Form — Partner fills service form on behalf of citizen %>
+<%# Pre-filled with citizen BonID data, rendered from PartnerSchema structure %>
+<% content_for(:title) { "#{@schema.name} — #{@citizen.full_name}" } %>
+
+<% all_form_fields = @fields_by_step.flat_map { |s| s[:fields] }.reject { |f| f["type"].in?(%w[bonid_signature seal_placeholder calculated section instructional_text address]) } %>
+<% required_count = all_form_fields.count { |f| f["required"] } %>
+<% optional_count = all_form_fields.size - required_count %>
+<% mark_optional = required_count >= optional_count %>
+
+<style>
+  .af-container {
+    max-width: 720px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 3rem;
+  }
+
+  /* ── Header ── */
+  .af-header {
+    margin-bottom: 1.5rem;
+  }
+  .af-breadcrumb {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.75rem; color: #64748B; margin-bottom: 1rem;
+  }
+  .af-breadcrumb a { color: #00209F; text-decoration: none; font-weight: 500; }
+  .af-breadcrumb a:hover { text-decoration: underline; }
+  .af-breadcrumb i { font-size: 0.65rem; }
+
+  .af-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .af-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 1.35rem; font-weight: 800; color: #0F172A;
+    margin: 0;
+  }
+  .af-badge-agent {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 4px 10px; border-radius: 20px;
+    background: #FFF7ED; color: #9A3412;
+    font-size: 0.68rem; font-weight: 700;
+    border: 1px solid #FDBA74;
+  }
+
+  /* ── Citizen Identity Card ── */
+  .af-citizen-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px;
+    background: #EFF6FF;
+    border: 1px solid #DBEAFE;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .af-citizen-photo {
+    width: 48px; height: 48px; border-radius: 50%;
+    object-fit: cover; border: 2px solid #00209F;
+    flex-shrink: 0;
+  }
+  .af-citizen-photo-placeholder {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: #DBEAFE; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .af-citizen-photo-placeholder i { font-size: 1.2rem; color: #3B82F6; }
+  .af-citizen-info { flex: 1; min-width: 0; }
+  .af-citizen-name { font-weight: 700; font-size: 0.9rem; color: #0F172A; }
+  .af-citizen-details {
+    font-size: 0.72rem; color: #3B82F6; font-weight: 500;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+
+  /* ── Step Progress Bar ── */
+  .af-progress {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0; margin-bottom: 2rem;
+  }
+  .af-step-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700;
+    border: 2px solid #CBD5E1; color: #94A3B8;
+    background: #FFF; transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .af-step-dot--active {
+    border-color: #00209F; background: #00209F; color: #FFF;
+  }
+  .af-step-dot--completed {
+    border-color: #059669; background: #059669; color: #FFF;
+  }
+  .af-step-line {
+    width: 40px; height: 2px; background: #CBD5E1;
+    flex-shrink: 0;
+  }
+  .af-step-line--completed { background: #059669; }
+
+  /* ── Form Card ── */
+  .af-form-card {
+    background: #FFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .af-step-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 1rem; font-weight: 700; color: #0F172A;
+    margin: 0 0 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  /* ── Form Fields ── */
+  .af-field-group { margin-bottom: 1.25rem; }
+  .af-field-group:last-child { margin-bottom: 0; }
+  .af-label {
+    display: block; font-size: 0.78rem; font-weight: 600; color: #334155;
+    margin-bottom: 0.35rem;
+  }
+  .af-label-hint {
+    font-weight: 400; color: #94A3B8; font-size: 0.72rem;
+  }
+  .af-input, .af-select, .af-textarea {
+    width: 100%; padding: 10px 12px;
+    font-size: 0.85rem; color: #0F172A;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 8px; background: #FFF;
+    transition: border-color 0.15s ease;
+    font-family: inherit;
+  }
+  .af-input:focus, .af-select:focus, .af-textarea:focus {
+    outline: none; border-color: #00209F;
+    box-shadow: 0 0 0 3px rgba(0,32,159,0.08);
+  }
+  .af-input--prefilled {
+    background: #F0FDF4; border-color: #A7F3D0;
+  }
+  .af-textarea { min-height: 80px; resize: vertical; }
+  .af-select { appearance: auto; }
+  .af-helptext {
+    font-size: 0.68rem; color: #94A3B8; margin-top: 4px;
+  }
+
+  /* Radio / Checkbox groups */
+  .af-radio-group, .af-checkbox-group {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .af-radio-option, .af-checkbox-option {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border: 1px solid #E2E8F0;
+    border-radius: 8px; cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .af-radio-option:hover, .af-checkbox-option:hover { border-color: #00209F; }
+  .af-radio-option input, .af-checkbox-option input { flex-shrink: 0; }
+  .af-option-label { font-size: 0.82rem; color: #334155; font-weight: 500; }
+  .af-option-price { font-size: 0.72rem; color: #059669; font-weight: 600; margin-left: auto; }
+
+  /* Section dividers */
+  .af-section-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.82rem; font-weight: 700; color: #475569;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    margin: 1.5rem 0 0.75rem; padding-top: 1rem;
+    border-top: 1px solid #E2E8F0;
+  }
+  .af-instruction {
+    font-size: 0.82rem; color: #64748B; line-height: 1.6;
+    background: #F8FAFC; padding: 12px; border-radius: 8px;
+    border-left: 3px solid #00209F; margin-bottom: 1rem;
+  }
+
+  /* ── Actions ── */
+  .af-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; margin-top: 2rem;
+  }
+  .af-btn-back {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 10px 20px; border-radius: 10px;
+    font-weight: 600; font-size: 0.82rem;
+    color: #475569; background: #F1F5F9;
+    border: 1px solid #CBD5E1; cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+  .af-btn-back:hover { background: #E2E8F0; color: #475569; text-decoration: none; }
+  .af-btn-next, .af-btn-submit {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 10px 24px; border-radius: 10px;
+    font-weight: 700; font-size: 0.85rem;
+    color: #FFF; border: none; cursor: pointer;
+    transition: background 0.15s ease;
+    text-decoration: none;
+  }
+  .af-btn-next { background: #00209F; }
+  .af-btn-next:hover { background: #001A7A; color: #FFF; text-decoration: none; }
+  .af-btn-submit { background: #059669; }
+  .af-btn-submit:hover { background: #047857; color: #FFF; text-decoration: none; }
+
+  /* ── Pricing Summary ── */
+  .af-price-summary {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; margin-top: 1.5rem;
+    background: #F8FAFC; border: 1px solid #E2E8F0;
+    border-radius: 10px;
+  }
+  .af-price-label { font-size: 0.78rem; font-weight: 600; color: #475569; }
+  .af-price-value { font-size: 1.1rem; font-weight: 800; color: #0F172A; }
+
+  /* ── Flash Messages ── */
+  .af-alert {
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 1.5rem;
+    font-size: 0.82rem; font-weight: 500;
+  }
+  .af-alert--error {
+    background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA;
+  }
+  .af-alert--success {
+    background: #F0FDF4; color: #065F46; border: 1px solid #BBF7D0;
+  }
+
+  @media (max-width: 575.98px) {
+    .af-container { padding: 0 1rem 2rem; }
+    .af-title { font-size: 1.1rem; }
+    .af-form-card { padding: 16px; }
+    .af-actions { flex-direction: column; }
+    .af-btn-back, .af-btn-next, .af-btn-submit { width: 100%; justify-content: center; }
+  }
+</style>
+
+<div class="af-container">
+
+  <%# ── Breadcrumb ── %>
+  <div class="af-header">
+    <div class="af-breadcrumb">
+      <%= link_to "Dashboard", partner_portal_dashboard_path %>
+      <i class="ri-arrow-right-s-line"></i>
+      <span><%= @schema.name %></span>
+    </div>
+    <div class="af-title-row">
+      <h1 class="af-title"><%= @schema.name %></h1>
+      <span class="af-badge-agent"><i class="ri-user-star-line me-1"></i>Ajan Ranpli</span>
+    </div>
+  </div>
+
+  <%# ── Flash ── %>
+  <% if flash[:alert] %>
+    <div class="af-alert af-alert--error"><i class="ri-error-warning-line me-1"></i><%= flash[:alert] %></div>
+  <% end %>
+  <% if flash[:notice] %>
+    <div class="af-alert af-alert--success"><i class="ri-checkbox-circle-line me-1"></i><%= flash[:notice] %></div>
+  <% end %>
+
+  <%# ── Citizen Identity Card ── %>
+  <div class="af-citizen-card">
+    <% if @citizen.photo.attached? %>
+      <%= image_tag @citizen.photo.variant(resize_to_limit: [96, 96]), class: "af-citizen-photo" %>
+    <% else %>
+      <div class="af-citizen-photo-placeholder"><i class="ri-user-line"></i></div>
+    <% end %>
+    <div class="af-citizen-info">
+      <div class="af-citizen-name"><%= @citizen.full_name %></div>
+      <div class="af-citizen-details">
+        <span><i class="ri-shield-check-fill me-1" style="color:#059669"></i>BonID Verifye</span>
+        <% if @citizen.email.present? %><span><i class="ri-mail-line me-1"></i><%= @citizen.email %></span><% end %>
+        <% if @citizen.phone.present? %><span><i class="ri-phone-line me-1"></i><%= @citizen.phone %></span><% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Step Progress (if multi-step) ── %>
+  <% if @total_steps > 1 %>
+    <div class="af-progress">
+      <% @fields_by_step.each_with_index do |step, idx| %>
+        <% if idx > 0 %>
+          <div class="af-step-line <%= idx <= @current_step ? 'af-step-line--completed' : '' %>"></div>
+        <% end %>
+        <div class="af-step-dot <%= idx == @current_step ? 'af-step-dot--active' : (idx < @current_step ? 'af-step-dot--completed' : '') %>">
+          <% if idx < @current_step %>
+            <i class="ri-check-line"></i>
+          <% else %>
+            <%= idx + 1 %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Form Card ── %>
+  <% current_step_data = @fields_by_step[@current_step] || @fields_by_step.first %>
+  <% is_last_step = @current_step >= @total_steps - 1 %>
+
+  <div class="af-form-card">
+    <% if current_step_data[:name].present? %>
+      <h2 class="af-step-title"><%= current_step_data[:name] %></h2>
+    <% end %>
+
+    <%= form_with url: (is_last_step ? agent_create_partner_portal_submissions_path : agent_update_partner_portal_submissions_path),
+                  method: (is_last_step ? :post : :patch),
+                  local: true do |f| %>
+      <%= hidden_field_tag :citizen_id, @citizen.id %>
+      <%= hidden_field_tag :schema_id, @schema.id %>
+      <%= hidden_field_tag :application_id, @application.id %>
+      <% unless is_last_step %>
+        <%= hidden_field_tag :next_step, @current_step + 1 %>
+      <% end %>
+
+      <% current_step_data[:fields].each do |field| %>
+        <% key = field["key"] %>
+        <% value = @saved_data[key].presence || @auto_fill[key] %>
+        <% is_prefilled = @auto_fill[key].present? && @saved_data[key].blank? %>
+        <% required = field["required"] %>
+        <% label_suffix = required ? (mark_optional ? "" : " <span class='af-label-hint'>(obligatwa)</span>") : (mark_optional ? " <span class='af-label-hint'>(opsyonèl)</span>" : "") %>
+
+        <% case field["type"]
+           when "section" %>
+          <div class="af-section-title"><%= field["label"] %></div>
+
+        <% when "instructional_text" %>
+          <div class="af-instruction"><%= field["content"] || field["label"] %></div>
+
+        <% when "text", "email", "phone", "number", "currency", "date", "time" %>
+          <div class="af-field-group">
+            <label class="af-label"><%= field["label"] %><%= label_suffix.html_safe %></label>
+            <input type="<%= field["type"] == "currency" ? "number" : field["type"] %>"
+                   name="form_data[<%= key %>]"
+                   value="<%= value %>"
+                   class="af-input <%= 'af-input--prefilled' if is_prefilled %>"
+                   placeholder="<%= field["placeholder"] %>"
+                   <% if field["type"] == "currency" || field["type"] == "number" %>step="any"<% end %>
+                   <%= "required" if required %>>
+            <% if field["help_text"].present? %>
+              <div class="af-helptext"><%= field["help_text"] %></div>
+            <% end %>
+          </div>
+
+        <% when "textarea" %>
+          <div class="af-field-group">
+            <label class="af-label"><%= field["label"] %><%= label_suffix.html_safe %></label>
+            <textarea name="form_data[<%= key %>]"
+                      class="af-textarea"
+                      placeholder="<%= field["placeholder"] %>"
+                      <%= "required" if required %>><%= value %></textarea>
+          </div>
+
+        <% when "select" %>
+          <div class="af-field-group">
+            <label class="af-label"><%= field["label"] %><%= label_suffix.html_safe %></label>
+            <select name="form_data[<%= key %>]" class="af-select" <%= "required" if required %>>
+              <option value="">— Chwazi —</option>
+              <% Array(field["options"]).each do |opt| %>
+                <% opt_value = opt.is_a?(Hash) ? opt["value"] : opt %>
+                <% opt_label = opt.is_a?(Hash) ? opt["label"] : opt %>
+                <% opt_price = opt.is_a?(Hash) ? opt["extra_price"] : nil %>
+                <option value="<%= opt_value %>" <%= "selected" if value == opt_value %>>
+                  <%= opt_label %><%= " (+#{opt_price} #{@schema.currency || 'HTG'})" if opt_price.to_f > 0 %>
+                </option>
+              <% end %>
+            </select>
+          </div>
+
+        <% when "radio" %>
+          <div class="af-field-group">
+            <label class="af-label"><%= field["label"] %><%= label_suffix.html_safe %></label>
+            <div class="af-radio-group">
+              <% Array(field["options"]).each do |opt| %>
+                <% opt_value = opt.is_a?(Hash) ? opt["value"] : opt %>
+                <% opt_label = opt.is_a?(Hash) ? opt["label"] : opt %>
+                <% opt_price = opt.is_a?(Hash) ? opt["extra_price"] : nil %>
+                <label class="af-radio-option">
+                  <input type="radio" name="form_data[<%= key %>]" value="<%= opt_value %>" <%= "checked" if value == opt_value %>>
+                  <span class="af-option-label"><%= opt_label %></span>
+                  <% if opt_price.to_f > 0 %>
+                    <span class="af-option-price">+<%= opt_price %> <%= @schema.currency || "HTG" %></span>
+                  <% end %>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+        <% when "checkbox" %>
+          <div class="af-field-group">
+            <label class="af-checkbox-option">
+              <input type="checkbox" name="form_data[<%= key %>]" value="true" <%= "checked" if value == "true" || value == true %>>
+              <span class="af-option-label"><%= field["label"] %></span>
+            </label>
+          </div>
+
+        <% when "multi_checkbox" %>
+          <div class="af-field-group">
+            <label class="af-label"><%= field["label"] %><%= label_suffix.html_safe %></label>
+            <div class="af-checkbox-group">
+              <% selected = Array(value) %>
+              <% Array(field["options"]).each do |opt| %>
+                <% opt_value = opt.is_a?(Hash) ? opt["value"] : opt %>
+                <% opt_label = opt.is_a?(Hash) ? opt["label"] : opt %>
+                <label class="af-checkbox-option">
+                  <input type="checkbox" name="form_data[<%= key %>][]" value="<%= opt_value %>" <%= "checked" if selected.include?(opt_value) %>>
+                  <span class="af-option-label"><%= opt_label %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+
+        <% when "file" %>
+          <div class="af-field-group">
+            <label class="af-label"><%= field["label"] %><%= label_suffix.html_safe %></label>
+            <input type="file" name="form_data[<%= key %>]" class="af-input">
+            <% if field["help_text"].present? %>
+              <div class="af-helptext"><%= field["help_text"] %></div>
+            <% end %>
+          </div>
+
+        <% when "calculated" %>
+          <%# Skip — calculated fields are computed server-side %>
+
+        <% when "bonid_signature", "seal_placeholder" %>
+          <%# Skip — not relevant for agent-filled forms %>
+
+        <% end %>
+      <% end %>
+
+      <%# ── Pricing (on last step) ── %>
+      <% if is_last_step && @schema.price_cents.to_i > 0 %>
+        <div class="af-price-summary">
+          <span class="af-price-label">Total</span>
+          <span class="af-price-value"><%= @schema.total_price_display %></span>
+        </div>
+      <% end %>
+
+      <%# ── Actions ── %>
+      <div class="af-actions">
+        <% if @current_step > 0 %>
+          <%= link_to agent_form_partner_portal_submissions_path(citizen_id: @citizen.id, schema_id: @schema.id, step: @current_step - 1),
+                      class: "af-btn-back" do %>
+            <i class="ri-arrow-left-line"></i> Retounen
+          <% end %>
+        <% else %>
+          <div></div>
+        <% end %>
+
+        <% if is_last_step %>
+          <button type="submit" class="af-btn-submit">
+            <i class="ri-check-double-line me-1"></i>Soumèt pou <%= @citizen.first_name %>
+          </button>
+        <% else %>
+          <button type="submit" class="af-btn-next">
+            Kontinye <i class="ri-arrow-right-line"></i>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

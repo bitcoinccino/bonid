@@ -15,6 +15,7 @@ class Partner < ApplicationRecord
   # ============================================================
   belongs_to :admin_user, optional: true
   has_one_attached :logo
+  has_one_attached :seal_image # Official partner seal/stamp for document signing
   has_one :address, as: :addressable, dependent: :destroy
 
   has_many :users, dependent: :nullify
@@ -29,12 +30,14 @@ class Partner < ApplicationRecord
   has_many :incident_reports, dependent: :nullify
   has_many :api_access_logs, dependent: :destroy
   has_many :partner_schemas, dependent: :destroy
+  has_many :service_applications, dependent: :destroy
   has_many :verification_records, dependent: :nullify
   has_many :consent_grants, dependent: :destroy
   has_many :transaction_consents, dependent: :destroy
   has_many :partner_api_logs, dependent: :destroy
   has_many :partner_payments, dependent: :destroy
   has_many :credit_ledger_entries, dependent: :destroy
+  has_many :settlements, dependent: :destroy
 
   accepts_nested_attributes_for :address, update_only: true
 

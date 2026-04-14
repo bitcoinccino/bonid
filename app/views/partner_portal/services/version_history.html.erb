@@ -1,0 +1,134 @@
+<%# app/views/partner_portal/services/version_history.html.erb %>
+<% content_for(:title) { "Istorik Vèsyon — #{@service.name}" } %>
+
+<div style="max-width: 720px; margin: 0 auto;">
+  <%# Header %>
+  <div style="margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <%= link_to edit_partner_portal_service_path(@service),
+            style: "color: #6B7280; text-decoration: none; font-size: 0.82rem;" do %>
+        <i class="ri-arrow-left-line"></i> Retounen
+      <% end %>
+    </div>
+    <h1 style="font-family: 'Montserrat', sans-serif; font-size: 1.3rem; font-weight: 700; color: #1a1a2e; margin: 0;">
+      <i class="ri-history-line" style="color: var(--bs-primary, #00209F);"></i>
+      Istorik Vèsyon
+    </h1>
+    <p style="font-size: 0.82rem; color: #6B7280; margin: 0.25rem 0 0;">
+      <%= @service.name %> — <%= @versions.count %> vèsyon
+    </p>
+  </div>
+
+  <%# Version Timeline %>
+  <div style="position: relative;">
+    <%# Vertical timeline line %>
+    <div style="position: absolute; left: 18px; top: 0; bottom: 0; width: 2px; background: #E5E7EB;"></div>
+
+    <% @versions.each do |version| %>
+      <div style="position: relative; padding-left: 48px; margin-bottom: 1.25rem;">
+        <%# Timeline dot %>
+        <div style="position: absolute; left: 10px; top: 12px; width: 18px; height: 18px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: white;
+          <% if version.published? %>
+            background: #059669;">
+            <i class="ri-check-line"></i>
+          <% elsif version.draft? %>
+            background: #D97706;">
+            <i class="ri-edit-2-line"></i>
+          <% else %>
+            background: #9CA3AF;">
+            <i class="ri-archive-line"></i>
+          <% end %>
+        </div>
+
+        <%# Version card %>
+        <div style="background: white; border: 1px solid <%= version.published? ? '#A7F3D0' : '#E5E7EB' %>;
+          border-radius: 10px; padding: 0.85rem 1rem;
+          <% if version.published? %>box-shadow: 0 0 0 1px #D1FAE5;<% end %>">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 0.95rem; color: #1a1a2e;">
+                Vèsyon <%= version.version %>
+              </span>
+              <span style="font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 9999px; margin-left: 0.4rem;
+                <% if version.published? %>
+                  background: #ECFDF5; color: #059669;">
+                  Aktif
+                <% elsif version.draft? %>
+                  background: #FEF3C7; color: #D97706;">
+                  Bouyon
+                <% else %>
+                  background: #F3F4F6; color: #6B7280;">
+                  Achive
+                <% end %>
+              </span>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem;">
+              <% if version.archived? && version.id != @service.id %>
+                <%# Rollback button for archived versions %>
+                <%= link_to edit_partner_portal_service_path(@service, rollback_to: version.version),
+                      data: { confirm: "Retounen nan vèsyon #{version.version}? Sa ap kreye yon nouvo bouyon." },
+                      style: "padding: 0.25rem 0.6rem; font-size: 0.7rem; border: 1px solid #E5E7EB; border-radius: 5px;
+                        background: white; color: #4B5563; text-decoration: none; font-weight: 500;" do %>
+                  <i class="ri-arrow-go-back-line"></i> Retounen
+                <% end %>
+              <% end %>
+
+              <% if version.published? %>
+                <%= link_to edit_partner_portal_service_path(version),
+                      style: "padding: 0.25rem 0.6rem; font-size: 0.7rem; border: 1px solid #00209F; border-radius: 5px;
+                        background: #00209F; color: white; text-decoration: none; font-weight: 600;" do %>
+                  <i class="ri-pencil-line"></i> Modifye
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Version details %>
+          <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #6B7280;">
+            <% field_count = Array(version.structure&.dig("fields")).length %>
+            <% step_count = Array(version.structure&.dig("steps")).length %>
+            <span>
+              <i class="ri-list-check-2"></i>
+              <%= field_count %> chan
+              <% if step_count > 0 %>
+                · <%= step_count %> etap
+              <% end %>
+            </span>
+
+            <% if version.published_at.present? %>
+              <span style="margin-left: 0.75rem;">
+                <i class="ri-calendar-check-line"></i>
+                Pibliye: <%= version.published_at.strftime("%d/%m/%Y %H:%M") %>
+              </span>
+            <% end %>
+
+            <% if version.created_at.present? %>
+              <span style="margin-left: 0.75rem;">
+                <i class="ri-time-line"></i>
+                Kreye: <%= version.created_at.strftime("%d/%m/%Y %H:%M") %>
+              </span>
+            <% end %>
+          </div>
+
+          <%# Draft changes indicator %>
+          <% if version.has_draft_changes? %>
+            <div style="margin-top: 0.5rem; padding: 0.35rem 0.6rem; background: #FEF3C7; border-radius: 5px;
+              font-size: 0.72rem; color: #92400E;">
+              <i class="ri-edit-2-line"></i> Gen chanjman bouyon ki poko pibliye
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @versions.empty? %>
+      <div style="text-align: center; padding: 2rem; color: #9CA3AF; font-size: 0.85rem;">
+        <i class="ri-history-line" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+        Pa gen istorik vèsyon ankò.
+      </div>
+    <% end %>
+  </div>
+</div>

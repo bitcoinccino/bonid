@@ -1,0 +1,28 @@
+<%# Shared partial: renders citizen's BonID signature + QR on any DGI form show page %>
+<%# Locals: record (VerificationRecord) %>
+<% citizen = record.user %>
+<% return unless citizen %>
+<% submission = citizen.identity_submissions&.find_by(status: "approved") %>
+<% return unless submission&.signature&.attached? %>
+
+<div class="dash-card mt-3" style="border-left:4px solid #00209F;">
+  <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-quill-pen-line me-2"></i>Siyati BonID</h6></div>
+  <div class="dash-card-body">
+    <div class="d-flex justify-content-between align-items-end">
+      <div>
+        <%= image_tag submission.signature.variant(resize_to_limit: [200,80]),
+              class: "img-fluid", style: "max-height:70px;" %>
+        <div class="mt-1">
+          <small class="fw-semibold"><%= citizen.first_name %> <%= citizen.last_name %></small>
+          <br><code class="small"><%= mask_bonid(citizen.bonid) %></code>
+        </div>
+      </div>
+      <% if submission.respond_to?(:secure_qr_png_base64) && submission.secure_qr_png_base64.present? %>
+        <div class="text-center">
+          <img src="data:image/png;base64,<%= submission.secure_qr_png_base64 %>" style="width:70px;height:70px;">
+          <br><small class="text-muted" style="font-size:0.65rem;">Verifye</small>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
