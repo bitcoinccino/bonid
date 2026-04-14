@@ -1,0 +1,152 @@
+<%# app/views/partner_portal/party_registrations/index.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-team-line me-2 pp-text-brand"></i>Enskripsyon Pati Politik
+      </h4>
+      <p class="pp-page-subtitle">Atik 143 — Dekrè Elektoral 1e Desanm 2025</p>
+    </div>
+    <% if @election %>
+      <%= link_to new_partner_portal_party_registration_path, class: "btn pp-btn-brand" do %>
+        <i class="ri-add-line me-1"></i> Nouvo Enskripsyon
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# ── Stats ── %>
+  <% if @stats %>
+    <div class="row g-3 mb-4">
+      <% [
+        ["Total", @stats[:total], "pp-text-brand", "ri-team-line"],
+        ["Pati", @stats[:parties], "pp-text-info", "ri-flag-line"],
+        ["Groupman", @stats[:groupings], "pp-text-warning", "ri-group-line"],
+        ["Apwouve", @stats[:approved], "pp-text-success", "ri-check-double-line"],
+        ["An Atant", @stats[:submitted] + @stats[:under_review], "pp-text-warning", "ri-time-line"],
+        ["Rejte", @stats[:rejected], "pp-text-danger", "ri-close-circle-line"],
+      ].each do |label, count, color_class, icon| %>
+        <div class="col-6 col-md-2">
+          <div class="pp-card card p-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="<%= icon %> <%= color_class %>"></i>
+              <div>
+                <div class="fw-bold pp-text-lg <%= color_class %>"><%= count %></div>
+                <div class="pp-text-xs pp-text-muted"><%= label %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# ── Filter Bar ── %>
+  <div class="pp-card card mb-4">
+    <div class="card-body p-3">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <input type="text" name="search" value="<%= params[:search] %>"
+                 class="form-control" placeholder="Chèche pati...">
+        </div>
+        <div class="col-md-3">
+          <select name="status" class="form-select">
+            <option value="">Tout estati</option>
+            <% ElectionPartyRegistration::STATUSES.each do |s| %>
+              <option value="<%= s %>" <%= 'selected' if params[:status] == s %>><%= s.titleize %></option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select name="type" class="form-select">
+            <option value="">Tout tip</option>
+            <option value="party" <%= 'selected' if params[:type] == 'party' %>>Pati</option>
+            <option value="grouping" <%= 'selected' if params[:type] == 'grouping' %>>Groupman</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn pp-btn-brand w-100">
+            <i class="ri-search-line me-1"></i> Filtre
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%# ── Table ── %>
+  <div class="pp-card card">
+    <div class="card-body p-0">
+      <% if @registrations.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover pp-table mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Pati / Groupman</th>
+                <th>Tip</th>
+                <th>Reprezantan</th>
+                <th>Dokiman</th>
+                <th>Estati</th>
+                <th>Dat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @registrations.each do |reg| %>
+                <tr>
+                  <td>
+                    <div class="fw-semibold"><%= reg.party_name %></div>
+                    <% if reg.party_acronym.present? %>
+                      <span class="pp-text-xs pp-text-muted"><%= reg.party_acronym %></span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <span class="pp-text-xs">
+                      <%= reg.registration_type == "grouping" ? "Groupman" : "Pati" %>
+                    </span>
+                  </td>
+                  <td>
+                    <div class="pp-text-sm"><%= reg.representative_name %></div>
+                    <% if reg.is_mandataire %>
+                      <span class="badge bg-warning-subtle text-warning pp-badge-sm">Mandatè</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="progress flex-grow-1" style="height: 6px; width: 60px;">
+                        <div class="progress-bar" style="width: <%= reg.documents_progress_percentage %>%; background-color: var(--portal-brand);"></div>
+                      </div>
+                      <span class="pp-text-xs pp-text-muted"><%= reg.documents_submitted_count %>/<%= reg.documents_total_count %></span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-<%= reg.status_color %>-subtle text-<%= reg.status_color %> pp-badge-sm">
+                      <%= reg.status_label %>
+                    </span>
+                  </td>
+                  <td class="pp-text-xs pp-text-muted">
+                    <%= reg.submitted_at&.strftime("%d %b %Y") %>
+                  </td>
+                  <td class="text-end">
+                    <%= link_to partner_portal_party_registration_path(reg), class: "btn btn-sm btn-outline-secondary" do %>
+                      <i class="ri-eye-line"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="pp-empty-state">
+          <i class="ri-team-line pp-icon-xl pp-text-muted mb-3"></i>
+          <p class="pp-text-sm pp-text-muted">Okenn pati politik pa enskri ankò.</p>
+          <% if @election %>
+            <%= link_to new_partner_portal_party_registration_path, class: "btn pp-btn-brand btn-sm" do %>
+              <i class="ri-add-line me-1"></i> Enskri Premye Pati a
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

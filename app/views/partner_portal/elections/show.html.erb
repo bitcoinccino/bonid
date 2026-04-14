@@ -1,0 +1,145 @@
+<%# Election Detail %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <%= link_to partner_portal_elections_path, class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen nan lis la
+      <% end %>
+
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h4 class="pp-page-title mb-1">
+            <i class="ri-government-line me-2 pp-text-brand"></i><%= @election.title %>
+          </h4>
+          <p class="pp-page-subtitle mb-0">
+            <%= @election.election_type.capitalize %> &middot; Round <%= @election.round %> &middot; <%= @election.election_date.strftime("%d %B %Y") %>
+          </p>
+        </div>
+        <% color = { "draft" => "secondary", "open" => "success", "closed" => "warning", "certified" => "primary", "cancelled" => "danger" }[@election.status] || "secondary" %>
+        <span class="badge bg-<%= color %> fs-6 px-3 py-2"><%= @election.status.capitalize %></span>
+      </div>
+
+      <%# Stats %>
+      <div class="row g-3 mb-4">
+        <% [
+          ["Kandida", @election.election_candidates.count, "ri-user-star-line"],
+          ["Sikonskripsyon", @election.election_constituencies.count, "ri-map-pin-line"],
+          ["Pati Politik", ElectionPartyRegistration.where(election: @election).count, "ri-flag-line"],
+          ["Vòt Total", @election.total_votes, "ri-checkbox-circle-line"],
+        ].each do |label, count, icon| %>
+          <div class="col-md-3">
+            <div class="pp-card card p-3">
+              <div class="d-flex align-items-center gap-3">
+                <i class="<%= icon %> pp-icon-lg pp-text-brand"></i>
+                <div>
+                  <div class="fw-bold pp-text-xl"><%= count %></div>
+                  <div class="pp-stat-label"><%= label %></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Lifecycle Actions %>
+      <div class="pp-card card mb-4">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3"><i class="ri-settings-3-line me-2"></i>Aksyon</h6>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <%# Dashboard link %>
+            <%= link_to partner_portal_election_tablo_path(@election), class: "btn btn-outline-primary" do %>
+              <i class="ri-pie-chart-line me-1"></i> Tablo CEP
+            <% end %>
+
+            <% if @election.draft? %>
+              <%= button_to "Ouvri Eleksyon", open_election_partner_portal_election_path(@election),
+                  method: :post, class: "btn btn-success",
+                  data: { confirm: "Ou sèten ou vle ouvri eleksyon sa a? Vòt ap kòmanse." } %>
+            <% end %>
+
+            <% if @election.open? %>
+              <%= button_to "Fèmen Eleksyon", close_election_partner_portal_election_path(@election),
+                  method: :post, class: "btn btn-warning",
+                  data: { confirm: "Ou sèten ou vle fèmen eleksyon sa a? Vòt ap sispann." } %>
+            <% end %>
+
+            <% if @election.closed? %>
+              <%= link_to partner_portal_election_multi_sig_path(@election), class: "btn btn-outline-primary" do %>
+                <i class="ri-key-2-line me-1"></i> Seremoni Siyati
+              <% end %>
+              <%= button_to "Sètifye Rezilta", certify_election_partner_portal_election_path(@election),
+                  method: :post, class: "btn btn-primary",
+                  data: { confirm: "Sètifye rezilta yo? Aksyon sa a pa ka defèt." } %>
+            <% end %>
+
+            <% if @election.closed? || @election.certified? %>
+              <%= link_to partner_portal_election_results_path(@election), class: "btn btn-outline-success" do %>
+                <i class="ri-bar-chart-box-line me-1"></i> Rezilta
+              <% end %>
+            <% end %>
+          </div>
+
+          <%# Calendar Generation %>
+          <% if @election.electoral_calendars.empty? %>
+            <%= button_to "Jenere Kalandriye 2026",
+                          generate_calendar_partner_portal_election_path(@election),
+                          method: :post,
+                          class: "btn btn-primary btn-lg w-100 mt-3",
+                          data: { confirm: "Sa pral kreye tout 13 faz ofisyèl CEP 2026 pou eleksyon sa a.\n\nOu sèten?" } %>
+          <% else %>
+            <div class="alert alert-success mt-3 mb-0 d-flex align-items-center justify-content-between">
+              <div>
+                <strong>Kalandriye deja jenere</strong> —
+                <%= @election.electoral_calendars.count %> faz aktif
+              </div>
+              <%= link_to partner_portal_electoral_calendar_path, class: "btn btn-sm btn-outline-success" do %>
+                <i class="ri-calendar-event-line me-1"></i> Wè Kalandriye
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Quick Links %>
+      <div class="pp-card card">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3"><i class="ri-links-line me-2"></i>Lyen Rapid</h6>
+          <div class="list-group list-group-flush">
+            <%= link_to partner_portal_candidate_registrations_path, class: "list-group-item list-group-item-action d-flex align-items-center" do %>
+              <i class="ri-user-star-line me-3 pp-text-brand"></i>
+              <div>
+                <div class="fw-semibold">Enskripsyon Kandida</div>
+                <small class="text-muted">Revize ak apwouve aplikasyon kandida yo</small>
+              </div>
+            <% end %>
+            <%= link_to partner_portal_party_registrations_path, class: "list-group-item list-group-item-action d-flex align-items-center" do %>
+              <i class="ri-flag-line me-3 pp-text-brand"></i>
+              <div>
+                <div class="fw-semibold">Pati Politik</div>
+                <small class="text-muted">Enskripsyon ak akreditasyon pati yo</small>
+              </div>
+            <% end %>
+            <%= link_to partner_portal_voter_registry_path, class: "list-group-item list-group-item-action d-flex align-items-center" do %>
+              <i class="ri-file-list-3-line me-3 pp-text-brand"></i>
+              <div>
+                <div class="fw-semibold">Lis Elektoral</div>
+                <small class="text-muted">Bati ak jere lis votè a</small>
+              </div>
+            <% end %>
+            <%= link_to partner_portal_electoral_calendar_path, class: "list-group-item list-group-item-action d-flex align-items-center" do %>
+              <i class="ri-calendar-event-line me-3 pp-text-brand"></i>
+              <div>
+                <div class="fw-semibold">Kalandriye Elektoral</div>
+                <small class="text-muted">Faz ak dat enpòtan yo</small>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

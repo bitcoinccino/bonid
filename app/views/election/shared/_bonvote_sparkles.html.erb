@@ -1,0 +1,22 @@
+<%# Render this partial inside body to add flag-top bar and sparkle particles.
+    Usage: render "election/shared/bonvote_sparkles", sparkle_count: 20 %>
+
+<% sparkle_count = local_assigns[:sparkle_count] || 0 %>
+<% if sparkle_count > 0 %>
+  <div class="flag-top"></div>
+  <div class="sparkle-field" id="sparkleField"></div>
+  <script>
+    (function() {
+      var field = document.getElementById('sparkleField');
+      var count = <%= sparkle_count %>;
+      for (var i = 0; i < count; i++) {
+        var s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.left = (Math.random() * 100) + '%';
+        s.style.animationDuration = (8 + Math.random() * 12) + 's';
+        s.style.animationDelay = (Math.random() * 10) + 's';
+        field.appendChild(s);
+      }
+    })();
+  </script>
+<% end %>

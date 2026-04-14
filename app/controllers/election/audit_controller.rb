@@ -31,6 +31,13 @@ module Election
       @departments_count = 10 # All 10 Haitian departments
       @merkle_root = snapshot[:merkle_root]
 
+      # Recent activity for live ticker (no PII — only department/country + time)
+      @recent_ballots = ElectionBallot.where(election_id: election_id).recent(5)
+
+      # Test mode detection
+      @election = BonvoteElection.find_by(id: election_id)
+      @test_mode = @election&.election_type == "simulation"
+
       I18n.locale = %w[ht fr en].include?(params[:lang]) ? params[:lang] : :ht
       render "election/audit/verify", layout: false
     end

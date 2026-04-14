@@ -1,0 +1,166 @@
+<%# Candidate Registrations — CEP Review Queue %>
+
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-user-star-line me-2 pp-text-brand"></i>Enskripsyon Kandida
+      </h4>
+      <p class="pp-page-subtitle">
+        Revize ak apwouve aplikasyon kandida yo.
+      </p>
+    </div>
+    <% if @election %>
+      <% reg_phase = @election.electoral_calendars.find_by(phase: "candidate_registration") %>
+      <% phase_active = reg_phase&.active? %>
+      <% if phase_active %>
+        <%= link_to new_partner_portal_candidate_registration_path, class: "btn pp-btn-brand px-4" do %>
+          <i class="ri-add-line me-1"></i> Nouvo Kandida
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @election %>
+    <% reg_phase = @election.electoral_calendars.find_by(phase: "candidate_registration") %>
+    <% if reg_phase && !reg_phase.active? %>
+      <div class="alert alert-warning d-flex align-items-center mb-4">
+        <i class="ri-lock-line me-2 fs-5"></i>
+        <div>
+          <strong>Enskripsyon kandida fèmen.</strong>
+          Pòtal la louvri sèlman pandan faz <strong>Depo Kandida</strong>:
+          <%= reg_phase.start_date.strftime("%d %B %Y") %> — <%= reg_phase.end_date.strftime("%d %B %Y") %>.
+        </div>
+      </div>
+    <% elsif reg_phase&.active? %>
+      <div class="alert alert-success d-flex align-items-center mb-4">
+        <i class="ri-checkbox-circle-line me-2 fs-5"></i>
+        <div>
+          <strong>Enskripsyon kandida louvri!</strong>
+          Jiska <%= reg_phase.end_date.strftime("%d %B %Y") %>.
+          <span class="ms-2 badge bg-success"><%= reg_phase.progress_percentage %>% pase</span>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+
+  <% if @stats %>
+    <%# Stats %>
+    <div class="row g-3 mb-4">
+      <% [
+        ["Total", @stats[:total], "pp-text-primary"],
+        ["Soumèt", @stats[:submitted], "pp-text-info"],
+        ["Anba Revizyon", @stats[:under_review], "pp-text-warning"],
+        ["Apwouve", @stats[:approved], "pp-text-success"],
+        ["Rejte", @stats[:rejected], "pp-text-danger"],
+      ].each do |label, count, color_class| %>
+        <div class="col">
+          <div class="pp-stat-card card">
+            <div class="pp-stat-number <%= color_class %>"><%= count %></div>
+            <div class="pp-stat-label"><%= label %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# By Position %>
+    <div class="row g-3 mb-4">
+      <% [
+        ["Prezidan", @stats[:by_position][:president], "ri-vip-crown-line"],
+        ["Senatè", @stats[:by_position][:senator], "ri-government-line"],
+        ["Depite", @stats[:by_position][:deputy], "ri-user-voice-line"],
+      ].each do |label, count, icon| %>
+        <div class="col-md-4">
+          <div class="pp-card card p-3">
+            <div class="d-flex align-items-center gap-3">
+              <i class="<%= icon %> pp-icon-lg pp-text-brand"></i>
+              <div>
+                <div class="fw-bold pp-text-xl"><%= count %></div>
+                <div class="pp-stat-label"><%= label %></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Filters %>
+  <div class="pp-filter-bar card">
+    <div class="card-body">
+      <%= form_with url: partner_portal_candidate_registrations_path, method: :get, local: true, class: "d-flex gap-2 align-items-end flex-wrap" do |f| %>
+        <div>
+          <%= f.text_field :search, value: params[:search], class: "form-control form-control-sm", placeholder: "Chèche non..." %>
+        </div>
+        <div>
+          <%= f.select :status, ElectionCandidate::REGISTRATION_STATUSES.map { |s| [s.titleize, s] },
+              { prompt: "Tout estati" }, class: "form-select form-select-sm" %>
+        </div>
+        <div>
+          <%= f.select :position, [["Prezidan", "president"], ["Senatè", "senator"], ["Depite", "deputy"]],
+              { prompt: "Tout pozisyon" }, class: "form-select form-select-sm" %>
+        </div>
+        <div>
+          <%= f.submit "Filtre", class: "btn btn-sm btn-outline-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Candidates Table %>
+  <div class="pp-card card">
+    <div class="table-responsive">
+      <table class="table table-hover pp-table">
+        <thead class="table-light">
+          <tr>
+            <th>Non</th>
+            <th>Pozisyon</th>
+            <th>Pati</th>
+            <th>Sikonskripsyon</th>
+            <th>Estati</th>
+            <th>Dat Soumèt</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @candidates.each do |candidate| %>
+            <tr>
+              <td class="fw-semibold"><%= candidate.full_name %></td>
+              <td>
+                <span class="badge bg-light text-dark border pp-badge-sm">
+                  <%= candidate.position.capitalize %>
+                </span>
+              </td>
+              <td><%= candidate.party_acronym.presence || candidate.party_name.presence || "—" %></td>
+              <td><%= candidate.election_constituency&.constituency_name || "—" %></td>
+              <td>
+                <span class="badge bg-<%= candidate.registration_status_color %> pp-badge-sm">
+                  <%= candidate.registration_status_label %>
+                </span>
+              </td>
+              <td class="text-muted"><%= candidate.submitted_at&.strftime("%d/%m/%Y") || "—" %></td>
+              <td>
+                <%= link_to partner_portal_candidate_registration_path(candidate), class: "btn btn-sm btn-outline-primary" do %>
+                  <i class="ri-eye-line"></i>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% if @candidates.empty? %>
+      <div class="pp-empty-state">
+        <i class="ri-user-star-line"></i>
+        <h6>Pa gen kandida ankò</h6>
+      </div>
+    <% end %>
+    <% if @candidates.respond_to?(:total_pages) && @candidates.total_pages > 1 %>
+      <div class="card-footer bg-white border-top-0 text-center py-3">
+        <%= paginate @candidates %>
+      </div>
+    <% end %>
+  </div>
+
+</div>

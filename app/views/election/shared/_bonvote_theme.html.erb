@@ -1,0 +1,221 @@
+<%# Shared BonVote Election Theme — Haitian Flag Color Palette
+    Include this partial in all standalone election pages.
+    Usage: render "election/shared/bonvote_theme", sparkle_count: 20 %>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600&family=Orbitron:wght@600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  /* ══════════════════════════════════════════════════
+     BONVOTE SHARED THEME — Haitian Flag Palette
+     Blue (#00209F) + Red (#D21034) = Headers/gradients
+     Yellow (#FFD700) = CTAs, interactive, hint cards
+     Green (#28A745) = Trust/verification/success
+     White = Text on dark backgrounds
+     Red = Critical data/alerts
+     ══════════════════════════════════════════════════ */
+
+  :root {
+    --ht-blue: #00209F;
+    --ht-red: #D21034;
+    --ht-yellow: #FFD700;
+    --ht-green: #28A745;
+    --ht-dark: #0d132d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--ht-dark); color: #fff;
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden; min-height: 100vh;
+  }
+
+  /* ── Flag gradient top bar ── */
+  .flag-top {
+    height: 6px;
+    background: linear-gradient(90deg, var(--ht-blue) 0%, var(--ht-red) 100%);
+  }
+
+  /* ── Sparkle particles (red & blue) ── */
+  .sparkle-field {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 0; overflow: hidden;
+  }
+  .sparkle {
+    position: absolute; width: 6px; height: 6px;
+    border-radius: 50%;
+    opacity: 0; animation: sparkleFloat linear infinite;
+  }
+  .sparkle:nth-child(odd) { background: var(--ht-red); }
+  .sparkle:nth-child(even) { background: var(--ht-blue); }
+  @keyframes sparkleFloat {
+    0% { opacity: 0; transform: translateY(100vh) scale(0); }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.6; }
+    100% { opacity: 0; transform: translateY(-20px) scale(1); }
+  }
+
+  /* ── Main container ── */
+  .main-container {
+    max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem;
+    position: relative; z-index: 1;
+  }
+
+  /* ── Cards — dark glass with gradient top ── */
+  .glass-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(237,185,94,0.15);
+    border-radius: 1.25rem; padding: 2rem;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    position: relative; overflow: hidden;
+  }
+  .glass-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--ht-blue), var(--ht-red));
+  }
+
+  /* ── Section headers (blue, Orbitron) ── */
+  .section-header {
+    font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 700;
+    color: var(--ht-blue); letter-spacing: 3px;
+  }
+
+  /* ── Stat grid ── */
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+  }
+  .stat-item {
+    text-align: center; padding: 1.25rem 0.75rem;
+    background: rgba(255,215,0,0.05);
+    border-left: 4px solid var(--ht-yellow);
+    border-top: 1px solid rgba(255,215,0,0.08);
+    border-right: 1px solid rgba(255,215,0,0.08);
+    border-bottom: 1px solid rgba(255,215,0,0.08);
+    border-radius: 0.75rem;
+  }
+  .stat-number {
+    font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 800; color: #fff;
+  }
+  .stat-label {
+    font-size: 0.62rem; color: #94A3B8; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-top: 4px;
+  }
+
+  /* ── Yellow hint card ── */
+  .hint-card {
+    border-left: 4px solid var(--ht-yellow);
+    background: rgba(255,215,0,0.05);
+  }
+
+  /* ── Verified/secure status boxes (green) ── */
+  .verified-status {
+    border: 1px solid var(--ht-green);
+    background: rgba(40,167,69,0.1);
+    border-radius: 0.5rem; padding: 0.75rem;
+  }
+
+  /* ── Green verdict ── */
+  .verdict-pass {
+    color: var(--ht-green); font-weight: 700;
+    border-left: 3px solid var(--ht-green);
+    padding-left: 6px;
+  }
+
+  /* ── Language switcher ── */
+  .lang-switcher {
+    display: inline-flex; background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2rem; padding: 3px;
+  }
+  .lang-pill {
+    padding: 5px 14px; border-radius: 2rem; font-size: 0.62rem; font-weight: 700;
+    letter-spacing: 0.05em; text-decoration: none; font-family: 'Montserrat', sans-serif;
+    color: #64748B;
+  }
+  .lang-pill.active { background: var(--ht-blue); color: #fff; }
+
+  /* ── Trust badges ── */
+  .bv-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bv-badge {
+    display: flex; align-items: center; gap: 4px; padding: 4px 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 2rem; font-size: 0.58rem; color: #64748B;
+  }
+  .bv-badge i { font-size: 0.68rem; color: var(--ht-green); }
+
+  /* ── Share buttons ── */
+  .share-card { transition: transform 0.2s; cursor: pointer; }
+  .share-card:hover { transform: scale(1.03); }
+
+  /* ── Animations ── */
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @keyframes sealPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(40,167,69,0.2); }
+    50% { box-shadow: 0 0 40px 10px rgba(40,167,69,0.15); }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  /* ── Footer (blue bg, white text) ── */
+  .bonvote-footer {
+    background: var(--ht-blue); color: #fff; text-align: center;
+    padding: 1.5rem; border-radius: 1rem; margin-top: 2rem;
+  }
+  .bonvote-footer a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.55rem; }
+  .bonvote-footer a:hover { color: #fff; }
+  .bonvote-footer .footer-badges span {
+    font-size: 0.55rem; color: rgba(255,255,255,0.8);
+    display: flex; align-items: center; gap: 3px;
+  }
+  .bonvote-footer .footer-badges i { color: var(--ht-green); }
+  .bonvote-footer .footer-brand {
+    font-family: 'Orbitron', sans-serif; font-size: 0.48rem;
+    color: rgba(255,255,255,0.6); letter-spacing: 2px;
+  }
+
+  /* ── Anti-Deepfake Watermark ── */
+  .watermark-bar {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(40,167,69,0.15);
+    border-radius: 0.6rem; padding: 0.85rem 1rem;
+    margin-bottom: 1rem; margin-top: 2rem;
+  }
+  .watermark-bar .crypto-label {
+    font-size: 0.5rem; color: #64748B; text-transform: uppercase;
+    letter-spacing: 0.08em; margin-bottom: 2px;
+  }
+  .watermark-bar .crypto-hash {
+    font-family: 'Courier New', monospace; font-size: 0.48rem;
+    color: #94A3B8; word-break: break-all;
+  }
+  .watermark-bar .verify-link {
+    font-size: 0.6rem; color: var(--ht-yellow); font-weight: 600;
+    text-decoration: none; flex-shrink: 0;
+  }
+  .watermark-bar .fake-warning {
+    margin-top: 4px; font-size: 0.45rem; color: #64748B;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .two-col { grid-template-columns: 1fr !important; }
+  }
+  @media (max-width: 640px) {
+    .main-container { padding: 1rem 0.75rem; }
+  }
+</style>
+
+<%# Sparkle HTML + JS are rendered via _bonvote_sparkles.html.erb partial in <body> %>

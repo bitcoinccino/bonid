@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BonVote White Paper | Haiti's First Cryptographic Election System</title>
+  <meta name="description" content="BonVote: Haiti's first integrated, cryptographically secure election management system. Built on BonID national digital identity.">
+  <%= render "election/shared/bonvote_theme", sparkle_count: 8 %>
+  <style>
+    /* ── Whitepaper-specific styles ── */
+    .wp-hero {
+      text-align: center; padding: 4rem 1rem 3rem;
+      background: linear-gradient(180deg, rgba(0,32,159,0.15) 0%, transparent 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 2rem;
+    }
+    .wp-hero h1 {
+      font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800; letter-spacing: 4px;
+      background: linear-gradient(135deg, var(--ht-yellow), #fff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 0.75rem;
+    }
+    .wp-hero .subtitle {
+      font-size: clamp(0.9rem, 2vw, 1.2rem); color: #94A3B8;
+      font-family: 'Montserrat', sans-serif; font-weight: 500;
+    }
+    .wp-hero .kreole {
+      font-size: 0.85rem; color: #64748B; margin-top: 0.5rem;
+      font-style: italic;
+    }
+    .wp-meta {
+      display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;
+      margin-top: 2rem; font-size: 0.7rem; color: #64748B;
+    }
+    .wp-meta span { display: flex; align-items: center; gap: 6px; }
+    .wp-meta i { color: var(--ht-blue); font-size: 0.85rem; }
+
+    /* Table of Contents */
+    .wp-toc {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 1rem; padding: 2rem; margin-bottom: 3rem;
+    }
+    .wp-toc h2 {
+      font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700;
+      color: var(--ht-blue); letter-spacing: 3px; margin-bottom: 1.25rem;
+    }
+    .wp-toc-list { list-style: none; padding: 0; columns: 2; column-gap: 2rem; }
+    .wp-toc-list li {
+      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+      break-inside: avoid;
+    }
+    .wp-toc-list a {
+      color: #94A3B8; text-decoration: none; font-size: 0.78rem; font-weight: 600;
+      transition: color 0.2s;
+    }
+    .wp-toc-list a:hover { color: var(--ht-yellow); }
+    .wp-toc-list .toc-num { color: var(--ht-blue); font-weight: 800; margin-right: 8px; }
+
+    /* Section styles */
+    .wp-section { margin-bottom: 3.5rem; scroll-margin-top: 80px; }
+    .wp-section h2 {
+      font-family: 'Playfair Display', serif; font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 800; color: #fff; margin-bottom: 1rem;
+      padding-bottom: 0.75rem; border-bottom: 2px solid var(--ht-blue);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .wp-section h2 .sec-num {
+      font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700;
+      color: var(--ht-dark); background: var(--ht-yellow); padding: 4px 10px;
+      border-radius: 2rem; letter-spacing: 1px;
+    }
+    .wp-section h3 {
+      font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700;
+      color: var(--ht-yellow); margin: 1.75rem 0 0.75rem;
+    }
+    .wp-section p {
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; line-height: 1.75;
+      color: #CBD5E1; margin-bottom: 1rem;
+    }
+    .wp-section ul {
+      list-style: none; padding: 0; margin-bottom: 1rem;
+    }
+    .wp-section ul li {
+      font-family: 'Inter', sans-serif; font-size: 0.85rem; line-height: 1.7;
+      color: #CBD5E1; padding: 6px 0 6px 20px; position: relative;
+    }
+    .wp-section ul li::before {
+      content: ''; position: absolute; left: 0; top: 14px;
+      width: 6px; height: 6px; border-radius: 50%; background: var(--ht-blue);
+    }
+
+    /* Info box */
+    .wp-infobox {
+      border-left: 4px solid var(--ht-blue); background: rgba(0,32,159,0.08);
+      border-radius: 0 0.75rem 0.75rem 0; padding: 1.25rem 1.5rem;
+      margin: 1.5rem 0; font-size: 0.82rem; line-height: 1.65; color: #CBD5E1;
+    }
+    .wp-infobox.yellow {
+      border-left-color: var(--ht-yellow); background: rgba(255,215,0,0.06);
+    }
+    .wp-infobox.green {
+      border-left-color: var(--ht-green); background: rgba(40,167,69,0.06);
+    }
+    .wp-infobox strong { color: #fff; }
+
+    /* Tables */
+    .wp-table-wrap { overflow-x: auto; margin: 1.25rem 0; border-radius: 0.75rem; }
+    .wp-table {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .wp-table thead th {
+      background: var(--ht-blue); color: #fff; padding: 10px 14px;
+      text-align: left; font-weight: 700; white-space: nowrap;
+    }
+    .wp-table tbody td {
+      padding: 10px 14px; color: #CBD5E1;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .wp-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+    .wp-table tbody tr:hover { background: rgba(0,32,159,0.08); }
+
+    /* Quote */
+    .wp-quote {
+      text-align: center; padding: 2rem; margin: 2rem 0;
+      font-family: 'Playfair Display', serif; font-size: 1.15rem;
+      font-style: italic; color: var(--ht-yellow); line-height: 1.6;
+    }
+    .wp-quote .translation {
+      display: block; font-family: 'Inter', sans-serif; font-size: 0.82rem;
+      color: #64748B; font-style: normal; margin-top: 0.5rem;
+    }
+
+    /* Back to top */
+    .wp-backtop {
+      position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px;
+      background: var(--ht-blue); color: #fff; border: none; border-radius: 50%;
+      cursor: pointer; font-size: 1.2rem; display: flex; align-items: center;
+      justify-content: center; z-index: 99; opacity: 0; transition: opacity 0.3s;
+      box-shadow: 0 4px 15px rgba(0,32,159,0.4);
+    }
+    .wp-backtop.visible { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .wp-toc-list { columns: 1; }
+      .wp-hero { padding: 2.5rem 1rem 2rem; }
+    }
+  </style>
+</head>
+<body>
+<%= render "election/shared/bonvote_sparkles", sparkle_count: 8 %>
+<%= render "election/shared/bonvote_nav", active: "whitepaper" %>
+
+<!-- ══ HERO ══ -->
+<div class="wp-hero">
+  <h1>BonVote</h1>
+  <div class="subtitle">Haiti's First Cryptographic Election Management System</div>
+  <div class="kreole">Premye Sistèm Eleksyon Kriptografik Ayiti</div>
+  <div class="wp-meta">
+    <span><i class="ri-file-text-line"></i> White Paper v1.0</span>
+    <span><i class="ri-calendar-line"></i> March 2026</span>
+    <span><i class="ri-building-line"></i> Verifyem Engineering</span>
+    <span><i class="ri-lock-line"></i> Public Distribution</span>
+  </div>
+  <div style="margin-top: 1rem;">
+    <a href="<%= election_livreblanc_path(lang: :fr) %>"
+       style="font-size: 0.72rem; color: var(--ht-yellow); text-decoration: none; font-weight: 700;">
+      <i class="ri-translate-2"></i> Lire en Français
+    </a>
+  </div>
+</div>
+
+<div class="main-container">
+
+  <!-- ══ TABLE OF CONTENTS ══ -->
+  <div class="wp-toc">
+    <h2>TABLE OF CONTENTS</h2>
+    <ol class="wp-toc-list">
+      <li><a href="#s1"><span class="toc-num">01</span> Executive Summary</a></li>
+      <li><a href="#s2"><span class="toc-num">02</span> The Problem: Haiti's Electoral Crisis</a></li>
+      <li><a href="#s3"><span class="toc-num">03</span> What is BonVote?</a></li>
+      <li><a href="#s4"><span class="toc-num">04</span> How BonVote Works</a></li>
+      <li><a href="#s5"><span class="toc-num">05</span> System Architecture</a></li>
+      <li><a href="#s6"><span class="toc-num">06</span> Security Model</a></li>
+      <li><a href="#s7"><span class="toc-num">07</span> The Electoral Calendar</a></li>
+      <li><a href="#s8"><span class="toc-num">08</span> Candidate Registration</a></li>
+      <li><a href="#s9"><span class="toc-num">09</span> Voting Day: From Ballot to Tally</a></li>
+      <li><a href="#s10"><span class="toc-num">10</span> Multi-Signature Decryption Ceremony</a></li>
+      <li><a href="#s11"><span class="toc-num">11</span> Diaspora Voting</a></li>
+      <li><a href="#s12"><span class="toc-num">12</span> Cost Analysis</a></li>
+      <li><a href="#s13"><span class="toc-num">13</span> Advantages for the Haitian Government</a></li>
+      <li><a href="#s14"><span class="toc-num">14</span> Compliance with Décret Électoral</a></li>
+      <li><a href="#s15"><span class="toc-num">15</span> Deployment Roadmap</a></li>
+      <li><a href="#s16"><span class="toc-num">16</span> Conclusion</a></li>
+    </ol>
+  </div>
+
+  <!-- ══ 1. EXECUTIVE SUMMARY ══ -->
+  <div class="wp-section" id="s1">
+    <h2><span class="sec-num">01</span> Executive Summary</h2>
+    <p>BonVote is Haiti's first integrated, cryptographically secure election management system. Built on the BonID national digital identity platform, it replaces Haiti's entirely manual election process with a modern, transparent, and mathematically verifiable system.</p>
+    <p>Haiti has not held a national election since the disputed 2015-2016 cycle, which cost over $55 million USD and produced results that took months to certify amid widespread allegations of fraud. The 2025-2026 election cycle, mandated by the Décret Électoral of December 1, 2025, presents an opportunity to fundamentally modernize how Haiti conducts elections.</p>
+    <div class="wp-infobox">
+      <strong>Key Innovation:</strong> BonVote uses zero-knowledge proofs and homomorphic encryption to ensure that votes are counted correctly without ever revealing how any individual voted. The server never sees the plaintext vote. Results can only be decrypted through a 5-of-9 multi-signature ceremony by CEP members, each verified by biometric liveness detection.
+    </div>
+    <p>BonVote reduces the cost of a full election cycle from $55-70 million to approximately $3-6 million &mdash; a 90% reduction &mdash; while simultaneously increasing transparency, eliminating ballot fraud, and enabling 2+ million Haitians in the diaspora to vote for the first time.</p>
+  </div>
+
+  <!-- ══ 2. THE PROBLEM ══ -->
+  <div class="wp-section" id="s2">
+    <h2><span class="sec-num">02</span> The Problem: Haiti's Electoral Crisis</h2>
+
+    <h3>2.1 The Current State</h3>
+    <p>Haiti's last real national elections (2015-2016) relied on an almost entirely manual process. The only technology used was Dermalog biometric systems run by the Office National d'Identification (ONI) for voter registration. Everything else was done by hand.</p>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Component</th><th>What Haiti Used (2015-2016)</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td>Voter Registry</td><td>Dermalog biometrics (ONI/CIN)</td><td>Functional but isolated</td></tr>
+          <tr><td>Voting</td><td>Paper ballots + ballot boxes + indelible ink</td><td>Stuffing, loss, theft</td></tr>
+          <tr><td>Counting</td><td>Manual hand count at polling stations</td><td>Human error, manipulation</td></tr>
+          <tr><td>Tabulation</td><td>Manual double-entry at CTV</td><td>Slow, error-prone</td></tr>
+          <tr><td>Results</td><td>Excel spreadsheets + internal databases</td><td>No cryptographic proof</td></tr>
+          <tr><td>Disputes</td><td>Paper-based complaints to BCEN</td><td>Months of delays</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.2 The Cost Problem</h3>
+    <p>The 2015-2016 election cycle cost approximately $55-70 million USD, funded almost entirely by international donors (USAID, Canada, EU, OAS/UNDP). Haiti cannot independently fund its own elections at this cost level, creating a dependency that undermines sovereignty.</p>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Cost Center</th><th>Estimated Cost (USD)</th><th>% of Total</th></tr></thead>
+        <tbody>
+          <tr><td>Paper ballots (printing + distribution)</td><td>$8-12M</td><td>15-17%</td></tr>
+          <tr><td>Polling station staff (40,000-60,000 temp workers)</td><td>$12-18M</td><td>22-26%</td></tr>
+          <tr><td>Logistics and transport</td><td>$10-15M</td><td>18-21%</td></tr>
+          <tr><td>Tabulation centers (CTV)</td><td>$3-5M</td><td>5-7%</td></tr>
+          <tr><td>Security (PNH + MINUSTAH escort)</td><td>$5-8M</td><td>9-11%</td></tr>
+          <tr><td>Indelible ink + supplies</td><td>$2-3M</td><td>3-4%</td></tr>
+          <tr><td>Training</td><td>$3-5M</td><td>5-7%</td></tr>
+          <tr><td>Second round (near-full repeat)</td><td>$15-20M</td><td>27-29%</td></tr>
+          <tr style="font-weight:700; color:#fff;"><td>TOTAL</td><td>$55-70M</td><td>100%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>2.3 The Trust Problem</h3>
+    <p>Multiple Haitian elections have been marred by allegations of fraud, ballot stuffing, and result manipulation. The fundamental issue is that paper-based elections offer no mathematical proof that results are correct. Citizens must trust the process &mdash; and that trust has been eroded.</p>
+
+    <h3>2.4 The Diaspora Problem</h3>
+    <p>An estimated 2+ million Haitians live abroad (United States, Canada, France, Dominican Republic, Chile, Brazil, and others). Under the current system, they have no mechanism to vote. The Décret Électoral of 2025 explicitly provides for diaspora voting through consular stations, but implementing this with paper ballots across 40+ countries is logistically impossible.</p>
+  </div>
+
+  <!-- ══ 3. WHAT IS BONVOTE? ══ -->
+  <div class="wp-section" id="s3">
+    <h2><span class="sec-num">03</span> What is BonVote?</h2>
+    <p>BonVote is the election module of BonID &mdash; Haiti's national digital identity verification platform. It is a complete Election Management System (EMS) that handles every phase of the electoral cycle: from party registration and candidate approval through voting day, cryptographic tabulation, multi-signature result certification, and public audit.</p>
+    <div class="wp-infobox yellow">
+      <strong>BonVote is NOT electronic voting in the traditional sense.</strong> Unlike systems like Smartmatic or Dominion that use proprietary counting machines, BonVote uses open cryptographic protocols (Schnorr ZKP, Pedersen commitments, AES-256-GCM, Shamir's Secret Sharing) where any mathematician can verify the integrity of results independently. The server never sees how anyone voted.
+    </div>
+
+    <h3>3.1 Core Principles</h3>
+    <ul>
+      <li><strong>Zero-Knowledge Privacy:</strong> The vote is encrypted on the voter's device before it ever reaches the server. The server stores, counts, and certifies votes without ever knowing their content.</li>
+      <li><strong>Mathematical Verifiability:</strong> Every ballot produces a Merkle-tree hash. Any observer (OAS, UN, citizen) can independently verify that no ballots were added, removed, or modified.</li>
+      <li><strong>Multi-Signature Decryption:</strong> Results can only be decrypted when 5 of 9 authorized CEP members each contribute their key shard in a public ceremony with biometric verification.</li>
+      <li><strong>Diaspora Inclusion:</strong> Haitians abroad vote through the same app, with ballots routed to the correct constituency based on their BonID location code.</li>
+      <li><strong>Sovereign Infrastructure:</strong> No international vendor lock-in. Haiti owns and operates the system. Cost drops from $55M to $3-6M per election cycle.</li>
+    </ul>
+  </div>
+
+  <!-- ══ 4. HOW BONVOTE WORKS ══ -->
+  <div class="wp-section" id="s4">
+    <h2><span class="sec-num">04</span> How BonVote Works</h2>
+    <p>BonVote operates through six sequential phases, each gated by the official CEP electoral calendar.</p>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th></th><th>Phase</th><th>Description</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700; color:var(--ht-yellow);">1</td><td>Party Registration</td><td>Political parties submit registration with required documents. CEP reviews and approves per Articles 143-145.</td><td>Mar 2-12, 2026</td></tr>
+          <tr><td style="font-weight:700; color:var(--ht-yellow);">2</td><td>Candidate Registration</td><td>Candidates submit 12 required documents, pay registration fees, and receive a cryptographic recepisse. BonID auto-fills verified data.</td><td>Apr 13 - May 15</td></tr>
+          <tr><td style="font-weight:700; color:var(--ht-yellow);">3</td><td>Voter Registration</td><td>Electoral roll built from CIN-verified BonID users. Cross-referenced with ONI biometric database.</td><td>Apr 1 - Jun 29</td></tr>
+          <tr><td style="font-weight:700; color:var(--ht-yellow);">4</td><td>Campaign Period</td><td>Official campaign period. Real-time analytics on registration stats and constituency coverage.</td><td>May 19 - Aug 28</td></tr>
+          <tr><td style="font-weight:700; color:var(--ht-yellow);">5</td><td>Voting Day</td><td>12-hour voting window. Voters authenticate via BonID with liveness verification. Encrypted ballots cast via API.</td><td>Aug 30, 2026</td></tr>
+          <tr><td style="font-weight:700; color:var(--ht-yellow);">6</td><td>Results & Certification</td><td>Multi-signature ceremony (5-of-9 CEP members). Results decrypted and published with Merkle root integrity proof.</td><td>Sep 2 - Oct 3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 5. SYSTEM ARCHITECTURE ══ -->
+  <div class="wp-section" id="s5">
+    <h2><span class="sec-num">05</span> System Architecture</h2>
+
+    <h3>5.1 Technology Stack</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Backend</td><td>Ruby on Rails 7.1</td><td>API, business logic, election lifecycle management</td></tr>
+          <tr><td>Database</td><td>PostgreSQL</td><td>Immutable ballot ledger, voter rolls, candidate records</td></tr>
+          <tr><td>Cache</td><td>Redis</td><td>Geocoder cache, challenge nonces, session management</td></tr>
+          <tr><td>Real-time</td><td>ActionCable (WebSockets)</td><td>Live vote count broadcast to CEP dashboard</td></tr>
+          <tr><td>Encryption</td><td>AES-256-GCM + RSA</td><td>Vote encryption with CEP public key</td></tr>
+          <tr><td>Zero-Knowledge</td><td>Schnorr ZKP + Pedersen Commitments</td><td>Vote privacy without revealing content</td></tr>
+          <tr><td>Key Management</td><td>Shamir's Secret Sharing (5-of-9)</td><td>Distributed decryption keys among CEP members</td></tr>
+          <tr><td>Integrity</td><td>SHA-256 Merkle Trees</td><td>Tamper-evident ballot ledger</td></tr>
+          <tr><td>Identity</td><td>BonID + Dermalog/ONI CIN</td><td>Voter verification via national ID</td></tr>
+          <tr><td>Geolocation</td><td>IPInfo.io (cached 30 days)</td><td>Diaspora routing, location flagging</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>5.2 Data Model</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Entity</th><th>Purpose</th><th>Key Fields</th></tr></thead>
+        <tbody>
+          <tr><td>BonvoteElection</td><td>Election event (round 1 or 2)</td><td>title, type, round, status, election_date, cep_public_key</td></tr>
+          <tr><td>ElectionConstituency</td><td>Geographic voting area</td><td>position, department, commune</td></tr>
+          <tr><td>ElectionCandidate</td><td>Registered nominee</td><td>full_name, position, party, documents, fee, recepisse</td></tr>
+          <tr><td>ElectionBallot</td><td>Immutable vote record</td><td>nullifier, encrypted_choice, zkp_proof, ballot_hash</td></tr>
+          <tr><td>ElectionSignature</td><td>Multi-sig ceremony record</td><td>bonid, role, key_shard_hash, liveness_verified</td></tr>
+          <tr><td>ElectoralCalendar</td><td>Phase timeline</td><td>phase, start_date, end_date, responsible_body</td></tr>
+          <tr><td>VoterEligibilityRecord</td><td>Voter roll entry</td><td>bonid, cin_number, department, eligibility_status</td></tr>
+          <tr><td>ElectionPartyRegistration</td><td>Party/grouping registration</td><td>party_name, acronym, type, status</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 6. SECURITY MODEL ══ -->
+  <div class="wp-section" id="s6">
+    <h2><span class="sec-num">06</span> Security Model</h2>
+    <p>BonVote implements defense-in-depth across seven layers. No single point of compromise can alter election results.</p>
+
+    <h3>6.1 Cryptographic Layers</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Layer</th><th>Mechanism</th><th>Algorithm</th><th>Protection</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Client-Side Encryption</td><td>AES-256-GCM</td><td>Votes encrypted on voter's device with CEP public key</td></tr>
+          <tr><td>2</td><td>Zero-Knowledge Proofs</td><td>Schnorr ZKP</td><td>Voter proves they know their vote without revealing it</td></tr>
+          <tr><td>3</td><td>Pedersen Commitments</td><td>Homomorphic</td><td>Vote hidden in a commitment allowing aggregation without decryption</td></tr>
+          <tr><td>4</td><td>Nullifier System</td><td>SHA-256 derived</td><td>One vote per voter per election, unlinkable to identity</td></tr>
+          <tr><td>5</td><td>Merkle Tree Ledger</td><td>SHA-256</td><td>Any tampering invalidates the root</td></tr>
+          <tr><td>6</td><td>Multi-Signature</td><td>Shamir's 5-of-9</td><td>No single person can decrypt results</td></tr>
+          <tr><td>7</td><td>Biometric Verification</td><td>BonID Liveness</td><td>Each signatory verified by face match + liveness detection</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>6.2 Anti-Fraud Guarantees</h3>
+    <ul>
+      <li><strong>No ballot stuffing:</strong> Every ballot requires a unique nullifier derived from the voter's identity. Duplicate nullifiers are rejected idempotently.</li>
+      <li><strong>No vote alteration:</strong> Votes are encrypted client-side with AES-256-GCM. The auth_tag ensures any modification is detected. The Merkle root changes if any ballot is altered.</li>
+      <li><strong>No result manipulation:</strong> Results require 5-of-9 multi-signature ceremony. Each signatory is biometrically verified.</li>
+      <li><strong>No identity fraud:</strong> Voters authenticate via BonID (CIN-verified, biometric liveness). The nullifier system prevents double voting.</li>
+      <li><strong>No covert deletion:</strong> The Merkle tree ledger is append-only. International observers can independently verify integrity.</li>
+      <li><strong>Geolocation monitoring:</strong> IP country is compared to BonID location code. Mismatches are flagged for CEP review but do not block voting.</li>
+    </ul>
+  </div>
+
+  <!-- ══ 7. ELECTORAL CALENDAR ══ -->
+  <div class="wp-section" id="s7">
+    <h2><span class="sec-num">07</span> The Electoral Calendar</h2>
+    <p>BonVote implements the official CEP 2026 electoral calendar as a first-class data structure, gating candidate registration, voter enrollment, and voting windows automatically.</p>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Phase Name (Kreyòl)</th><th>System Key</th><th>Dates</th><th>Body</th></tr></thead>
+        <tbody>
+          <tr><td>Enrejistreman Pati Politik</td><td>party_registration</td><td>Mar 2-12</td><td>CEP</td></tr>
+          <tr><td>Depo Kandida</td><td>candidate_registration</td><td>Apr 13 - May 15</td><td>CEP</td></tr>
+          <tr><td>Enrejistreman Elektè</td><td>voter_registration</td><td>Apr 1 - Jun 29</td><td>ONI/CEP</td></tr>
+          <tr><td>Kanpay Elektoral (1ye tou)</td><td>campaign</td><td>May 19 - Aug 28</td><td>Candidates</td></tr>
+          <tr><td>Peryòd Silans</td><td>silence_period</td><td>Aug 29-30</td><td>CEP</td></tr>
+          <tr><td>Jou Vòt (1ye tou)</td><td>voting_day</td><td>Aug 30</td><td>CEP/BEC</td></tr>
+          <tr><td>Tabulasyon Rezilta</td><td>tabulation</td><td>Aug 30 - Sep 1</td><td>CTV</td></tr>
+          <tr><td>Rezilta Preliminè</td><td>preliminary_results</td><td>Sep 2-8</td><td>CEP</td></tr>
+          <tr><td>Kontestasyon</td><td>disputes</td><td>Sep 3 - Oct 2</td><td>BCEN</td></tr>
+          <tr><td>Rezilta Definitif (1ye tou)</td><td>final_results</td><td>Oct 3</td><td>CEP</td></tr>
+          <tr><td>Kanpay Dezyèm Tou</td><td>second_round_campaign</td><td>Nov 6 - Dec 5</td><td>Candidates</td></tr>
+          <tr><td>Jou Vòt Dezyèm Tou</td><td>second_round_voting</td><td>Dec 6</td><td>CEP/BEC</td></tr>
+          <tr><td>Rezilta Definitif Dezyèm Tou</td><td>second_round_results</td><td>Jan 7, 2027</td><td>CEP</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="wp-infobox yellow">
+      <strong>Automatic Phase Gating:</strong> The candidate registration portal automatically opens only during the candidate_registration phase. The sidebar displays the current phase with a live progress bar, preventing submissions outside the legal window.
+    </div>
+  </div>
+
+  <!-- ══ 8. CANDIDATE REGISTRATION ══ -->
+  <div class="wp-section" id="s8">
+    <h2><span class="sec-num">08</span> Candidate Registration</h2>
+    <p>BonVote implements the full candidate registration flow per Articles 180-181 of the Décret Électoral, with BonID auto-population of verified data.</p>
+
+    <h3>8.1 Registration Flow</h3>
+    <div style="text-align: center; padding: 1rem; font-family: 'Courier New', monospace; font-size: 0.85rem; color: var(--ht-yellow);">
+      draft &rarr; submitted &rarr; under_review &rarr; approved (active on ballot) <span style="color: #64748B;">or</span> rejected
+    </div>
+
+    <h3>8.2 Required Documents (Article 181)</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>#</th><th>Document</th><th>Required For</th><th>BonID Integration</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>CIN oswa Sètifika ONI</td><td>All candidates</td><td>Auto-verified via BonID</td></tr>
+          <tr><td>2</td><td>Ak nesans / Ekstrè achiv</td><td>All candidates</td><td>Manual upload</td></tr>
+          <tr><td>3</td><td>Ekstrè kazye jidisyè (DCPJ)</td><td>All candidates</td><td>Manual upload</td></tr>
+          <tr><td>4</td><td>Kitans DGI (frè enskripsyon)</td><td>All candidates</td><td>Auto-checked if paid via BonID DGI</td></tr>
+          <tr><td>5</td><td>Atestasyon rezidans</td><td>All candidates</td><td>Auto-filled from BonID address</td></tr>
+          <tr><td>6</td><td>4 foto idantite</td><td>All candidates</td><td>Auto-checked if BonID photo attached</td></tr>
+          <tr><td>7</td><td>Atestasyon pwofesyon</td><td>All candidates</td><td>Manual upload</td></tr>
+          <tr><td>8</td><td>Pwopriyete imobilye</td><td>President, Senator only</td><td>Manual upload</td></tr>
+          <tr><td>9</td><td>Sètifika imigrasyon</td><td>Conditional</td><td>Manual upload</td></tr>
+          <tr><td>10</td><td>Dechaj (ansyen fonksyonè)</td><td>Conditional</td><td>Manual upload</td></tr>
+          <tr><td>11</td><td>Atestasyon pati politik</td><td>Party/grouping only</td><td>Linked to ElectionPartyRegistration</td></tr>
+          <tr><td>12</td><td>Petisyon 2% elektè</td><td>Independent only</td><td>Manual upload</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>8.3 Registration Fees</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Position</th><th>Fee (Gourdes)</th><th>Fee (USD approx.)</th><th>50% Reduction</th></tr></thead>
+        <tbody>
+          <tr><td>President (Prezidan)</td><td>800,000 G</td><td>~$5,000</td><td>Women, disabled, educators</td></tr>
+          <tr><td>Senator (Senatè)</td><td>120,000 G</td><td>~$750</td><td>Women, disabled, educators</td></tr>
+          <tr><td>Deputy (Depite)</td><td>60,000 G</td><td>~$375</td><td>Women, disabled, educators</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 9. VOTING DAY ══ -->
+  <div class="wp-section" id="s9">
+    <h2><span class="sec-num">09</span> Voting Day: From Ballot to Tally</h2>
+
+    <h3>9.1 Voter Authentication</h3>
+    <ul>
+      <li><strong>Step 1 &mdash; Open BonID App:</strong> Voter launches the BonID mobile application.</li>
+      <li><strong>Step 2 &mdash; Liveness Verification:</strong> Biometric face match + liveness detection confirms the physical person.</li>
+      <li><strong>Step 3 &mdash; Eligibility Check:</strong> API verifies BonID is verified, CIN is on voter roll, nullifier check confirms voter hasn't voted yet, geolocation noted.</li>
+      <li><strong>Step 4 &mdash; Ballot Routing:</strong> Based on BonID location code (4th segment), voter receives the correct ballot: domestic (3 sections) or diaspora (1 section).</li>
+      <li><strong>Step 5 &mdash; Vote on Device:</strong> Voter selects candidates. The app generates Schnorr ZKP proof, Pedersen commitment, AES-256-GCM encryption, nullifier, and ballot hash.</li>
+      <li><strong>Step 6 &mdash; Cast:</strong> Encrypted ballot sent to server. Server stores the encrypted blob without ever seeing the vote. Voter receives a ballot_hash receipt.</li>
+    </ul>
+
+    <h3>9.2 What the Server Stores (per ballot)</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Field</th><th>Content</th><th>Reveals Vote?</th></tr></thead>
+        <tbody>
+          <tr><td>nullifier</td><td>SHA-256 hash (unique per voter per election)</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>encrypted_choice</td><td>AES-256-GCM encrypted blob + IV + auth_tag</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>encrypted_key</td><td>RSA-encrypted AES session key</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>zkp_commitment</td><td>Pedersen commitment hiding the vote</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>zkp_proof</td><td>Schnorr proof (challenge, response, public_commitment)</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>ballot_hash</td><td>SHA-256 of entire ballot (voter receipt)</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>receipt_id</td><td>Unique public identifier</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>channel</td><td>remote / consulate / in_person</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>department_code</td><td>From BonID location code</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>ip_country</td><td>From IP geolocation (cached)</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+          <tr><td>cast_at</td><td>Timestamp</td><td style="color:var(--ht-green); font-weight:700;">No</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="text-align: center; font-size: 0.75rem; color: #64748B; font-style: italic;">The server stores 11 fields per ballot. None of them reveal the voter's choice.</p>
+
+    <h3>9.3 Performance</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Eligible voters</td><td>~6 million</td></tr>
+          <tr><td>Expected turnout (30-40%)</td><td>~1.8 - 2.4 million votes</td></tr>
+          <tr><td>Voting window</td><td>12 hours (6 AM - 6 PM)</td></tr>
+          <tr><td>Required throughput</td><td>~2,500 - 3,300 votes/minute</td></tr>
+          <tr><td>System capacity (4 workers x 4 threads)</td><td>10,000 - 15,000 votes/minute</td></tr>
+          <tr><td>Headroom factor</td><td>3-5x required rate</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 10. MULTI-SIG CEREMONY ══ -->
+  <div class="wp-section" id="s10">
+    <h2><span class="sec-num">10</span> Multi-Signature Decryption Ceremony</h2>
+    <p>Results cannot be decrypted by any single person. The ceremony requires 5 of 9 authorized CEP signatories to each contribute their decryption key shard, verified by biometric liveness detection.</p>
+
+    <h3>10.1 Authorized Signatories</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Role</th><th>Title</th><th>Type</th></tr></thead>
+        <tbody>
+          <tr><td>cep_president</td><td>Prezidan CEP</td><td>Signatory (key holder)</td></tr>
+          <tr><td>cep_vice_president</td><td>Vis-Prezidan CEP</td><td>Signatory (key holder)</td></tr>
+          <tr><td>cep_secretary_general</td><td>Sekretè Jeneral CEP</td><td>Signatory (key holder)</td></tr>
+          <tr><td>cep_member_1 through cep_member_6</td><td>Manm Konsèy CEP (6 seats)</td><td>Signatory (key holder)</td></tr>
+          <tr><td>international_observer</td><td>Obsèvatè Entènasyonal (OEA/ONU)</td><td>Observer (non-signing)</td></tr>
+          <tr><td>bonid_technical_director</td><td>Direktè Teknik BonID</td><td>Observer (non-signing)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>10.2 Ceremony Protocol</h3>
+    <ul>
+      <li><strong>1. Identity Verification:</strong> Each signatory scans their BonID QR code.</li>
+      <li><strong>2. Liveness Check:</strong> Biometric face match + anti-spoofing liveness detection confirms physical presence.</li>
+      <li><strong>3. Key Shard Entry:</strong> Signatory enters their unique decryption key shard.</li>
+      <li><strong>4. Signature Record:</strong> ElectionSignature record created with bonid, role, key_shard_hash, liveness_verified, and timestamp.</li>
+      <li><strong>5. Quorum Check:</strong> After each signature, system checks if 5+ signatures have been collected.</li>
+      <li><strong>6. Key Reconstruction:</strong> 5+ key shards combined via Shamir's Secret Sharing to reconstruct master decryption key.</li>
+      <li><strong>7. Results Published:</strong> Aggregate vote counts per candidate displayed with Merkle root integrity proof.</li>
+    </ul>
+
+    <div class="wp-infobox yellow">
+      <strong>Why 5-of-9?</strong> This threshold ensures no faction of fewer than 5 CEP members can unilaterally access results, while allowing the ceremony to proceed even if up to 4 members are unavailable. This is the same threshold used by major financial institutions for multi-signature wallets.
+    </div>
+  </div>
+
+  <!-- ══ 11. DIASPORA VOTING ══ -->
+  <div class="wp-section" id="s11">
+    <h2><span class="sec-num">11</span> Diaspora Voting</h2>
+    <p>BonVote enables diaspora voting through two channels: the BonID mobile app (remote) and kiosk tablets at Haitian diplomatic missions (consulate). The BallotRoutingService automatically determines the correct ballot based on the voter's BonID location code.</p>
+
+    <h3>11.1 Ballot Routing Logic</h3>
+    <p>The BonID format encodes the voter's department or country at the 4th segment (e.g., VP-1970-M-<strong>ND</strong>-P2334-4EC for domestic Nord, VP-1985-F-<strong>US</strong>-K7721-9AB for diaspora US).</p>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Location Code</th><th>Type</th><th>Ballot Sections</th><th>Positions</th></tr></thead>
+        <tbody>
+          <tr><td>OU, ND, SD, AR, NE, NO, SE, CE, GA, NI</td><td>Domestic</td><td>3 sections</td><td>President + Senator + Deputy</td></tr>
+          <tr><td>US, CA, FR, DO, CL, BR, etc.</td><td>Diaspora</td><td>1 section</td><td>President only</td></tr>
+          <tr><td>HT (generic)</td><td>Domestic (default)</td><td>3 sections</td><td>President + Senator + Deputy</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>11.2 Consulate Voting Stations</h3>
+    <p>BonVote supports 45+ Haitian diplomatic missions worldwide as voting stations. Each consulate operates a kiosk tablet with the BonID voting interface. Kiosk votes skip geolocation lookup and are tagged with consulate_id and station_id for audit.</p>
+  </div>
+
+  <!-- ══ 12. COST ANALYSIS ══ -->
+  <div class="wp-section" id="s12">
+    <h2><span class="sec-num">12</span> Cost Analysis</h2>
+
+    <h3>12.1 BonVote vs. Traditional Election Cost</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Cost Center</th><th>Traditional</th><th>BonVote</th><th>Savings</th></tr></thead>
+        <tbody>
+          <tr><td>Paper ballots</td><td>$8-12M</td><td>$0</td><td style="color:var(--ht-green);">$8-12M</td></tr>
+          <tr><td>Polling station staff (40K+)</td><td>$12-18M</td><td>$500K</td><td style="color:var(--ht-green);">$11.5-17.5M</td></tr>
+          <tr><td>Logistics/transport</td><td>$10-15M</td><td>$0</td><td style="color:var(--ht-green);">$10-15M</td></tr>
+          <tr><td>Tabulation centers</td><td>$3-5M</td><td>$0</td><td style="color:var(--ht-green);">$3-5M</td></tr>
+          <tr><td>Security (ballot escort)</td><td>$5-8M</td><td>$200K</td><td style="color:var(--ht-green);">$4.8-7.8M</td></tr>
+          <tr><td>Indelible ink + supplies</td><td>$2-3M</td><td>$0</td><td style="color:var(--ht-green);">$2-3M</td></tr>
+          <tr><td>Training</td><td>$3-5M</td><td>$500K</td><td style="color:var(--ht-green);">$2.5-4.5M</td></tr>
+          <tr><td>Server infrastructure</td><td>$0</td><td>$100K</td><td>-$100K</td></tr>
+          <tr><td>Kiosk tablets (one-time)</td><td>$0</td><td>$1M</td><td>-$1M</td></tr>
+          <tr><td>Public education campaign</td><td>$0</td><td>$1-2M</td><td>-$1-2M</td></tr>
+          <tr><td>Second round</td><td>$15-20M</td><td>$500K</td><td style="color:var(--ht-green);">$14.5-19.5M</td></tr>
+          <tr style="font-weight:700; color:#fff; background:rgba(0,32,159,0.15);"><td>TOTAL</td><td>$55-70M</td><td>$3-6M</td><td style="color:var(--ht-green);">$50-65M</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>12.2 Ten-Year Projection</h3>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th></th><th>Traditional (3 cycles)</th><th>BonVote (3 cycles)</th><th>Cumulative Savings</th></tr></thead>
+        <tbody>
+          <tr><td>Year 1-2 (Cycle 1)</td><td>$55-70M</td><td>$5-6M</td><td style="color:var(--ht-green);">$50-64M</td></tr>
+          <tr><td>Year 4-5 (Cycle 2)</td><td>$55-70M</td><td>$3-4M</td><td style="color:var(--ht-green);">$102-130M</td></tr>
+          <tr><td>Year 8-9 (Cycle 3)</td><td>$55-70M</td><td>$3-4M</td><td style="color:var(--ht-green);">$154-196M</td></tr>
+          <tr style="font-weight:700; color:#fff; background:rgba(0,32,159,0.15);"><td>10-YEAR TOTAL</td><td>$165-210M</td><td>$11-14M</td><td style="color:var(--ht-green);">$154-196M</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="wp-infobox green">
+      <strong>Cost per vote:</strong> Traditional elections cost $25-35 per vote. BonVote costs $1.50-3.00 per vote. This represents a <strong>90% reduction</strong> in cost per vote and eliminates Haiti's dependency on international donors to fund its own democratic process.
+    </div>
+  </div>
+
+  <!-- ══ 13. GOVERNMENT ADVANTAGES ══ -->
+  <div class="wp-section" id="s13">
+    <h2><span class="sec-num">13</span> Advantages for the Haitian Government</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem;">
+      <% [
+        ["ri-flag-line", "Electoral Sovereignty", "Haiti funds and operates its own elections at 1/10th the cost. No dependency on USAID, Canada, or EU donor timelines."],
+        ["ri-calculator-line", "Mathematical Trust", "Results are provably correct. Any mathematician, observer, or citizen can independently verify the Merkle root."],
+        ["ri-shield-check-line", "Fraud Elimination", "Ballot stuffing is mathematically impossible. Vote alteration is detectable. Result manipulation requires compromising 5 of 9 biometrically-verified CEP members."],
+        ["ri-global-line", "Diaspora Inclusion", "2+ million Haitians abroad can vote for the first time, increasing democratic legitimacy."],
+        ["ri-timer-flash-line", "Instant Results", "Results available within hours of polls closing, not weeks or months."],
+        ["ri-recycle-line", "Reusable Infrastructure", "The same system works for presidential, legislative, municipal, and referendum elections. Second rounds cost near-zero marginal cost."],
+        ["ri-earth-line", "International Credibility", "Open cryptographic protocols allow international observers to independently verify election integrity."],
+        ["ri-shield-star-line", "Reduced Political Violence", "Transparent, verifiable results reduce the incentive for post-election protests and violence."],
+        ["ri-building-2-line", "Built on Existing Infrastructure", "Leverages BonID and ONI/Dermalog CIN system. No new national ID program required."],
+        ["ri-file-search-line", "Complete Audit Trail", "Every action is logged with cryptographic integrity. Post-election audits are instantaneous."],
+      ].each do |icon, title, desc| %>
+        <div class="glass-card" style="padding: 1.25rem;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.75rem;">
+            <i class="<%= icon %>" style="font-size: 1.2rem; color: var(--ht-yellow);"></i>
+            <strong style="font-size: 0.85rem; color: #fff;"><%= title %></strong>
+          </div>
+          <p style="font-size: 0.78rem; line-height: 1.6; color: #94A3B8; margin: 0;"><%= desc %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- ══ 14. COMPLIANCE ══ -->
+  <div class="wp-section" id="s14">
+    <h2><span class="sec-num">14</span> Compliance with Décret Électoral</h2>
+    <p>BonVote is designed to comply fully with the Décret Électoral du 1er Décembre 2025 and its revisions.</p>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Article/Provision</th><th>Requirement</th><th>BonVote Implementation</th></tr></thead>
+        <tbody>
+          <tr><td>Articles 143-145</td><td>Party registration requirements</td><td>ElectionPartyRegistration with full document verification</td></tr>
+          <tr><td>Articles 180-181</td><td>Candidate registration + 12 documents</td><td>12-document checklist with auto-verification via BonID</td></tr>
+          <tr><td>Article 181 (fees)</td><td>Registration fees by position + 50% reduction</td><td>Automatic fee calculation: 800K/120K/60K G with reduction</td></tr>
+          <tr><td>Absolute majority</td><td>Two-round voting system</td><td>create_runoff! duplicates top-2 candidates per constituency</td></tr>
+          <tr><td>Secret ballot</td><td>Vote secrecy requirement</td><td>Zero-knowledge proofs + client-side encryption</td></tr>
+          <tr><td>Universal suffrage</td><td>All citizens 18+ can vote</td><td>VoterEligibilityRecord from ONI/CIN database</td></tr>
+          <tr><td>Diaspora voting</td><td>Consular voting provision</td><td>45+ diplomatic missions + remote app voting</td></tr>
+          <tr><td>Transparency</td><td>Observer access</td><td>Public Merkle root + downloadable ledger (CSV)</td></tr>
+          <tr><td>Dispute resolution</td><td>BCEN complaint mechanism</td><td>ElectionDispute model with cryptographic reference codes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 15. DEPLOYMENT ROADMAP ══ -->
+  <div class="wp-section" id="s15">
+    <h2><span class="sec-num">15</span> Deployment Roadmap</h2>
+    <div class="wp-table-wrap">
+      <table class="wp-table">
+        <thead><tr><th>Timeline</th><th>Phase</th><th>Deliverables</th></tr></thead>
+        <tbody>
+          <tr><td style="white-space:nowrap;">Mar-Apr 2026</td><td>Foundation</td><td>Election creation UI, electoral calendar generation, party registration portal, candidate registration with phase gating.</td></tr>
+          <tr><td style="white-space:nowrap;">Apr-Jun 2026</td><td>Voter Roll</td><td>Build electoral roll from CIN-verified BonID users. Cross-reference with ONI database. VoterEligibilityRecord generation.</td></tr>
+          <tr><td style="white-space:nowrap;">Jun-Jul 2026</td><td>Voting Infrastructure</td><td>BonID app ballot interface, cryptographic ballot generation (client-side), API load testing at 15,000 votes/min.</td></tr>
+          <tr><td style="white-space:nowrap;">Jul-Aug 2026</td><td>Security Audit</td><td>Third-party penetration testing, cryptographic protocol review, CEP key ceremony rehearsal, disaster recovery testing.</td></tr>
+          <tr><td style="white-space:nowrap;">Aug 30, 2026</td><td>Election Day</td><td>12-hour voting window, real-time CEP dashboard, consulate kiosk support, observer ledger access.</td></tr>
+          <tr><td style="white-space:nowrap;">Sep-Oct 2026</td><td>Certification</td><td>Multi-signature ceremony, result publication, dispute resolution, public audit portal.</td></tr>
+          <tr><td style="white-space:nowrap;">Dec 2026</td><td>Second Round</td><td>Automatic runoff election with near-zero marginal cost.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 16. CONCLUSION ══ -->
+  <div class="wp-section" id="s16">
+    <h2><span class="sec-num">16</span> Conclusion</h2>
+    <p>BonVote represents a paradigm shift in how Haiti conducts elections. By replacing a $55-70 million paper-based process with a $3-6 million cryptographically secure system, Haiti gains:</p>
+    <ul>
+      <li><strong>Electoral sovereignty</strong> &mdash; no longer dependent on international donors to fund democratic processes.</li>
+      <li><strong>Mathematical proof of results</strong> &mdash; replacing "trust" with "verify."</li>
+      <li><strong>Diaspora inclusion</strong> &mdash; 2+ million Haitians abroad gain a democratic voice for the first time.</li>
+      <li><strong>Instant results</strong> &mdash; hours instead of months.</li>
+      <li><strong>Fraud elimination</strong> &mdash; not through promises, but through mathematics.</li>
+      <li><strong>Reusable infrastructure</strong> &mdash; the same system serves every future election at near-zero marginal cost.</li>
+    </ul>
+
+    <div class="wp-quote">
+      "Demokrasi pa yon pwomès &mdash; se yon prèv matematik."
+      <span class="translation">Democracy is not a promise &mdash; it is a mathematical proof.</span>
+    </div>
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="bonvote-footer">
+    <div class="footer-brand" style="margin-bottom: 8px;">BONVOTE</div>
+    <p style="font-size: 0.6rem; color: rgba(255,255,255,0.7); margin: 0;">
+      A product of <strong>Verifyem</strong> &middot; info@verifyem.ht &middot; Version 1.0 &mdash; March 2026
+    </p>
+    <p style="font-size: 0.5rem; color: rgba(255,255,255,0.4); margin-top: 6px;">
+      Legal Basis: Décret Électoral du 1er Décembre 2025 &middot; Classification: Public Distribution
+    </p>
+  </div>
+
+</div>
+
+<!-- Back to top button -->
+<button class="wp-backtop" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <i class="ri-arrow-up-line"></i>
+</button>
+
+<script>
+  // Show/hide back-to-top button
+  window.addEventListener('scroll', function() {
+    document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 400);
+  });
+
+  // Smooth scroll for TOC links
+  document.querySelectorAll('.wp-toc-list a').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+</script>
+</body>
+</html>

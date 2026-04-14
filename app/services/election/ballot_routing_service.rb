@@ -139,19 +139,28 @@ module Election
       }
     end
 
-    # Load candidates for a position in an election
-    # TODO: Replace with ElectionCandidate model queries
+    # Load candidates for a position in an election.
     #
     # @param election_id [String]
     # @param position [String] "president", "senator", "deputy"
     # @param department [String] Department code (for senator)
     # @param commune_id [Integer] Commune ID (for deputy — circumscription level)
     def self.load_candidates(election_id, position, department = nil, commune_id = nil)
-      # Placeholder — will be populated by CEP data import
-      # In production:
-      #   ElectionCandidate.where(election_id:, position:)
-      #     .where(department: department) if senator
-      #     .where(commune_id: commune_id) if deputy
+      scope = ElectionCandidate.where(election_id: election_id, position: position, status: "active")
+      scope = scope.where(department_code: department) if department.present?
+      scope = scope.where(commune_id: commune_id) if commune_id.present?
+      scope.order(:ballot_number).map do |c|
+        {
+          id: c.id,
+          name: c.full_name,
+          party: c.party_name,
+          party_acronym: c.party_acronym,
+          photo_url: c.photo_url,
+          ballot_number: c.ballot_number
+        }
+      end
+    rescue NameError
+      # Table not yet migrated
       []
     end
   end

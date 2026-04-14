@@ -1,0 +1,152 @@
+<%# app/views/partner_portal/electoral_calendar/index.html.erb %>
+<%# Electoral Calendar — CEP Timeline View %>
+
+<div class="container-fluid py-4">
+
+  <%# Header %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-calendar-event-line me-2 pp-text-brand"></i>Kalandriye Elektoral
+      </h4>
+      <p class="pp-page-subtitle">
+        <% if @election %>
+          <%= @election.title %> — Round <%= @election.round %>
+        <% else %>
+          Pa gen eleksyon aktif
+        <% end %>
+      </p>
+    </div>
+    <% if @current_phase %>
+      <div class="badge rounded-pill px-3 py-2 pp-bg-brand pp-text-xs" style="color: white;">
+        <i class="ri-time-line me-1"></i>Faz aktyèl: <%= @current_phase.phase_label %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @phases.any? %>
+
+    <%# Timeline %>
+    <div class="pp-card card">
+      <div class="card-body p-4">
+
+        <div class="electoral-timeline">
+          <% @phases.each_with_index do |phase, i| %>
+            <%
+              is_active = phase.active?
+              is_past = phase.past?
+
+              # Map phase state to token classes
+              dot_class = is_active ? "pp-bg-brand" : ""
+              border_color_class = if is_active
+                "pp-text-brand"
+              elsif is_past
+                "pp-text-success"
+              else
+                "pp-text-muted"
+              end
+            %>
+
+            <div class="d-flex mb-3">
+              <%# Timeline dot + line %>
+              <div class="d-flex flex-column align-items-center me-3" style="min-width: 32px;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width: 32px; height: 32px;
+                            background: <%= is_active ? 'var(--portal-brand)' : 'white' %>;
+                            border: 2px solid <%= is_active ? 'var(--portal-brand)' : is_past ? 'var(--status-success)' : 'var(--slate-400)' %>;
+                            flex-shrink: 0;">
+                  <% if is_past %>
+                    <i class="ri-check-line pp-text-success" style="font-size: 0.9rem;"></i>
+                  <% elsif is_active %>
+                    <i class="ri-play-fill" style="color: white; font-size: 0.75rem;"></i>
+                  <% else %>
+                    <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--slate-400);"></span>
+                  <% end %>
+                </div>
+                <% unless i == @phases.size - 1 %>
+                  <div style="width: 2px; flex: 1; min-height: 16px;
+                              background: <%= is_past ? 'var(--status-success)' : is_active ? 'var(--portal-brand)' : 'var(--slate-400)' %>;
+                              opacity: 0.3;"></div>
+                <% end %>
+              </div>
+
+              <%# Phase card %>
+              <div class="flex-grow-1 rounded-3 p-3 mb-1"
+                   style="background: <%= is_active ? 'var(--portal-brand-light)' : is_past ? 'var(--status-success-bg)' : 'var(--slate-50)' %>;
+                          border-left: 3px solid <%= is_active ? 'var(--portal-brand)' : is_past ? 'var(--status-success)' : 'var(--slate-400)' %>;">
+                <div class="d-flex align-items-start justify-content-between">
+                  <div>
+                    <h6 class="fw-bold mb-1 pp-text-base pp-text-primary"><%= phase.name %></h6>
+                    <div class="mb-1 pp-text-xs pp-text-secondary">
+                      <i class="ri-calendar-line me-1"></i>
+                      <%= l(phase.start_date, format: :long) %> — <%= l(phase.end_date, format: :long) %>
+                      <span class="ms-2 pp-text-muted">(<%= phase.duration_days %> jou)</span>
+                    </div>
+                    <% if phase.description.present? %>
+                      <p class="mb-1 pp-text-secondary pp-text-sm" style="line-height: 1.5;"><%= phase.description %></p>
+                    <% end %>
+                    <% if phase.responsible_body.present? %>
+                      <span class="badge bg-light text-secondary border pp-badge">
+                        <i class="ri-government-line me-1"></i><%= phase.responsible_body_label %>
+                      </span>
+                    <% end %>
+                  </div>
+                  <div class="text-end ms-3" style="min-width: 80px;">
+                    <% if is_active %>
+                      <span class="badge rounded-pill px-2 py-1 pp-bg-brand pp-badge" style="color: white;">
+                        <i class="ri-play-circle-line me-1"></i>Aktif
+                      </span>
+                      <div class="mt-2">
+                        <div class="progress" style="height: 4px; width: 60px;">
+                          <div class="progress-bar" style="width: <%= phase.progress_percentage %>%; background: var(--portal-brand);"></div>
+                        </div>
+                        <div class="pp-text-muted mt-1 pp-text-3xs"><%= phase.progress_percentage %>%</div>
+                      </div>
+                    <% elsif is_past %>
+                      <span class="badge rounded-pill bg-success px-2 py-1 pp-badge">
+                        <i class="ri-check-line me-1"></i>Fini
+                      </span>
+                    <% else %>
+                      <span class="badge rounded-pill bg-light text-muted border px-2 py-1 pp-badge">
+                        <i class="ri-time-line me-1"></i>Annatant
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+
+    <%# Phase Summary Cards %>
+    <div class="row g-3 mt-3">
+      <% [
+        ["Faz Fini", @phases.select(&:past?).count, "pp-text-success"],
+        ["Faz Aktif", @phases.select(&:active?).count, "pp-text-brand"],
+        ["Faz Annatant", @phases.select(&:upcoming?).count, "pp-text-muted"],
+        ["Total Faz", @phases.count, "pp-text-primary"],
+      ].each do |label, count, color_class| %>
+        <div class="col-md-3">
+          <div class="pp-stat-card card">
+            <div class="fw-bold display-6 <%= color_class %>"><%= count %></div>
+            <div class="pp-stat-label"><%= label %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+  <% else %>
+    <%# Empty state %>
+    <div class="pp-card card">
+      <div class="pp-empty-state">
+        <i class="ri-calendar-event-line"></i>
+        <h5>Pa gen kalandriye ankò</h5>
+        <p>Kalandriye elektoral la ap disponib lè administratè a kreye faz yo.</p>
+      </div>
+    </div>
+  <% end %>
+
+</div>

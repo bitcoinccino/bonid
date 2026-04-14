@@ -12,15 +12,18 @@
   <meta name="description" content="<%= t("bonvote.results_election_info") %>">
   <meta property="og:title" content="<%= t("bonvote.results_title") %> — Eleksyon Ayiti 2026">
   <meta property="og:description" content="<%= t("bonvote.results_election_info") %>">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Inter:wght@400;500;600&family=Orbitron:wght@600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+  <%= render "election/shared/bonvote_theme", sparkle_count: 15 %>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0B0F19; color: #fff; font-family: 'Montserrat', sans-serif; overflow-x: hidden; }
+    /* ── Results page-specific styles ── */
     body.broadcast-mode .broadcast-hide { display: none !important; }
     body.broadcast-mode { background: #000; }
-    body.broadcast-mode .main-container { padding: 1rem; max-width: 100%; }
-    .main-container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+    body.broadcast-mode .main-container { padding: 2rem; max-width: 100%; }
+    body.broadcast-mode .results-grid { grid-template-columns: 1fr; max-width: 720px; margin: 0 auto; }
+    body.broadcast-mode .results-right { position: static; }
+    body.broadcast-mode header { margin-bottom: 2.5rem; }
+    body.broadcast-mode header h1 { font-size: clamp(2.2rem, 7vw, 3.5rem); }
+    body.broadcast-mode .lock-container div:first-child { width: 160px !important; height: 160px !important; }
+    body.broadcast-mode .lock-container i { font-size: 5rem !important; }
 
     /* Two-column grid */
     .results-grid {
@@ -62,10 +65,6 @@
       100% { opacity: 1; transform: scale(1); }
     }
 
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-    @keyframes countUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-
     /* Podium */
     .podium { display: flex; align-items: flex-end; justify-content: center; gap: clamp(0.5rem, 2vw, 1.5rem); margin: 2rem 0; }
     .podium-slot { text-align: center; flex: 1; max-width: 280px; }
@@ -78,33 +77,53 @@
     .ticker-scroll { display: flex; gap: 2rem; animation: tickerScroll 30s linear infinite; white-space: nowrap; }
     @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-    .share-card { transition: transform 0.2s; cursor: pointer; }
-    .share-card:hover { transform: scale(1.03); }
-
     /* Timeline */
     .timeline-step { display: flex; gap: 1rem; margin-bottom: 1.25rem; position: relative; }
     .timeline-dot { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center;
                     justify-content: center; flex-shrink: 0; z-index: 1; }
-    .timeline-card { background: #161B28; border: 1px solid rgba(148,163,184,0.06); border-radius: 0.6rem;
-                     padding: 0.75rem 1rem; flex: 1; }
+    .timeline-card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+      border: 1px solid rgba(237,185,94,0.12);
+      border-radius: 0.6rem; padding: 0.75rem 1rem; flex: 1;
+    }
 
     @media (max-width: 900px) {
       .results-grid { grid-template-columns: 1fr; }
       .results-right { position: static; }
+      .timeline-step { gap: 0.6rem; }
+      .timeline-dot { width: 32px; height: 32px; }
+      .timeline-card { padding: 0.6rem 0.75rem; }
     }
     @media (max-width: 640px) {
       .podium { flex-direction: column; align-items: center; }
       .podium-1, .podium-2, .podium-3 { order: unset; max-width: 100%; width: 100%; }
+      .ticker-scroll { gap: 1.25rem; }
     }
     @media print { body { background: #fff !important; color: #000 !important; } .broadcast-hide { display: none !important; } }
   </style>
 </head>
 <body>
+<%= render "election/shared/bonvote_sparkles", sparkle_count: 15 %>
+<%= render "election/shared/bonvote_nav", active: "results" %>
+
+<%# ── Test Mode Banner (simulation elections only) ── %>
+<% if @test_mode %>
+  <div style="background: linear-gradient(90deg, #D97706, #B45309); padding: 10px 20px;
+              text-align: center; font-size: 0.78rem; font-weight: 700; color: #FFF;
+              letter-spacing: 0.05em; position: sticky; top: 0; z-index: 100;
+              border-bottom: 2px solid rgba(0,0,0,0.2);">
+    <i class="ri-flask-line" style="margin-right: 6px;"></i>
+    MÒD TES — PA REZILTA REYÈL
+    <span style="display: block; font-size: 0.65rem; font-weight: 500; opacity: 0.85; margin-top: 2px;">
+      Tout done sa yo se simulation sèlman. Yo pral efase apre pilòt la.
+    </span>
+  </div>
+<% end %>
 
 <div class="main-container">
 
-  <%# ── Broadcast Toggle ── %>
-  <div class="broadcast-hide" style="display: flex; justify-content: flex-end; margin-bottom: 0.75rem;">
+  <%# ── Broadcast Toggle (never hidden — must always be clickable to exit) ── %>
+  <div style="display: flex; justify-content: flex-end; margin-bottom: 0.75rem; position: relative; z-index: 50;">
     <button onclick="document.body.classList.toggle('broadcast-mode'); this.innerHTML = document.body.classList.contains('broadcast-mode') ? '<i class=ri-tv-2-line></i> <%= t("bonvote.results_broadcast_off") %>' : '<i class=ri-tv-2-line></i> <%= t("bonvote.results_broadcast_on") %>'"
             style="padding: 6px 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
                    border-radius: 2rem; color: #64748B; font-size: 0.68rem; font-weight: 600; cursor: pointer;
@@ -115,13 +134,10 @@
 
   <%# ── Language Switcher ── %>
   <div class="broadcast-hide" style="display: flex; justify-content: center; margin-bottom: 1rem;">
-    <div style="display: inline-flex; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-                border-radius: 2rem; padding: 3px;">
+    <div class="lang-switcher">
       <% %w[ht fr en].each do |lang| %>
         <a href="<%= election_public_results_path(lang: lang) %>"
-           style="padding: 5px 14px; border-radius: 2rem; font-size: 0.62rem; font-weight: 700;
-                  letter-spacing: 0.05em; text-decoration: none; font-family: 'Montserrat', sans-serif;
-                  <%= I18n.locale.to_s == lang ? 'background: #2563EB; color: #fff;' : 'color: #64748B;' %>">
+           class="lang-pill <%= 'active' if I18n.locale.to_s == lang %>">
           <%= lang.upcase %>
         </a>
       <% end %>
@@ -130,21 +146,21 @@
 
   <%# ── Official Header (Full Width) ── %>
   <header style="text-align: center; margin-bottom: 1.5rem;">
-    <div style="display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px;
-                border-radius: 50%; background: linear-gradient(135deg, #EDB95E 0%, #C8942E 100%);
-                margin-bottom: 1rem; box-shadow: 0 6px 30px rgba(237,185,94,0.3);">
-      <i class="ri-government-line" style="font-size: 2rem; color: #0B0F19;"></i>
+    <div style="margin-bottom: 1rem;">
+      <%= image_tag "haiti_flag.png", alt: "Armoiries d'Haïti",
+            style: "height: 80px; width: auto; filter: drop-shadow(0 6px 30px rgba(237,185,94,0.3));" %>
     </div>
 
-    <%# Haitian flag colors accent %>
-    <div style="display: flex; justify-content: center; gap: 0; margin-bottom: 0.75rem;">
-      <div style="width: 40px; height: 3px; background: #00209F; border-radius: 2px 0 0 2px;"></div>
-      <div style="width: 40px; height: 3px; background: #D90416; border-radius: 0 2px 2px 0;"></div>
-    </div>
+    <%# Haitian flag gradient accent %>
+    <div style="width: 80px; height: 3px; margin: 0 auto 0.75rem; border-radius: 2px;
+                background: linear-gradient(90deg, var(--ht-red) 0%, var(--ht-blue) 100%);"></div>
 
-    <div style="font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800;
-                color: #EDB95E; letter-spacing: 4px; margin-bottom: 8px;">
-      <%= t("bonvote.results_republic") %> &middot; BonID
+    <div class="section-header" style="font-size: 0.6rem; font-weight: 800;
+                letter-spacing: 4px; margin-bottom: 4px;">
+      <%= t("bonvote.results_republic") %>
+    </div>
+    <div style="font-size: 0.55rem; color: #64748B; margin-bottom: 8px;">
+      Powered by BonID
     </div>
 
     <h1 style="font-family: 'Playfair Display', Georgia, serif; font-size: clamp(1.6rem, 6vw, 2.8rem);
@@ -171,10 +187,10 @@
         </div>
       <% else %>
         <div style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 24px;
-                    background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 2rem;">
+                    background: rgba(40,167,69,0.08); border: 1px solid rgba(40,167,69,0.2); border-radius: 2rem;">
           <span style="width: 8px; height: 8px; background: #10B981; border-radius: 50%;
                        animation: blink 1.5s infinite;"></span>
-          <span style="font-size: 0.72rem; font-weight: 700; color: #10B981; text-transform: uppercase;
+          <span style="font-size: 0.72rem; font-weight: 700; color: var(--ht-green); text-transform: uppercase;
                        letter-spacing: 0.08em;">
             <%= t("bonvote.results_live") %>
           </span>
@@ -205,16 +221,16 @@
       <%# Timeline %>
       <div style="position: relative;">
         <div style="position: absolute; left: 18px; top: 0; bottom: 0; width: 2px;
-                    background: linear-gradient(180deg, #EDB95E, #2563EB, #10B981, #D90416, #7b8fff, #10B981, #EDB95E);
+                    background: linear-gradient(180deg, var(--ht-yellow), var(--ht-blue), var(--ht-green), var(--ht-red), #7b8fff, var(--ht-green), var(--ht-yellow));
                     border-radius: 1px;"></div>
 
         <% [
           { icon: "ri-user-add-line",      color: "#EDB95E", title: t("bonvote.results_step1_title"), desc: t("bonvote.results_step1_desc") },
-          { icon: "ri-smartphone-line",    color: "#2563EB", title: t("bonvote.results_step2_title"), desc: t("bonvote.results_step2_desc_html") },
-          { icon: "ri-file-check-line",    color: "#10B981", title: t("bonvote.results_step3_title"), desc: t("bonvote.results_step3_desc_html") },
+          { icon: "ri-smartphone-line",    color: "#00209F", title: t("bonvote.results_step2_title"), desc: t("bonvote.results_step2_desc_html") },
+          { icon: "ri-file-check-line",    color: "#28A745", title: t("bonvote.results_step3_title"), desc: t("bonvote.results_step3_desc_html") },
           { icon: "ri-lock-2-line",        color: "#D90416", title: t("bonvote.results_step4_title"), desc: t("bonvote.results_step4_desc") },
           { icon: "ri-key-2-line",         color: "#7b8fff", title: t("bonvote.results_step5_title"), desc: t("bonvote.results_step5_desc_html") },
-          { icon: "ri-bar-chart-box-line", color: "#10B981", title: t("bonvote.results_step6_title"), desc: t("bonvote.results_step6_desc") },
+          { icon: "ri-bar-chart-box-line", color: "#28A745", title: t("bonvote.results_step6_title"), desc: t("bonvote.results_step6_desc") },
           { icon: "ri-award-fill",         color: "#EDB95E", title: t("bonvote.results_step7_title"), desc: t("bonvote.results_step7_desc_html") }
         ].each do |step| %>
           <div class="timeline-step">
@@ -234,11 +250,10 @@
       </div>
 
       <%# Summary box %>
-      <div style="margin-top: 1rem; background: rgba(237,185,94,0.04);
-                  border: 1px solid rgba(237,185,94,0.12); border-radius: 0.6rem; padding: 1rem 1.25rem;
+      <div class="hint-card" style="margin-top: 1rem; border-radius: 0.6rem; padding: 1rem 1.25rem;
                   text-align: center;">
         <p style="font-size: 0.72rem; color: #94A3B8; margin: 0; line-height: 1.6;">
-          <i class="ri-shield-check-fill" style="color: #EDB95E;"></i>
+          <i class="ri-shield-check-fill" style="color: var(--ht-yellow);"></i>
           <%= t("bonvote.results_summary_html").html_safe %>
         </p>
       </div>
@@ -258,15 +273,15 @@
           </div>
           <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 0.75rem; flex-wrap: wrap;">
             <span style="font-size: 0.7rem; color: #64748B;">
-              <i class="ri-smartphone-line" style="color: #2563EB;"></i>
+              <i class="ri-smartphone-line" style="color: var(--ht-blue);"></i>
               <%= number_with_delimiter(@remote_votes || 0) %> <%= t("bonvote.results_remote") %>
             </span>
             <span style="font-size: 0.7rem; color: #64748B;">
-              <i class="ri-building-line" style="color: #EDB95E;"></i>
+              <i class="ri-building-line" style="color: var(--ht-yellow);"></i>
               <%= number_with_delimiter(@consulate_votes || 0) %> <%= t("bonvote.results_consulate") %>
             </span>
             <span style="font-size: 0.7rem; color: #64748B;">
-              <i class="ri-flag-line" style="color: #D90416;"></i>
+              <i class="ri-flag-line" style="color: var(--ht-red);"></i>
               <%= @countries_count || 0 %> <%= t("bonvote.results_countries") %> &middot; 10 <%= t("bonvote.results_departments") %>
             </span>
           </div>
@@ -275,19 +290,26 @@
         <%# ── Podium (Top 3) ── %>
         <% if sorted.size >= 3 %>
           <div class="podium" style="animation: countUp 1.5s ease-out;">
-            <% [[1, sorted[1], "#2563EB", 120], [0, sorted[0], "#EDB95E", 160], [2, sorted[2], "#10B981", 100]].each do |rank, (name, votes), color, height| %>
+            <% [[1, sorted[1], "#00209F", 120], [0, sorted[0], "#FFD700", 160], [2, sorted[2], "#28A745", 100]].each do |rank, (name, votes), color, height| %>
               <% pct = total > 0 ? ((votes.to_f / total) * 100).round(1) : 0 %>
               <% is_winner = rank == 0 && pct > 50 %>
+              <% candidate_obj = @candidate_objects[name] %>
               <div class="podium-slot podium-<%= rank + 1 %> <%= 'winner-card' if is_winner %>"
                    style="<%= 'animation: float 3s ease-in-out infinite;' if is_winner %>">
-                <div style="width: 36px; height: 36px; border-radius: 50%; margin: 0 auto 0.5rem;
-                            background: <%= color %>; display: flex; align-items: center; justify-content: center;
-                            font-weight: 900; font-size: 0.9rem; color: #0B0F19;
+                <%# Candidate photo or rank badge %>
+                <div style="width: <%= is_winner ? '56px' : '42px' %>; height: <%= is_winner ? '56px' : '42px' %>;
+                            border-radius: 50%; margin: 0 auto 0.5rem; overflow: hidden;
+                            border: 2px solid <%= color %>;
+                            display: flex; align-items: center; justify-content: center;
+                            background: <%= color %>20;
                             box-shadow: 0 4px 16px <%= color %>40;">
-                  <% if is_winner %>
-                    <i class="ri-trophy-fill" style="font-size: 1rem;"></i>
+                  <% if candidate_obj&.candidate_photo_url %>
+                    <%= image_tag candidate_obj.candidate_photo_url, alt: name,
+                          style: "width: 100%; height: 100%; object-fit: cover; object-position: center top;" %>
+                  <% elsif is_winner %>
+                    <i class="ri-trophy-fill" style="font-size: 1.2rem; color: <%= color %>;"></i>
                   <% else %>
-                    <%= rank + 1 %>
+                    <span style="font-weight: 900; font-size: 0.9rem; color: <%= color %>;"><%= rank + 1 %></span>
                   <% end %>
                 </div>
                 <div style="font-size: clamp(0.78rem, 2vw, 0.95rem); font-weight: 800; margin-bottom: 4px;
@@ -301,7 +323,7 @@
                   <%= number_with_delimiter(votes) %> <%= t("bonvote.results_votes") %>
                 </div>
                 <% if is_winner %>
-                  <div style="display: inline-block; padding: 4px 16px; background: #EDB95E; color: #0B0F19;
+                  <div style="display: inline-block; padding: 4px 16px; background: #EDB95E; color: #0d132d;
                               border-radius: 2rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
                               letter-spacing: 0.05em; margin-bottom: 0.5rem;">
                     <i class="ri-trophy-line"></i> <%= t("bonvote.results_elected") %>
@@ -320,16 +342,23 @@
           <% sorted.each_with_index do |(name, votes), i| %>
             <% pct = total > 0 ? ((votes.to_f / total) * 100).round(1) : 0 %>
             <% is_winner = i == 0 && pct > 50 %>
-            <% bar_color = case i; when 0 then "#EDB95E"; when 1 then "#2563EB"; when 2 then "#10B981"; when 3 then "#D90416"; else "#475569"; end %>
+            <% bar_color = case i; when 0 then "#FFD700"; when 1 then "#00209F"; when 2 then "#28A745"; when 3 then "#D21034"; else "#475569"; end %>
+            <% candidate_obj = @candidate_objects[name] %>
 
             <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; padding: 0.85rem 1rem;
-                        background: <%= is_winner ? 'rgba(237,185,94,0.06)' : '#161B28' %>;
-                        border: 1px solid <%= is_winner ? 'rgba(237,185,94,0.2)' : 'rgba(148,163,184,0.06)' %>;
+                        background: <%= is_winner ? 'rgba(237,185,94,0.06)' : 'rgba(255,255,255,0.02)' %>;
+                        border: 1px solid <%= is_winner ? 'rgba(237,185,94,0.2)' : 'rgba(237,185,94,0.08)' %>;
                         border-radius: 0.75rem;">
-              <div style="width: 28px; height: 28px; border-radius: 50%; background: <%= bar_color %>20;
-                          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-                          font-size: 0.72rem; font-weight: 800; color: <%= bar_color %>;">
-                <%= i + 1 %>
+              <div style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+                          border: 1.5px solid <%= bar_color %>; flex-shrink: 0;
+                          display: flex; align-items: center; justify-content: center;
+                          background: <%= bar_color %>15;">
+                <% if candidate_obj&.candidate_photo_url %>
+                  <%= image_tag candidate_obj.candidate_photo_url, alt: name,
+                        style: "width: 100%; height: 100%; object-fit: cover; object-position: center top;" %>
+                <% else %>
+                  <span style="font-size: 0.72rem; font-weight: 800; color: <%= bar_color %>;"><%= i + 1 %></span>
+                <% end %>
               </div>
               <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
@@ -337,7 +366,7 @@
                   <span style="font-size: 0.82rem; font-weight: 800; color: <%= bar_color %>;">
                     <%= pct %>%
                     <% if is_winner %>
-                      <span style="font-size: 0.6rem; background: #EDB95E; color: #0B0F19; padding: 1px 8px;
+                      <span style="font-size: 0.6rem; background: #EDB95E; color: #0d132d; padding: 1px 8px;
                                    border-radius: 1rem; margin-left: 4px; font-weight: 800;"><%= t("bonvote.results_elected").upcase %></span>
                     <% end %>
                   </span>
@@ -354,26 +383,25 @@
           <% end %>
         </div>
 
-        <%# ── Geographic Ticker ── %>
-        <div style="overflow: hidden; margin-bottom: 2rem; padding: 0.6rem 0;
-                    border-top: 1px solid rgba(148,163,184,0.06); border-bottom: 1px solid rgba(148,163,184,0.06);">
-          <div class="ticker-scroll">
-            <% [
-              ["Miami, US", "98%"], ["Petyonvil, HT", "100%"], ["Santiago, CL", "85%"],
-              ["Montréal, CA", "92%"], ["Paris, FR", "88%"], ["Santo Domingo, DO", "95%"],
-              ["Cap-Haïtien, HT", "100%"], ["New York, US", "97%"], ["Brasília, BR", "78%"],
-              ["Pòtoprens, HT", "100%"], ["Boston, US", "94%"], ["Gonayiv, HT", "100%"],
-              ["Miami, US", "98%"], ["Petyonvil, HT", "100%"], ["Santiago, CL", "85%"],
-              ["Montréal, CA", "92%"], ["Paris, FR", "88%"], ["Santo Domingo, DO", "95%"]
-            ].each do |location, pct| %>
-              <span style="font-size: 0.65rem; color: #64748B;">
-                <span style="color: #10B981;">&#9679;</span>
-                <strong style="color: #94A3B8;"><%= location %></strong>
-                <span><%= pct %></span>
-              </span>
-            <% end %>
+        <%# ── Geographic Ticker (live from recent ballots) ── %>
+        <% if @recent_ballots.present? %>
+          <div style="overflow: hidden; margin-bottom: 2rem; padding: 0.6rem 0;
+                      border-top: 1px solid rgba(148,163,184,0.06); border-bottom: 1px solid rgba(148,163,184,0.06);">
+            <div class="ticker-scroll">
+              <%# Double the entries for seamless infinite scroll %>
+              <% 2.times do %>
+                <% @recent_ballots.each do |ballot| %>
+                  <% flag_code, location_label = ballot.ticker_location %>
+                  <span style="font-size: 0.65rem; color: #64748B; display: inline-flex; align-items: center; gap: 4px;">
+                    <img src="https://hatscripts.github.io/circle-flags/flags/<%= flag_code %>.svg" width="14" height="14" alt="<%= flag_code.upcase %>" style="border-radius: 50%; vertical-align: middle;">
+                    <strong style="color: #94A3B8;"><%= location_label %></strong>
+                    <span><%= ballot.time_ago_label %></span>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
           </div>
-        </div>
+        <% end %>
 
         <%# ── Share Cards ── %>
         <div class="broadcast-hide" style="margin-bottom: 1.5rem; text-align: center;">
@@ -420,20 +448,20 @@
                      font-weight: 800; color: #EDB95E; margin-bottom: 0.5rem;">
             <%= t("bonvote.results_locked_title") %>
           </h2>
-          <p style="font-size: 0.88rem; color: #64748B; max-width: 400px; margin: 0 auto 1.5rem; line-height: 1.6;">
+          <p style="font-size: 0.88rem; color: #64748B; max-width: 440px; margin: 0 auto 1.5rem; line-height: 1.6; text-align: center;">
             <%= t("bonvote.results_locked_desc_html").html_safe %>
           </p>
 
-          <%# Signature progress %>
-          <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem;">
-            <% 5.times do |i| %>
+          <%# Signature progress (9 CEP members, 5 required for quorum) %>
+          <div style="display: flex; justify-content: center; gap: 0.4rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <% 9.times do |i| %>
               <% signed = i < (@signatures_count || 0) %>
               <div style="width: 40px; height: 40px; border-radius: 50%;
                           background: <%= signed ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)' %>;
                           border: 2px solid <%= signed ? '#10B981' : 'rgba(255,255,255,0.08)' %>;
                           display: flex; align-items: center; justify-content: center;">
                 <% if signed %>
-                  <i class="ri-check-line" style="color: #10B981; font-size: 1rem;"></i>
+                  <i class="ri-check-line" style="color: var(--ht-green); font-size: 1rem;"></i>
                 <% else %>
                   <span style="font-size: 0.7rem; color: #475569; font-weight: 700;"><%= i + 1 %></span>
                 <% end %>
@@ -441,12 +469,11 @@
             <% end %>
           </div>
           <div style="font-size: 0.72rem; color: #475569;">
-            <%= @signatures_count || 0 %> / 3 <%= t("bonvote.results_sigs_needed") %>
+            <%= @signatures_count || 0 %> / 5 <%= t("bonvote.results_sigs_needed") %>
           </div>
 
           <%# Total votes cast (visible even when locked) %>
-          <div style="margin-top: 2rem; padding: 1.25rem; background: #161B28;
-                      border: 1px solid rgba(148,163,184,0.06); border-radius: 1rem;">
+          <div class="glass-card" style="margin-top: 2rem; padding: 1.25rem;">
             <div style="font-size: 0.6rem; color: #475569; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">
               <%= t("bonvote.results_total_registered") %>
             </div>
@@ -462,81 +489,37 @@
   </div><%# end results-grid %>
 
   <%# ── Anti-Deepfake Watermark (Full Width) ── %>
-  <div style="background: #161B28; border: 1px solid rgba(148,163,184,0.06); border-radius: 0.6rem;
-              padding: 0.85rem 1rem; margin-bottom: 1rem; margin-top: 2rem;">
+  <div class="watermark-bar">
     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
       <div style="flex: 1; min-width: 200px;">
-        <div style="font-size: 0.5rem; color: #334155; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;">
-          <%= t("bonvote.results_crypto_sig") %>
-        </div>
-        <div style="font-family: 'Courier New', monospace; font-size: 0.48rem; color: #1E293B; word-break: break-all;">
-          <%= @results_hash %>
-        </div>
+        <div class="crypto-label"><%= t("bonvote.results_crypto_sig") %></div>
+        <div class="crypto-hash"><%= @results_hash %></div>
       </div>
-      <a href="/election/verify" target="_blank" class="broadcast-hide"
-         style="font-size: 0.6rem; color: #2563EB; font-weight: 600; text-decoration: none; flex-shrink: 0;">
+      <a href="/election/verify" target="_blank" class="broadcast-hide verify-link">
         <i class="ri-external-link-line"></i> <%= t("bonvote.results_verify") %>
       </a>
     </div>
-    <div style="margin-top: 4px; font-size: 0.45rem; color: #1E293B;">
-      <%= t("bonvote.results_fake_warning") %>
-    </div>
+    <div class="fake-warning"><%= t("bonvote.results_fake_warning") %></div>
   </div>
 
   <%# ── Trust Footer ── %>
-  <footer style="text-align: center; padding: 0.75rem 0;">
-    <div style="display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
-      <span style="font-size: 0.55rem; color: #334155; display: flex; align-items: center; gap: 3px;">
-        <i class="ri-fingerprint-line"></i> Byometrik
-      </span>
-      <span style="font-size: 0.55rem; color: #334155; display: flex; align-items: center; gap: 3px;">
-        <i class="ri-eye-off-line"></i> Anonim
-      </span>
-      <span style="font-size: 0.55rem; color: #334155; display: flex; align-items: center; gap: 3px;">
-        <i class="ri-lock-line"></i> E2E
-      </span>
-      <span style="font-size: 0.55rem; color: #334155; display: flex; align-items: center; gap: 3px;">
-        <i class="ri-shield-check-line"></i> Multi-Sig 3/5
-      </span>
-      <span style="font-size: 0.55rem; color: #334155; display: flex; align-items: center; gap: 3px;">
-        <i class="ri-git-merge-line"></i> Merkle Tree
-      </span>
+  <footer class="broadcast-hide bonvote-footer">
+    <div class="footer-badges" style="display: flex; justify-content: center; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+      <span><i class="ri-fingerprint-line"></i> Byometrik</span>
+      <span><i class="ri-eye-off-line"></i> Anonim</span>
+      <span><i class="ri-lock-line"></i> E2E</span>
+      <span><i class="ri-shield-check-line"></i> Multi-Sig 5/9</span>
+      <span><i class="ri-git-merge-line"></i> Merkle Tree</span>
     </div>
-    <%# Flag accent %>
-    <div style="display: flex; justify-content: center; gap: 0; margin-bottom: 6px;">
-      <div style="width: 24px; height: 2px; background: #00209F;"></div>
-      <div style="width: 24px; height: 2px; background: #D90416;"></div>
-    </div>
+    <div style="width: 48px; height: 2px; margin: 0 auto 6px; border-radius: 2px;
+                background: linear-gradient(90deg, var(--ht-red) 0%, var(--ht-blue) 100%);"></div>
     <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 6px;">
-      <a href="/terms" target="_blank" style="font-size: 0.55rem; color: #475569; text-decoration: none;">Terms of Use</a>
-      <a href="/privacy" target="_blank" style="font-size: 0.55rem; color: #475569; text-decoration: none;">Privacy Policy</a>
+      <a href="/terms" target="_blank">Terms of Use</a>
+      <a href="/privacy" target="_blank">Privacy Policy</a>
     </div>
-    <div style="font-family: 'Orbitron', sans-serif; font-size: 0.48rem; color: #1E293B; letter-spacing: 2px;">
-      BONID &middot; VERIFYEM &middot; &copy; 2026
-    </div>
+    <div class="footer-brand">BONID &middot; BONVOTE &middot; VERIFYEM &middot; &copy; 2026</div>
   </footer>
 </div>
 
 </body>
 </html>
-iv>
-
-</body>
-</html>
-er>
-</div>
-
-</body>
-</html>
-iv>
-
-</body>
-</html>
-iv>
-
-</body>
-</html>
-body>
-</html>
-/html>
-/html>

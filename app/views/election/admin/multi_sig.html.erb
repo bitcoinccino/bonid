@@ -1,204 +1,154 @@
 <%# app/views/election/admin/multi_sig.html.erb %>
-<%# Multi-Signature Decryption Ceremony — "Opening the Box"
-    3 of 5 authorized signatories must scan their BonID + pass liveness
-    to unlock the final election results. %>
+<%# Multi-Signature Decryption Ceremony — 5 of 9 CEP members required %>
 
-<div style="min-height: 100vh; background: linear-gradient(180deg, #0a0f1f 0%, #1a0a2e 100%);
-            display: flex; flex-direction: column; align-items: center;
-            padding: 2rem 1.5rem; font-family: 'Montserrat', 'Inter', sans-serif; color: #ffffff;">
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
 
-  <%# ── Header ── %>
-  <div style="text-align: center; margin-bottom: 2rem; max-width: 600px;">
-    <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.7rem;
-                font-weight: 800; color: #EDB95E; letter-spacing: 3px; margin-bottom: 8px;">
-      CEP &middot; SEREMONI DECHIFRAJ
-    </div>
-    <h1 style="font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 800; margin: 0 0 0.75rem;">
-      Ouvri Bwat Vòt la
-    </h1>
-    <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); line-height: 1.6; margin: 0;">
-      <%= Election::MultiSigService::QUORUM_REQUIRED %> nan <%= Election::MultiSigService::TOTAL_SIGNATORIES %>
-      siyatè otorize dwe verifye idantite yo pou dechifre rezilta eleksyon an.
-      Okenn moun pa ka wè rezilta yo poukont li.
-    </p>
-  </div>
+      <%# ── Header ── %>
+      <div class="text-center mb-4">
+        <h4 class="pp-page-title">
+          <i class="ri-key-2-line me-2 pp-text-brand"></i>Seremoni Dechifraj
+        </h4>
+        <p class="pp-page-subtitle">
+          <%= Election::MultiSigService::QUORUM_REQUIRED %> nan <%= Election::MultiSigService::TOTAL_SIGNATORIES %>
+          siyatè otorize dwe verifye idantite yo pou dechifre rezilta eleksyon an.
+        </p>
+      </div>
 
-  <%# ── Signature Progress Ring ── %>
-  <div style="margin-bottom: 2rem; text-align: center;">
-    <div style="position: relative; width: 140px; height: 140px; margin: 0 auto;">
-      <%# Background circle %>
-      <svg width="140" height="140" style="position: absolute; top: 0; left: 0;">
-        <circle cx="70" cy="70" r="60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
-        <circle cx="70" cy="70" r="60" fill="none" stroke="<%= @sig_status[:met] ? '#34d399' : '#EDB95E' %>"
-                stroke-width="8" stroke-linecap="round"
-                stroke-dasharray="<%= 377 %>"
-                stroke-dashoffset="<%= 377 - (377 * @sig_status[:total].to_f / Election::MultiSigService::QUORUM_REQUIRED) %>"
-                transform="rotate(-90 70 70)"
-                style="transition: stroke-dashoffset 0.8s ease;"/>
-      </svg>
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-        <div style="font-size: 2.2rem; font-weight: 800; color: <%= @sig_status[:met] ? '#34d399' : '#EDB95E' %>;">
-          <%= @sig_status[:total] %>/<%= Election::MultiSigService::QUORUM_REQUIRED %>
-        </div>
-        <div style="font-size: 0.65rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em;">
-          Siyati
+      <%# ── Signature Progress ── %>
+      <div class="pp-card card mb-4">
+        <div class="card-body p-4 text-center">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+               style="width: 100px; height: 100px; border: 4px solid <%= @sig_status[:met] ? 'var(--status-success)' : 'var(--status-warning)' %>;">
+            <div>
+              <div class="fw-bold pp-text-3xl" style="color: <%= @sig_status[:met] ? 'var(--status-success)' : 'var(--status-warning)' %>;">
+                <%= @sig_status[:total] %>/<%= Election::MultiSigService::QUORUM_REQUIRED %>
+              </div>
+              <div class="pp-text-xs pp-text-secondary text-uppercase">Siyati</div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <%# ── Signatory Slots ── %>
-  <div style="width: 100%; max-width: 600px; margin-bottom: 2rem;">
-    <% Election::MultiSigService::SIGNATORY_ROLES.each_with_index do |role, i| %>
-      <% signed = @sig_status[:signatories]&.find { |s| s[:role] == role } %>
-      <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem;
-                  background: <%= signed ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.03)' %>;
-                  border: 1px solid <%= signed ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.06)' %>;
-                  border-radius: 0.85rem; margin-bottom: 0.75rem;
-                  transition: all 0.3s ease;">
-
-        <%# Status icon %>
-        <div style="width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-                    background: <%= signed ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.05)' %>;
-                    display: flex; align-items: center; justify-content: center;">
-          <% if signed %>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="#34d399">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-            </svg>
-          <% else %>
-            <span style="font-size: 1.1rem; font-weight: 800; color: rgba(255,255,255,0.3);"><%= i + 1 %></span>
-          <% end %>
+      <%# ── Signatory Slots ── %>
+      <div class="pp-card card mb-4">
+        <div class="card-header px-4 py-3">
+          <h6 class="fw-semibold mb-0 pp-text-sm">Siyatè yo</h6>
         </div>
+        <div class="card-body p-0">
+          <% Election::MultiSigService::SIGNATORY_ROLES.each_with_index do |role, i| %>
+            <% signed = @sig_status[:signatories]&.find { |s| s[:role] == role } %>
+            <div class="d-flex align-items-center gap-3 px-4 py-3 <%= i < Election::MultiSigService::SIGNATORY_ROLES.size - 1 ? 'border-bottom' : '' %>">
 
-        <%# Role info %>
-        <div style="flex: 1;">
-          <div style="font-size: 0.82rem; font-weight: 700; color: <%= signed ? '#34d399' : '#fff' %>;">
-            <%= Election::MultiSigService.role_label(role) %>
-          </div>
-          <% if signed %>
-            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5);">
-              <%= signed[:name] %> &middot; <%= Time.parse(signed[:signed_at]).strftime("%H:%M") rescue signed[:signed_at] %>
-            </div>
-          <% else %>
-            <div style="font-size: 0.7rem; color: rgba(255,255,255,0.3);">
-              Ap tann siyati...
+              <%# Status icon %>
+              <div class="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                   style="width: 36px; height: 36px; background: <%= signed ? 'var(--status-success-bg)' : 'var(--slate-50)' %>;">
+                <% if signed %>
+                  <i class="ri-check-line pp-text-success"></i>
+                <% else %>
+                  <span class="fw-bold pp-text-sm pp-text-muted"><%= i + 1 %></span>
+                <% end %>
+              </div>
+
+              <%# Role info %>
+              <div class="flex-grow-1">
+                <div class="fw-semibold pp-text-sm <%= signed ? 'pp-text-success' : '' %>">
+                  <%= Election::MultiSigService.role_label(role) %>
+                </div>
+                <% if signed %>
+                  <div class="pp-text-xs pp-text-secondary">
+                    <%= signed[:name] %> &middot; <%= Time.parse(signed[:signed_at]).strftime("%H:%M") rescue signed[:signed_at] %>
+                  </div>
+                <% else %>
+                  <div class="pp-text-xs pp-text-muted">Ap tann siyati...</div>
+                <% end %>
+              </div>
+
+              <%# Liveness badge %>
+              <% if signed && signed[:liveness_verified] %>
+                <span class="badge bg-success-subtle text-success pp-badge-sm">
+                  <i class="ri-user-smile-line me-1"></i> Verifye
+                </span>
+              <% end %>
             </div>
           <% end %>
         </div>
-
-        <%# Liveness badge %>
-        <% if signed && signed[:liveness_verified] %>
-          <span style="font-size: 0.6rem; font-weight: 700; background: rgba(52,211,153,0.15); color: #34d399;
-                       padding: 3px 8px; border-radius: 12px;">
-            <i class="ri-user-smile-line" style="margin-right: 2px;"></i> Verifye
-          </span>
-        <% end %>
       </div>
-    <% end %>
-  </div>
 
-  <%# ── Sign Action (for current admin) ── %>
-  <% unless @sig_status[:met] %>
-    <div style="width: 100%; max-width: 600px; background: #111730;
-                border: 2px solid rgba(237,185,94,0.2); border-radius: 1rem; padding: 1.5rem;
-                margin-bottom: 2rem;">
-      <h3 style="font-size: 0.9rem; font-weight: 700; margin: 0 0 1rem; text-align: center;">
-        <i class="ri-key-2-line" style="color: #EDB95E; margin-right: 4px;"></i>
-        Siyen kòm Siyatè Otorize
-      </h3>
+      <%# ── Sign Action ── %>
+      <% unless @sig_status[:met] %>
+        <div class="pp-card card mb-4">
+          <div class="card-header px-4 py-3">
+            <h6 class="fw-semibold mb-0 pp-text-sm d-flex align-items-center gap-2">
+              <i class="ri-key-2-line pp-text-warning"></i>
+              Siyen kòm Siyatè Otorize
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <form action="<%= admin_election_election_sign_path(@election_id) %>" method="post">
+              <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+              <%= hidden_field_tag :election_id, @election_id %>
 
-      <form action="<%= election_admin_sign_path(@election_id) %>" method="post">
-        <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
-        <%= hidden_field_tag :election_id, @election_id %>
+              <div class="mb-3">
+                <label class="form-label fw-semibold pp-text-sm">Wòl Ou</label>
+                <select name="role" required class="form-select">
+                  <option value="">— Chwazi wòl ou —</option>
+                  <% (@sig_status[:available_roles] || Election::MultiSigService::SIGNATORY_ROLES).each do |role| %>
+                    <option value="<%= role %>"><%= Election::MultiSigService.role_label(role) %></option>
+                  <% end %>
+                </select>
+              </div>
 
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5);
-                        text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">Wòl Ou</label>
-          <select name="role" required
-                  style="width: 100%; padding: 0.7rem 1rem; background: rgba(255,255,255,0.05);
-                         border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem;
-                         color: #fff; font-size: 0.82rem; font-family: 'Montserrat', sans-serif;">
-            <option value="">— Chwazi wòl ou —</option>
-            <% (@sig_status[:available_roles] || Election::MultiSigService::SIGNATORY_ROLES).each do |role| %>
-              <option value="<%= role %>"><%= Election::MultiSigService.role_label(role) %></option>
-            <% end %>
-          </select>
-        </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold pp-text-sm">Kle Dechifraj Ou (Shard)</label>
+                <textarea name="key_shard" rows="3" required class="form-control pp-font-mono pp-text-xs"
+                          placeholder="Kole kle shard ou a isit..."></textarea>
+              </div>
 
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5);
-                        text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.4rem;">Kle Dechifraj Ou (Shard)</label>
-          <textarea name="key_shard" rows="3" required
-                    placeholder="Kole kle shard ou a isit..."
-                    style="width: 100%; padding: 0.7rem 1rem; background: rgba(255,255,255,0.05);
-                           border: 1px solid rgba(255,255,255,0.15); border-radius: 0.5rem;
-                           color: #fff; font-family: 'Courier New', monospace; font-size: 0.75rem;
-                           resize: none;"></textarea>
-        </div>
+              <div class="alert alert-warning rounded-3 mb-3 pp-text-xs">
+                <div class="d-flex align-items-start gap-2">
+                  <i class="ri-fingerprint-line pp-text-lg"></i>
+                  <div>
+                    Verifikasyon byometrik (liveness + figi) obligatwa. Sistèm nan ap verifye idantite ou anvan li aksepte siyati a.
+                  </div>
+                </div>
+              </div>
 
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;
-                    padding: 0.75rem; background: rgba(237,185,94,0.08); border-radius: 0.5rem;
-                    border: 1px solid rgba(237,185,94,0.15);">
-          <i class="ri-fingerprint-line" style="font-size: 1.2rem; color: #EDB95E;"></i>
-          <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7); line-height: 1.4;">
-            Verifikasyon byometrik (liveness + figi) obligatwa. Sistèm nan ap verifye idantite ou anvan li aksepte siyati a.
+              <button type="submit" class="btn pp-btn-brand w-100 py-2">
+                <i class="ri-shield-keyhole-line me-1"></i> Siyen + Verifye Idantite
+              </button>
+            </form>
           </div>
         </div>
+      <% else %>
+        <%# ── Quorum Met ── %>
+        <div class="pp-card card mb-4">
+          <div class="card-body p-4 text-center">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3 pp-bg-success-bg"
+                 style="width: 64px; height: 64px;">
+              <i class="ri-lock-unlock-line pp-icon-xl pp-text-success"></i>
+            </div>
+            <h5 class="fw-bold pp-text-success mb-2">Bwat Vòt la Ouvri</h5>
+            <p class="pp-text-sm pp-text-secondary mb-3">
+              Kowòm atenn. <%= Election::MultiSigService::QUORUM_REQUIRED %> siyatè verifye. Rezilta ofisyèl yo disponib.
+            </p>
+            <a href="<%= partner_portal_election_results_path(@election_id) %>" class="btn btn-success px-4">
+              <i class="ri-bar-chart-box-line me-1"></i> Wè Rezilta Ofisyèl Yo
+            </a>
+          </div>
+        </div>
+      <% end %>
 
-        <button type="submit"
-                style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #EDB95E 0%, #D4A04A 100%);
-                       color: #0a0f1f; border: none; border-radius: 0.75rem; font-weight: 800;
-                       font-size: 0.95rem; cursor: pointer; font-family: 'Montserrat', sans-serif;
-                       box-shadow: 0 4px 16px rgba(237,185,94,0.3);
-                       display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-          <i class="ri-shield-keyhole-line" style="font-size: 1.1rem;"></i>
-          Siyen + Verifye Idantite
-        </button>
-      </form>
-    </div>
-  <% else %>
-    <%# ── Quorum Met — Results Unlocked ── %>
-    <div style="width: 100%; max-width: 600px; text-align: center; margin-bottom: 2rem;">
-      <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(52,211,153,0.15);
-                  display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;
-                  animation: pulse 2s ease-in-out infinite;">
-        <i class="ri-lock-unlock-line" style="font-size: 2rem; color: #34d399;"></i>
+      <%# ── Security Notice ── %>
+      <div class="text-center py-3">
+        <p class="pp-text-xs pp-text-muted mb-0">
+          <i class="ri-shield-check-line me-1"></i>
+          Seremoni dechifraj sa a anrejistre nan log odit imutab.
+          Chak siyati gen verifikasyon byometrik (liveness + konparezon figi).
+        </p>
       </div>
 
-      <h2 style="font-size: 1.4rem; font-weight: 800; color: #34d399; margin: 0 0 0.5rem;">
-        Bwat Vòt la Ouvri
-      </h2>
-      <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin: 0 0 1.5rem; line-height: 1.5;">
-        Kowòm atenn. <%= Election::MultiSigService::QUORUM_REQUIRED %> siyatè verifye.
-        Rezilta ofisyèl yo disponib.
-      </p>
-
-      <a href="<%= election_admin_results_path(@election_id) %>"
-         style="display: inline-flex; align-items: center; gap: 0.5rem;
-                padding: 1rem 2.5rem; background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-                color: #fff; border: none; border-radius: 0.75rem; font-weight: 800;
-                font-size: 1rem; cursor: pointer; font-family: 'Montserrat', sans-serif;
-                text-decoration: none; box-shadow: 0 4px 16px rgba(52,211,153,0.3);">
-        <i class="ri-bar-chart-box-line" style="font-size: 1.2rem;"></i>
-        Wè Rezilta Ofisyèl Yo
-      </a>
     </div>
-  <% end %>
-
-  <%# ── Security Notice ── %>
-  <div style="max-width: 500px; text-align: center; margin-top: 1rem;">
-    <p style="font-size: 0.62rem; color: rgba(255,255,255,0.25); line-height: 1.6;">
-      <i class="ri-shield-check-line" style="margin-right: 2px;"></i>
-      Seremoni dechifraj sa a anrejistre nan log odit imutab.
-      Chak siyati gen verifikasyon byometrik (liveness + konparezon figi).
-      Rezilta yo dechifre sèlman apre kowòm atenn — okenn moun pa ka wè yo anvan.
-    </p>
   </div>
 </div>
-
-<style>
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-  }
-</style>

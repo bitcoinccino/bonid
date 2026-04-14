@@ -1,0 +1,126 @@
+<%# Lis Elektoral — Voter Registry Dashboard %>
+
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-file-list-3-line me-2 pp-text-brand"></i>Lis Elektoral
+      </h4>
+      <p class="pp-page-subtitle">
+        <% if @election %>
+          <%= @election.title %> — Rejis votè elijib
+        <% else %>
+          Pa gen eleksyon aktif
+        <% end %>
+      </p>
+    </div>
+    <% if @election %>
+      <%= button_to "Bati Lis Elektoral", partner_portal_voter_registry_build_path,
+          method: :post, class: "btn pp-btn-brand px-4",
+          data: { confirm: "Sa ap anrejistre tout sitwayen BonID verifye. Kontinye?" } %>
+    <% end %>
+  </div>
+
+  <% if @election && @stats %>
+    <%# Stats Cards %>
+    <div class="row g-3 mb-4">
+      <% [
+        ["Total Anrejistre", @stats[:total_registered], "pp-text-primary"],
+        ["Elijib", @stats[:eligible], "pp-text-success"],
+        ["Pa elijib", @stats[:ineligible], "pp-text-danger"],
+        ["Deja Vote", @stats[:voted], "pp-text-brand"],
+        ["#{@stats[:turnout_pct]}%", nil, "pp-text-warning"],
+        ["Dyaspora", @stats[:diaspora], "pp-text-purple"],
+      ].each do |label, count, color_class| %>
+        <div class="col-md-2">
+          <div class="pp-stat-card card">
+            <div class="pp-stat-number-lg <%= color_class %>">
+              <%= count ? number_with_delimiter(count) : label.split.first %>
+            </div>
+            <div class="pp-stat-label"><%= count ? label : "Patisipasyon" %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Filters %>
+    <div class="pp-filter-bar card">
+      <div class="card-body">
+        <%= form_with url: partner_portal_voter_registry_path, method: :get, local: true, class: "d-flex gap-2 align-items-end flex-wrap" do |f| %>
+          <div>
+            <%= f.text_field :search, value: params[:search], class: "form-control form-control-sm", placeholder: "Chèche BonID..." %>
+          </div>
+          <div>
+            <%= f.select :status, VoterEligibilityRecord::STATUSES.map { |s| [s.capitalize, s] },
+                { prompt: "Tout estati" }, class: "form-select form-select-sm" %>
+          </div>
+          <div>
+            <%= f.select :channel, [["Domestik", "domestic"], ["Dyaspora", "diaspora"]],
+                { prompt: "Tout kanal" }, class: "form-select form-select-sm" %>
+          </div>
+          <div>
+            <%= f.submit "Filtre", class: "btn btn-sm btn-outline-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Voter Table %>
+    <div class="pp-card card">
+      <div class="table-responsive">
+        <table class="table table-hover pp-table">
+          <thead class="table-light">
+            <tr>
+              <th>BonID</th>
+              <th>Depatman</th>
+              <th>Sikonskripsyon</th>
+              <th>Kanal</th>
+              <th>Estati</th>
+              <th>Vote?</th>
+              <th>Dat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @voters.each do |voter| %>
+              <tr>
+                <td><code><%= mask_bonid(voter.bonid) %></code></td>
+                <td><%= voter.department_code %></td>
+                <td><%= voter.constituency_name %></td>
+                <td><%= voter.channel == "diaspora" ? "Dyaspora" : "Domestik" %></td>
+                <td>
+                  <span class="badge bg-<%= voter.eligible? ? 'success' : 'danger' %> pp-badge-sm">
+                    <%= voter.status.capitalize %>
+                  </span>
+                </td>
+                <td>
+                  <% if voter.has_voted? %>
+                    <i class="ri-checkbox-circle-fill pp-text-success"></i>
+                  <% else %>
+                    <i class="ri-checkbox-blank-circle-line pp-text-muted"></i>
+                  <% end %>
+                </td>
+                <td class="text-muted"><%= voter.created_at.strftime("%d/%m/%Y") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @voters.respond_to?(:total_pages) && @voters.total_pages > 1 %>
+        <div class="card-footer bg-white border-top-0 text-center py-3">
+          <%= paginate @voters %>
+        </div>
+      <% end %>
+    </div>
+
+  <% else %>
+    <div class="pp-card card">
+      <div class="pp-empty-state">
+        <i class="ri-file-list-3-line"></i>
+        <h5>Pa gen eleksyon aktif</h5>
+        <p>Lis elektoral la ap disponib lè yon eleksyon kreye.</p>
+      </div>
+    </div>
+  <% end %>
+
+</div>

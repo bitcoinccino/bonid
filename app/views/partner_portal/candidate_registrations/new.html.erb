@@ -1,0 +1,84 @@
+<%# New Candidate Registration %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <%= link_to partner_portal_candidate_registrations_path, class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen nan lis la
+      <% end %>
+
+      <h4 class="pp-page-title mb-4">
+        <i class="ri-user-star-line me-2 pp-text-brand"></i>Nouvo Enskripsyon Kandida
+      </h4>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+
+          <% if @candidate.errors.any? %>
+            <div class="alert alert-danger mb-4">
+              <strong><%= pluralize(@candidate.errors.count, "erè") %>:</strong>
+              <ul class="mb-0 mt-2">
+                <% @candidate.errors.full_messages.each do |msg| %>
+                  <li><%= msg %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= form_with model: @candidate, url: partner_portal_candidate_registrations_path, local: true do |f| %>
+
+            <div class="mb-3">
+              <%= f.label :full_name, "Non konplè", class: "form-label fw-semibold" %>
+              <%= f.text_field :full_name, class: "form-control", placeholder: "Non ak siyati kandida a" %>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <%= f.label :position, "Pozisyon", class: "form-label fw-semibold" %>
+                <%= f.select :position,
+                    [["Prezidan", "president"], ["Senatè", "senator"], ["Depite", "deputy"]],
+                    { prompt: "Chwazi pozisyon" }, class: "form-select" %>
+              </div>
+              <div class="col-md-6">
+                <%= f.label :election_constituency_id, "Sikonskripsyon", class: "form-label fw-semibold" %>
+                <%= f.select :election_constituency_id,
+                    @constituencies.map { |c| [c.constituency_name, c.id] },
+                    { prompt: "Chwazi sikonskripsyon" }, class: "form-select" %>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <%= f.label :party_name, "Non Pati (opsyonèl)", class: "form-label fw-semibold" %>
+                <%= f.text_field :party_name, class: "form-control", placeholder: "Endepandan si vid" %>
+              </div>
+              <div class="col-md-6">
+                <%= f.label :party_acronym, "Akwonim Pati (opsyonèl)", class: "form-label fw-semibold" %>
+                <%= f.text_field :party_acronym, class: "form-control", placeholder: "ex: PHTK, FL" %>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :bonid, "Nimewo BonID (opsyonèl)", class: "form-label fw-semibold" %>
+              <%= f.text_field :bonid, class: "form-control pp-font-mono", placeholder: "BonID kandida a" %>
+              <small class="form-text text-muted">Si kandida a gen yon BonID, antre l pou lye kont li.</small>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :platform_statement, "Platfòm / Deklarasyon", class: "form-label fw-semibold" %>
+              <%= f.text_area :platform_statement, class: "form-control", rows: 5,
+                  placeholder: "Deskripsyon platfòm kandida a..." %>
+            </div>
+
+            <div class="text-end">
+              <%= f.submit "Soumèt Enskripsyon", class: "btn pp-btn-brand px-5" %>
+            </div>
+
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

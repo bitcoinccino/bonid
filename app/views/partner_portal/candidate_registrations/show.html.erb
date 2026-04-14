@@ -1,0 +1,121 @@
+<%# Candidate Registration Detail — CEP Review %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <%= link_to partner_portal_candidate_registrations_path, class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen nan lis la
+      <% end %>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+
+          <%# Header %>
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h4 class="pp-page-title"><%= @candidate.full_name %></h4>
+              <div class="d-flex gap-2">
+                <span class="badge bg-light text-dark border pp-badge-sm">
+                  <%= @candidate.position.capitalize %>
+                </span>
+                <span class="badge bg-<%= @candidate.registration_status_color %> pp-badge-sm">
+                  <%= @candidate.registration_status_label %>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <%# Details %>
+          <table class="table table-sm pp-table-detail">
+            <tbody>
+              <tr>
+                <td>Non konplè</td>
+                <td><%= @candidate.full_name %></td>
+              </tr>
+              <% if @candidate.bonid.present? %>
+                <tr>
+                  <td>BonID</td>
+                  <td><code><%= mask_bonid(@candidate.bonid) %></code></td>
+                </tr>
+              <% end %>
+              <tr>
+                <td>Pozisyon</td>
+                <td><%= @candidate.position.capitalize %></td>
+              </tr>
+              <tr>
+                <td>Sikonskripsyon</td>
+                <td><%= @candidate.election_constituency&.constituency_name || "—" %></td>
+              </tr>
+              <tr>
+                <td>Pati</td>
+                <td><%= @candidate.party_name.presence || "Endepandan" %></td>
+              </tr>
+              <% if @candidate.party_acronym.present? %>
+                <tr>
+                  <td>Akwonim Pati</td>
+                  <td><%= @candidate.party_acronym %></td>
+                </tr>
+              <% end %>
+              <% if @candidate.platform_statement.present? %>
+                <tr>
+                  <td>Platfòm</td>
+                  <td><%= simple_format(@candidate.platform_statement) %></td>
+                </tr>
+              <% end %>
+              <tr>
+                <td>Dat soumèt</td>
+                <td><%= @candidate.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" %></td>
+              </tr>
+              <% if @candidate.approved_at.present? %>
+                <tr>
+                  <td>Dat apwouve</td>
+                  <td><%= @candidate.approved_at.strftime("%d/%m/%Y %H:%M") %></td>
+                </tr>
+              <% end %>
+              <% if @candidate.rejection_reason.present? %>
+                <tr>
+                  <td>Rezon rejeksyon</td>
+                  <td class="pp-text-danger"><%= @candidate.rejection_reason %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+
+          <%# Actions %>
+          <% if @candidate.registration_pending? %>
+            <hr>
+            <div class="d-flex gap-2 flex-wrap">
+              <% if @candidate.registration_status == "submitted" %>
+                <%= button_to "Kòmanse Revizyon", start_review_partner_portal_candidate_registration_path(@candidate),
+                    method: :post, class: "btn btn-warning px-4" %>
+              <% end %>
+
+              <%= button_to "Apwouve", approve_partner_portal_candidate_registration_path(@candidate),
+                  method: :post, class: "btn btn-success px-4",
+                  data: { confirm: "Apwouve #{@candidate.full_name} kòm kandida?" } %>
+
+              <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="collapse" data-bs-target="#reject-form">
+                Rejte
+              </button>
+            </div>
+
+            <%# Rejection Form %>
+            <div class="collapse mt-3" id="reject-form">
+              <%= form_with url: reject_partner_portal_candidate_registration_path(@candidate), method: :post, local: true do |f| %>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold pp-text-sm">Rezon rejeksyon</label>
+                  <%= f.text_area :rejection_reason, class: "form-control", rows: 3,
+                      placeholder: "Eksplike poukisa kandida a rejte..." %>
+                </div>
+                <%= f.submit "Konfime Rejeksyon", class: "btn btn-danger" %>
+              <% end %>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

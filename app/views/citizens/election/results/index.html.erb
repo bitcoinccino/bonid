@@ -1,0 +1,105 @@
+<%# Election Results — Citizen view %>
+
+<div class="container-fluid py-4" style="max-width: 680px; margin: 0 auto;">
+
+  <div class="text-center mb-4">
+    <h2 style="font-size: 1.3rem; font-weight: 800; color: #1E293B; margin-bottom: 4px;">
+      <i class="ri-bar-chart-box-line" style="color: #00209F; margin-right: 6px;"></i>
+      <%= t("citizens.election.results_title") %>
+    </h2>
+    <% if @election %>
+      <p style="font-size: 0.82rem; color: #64748B;">
+        <%= @election.title.presence || @election.id %>
+      </p>
+    <% end %>
+  </div>
+
+  <% if @election %>
+    <%# ── Status Badge ── %>
+    <div class="text-center mb-4">
+      <% if @certified %>
+        <span style="padding: 6px 16px; font-size: 0.75rem; font-weight: 700; background: #D1FAE5;
+                     color: #065F46; border-radius: 2rem;">
+          <i class="ri-checkbox-circle-fill" style="margin-right: 4px;"></i>
+          <%= t("citizens.election.certified") %>
+        </span>
+      <% else %>
+        <span style="padding: 6px 16px; font-size: 0.75rem; font-weight: 700; background: #DBEAFE;
+                     color: #1E40AF; border-radius: 2rem;">
+          <i class="ri-loader-4-line" style="margin-right: 4px;"></i>
+          <%= t("citizens.election.counting") %>
+        </span>
+      <% end %>
+    </div>
+
+    <%# ── Stats Grid ── %>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 2rem;">
+      <div class="card border-0 shadow-sm" style="border-radius: 0.75rem;">
+        <div class="card-body p-3 text-center">
+          <div style="font-size: 1.5rem; font-weight: 800; color: #00209F;"><%= number_with_delimiter(@total_votes) %></div>
+          <div style="font-size: 0.68rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">
+            Total Vot
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm" style="border-radius: 0.75rem;">
+        <div class="card-body p-3 text-center">
+          <div style="font-size: 1.5rem; font-weight: 800; color: #00209F;"><%= number_with_delimiter(@remote_votes) %></div>
+          <div style="font-size: 0.68rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">
+            Remot
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm" style="border-radius: 0.75rem;">
+        <div class="card-body p-3 text-center">
+          <div style="font-size: 1.5rem; font-weight: 800; color: #00209F;"><%= number_with_delimiter(@consulate_votes) %></div>
+          <div style="font-size: 0.68rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">
+            Konsila
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm" style="border-radius: 0.75rem;">
+        <div class="card-body p-3 text-center">
+          <div style="font-size: 1.5rem; font-weight: 800; color: #00209F;"><%= @countries_count %></div>
+          <div style="font-size: 0.68rem; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em;">
+            Peyi
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Link to full public results ── %>
+    <div class="text-center">
+      <a href="/election/results"
+         target="_blank"
+         style="display: inline-flex; align-items: center; gap: 8px; padding: 0.85rem 2rem;
+                background: #00209F; color: #fff; font-size: 0.88rem; font-weight: 700;
+                border-radius: 0.75rem; text-decoration: none; transition: all 0.2s;"
+         onmouseover="this.style.background='#001570'"
+         onmouseout="this.style.background='#00209F'">
+        <i class="ri-external-link-line"></i>
+        <%= t("citizens.election.view_full_results") %>
+      </a>
+
+      <% if @certified %>
+        <a href="/election/celebration"
+           target="_blank"
+           style="display: block; margin-top: 0.75rem; font-size: 0.82rem; font-weight: 600;
+                  color: #EDB95E; text-decoration: none;">
+          <i class="ri-trophy-line" style="margin-right: 4px;"></i>
+          <%= t("citizens.election.view_celebration") %>
+        </a>
+      <% end %>
+    </div>
+
+  <% else %>
+    <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+      <div class="card-body p-4 text-center">
+        <i class="ri-bar-chart-line" style="font-size: 2.5rem; color: #CBD5E1; display: block; margin-bottom: 0.75rem;"></i>
+        <p style="font-size: 0.88rem; color: #64748B; margin: 0;">
+          <%= t("citizens.election.no_results") %>
+        </p>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -1,0 +1,208 @@
+<%# Step 1: Eligibility Check — shows election info + voter status %>
+
+<div class="container-fluid py-4" style="max-width: 680px; margin: 0 auto;">
+
+  <%# ── Election Header ── %>
+  <div class="text-center mb-4">
+    <div style="width: 80px; height: 80px; margin: 0 auto 1rem;">
+      <img src="<%= asset_path('haiti_flag.png') %>" width="80" height="80" style="object-fit: contain;" alt="Haiti">
+    </div>
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: #1E293B; margin-bottom: 4px;">
+      <%= t("citizens.election.vote_title") %>
+    </h2>
+    <% if @election %>
+      <p style="font-size: 0.85rem; color: #64748B;">
+        <%= @election.title.presence || @election.id %>
+      </p>
+    <% end %>
+  </div>
+
+  <%# ── No Election Open ── %>
+  <% unless @election %>
+    <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+      <div class="card-body p-4 text-center">
+        <div style="width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 1rem;
+                    background: #F1F5F9; display: flex; align-items: center; justify-content: center;">
+          <i class="ri-calendar-schedule-line" style="font-size: 1.5rem; color: #94A3B8;"></i>
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: #1E293B; margin-bottom: 0.5rem;">
+          <%= t("citizens.election.no_election") %>
+        </h3>
+        <p style="font-size: 0.82rem; color: #64748B; line-height: 1.6; max-width: 380px; margin: 0 auto 1.25rem;">
+          <%= t("citizens.election.election_not_started") %>
+        </p>
+
+        <% if @upcoming_election %>
+          <div style="background: #F0F4FF; border: 1px solid rgba(0,32,159,0.08); border-radius: 0.75rem;
+                      padding: 1rem; margin-bottom: 1rem;">
+            <div style="font-size: 0.68rem; font-weight: 700; color: #94A3B8; text-transform: uppercase;
+                        letter-spacing: 0.08em; margin-bottom: 6px;">
+              <%= t("citizens.election.upcoming_election") %>
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #1E293B;">
+              <%= @upcoming_election.title.presence || @upcoming_election.id %>
+            </div>
+            <% if @upcoming_election.election_date %>
+              <div style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">
+                <i class="ri-calendar-line" style="margin-right: 4px;"></i>
+                <%= @upcoming_election.election_date.strftime("%d %B %Y") %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <a href="<%= citizens_election_calendar_path %>"
+           style="display: inline-flex; align-items: center; gap: 6px; padding: 0.75rem 1.5rem;
+                  background: #00209F; color: #fff; font-size: 0.85rem; font-weight: 700;
+                  border-radius: 0.75rem; text-decoration: none;">
+          <i class="ri-calendar-event-line"></i>
+          <%= t("citizens.election.view_calendar") %>
+        </a>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @election %>
+  <%# ── Status Card ── %>
+  <div class="card border-0 shadow-sm" style="border-radius: 1rem; overflow: hidden;">
+    <div class="card-body p-4">
+
+      <%# BonID Verified %>
+      <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom: 1px solid #F1F5F9;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+                    background: <%= current_citizen.bonid_verified? ? '#D1FAE5' : '#FEE2E2' %>;
+                    display: flex; align-items: center; justify-content: center;">
+          <i class="<%= current_citizen.bonid_verified? ? 'ri-check-line' : 'ri-close-line' %>"
+             style="color: <%= current_citizen.bonid_verified? ? '#065F46' : '#991B1B' %>; font-size: 1.1rem;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 700; color: #1E293B;">BonID Verifye</div>
+          <div style="font-size: 0.72rem; color: #64748B;">
+            <% if current_citizen.bonid_verified? %>
+              <%= current_citizen.bonid %>
+            <% else %>
+              <%= t("citizens.election.not_verified") %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# CIN on Roll %>
+      <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom: 1px solid #F1F5F9;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+                    background: <%= @has_cin ? '#D1FAE5' : '#FEF3C7' %>;
+                    display: flex; align-items: center; justify-content: center;">
+          <i class="<%= @has_cin ? 'ri-check-line' : 'ri-alert-line' %>"
+             style="color: <%= @has_cin ? '#065F46' : '#92400E' %>; font-size: 1.1rem;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 700; color: #1E293B;">Nimewo CIN</div>
+          <div style="font-size: 0.72rem; color: #64748B;">
+            <% if @has_cin %>
+              <%= t("citizens.election.cin_found") %>
+            <% else %>
+              <%= t("citizens.election.cin_missing") %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <%# Already Voted? %>
+      <div class="d-flex align-items-center gap-3 mb-3 pb-3" style="border-bottom: 1px solid #F1F5F9;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+                    background: <%= @already_voted ? '#FEE2E2' : '#D1FAE5' %>;
+                    display: flex; align-items: center; justify-content: center;">
+          <i class="<%= @already_voted ? 'ri-close-line' : 'ri-check-line' %>"
+             style="color: <%= @already_voted ? '#991B1B' : '#065F46' %>; font-size: 1.1rem;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 700; color: #1E293B;">
+            <%= @already_voted ? t("citizens.election.already_voted") : t("citizens.election.not_yet_voted") %>
+          </div>
+          <div style="font-size: 0.72rem; color: #64748B;">
+            <%= @already_voted ? t("citizens.election.already_voted_desc") : t("citizens.election.can_vote") %>
+          </div>
+        </div>
+      </div>
+
+      <%# Ballot Type %>
+      <div class="d-flex align-items-center gap-3">
+        <div style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+                    background: #DBEAFE; display: flex; align-items: center; justify-content: center;">
+          <i class="ri-file-list-3-line" style="color: #1E40AF; font-size: 1.1rem;"></i>
+        </div>
+        <div>
+          <div style="font-size: 0.82rem; font-weight: 700; color: #1E293B;">
+            <%= t("citizens.election.ballot_type") %>
+          </div>
+          <div style="font-size: 0.72rem; color: #64748B;">
+            <% if @is_diaspora %>
+              <%= t("citizens.election.ballot_diaspora") %>
+            <% else %>
+              <%= t("citizens.election.ballot_domestic", department: @ballot_route[:department]) %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Ballot Sections Preview ── %>
+    <div style="background: #F8FAFC; padding: 1rem 1.5rem; border-top: 1px solid #F1F5F9;">
+      <div style="font-size: 0.68rem; font-weight: 700; color: #94A3B8; text-transform: uppercase;
+                  letter-spacing: 0.08em; margin-bottom: 0.5rem;">
+        <%= t("citizens.election.sections_label") %>
+      </div>
+      <% @ballot_route[:ballot_sections]&.each do |section| %>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <i class="ri-checkbox-blank-circle-fill" style="font-size: 0.4rem; color: #00209F;"></i>
+          <span style="font-size: 0.78rem; color: #475569;"><%= section[:title] %></span>
+          <span style="font-size: 0.65rem; color: #94A3B8; margin-left: auto;">
+            <%= section[:candidates]&.size || 0 %> <%= t("citizens.election.candidates") %>
+          </span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Action Button ── %>
+  <div class="mt-4">
+    <% eligible = current_citizen.bonid_verified? && @has_cin && !@already_voted %>
+    <% if eligible %>
+      <%= form_with url: citizens_election_vote_begin_path, method: :post, local: true,
+                    data: { controller: "liveness-gate", liveness_gate_target: "form" } do |f| %>
+        <%= f.hidden_field :liveness_session_id, value: "", data: { liveness_gate_target: "sessionId" } %>
+        <%= f.hidden_field :biometric_hash, value: "", data: { liveness_gate_target: "biometricHash" } %>
+        <button type="submit"
+                style="width: 100%; padding: 1rem; background: #00209F; color: #fff;
+                       font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700;
+                       border: none; border-radius: 0.85rem; cursor: pointer;
+                       min-height: 56px; transition: all 0.2s;"
+                onmouseover="this.style.background='#001570'"
+                onmouseout="this.style.background='#00209F'">
+          <i class="ri-fingerprint-line" style="margin-right: 6px;"></i>
+          <%= t("citizens.election.start_voting") %>
+        </button>
+      <% end %>
+      <p style="font-size: 0.68rem; color: #94A3B8; text-align: center; margin-top: 0.75rem; line-height: 1.5;">
+        <%= t("citizens.election.liveness_notice") %>
+      </p>
+    <% elsif @already_voted %>
+      <a href="<%= citizens_election_verify_path %>"
+         style="display: block; width: 100%; padding: 1rem; background: #10B981; color: #fff;
+                font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700;
+                border: none; border-radius: 0.85rem; text-align: center; text-decoration: none;
+                min-height: 56px;">
+        <i class="ri-shield-check-line" style="margin-right: 6px;"></i>
+        <%= t("citizens.election.verify_my_vote") %>
+      </a>
+    <% else %>
+      <button disabled
+              style="width: 100%; padding: 1rem; background: #E2E8F0; color: #94A3B8;
+                     font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700;
+                     border: none; border-radius: 0.85rem; cursor: not-allowed; min-height: 56px;">
+        <%= t("citizens.election.cannot_vote") %>
+      </button>
+    <% end %>
+  </div>
+  <% end %>
+</div>

@@ -1,0 +1,269 @@
+<%# app/views/partner_portal/party_registrations/show.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <%# ── Header ── %>
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h4 class="pp-page-title">
+            <i class="ri-flag-line me-2 pp-text-brand"></i><%= @registration.display_name %>
+          </h4>
+          <p class="pp-page-subtitle">
+            <%= @registration.type_label %> &middot; Soumèt <%= @registration.submitted_at&.strftime("%d %b %Y") %>
+          </p>
+        </div>
+        <span class="badge bg-<%= @registration.status_color %>-subtle text-<%= @registration.status_color %> px-3 py-2">
+          <%= @registration.status_label %>
+        </span>
+      </div>
+
+      <%# ── Party Info ── %>
+      <div class="pp-card card mb-4">
+        <div class="card-header px-4 py-3">
+          <h6 class="fw-semibold mb-0 pp-text-sm">Enfòmasyon Pati</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-1">Non Pati</div>
+              <div class="pp-text-sm"><%= @registration.party_name %></div>
+            </div>
+            <% if @registration.party_acronym.present? %>
+              <div class="col-md-6">
+                <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-1">Sigle</div>
+                <div class="pp-text-sm"><%= @registration.party_acronym %></div>
+              </div>
+            <% end %>
+            <div class="col-md-6">
+              <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-1">Reprezantan</div>
+              <div class="pp-text-sm">
+                <%= @registration.representative_name %>
+                <% if @registration.is_mandataire %>
+                  <span class="badge bg-warning-subtle text-warning pp-badge-sm ms-1">Mandatè</span>
+                <% end %>
+              </div>
+            </div>
+            <% if @registration.representative_cin.present? %>
+              <div class="col-md-6">
+                <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-1">CIN Reprezantan</div>
+                <div class="pp-text-sm pp-font-mono"><%= @registration.representative_cin %></div>
+              </div>
+            <% end %>
+            <% if @registration.representative_bonid.present? %>
+              <div class="col-md-6">
+                <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-1">BonID</div>
+                <div class="pp-text-sm pp-font-mono"><%= @registration.representative_bonid %></div>
+              </div>
+            <% end %>
+            <div class="col-md-6">
+              <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-1">Tip</div>
+              <div class="pp-text-sm"><%= @registration.type_label %></div>
+            </div>
+          </div>
+
+          <%# Member parties for groupings %>
+          <% if @registration.registration_type == "grouping" && @registration.member_parties.present? %>
+            <div class="mt-3 pt-3 border-top">
+              <div class="pp-text-xs fw-semibold pp-text-secondary text-uppercase mb-2">Pati Manm yo</div>
+              <div class="d-flex flex-wrap gap-2">
+                <% @registration.member_parties.each do |party| %>
+                  <span class="badge bg-light text-dark border pp-badge-sm"><%= party %></span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Document Checklist (Article 143) ── %>
+      <div class="pp-card card mb-4">
+        <div class="card-header px-4 py-3 d-flex justify-content-between align-items-center">
+          <h6 class="fw-semibold mb-0 pp-text-sm d-flex align-items-center gap-2">
+            <i class="ri-file-list-3-line pp-text-warning"></i>
+            Dokiman Obligatwa — Atik 143
+          </h6>
+          <span class="pp-text-xs pp-text-muted">
+            <%= @registration.documents_submitted_count %>/<%= @registration.documents_total_count %> soumèt
+          </span>
+        </div>
+        <div class="card-body p-0">
+          <%= form_with model: @registration,
+                        url: update_documents_partner_portal_party_registration_path(@registration),
+                        method: :patch,
+                        local: true do |f| %>
+            <% @registration.required_documents.each_with_index do |doc, i| %>
+              <div class="d-flex align-items-center gap-3 px-4 py-3 <%= i < @registration.required_documents.size - 1 ? 'border-bottom' : '' %>">
+                <div class="form-check">
+                  <%= f.check_box doc[:field],
+                      class: "form-check-input",
+                      id: "doc_#{doc[:field]}" %>
+                </div>
+                <div class="flex-grow-1">
+                  <label for="doc_<%= doc[:field] %>" class="form-check-label pp-text-sm mb-0 cursor-pointer">
+                    <%= doc[:label] %>
+                  </label>
+                </div>
+                <span class="pp-text-xs pp-text-muted">Réf. <%= doc[:ref] %></span>
+                <% if @registration.send(doc[:field]) %>
+                  <i class="ri-check-line pp-text-success"></i>
+                <% else %>
+                  <i class="ri-time-line pp-text-muted"></i>
+                <% end %>
+              </div>
+            <% end %>
+            <div class="px-4 py-3 border-top bg-light">
+              <button type="submit" class="btn pp-btn-brand btn-sm">
+                <i class="ri-save-line me-1"></i> Anrejistre Dokiman
+              </button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Progress Bar ── %>
+      <div class="pp-card card mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="pp-text-sm fw-semibold">Pwogrè Dokiman</span>
+            <span class="pp-text-sm fw-bold pp-text-brand"><%= @registration.documents_progress_percentage %>%</span>
+          </div>
+          <div class="progress" style="height: 8px;">
+            <div class="progress-bar" role="progressbar"
+                 style="width: <%= @registration.documents_progress_percentage %>%; background-color: var(--portal-brand);">
+            </div>
+          </div>
+          <% if @registration.documents_complete? %>
+            <div class="mt-2 pp-text-xs pp-text-success">
+              <i class="ri-check-double-line me-1"></i> Tout dokiman yo soumèt
+            </div>
+          <% else %>
+            <div class="mt-2 pp-text-xs pp-text-muted">
+              <%= @registration.documents_total_count - @registration.documents_submitted_count %> dokiman rete
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── CEP Actions ── %>
+      <% if @registration.status.in?(%w[submitted under_review]) %>
+        <div class="pp-card card mb-4">
+          <div class="card-header px-4 py-3">
+            <h6 class="fw-semibold mb-0 pp-text-sm d-flex align-items-center gap-2">
+              <i class="ri-shield-check-line pp-text-brand"></i>
+              Aksyon CEP
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="d-flex gap-2 flex-wrap">
+              <% if @registration.status == "submitted" %>
+                <%= button_to "Kòmanse Revizyon",
+                    start_review_partner_portal_party_registration_path(@registration),
+                    method: :patch,
+                    class: "btn btn-outline-warning" do %>
+                  <i class="ri-eye-line me-1"></i> Kòmanse Revizyon
+                <% end %>
+              <% end %>
+
+              <%= button_to "Apwouve",
+                  approve_partner_portal_party_registration_path(@registration),
+                  method: :patch,
+                  class: "btn btn-success",
+                  data: { turbo_confirm: "Apwouve #{@registration.display_name}?" } do %>
+                <i class="ri-check-line me-1"></i> Apwouve
+              <% end %>
+
+              <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#rejectForm">
+                <i class="ri-close-line me-1"></i> Rejte
+              </button>
+            </div>
+
+            <div class="collapse mt-3" id="rejectForm">
+              <%= form_with url: reject_partner_portal_party_registration_path(@registration),
+                            method: :patch, local: true do |f| %>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold pp-text-sm">Rezon Rejeksyon</label>
+                  <textarea name="rejection_reason" rows="3" required
+                            class="form-control" placeholder="Eksplike poukisa enskripsyon an rejte..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger">
+                  <i class="ri-close-circle-line me-1"></i> Konfime Rejeksyon
+                </button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Rejection Reason ── %>
+      <% if @registration.status == "rejected" && @registration.rejection_reason.present? %>
+        <div class="alert alert-danger rounded-3 mb-4">
+          <div class="fw-semibold pp-text-sm mb-1">
+            <i class="ri-close-circle-line me-1"></i> Rezon Rejeksyon
+          </div>
+          <p class="pp-text-sm mb-0"><%= @registration.rejection_reason %></p>
+          <div class="pp-text-xs pp-text-muted mt-1">
+            Pa <%= @registration.reviewed_by %> &middot; <%= @registration.rejected_at&.strftime("%d %b %Y %H:%M") %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Nominated Candidates ── %>
+      <% if @registration.status == "approved" %>
+        <div class="pp-card card mb-4">
+          <div class="card-header px-4 py-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-semibold mb-0 pp-text-sm d-flex align-items-center gap-2">
+              <i class="ri-user-star-line pp-text-brand"></i>
+              Kandida Nomine
+            </h6>
+            <%= link_to new_partner_portal_candidate_registration_path(party_registration_id: @registration.id),
+                        class: "btn pp-btn-brand btn-sm" do %>
+              <i class="ri-add-line me-1"></i> Nomine Kandida
+            <% end %>
+          </div>
+          <div class="card-body p-0">
+            <% if @registration.candidates.any? %>
+              <div class="table-responsive">
+                <table class="table table-hover pp-table mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Non</th>
+                      <th>Pòs</th>
+                      <th>Estati</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% @registration.candidates.each do |c| %>
+                      <tr>
+                        <td class="fw-semibold"><%= c.full_name %></td>
+                        <td class="pp-text-xs"><%= c.position.titleize %></td>
+                        <td>
+                          <span class="badge bg-<%= c.registration_status_color %>-subtle text-<%= c.registration_status_color %> pp-badge-sm">
+                            <%= c.registration_status_label %>
+                          </span>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% else %>
+              <div class="text-center p-4">
+                <span class="pp-text-sm pp-text-muted">Okenn kandida nomine ankò.</span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Back ── %>
+      <div class="text-center">
+        <%= link_to partner_portal_party_registrations_path, class: "btn btn-outline-secondary" do %>
+          <i class="ri-arrow-left-line me-1"></i> Retounen nan Lis la
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>

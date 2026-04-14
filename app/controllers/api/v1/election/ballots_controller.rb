@@ -78,12 +78,8 @@ module Api
 
           # Geolocation validation — flag mismatch but don't block
           # (voter may be traveling; CEP reviews flagged votes)
-          ip_country = begin
-            Geocoder.search(request.remote_ip).first&.country_code
-          rescue => e
-            Rails.logger.warn("[Election API] Geocoder failed: #{e.message}")
-            nil
-          end
+          # Skip for kiosk votes — constituency is known from the kiosk location
+          ip_country = vote_source == "kiosk" ? nil : IpGeolocator.country_code(request.remote_ip)
           location_check = verify_voter_location(current_voter.bonid, ip_country)
 
           # Eligible — issue challenge nonce for ZKP
@@ -245,8 +241,7 @@ module Api
         private
 
         def election_open?(election_id)
-          # TODO: Check Election model for open/closed status
-          election_id.present?
+          ::Election::ElectionCache.open?(election_id)
         end
 
         def cin_on_voter_roll?(cin_number, election_id)
@@ -256,22 +251,40 @@ module Api
         end
 
         def cep_public_key(election_id)
-          Rails.application.credentials.dig(:election, :cep_public_key) || ""
+          ::Election::ElectionCache.cep_public_key(election_id)
         end
 
         def find_existing_ballot(nullifier, election_id)
-          # TODO: Replace with ElectionBallot.find_by(nullifier:, election_id:)
-          nil
+          ballot = ElectionBallot.find_by(nullifier: nullifier, election_id: election_id)
+          return nil unless ballot
+
+          { ballot_hash: ballot.ballot_hash, receipt_id: ballot.receipt_id }
         end
 
         def store_ballot!(election_id, ballot, receipt)
-          # TODO: Save to ElectionBallot model (append-only, immutable)
-          # Cross-device nullifier lock — prevents casting from a second device
-          # while the first device's vote is being processed
-          nullifier_key = "election_nullifier:#{election_id}:#{ballot[:nullifier]}"
-          unless Rails.cache.write(nullifier_key, true, unless_exist: true, expires_in: 30.days)
-            raise ::Election::BallotService::AlreadyVotedError, "Ou deja vote nan eleksyon sa a."
-          end
+          location_code = ::Election::BallotRoutingService.send(:extract_location_code, current_voter.bonid)
+          ip_country = vote_source == "kiosk" ? nil : IpGeolocator.country_code(request.remote_ip)
+
+          ElectionBallot.create!(
+            election_id: election_id,
+            nullifier: ballot[:nullifier],
+            position: params[:position] || "president",
+            encrypted_choice: ballot[:encrypted_choice].to_json,
+            encrypted_key: ballot.dig(:encrypted_choice, :encrypted_key),
+            iv: ballot.dig(:encrypted_choice, :iv),
+            auth_tag: ballot.dig(:encrypted_choice, :auth_tag),
+            zkp_commitment: ballot[:zkp_commitment],
+            zkp_proof: ballot[:zkp_proof],
+            ballot_hash: receipt[:ballot_hash],
+            receipt_id: receipt[:receipt_id],
+            channel: vote_source == "kiosk" ? "consulate" : "remote",
+            consulate_id: params[:consulate_id],
+            station_id: params[:station_id],
+            department_code: location_code,
+            ip_country: ip_country,
+            location_flagged: ip_country.present? && location_code.present? && ip_country.upcase != location_code,
+            cast_at: Time.current
+          )
 
           Rails.logger.info(
             "[Election API] Ballot stored: election=#{election_id} " \
@@ -305,15 +318,10 @@ module Api
         end
 
         def broadcast_new_vote(election_id)
-          ElectionTallyChannel.broadcast_vote(election_id, {
-            total_votes: 0, # TODO: ElectionBallot.where(election_id:).count
-            remote_votes: 0,
-            consulate_votes: 0,
-            rejected: 0,
-            by_country: {}
-          })
-        rescue => e
-          Rails.logger.warn("[Election API] Broadcast failed: #{e.message}")
+          # Increment Redis counter (O(1), ~0.1ms) instead of enqueuing
+          # a background job on every single vote. The aggregated broadcast
+          # job runs every 5 seconds and pushes stats to CEP dashboards.
+          ::Election::ElectionCache.increment_vote_count!(election_id)
         end
       end
     end

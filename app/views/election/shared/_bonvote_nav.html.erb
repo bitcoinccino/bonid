@@ -1,0 +1,75 @@
+<%# Shared navigation bar for all public election pages.
+    Usage: render "election/shared/bonvote_nav", active: "results" %>
+
+<% active_page = local_assigns[:active] || "" %>
+
+<nav style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 0; position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;
+              display: flex; align-items: center; justify-content: space-between;">
+
+    <%# Brand %>
+    <a href="/election/results" style="display: flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 0;">
+      <%= image_tag "haiti_flag.png", alt: "Haiti", style: "height: 28px; width: auto;" rescue "" %>
+      <span style="font-family: 'Orbitron', sans-serif; font-size: 0.6rem; font-weight: 800;
+                   color: var(--ht-yellow); letter-spacing: 2px;">BONVOTE</span>
+    </a>
+
+    <%# Nav links %>
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <a href="<%= election_public_results_path(lang: I18n.locale) %>"
+         style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 2rem;
+                font-size: 0.65rem; font-weight: 700; text-decoration: none;
+                font-family: 'Montserrat', sans-serif;
+                <%= active_page == 'results' ? 'background: var(--ht-blue); color: #fff;' : 'color: #94A3B8;' %>">
+        <i class="ri-bar-chart-box-line" style="font-size: 0.8rem;"></i>
+        <span class="nav-label"><%= t("bonvote.nav_results", default: "Rezilta") %></span>
+      </a>
+
+      <a href="<%= election_audit_verify_path(lang: I18n.locale) %>"
+         style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 2rem;
+                font-size: 0.65rem; font-weight: 700; text-decoration: none;
+                font-family: 'Montserrat', sans-serif;
+                <%= active_page == 'verify' ? 'background: var(--ht-blue); color: #fff;' : 'color: #94A3B8;' %>">
+        <i class="ri-shield-check-line" style="font-size: 0.8rem;"></i>
+        <span class="nav-label"><%= t("bonvote.nav_verify", default: "Verifye") %></span>
+      </a>
+
+      <a href="<%= election_public_celebration_path(lang: I18n.locale) %>"
+         style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 2rem;
+                font-size: 0.65rem; font-weight: 700; text-decoration: none;
+                font-family: 'Montserrat', sans-serif;
+                <%= active_page == 'celebration' ? 'background: var(--ht-blue); color: #fff;' : 'color: #94A3B8;' %>">
+        <i class="ri-trophy-line" style="font-size: 0.8rem;"></i>
+        <span class="nav-label"><%= t("bonvote.nav_celebration", default: "Selebrasyon") %></span>
+      </a>
+
+      <span style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 4px;"></span>
+
+      <a href="<%= election_whitepaper_path(lang: :en) %>"
+         style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 2rem;
+                font-size: 0.65rem; font-weight: 700; text-decoration: none;
+                font-family: 'Montserrat', sans-serif;
+                <%= active_page == 'whitepaper' ? 'background: var(--ht-blue); color: #fff;' : 'color: #94A3B8;' %>">
+        <i class="ri-file-text-line" style="font-size: 0.8rem;"></i>
+        <span class="nav-label">Whitepaper</span>
+      </a>
+
+      <a href="<%= election_livreblanc_path(lang: :fr) %>"
+         style="display: flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 2rem;
+                font-size: 0.65rem; font-weight: 700; text-decoration: none;
+                font-family: 'Montserrat', sans-serif;
+                <%= active_page == 'livreblanc' ? 'background: var(--ht-blue); color: #fff;' : 'color: #94A3B8;' %>">
+        <i class="ri-file-text-line" style="font-size: 0.8rem;"></i>
+        <span class="nav-label">Livre Blanc</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<style>
+  @media (max-width: 480px) {
+    .nav-label { display: none; }
+  }
+</style>

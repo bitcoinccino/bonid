@@ -1,0 +1,53 @@
+<%# Vote Verification — enter ballot hash %>
+
+<div class="container-fluid py-4" style="max-width: 560px; margin: 0 auto;">
+  <div class="text-center mb-4">
+    <div style="width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 1rem;
+                background: #DBEAFE; display: flex; align-items: center; justify-content: center;">
+      <i class="ri-shield-check-line" style="font-size: 1.5rem; color: #1E40AF;"></i>
+    </div>
+    <h2 style="font-size: 1.3rem; font-weight: 800; color: #1E293B; margin-bottom: 4px;">
+      <%= t("citizens.election.verify_title") %>
+    </h2>
+    <p style="font-size: 0.82rem; color: #64748B; line-height: 1.5; max-width: 400px; margin: 0 auto;">
+      <%= t("citizens.election.verify_desc") %>
+    </p>
+  </div>
+
+  <% if @error %>
+    <div class="alert alert-warning" style="border-radius: 0.75rem; font-size: 0.82rem;">
+      <%= @error %>
+    </div>
+  <% end %>
+
+  <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
+    <div class="card-body p-4">
+      <%= form_with url: citizens_election_verify_check_path, method: :post, local: true do |f| %>
+        <label style="display: block; font-size: 0.72rem; font-weight: 700; color: #475569;
+                      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">
+          <%= t("citizens.election.ballot_hash_label") %>
+        </label>
+        <%= f.text_area :ballot_hash,
+                        placeholder: t("citizens.election.hash_placeholder"),
+                        rows: 3,
+                        style: "width: 100%; padding: 0.85rem; border: 1px solid #E2E8F0; border-radius: 0.75rem;
+                               font-family: 'Courier New', monospace; font-size: 0.82rem; color: #1E293B;
+                               resize: none; min-height: 80px;",
+                        required: true %>
+
+        <button type="submit"
+                style="width: 100%; padding: 0.85rem; background: #00209F; color: #fff;
+                       font-family: 'Montserrat', sans-serif; font-size: 0.9rem; font-weight: 700;
+                       border: none; border-radius: 0.75rem; cursor: pointer; margin-top: 1rem;
+                       min-height: 48px;">
+          <i class="ri-search-line" style="margin-right: 6px;"></i>
+          <%= t("citizens.election.verify_button") %>
+        </button>
+      <% end %>
+    </div>
+  </div>
+
+  <p style="font-size: 0.68rem; color: #94A3B8; text-align: center; margin-top: 1rem; line-height: 1.5;">
+    <%= t("citizens.election.verify_note") %>
+  </p>
+</div>

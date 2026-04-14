@@ -1,0 +1,74 @@
+<%# Elections List %>
+
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-government-line me-2 pp-text-brand"></i>Eleksyon yo
+      </h4>
+      <p class="pp-page-subtitle">Jere tout eleksyon nasyonal yo.</p>
+    </div>
+    <%= link_to new_partner_portal_election_path, class: "btn pp-btn-brand px-4" do %>
+      <i class="ri-add-line me-1"></i> Nouvo Eleksyon
+    <% end %>
+  </div>
+
+  <div class="pp-card card">
+    <div class="table-responsive">
+      <table class="table table-hover pp-table">
+        <thead class="table-light">
+          <tr>
+            <th>Tit</th>
+            <th>Tip</th>
+            <th>Dat</th>
+            <th>Round</th>
+            <th>Estati</th>
+            <th>Vòt</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @elections.each do |election| %>
+            <tr>
+              <td class="fw-semibold"><%= election.title %></td>
+              <td>
+                <span class="badge bg-light text-dark border pp-badge-sm">
+                  <%= election.election_type.capitalize %>
+                </span>
+              </td>
+              <td class="text-muted"><%= election.election_date.strftime("%d/%m/%Y") %></td>
+              <td><%= election.round %></td>
+              <td>
+                <% color = { "draft" => "secondary", "open" => "success", "closed" => "warning", "certified" => "primary", "cancelled" => "danger" }[election.status] || "secondary" %>
+                <span class="badge bg-<%= color %> pp-badge-sm"><%= election.status.capitalize %></span>
+              </td>
+              <td><%= election.total_votes %></td>
+              <td>
+                <%= link_to partner_portal_election_path(election), class: "btn btn-sm btn-outline-primary" do %>
+                  <i class="ri-eye-line"></i>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% if @elections.empty? %>
+      <div class="pp-empty-state">
+        <i class="ri-government-line"></i>
+        <h6>Pa gen eleksyon ankò</h6>
+        <p class="text-muted">Kreye premye eleksyon an pou kòmanse.</p>
+        <%= link_to new_partner_portal_election_path, class: "btn pp-btn-brand mt-2" do %>
+          <i class="ri-add-line me-1"></i> Kreye Eleksyon
+        <% end %>
+      </div>
+    <% end %>
+    <% if @elections.respond_to?(:total_pages) && @elections.total_pages > 1 %>
+      <div class="card-footer bg-white border-top-0 text-center py-3">
+        <%= paginate @elections %>
+      </div>
+    <% end %>
+  </div>
+
+</div>

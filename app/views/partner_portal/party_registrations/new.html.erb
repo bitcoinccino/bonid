@@ -1,0 +1,108 @@
+<%# app/views/partner_portal/party_registrations/new.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <div class="mb-4">
+        <h4 class="pp-page-title">
+          <i class="ri-flag-line me-2 pp-text-brand"></i>Enskri Pati Politik
+        </h4>
+        <p class="pp-page-subtitle">Atik 143 — Dekrè Elektoral 1e Desanm 2025</p>
+      </div>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+          <%= form_with model: @registration,
+                        url: partner_portal_party_registrations_path,
+                        local: true do |f| %>
+
+            <%# Registration Type %>
+            <div class="mb-4">
+              <label class="form-label fw-semibold pp-text-sm">Tip Enskripsyon</label>
+              <div class="d-flex gap-3">
+                <div class="form-check">
+                  <%= f.radio_button :registration_type, "party",
+                      class: "form-check-input", id: "type_party", checked: true %>
+                  <label class="form-check-label pp-text-sm" for="type_party">Pati Politik</label>
+                </div>
+                <div class="form-check">
+                  <%= f.radio_button :registration_type, "grouping",
+                      class: "form-check-input", id: "type_grouping" %>
+                  <label class="form-check-label pp-text-sm" for="type_grouping">Groupman / Regroupman</label>
+                </div>
+              </div>
+            </div>
+
+            <%# Party Name %>
+            <div class="mb-3">
+              <label class="form-label fw-semibold pp-text-sm">Non Pati a <span class="text-danger">*</span></label>
+              <%= f.text_field :party_name, class: "form-control",
+                  placeholder: "e.g., Fanmi Lavalas", required: true %>
+            </div>
+
+            <%# Party Acronym %>
+            <div class="mb-3">
+              <label class="form-label fw-semibold pp-text-sm">Sigle (Akwonim)</label>
+              <%= f.text_field :party_acronym, class: "form-control",
+                  placeholder: "e.g., FL" %>
+            </div>
+
+            <hr class="my-4">
+
+            <%# Representative %>
+            <div class="mb-3">
+              <label class="form-label fw-semibold pp-text-sm">Non Reprezantan Ofisyèl <span class="text-danger">*</span></label>
+              <%= f.text_field :representative_name, class: "form-control",
+                  placeholder: "Non konplè reprezantan an", required: true %>
+            </div>
+
+            <%# CIN %>
+            <div class="mb-3">
+              <label class="form-label fw-semibold pp-text-sm">Nimewo CIN Reprezantan</label>
+              <%= f.text_field :representative_cin, class: "form-control pp-font-mono",
+                  placeholder: "Nimewo Kat Idantifikasyon Nasyonal" %>
+            </div>
+
+            <%# BonID %>
+            <div class="mb-3">
+              <label class="form-label fw-semibold pp-text-sm">BonID Reprezantan</label>
+              <%= f.text_field :representative_bonid, class: "form-control pp-font-mono",
+                  placeholder: "BonID (si disponib)" %>
+            </div>
+
+            <%# Mandataire %>
+            <div class="mb-3">
+              <div class="form-check">
+                <%= f.check_box :is_mandataire, class: "form-check-input", id: "is_mandataire" %>
+                <label class="form-check-label pp-text-sm" for="is_mandataire">
+                  Sa a se yon mandatè (pa reprezantan ofisyèl la)
+                </label>
+              </div>
+              <div class="pp-text-xs pp-text-muted mt-1">
+                Si se yon mandatè, yon akt notarye otorizasyon obligatwa (Dokiman #5).
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <%# Info Notice %>
+            <div class="alert alert-info rounded-3 pp-text-xs">
+              <i class="ri-information-line me-1"></i>
+              Apre enskripsyon, w ap ka tcheke dokiman obligatwa yo (Atik 143) sou paj detay pati a.
+              CEP ap revize dosye a epi apwouve oswa rejte li.
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn pp-btn-brand">
+                <i class="ri-send-plane-line me-1"></i> Soumèt Enskripsyon
+              </button>
+              <%= link_to "Anile", partner_portal_party_registrations_path, class: "btn btn-outline-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

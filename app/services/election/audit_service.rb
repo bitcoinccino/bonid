@@ -188,16 +188,32 @@ module Election
       compute_merkle_root(parents)
     end
 
-    # Load ballots from the ledger.
-    # In production, this reads from an append-only, immutable table.
+    # Load ballots from the immutable ledger.
     def self.load_ballots(election_id)
-      # TODO: Replace with ElectionBallot.where(election_id: election_id)
-      #       once the election ballot model is created.
+      ElectionBallot.where(election_id: election_id).order(:cast_at).map do |b|
+        {
+          ballot_hash: b.ballot_hash,
+          nullifier: b.nullifier,
+          zkp_commitment: b.zkp_commitment,
+          timestamp: b.cast_at.iso8601,
+          channel: b.channel,
+          position: b.position
+        }
+      end
+    rescue NameError
       []
     end
 
     def self.find_ballot(ballot_hash, election_id)
-      # TODO: Replace with ElectionBallot.find_by(ballot_hash:, election_id:)
+      ballot = ElectionBallot.find_by(ballot_hash: ballot_hash, election_id: election_id)
+      return nil unless ballot
+
+      {
+        ballot_hash: ballot.ballot_hash,
+        timestamp: ballot.cast_at.iso8601,
+        position: "Vote ##{ElectionBallot.where(election_id: election_id).where('cast_at <= ?', ballot.cast_at).count}"
+      }
+    rescue NameError
       nil
     end
   end

@@ -1,0 +1,321 @@
+<%# Step 3: Ballot — Immersive candidate selection (multi-section wizard) %>
+
+<div style="min-height: 100vh; background: linear-gradient(180deg, #00209F 0%, #001466 30%, #0B0F19 100%);
+            font-family: 'Montserrat', 'Inter', sans-serif;">
+
+  <%# ── Top bar ── %>
+  <div style="padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="<%= asset_path('haiti_flag.png') %>" width="28" height="28" style="border-radius: 50%; object-fit: cover;" alt="Haiti">
+      <div>
+        <div style="font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.9); letter-spacing: 1px;">
+          ELEKSYON 2026
+        </div>
+        <div style="font-size: 0.6rem; color: rgba(255,255,255,0.5);">
+          <%= @election.title.presence || @election.id %>
+        </div>
+      </div>
+    </div>
+    <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4);">
+      <i class="ri-time-line"></i> 10:00
+    </div>
+  </div>
+
+  <%# ── Section tabs ── %>
+  <div style="padding: 0 1.5rem; display: flex; gap: 8px; margin-bottom: 1.5rem; overflow-x: auto;" id="section-tabs">
+    <% @sections.each_with_index do |section, i| %>
+      <button onclick="showSection(<%= i %>)"
+              id="tab-<%= i %>"
+              class="ballot-tab <%= 'active' if i == 0 %>"
+              style="padding: 8px 16px; border-radius: 2rem; border: 1px solid rgba(255,255,255,0.15);
+                     background: <%= i == 0 ? 'rgba(255,255,255,0.15)' : 'transparent' %>;
+                     color: <%= i == 0 ? '#fff' : 'rgba(255,255,255,0.5)' %>;
+                     font-family: 'Montserrat', sans-serif; font-size: 0.72rem; font-weight: 600;
+                     cursor: pointer; white-space: nowrap; transition: all 0.2s;">
+        <%= section[:title] %>
+      </button>
+    <% end %>
+  </div>
+
+  <%# ── Ballot form ── %>
+  <%= form_with url: citizens_election_vote_cast_path, method: :post, local: true, id: "ballot-form",
+                data: { controller: "vote-encryption" } do |f| %>
+
+    <%# Hidden fields for encrypted payload %>
+    <%= f.hidden_field :position, value: "president", id: "vote-position" %>
+    <input type="hidden" name="encrypted_choice[encrypted_choice]" id="enc-choice" value="">
+    <input type="hidden" name="encrypted_choice[encrypted_key]" id="enc-key" value="">
+    <input type="hidden" name="encrypted_choice[iv]" id="enc-iv" value="">
+    <input type="hidden" name="encrypted_choice[auth_tag]" id="enc-auth-tag" value="">
+
+    <%# ── Candidate sections ── %>
+    <% @sections.each_with_index do |section, si| %>
+      <div class="ballot-section" id="section-<%= si %>" style="<%= 'display:none;' unless si == 0 %>">
+        <div style="padding: 0 1.5rem;">
+          <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 4px;">
+            <%= section[:title] %>
+          </h3>
+          <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-bottom: 1.25rem;">
+            <%= section[:description] %>
+          </p>
+
+          <%# ── Candidate cards ── %>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem;">
+            <% (section[:candidates] || []).each do |candidate| %>
+              <label style="cursor: pointer; display: block;">
+                <input type="radio"
+                       name="selection_<%= section[:position] %>"
+                       value="<%= candidate[:id] %>"
+                       data-position="<%= section[:position] %>"
+                       data-ballot-number="<%= candidate[:ballot_number] %>"
+                       style="display: none;"
+                       onchange="selectCandidate(this)">
+
+                <div class="candidate-card" data-candidate-id="<%= candidate[:id] %>"
+                     style="background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.08);
+                            border-radius: 1rem; padding: 1rem; transition: all 0.2s;
+                            display: flex; align-items: center; gap: 1rem;">
+
+                  <%# Photo %>
+                  <div style="width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+                              background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
+                    <% if candidate[:photo_url].present? %>
+                      <img src="<%= candidate[:photo_url] %>" width="56" height="56"
+                           style="border-radius: 50%; object-fit: cover;" alt="<%= candidate[:name] %>">
+                    <% else %>
+                      <i class="ri-user-line" style="font-size: 1.5rem; color: rgba(255,255,255,0.4);"></i>
+                    <% end %>
+                  </div>
+
+                  <%# Info %>
+                  <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-bottom: 2px;">
+                      <%= candidate[:name] %>
+                    </div>
+                    <div style="font-size: 0.68rem; color: rgba(255,255,255,0.5);">
+                      <% if candidate[:party].present? %>
+                        <%= candidate[:party] %>
+                        <% if candidate[:party_acronym].present? %>
+                          (<%= candidate[:party_acronym] %>)
+                        <% end %>
+                      <% else %>
+                        Endepandan
+                      <% end %>
+                    </div>
+                    <% if candidate[:ballot_number] %>
+                      <div style="margin-top: 4px;">
+                        <span style="font-size: 0.6rem; font-weight: 700; background: rgba(255,255,255,0.1);
+                                     color: rgba(255,255,255,0.7); padding: 2px 8px; border-radius: 1rem;">
+                          #<%= candidate[:ballot_number] %>
+                        </span>
+                      </div>
+                    <% end %>
+                  </div>
+
+                  <%# Selection indicator %>
+                  <div class="select-indicator"
+                       style="width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+                              border: 2px solid rgba(255,255,255,0.2); display: flex;
+                              align-items: center; justify-content: center; transition: all 0.2s;">
+                  </div>
+                </div>
+              </label>
+            <% end %>
+
+            <% if section[:candidates].blank? %>
+              <div style="padding: 2rem; text-align: center; color: rgba(255,255,255,0.4); font-size: 0.82rem;">
+                <i class="ri-inbox-line" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                <%= t("citizens.election.no_candidates") %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <%# ── Navigation buttons ── %>
+        <div style="padding: 1.5rem; display: flex; gap: 0.75rem; margin-top: 1rem;">
+          <% if si > 0 %>
+            <button type="button" onclick="showSection(<%= si - 1 %>)"
+                    style="flex: 1; padding: 0.85rem; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+                           font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600;
+                           border: 1px solid rgba(255,255,255,0.15); border-radius: 0.75rem; cursor: pointer;
+                           min-height: 48px;">
+              <i class="ri-arrow-left-line"></i> <%= t("citizens.election.back") %>
+            </button>
+          <% end %>
+
+          <% if si < @sections.size - 1 %>
+            <button type="button" onclick="showSection(<%= si + 1 %>)"
+                    style="flex: 2; padding: 0.85rem; background: #00209F; color: #fff;
+                           font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 700;
+                           border: none; border-radius: 0.75rem; cursor: pointer; min-height: 48px;">
+              <%= t("citizens.election.next_section") %> <i class="ri-arrow-right-line"></i>
+            </button>
+          <% else %>
+            <%# Last section — show confirm button %>
+            <button type="button" onclick="showConfirmation()"
+                    id="confirm-btn"
+                    style="flex: 2; padding: 0.85rem; background: #10B981; color: #fff;
+                           font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 700;
+                           border: none; border-radius: 0.75rem; cursor: pointer; min-height: 48px;">
+              <i class="ri-check-double-line"></i> <%= t("citizens.election.review_choices") %>
+            </button>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# ── Confirmation overlay ── %>
+    <div id="confirmation-overlay" style="display: none;">
+      <div style="padding: 1.5rem; max-width: 480px; margin: 0 auto;">
+        <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+                    border-radius: 1.25rem; padding: 2rem; text-align: center;">
+
+          <div style="width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 1rem;
+                      background: rgba(237,185,94,0.15); display: flex; align-items: center; justify-content: center;">
+            <i class="ri-file-shield-2-line" style="font-size: 1.5rem; color: #EDB95E;"></i>
+          </div>
+
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">
+            <%= t("citizens.election.confirm_title") %>
+          </h3>
+          <p style="font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-bottom: 1.5rem; line-height: 1.5;">
+            <%= t("citizens.election.confirm_desc") %>
+          </p>
+
+          <%# Summary of choices — filled by JS %>
+          <div id="choices-summary" style="text-align: left; margin-bottom: 1.5rem;"></div>
+
+          <%# Security notice %>
+          <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.15);
+                      border-radius: 0.75rem; padding: 0.75rem; margin-bottom: 1.5rem;">
+            <p style="font-size: 0.68rem; color: #10B981; margin: 0; line-height: 1.5;">
+              <i class="ri-lock-line" style="margin-right: 4px;"></i>
+              <%= t("citizens.election.encryption_notice") %>
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" onclick="hideConfirmation()"
+                    style="flex: 1; padding: 0.85rem; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+                           font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 600;
+                           border: 1px solid rgba(255,255,255,0.15); border-radius: 0.75rem; cursor: pointer;
+                           min-height: 48px;">
+              <i class="ri-arrow-left-line"></i> <%= t("citizens.election.modify") %>
+            </button>
+
+            <button type="submit" id="cast-btn"
+                    style="flex: 2; padding: 0.85rem; background: #10B981; color: #fff;
+                           font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 800;
+                           border: none; border-radius: 0.75rem; cursor: pointer; min-height: 48px;
+                           box-shadow: 0 4px 20px rgba(16,185,129,0.3);">
+              <i class="ri-checkbox-circle-line"></i> <%= t("citizens.election.cast_vote") %>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .candidate-card:hover {
+    background: rgba(255,255,255,0.1) !important;
+    border-color: rgba(255,255,255,0.2) !important;
+  }
+  .candidate-card.selected {
+    background: rgba(0,32,159,0.2) !important;
+    border-color: #00209F !important;
+  }
+  .candidate-card.selected .select-indicator {
+    background: #00209F !important;
+    border-color: #00209F !important;
+  }
+  .candidate-card.selected .select-indicator::after {
+    content: '\2713';
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .ballot-tab.active {
+    background: rgba(255,255,255,0.15) !important;
+    color: #fff !important;
+  }
+  @media (max-width: 480px) {
+    .candidate-card { padding: 0.85rem !important; }
+  }
+</style>
+
+<script>
+  // ── Section navigation ──
+  function showSection(index) {
+    document.querySelectorAll('.ballot-section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.ballot-tab').forEach(t => {
+      t.classList.remove('active');
+      t.style.background = 'transparent';
+      t.style.color = 'rgba(255,255,255,0.5)';
+    });
+
+    const section = document.getElementById('section-' + index);
+    const tab = document.getElementById('tab-' + index);
+    if (section) section.style.display = 'block';
+    if (tab) {
+      tab.classList.add('active');
+      tab.style.background = 'rgba(255,255,255,0.15)';
+      tab.style.color = '#fff';
+    }
+
+    document.getElementById('confirmation-overlay').style.display = 'none';
+  }
+
+  // ── Candidate selection ──
+  function selectCandidate(radio) {
+    const position = radio.dataset.position;
+    // Clear all selections in this section
+    document.querySelectorAll('input[name="selection_' + position + '"]').forEach(r => {
+      const card = r.closest('label').querySelector('.candidate-card');
+      card.classList.remove('selected');
+    });
+    // Mark selected
+    const card = radio.closest('label').querySelector('.candidate-card');
+    card.classList.add('selected');
+  }
+
+  // ── Confirmation ──
+  function showConfirmation() {
+    const summary = document.getElementById('choices-summary');
+    let html = '';
+
+    document.querySelectorAll('.ballot-section').forEach((section, i) => {
+      const radios = section.querySelectorAll('input[type="radio"]:checked');
+      if (radios.length > 0) {
+        const radio = radios[0];
+        const card = radio.closest('label').querySelector('.candidate-card');
+        const name = card.querySelector('[style*="font-weight: 700"][style*="color: #fff"]').textContent.trim();
+        const number = radio.dataset.ballotNumber;
+
+        html += '<div style="display: flex; align-items: center; gap: 10px; padding: 0.75rem; ' +
+                'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); ' +
+                'border-radius: 0.75rem; margin-bottom: 0.5rem;">' +
+                '<i class="ri-check-line" style="color: #10B981;"></i>' +
+                '<div><div style="font-size: 0.78rem; font-weight: 700; color: #fff;">' + name + '</div>' +
+                '<div style="font-size: 0.65rem; color: rgba(255,255,255,0.5);">#' + (number || '?') + '</div></div></div>';
+      }
+    });
+
+    if (html === '') {
+      html = '<div style="text-align: center; padding: 1rem; color: rgba(255,255,255,0.4); font-size: 0.82rem;">' +
+             '<%= t("citizens.election.no_selection") %></div>';
+    }
+
+    summary.innerHTML = html;
+
+    document.querySelectorAll('.ballot-section').forEach(s => s.style.display = 'none');
+    document.getElementById('confirmation-overlay').style.display = 'block';
+  }
+
+  function hideConfirmation() {
+    document.getElementById('confirmation-overlay').style.display = 'none';
+    // Show last section
+    showSection(<%= @sections.size - 1 %>);
+  }
+</script>

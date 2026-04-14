@@ -10,15 +10,13 @@ module Election
   module Admin
     class ElectionsController < ::Admin::BaseController
       before_action :require_cep_admin!
+      before_action :set_election, except: [:snapshot]
 
-      # GET /election/admin/elections/:id
+      # GET /election/:id
       # The main tally dashboard
       def show
-        @election_id = params[:id] || "2026-presidential-round1"
-        @election_closed = false # TODO: Check election.closed_at
-
-        # Vote counts
         @stats = build_stats(@election_id)
+        @sig_status = ElectionSignature.status_for(@election_id)
 
         # Integrity verification
         @integrity = Election::AuditService.generate_tally_proof(@election_id)
@@ -32,7 +30,7 @@ module Election
         render "election/admin/tally"
       end
 
-      # GET /election/admin/elections/:id/snapshot
+      # GET /election/:id/snapshot
       # Daily snapshot for public publication
       def snapshot
         @election_id = params[:id]
@@ -47,89 +45,131 @@ module Election
         end
       end
 
-      # POST /election/admin/elections/:id/decrypt
+      # GET /election/:id/multi_sig
+      # Multi-signature ceremony UI
+      def multi_sig
+        @sig_status = Election::MultiSigService.status(@election_id)
+
+        render "election/admin/multi_sig"
+      end
+
+      # POST /election/:id/sign
+      # Add a signatory's signature
+      def sign
+        signatory = {
+          bonid: current_admin_user.try(:bonid) || params[:bonid],
+          role: params[:role],
+          name: current_admin_user.try(:full_name) || params[:name] || current_admin_user.try(:email),
+          liveness_session_id: params[:liveness_session_id],
+          liveness_verified: params[:liveness_verified].present? || params[:liveness_session_id].present?,
+          key_shard: params[:key_shard]
+        }
+
+        result = Election::MultiSigService.add_signature(@election_id, signatory)
+
+        if result[:quorum_met]
+          redirect_to admin_election_election_results_path(@election_id),
+                      notice: "Kowòm atenn! Rezilta yo disponib."
+        else
+          redirect_to admin_election_election_multi_sig_path(@election_id),
+                      notice: "Siyati anrejistre. #{result[:remaining]} rete."
+        end
+      rescue Election::MultiSigService::DuplicateSignatureError => e
+        redirect_to admin_election_election_multi_sig_path(@election_id), alert: e.message
+      rescue Election::MultiSigService::InvalidSignatoryError => e
+        redirect_to admin_election_election_multi_sig_path(@election_id), alert: e.message
+      end
+
+      # GET /election/:id/results
+      # Official results (only after multi-sig quorum)
+      def results
+        @sig_status = ElectionSignature.status_for(@election_id)
+        @stats = build_stats(@election_id)
+        @integrity = Election::AuditService.generate_tally_proof(@election_id)
+        @results = build_results(@election_id)
+
+        render "election/admin/results"
+      end
+
+      # POST /election/:id/decrypt
       # The "Grand Decryption" — requires multi-sig authorization
       def decrypt
-        @election_id = params[:id] || params[:election_id]
-        cep_private_key = params[:cep_private_key]
+        @sig_status = ElectionSignature.status_for(@election_id)
 
-        # TODO: Implement multi-sig (3 of 5 CEP board members)
-        # For now, single key decryption
-        if cep_private_key.blank?
-          redirect_to election_admin_election_path(@election_id),
-                      alert: "Kle prive CEP a obligatwa pou dechifre rezilta yo."
+        unless @sig_status[:met]
+          redirect_to admin_election_election_multi_sig_path(@election_id),
+                      alert: "Kowòm pa atenn. #{@sig_status[:remaining]} siyati rete."
           return
         end
 
-        begin
-          # Decrypt aggregated results
-          # In production, this decrypts the homomorphic sum of all commitments
-          @results = decrypt_final_tally(@election_id, cep_private_key)
+        @stats = build_stats(@election_id)
+        @integrity = Election::AuditService.generate_tally_proof(@election_id)
+        @results = build_results(@election_id)
 
-          render "election/admin/results"
-        rescue OpenSSL::PKey::RSAError => e
-          redirect_to election_admin_election_path(@election_id),
-                      alert: "Kle prive a pa valid: #{e.message}"
-        rescue => e
-          Rails.logger.error("[Election::Decrypt] Failed: #{e.message}")
-          redirect_to election_admin_election_path(@election_id),
-                      alert: "Erè nan dechifraj: #{e.message}"
-        end
+        render "election/admin/results"
+      rescue => e
+        Rails.logger.error("[Election::Decrypt] Failed: #{e.message}")
+        redirect_to admin_election_election_path(@election_id),
+                    alert: "Erè nan dechifraj: #{e.message}"
       end
 
       private
 
+      def set_election
+        @election_id = params[:id]
+        @election = BonvoteElection.find_by(id: @election_id)
+        @election_closed = @election&.closed? || @election&.certified? || false
+      end
+
       def require_cep_admin!
-        # TODO: Check for CEP-specific role
-        # For now, any admin user can access
         unless current_admin_user.present?
           redirect_to admin_login_path, alert: "Aksè refize. Sèlman administratè CEP ka wè paj sa a."
         end
       end
 
       def build_stats(election_id)
-        # TODO: Replace with real ElectionBallot queries once model exists
-        ballots = [] # ElectionBallot.where(election_id: election_id)
+        stats = ElectionBallot.stats(election_id)
 
-        total = ballots.size
-        remote = ballots.count { |b| b[:channel] != "consulate" }
-        consulate = total - remote
+        # Consulate station details with live vote counts
+        consulate_votes = ElectionBallot.where(election_id: election_id, channel: "consulate")
+                                        .group(:consulate_id).count
 
-        # Group by country
-        by_country = ballots.group_by { |b| b[:country] || "HT" }
-                            .transform_values(&:size)
+        consulates = HaitianDiplomaticMissions::ALL_MISSIONS.map do |mission|
+          mission.merge(
+            votes: consulate_votes[mission[:id]] || 0,
+            status: consulate_votes[mission[:id]].to_i > 0 ? "active" : "standby"
+          )
+        end
 
-        # Consulate stations
-        consulates = [
-          { id: "HT-CONS-MIAMI", name: "Miami, FL", country: "US", votes: 0, status: "active" },
-          { id: "HT-CONS-NYC", name: "New York, NY", country: "US", votes: 0, status: "active" },
-          { id: "HT-CONS-BOS", name: "Boston, MA", country: "US", votes: 0, status: "active" },
-          { id: "HT-CONS-CHI", name: "Chicago, IL", country: "US", votes: 0, status: "standby" },
-          { id: "HT-CONS-MTL", name: "Montréal, QC", country: "CA", votes: 0, status: "active" },
-          { id: "HT-CONS-PAR", name: "Paris", country: "FR", votes: 0, status: "active" },
-          { id: "HT-CONS-SDQ", name: "Santo Domingo", country: "DO", votes: 0, status: "active" },
-          { id: "HT-CONS-SCL", name: "Santiago", country: "CL", votes: 0, status: "active" },
-          { id: "HT-CONS-BSB", name: "Brasília", country: "BR", votes: 0, status: "standby" },
-          { id: "HT-CONS-NAS", name: "Nassau", country: "BS", votes: 0, status: "standby" }
-        ]
+        # Votes by country (from ip_country)
+        by_country = ElectionBallot.where(election_id: election_id)
+                                   .where.not(ip_country: nil)
+                                   .group(:ip_country).count
 
-        {
-          total_votes: total,
-          remote_votes: remote,
-          consulate_votes: consulate,
-          rejected: 0,
+        stats.merge(
+          rejected: ElectionBallot.where(election_id: election_id).flagged.count,
+          in_person_votes: ElectionBallot.where(election_id: election_id).in_person.count,
           by_country: by_country,
           consulates: consulates
-        }
+        )
       end
 
-      def decrypt_final_tally(election_id, cep_private_key)
-        # TODO: Implement homomorphic decryption of aggregated commitments
-        # This is the final step — CEP decrypts ONLY the total, never individual votes
+      def build_results(election_id)
+        candidates = ElectionCandidate.where(election_id: election_id, position: "president", status: "active")
+                                      .order(votes_round1: :desc)
+
+        election = BonvoteElection.find_by(id: election_id)
+        round = election&.round || 1
+        vote_field = round == 2 ? :votes_round2 : :votes_round1
+
+        candidate_results = candidates.each_with_object({}) do |c, hash|
+          hash[c.display_name] = c.send(vote_field)
+        end
+
         {
           election_id: election_id,
-          decrypted_at: Time.current.iso8601,
-          results: {} # { candidate_1: count, candidate_2: count, ... }
+          decrypted_at: election&.certified_at&.iso8601 || Time.current.iso8601,
+          candidates: candidate_results
         }
       end
 

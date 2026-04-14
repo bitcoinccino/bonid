@@ -1,0 +1,75 @@
+<%# Create New Election %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7">
+
+      <%= link_to partner_portal_elections_path, class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen nan lis la
+      <% end %>
+
+      <h4 class="pp-page-title mb-1">
+        <i class="ri-add-circle-line me-2 pp-text-brand"></i>Kreye Eleksyon
+      </h4>
+      <p class="pp-page-subtitle mb-4">Konfigire yon nouvo eleksyon nasyonal.</p>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+
+          <% if @election.errors.any? %>
+            <div class="alert alert-danger mb-4">
+              <strong><%= pluralize(@election.errors.count, "erè") %>:</strong>
+              <ul class="mb-0 mt-2">
+                <% @election.errors.full_messages.each do |msg| %>
+                  <li><%= msg %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= form_with model: @election, url: partner_portal_elections_path, local: true do |f| %>
+
+            <div class="mb-3">
+              <%= f.label :title, "Tit Eleksyon", class: "form-label fw-semibold" %>
+              <%= f.text_field :title, class: "form-control", placeholder: "ex: Eleksyon Jeneral 2026" %>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <%= f.label :election_type, "Tip Eleksyon", class: "form-label fw-semibold" %>
+                <%= f.select :election_type,
+                    [["Jeneral (Prezidan + Lejislatif)", "general"],
+                     ["Prezidansyèl sèlman", "presidential"],
+                     ["Lejislatif sèlman", "legislative"],
+                     ["Referandòm", "referendum"]],
+                    { prompt: "Chwazi tip" }, class: "form-select" %>
+              </div>
+              <div class="col-md-6">
+                <%= f.label :election_date, "Dat Eleksyon", class: "form-label fw-semibold" %>
+                <%= f.date_field :election_date, class: "form-control" %>
+              </div>
+            </div>
+
+            <%= f.hidden_field :round, value: 1 %>
+
+            <div class="mb-3">
+              <%= f.label :cep_public_key, "Kle Piblik CEP (opsyonèl)", class: "form-label fw-semibold" %>
+              <%= f.text_area :cep_public_key, class: "form-control pp-font-mono", rows: 3,
+                  placeholder: "RSA public key pou chifraj vòt yo..." %>
+              <small class="form-text text-muted">Kle RSA CEP a ap itilize pou chifre vòt yo. Ou ka ajoute l pita.</small>
+            </div>
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-2 justify-content-end">
+              <%= link_to "Anile", partner_portal_elections_path, class: "btn btn-outline-secondary px-4" %>
+              <%= f.submit "Kreye Eleksyon", class: "btn pp-btn-brand px-5" %>
+            </div>
+
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
