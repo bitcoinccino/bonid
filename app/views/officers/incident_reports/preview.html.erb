@@ -5,13 +5,10 @@
 <%
   def mask_bonid(bonid)
     return bonid if bonid.blank?
-    parts = bonid.split('-')
-    return bonid if parts.length < 5
-    tail = parts.last
-    masked_parts = [
-      parts[0], '••••', '•', '••', "#{tail[0]}••••#{tail[-3..]}"
-    ]
-    masked_parts.join('-')
+    stripped = bonid.gsub('-', '')
+    last6 = stripped.last(6)
+    dots = '•' * [stripped.length - 8, 6].max
+    "MB#{dots}#{last6}"
   end
 
   def mask_bontouris(bonid)

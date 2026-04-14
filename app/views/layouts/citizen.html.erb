@@ -20,22 +20,30 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 
-<body class="citizen-app" data-controller="global-loading">
+<body class="citizen-app <%= 'immersive-form' if @immersive_form %>" data-controller="global-loading">
   <%= render "shared/global_loading" %>
   <turbo-frame id="turbo-redirect"></turbo-frame>
 
-  <!-- TOPBAR -->
-  <%= render "citizens/shared/topbar" %>
+  <% unless @immersive_form %>
+    <!-- TOPBAR -->
+    <%= render "citizens/shared/topbar" %>
 
-  <!-- MOBILE OFFCANVAS SIDEBAR -->
-  <%= render "citizens/shared/sidebar" %> <!-- This contains the offcanvas and desktop sidebar -->
+    <!-- MOBILE OFFCANVAS SIDEBAR -->
+    <%= render "citizens/shared/sidebar" %>
+  <% end %>
 
   <!-- MAIN CONTENT -->
-  <main class="citizen-content">
+  <main class="<%= @immersive_form ? 'immersive-form-content' : 'citizen-content' %>">
     <div id="flash_messages">
       <%= render "shared/flash" if flash.any? %>
     </div>
     <%= yield %>
+
+    <% unless @immersive_form %>
+      <footer class="text-center py-3" style="font-size: 0.72rem; color: #94A3B8; border-top: 1px solid #F1F5F9;">
+        Powered by <strong style="color: #64748B;">BonID</strong>
+      </footer>
+    <% end %>
   </main>
 
 </body>

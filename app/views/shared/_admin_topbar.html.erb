@@ -55,10 +55,63 @@
           <% end %>
         </button>
 
-        <ul class="dropdown-menu dropdown-menu-end shadow mt-2" style="min-width: 280px; border-radius: 0.75rem;">
+        <ul class="dropdown-menu dropdown-menu-end shadow mt-2" style="min-width: 340px; border-radius: 0.75rem;">
           <li class="dropdown-header fw-semibold">Notifications</li>
           <li><hr class="dropdown-divider my-1"></li>
-          <% if (@unread_notifications_count || 0).zero? %>
+
+          <% if (@fraud_alerts_count || 0) > 0 %>
+            <%# ── Fraud Alert Summary ── %>
+            <li class="px-3 py-2">
+              <div class="d-flex align-items-start gap-2">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width: 32px; height: 32px; background: rgba(220,53,69,0.1);">
+                  <i class="ri-shield-cross-line text-danger" style="font-size: 1rem;"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold text-danger" style="font-size: 0.85rem;">
+                    <%= @fraud_alerts_count %> Duplicate Identity Alert<%= @fraud_alerts_count > 1 ? "s" : "" %>
+                  </div>
+                  <div class="text-muted" style="font-size: 0.75rem;">
+                    Face dedup caught <%= @fraud_alerts_count > 1 ? "attempts" : "an attempt" %> in the last 30 days
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            <%# ── Recent fraud rejections (up to 3) ── %>
+            <% IdentitySubmission.where(status: :rejected, rejection_reason: "duplicate_identity")
+                 .order(created_at: :desc).limit(3).each do |alert_sub| %>
+              <li>
+                <hr class="dropdown-divider my-1">
+              </li>
+              <li>
+                <%= link_to admin_identity_submission_path(alert_sub.uuid),
+                    class: "dropdown-item d-flex align-items-start gap-2 py-2" do %>
+                  <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                       style="width: 28px; height: 28px; background: rgba(255,193,7,0.15);">
+                    <i class="ri-user-forbid-line text-warning" style="font-size: 0.85rem;"></i>
+                  </div>
+                  <div>
+                    <div class="fw-medium" style="font-size: 0.8rem;">
+                      <%= alert_sub.user&.full_name || "Unknown User" %>
+                    </div>
+                    <div class="text-muted" style="font-size: 0.7rem;">
+                      Matched user #<%= alert_sub.metadata&.dig("face_dedup", "matched_user_id") %> &middot;
+                      <%= time_ago_in_words(alert_sub.created_at) %> ago
+                    </div>
+                  </div>
+                <% end %>
+              </li>
+            <% end %>
+
+            <li><hr class="dropdown-divider my-1"></li>
+            <li>
+              <%= link_to admin_identity_submissions_path(rejection_reason: "duplicate_identity"),
+                  class: "dropdown-item text-center fw-semibold text-primary", style: "font-size: 0.8rem;" do %>
+                View All Fraud Alerts <i class="ri-arrow-right-s-line"></i>
+              <% end %>
+            </li>
+          <% else %>
             <li class="px-3 py-2 small text-muted text-center">No new notifications</li>
           <% end %>
         </ul>

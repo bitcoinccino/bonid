@@ -1,5 +1,5 @@
-<%# app/views/partner_portal/shared/sidebars/_sidebar_oni_content.html.erb %>
-<%# Sidebar for Office National d'Identification (ONI) %>
+<%# app/views/partner_portal/shared/sidebars/_sidebar_banking_content.html.erb %>
+<%# Sidebar for Banking partners — BonBank %>
 
 <%# Mobile backdrop %>
 <div class="partner-sidebar-backdrop d-lg-none"
@@ -23,6 +23,7 @@
     <%# ── OPERATIONS ────────────────────────────── %>
     <li class="sidebar-section-label">Operasyon</li>
 
+    <%# 1. Dashboard %>
     <li class="nav-item">
       <%= link_to partner_portal_dashboard_path,
                   class: "nav-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
@@ -40,23 +41,25 @@
       <% end %>
     </li>
 
+    <%# 2. Scan BonID (KYC) %>
     <li class="nav-item">
       <%= link_to partner_portal_scans_path,
                   class: "nav-link #{'active' if request.path.include?('scans')}" do %>
         <i class="ri-qr-scan-2-line"></i>
-        <span>Scan BonID</span>
+        <span>Scan BonID (KYC)</span>
       <% end %>
     </li>
 
-    <%# CIN Requests — placeholder %>
+    <%# 3. BonID Lookup %>
     <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
-        <i class="ri-id-card-line"></i>
-        <span>Demann CIN</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
+      <%= link_to partner_portal_bonid_lookups_path,
+                  class: "nav-link #{'active' if request.path.include?('bonid_lookups')}" do %>
+        <i class="ri-search-eye-line"></i>
+        <span>Rechèch BonID</span>
+      <% end %>
     </li>
 
+    <%# 4. Verifications %>
     <li class="nav-item">
       <%= link_to partner_portal_verifications_path,
                   class: "nav-link #{'active' if request.path.include?('verifications')}" do %>
@@ -65,35 +68,58 @@
       <% end %>
     </li>
 
+    <%# ── KYC / COMPLIANCE ─────────────────────── %>
+    <li class="sidebar-section-label">KYC & Konpliyans</li>
+
+    <%# 5. Account Opening %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-account-box-line"></i>
+        <span>Ouvèti Kont</span>
+        <span class="badge bg-secondary rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# 6. Loan Verification %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-hand-coin-line"></i>
+        <span>Verif. Prè</span>
+        <span class="badge bg-secondary rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# 7. AML Screening %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-shield-check-line"></i>
+        <span>AML / CFT</span>
+        <span class="badge bg-secondary rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# 8. Transaction Monitoring %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-exchange-dollar-line"></i>
+        <span>Siveyans Tranzaksyon</span>
+        <span class="badge bg-secondary rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# ── ADMINISTRATION ───────────────────────── %>
+    <li class="sidebar-section-label">Administrasyon</li>
+
+    <%# 9. Team / Tellers %>
     <li class="nav-item">
       <%= link_to partner_portal_team_index_path,
                   class: "nav-link #{'active' if request.path.include?('team')}" do %>
         <i class="ri-team-line"></i>
-        <span>Ekip</span>
+        <span>Ekip & Kesye</span>
       <% end %>
     </li>
 
-    <%# ── IDENTITY ──────────────────────────────── %>
-    <li class="sidebar-section-label">Idantite</li>
-
-    <%# NIF Registry — placeholder %>
-    <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
-        <i class="ri-file-user-line"></i>
-        <span>Rejis NIF</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
-    </li>
-
-    <%# Biometric Logs — placeholder %>
-    <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
-        <i class="ri-fingerprint-line"></i>
-        <span>Anprent Dijital</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
-    </li>
-
+    <%# 10. Analytics %>
     <li class="nav-item">
       <%= link_to partner_portal_analytics_path,
                   class: "nav-link #{'active' if request.path.include?('analytics')}" do %>
@@ -102,9 +128,7 @@
       <% end %>
     </li>
 
-    <%# ── API & BILLING ─────────────────────────── %>
-    <li class="sidebar-section-label">API & Faktirasyon</li>
-
+    <%# 11. API Keys %>
     <li class="nav-item">
       <%= link_to partner_portal_api_keys_path,
                   class: "nav-link #{'active' if request.path.include?('api_keys')}" do %>
@@ -113,6 +137,7 @@
       <% end %>
     </li>
 
+    <%# 12. Settings %>
     <li class="nav-item">
       <%= link_to partner_portal_settings_path,
                   class: "nav-link #{'active' if request.path.include?('settings')}" do %>
@@ -121,8 +146,10 @@
       <% end %>
     </li>
 
+    <%# Divider %>
     <li class="sidebar-divider"></li>
 
+    <%# 13. Credits %>
     <li class="nav-item">
       <%= link_to partner_portal_credits_path,
                   class: "nav-link #{'active' if request.path.include?('credits')}" do %>
@@ -136,6 +163,7 @@
       <% end %>
     </li>
 
+    <%# 14. Billing %>
     <li class="nav-item">
       <%= link_to partner_portal_billing_path,
                   class: "nav-link #{'active' if request.path.include?('billing')}" do %>

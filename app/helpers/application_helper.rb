@@ -290,16 +290,14 @@ module ApplicationHelper
     "#{masked_local}@#{domain}"
   end
 
-  # Masks a BonID, showing only the last segment: "JM-1968-M-OUEST-P2334-217" → "****-217"
+  # Masks a BonID: "JM-1968-M-OUEST-P2334-697280" → "MB••••••••697280"
   def mask_bonid(bonid)
     return "—" if bonid.blank?
 
-    parts = bonid.split("-")
-    return "****" if parts.length < 2
-
-    initials = parts.first
-    last6 = bonid.gsub("-", "").last(6)
-    "#{initials}-XXXXXX-#{last6}"
+    stripped = bonid.gsub("-", "")
+    last6 = stripped.last(6)
+    dots = "•" * [stripped.length - 8, 6].max
+    "MB#{dots}#{last6}"
   end
 
   # Maps raw API endpoints to human-readable, citizen-focused action labels.
@@ -390,4 +388,5 @@ module ApplicationHelper
   rescue
     false
   end
+
 end

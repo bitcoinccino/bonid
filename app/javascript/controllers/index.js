@@ -66,6 +66,8 @@ register("certificate-toggle", () =>
   register("submission-filter", () => import("./submission_filter_controller"))
   register("select-all", () => import("./select_all_controller"))
 
+  register("form-builder", () => import("./form_builder_controller"))
+  register("service-form", () => import("./service_form_controller"))
   register("partner-form", () => import("./partner_form_controller"))
   register("partner-sidebar", () => import("./partner_sidebar_controller"))
   register("partner-metrics", () => import("./partner_metrics_controller"))

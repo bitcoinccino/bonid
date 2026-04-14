@@ -24,6 +24,39 @@ export default class extends Controller {
     if (this.hasSubmitButtonTarget) {
       this.submitButtonTarget.disabled = true
     }
+    // Cache file names when users select files (iOS Safari clears file inputs in hidden steps)
+    this._fileCache = {}
+    this._attachFileCacheListeners()
+
+    // If the wizard restored to the last step (e.g., after page re-render from validation error),
+    // the stepChanged event won't fire — populate review immediately.
+    requestAnimationFrame(() => this._populateIfOnReviewStep())
+  }
+
+  _populateIfOnReviewStep() {
+    const steps = this.element.querySelectorAll("[data-wizard-target='step']")
+    const totalSteps = steps.length
+    if (totalSteps === 0) return
+
+    // Find which step is currently active (visible)
+    const activeStep = Array.from(steps).findIndex(s =>
+      s.classList.contains("active") || !s.classList.contains("d-none")
+    )
+    if (activeStep + 1 === totalSteps) {
+      this.populateReview()
+    }
+  }
+
+  _attachFileCacheListeners() {
+    const form = this.element
+    const fileInputs = form.querySelectorAll("input[type='file']")
+    fileInputs.forEach(input => {
+      input.addEventListener("change", () => {
+        if (input.files && input.files.length > 0) {
+          this._fileCache[input.name] = input.files[0].name
+        }
+      })
+    })
   }
 
   // Called via: data-action="wizard:stepChanged->submission-review#onStepChanged"
@@ -40,8 +73,11 @@ export default class extends Controller {
 
     // ── 1. Government ID ──
     if (this.hasReviewIdTarget) {
-      const idType = this._selectedText(form, "identity_submission[id_type]") ||
-                     this._fieldValue(form, "identity_submission[id_type]")
+      const rawIdType = this._selectedText(form, "identity_submission[id_type]") ||
+                        this._fieldValue(form, "identity_submission[id_type]")
+      // Map raw values to human-readable labels
+      const idTypeMap = { "cin": "CIN", "passport": "Passport" }
+      const idType = idTypeMap[rawIdType.toLowerCase()] || rawIdType
 
       const cinFront = this._fileLabel(form, "identity_submission[cin_front]")
       const cinBack  = this._fileLabel(form, "identity_submission[cin_back]")
@@ -154,8 +190,21 @@ export default class extends Controller {
 
   _fileLabel(form, name) {
     const input = form.querySelector(`input[name="${name}"]`)
-    if (!input || !input.files || input.files.length === 0) return "Not uploaded"
-    return this._esc(input.files[0].name)
+    // Check live file input first
+    if (input && input.files && input.files.length > 0) {
+      return this._esc(input.files[0].name)
+    }
+    // Fall back to cached file name (iOS Safari clears file inputs in hidden steps)
+    if (this._fileCache && this._fileCache[name]) {
+      return this._esc(this._fileCache[name])
+    }
+    // Check for server-rendered "Uploaded" indicator (resubmission with existing attachment)
+    if (input) {
+      const container = input.closest(".col-md-6, .mb-3")
+      const uploaded = container?.querySelector(".text-success")
+      if (uploaded) return '<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Previously uploaded</span>'
+    }
+    return "Not uploaded"
   }
 
   _esc(str) {

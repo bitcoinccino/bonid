@@ -1,5 +1,5 @@
-<%# app/views/partner_portal/shared/sidebars/_sidebar_dgi_content.html.erb %>
-<%# Sidebar for Direction Generale des Impots (DGI) %>
+<%# app/views/partner_portal/shared/sidebars/_sidebar_embassy_content.html.erb %>
+<%# Sidebar for Embassy / Consulate / MHAVE partners %>
 
 <%# Mobile backdrop %>
 <div class="partner-sidebar-backdrop d-lg-none"
@@ -26,8 +26,8 @@
     <li class="nav-item">
       <%= link_to partner_portal_dashboard_path,
                   class: "nav-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
-        <i class="ri-dashboard-line"></i>
-        <span>Dashboard</span>
+        <i class="ri-home-4-line"></i>
+        <span>Akèy</span>
       <% end %>
     </li>
 
@@ -35,43 +35,64 @@
       <%= link_to partner_portal_scans_path,
                   class: "nav-link #{'active' if request.path.include?('scans') || request.path.include?('bonid_lookups')}" do %>
         <i class="ri-qr-scan-2-line"></i>
-        <span>Scan BonID</span>
+        <span>Eskanè</span>
       <% end %>
     </li>
 
-    <%# Review queue — citizen-filed declarations pending DGI approval %>
-    <li class="nav-item">
-      <%= link_to partner_portal_dgi_review_index_path,
-                  class: "nav-link #{'active' if request.path.include?('dgi_review')}" do %>
-        <i class="ri-inbox-line"></i>
-        <span>Revizyon</span>
-        <% pending_count = VerificationRecord.where(status: "pending").where("data->>'filed_by' = ?", "citizen").count rescue 0 %>
-        <% if pending_count > 0 %>
-          <span class="badge bg-danger rounded-pill ms-auto"><%= pending_count %></span>
-        <% end %>
-      <% end %>
-    </li>
-
-    <%# Payment confirmations — cash/bank transfers needing approval %>
-    <li class="nav-item">
-      <%= link_to partner_portal_dgi_cash_payments_path,
-                  class: "nav-link #{'active' if request.path.include?('dgi_cash_payments')}" do %>
-        <i class="ri-money-dollar-circle-line"></i>
-        <span>Peman</span>
-        <% pending_pay = DgiPayment.where(status: %w[pending_cash pending]).where(payment_method: %w[cash_window bank_transfer]).count rescue 0 %>
-        <% if pending_pay > 0 %>
-          <span class="badge bg-warning text-dark rounded-pill ms-auto"><%= pending_pay %></span>
-        <% end %>
-      <% end %>
-    </li>
-
-    <%# Service builder — create/edit forms, pricing %>
     <li class="nav-item">
       <%= link_to partner_portal_services_path,
                   class: "nav-link #{'active' if request.path.include?('services')}" do %>
         <i class="ri-service-line"></i>
         <span>Sèvis</span>
       <% end %>
+    </li>
+
+    <%# Diaspora Registry — MHAVE's core mission %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-global-line"></i>
+        <span>Dyaspora</span>
+        <span class="badge bg-info-subtle text-info rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# Document requests — CIN, passport, consular ID consolidated %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-file-list-3-line"></i>
+        <span>Dokiman</span>
+        <span class="badge bg-info-subtle text-info rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
+    </li>
+
+    <%# ── ELEKSYON — Voting (August 2026) ───────────────── %>
+    <li class="sidebar-section-label">Eleksyon</li>
+
+    <%# Voter eligibility check — uses existing voter_eligibility controller %>
+    <li class="nav-item">
+      <%= link_to partner_portal_voter_eligibility_path,
+                  class: "nav-link #{'active' if request.path.include?('voter_eligibility')}" do %>
+        <i class="ri-checkbox-circle-line"></i>
+        <span>Elijibilite</span>
+      <% end %>
+    </li>
+
+    <%# Electoral calendar — view CEP's 13-phase timeline %>
+    <li class="nav-item">
+      <%= link_to partner_portal_electoral_calendar_path,
+                  class: "nav-link #{'active' if request.path.include?('electoral_calendar')}" do %>
+        <i class="ri-calendar-check-line"></i>
+        <span>Kalandriye</span>
+      <% end %>
+    </li>
+
+    <%# Consulate voting station status %>
+    <li class="nav-item">
+      <a href="#" class="nav-link disabled" aria-disabled="true">
+        <i class="ri-government-line"></i>
+        <span>Estasyon</span>
+        <span class="badge bg-info-subtle text-info rounded-pill ms-auto" style="font-size:0.55rem;">Byento</span>
+      </a>
     </li>
 
     <%# ── RAPO — Reporting & intelligence ──────────────── %>
@@ -89,7 +110,7 @@
       <%= link_to partner_portal_partner_audit_logs_path,
                   class: "nav-link #{'active' if request.path.include?('partner_audit_logs')}" do %>
         <i class="ri-shield-check-line"></i>
-        <span>Jounal Sekirite</span>
+        <span>Jounal</span>
         <% mismatch_count = @current_partner&.partner_audit_logs&.where(event: "identity_mismatch")&.where("created_at >= ?", 24.hours.ago)&.count || 0 %>
         <% if mismatch_count > 0 %>
           <span class="badge bg-danger rounded-pill ms-auto"><%= mismatch_count %></span>

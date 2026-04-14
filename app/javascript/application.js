@@ -201,7 +201,40 @@ function initBootstrap() {
   });
 }
 
+// ─────────────────────────────────────────
+// Clean up stale Bootstrap modal artifacts on Turbo navigation
+// ─────────────────────────────────────────
+// When Turbo Drive navigates between pages, Bootstrap modals can leave
+// behind .modal-backdrop elements, body.modal-open, and overflow:hidden.
+// This purges them before Turbo caches the page and after each load.
+function cleanupBootstrapModals() {
+  // Dispose any lingering Bootstrap Modal instances
+  document.querySelectorAll(".modal").forEach((el) => {
+    const instance = bootstrap.Modal.getInstance(el);
+    if (instance) {
+      instance.hide();
+      instance.dispose();
+    }
+  });
+
+  // Remove orphaned backdrop elements
+  document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+
+  // Restore body scroll
+  document.body.classList.remove("modal-open");
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("padding-right");
+}
+
+document.addEventListener("turbo:before-cache", cleanupBootstrapModals);
+
 document.addEventListener("turbo:load", () => {
+  // Clean up any backdrops that survived the navigation
+  document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+  document.body.classList.remove("modal-open");
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("padding-right");
+
   initBootstrap();
   Chartkick?.eachChart((chart) => chart.redraw());
 });

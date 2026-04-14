@@ -40,6 +40,35 @@ module Api
           fetched_at: Time.current.iso8601
         }
       end
+
+      # GET /api/v1/public_keys/bongouv
+      #
+      # Returns the Ed25519 public key used to sign BonGouv receipts.
+      # Banks, auditors, and DGI agents cache this for offline verification.
+      def bongouv
+        pub_key = Bongouv::ReceiptSigner.public_key_base64
+
+        if pub_key.blank?
+          return render json: {
+            error: "BonGouv Ed25519 public key not configured",
+            hint: "Set BONGOUV_ED25519_PUBLIC or fall back to BONID_ED25519_PUBLIC"
+          }, status: :service_unavailable
+        end
+
+        response.set_header("Cache-Control", "public, max-age=86400")
+        response.set_header("X-Key-Algorithm", "Ed25519")
+        response.set_header("X-Issuer", "bongouv.ht")
+
+        render json: {
+          algorithm: "Ed25519",
+          public_key: pub_key,
+          encoding: "base64",
+          key_fingerprint: Digest::SHA256.hexdigest(Base64.decode64(pub_key)),
+          issuer: "bongouv.ht",
+          usage: "BonGouv DGI receipt signature verification",
+          fetched_at: Time.current.iso8601
+        }
+      end
     end
   end
 end

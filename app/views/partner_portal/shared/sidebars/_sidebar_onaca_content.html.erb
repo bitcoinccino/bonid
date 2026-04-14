@@ -4,7 +4,8 @@
 <%# Mobile backdrop %>
 <div class="partner-sidebar-backdrop d-lg-none"
      data-action="click->partner-sidebar#close"
-     id="partnerSidebarBackdrop"></div>
+     id="partnerSidebarBackdrop"
+     style="display:none"></div>
 
 <%# Sidebar %>
 <div class="partner-sidebar" id="partnerSidebar" data-controller="partner-sidebar">
@@ -15,23 +16,6 @@
           aria-label="Close sidebar">
     <i class="ri-close-line"></i>
   </button>
-
-  <%# Partner logo and name %>
-  <div class="partner-logo-section">
-    <div class="partner-logo-wrapper">
-      <% if @current_partner&.logo&.attached? %>
-        <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [120, 120])),
-                      class: "partner-logo-img",
-                      alt: "#{@current_partner.name || 'ONACA'} logo" %>
-      <% else %>
-        <div class="partner-logo-placeholder">
-          <i class="ri-map-2-line"></i>
-        </div>
-      <% end %>
-    </div>
-    <div class="partner-name"><%= @current_partner&.name || "Office National du Cadastre" %></div>
-    <div class="partner-sector">Kadast Nasyonal</div>
-  </div>
 
   <%# Navigation links %>
   <ul class="nav flex-column sidebar-nav">
@@ -44,6 +28,15 @@
                   class: "nav-link #{'active' if current_page?(partner_portal_dashboard_path)}" do %>
         <i class="ri-dashboard-line"></i>
         <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <%# Sèvis (Service Builder) %>
+    <li class="nav-item">
+      <%= link_to partner_portal_services_path,
+                  class: "nav-link #{'active' if request.path.include?('services')}" do %>
+        <i class="ri-service-line"></i>
+        <span>Sèvis</span>
       <% end %>
     </li>
 
@@ -74,7 +67,7 @@
     </li>
 
     <li class="nav-item">
-      <%= link_to partner_portal_team_path,
+      <%= link_to partner_portal_team_index_path,
                   class: "nav-link #{'active' if request.path.include?('team')}" do %>
         <i class="ri-team-line"></i>
         <span>Ekip</span>

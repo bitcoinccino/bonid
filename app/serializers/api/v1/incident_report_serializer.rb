@@ -157,16 +157,18 @@ module Api
 
       def mask_bonid(bonid)
         return nil if bonid.blank?
-        parts = bonid.split("-")
 
         if bonid.start_with?("T-")
-          # BonTouris format: T-JM-1990-M-US-P-123456
+          # BonTouris: keep T- prefix visible
+          parts = bonid.split("-")
           return bonid if parts.length < 6
           [parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1]].join("-")
         else
-          # Citizen BonID format: DV-1989-M-SE-P8697XDS
-          return bonid if parts.length < 4
-          "#{parts.first}-****-*-**-#{parts.last[0]}****#{parts.last[-3..]}"
+          # Citizen BonID: MB••••••••697280
+          stripped = bonid.gsub("-", "")
+          last6 = stripped.last(6)
+          dots = "•" * [stripped.length - 8, 6].max
+          "MB#{dots}#{last6}"
         end
       end
 

@@ -13,22 +13,28 @@
 
   <ul class="dropdown-menu bonid-dropdown">
 
-    <div class="dropdown-label"><%= t("main.navbar.core_identity") %></div>
+    <% product_groups.each_with_index do |group, idx| %>
+      <% if idx > 0 %>
+        <li><hr class="dropdown-divider"></li>
+      <% end %>
 
-    <% core_products.each do |product| %>
-      <li>
-        <%= link_to product[:path],
-          class: "dropdown-item d-flex align-items-center gap-3" do %>
-          <i class="<%= product[:icon] %> dropdown-icon <%= product[:highlight] %>"></i>
-          <div>
-            <strong><%= product[:name] %></strong>
-            <small class="d-block text-muted"><%= product[:description] %></small>
-          </div>
-          <% if product[:badge] %>
-            <span class="badge <%= product[:badge_class] %> ms-auto"><%= product[:badge] %></span>
+      <div class="dropdown-label<%= ' mt-2' if idx > 0 %>"><%= t(group[:label_key]) %></div>
+
+      <% group[:items].each do |product| %>
+        <li>
+          <%= link_to product[:path],
+            class: "dropdown-item d-flex align-items-center gap-3" do %>
+            <i class="<%= product[:icon] %> dropdown-icon"></i>
+            <div>
+              <strong><%= product[:name] %></strong>
+              <small class="d-block text-muted"><%= product[:description] %></small>
+            </div>
+            <% if product[:badge] %>
+              <span class="badge <%= product[:badge_class] %> ms-auto"><%= product[:badge] %></span>
+            <% end %>
           <% end %>
-        <% end %>
-      </li>
+        </li>
+      <% end %>
     <% end %>
 
     <li><hr class="dropdown-divider"></li>

@@ -2,23 +2,14 @@
 
 <% verified_submission = @officer.user&.identity_submissions&.approved&.last %>
 
-<%# Helper to mask BonID: DV-1989-M-SE-P8697XDS → DV-••••-•-••-P••••XDS %>
+<%# Helper to mask BonID: DV-1989-M-SE-P8697XDS → MB••••••••697280 %>
 <%
   def mask_bonid(bonid)
     return bonid if bonid.blank?
-    parts = bonid.split('-')
-    return bonid if parts.length < 5
-
-    # Format: INITIALS-YEAR-SEX-DEPT-P+DIGITS+CHECKSUM
-    tail = parts.last  # e.g. "P8697XDS"
-    masked_parts = [
-      parts[0],                                            # Initials (DV)
-      '••••',                                              # Year masked
-      '•',                                                 # Sex masked
-      '••',                                                # Department masked
-      "#{tail[0]}••••#{tail[-3..]}"                        # P + masked digits + checksum
-    ]
-    masked_parts.join('-')
+    stripped = bonid.gsub('-', '')
+    last6 = stripped.last(6)
+    dots = '•' * [stripped.length - 8, 6].max
+    "MB#{dots}#{last6}"
   end
 %>
 

@@ -1,5 +1,5 @@
 <%# app/views/shared/_admin_sidebar.html.erb %>
-<%# Admin sidebar — matches partner portal sidebar design %>
+<%# Admin sidebar — grouped by domain %>
 
 <%# Mobile backdrop %>
 <div class="admin-sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
@@ -27,7 +27,8 @@
 
   <%# Navigation links %>
   <ul class="nav flex-column sidebar-nav">
-    <%# 1. Dashboard %>
+
+    <%# ── Dashboard ── %>
     <li class="nav-item">
       <%= link_to admin_root_path,
                   class: "nav-link #{'active' if current_page?(admin_root_path)}" do %>
@@ -36,9 +37,216 @@
       <% end %>
     </li>
 
-    <%# Waitlist Section %>
-    <li class="nav-item mt-2">
-      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Waitlist</small>
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── IDANTITE / IDENTITY ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Idantite</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_identity_submissions_path,
+                  class: "nav-link #{'active' if current_page?(admin_identity_submissions_path)}" do %>
+        <i class="ri-id-card-line"></i>
+        <span>BonIDs</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_name_change_requests_path,
+                  class: "nav-link #{'active' if current_page?(admin_name_change_requests_path)}" do %>
+        <i class="ri-edit-line"></i>
+        <span>Name Changes</span>
+        <% pending_count = NameChangeRequest.pending.count %>
+        <% if pending_count > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto"><%= pending_count %></span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_qr_scan_logs_path,
+                  class: "nav-link #{'active' if current_page?(admin_qr_scan_logs_path)}" do %>
+        <i class="ri-scan-line"></i>
+        <span>BonID Scans</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_reviewers_path,
+                  class: "nav-link #{'active' if current_page?(admin_reviewers_path)}" do %>
+        <i class="ri-user-search-line"></i>
+        <span>Reviewers</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── PATNE / PARTNERS ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Patnè</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_partners_path,
+                  class: "nav-link #{'active' if current_page?(admin_partners_path)}" do %>
+        <i class="ri-building-line"></i>
+        <span>Partners</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_partner_schemas_path,
+                  class: "nav-link #{'active' if current_page?(admin_partner_schemas_path)}" do %>
+        <i class="ri-folder-line"></i>
+        <span>Schemas</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── FINANS / BILLING ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Finans</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_billing_path,
+                  class: "nav-link #{'active' if current_page?(admin_billing_path)}" do %>
+        <i class="ri-money-dollar-circle-line"></i>
+        <span>Billing</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_billing_credit_ledger_path,
+                  class: "nav-link #{'active' if current_page?(admin_billing_credit_ledger_path)}" do %>
+        <i class="ri-file-list-3-line"></i>
+        <span>Credit Ledger</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_billing_payments_path,
+                  class: "nav-link #{'active' if current_page?(admin_billing_payments_path)}" do %>
+        <i class="ri-bank-card-line"></i>
+        <span>Payments</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_api_usage_index_path,
+                  class: "nav-link #{'active' if current_page?(admin_api_usage_index_path)}" do %>
+        <i class="ri-bar-chart-2-line"></i>
+        <span>API Usage</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── TOURIS / VISITORS ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Touris</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_visitor_submissions_path,
+                  class: "nav-link #{'active' if current_page?(admin_visitor_submissions_path)}" do %>
+        <i class="ri-passport-line"></i>
+        <span>Visitors</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_visitor_analytics_path,
+                  class: "nav-link #{'active' if current_page?(admin_visitor_analytics_path)}" do %>
+        <i class="ri-bar-chart-line"></i>
+        <span>Visitor Analytics</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── SEKIRITE / LAW ENFORCEMENT ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Sekirite</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_identity_submissions_path(rejection_reason: "duplicate_identity"),
+                  class: "nav-link #{'active' if params[:rejection_reason] == 'duplicate_identity'}" do %>
+        <i class="ri-shield-cross-line"></i>
+        <span>Fraud Alerts</span>
+        <% if (@fraud_alerts_count || 0) > 0 %>
+          <span class="badge bg-danger rounded-pill ms-auto"><%= @fraud_alerts_count %></span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_incident_reports_path,
+                  class: "nav-link #{'active' if current_page?(admin_incident_reports_path)}" do %>
+        <i class="ri-alert-line"></i>
+        <span>Incident Reports</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── ELEKSYON / CEP ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Eleksyon / CEP</small>
+    </li>
+    <% election = BonvoteElection.order(created_at: :desc).first %>
+    <% election_id = election&.id || "1" %>
+    <li class="nav-item">
+      <%= link_to admin_election_election_path(election_id),
+                  class: "nav-link #{'active' if request.path.start_with?('/admin/election') && !request.path.include?('multi_sig') && !request.path.include?('results')}" do %>
+        <i class="ri-pie-chart-line"></i>
+        <span>Tablo CEP</span>
+        <% if election&.open? %>
+          <span class="badge bg-success rounded-pill ms-auto" style="font-size: 9px;">LIVE</span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_election_election_multi_sig_path(election_id),
+                  class: "nav-link #{'active' if request.path.include?('multi_sig')}" do %>
+        <i class="ri-key-2-line"></i>
+        <span>Seremoni Siyati</span>
+        <% sig_count = ElectionSignature.where(election_id: election_id).count rescue 0 %>
+        <% if sig_count > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto"><%= sig_count %>/<%= ElectionSignature::QUORUM %></span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_election_election_results_path(election_id),
+                  class: "nav-link #{'active' if request.path.include?('results') && request.path.include?('election')}" do %>
+        <i class="ri-bar-chart-box-line"></i>
+        <span>Rezilta</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── API / TEKNIK ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">API / Teknik</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_oauth_events_path,
+                  class: "nav-link #{'active' if current_page?(admin_oauth_events_path)}" do %>
+        <i class="ri-key-2-line"></i>
+        <span>OAuth Events</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_partner_access_logs_path,
+                  class: "nav-link #{'active' if current_page?(admin_partner_access_logs_path)}" do %>
+        <i class="ri-file-list-3-line"></i>
+        <span>Access Logs</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_webhook_events_path,
+                  class: "nav-link #{'active' if current_page?(admin_webhook_events_path)}" do %>
+        <i class="ri-webhook-line"></i>
+        <span>Webhooks</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── LIS DATANT / WAITLIST ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Lis Datant</small>
     </li>
     <li class="nav-item">
       <%= link_to admin_waitlist_signups_path,
@@ -59,139 +267,6 @@
       <% end %>
     </li>
 
-    <%# 2. Partners %>
-    <li class="nav-item">
-      <%= link_to admin_partners_path,
-                  class: "nav-link #{'active' if current_page?(admin_partners_path)}" do %>
-        <i class="ri-building-line"></i>
-        <span>Partners</span>
-      <% end %>
-    </li>
-
-    <%# 3. Reviewers %>
-    <li class="nav-item">
-      <%= link_to admin_reviewers_path,
-                  class: "nav-link #{'active' if current_page?(admin_reviewers_path)}" do %>
-        <i class="ri-user-search-line"></i>
-        <span>Reviewers</span>
-      <% end %>
-    </li>
-
-    <%# 4. BonIDs (Citizens) %>
-    <li class="nav-item">
-      <%= link_to admin_identity_submissions_path,
-                  class: "nav-link #{'active' if current_page?(admin_identity_submissions_path)}" do %>
-        <i class="ri-id-card-line"></i>
-        <span>BonIDs</span>
-      <% end %>
-    </li>
-
-    <%# 5. Name Changes %>
-    <li class="nav-item">
-      <%= link_to admin_name_change_requests_path,
-                  class: "nav-link #{'active' if current_page?(admin_name_change_requests_path)}" do %>
-        <i class="ri-edit-line"></i>
-        <span>Name Changes</span>
-        <% pending_count = NameChangeRequest.pending.count %>
-        <% if pending_count > 0 %>
-          <span class="badge bg-warning text-dark rounded-pill ms-auto"><%= pending_count %></span>
-        <% end %>
-      <% end %>
-    </li>
-
-    <%# 6. Visitors / Tourists %>
-    <li class="nav-item">
-      <%= link_to admin_visitor_submissions_path,
-                  class: "nav-link #{'active' if current_page?(admin_visitor_submissions_path)}" do %>
-        <i class="ri-passport-line"></i>
-        <span>Visitors</span>
-      <% end %>
-    </li>
-
-    <%# 6. Visitor Analytics %>
-    <li class="nav-item">
-      <%= link_to admin_visitor_analytics_path,
-                  class: "nav-link #{'active' if current_page?(admin_visitor_analytics_path)}" do %>
-        <i class="ri-bar-chart-line"></i>
-        <span>Visitor Analytics</span>
-      <% end %>
-    </li>
-
-    <%# 7. Law Enforcement %>
-    <li class="nav-item">
-      <%= link_to admin_incident_reports_path,
-                  class: "nav-link #{'active' if current_page?(admin_incident_reports_path)}" do %>
-        <i class="ri-alert-line"></i>
-        <span>Law Enforcement</span>
-      <% end %>
-    </li>
-
-    <%# 8. BonID Scans %>
-    <li class="nav-item">
-      <%= link_to admin_qr_scan_logs_path,
-                  class: "nav-link #{'active' if current_page?(admin_qr_scan_logs_path)}" do %>
-        <i class="ri-scan-line"></i>
-        <span>BonID Scans</span>
-      <% end %>
-    </li>
-
-    <%# 9. Schemas %>
-    <li class="nav-item">
-      <%= link_to admin_partner_schemas_path,
-                  class: "nav-link #{'active' if current_page?(admin_partner_schemas_path)}" do %>
-        <i class="ri-folder-line"></i>
-        <span>Schemas</span>
-      <% end %>
-    </li>
-
-    <%# Divider %>
-    <li class="sidebar-divider"></li>
-
-    <%# 10. API (collapsible) %>
-    <li class="nav-item">
-      <a href="#apiSubmenu"
-         class="nav-link d-flex align-items-center justify-content-between"
-         data-bs-toggle="collapse"
-         role="button"
-         aria-expanded="false">
-        <div class="d-flex align-items-center gap-3">
-          <i class="ri-code-s-slash-line"></i>
-          <span>API</span>
-        </div>
-        <i class="ri-arrow-down-s-line rotate-icon"></i>
-      </a>
-
-      <ul class="collapse api-submenu" id="apiSubmenu">
-        <li>
-          <%= link_to admin_oauth_events_path,
-                class: "nav-link #{'active' if current_page?(admin_oauth_events_path)}" do %>
-            <i class="ri-key-2-line"></i>
-            <span>OAuth Events</span>
-          <% end %>
-        </li>
-        <li>
-          <%= link_to admin_api_usage_index_path,
-                class: "nav-link #{'active' if current_page?(admin_api_usage_index_path)}" do %>
-            <i class="ri-bar-chart-2-line"></i>
-            <span>Partner API</span>
-          <% end %>
-        </li>
-        <li>
-          <%= link_to admin_partner_access_logs_path,
-                class: "nav-link #{'active' if current_page?(admin_partner_access_logs_path)}" do %>
-            <i class="ri-file-list-3-line"></i>
-            <span>Logs</span>
-          <% end %>
-        </li>
-        <li>
-          <%= link_to admin_webhook_events_path,
-                class: "nav-link #{'active' if current_page?(admin_webhook_events_path)}" do %>
-            <i class="ri-webhook-line"></i>
-            <span>Webhooks</span>
-          <% end %>
-        </li>
-      </ul>
-    </li>
   </ul>
 
   <%# Logout button %>

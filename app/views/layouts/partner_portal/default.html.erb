@@ -47,10 +47,10 @@
        NAVBAR — Citizen Haitian Blue
     ============================================================ */
     .partner-navbar {
-      background: var(--haitian-blue) !important;
+      background: #0d132d !important;
       height: var(--topbar-height);
       z-index: 1050;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      box-shadow: none;
     }
 
     /* ============================================================
@@ -148,10 +148,35 @@
     .font-heading {
       font-family: 'Montserrat', sans-serif !important;
     }
+
+    /* ============================================================
+       IMMERSIVE BUILDER — full-screen mode for service form builder
+    ============================================================ */
+    .immersive-builder .partner-sidebar,
+    .immersive-builder .partner-navbar { display: none !important; }
+
+    .immersive-builder > main {
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100vh !important;
+      overflow: hidden !important;
+    }
+
+    .immersive-builder #flash-messages:empty { display: none; }
+
+    .immersive-builder-content {
+      padding: 0 !important;
+      max-width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
   </style>
 </head>
 
-<body class="partners-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-default-layout"
+<body class="partners-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-default-layout <%= 'immersive-builder' if @immersive_form %>"
       data-controller="tooltip bootstrap global-loading">
 
   <%= render "shared/global_loading" %>
@@ -160,12 +185,34 @@
   <%# Global confirmation modal %>
   <%= render "shared/confirmation_modal" if lookup_context.exists?("shared/confirmation_modal", [], true) %>
 
-  <!-- Sidebar -->
-  <%= render "partner_portal/shared/sidebars/sidebar_default_content" %>
+  <% unless @immersive_form %>
+    <!-- Sidebar -->
+    <% sidebar_sector = @current_partner&.department_sector || @current_partner&.sector %>
+    <%# Map sector variants to their shared sidebar partial %>
+    <% sidebar_key = case sidebar_sector&.downcase
+         when "commercial_bank", "microfinance", "credit_union", "money_transfer",
+              "mobile_wallet", "payment_processor", "remittance", "fintech", "banking"
+           "banking"
+         when "embassy", "consulate", "international_org", "un_agency"
+           "embassy"
+         when "pnh", "law_enforcement"
+           "law_enforcement"
+         else
+           sidebar_sector
+         end %>
+    <% sidebar_partial = "partner_portal/shared/sidebars/sidebar_#{sidebar_key}_content" if sidebar_key.present? %>
+    <% if sidebar_partial && lookup_context.exists?(sidebar_partial, [], true) %>
+      <%= render sidebar_partial %>
+    <% else %>
+      <%= render "partner_portal/shared/sidebars/sidebar_default_content" %>
+    <% end %>
+  <% end %>
 
   <!-- Main Content -->
-  <main class="flex-grow-1 w-100 position-relative">
-    <%= render "partner_portal/shared/navbars/navbar_default" %>
+  <main class="flex-grow-1 position-relative">
+    <% unless @immersive_form %>
+      <%= render "partner_portal/shared/navbars/navbar_default" %>
+    <% end %>
 
     <div id="flash-messages">
       <% unless controller.devise_controller? %>
@@ -173,9 +220,15 @@
       <% end %>
     </div>
 
-    <div class="p-4 partner-scroll-region">
+    <div class="<%= @immersive_form ? 'immersive-builder-content' : 'p-4 partner-scroll-region' %>">
       <%= yield %>
     </div>
+
+    <% unless @immersive_form %>
+      <footer class="text-center py-3" style="font-size: 0.72rem; color: #94A3B8; border-top: 1px solid #F1F5F9;">
+        Powered by <strong style="color: #64748B;">BonGouv</strong>
+      </footer>
+    <% end %>
   </main>
 </body>
 </html>

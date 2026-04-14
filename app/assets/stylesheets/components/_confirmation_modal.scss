@@ -1,17 +1,26 @@
 /* ============================================
    BONID – GLOBAL CONFIRMATION MODAL
-   Uses var(--bs-primary) so the correct portal
-   blue is applied automatically in each layout:
-     Citizen / Partner Admin  →  #00209F
-     Law Enforcement / Officer →  #092C73
-   No gradients. Flat, authoritative, clean.
+   Clean, centered, Haitian Creole.
+   Adapts to portal via --bs-primary.
    ============================================ */
+
+/* ── Safety: hidden until .show ── */
+#confirmationModal:not(.show) {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Kill orphaned Bootstrap backdrops */
+.modal-backdrop:not(.show) {
+  display: none !important;
+}
 
 /* Scale-In Animation */
 @keyframes bonid-modal-in {
   from {
     opacity: 0;
-    transform: scale(0.94) translateY(-6px);
+    transform: scale(0.92) translateY(-8px);
   }
   to {
     opacity: 1;
@@ -21,119 +30,144 @@
 
 .bonid-confirmation-modal {
   .modal-dialog {
-    animation: bonid-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: bonid-modal-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Darker backdrop */
+  & + .modal-backdrop.show {
+    opacity: 0.4;
   }
 }
 
 .bonid-confirm-content {
-  border-radius: 1.25rem !important;
+  border-radius: 16px !important;
   box-shadow:
-    0 20px 60px rgba(0, 0, 0, 0.15),
-    0 4px 16px rgba(0, 0, 0, 0.08);
-  font-family: "Montserrat", "Inter", sans-serif;
+    0 24px 64px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+  font-family: "Inter", "Montserrat", sans-serif;
   overflow: hidden;
+  background: #fff;
 }
 
-/* ── Header ── */
-.bonid-confirm-header {
-  background: var(--bs-primary);
+/* ── Top: Icon + Title ── */
+.bonid-confirm-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 2rem 0;
+  gap: 0.75rem;
 }
 
-.bonid-confirm-icon-wrap {
-  width: 36px;
-  height: 36px;
+.bonid-confirm-icon-circle {
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
-  flex-shrink: 0;
-}
+  background: #FEF3C7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-.bonid-confirm-icon {
-  font-size: 1.1rem;
-  color: #fff;
+  i {
+    font-size: 1.6rem;
+    color: #D97706;
+  }
 }
 
 .bonid-confirm-title {
-  font-size: 0.95rem;
-  letter-spacing: 0.4px;
-  color: #fff;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 /* ── Body ── */
 .bonid-confirm-body {
-  padding: 1.75rem 2rem;
+  padding: 0.75rem 2rem 1.5rem !important;
   text-align: center;
-  font-size: 0.95rem;
-  line-height: 1.65;
-  color: #374151;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #6B7280;
   background: #fff;
-
-  /* Subtle top accent line using portal blue */
-  border-top: 3px solid var(--bs-primary);
+  border: none !important;
 }
 
 /* ── Footer ── */
 .bonid-confirm-footer {
-  padding: 1rem 1.5rem 1.5rem;
-  background: #fff;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 2rem 2rem;
+  justify-content: center;
 }
 
-/* Cancel — neutral ghost */
+/* Cancel — subtle outline */
 .bonid-confirm-cancel-btn {
-  min-width: 120px;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.875rem;
-  background: #F3F4F6;
+  flex: 1;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #fff;
   color: #374151;
   border: 1.5px solid #E5E7EB;
-  transition: background 0.15s, border-color 0.15s;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
 
   &:hover {
-    background: #E5E7EB;
+    background: #F9FAFB;
     border-color: #D1D5DB;
-    color: #1F2937;
   }
 
   &:active {
-    background: #D1D5DB;
+    background: #F3F4F6;
   }
 }
 
-/* Confirm — solid portal primary, no gradient */
+/* Confirm — solid primary */
 .bonid-confirm-btn {
-  min-width: 120px;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.875rem;
+  flex: 1;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   background: var(--bs-primary);
   color: #fff;
   border: none;
-  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.35);
-  transition: filter 0.15s, box-shadow 0.15s, transform 0.15s;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
 
   &:hover {
-    filter: brightness(1.12);
-    box-shadow: 0 6px 18px rgba(var(--bs-primary-rgb), 0.45);
+    filter: brightness(1.1);
     transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 32, 159, 0.3);
     color: #fff;
   }
 
   &:active {
-    filter: brightness(0.92);
+    filter: brightness(0.95);
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(var(--bs-primary-rgb), 0.25);
   }
 }
 
 /* ── Mobile ── */
 @media (max-width: 576px) {
+  .bonid-confirm-top {
+    padding: 1.5rem 1.5rem 0;
+  }
+
+  .bonid-confirm-body {
+    padding: 0.75rem 1.5rem 1.25rem !important;
+  }
+
   .bonid-confirm-footer {
-    flex-direction: column-reverse !important;
-    gap: 0.5rem !important;
+    flex-direction: column-reverse;
+    padding: 0 1.5rem 1.5rem;
+    gap: 0.5rem;
   }
 
   .bonid-confirm-btn,
   .bonid-confirm-cancel-btn {
     width: 100%;
-    min-width: unset;
   }
 }

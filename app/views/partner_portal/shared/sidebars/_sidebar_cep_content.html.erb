@@ -4,7 +4,8 @@
 <%# Mobile backdrop %>
 <div class="partner-sidebar-backdrop d-lg-none"
      data-action="click->partner-sidebar#close"
-     id="partnerSidebarBackdrop"></div>
+     id="partnerSidebarBackdrop"
+     style="display:none"></div>
 
 <%# Sidebar %>
 <div class="partner-sidebar" id="partnerSidebar" data-controller="partner-sidebar">
@@ -15,23 +16,6 @@
           aria-label="Close sidebar">
     <i class="ri-close-line"></i>
   </button>
-
-  <%# Partner logo and name %>
-  <div class="partner-logo-section">
-    <div class="partner-logo-wrapper">
-      <% if @current_partner&.logo&.attached? %>
-        <%= image_tag url_for(@current_partner.logo.variant(resize_to_limit: [120, 120])),
-                      class: "partner-logo-img",
-                      alt: "#{@current_partner.name || 'CEP'} logo" %>
-      <% else %>
-        <div class="partner-logo-placeholder">
-          <i class="ri-government-line"></i>
-        </div>
-      <% end %>
-    </div>
-    <div class="partner-name"><%= @current_partner&.name || "Conseil Electoral Provisoire" %></div>
-    <div class="partner-sector">Eleksyon Nasyonal</div>
-  </div>
 
   <%# Navigation links %>
   <ul class="nav flex-column sidebar-nav">
@@ -47,6 +31,15 @@
       <% end %>
     </li>
 
+    <%# Sèvis (Service Builder) %>
+    <li class="nav-item">
+      <%= link_to partner_portal_services_path,
+                  class: "nav-link #{'active' if request.path.include?('services')}" do %>
+        <i class="ri-service-line"></i>
+        <span>Sèvis</span>
+      <% end %>
+    </li>
+
     <li class="nav-item">
       <%= link_to partner_portal_scans_path,
                   class: "nav-link #{'active' if request.path.include?('scans')}" do %>
@@ -55,13 +48,12 @@
       <% end %>
     </li>
 
-    <%# Voter Lookup — placeholder %>
     <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
+      <%= link_to partner_portal_voter_eligibility_path,
+                  class: "nav-link #{'active' if request.path.include?('voter_eligibility')}" do %>
         <i class="ri-user-search-line"></i>
-        <span>Chèche Vote</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
+        <span>Chèche Votè</span>
+      <% end %>
     </li>
 
     <li class="nav-item">
@@ -73,7 +65,7 @@
     </li>
 
     <li class="nav-item">
-      <%= link_to partner_portal_team_path,
+      <%= link_to partner_portal_team_index_path,
                   class: "nav-link #{'active' if request.path.include?('team')}" do %>
         <i class="ri-team-line"></i>
         <span>Ekip</span>
@@ -83,31 +75,114 @@
     <%# ── ELECTIONS ──────────────────────────────── %>
     <li class="sidebar-section-label">Eleksyon</li>
 
-    <%# Electoral Roll — placeholder %>
+    <% cep_election = BonvoteElection.order(created_at: :desc).first %>
+    <% cep_election_id = cep_election&.id || "1" %>
+    <% current_phase = cep_election ? ElectoralCalendar.current_phase(cep_election) : nil %>
+
+    <%# Current Phase Indicator %>
+    <% if current_phase %>
+      <li class="nav-item px-3 mb-2">
+        <div class="pp-phase-indicator">
+          <div class="pp-phase-label">Faz aktyèl</div>
+          <div class="pp-phase-name"><%= current_phase.phase_label %></div>
+          <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: <%= current_phase.progress_percentage %>%;"></div>
+          </div>
+        </div>
+      </li>
+    <% end %>
+
+    <%# Eleksyon (Manage Elections) %>
     <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
+      <%= link_to partner_portal_elections_path,
+                  class: "nav-link #{'active' if request.path.include?('elections')}" do %>
+        <i class="ri-government-line"></i>
+        <span>Jere Eleksyon</span>
+      <% end %>
+    </li>
+
+    <%# Kalandriye (Electoral Calendar) %>
+    <li class="nav-item">
+      <%= link_to partner_portal_electoral_calendar_path,
+                  class: "nav-link #{'active' if request.path.include?('electoral_calendar')}" do %>
+        <i class="ri-calendar-event-line"></i>
+        <span>Kalandriye</span>
+      <% end %>
+    </li>
+
+    <% if cep_election %>
+      <%# Tablo CEP (Live Dashboard) %>
+      <li class="nav-item">
+        <%= link_to partner_portal_election_tablo_path(cep_election_id),
+                    class: "nav-link #{'active' if request.path.include?('tablo')}" do %>
+          <i class="ri-pie-chart-line"></i>
+          <span>Tablo CEP</span>
+          <% if cep_election.open? %>
+            <span class="badge bg-success rounded-pill ms-auto" style="font-size: 0.6rem;">LIVE</span>
+          <% end %>
+        <% end %>
+      </li>
+
+      <%# Seremoni Siyati (Multi-Sig Ceremony) %>
+      <li class="nav-item">
+        <%= link_to partner_portal_election_multi_sig_path(cep_election_id),
+                    class: "nav-link #{'active' if request.path.include?('multi_sig')}" do %>
+          <i class="ri-key-2-line"></i>
+          <span>Seremoni Siyati</span>
+          <% sig_count = ElectionSignature.where(election_id: cep_election_id).count rescue 0 %>
+          <% if sig_count > 0 %>
+            <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 0.6rem;"><%= sig_count %>/<%= ElectionSignature::QUORUM %></span>
+          <% end %>
+        <% end %>
+      </li>
+
+      <%# Rezilta (Results) %>
+      <li class="nav-item">
+        <%= link_to partner_portal_election_results_path(cep_election_id),
+                    class: "nav-link #{'active' if request.path.include?('results')}" do %>
+          <i class="ri-bar-chart-box-line"></i>
+          <span>Rezilta</span>
+        <% end %>
+      </li>
+    <% end %>
+
+    <%# Electoral Roll %>
+    <li class="nav-item">
+      <%= link_to partner_portal_voter_registry_path,
+                  class: "nav-link #{'active' if request.path.include?('voter_registry')}" do %>
         <i class="ri-file-list-3-line"></i>
         <span>Lis Elektoral</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
+        <% voter_count = cep_election ? VoterEligibilityRecord.where(bonvote_election: cep_election).eligible.count : 0 %>
+        <% if voter_count > 0 %>
+          <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.6rem;"><%= number_with_delimiter(voter_count) %></span>
+        <% end %>
+      <% end %>
     </li>
 
-    <%# Registration Stats — placeholder %>
+    <%# Party Registration (Article 143) %>
     <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
-        <i class="ri-line-chart-line"></i>
-        <span>Enskripsyon</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
+      <%= link_to partner_portal_party_registrations_path,
+                  class: "nav-link #{'active' if request.path.include?('party_registrations')}" do %>
+        <i class="ri-flag-line"></i>
+        <span>Pati Politik</span>
+        <% party_pending = cep_election ? ElectionPartyRegistration.where(election: cep_election).pending_review.count : 0 %>
+        <% if party_pending > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 0.6rem;"><%= party_pending %></span>
+        <% end %>
+      <% end %>
     </li>
 
-    <%# Anomaly Flags — placeholder %>
+    <%# Candidate Registration %>
     <li class="nav-item">
-      <a href="#" class="nav-link disabled" aria-disabled="true">
-        <i class="ri-alarm-warning-line"></i>
-        <span>Anomali</span>
-        <span class="badge bg-secondary ms-auto" style="font-size: 0.6rem;">Byento</span>
-      </a>
+      <%= link_to partner_portal_candidate_registrations_path,
+                  class: "nav-link #{'active' if request.path.include?('candidate_registrations')}" do %>
+        <i class="ri-user-star-line"></i>
+        <span>Kandida</span>
+        <% pending_count = cep_election ? ElectionCandidate.where(election: cep_election).pending_review.count : 0 %>
+        <% if pending_count > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 0.6rem;"><%= pending_count %></span>
+        <% end %>
+      <% end %>
     </li>
 
     <li class="nav-item">

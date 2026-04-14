@@ -451,16 +451,17 @@ class CrimeCertificateService
 
   def mask_bonid(bonid)
     return bonid if bonid.blank?
-    parts = bonid.split("-")
-    return bonid if parts.length < 4
 
     if bonid.start_with?("T-")
-      # BonTouris: T-JS-1990-M-US-P-988455 → T-JS-••••-•-US-P-988455
+      # BonTouris: keep T- prefix visible
+      parts = bonid.split("-")
       [parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1]].join("-")
     else
-      # BonID: DV-1989-M-SE-P8697XDS → DV-****-*-**-P****XDS
-      checksum = bonid[-3..]
-      [parts[0], "****", "*", "**", "P****#{checksum}"].join("-")
+      # Citizen BonID: MB••••••••697280
+      stripped = bonid.gsub("-", "")
+      last6 = stripped.last(6)
+      dots = "•" * [stripped.length - 8, 6].max
+      "MB#{dots}#{last6}"
     end
   end
 

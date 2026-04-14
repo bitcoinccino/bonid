@@ -105,8 +105,7 @@
               <div class="mb-3" id="modal-sector-country" style="display: none;">
                 <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.country") %></label>
                 <%
-                  priority = %w[US DO CA FR CL BR BS MX GP MQ GF TT JM PA]
-                  priority_countries = priority.map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] }.compact
+                  priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
                   other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - priority_countries
                   all_countries = priority_countries + [["---", ""]] + other_countries
                 %>
@@ -204,8 +203,7 @@
               <div class="mb-3">
                 <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.which_country") %></label>
                 <%
-                  d_priority = %w[US DO CA FR CL BR BS MX GP MQ GF TT JM PA]
-                  d_priority_countries = d_priority.map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] }.compact
+                  d_priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
                   d_other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - d_priority_countries
                   d_all_countries = d_priority_countries + [["---", ""]] + d_other_countries
                 %>

@@ -8,6 +8,9 @@ Geocoder.configure(
   use_https: true,
   language: :en,
   units: :km,
+  cache: Rails.cache,
+  cache_prefix: "geocoder:",
+  cache_options: { expires_in: 30.days },
   http_headers: {
     "User-Agent" => "BonID/1.0 (support@bonid.ht)"
   }

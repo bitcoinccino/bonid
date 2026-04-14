@@ -775,14 +775,12 @@ module Api
       # Mask BonID: DV-1989-M-SE-P8697XDS → DV-••••-•-••-P••••XDS
       def mask_bonid(bonid)
         return bonid if bonid.blank?
-        parts = bonid.split("-")
-        return bonid if parts.length < 4
 
-        last_segment = parts.last
-        masked_last = last_segment.length > 3 ? "#{last_segment[0]}••••#{last_segment[-3..]}" : last_segment
-        masked_middle = parts[1..-2].map { |p| "•" * p.length }
-
-        [parts[0], *masked_middle, masked_last].join("-")
+        # Citizen BonID: MB••••••••697280
+        stripped = bonid.gsub("-", "")
+        last6 = stripped.last(6)
+        dots = "•" * [stripped.length - 8, 6].max
+        "MB#{dots}#{last6}"
       end
 
       # Mask BonTouris: T-JS-1990-M-US-P-988455 → T-JS-••••-•-US-P-988455

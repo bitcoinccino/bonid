@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
 </head>
 
-<body class="partners-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-law-enforcement-layout"
+<body class="partners-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-law-enforcement-layout <%= 'immersive-builder' if @immersive_form %>"
       data-controller="tooltip bootstrap global-loading">
 
   <%= render "shared/global_loading" %>
@@ -23,12 +23,16 @@
   <%# Global confirmation modal — intercepts all data-turbo-confirm dialogs %>
   <%= render "shared/confirmation_modal" %>
 
-  <!-- Sidebar -->
-  <%= render "partner_portal/shared/sidebars/sidebar_law_enforcement" %>
+  <% unless @immersive_form %>
+    <!-- Sidebar -->
+    <%= render "partner_portal/shared/sidebars/sidebar_law_enforcement" %>
+  <% end %>
 
   <!-- Main Content -->
   <main class="flex-grow-1 w-100 position-relative">
-    <%= render "partner_portal/shared/navbars/navbar_law_enforcement" %>
+    <% unless @immersive_form %>
+      <%= render "partner_portal/shared/navbars/navbar_law_enforcement" %>
+    <% end %>
 
     <div id="flash-messages">
       <% unless controller.devise_controller? %>
@@ -36,7 +40,7 @@
       <% end %>
     </div>
 
-    <div class="p-4 partner-scroll-region">
+    <div class="<%= @immersive_form ? 'immersive-builder-content' : 'p-4 partner-scroll-region' %>">
       <%= yield %>
     </div>
   </main>

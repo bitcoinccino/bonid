@@ -3,6 +3,14 @@ Rails.application.routes.draw do
   # HEALTH & MONITORING
   # ===========================================================================
   get "/up", to: "rails/health#show", as: :rails_health_check
+
+  # ===========================================================================
+  # BONGOUV — Public Receipt Verification
+  # ===========================================================================
+  # Scanned QR codes on DGI receipts hit this endpoint.
+  # No auth required — public cryptographic verification.
+  get "/v/:token", to: "bongouv/verification#show", as: :bongouv_verify
+
   # config/routes.rb
 
 
@@ -215,14 +223,13 @@ end
     end
 
     # Election Admin (CEP Dashboard)
-    namespace :election, module: "election/admin" do
-      get    ":id",          to: "elections#show",     as: :election
-      get    ":id/snapshot",  to: "elections#snapshot",  as: :election_snapshot
-      post   ":id/decrypt",   to: "elections#decrypt",   as: :election_decrypt
-      get    ":id/multi_sig", to: "elections#multi_sig", as: :election_multi_sig, controller: "elections"
-      post   ":id/sign",      to: "elections#sign",      as: :election_sign
-      get    ":id/results",   to: "elections#results",   as: :election_results
-    end
+    # Controller: Election::Admin::ElectionsController
+    get    "election/:id",          to: "/election/admin/elections#show",     as: :election_election
+    get    "election/:id/snapshot",  to: "/election/admin/elections#snapshot",  as: :election_election_snapshot
+    post   "election/:id/decrypt",   to: "/election/admin/elections#decrypt",   as: :election_election_decrypt
+    get    "election/:id/multi_sig", to: "/election/admin/elections#multi_sig", as: :election_election_multi_sig
+    post   "election/:id/sign",      to: "/election/admin/elections#sign",      as: :election_election_sign
+    get    "election/:id/results",   to: "/election/admin/elections#results",   as: :election_election_results
 
     # (UNCHANGED — all your admin routes preserved)
     resources :partners, param: :uuid do
@@ -309,8 +316,10 @@ end
 
     resources :reviewers, only: [ :index, :new, :create, :destroy ] do
       collection do
+        post :lookup
         get  :bulk_new
         post :bulk_create
+        get  :activity
       end
     end
 
@@ -323,6 +332,18 @@ end
 
     resources :api_usage, only: [ :index ]
     resources :qr_scans, only: [ :index ]
+
+    # Billing
+    get "billing",               to: "billing#index",         as: :billing
+    get "billing/credit_ledger", to: "billing#credit_ledger", as: :billing_credit_ledger
+    get "billing/payments",      to: "billing#payments",      as: :billing_payments
+
+    # Settlements
+    resources :settlements, only: [:index, :show] do
+      collection do
+        post :settle_batch
+      end
+    end
 
     resources :guidelines, only: [ :index ] do
       collection { post :confirm }
@@ -438,6 +459,69 @@ end
             as:     :certificate_by_ref
       end
     end
+
+    # DGI Self-Service Filing (Citizen files their own tax forms)
+    resources :dgi, only: [:index, :new, :create, :show], controller: "dgi" do
+      collection do
+        post :save_draft
+      end
+      member do
+        get  :resubmit
+        post :update_resubmit
+      end
+    end
+
+    # DGI Payments
+    resources :dgi_payments, only: [:index, :show], param: :order_id, controller: "dgi_payments" do
+      member do
+        post :pay
+        get  :receipt
+      end
+      collection do
+        get :moncash_callback
+        get :zellus_callback
+      end
+    end
+
+    # Browse Partner Services
+    resources :services, only: [:index, :show], param: :slug
+
+    # Service Applications — citizen applies to partner services
+    resources :service_applications, only: [:index, :show, :create, :update] do
+      member do
+        post :submit
+        get  :receipt
+      end
+      collection do
+        post :auto_save
+        get  :zellus_callback
+      end
+    end
+    get "apply/:partner_slug/:form_code", to: "service_applications#new", as: :apply_service
+    get "service/:partner_slug/:form_code", to: "services#detail", as: :service_detail
+
+    # ── Election (Citizen Voting) ──────────────────────────────
+    namespace :election do
+      get "kalandriye", to: "calendar#index", as: :calendar
+
+      # Voting flow (multi-step wizard)
+      get  "vote",             to: "vote#eligibility", as: :vote
+      post "vote/begin",       to: "vote#begin",       as: :vote_begin
+      get  "vote/ballot",      to: "vote#ballot",      as: :vote_ballot
+      post "vote/cast",        to: "vote#cast",        as: :vote_cast
+      get  "vote/receipt",     to: "vote#receipt",      as: :vote_receipt
+
+      # Verify my vote
+      get  "verifye",          to: "verify#index",      as: :verify
+      post "verifye",          to: "verify#check",      as: :verify_check
+
+      # Results
+      get  "rezilta",          to: "results#index",     as: :results
+    end
+
+    # Private Services (legacy — kept for backward compat)
+    resources :bank_services, only: [:index]
+    resources :bill_payments, only: [:index]
   end
 
 
@@ -530,7 +614,12 @@ end
     get "profile/complete", to: "profile_completion#index", as: :profile_completion
     patch "profile/complete", to: "profile_completion#update"
 
+    # Guidelines acceptance gate (all verified partners)
+    get  "guidelines", to: "guidelines_acceptance#index", as: :guidelines
+    post "guidelines/accept", to: "guidelines_acceptance#accept", as: :guidelines_accept
+
     resources :access_logs, only: [ :index ]
+    resources :partner_audit_logs, only: [ :index, :show ]
     resources :settings, only: [ :index, :update ]
     resources :metrics,     only: [ :show ]
 
@@ -540,12 +629,133 @@ end
       member { post :confirm }
     end
     resources :verifications, only: [ :index, :show ]
+
+    # ── DGI Forms (Cashier Flow) ──────────────────────────
+    # Fiscal receipts (general)
+    resources :fiscal_receipts, only: [ :index, :new, :create, :show ] do
+      member do
+        get :receipt  # printable receipt view
+      end
+    end
+
+    # Formulaire A — NIF Registration (gateway form for individuals)
+    resources :nif_registrations, only: [ :index, :new, :create, :show ]
+
+    # Formulaire B — Business Registration (gateway form for businesses)
+    resources :business_registrations, only: [ :index, :new, :create, :show ]
+
+    # Patente — Annual Business License Tax (DGI-F008)
+    resources :patente_declarations, only: [ :index, :new, :create, :show ]
+
+    # TCA — Monthly Sales Tax
+    resources :tca_declarations, only: [ :index, :new, :create, :show ]
+
+    # RAS IR — Monthly Income Withholding Tax
+    resources :ras_ir_declarations, only: [ :index, :new, :create, :show ]
+
+    # DGI Review Queue — Citizen-filed declarations pending approval
+    resources :dgi_review, only: [:index, :show], controller: "dgi_review" do
+      member do
+        post :approve
+        post :reject
+      end
+    end
+
+    # DGI Cash/Bank Payment Confirmation
+    resources :dgi_cash_payments, only: [:index], controller: "dgi_cash_payments" do
+      member do
+        post :confirm
+      end
+      collection do
+        get :lookup
+      end
+    end
+
+    # ── Service Builder (all sectors) ──────────────────────
+    resources :services, only: [:index, :new, :create, :edit, :update, :destroy] do
+      member do
+        patch :toggle
+        patch :publish
+        get :version_history
+      end
+      collection do
+        get :templates
+      end
+    end
+
+    # Citizen submissions — partner admin reviews & approves/rejects
+    resources :submissions, only: [:index, :show], controller: "submissions" do
+      member do
+        patch :approve
+        patch :reject
+        patch :check_in
+        post  :add_note
+      end
+      collection do
+        get  :export
+        get  :agent_form     # Agent fills form on behalf of citizen
+        post :agent_create   # Agent submits form on behalf of citizen
+        patch :agent_update  # Agent saves form data (step-by-step)
+      end
+    end
+
     # Unified team management (all sectors except law enforcement)
     resources :team, only: [:index, :new, :create, :destroy] do
       collection do
         post :lookup
       end
+      member do
+        patch :suspend
+        patch :reactivate
+        patch :update_role
+      end
     end
+
+    # Elections (CEP — create & manage)
+    resources :elections, only: [:index, :new, :create, :show], controller: "elections" do
+      member do
+        post :open_election
+        post :close_election
+        post :certify_election
+        post :generate_calendar
+      end
+    end
+
+    # Electoral Calendar (CEP)
+    get "electoral_calendar", to: "electoral_calendar#index", as: :electoral_calendar
+
+    # CEP Election Pages (partner portal access)
+    get "election/:id/tablo",     to: "election_dashboard#show",      as: :election_tablo
+    get "election/:id/multi_sig", to: "election_dashboard#multi_sig", as: :election_multi_sig
+    get "election/:id/results",   to: "election_dashboard#results",   as: :election_results
+
+    # Voter Eligibility Lookup (CEP)
+    get  "voter_eligibility", to: "voter_eligibility#index", as: :voter_eligibility
+    post "voter_eligibility/lookup", to: "voter_eligibility#lookup", as: :voter_eligibility_lookup
+
+    # Voter Registry / Lis Elektoral (CEP)
+    get  "voter_registry", to: "voter_registry#index", as: :voter_registry
+    post "voter_registry/build", to: "voter_registry#build", as: :voter_registry_build
+
+    # Party Registration (CEP — Article 143)
+    resources :party_registrations, only: [:index, :show, :new, :create] do
+      member do
+        patch :update_documents
+        patch :start_review
+        patch :approve
+        patch :reject
+      end
+    end
+
+    # Candidate Registration (CEP)
+    resources :candidate_registrations, only: [:index, :show, :new, :create] do
+      member do
+        post :approve
+        post :reject
+        post :start_review
+      end
+    end
+
     get "analytics", to: "analytics#index"
     resources :api_keys, only: [ :index, :create, :destroy ] do
       post :generate_token, on: :collection
@@ -613,7 +823,13 @@ end
   # ===========================================================================
   get "/election/verify",   to: "election/audit#verify",    as: :election_audit_verify
   get "/election/snapshot",  to: "election/audit#snapshot",  as: :election_audit_snapshot
-  get "/election/results",   to: "election/public#results",  as: :election_public_results
+  get "/election/results",      to: "election/public#results",      as: :election_public_results
+  get "/election/celebration",  to: "election/public#celebration",  as: :election_public_celebration
+  get "/election/live_stats",   to: "election/public#live_stats",   as: :election_live_stats
+  get "/election/whitepaper",   to: "election/public#whitepaper",   as: :election_whitepaper
+  get "/election/livreblanc",   to: "election/public#livreblanc",   as: :election_livreblanc
+  post "/election/feedback",       to: "election/pilot_feedback#create", as: :election_pilot_feedback
+  get  "/election/feedback/stats",  to: "election/pilot_feedback#stats",  as: :election_pilot_feedback_stats
 
   # ===========================================================================
   # PARTNER EMAIL VERIFICATION ROUTES
@@ -743,6 +959,10 @@ end
       # Ed25519 public key for BonID QR offline verification
       # GET /api/v1/public_keys/bonid
       get "public_keys/bonid", to: "public_keys#bonid", as: :bonid_public_key
+
+      # Ed25519 public key for BonGouv receipt verification
+      # GET /api/v1/public_keys/bongouv
+      get "public_keys/bongouv", to: "public_keys#bongouv", as: :bongouv_public_key
 
       # Officer misconduct summary — for verified partners (embassies, consulates, law firms)
       # GET /api/v1/officers/:badge_id/complaints/summary
