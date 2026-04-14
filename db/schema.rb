@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_14_224500) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_14_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2179,6 +2179,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_14_224500) do
     t.datetime "verified_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "biometric_fingerprint"
     t.index ["bonvote_election_id", "bonid"], name: "idx_voter_election_bonid", unique: true
     t.index ["bonvote_election_id", "department_code"], name: "idx_voter_election_dept"
     t.index ["bonvote_election_id"], name: "index_voter_eligibility_records_on_bonvote_election_id"

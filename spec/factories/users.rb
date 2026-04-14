@@ -64,5 +64,32 @@ FactoryBot.define do
         create(:identity_submission, :pending, user: user)
       end
     end
+
+    # ===== Domestic voter (Haiti) — real Department + Address =====
+    trait :domestic do
+      after(:create) do |user|
+        department = Department.find_by(name: "Ouest") ||
+          create(:department, name: "Ouest", postal_code_prefix: "HT61")
+        arrondissement = Arrondissement.find_by(department: department) ||
+          create(:arrondissement, name: "Port-au-Prince", department: department)
+        commune = Commune.find_by(department_id: department.id) ||
+          create(:commune, name: "Port-au-Prince", arrondissement: arrondissement, department_id: department.id, postal_code: "HT6110")
+        communal_section = CommunalSection.find_by(commune: commune) ||
+          create(:communal_section, name: "1re Section", commune: commune, postal_code: "HT6000")
+
+        create(:address,
+          addressable: user,
+          department_id: department.id,
+          commune_id: commune.id,
+          communal_section: communal_section,
+          country: "Haiti"
+        )
+      end
+    end
+
+    # ===== Diaspora voter (abroad) — no local address needed =====
+    trait :diaspora do
+      # No Haitian address — department_code will be the ISO country code
+    end
   end
 end

@@ -36,16 +36,16 @@ module Citizens
           return
         end
 
-        # Check CIN on voter roll
-        cin_number = current_citizen.id_number
-        @has_cin = cin_number.present?
+        # Check voter roll
+        @voter_record = VoterEligibilityRecord.check_eligibility(election: @election, bonid: current_citizen.bonid)
+        @has_cin = @voter_record&.eligible? || current_citizen.id_number.present?
 
-        # Generate nullifier to check double-voting
-        if @has_cin
+        # Generate nullifier to check double-voting (using biometric anchor from voter roll)
+        if @voter_record&.eligible?
           voter_key = ::Election::EligibilityProofService.derive_voter_key(
             current_citizen.bonid,
             "eligibility-check",
-            cin_number.to_s
+            @voter_record.biometric_anchor
           )
           nullifier = ::Election::EligibilityProofService.generate_nullifier(voter_key, @election.id)
           @already_voted = ::Election::EligibilityProofService.already_voted?(nullifier, @election.id)
@@ -72,11 +72,21 @@ module Citizens
           return
         end
 
-        # Derive voter key
+        # Resolve biometric anchor from voter roll (Rekognition face_id hash)
+        voter_record = VoterEligibilityRecord.check_eligibility(election: election, bonid: current_citizen.bonid)
+        biometric_anchor = voter_record&.biometric_anchor || OpenSSL::Digest::SHA256.hexdigest(current_citizen.bonid.to_s)
+
+        # Derive voter key: BonID + liveness session + biometric anchor
+        # The biometric_hash from liveness is combined with the enrolled face_id hash
+        # so even a stolen session can't produce the correct nullifier
+        combined_biometric = OpenSSL::Digest::SHA256.hexdigest(
+          "#{biometric_hash || "none"}||#{biometric_anchor}"
+        )
+
         voter_key = ::Election::EligibilityProofService.derive_voter_key(
           current_citizen.bonid,
           liveness_session_id,
-          biometric_hash || current_citizen.id_number.to_s
+          combined_biometric
         )
 
         # Generate nullifier
@@ -106,7 +116,7 @@ module Citizens
           nullifier: nullifier,
           challenge_nonce: challenge_nonce,
           liveness_session_id: liveness_session_id,
-          biometric_hash: biometric_hash || current_citizen.id_number.to_s,
+          biometric_hash: combined_biometric,
           ballot_type: ballot_route[:type].to_s,
           department: ballot_route[:department],
           started_at: Time.current.iso8601
@@ -158,6 +168,15 @@ module Citizens
         # Idempotency — check if already cast with this nullifier
         existing = ElectionBallot.find_by(nullifier: vote_session["nullifier"], election_id: election_id)
         if existing
+          # Track collision for CEP monitoring (silent — voter sees normal receipt)
+          ::Election::NullifierCollisionTracker.record!(
+            election_id,
+            nullifier: vote_session["nullifier"],
+            ip_address: request.remote_ip,
+            channel: "remote",
+            department_code: current_citizen.bonid.to_s.split("-")[3]&.upcase
+          )
+
           session[:election_receipt] = {
             ballot_hash: existing.ballot_hash,
             receipt_id: existing.receipt_id,
@@ -204,6 +223,9 @@ module Citizens
 
         # Broadcast to CEP dashboard
         ::Election::ElectionCache.increment_vote_count!(election_id)
+
+        # Track velocity for spike detection
+        ::Election::VelocityMonitorService.record_vote!(election_id, department_code: location_code)
 
         # Store receipt in session
         session[:election_receipt] = {

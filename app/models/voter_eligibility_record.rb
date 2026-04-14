@@ -68,27 +68,37 @@ class VoterEligibilityRecord < ApplicationRecord
     # Determine eligibility
     submission = user.identity_submissions.where(status: :approved).order(created_at: :desc).first
 
+    # Resolve address info upfront
+    address = user.address
+    local_dept_code = address&.department&.slug || "UNKNOWN"
+
     if user.bonid.blank?
-      record.assign_attributes(status: "ineligible", ineligibility_reason: "no_cin")
+      record.assign_attributes(status: "ineligible", ineligibility_reason: "no_cin", department_code: local_dept_code)
     elsif submission.blank?
-      record.assign_attributes(status: "ineligible", ineligibility_reason: "no_cin")
+      record.assign_attributes(status: "ineligible", ineligibility_reason: "no_cin", department_code: local_dept_code)
     elsif user.dob.blank? || user.age < 18
-      record.assign_attributes(status: "ineligible", ineligibility_reason: "underage")
+      record.assign_attributes(status: "ineligible", ineligibility_reason: "underage", department_code: local_dept_code)
     elsif submission.expires_at.present? && submission.expires_at < Time.current
-      record.assign_attributes(status: "ineligible", ineligibility_reason: "expired_id")
+      record.assign_attributes(status: "ineligible", ineligibility_reason: "expired_id", department_code: local_dept_code)
     else
       # Eligible — determine constituency
-      address = user.address
-      dept_code = address&.department&.slug
+      is_diaspora = submission.country_of_residence.present? && submission.country_of_residence != "HT"
+
+      # Domestic: department slug (OU, ND, SE)
+      # Diaspora: ISO country code (US, FR, CA) — enables per-country analytics
+      dept_code = is_diaspora ? submission.country_of_residence : local_dept_code
       commune_id = address&.commune_id
 
-      is_diaspora = submission.country_of_residence.present? && submission.country_of_residence != "HT"
+      # Extract Rekognition face_id and hash it for voter key derivation
+      face_id = submission.metadata&.dig("face_collection", "face_id")
+      biometric_fp = face_id.present? ? OpenSSL::Digest::SHA256.hexdigest(face_id) : nil
 
       record.assign_attributes(
         status: "eligible",
-        department_code: dept_code || "UNKNOWN",
+        department_code: dept_code,
         commune_id: commune_id,
         channel: is_diaspora ? "diaspora" : "domestic",
+        biometric_fingerprint: biometric_fp,
         verified_at: Time.current
       )
 
@@ -98,7 +108,7 @@ class VoterEligibilityRecord < ApplicationRecord
       else
         election.election_constituencies
           .where(position: "deputy", commune_id: commune_id)
-          .first&.constituency_name || dept_code
+          .first&.constituency_name || local_dept_code
       end
       record.constituency_name = constituency
     end
@@ -138,6 +148,13 @@ class VoterEligibilityRecord < ApplicationRecord
 
   def ineligibility_label
     INELIGIBILITY_REASONS[ineligibility_reason] || ineligibility_reason
+  end
+
+  # Returns the biometric anchor for voter key derivation.
+  # Falls back to BonID hash if face_id was not yet enrolled
+  # (e.g. pre-Rekognition accounts), ensuring all voters can still vote.
+  def biometric_anchor
+    biometric_fingerprint.presence || OpenSSL::Digest::SHA256.hexdigest(bonid.to_s)
   end
 
   # Stats for CEP dashboard

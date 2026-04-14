@@ -53,6 +53,19 @@ class BroadcastElectionTallyJob < ApplicationJob
 
   def broadcast_stats(election_id)
     stats = ElectionBallot.stats(election_id)
+
+    # Attach velocity snapshot (no extra DB query — Redis only)
+    stats[:velocity] = ::Election::VelocityMonitorService.snapshot(election_id)
+
+    # Attach nullifier collision stats (Redis only)
+    stats[:nullifier_collisions] = ::Election::NullifierCollisionTracker.stats(election_id)
+
+    # Attach ceremony progress (1 lightweight DB query)
+    stats[:ceremony] = ::Election::CeremonyTracker.broadcast_payload(election_id)
+
     ElectionTallyChannel.broadcast_vote(election_id, stats)
+
+    # Check for velocity spikes (fires alert if threshold exceeded)
+    ::Election::VelocityMonitorService.check_and_alert!(election_id)
   end
 end
