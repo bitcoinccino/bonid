@@ -46,5 +46,46 @@ class TeamMailer < ApplicationMailer
     )
   end
 
+  # Suspension notice — sent when a team member is suspended
+  def suspended(user:, partner:, reason: nil)
+    @user    = user
+    @partner = partner
+    @reason  = reason
+
+    mail(
+      to:      user.email,
+      subject: "BonID: Kont Sispann — #{partner.name}"
+    )
+  end
+
+  # Reactivation notice — sent when a suspended member is reactivated
+  def reactivated(user:, partner:)
+    @user    = user
+    @partner = partner
+
+    mail(
+      to:      user.email,
+      subject: "BonID: Kont Reaktive — #{partner.name}"
+    )
+  end
+
+  # Role granted notification — for internal staff (reviewers, etc.)
+  # No partner context, no invitation token. The user already has BonID credentials.
+  # They just need to know their role was upgraded and where to sign in.
+  #
+  # @param user [User]   the person who was granted the role
+  # @param role [String] "reviewer" (extensible for future internal roles)
+  def role_granted(user:, role:)
+    @user = user
+    @role = role
+    @role_label = role.humanize
+    @sign_in_url = new_reviewer_session_url
+
+    mail(
+      to:      user.email,
+      subject: "BonID: Ou se yon #{@role_label} kounye a"
+    )
+  end
+
   private
 end

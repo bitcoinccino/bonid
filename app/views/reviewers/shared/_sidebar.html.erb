@@ -1,84 +1,158 @@
-<aside class="offcanvas-lg offcanvas-start bg-white border-end shadow-sm reviewer-sidebar"
-       tabindex="-1" id="reviewerSidebar">
-  <div class="offcanvas-body p-3 d-flex flex-column justify-content-between">
+<%# app/views/reviewers/shared/_sidebar.html.erb %>
+<%# Reviewer sidebar — inherits admin-sidebar styles %>
 
-    <!-- NAVIGATION -->
-    <div>
-      <h6 class="text-uppercase fw-semibold text-muted small mb-3">Navigation</h6>
+<%# Mobile backdrop %>
+<div class="admin-sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
 
-      <ul class="nav flex-column gap-2">
+<%# Sidebar %>
+<nav class="admin-sidebar" id="adminSidebar" aria-label="Reviewer Sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          id="sidebarCloseBtn"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
 
-        <!-- Dashboard -->
-        <li>
-          <%= link_to reviewers_root_path,
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if current_page?(reviewers_root_path)}" do %>
-              <i class="ri-dashboard-line"></i> Dashboard
-          <% end %>
-        </li>
-
-        <!-- All submissions -->
-        <li>
-          <%= link_to reviewers_identity_submissions_path,
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if current_page?(reviewers_identity_submissions_path)}" do %>
-              <i class="ri-file-list-3-line"></i> All Submissions
-          <% end %>
-        </li>
-
-        <!-- Pending reviews -->
-        <li>
-          <%= link_to reviewers_identity_submissions_path(status: :pending),
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if params[:status] == 'pending'}" do %>
-              <i class="ri-time-line"></i> Pending Reviews
-          <% end %>
-        </li>
-
-        <!-- Approved -->
-        <li>
-          <%= link_to reviewers_identity_submissions_path(status: :approved),
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if params[:status] == 'approved'}" do %>
-              <i class="ri-checkbox-circle-line"></i> Approved
-          <% end %>
-        </li>
-
-        <!-- Rejected -->
-        <li>
-          <%= link_to reviewers_identity_submissions_path(status: :rejected),
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if params[:status] == 'rejected'}" do %>
-              <i class="ri-close-circle-line"></i> Rejected
-          <% end %>
-        </li>
-
-        <!-- Analytics -->
-        <li>
-          <%= link_to reviewers_analytics_index_path,
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if controller_name == 'analytics'}" do %>
-              <i class="ri-bar-chart-2-line"></i> Analytics
-          <% end %>
-        </li>
-
-        <!-- Audit logs -->
-        <li>
-          <%= link_to reviewers_audit_logs_path,
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if controller_name == 'audit_logs'}" do %>
-              <i class="ri-history-line"></i> Audit Logs
-          <% end %>
-        </li>
-
-        <!-- Notifications -->
-        <li>
-          <%= link_to reviewers_notifications_path,
-             class: "nav-link d-flex align-items-center gap-2 #{'active' if controller_name == 'notifications'}" do %>
-              <i class="ri-notification-3-line"></i> Notifications
-          <% end %>
-        </li>
-
-      </ul>
+  <%# Reviewer logo and info %>
+  <div class="admin-logo-section">
+    <div class="admin-logo-wrapper">
+      <div class="admin-logo-placeholder">
+        <i class="ri-user-search-line"></i>
+      </div>
     </div>
-
-    <!-- FOOTER -->
-    <div class="small text-muted mt-auto pt-4">
-      <i class="ri-information-line"></i>
-      Reviewer Portal v2 • <%= Time.current.year %>
-    </div>
+    <div class="admin-name"><%= current_reviewer&.full_name || "Reviewer" %></div>
+    <div class="admin-role">BonID Reviewer</div>
   </div>
-</aside>
+
+  <%# Navigation links %>
+  <ul class="nav flex-column sidebar-nav">
+
+    <%# ── Dashboard ── %>
+    <li class="nav-item">
+      <%= link_to reviewers_root_path,
+                  class: "nav-link #{'active' if current_page?(reviewers_root_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Dashboard</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── VERIFIKASYON / VERIFICATION ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Verifikasyon</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_identity_submissions_path,
+                  class: "nav-link #{'active' if current_page?(reviewers_identity_submissions_path) && params[:status].blank? && params[:rejection_reason].blank?}" do %>
+        <i class="ri-file-list-3-line"></i>
+        <span>All Submissions</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_identity_submissions_path(status: :pending),
+                  class: "nav-link #{'active' if params[:status] == 'pending'}" do %>
+        <i class="ri-time-line"></i>
+        <span>Pending Reviews</span>
+        <% pending_count = IdentitySubmission.where(status: :pending).count %>
+        <% if pending_count > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto"><%= pending_count %></span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_identity_submissions_path(status: :approved),
+                  class: "nav-link #{'active' if params[:status] == 'approved'}" do %>
+        <i class="ri-checkbox-circle-line"></i>
+        <span>Approved</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_identity_submissions_path(status: :rejected),
+                  class: "nav-link #{'active' if params[:status] == 'rejected' && params[:rejection_reason].blank?}" do %>
+        <i class="ri-close-circle-line"></i>
+        <span>Rejected</span>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── SEKIRITE / SECURITY ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Sekirite</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_identity_submissions_path(rejection_reason: "duplicate_identity"),
+                  class: "nav-link #{'active' if params[:rejection_reason] == 'duplicate_identity'}" do %>
+        <i class="ri-shield-cross-line"></i>
+        <span>Fraud Alerts</span>
+        <% if (@fraud_alerts_count || 0) > 0 %>
+          <span class="badge bg-danger rounded-pill ms-auto"><%= @fraud_alerts_count %></span>
+        <% end %>
+      <% end %>
+    </li>
+
+    <%# ══════════════════════════════════════════════ %>
+    <%# ── ANALITIK / ANALYTICS ── %>
+    <%# ══════════════════════════════════════════════ %>
+    <li class="nav-item mt-3">
+      <small class="nav-section-label text-muted text-uppercase px-3" style="font-size: 10px; letter-spacing: 1px;">Analitik</small>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_analytics_index_path,
+                  class: "nav-link #{'active' if controller_name == 'analytics'}" do %>
+        <i class="ri-bar-chart-2-line"></i>
+        <span>Analytics</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_audit_logs_path,
+                  class: "nav-link #{'active' if controller_name == 'audit_logs'}" do %>
+        <i class="ri-history-line"></i>
+        <span>Audit Logs</span>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to reviewers_notifications_path,
+                  class: "nav-link #{'active' if controller_name == 'notifications'}" do %>
+        <i class="ri-notification-3-line"></i>
+        <span>Notifications</span>
+      <% end %>
+    </li>
+
+  </ul>
+
+  <%# Logout button %>
+  <div class="sidebar-logout">
+    <%= link_to destroy_reviewer_session_path,
+                data: { turbo_method: :delete },
+                class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Log Out</span>
+    <% end %>
+  </div>
+</nav>
+
+<script>
+document.addEventListener("turbo:load", () => {
+  const sidebar = document.getElementById("adminSidebar");
+  const backdrop = document.getElementById("sidebarBackdrop");
+  const mobileToggle = document.getElementById("sidebarToggle");
+  const closeBtn = document.getElementById("sidebarCloseBtn");
+
+  function openSidebar() {
+    sidebar?.classList.add("show");
+    backdrop?.classList.add("show");
+  }
+
+  function closeSidebar() {
+    sidebar?.classList.remove("show");
+    backdrop?.classList.remove("show");
+  }
+
+  mobileToggle?.addEventListener("click", openSidebar);
+  closeBtn?.addEventListener("click", closeSidebar);
+  backdrop?.addEventListener("click", closeSidebar);
+});
+</script>

@@ -3,6 +3,8 @@ module Reviewers
   class ApplicationController < ApplicationController
     layout "reviewer"
     before_action :authenticate_reviewer!
+    before_action :set_fraud_alert_count
+    before_action :track_last_seen
 
     # --------------------------------------------------------
     # AUTH CHECK — Must have reviewer role + VERIFIED BonID
@@ -24,5 +26,26 @@ module Reviewers
       current_user
     end
     helper_method :current_reviewer
+
+    def set_fraud_alert_count
+      @fraud_alerts_count = Rails.cache.fetch("admin/fraud_alerts_count", expires_in: 2.minutes) do
+        IdentitySubmission
+          .where(status: :rejected)
+          .where(rejection_reason: "duplicate_identity")
+          .where("created_at > ?", 30.days.ago)
+          .count
+      end
+    end
+
+    # --------------------------------------------------------
+    # TRACK LAST SEEN — Updates every 5 minutes max (avoids DB spam)
+    # --------------------------------------------------------
+    def track_last_seen
+      return unless current_reviewer
+
+      if current_reviewer.last_seen_at.nil? || current_reviewer.last_seen_at < 5.minutes.ago
+        current_reviewer.update_column(:last_seen_at, Time.current)
+      end
+    end
   end
 end

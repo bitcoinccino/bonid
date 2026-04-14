@@ -7,6 +7,12 @@ module Reviewers
       @rejected = IdentitySubmission.where(status: "rejected").count
 
       @recent = IdentitySubmission.order(created_at: :desc).limit(10)
+
+      @recent_fraud_alerts = IdentitySubmission
+        .where(status: :rejected, rejection_reason: "duplicate_identity")
+        .includes(:user)
+        .order(created_at: :desc)
+        .limit(5)
     end
   end
 end

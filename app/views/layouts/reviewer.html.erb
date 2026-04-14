@@ -1,50 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title><%= content_for(:title) || "BonID Reviewer Portal" %></title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <title><%= content_for(:title).presence || "BonID – Reviewer Portal" %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
 
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" crossorigin="anonymous" />
+
+  <!-- Styles & Scripts -->
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 
-<body class="d-flex bg-light min-vh-100 reviewer-layout">
-  <%= render "reviewers/shared/sidebar" %>
+<body class="admin-layout" style="font-family: 'Montserrat', sans-serif;"
+      data-controller="global-loading">
 
-  <div class="flex-grow-1 d-flex flex-column">
-    <%= render "reviewers/shared/navbar" %>
-    <main class="flex-grow-1 p-3 p-md-4" style="margin-top: 4rem;">
-      <%= yield %>
+  <%= render "shared/global_loading" if lookup_context.template_exists?("shared/_global_loading", [], true) %>
+
+  <%# Fixed Topbar (70px) — reuses admin topbar styles %>
+  <%= render "reviewers/shared/navbar" %>
+
+  <%# Main Layout Wrapper %>
+  <div class="admin-main-wrapper d-flex">
+
+    <%# Sidebar (Desktop: fixed 260px | Mobile: off-canvas) %>
+    <%= render "reviewers/shared/sidebar" %>
+
+    <%# Main Content Area %>
+    <main class="admin-main-content">
+      <div class="container-fluid px-4 py-4">
+
+        <%# Flash Messages %>
+        <div id="flash" class="mb-4">
+          <%= render "shared/flash" if lookup_context.template_exists?("shared/_flash", [], true) %>
+        </div>
+
+        <%# Page Content %>
+        <%= yield %>
+      </div>
     </main>
   </div>
+
+  <%# Modals %>
+  <%= yield :modals %>
+
 </body>
 </html>
-
-<style>
-   .reviewer-layout {
-  font-family: "Montserrat", sans-serif;
-  background-color: #f8f9fa;
-}
-
-.reviewer-sidebar {
-  width: 240px;
-  z-index: 1040;
-}
-
-.nav-link {
-  border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  transition: all 0.2s ease;
-
-  &:hover, &.active {
-    background-color: rgba(0, 32, 159, 0.1);
-    color: #00209F !important;
-  }
-}
-
-</style>

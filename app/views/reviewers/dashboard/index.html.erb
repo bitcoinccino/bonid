@@ -1,27 +1,117 @@
-<div class="container py-4">
-  <h1 class="h3 fw-bold mb-4">Reviewer Dashboard</h1>
+<%# app/views/reviewers/dashboard/index.html.erb %>
 
-  <div class="row g-3">
-    <div class="col-md-3">
-      <div class="card shadow-sm p-3 text-center">
-        <h5>Pending</h5>
-        <h2 class="text-warning"><%= @pending %></h2>
+<!-- HEADER -->
+<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 fw-bold mb-0">Reviewer Dashboard</h1>
+  <span class="badge bg-primary-subtle text-primary fw-semibold px-4 py-2 shadow-sm">
+    <%= Time.zone.now.strftime('%B %d, %Y') %>
+  </span>
+</div>
+
+<%# ── Fraud Alert Banner ── %>
+<% if @recent_fraud_alerts.any? %>
+  <div class="card border-0 shadow-sm mb-4" style="border-left: 4px solid #dc3545 !important; background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);">
+    <div class="card-body py-3">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-circle d-flex align-items-center justify-content-center"
+               style="width: 40px; height: 40px; background: rgba(220,53,69,0.1);">
+            <i class="ri-shield-cross-line text-danger" style="font-size: 1.2rem;"></i>
+          </div>
+          <div>
+            <h6 class="mb-0 fw-bold text-danger">
+              <%= @fraud_alerts_count %> Duplicate Identity Alert<%= @fraud_alerts_count > 1 ? "s" : "" %>
+            </h6>
+            <small class="text-muted">Face dedup caught attempts in the last 30 days</small>
+          </div>
+        </div>
+        <%= link_to reviewers_identity_submissions_path(rejection_reason: "duplicate_identity"),
+            class: "btn btn-outline-danger btn-sm fw-semibold px-3" do %>
+          Review <i class="ri-arrow-right-s-line"></i>
+        <% end %>
       </div>
+
+      <% @recent_fraud_alerts.limit(3).each do |fraud_sub| %>
+        <div class="d-flex align-items-center gap-2 py-2 border-top">
+          <i class="ri-user-forbid-line text-warning"></i>
+          <div class="flex-grow-1">
+            <span class="fw-medium" style="font-size: 0.85rem;"><%= fraud_sub.user&.full_name || "Unknown" %></span>
+            <span class="text-muted" style="font-size: 0.75rem;">
+              &mdash; matched user #<%= fraud_sub.metadata&.dig("face_dedup", "matched_user_id") %>
+              (<%= fraud_sub.metadata&.dig("face_dedup", "similarity") %>%)
+              &middot; <%= time_ago_in_words(fraud_sub.created_at) %> ago
+            </span>
+          </div>
+          <%= link_to reviewers_identity_submission_path(fraud_sub),
+              class: "btn btn-sm btn-outline-secondary px-2" do %>
+            <i class="ri-eye-line"></i>
+          <% end %>
+        </div>
+      <% end %>
     </div>
-    <div class="col-md-3">
-      <div class="card shadow-sm p-3 text-center">
-        <h5>Approved</h5>
-        <h2 class="text-success"><%= @approved %></h2>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card shadow-sm p-3 text-center">
-        <h5>Rejected</h5>
-        <h2 class="text-danger"><%= @rejected %></h2>
+  </div>
+<% end %>
+
+<!-- === STAT CARDS === -->
+<div class="row g-4 mb-5">
+  <!-- Pending -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-time-line text-warning fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Pending Review</h6>
+        <p class="stat-number text-warning"><%= number_with_delimiter(@pending) %></p>
+        <%= link_to "Review", reviewers_identity_submissions_path(status: :pending), class: "btn btn-outline-warning btn-sm px-3 mt-2" %>
       </div>
     </div>
   </div>
 
-  <h3 class="h5 mt-4 fw-bold">Recent Submissions</h3>
-  <%= render "reviewers/shared/submission_table", submissions: @recent %>
+  <!-- Approved -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-checkbox-circle-line text-success fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Approved</h6>
+        <p class="stat-number text-success"><%= number_with_delimiter(@approved) %></p>
+        <%= link_to "View", reviewers_identity_submissions_path(status: :approved), class: "btn btn-outline-success btn-sm px-3 mt-2" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rejected -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-close-circle-line text-danger fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Rejected</h6>
+        <p class="stat-number text-danger"><%= number_with_delimiter(@rejected) %></p>
+        <%= link_to "View", reviewers_identity_submissions_path(status: :rejected), class: "btn btn-outline-danger btn-sm px-3 mt-2" %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total -->
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-id-card-line text-primary fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Total Submissions</h6>
+        <p class="stat-number"><%= number_with_delimiter(@total_submissions) %></p>
+        <%= link_to "View All", reviewers_identity_submissions_path, class: "btn btn-outline-primary btn-sm px-3 mt-2" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- === RECENT SUBMISSIONS TABLE === -->
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-primary text-white fw-semibold d-flex justify-content-between align-items-center">
+    <span>Recent Submissions</span>
+    <%= link_to reviewers_identity_submissions_path, class: "btn btn-sm btn-outline-light" do %>
+      View All <i class="ri-arrow-right-s-line"></i>
+    <% end %>
+  </div>
+  <div class="card-body p-0">
+    <%= render "reviewers/shared/submission_table", submissions: @recent %>
+  </div>
 </div>

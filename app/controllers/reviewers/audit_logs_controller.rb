@@ -1,9 +1,12 @@
+# frozen_string_literal: true
+
 module Reviewers
   class AuditLogsController < Reviewers::ApplicationController
     def index
-      @logs = PartnerAuditLog.where(admin_user_id: current_reviewer.id)
-                             .order(created_at: :desc)
-                             .page(params[:page]).per(20)
+      @activities = ReviewerActivity.for_reviewer(current_reviewer.id)
+                                    .includes(:target)
+                                    .recent
+                                    .page(params[:page]).per(25)
     end
   end
 end

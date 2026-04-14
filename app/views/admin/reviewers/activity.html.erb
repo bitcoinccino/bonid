@@ -1,0 +1,190 @@
+<%# app/views/admin/reviewers/activity.html.erb %>
+<%# Admin view — Reviewer Pulse Dashboard %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="fw-bold text-haitian-blue">Reviewer Activity</h1>
+    <p class="text-muted mb-0">Siveyans aktivite reviewer yo an tan reyèl</p>
+  </div>
+  <div>
+    <%= link_to admin_reviewers_path, class: "btn btn-outline-primary rounded-pill" do %>
+      <i class="ri-arrow-left-line me-1"></i> Reviewers
+    <% end %>
+  </div>
+</div>
+
+<%# ── STAT CARDS ── %>
+<div class="row g-4 mb-4">
+  <div class="col-12 col-md-4">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-user-search-line text-success fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Reviewer Aktif</h6>
+        <p class="stat-number text-success"><%= @active_reviewers %></p>
+        <small class="text-muted">sou <%= @reviewer_stats.size %> total</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-checkbox-circle-line text-primary fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Review Jodi a</h6>
+        <p class="stat-number"><%= @total_reviews_today %></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-12 col-md-4">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-alert-line text-danger fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Warning Overrides</h6>
+        <p class="stat-number text-danger"><%= @total_overrides %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── REVIEWER PULSE TABLE ── %>
+<div class="card shadow-sm border-0 table-card mb-4">
+  <div class="card-header table-header bg-primary text-white fw-semibold d-flex justify-content-between">
+    <span><i class="ri-pulse-line me-2"></i>Reviewer Pulse</span>
+    <small class="text-white-50"><%= Time.zone.now.strftime('%H:%M') %></small>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Reviewer</th>
+          <th>Estati</th>
+          <th>Dènye Login</th>
+          <th>IP</th>
+          <th class="text-center">Jodi a</th>
+          <th class="text-center">Overrides</th>
+          <th class="text-center">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @reviewer_stats.sort_by { |r| r[:online] ? 0 : (r[:idle] ? 1 : 2) }.each do |stat| %>
+          <tr>
+            <td>
+              <div class="fw-semibold"><%= stat[:user].full_name %></div>
+              <small class="text-muted"><%= stat[:user].email %></small>
+            </td>
+            <td>
+              <% if stat[:online] %>
+                <span class="badge bg-success">En Liy</span>
+              <% elsif stat[:idle] %>
+                <span class="badge bg-warning text-dark">Inaktif</span>
+              <% else %>
+                <span class="badge bg-secondary">Offline</span>
+              <% end %>
+              <% if stat[:ip_mismatch] %>
+                <span class="badge bg-danger-subtle text-danger ms-1" title="IP changed between sessions">
+                  <i class="ri-error-warning-line"></i> IP
+                </span>
+              <% end %>
+            </td>
+            <td class="small text-muted">
+              <% if stat[:last_login_at] %>
+                <%= time_ago_in_words(stat[:last_login_at]) %> ago
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="small font-monospace text-muted">
+              <%= stat[:current_ip] || stat[:last_login_ip] || "—" %>
+            </td>
+            <td class="text-center">
+              <span class="text-success fw-semibold"><%= stat[:approvals_today] %></span>
+              /
+              <span class="text-danger fw-semibold"><%= stat[:rejections_today] %></span>
+              <br>
+              <small class="text-muted"><%= stat[:views_today] %> wè</small>
+            </td>
+            <td class="text-center">
+              <% if stat[:overrides_total] > 0 %>
+                <span class="badge bg-danger"><%= stat[:overrides_total] %></span>
+              <% else %>
+                <span class="text-muted">0</span>
+              <% end %>
+            </td>
+            <td class="text-center fw-semibold">
+              <%= stat[:total_reviews] %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%# ── RECENT ACTIVITY FEED ── %>
+<div class="card shadow-sm border-0 table-card">
+  <div class="card-header table-header bg-primary text-white fw-semibold">
+    <i class="ri-history-line me-2"></i>Aktivite Resan (50 Dènye)
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Reviewer</th>
+          <th>Aksyon</th>
+          <th>Sib</th>
+          <th>Detay</th>
+          <th>IP</th>
+          <th>Lè</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @recent_activities.each do |activity| %>
+          <tr>
+            <td class="fw-medium"><%= activity.user&.full_name || "Unknown" %></td>
+            <td>
+              <% case activity.action %>
+              <% when "login" %>
+                <span class="badge bg-info-subtle text-info"><i class="ri-login-box-line me-1"></i>Login</span>
+              <% when "logout" %>
+                <span class="badge bg-secondary"><i class="ri-logout-box-line me-1"></i>Logout</span>
+              <% when "view_submission" %>
+                <span class="badge bg-primary-subtle text-primary"><i class="ri-eye-line me-1"></i>View</span>
+              <% when "approve" %>
+                <span class="badge bg-success-subtle text-success"><i class="ri-checkbox-circle-line me-1"></i>Approve</span>
+              <% when "reject" %>
+                <span class="badge bg-danger-subtle text-danger"><i class="ri-close-circle-line me-1"></i>Reject</span>
+              <% when "override_warning" %>
+                <span class="badge bg-danger"><i class="ri-alert-line me-1"></i>Override</span>
+              <% end %>
+            </td>
+            <td>
+              <% if activity.target_type == "IdentitySubmission" && activity.target %>
+                <%= link_to admin_identity_submission_path(activity.target.uuid),
+                    class: "text-decoration-none" do %>
+                  <%= activity.target.user&.full_name || "##{activity.target_id}" %>
+                <% end %>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <td class="small text-muted">
+              <% if activity.metadata["review_duration"].present? %>
+                <i class="ri-timer-line me-1"></i><%= activity.metadata["review_duration"] %>s
+              <% end %>
+              <% if activity.metadata["rejection_reason"].present? %>
+                <%= activity.metadata["rejection_reason"].to_s.humanize %>
+              <% end %>
+              <% if activity.action == "override_warning" %>
+                <span class="text-danger fw-semibold">
+                  Match #<%= activity.metadata["matched_user_id"] %>
+                  (<%= activity.metadata["similarity"] %>%)
+                </span>
+              <% end %>
+            </td>
+            <td class="small font-monospace text-muted"><%= activity.ip_address %></td>
+            <td class="small text-muted text-nowrap"><%= activity.created_at.strftime("%b %d %H:%M") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>

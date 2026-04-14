@@ -1,23 +1,266 @@
-<div class="container py-4">
-  <h1 class="h3 fw-bold mb-3">Analytics</h1>
+<%# app/views/reviewers/analytics/index.html.erb %>
+<%# Reviewer Analytics — Uses shared admin styles (stat-card, chart_card, text-haitian-blue) %>
 
-  <div class="card shadow-sm p-4 mb-4">
-    <h5 class="fw-semibold mb-3">Review Activity</h5>
-    <pre><%= @reviews_per_day.to_json %></pre>
-  </div>
+<%# ── HEADER ── %>
+<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 fw-bold text-haitian-blue mb-0">
+    <i class="ri-bar-chart-2-line me-2"></i>Analitik Verifikasyon
+  </h1>
+  <span class="badge bg-primary-subtle text-primary fw-semibold px-4 py-2 shadow-sm">
+    <%= Time.zone.now.strftime('%B %d, %Y') %>
+  </span>
+</div>
 
-  <div class="row g-4">
-    <div class="col-md-6">
-      <div class="card shadow-sm p-4 text-center">
-        <h4 class="fw-bold"><%= @approval_rate %></h4>
-        <p class="text-muted">Approved</p>
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── STAT CARDS ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<div class="row g-4 mb-5">
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-file-list-3-line text-primary fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Total Soumisyon</h6>
+        <p class="stat-number"><%= number_with_delimiter(@total_submissions) %></p>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="card shadow-sm p-4 text-center">
-        <h4 class="fw-bold"><%= @rejection_rate %></h4>
-        <p class="text-muted">Rejected</p>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-checkbox-circle-line text-success fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Apwouve</h6>
+        <p class="stat-number text-success"><%= @approval_rate %>%</p>
+        <small class="text-muted"><%= number_with_delimiter(@approved_count) %> soumisyon</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-close-circle-line text-danger fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">Rejte</h6>
+        <p class="stat-number text-danger"><%= @rejection_rate %>%</p>
+        <small class="text-muted"><%= number_with_delimiter(@rejected_count) %> soumisyon</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-3">
+    <div class="card stat-card shadow-sm h-100 border-0">
+      <div class="card-body text-center py-4">
+        <i class="ri-time-line text-warning fs-1 mb-2"></i>
+        <h6 class="text-muted fw-semibold mb-1">An Atant</h6>
+        <p class="stat-number text-warning"><%= @pending_rate %>%</p>
+        <small class="text-muted"><%= number_with_delimiter(@pending_count) %> soumisyon</small>
       </div>
     </div>
   </div>
 </div>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── DOUBLE LOCK FRAUD BANNER ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<% if @fraud_total > 0 %>
+  <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #fff5f5 0%, #fff 100%); border-left: 4px solid #dc3545 !important;">
+    <div class="card-body py-3">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center"
+               style="width: 44px; height: 44px; background: rgba(220,53,69,0.1);">
+            <i class="ri-shield-cross-line text-danger" style="font-size: 1.4rem;"></i>
+          </div>
+          <div>
+            <h6 class="mb-0 fw-bold text-danger">
+              <i class="ri-error-warning-line me-1"></i>Double Lock: Duplicate Identity
+            </h6>
+            <small class="text-muted">
+              7 jou: <strong class="text-danger"><%= @fraud_last_7_days %></strong> &middot;
+              30 jou: <strong class="text-danger"><%= @fraud_last_30_days %></strong> &middot;
+              Total: <strong class="text-danger"><%= @fraud_total %></strong>
+            </small>
+          </div>
+        </div>
+        <%= link_to reviewers_identity_submissions_path(rejection_reason: "duplicate_identity"),
+            class: "btn btn-outline-danger btn-sm fw-semibold px-3" do %>
+          Wè Tout <i class="ri-arrow-right-s-line"></i>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── SUBMISSION VOLUME ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<section class="mb-5">
+  <h4 class="fw-bold text-haitian-blue mb-3">
+    <i class="ri-line-chart-line me-1"></i>
+    Volim Soumisyon
+  </h4>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Chak Jou",
+        subtitle: "Dènye 30 Jou",
+        icon: "ri-bar-chart-2-line",
+        chart: area_chart(@submissions_daily, colors: ["#04328C"], library: { height: "260px" })
+      %>
+    </div>
+
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Chak Semèn",
+        subtitle: "Dènye 12 Semèn",
+        icon: "ri-timeline-view",
+        chart: line_chart(@submissions_weekly, colors: ["#1A936F"], library: { height: "260px" })
+      %>
+    </div>
+
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Chak Mwa",
+        subtitle: "Dènye 12 Mwa",
+        icon: "ri-calendar-2-line",
+        chart: column_chart(@submissions_monthly, colors: ["#00209F", "#1A936F"], library: { height: "260px" })
+      %>
+    </div>
+
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Distribisyon Estati",
+        subtitle: "Apwouve / Rejte / An Atant / Revoke",
+        icon: "ri-pie-chart-line",
+        chart: pie_chart(@status_breakdown, colors: ["#1A936F", "#E53E3E", "#EDB95E", "#6C757D"], library: { height: "260px" })
+      %>
+    </div>
+  </div>
+</section>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── FRAUD DETECTION (DOUBLE LOCK) ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<section class="mb-5">
+  <h4 class="fw-bold text-haitian-blue mb-3">
+    <i class="ri-shield-cross-line me-1"></i>
+    Deteksyon Fwòd — Double Lock
+  </h4>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Tandans Fwòd (Face 1:N)",
+        subtitle: "Dènye 30 Jou",
+        icon: "ri-shield-cross-line",
+        chart: @fraud_total > 0 ?
+          column_chart(@fraud_trend, colors: ["#E53E3E"], library: { height: "260px" }) :
+          nil
+      %>
+    </div>
+
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Top Rezon Rejeksyon",
+        subtitle: "Pa volim",
+        icon: "ri-bar-chart-horizontal-line",
+        chart: @rejection_reasons.any? ?
+          bar_chart(@rejection_reasons, colors: ["#EDB95E"], library: { height: "260px" }) :
+          nil
+      %>
+    </div>
+  </div>
+</section>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── SUBMISSION TYPES + REVIEWER PERFORMANCE ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<section class="mb-5">
+  <h4 class="fw-bold text-haitian-blue mb-3">
+    <i class="ri-team-line me-1"></i>
+    Pèfòmans & Distribisyon
+  </h4>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Tip Soumisyon",
+        subtitle: "Initial / Resubmission / Reissue / Visitor",
+        icon: "ri-file-copy-line",
+        chart: pie_chart(@type_breakdown, colors: ["#04328C", "#EDB95E", "#3366CC", "#1A936F"], library: { height: "260px" })
+      %>
+    </div>
+
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Pèfòmans Reviewer",
+        subtitle: "Soumisyon revize pa moun",
+        icon: "ri-user-search-line",
+        chart: @reviews_by_reviewer.any? ?
+          bar_chart(@reviews_by_reviewer, colors: ["#1A936F"], library: { height: "260px" }) :
+          nil
+      %>
+    </div>
+  </div>
+</section>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── DEMOGRAPHICS ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<section class="mb-5">
+  <h4 class="fw-bold text-haitian-blue mb-3">
+    <i class="ri-user-3-line me-1"></i>
+    Demografi Aplikan
+  </h4>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Sèks",
+        subtitle: "Gason / Fi",
+        icon: "ri-team-line",
+        chart: pie_chart(@gender_breakdown, colors: ["#04328C", "#E53E3E", "#6C757D"], library: { height: "260px" })
+      %>
+    </div>
+
+    <div class="col-md-6">
+      <%= render "admin/dashboards/chart_card",
+        title: "Gwoup Laj",
+        subtitle: "< 18 / 18–35 / 36–65 / 65+",
+        icon: "ri-user-3-line",
+        chart: bar_chart(@age_groups, colors: ["#3366CC", "#1A936F", "#04328C", "#E53E3E"], library: { height: "260px" })
+      %>
+    </div>
+  </div>
+</section>
+
+<%# ══════════════════════════════════════════════════════════ %>
+<%# ── GEOGRAPHIC DISTRIBUTION ── %>
+<%# ══════════════════════════════════════════════════════════ %>
+<section class="mb-5">
+  <h4 class="fw-bold text-haitian-blue mb-3">
+    <i class="ri-map-pin-line me-1"></i>
+    Distribisyon Jewografik
+  </h4>
+
+  <div class="row g-4">
+    <div class="col-md-12">
+      <%= render "admin/dashboards/chart_card",
+        title: "Aplikan pa Depatman",
+        subtitle: "Distribisyon atravè Ayiti",
+        icon: "ri-map-pin-line",
+        chart: column_chart(@by_department, colors: ["#04328C"], library: { height: "260px" })
+      %>
+    </div>
+
+    <div class="col-md-12">
+      <%= render "admin/dashboards/chart_card",
+        title: "Top 15 Komin",
+        subtitle: "Pi gwo volim soumisyon",
+        icon: "ri-community-line",
+        chart: bar_chart(@by_commune, colors: ["#1A936F"], library: { height: "300px" })
+      %>
+    </div>
+  </div>
+</section>

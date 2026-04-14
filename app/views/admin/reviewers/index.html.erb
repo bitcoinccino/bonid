@@ -2,6 +2,11 @@
   <h1 class="fw-bold text-haitian-blue">Reviewers</h1>
 
   <div>
+    <%= link_to activity_admin_reviewers_path,
+      class: "btn btn-outline-secondary rounded-pill me-2" do %>
+      <i class="ri-pulse-line me-1"></i> Activity
+    <% end %>
+
     <%= link_to "Bulk Invite", bulk_new_admin_reviewers_path,
       class: "btn btn-outline-primary rounded-pill me-2" %>
 
@@ -14,6 +19,8 @@
   <table class="table table-hover align-middle">
     <thead>
       <tr>
+        <th>Name</th>
+        <th>BonID</th>
         <th>Email</th>
         <th>Invited</th>
         <th>Signed In</th>
@@ -24,6 +31,8 @@
     <tbody>
       <% @reviewers.each do |user| %>
         <tr>
+          <td class="fw-semibold"><%= user.full_name %></td>
+          <td><code class="text-primary"><%= user.bonid || "—" %></code></td>
           <td><%= user.email %></td>
           <td><%= user.invitation_sent_at&.strftime("%b %d, %Y") || "—" %></td>
           <td><%= user.last_sign_in_at&.strftime("%b %d, %Y") || "—" %></td>

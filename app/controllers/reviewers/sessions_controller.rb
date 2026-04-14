@@ -25,6 +25,14 @@ module Reviewers
             alert: "You are not authorized as a Reviewer." and return
         end
 
+        # --- Log the login event ---
+        ReviewerActivity.log!(
+          user:       user,
+          action:     "login",
+          ip_address: request.remote_ip,
+          metadata:   { user_agent: request.user_agent }
+        )
+
         # --- Success: reviewer login ---
         redirect_to reviewers_identity_submissions_path,
           notice: "Welcome, reviewer!" and return
@@ -33,6 +41,13 @@ module Reviewers
 
     # DELETE /reviewer/sign_out
     def destroy
+      if current_user&.has_role?(:reviewer)
+        ReviewerActivity.log!(
+          user:       current_user,
+          action:     "logout",
+          ip_address: request.remote_ip
+        )
+      end
       super
     end
   end

@@ -1,11 +1,98 @@
-<div class="container py-4">
-  <h1 class="h3 fw-bold mb-3">Audit Logs</h1>
+<%# app/views/reviewers/audit_logs/index.html.erb %>
+<%# Uses shared admin styles (table-card, text-haitian-blue) %>
 
-  <% @logs.each do |log| %>
-    <div class="card shadow-sm p-3 mb-3">
-      <p class="fw-semibold mb-1"><%= log.event %></p>
-      <p class="small mb-0 text-muted"><%= log.details %></p>
-      <small class="text-muted"><%= log.created_at.strftime("%Y-%m-%d %H:%M") %></small>
-    </div>
-  <% end %>
+<div class="dashboard-header d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 fw-bold text-haitian-blue mb-0">
+    <i class="ri-history-line me-2"></i>Jounal Aktivite
+  </h1>
+  <span class="badge bg-primary-subtle text-primary fw-semibold px-4 py-2 shadow-sm">
+    <%= Time.zone.now.strftime('%B %d, %Y') %>
+  </span>
 </div>
+
+<div class="card shadow-sm border-0 table-card">
+  <div class="card-header table-header bg-primary text-white fw-semibold">
+    Istwa Aktivite Ou
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Aksyon</th>
+          <th>Sib</th>
+          <th>Detay</th>
+          <th>IP</th>
+          <th>Dat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @activities.each do |activity| %>
+          <tr>
+            <td>
+              <% case activity.action %>
+              <% when "login" %>
+                <span class="badge bg-info-subtle text-info"><i class="ri-login-box-line me-1"></i>Login</span>
+              <% when "logout" %>
+                <span class="badge bg-secondary"><i class="ri-logout-box-line me-1"></i>Logout</span>
+              <% when "view_submission" %>
+                <span class="badge bg-primary-subtle text-primary"><i class="ri-eye-line me-1"></i>View</span>
+              <% when "approve" %>
+                <span class="badge bg-success-subtle text-success"><i class="ri-checkbox-circle-line me-1"></i>Approve</span>
+              <% when "reject" %>
+                <span class="badge bg-danger-subtle text-danger"><i class="ri-close-circle-line me-1"></i>Reject</span>
+              <% when "override_warning" %>
+                <span class="badge bg-danger"><i class="ri-alert-line me-1"></i>Override</span>
+              <% end %>
+            </td>
+
+            <td>
+              <% if activity.target_type == "IdentitySubmission" && activity.target %>
+                <%= link_to reviewers_identity_submission_path(activity.target),
+                    class: "text-decoration-none fw-medium" do %>
+                  <%= activity.target.user&.full_name || "Submission ##{activity.target_id}" %>
+                <% end %>
+              <% elsif activity.action.in?(%w[login logout]) %>
+                <span class="text-muted">—</span>
+              <% else %>
+                <span class="text-muted">#<%= activity.target_id %></span>
+              <% end %>
+            </td>
+
+            <td class="small text-muted">
+              <% if activity.metadata["review_duration"].present? %>
+                <i class="ri-timer-line me-1"></i><%= activity.metadata["review_duration"] %>s
+              <% end %>
+              <% if activity.metadata["rejection_reason"].present? %>
+                <i class="ri-information-line me-1"></i><%= activity.metadata["rejection_reason"].to_s.humanize %>
+              <% end %>
+              <% if activity.action == "override_warning" %>
+                <span class="text-danger fw-semibold">
+                  <i class="ri-shield-cross-line me-1"></i>
+                  Match #<%= activity.metadata["matched_user_id"] %>
+                  (<%= activity.metadata["similarity"] %>%)
+                </span>
+              <% end %>
+              <% if activity.metadata["user_agent"].present? %>
+                <span class="d-none"><%= activity.metadata["user_agent"] %></span>
+              <% end %>
+            </td>
+
+            <td class="small font-monospace text-muted">
+              <%= activity.ip_address %>
+            </td>
+
+            <td class="small text-muted text-nowrap">
+              <%= activity.created_at.strftime("%b %d, %Y %H:%M") %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<% if @activities.respond_to?(:total_pages) && @activities.total_pages > 1 %>
+  <div class="d-flex justify-content-center mt-4">
+    <%= paginate @activities %>
+  </div>
+<% end %>

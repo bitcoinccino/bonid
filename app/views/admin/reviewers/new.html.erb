@@ -1,17 +1,120 @@
-<div class="container py-5" style="max-width: 600px;">
-  <h2 class="fw-bold mb-4">Invite Reviewer</h2>
+<%# app/views/admin/reviewers/new.html.erb %>
 
-  <div class="card p-4 shadow-sm">
-    <%= form_with url: send_invite_admin_reviewers_path, method: :post, local: true do |f| %>
+<div class="container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2">
+          <li class="breadcrumb-item">
+            <%= link_to "Reviewers", admin_reviewers_path %>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Envite Reviewer</li>
+        </ol>
+      </nav>
+      <h1 class="h3 fw-bold text-dark mb-1">Envite Reviewer</h1>
+      <p class="text-muted mb-0">Envite yon sitwayen ki gen BonID verifye pou vin Reviewer</p>
+    </div>
+    <div class="mt-3 mt-md-0">
+      <%= link_to admin_reviewers_path, class: "btn btn-outline-secondary rounded-pill" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen
+      <% end %>
+    </div>
+  </div>
 
-      <div class="mb-3">
-        <%= f.label :email, "Reviewer Email", class: "form-label fw-semibold" %>
-        <%= f.email_field :email, class: "form-control", required: true %>
+  <div class="row">
+    <div class="col-lg-8">
+      <%# BonID Requirement Notice %>
+      <div class="alert alert-info border-0 shadow-sm rounded-3 mb-4">
+        <div class="d-flex">
+          <div class="flex-shrink-0">
+            <i class="ri-shield-check-line fs-4 text-info"></i>
+          </div>
+          <div class="ms-3">
+            <h6 class="fw-semibold mb-1">BonID Verifye Obligatwa</h6>
+            <p class="mb-0 small">
+              Antre <strong>6 dènye karaktè</strong> BonID moun nan. Non, foto, ak imèl yo pral chaje
+              otomatikman depi sou dosye verifye yo.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <%= f.submit "Send Invite", class: "btn btn-primary" %>
-      <%= link_to "Cancel", admin_reviewers_path, class: "btn btn-outline-secondary ms-2" %>
+      <%# BonID Lookup Form %>
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-user-search-line text-primary me-2"></i>Envitasyon Reviewer
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <%= form_tag lookup_admin_reviewers_path, method: :post,
+                       class: "needs-validation", novalidate: true do %>
 
-    <% end %>
+            <div class="mb-4">
+              <label for="bonid" class="form-label fw-semibold">6 Dènye Karaktè BonID</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="ri-fingerprint-line text-muted"></i>
+                </span>
+                <%= text_field_tag :bonid, params[:bonid],
+                    class: "form-control border-start-0 ps-0 font-monospace text-center",
+                    placeholder: "A3FB2C",
+                    required: true,
+                    autofocus: true,
+                    autocomplete: "off",
+                    maxlength: 6,
+                    style: "font-size: 20px; min-height: 48px; letter-spacing: 2px; text-transform: uppercase;" %>
+              </div>
+              <div class="form-text text-muted">
+                Mande sitwayen an 6 dènye karaktè BonID yo, oswa eskane kòd QR yo.
+              </div>
+            </div>
+
+            <div class="d-flex gap-3">
+              <button type="submit" class="btn btn-primary rounded-pill px-4">
+                <i class="ri-search-line me-1"></i> Chèche Moun Nan
+              </button>
+              <%= link_to "Anile", admin_reviewers_path, class: "btn btn-outline-secondary rounded-pill px-4" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Bulk Invite Card %>
+      <div class="card border-0 shadow-sm rounded-3 mt-4">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-group-line text-success me-2"></i>Envitasyon an Mas
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted mb-3">
+            Bezwen envite plizyè reviewer alafwa? Telechaje yon fichye CSV ak BonID suffixes.
+          </p>
+          <%= link_to bulk_new_admin_reviewers_path,
+                      class: "btn btn-outline-success rounded-pill" do %>
+            <i class="ri-upload-2-line me-2"></i>Telechaje CSV
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Sidebar Info %>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-3 bg-light">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3">
+            <i class="ri-information-line text-primary me-2"></i>Kijan sa mache
+          </h6>
+          <ol class="ps-3 mb-0 small text-muted">
+            <li class="mb-2">Antre 6 dènye karaktè BonID sitwayen an</li>
+            <li class="mb-2">Nou verifye yo gen yon BonID apwouve</li>
+            <li class="mb-2">Konfime non, foto, ak imèl moun nan</li>
+            <li class="mb-2">Yo resevwa yon imèl envitasyon</li>
+            <li>Yo klike sou lyen an pou aksepte epi konfigire kont yo</li>
+          </ol>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

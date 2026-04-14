@@ -1,36 +1,83 @@
-<nav class="navbar navbar-expand-lg bg-white shadow-sm fixed-top px-3 py-2">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
+<%# app/views/reviewers/shared/_navbar.html.erb %>
+<%# Reviewer topbar — inherits admin-topbar styles %>
+<nav class="admin-topbar navbar navbar-expand-lg fixed-top shadow-sm">
+  <div class="container-fluid px-3 justify-content-between align-items-center">
 
-    <!-- Branding -->
-    <%= link_to reviewers_root_path, class: "fw-bold text-haitian-blue font-orbitron fs-5 text-decoration-none" do %>
-      <i class="ri-shield-check-line me-2"></i>BonID Reviewer
-    <% end %>
+    <%# Brand + Mobile Toggle %>
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn d-lg-none text-white sidebar-toggle-btn"
+              type="button"
+              id="sidebarToggle"
+              aria-label="Toggle sidebar">
+        <i class="ri-menu-line ri-xl"></i>
+      </button>
 
-    <!-- User Menu -->
-    <div class="dropdown">
-      <a class="d-flex align-items-center text-decoration-none" href="#" 
-         role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="ri-user-line me-2"></i>
-        <span><%= current_reviewer&.full_name || "Reviewer" %></span>
-        <i class="ri-arrow-down-s-line ms-1"></i>
-      </a>
-
-      <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-        <li class="dropdown-header small text-muted">
-          Signed in as <strong><%= current_reviewer&.email %></strong>
-        </li>
-
-        <li><hr class="dropdown-divider"></li>
-
-        <li><%= link_to "Profile", "#", class: "dropdown-item" %></li>
-
-        <li>
-          <%= link_to "Logout",
-              destroy_reviewer_session_path,
-              method: :delete,
-              class: "dropdown-item text-danger" %>
-        </li>
-      </ul>
+      <%= link_to reviewers_root_path, class: "navbar-brand d-flex align-items-center gap-2 text-white text-decoration-none" do %>
+        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center"
+             style="width: 36px; height: 36px;">
+          <i class="ri-user-search-line" style="color: #00209F; font-size: 1.25rem;"></i>
+        </div>
+        <span class="fw-bold fs-5" style="font-family: 'Montserrat', sans-serif;">BonID</span>
+        <span class="badge bg-white bg-opacity-25 fw-medium" style="font-size: 0.65rem; letter-spacing: 0.5px;">REVIEWER</span>
+      <% end %>
     </div>
+
+    <%# Right: Fraud Alerts + Profile Dropdown %>
+    <div class="d-flex align-items-center gap-3">
+
+      <%# Fraud Alert Badge %>
+      <% if (@fraud_alerts_count || 0) > 0 %>
+        <%= link_to reviewers_identity_submissions_path(rejection_reason: "duplicate_identity"),
+            class: "btn btn-sm text-white position-relative px-2",
+            title: "#{@fraud_alerts_count} fraud alert(s)" do %>
+          <i class="ri-shield-cross-line" style="font-size: 1.25rem;"></i>
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                style="font-size: 0.6rem; padding: 3px 6px;">
+            <%= @fraud_alerts_count %>
+          </span>
+        <% end %>
+      <% end %>
+
+      <%# Reviewer Profile Dropdown %>
+      <div class="dropdown">
+        <a href="#"
+           class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <div class="bg-white rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+               style="width: 36px; height: 36px; border: 2px solid rgba(255,255,255,0.3);">
+            <i class="ri-user-line" style="color: #00209F; font-size: 1.1rem;"></i>
+          </div>
+        </a>
+
+        <ul class="dropdown-menu dropdown-menu-end shadow mt-2" style="min-width: 220px; border-radius: 0.75rem;">
+          <%# Reviewer info header %>
+          <li class="px-3 py-2 border-bottom">
+            <div class="fw-semibold"><%= current_reviewer&.full_name || "Reviewer" %></div>
+            <small class="text-muted"><%= current_reviewer&.email %></small>
+          </li>
+          <li>
+            <%= link_to reviewers_root_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ri-dashboard-line"></i> Dashboard
+            <% end %>
+          </li>
+          <li>
+            <%= link_to reviewers_identity_submissions_path, class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ri-id-card-line"></i> Submissions
+            <% end %>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <%= link_to destroy_reviewer_session_path,
+                data: { turbo_method: :delete },
+                class: "dropdown-item text-danger d-flex align-items-center gap-2" do %>
+              <i class="ri-logout-box-r-line"></i> Sign Out
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    </div>
+
   </div>
 </nav>

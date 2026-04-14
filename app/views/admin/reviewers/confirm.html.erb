@@ -1,0 +1,103 @@
+<%# app/views/admin/reviewers/confirm.html.erb %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-2">
+          <li class="breadcrumb-item">
+            <%= link_to "Reviewers", admin_reviewers_path %>
+          </li>
+          <li class="breadcrumb-item">
+            <%= link_to "Envite", new_admin_reviewer_path %>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">Konfime</li>
+        </ol>
+      </nav>
+      <h1 class="h3 fw-bold text-dark mb-1">Konfime Envitasyon Reviewer</h1>
+      <p class="text-muted mb-0">Verifye enfòmasyon moun nan anvan ou voye envitasyon an</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <%# === PERSON PREVIEW CARD === %>
+      <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body d-flex align-items-center p-4">
+          <div class="me-3">
+            <% if @person[:photo_url] %>
+              <img src="<%= @person[:photo_url] %>"
+                   alt="<%= @person[:full_name] %>"
+                   class="rounded-circle border border-2 border-primary"
+                   style="width: 80px; height: 80px; object-fit: cover;">
+            <% else %>
+              <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
+                   style="width: 80px; height: 80px;">
+                <i class="ri-user-line ri-2x text-primary"></i>
+              </div>
+            <% end %>
+          </div>
+          <div>
+            <h4 class="fw-bold mb-1"><%= @person[:full_name] %></h4>
+            <div class="text-muted">
+              <i class="ri-mail-line me-1"></i> <%= @person[:email] %>
+            </div>
+            <div class="mt-1">
+              <code class="text-primary fs-6"><%= @person[:bonid] %></code>
+              <span class="badge bg-success-subtle text-success ms-2">
+                <i class="ri-checkbox-circle-line me-1"></i> BonID Verifye
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# === CONFIRM FORM === %>
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 py-3">
+          <h5 class="mb-0 fw-semibold">
+            <i class="ri-user-search-line text-primary me-2"></i>Konfime Envitasyon
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <p class="text-muted mb-4">
+            Moun sa a pral resevwa wòl <strong>Reviewer</strong> epi yon imèl envitasyon
+            pou konfigire kont yo.
+          </p>
+
+          <%= form_tag admin_reviewers_path, method: :post do %>
+            <%= hidden_field_tag :bonid, @bonid_suffix %>
+
+            <div class="d-flex gap-3">
+              <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4" style="min-height: 48px;">
+                <i class="ri-send-plane-line me-1"></i> Voye Envitasyon
+              </button>
+              <%= link_to new_admin_reviewer_path,
+                          class: "btn btn-outline-secondary rounded-pill px-4" do %>
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# === SIDEBAR: Role Info === %>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-3 bg-light">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3">
+            <i class="ri-user-search-line text-primary me-2"></i>Wòl Reviewer
+          </h6>
+          <ul class="ps-3 mb-0 small text-muted">
+            <li class="mb-2">Revize soumisyon idantite (BonID)</li>
+            <li class="mb-2">Apwouve oswa rejte dokiman</li>
+            <li class="mb-2">Wè alèt fwòd (duplicate identity)</li>
+            <li class="mb-2">Aksè nan analitik ak rapò</li>
+            <li>Pa ka modifye konfigurasyon sistèm</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
