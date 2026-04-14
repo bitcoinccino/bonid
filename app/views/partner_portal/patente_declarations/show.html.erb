@@ -1,0 +1,118 @@
+<%# Partner Portal — Patente Declaration Detail (DGI-F008) %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-store-2-line me-2"></i>Patant <code class="ms-2"><%= @record.patente_declaration_number %></code></h4>
+      <p class="dash-subtitle"><%= @record.patente_raison_sociale %> — <%= @record.patente_annee_fiscale %></p>
+    </div>
+    <%= link_to partner_portal_patente_declarations_path, class: "btn btn-outline-secondary" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <%# Identification %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-building-line me-2"></i>Section III — Idantifikasyon</h6></div>
+        <div class="dash-card-body">
+          <div class="row"><div class="col-md-6">
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:40%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.patente_raison_sociale %></td></tr>
+              <tr><td class="text-muted">NIF</td><td><code><%= @record.patente_nif %></code></td></tr>
+              <tr><td class="text-muted">Sektè</td><td><%= @record.patente_secteur_label %></td></tr>
+            </table>
+          </div><div class="col-md-6">
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:40%">Adrès</td><td><%= @record.patente_adresse %></td></tr>
+              <tr><td class="text-muted">Vil</td><td><%= @record.patente_ville %></td></tr>
+              <tr><td class="text-muted">Telefon</td><td><%= @record.patente_telephone || "—" %></td></tr>
+            </table>
+          </div></div>
+        </div>
+      </div>
+
+      <%# Section IV — Calcul (15 lines) %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-calculator-line me-2"></i>Section IV — Kalkil Taks (15 Liy)</h6></div>
+        <div class="dash-card-body p-0">
+          <table class="table table-striped table-sm mb-0">
+            <thead><tr><th style="width:8%">Liy</th><th>Deskripsyon</th><th style="width:12%">To</th><th style="width:18%" class="text-end">Montan (HTG)</th></tr></thead>
+            <tbody>
+              <% RecordSchemas::PatenteDeclarationSchema::CALCUL_LINES.each do |num, line| %>
+                <% val = @record.data.dig("calcul_taxe", line[:key]) %>
+                <tr class="<%= 'table-warning' if line[:admin] %>">
+                  <td class="fw-bold"><%= num %></td>
+                  <td><%= line[:label] %><% if line[:editable] %> <i class="ri-edit-line text-muted small"></i><% end %></td>
+                  <td class="text-muted"><%= line[:rate] %></td>
+                  <td class="text-end fw-semibold"><%= val.present? ? number_with_delimiter(val.to_f.round(2)) : "—" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <%# Section VI — Admin %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-government-line me-2"></i>Section VI — Kad Administrasyon</h6></div>
+        <div class="dash-card-body p-0">
+          <table class="table table-sm mb-0">
+            <% RecordSchemas::PatenteDeclarationSchema::ADMIN_LINES.each do |key, label| %>
+              <% val = @record.data.dig("calcul_taxe", key.to_s) %>
+              <tr class="<%= 'table-primary fw-bold' if key == :total %>">
+                <td><%= label %></td>
+                <td class="text-end fw-semibold"><%= val.present? ? number_with_delimiter(val.to_f.round(2)) : "0.00" %> HTG</td>
+              </tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+
+      <%# Paiement + Signature %>
+      <div class="dash-card">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-quill-pen-line me-2"></i>Section V — Siyati & Peman</h6></div>
+        <div class="dash-card-body">
+          <div class="row"><div class="col-md-6">
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted">Deklaran</td><td><%= @record.patente_declarant_nom || "—" %></td></tr>
+              <tr><td class="text-muted">NIF Deklaran</td><td><code><%= @record.patente_declarant_nif || "—" %></code></td></tr>
+              <tr><td class="text-muted">Dat Prezantasyon</td><td><%= @record.patente_date_presentation %></td></tr>
+            </table>
+          </div><div class="col-md-6">
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted">Metòd</td><td><%= @record.patente_methode_paiement || "—" %></td></tr>
+              <tr><td class="text-muted">Chèk</td><td><%= @record.patente_numero_cheque || "—" %></td></tr>
+              <tr><td class="text-muted">Bank</td><td><%= @record.patente_banque || "—" %></td></tr>
+            </table>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="dash-card mb-3" style="border-left:4px solid #198754;">
+        <div class="dash-card-body text-center">
+          <span class="text-muted small d-block mb-1">Total Taks</span>
+          <h3 class="mb-1" style="color:#198754;"><%= number_with_delimiter(@record.patente_total.round(2)) %> HTG</h3>
+          <span class="text-muted small"><%= @record.patente_annee_fiscale %></span>
+        </div>
+      </div>
+      <div class="dash-card mb-3">
+        <div class="dash-card-body">
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted">Estati</span><span class="badge bg-success"><%= @record.status&.titleize %></span></div>
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted">Tip</span><span><%= @record.patente_type_declaration %></span></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">Konsòmasyon</span><span class="badge <%= @record.consumed? ? 'bg-danger' : 'bg-success' %>"><%= @record.consumed? ? 'Konsome' : 'Disponib' %></span></div>
+        </div>
+      </div>
+      <% if @record.user %>
+        <div class="dash-card mb-3" style="border-left:4px solid #00209F;">
+          <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-user-line me-2"></i>Kontribyab</h6></div>
+          <div class="dash-card-body text-center">
+            <h6><%= @record.user.first_name %> <%= @record.user.last_name %></h6>
+            <code><%= mask_bonid(@record.user.bonid) %></code>
+          </div>
+        </div>
+        <%= render "partner_portal/shared/citizen_signature", record: @record %>
+      <% end %>
+    </div>
+  </div>
+</div>

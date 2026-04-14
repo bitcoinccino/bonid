@@ -1,0 +1,65 @@
+<%# Partner Portal — Lookup Payment by Order ID / QR Scan %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-qr-scan-2-line me-2"></i>Chèche Peman pa Referans</h4>
+      <p class="dash-subtitle">Antre oswa eskane nimewo referans peman sitwayen an</p>
+    </div>
+    <%= link_to partner_portal_dgi_cash_payments_path, class: "btn btn-outline-secondary" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="dash-card mb-4">
+        <div class="dash-card-body py-4">
+          <%= form_tag lookup_partner_portal_dgi_cash_payments_path, method: :get do %>
+            <label class="form-label fw-semibold">Nimewo Referans Peman</label>
+            <div class="input-group input-group-lg">
+              <%= text_field_tag :order_id, params[:order_id], class: "form-control", placeholder: "DGI-XXXXXX-XXXXXXXX", style: "font-family:monospace;letter-spacing:1px;" %>
+              <button type="submit" class="btn btn-primary"><i class="ri-search-line me-1"></i>Chèche</button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <% if @payment %>
+        <div class="dash-card" style="border-left:4px solid <%= @payment.completed? ? '#198754' : '#ffc107' %>;">
+          <div class="dash-card-body">
+            <h6 class="mb-3">Peman Jwenn</h6>
+            <table class="table table-borderless table-sm mb-3">
+              <tr><td class="text-muted">Referans</td><td><code class="fw-bold"><%= @payment.order_id %></code></td></tr>
+              <tr><td class="text-muted">Sitwayen</td><td><strong><%= @payment.user.first_name %> <%= @payment.user.last_name %></strong> — <code><%= mask_bonid(@payment.user.bonid) %></code></td></tr>
+              <tr><td class="text-muted">Fòm</td><td><%= @payment.form_type_label %></td></tr>
+              <tr><td class="text-muted">Montan</td><td class="fw-bold fs-5"><%= @payment.formatted_total %></td></tr>
+              <tr><td class="text-muted">Metòd</td><td><%= @payment.payment_method_label %></td></tr>
+              <tr><td class="text-muted">Estati</td><td><span class="badge <%= @payment.status_badge_class %>"><%= @payment.status_label %></span></td></tr>
+            </table>
+
+            <% if @payment.pending? %>
+              <% if @payment.payment_method == "cash_window" %>
+                <%= form_tag confirm_partner_portal_dgi_cash_payment_path(@payment), method: :post do %>
+                  <button type="submit" class="btn btn-success btn-lg w-100" style="min-height:48px;"
+                          onclick="return confirm('Konfime peman kach #{@payment.formatted_total}?')">
+                    <i class="ri-check-double-line me-2"></i>Konfime Peman Kach
+                  </button>
+                <% end %>
+              <% elsif @payment.payment_method == "bank_transfer" %>
+                <%= form_tag confirm_partner_portal_dgi_cash_payment_path(@payment), method: :post do %>
+                  <div class="mb-3">
+                    <label class="form-label">Referans Transfè Bankè</label>
+                    <%= text_field_tag :bank_reference, nil, class: "form-control", required: true %>
+                  </div>
+                  <button type="submit" class="btn btn-success btn-lg w-100">
+                    <i class="ri-check-double-line me-2"></i>Konfime Transfè
+                  </button>
+                <% end %>
+              <% end %>
+            <% elsif @payment.completed? %>
+              <div class="alert alert-success mb-0"><i class="ri-check-line me-1"></i>Peman deja konfime le <%= @payment.paid_at&.strftime("%d/%m/%Y a %H:%M") %></div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

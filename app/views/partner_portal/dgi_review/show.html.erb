@@ -1,0 +1,226 @@
+<%# Partner Portal — DGI Review: Side-by-Side Citizen Data vs BonID Profile %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-search-eye-line me-2"></i>Revize Deklarasyon <code class="ms-2"><%= @record.data["declaration_number"] %></code></h4>
+      <p class="dash-subtitle"><%= @record.record_type.titleize.gsub("_", " ") %> — Depoze pa sitwayen</p>
+    </div>
+    <%= link_to partner_portal_dgi_review_index_path, class: "btn btn-outline-secondary" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+  </div>
+
+  <div class="row g-4">
+    <%# ═══════════════════════════════════════════════ %>
+    <%# Left Column — Declaration Data + Signature     %>
+    <%# ═══════════════════════════════════════════════ %>
+    <div class="col-lg-6">
+      <%# Declaration Data %>
+      <div class="dash-card mb-4" style="border-top:3px solid #ffc107;">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-file-text-line me-2"></i>Done Soumèt pa Sitwayen</h6></div>
+        <div class="dash-card-body p-3">
+          <% case @record.record_type
+             when "nif_registration" %>
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:35%">Non</td><td class="fw-semibold"><%= @record.nif_nom_complet %></td></tr>
+              <tr><td class="text-muted">Dat Nesans</td><td><%= @record.nif_date_naissance %></td></tr>
+              <tr><td class="text-muted">Seks</td><td><%= @record.nif_sexe_label %></td></tr>
+              <tr><td class="text-muted">Eta Sivil</td><td><%= @record.nif_etat_civil_label %></td></tr>
+              <tr><td class="text-muted">CIN</td><td><code><%= @record.nif_numero_cin || "—" %></code></td></tr>
+              <tr><td class="text-muted">Adrès</td><td><%= [@record.nif_adresse_rue, @record.nif_ville, @record.nif_code_postal, @record.nif_commune, @record.nif_departement, "HAITI"].compact_blank.join(", ") %></td></tr>
+              <tr><td class="text-muted">Telefon</td><td><%= @record.nif_telephone %></td></tr>
+              <tr><td class="text-muted">Imel</td><td><%= @record.nif_email || "—" %></td></tr>
+            </table>
+
+          <% when "patente_declaration" %>
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.patente_raison_sociale %></td></tr>
+              <tr><td class="text-muted">NIF</td><td><code><%= @record.patente_nif %></code></td></tr>
+              <tr><td class="text-muted">Sektè</td><td><%= @record.patente_secteur_label %></td></tr>
+              <tr><td class="text-muted">Ane</td><td><%= @record.patente_annee_fiscale %></td></tr>
+              <tr><td class="text-muted fw-bold">Total</td><td class="fw-bold text-primary"><%= number_with_delimiter(@record.patente_total.round(2)) %> HTG</td></tr>
+            </table>
+
+          <% when "tca_declaration" %>
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.tca_raison_sociale %></td></tr>
+              <tr><td class="text-muted">NIF</td><td><code><%= @record.tca_nif %></code></td></tr>
+              <tr><td class="text-muted">Mwa/Ane</td><td><%= @record.tca_mois_declaration %>/<%= @record.tca_annee_fiscale %></td></tr>
+              <tr><td class="text-muted">CA Brit</td><td><%= number_with_delimiter(@record.tca_ca_brut.round(2)) %> HTG</td></tr>
+              <tr><td class="text-muted fw-bold">Total TCA</td><td class="fw-bold text-primary"><%= number_with_delimiter(@record.tca_total.round(2)) %> HTG</td></tr>
+            </table>
+
+          <% when "ras_ir_declaration" %>
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.ras_raison_sociale %></td></tr>
+              <tr><td class="text-muted">NIF</td><td><code><%= @record.ras_nif %></code></td></tr>
+              <tr><td class="text-muted">Sektè</td><td><%= @record.ras_secteur_label %></td></tr>
+              <tr><td class="text-muted">Anplwaye</td><td><%= @record.ras_nombre_employes %></td></tr>
+              <tr><td class="text-muted fw-bold">Total</td><td class="fw-bold text-primary"><%= number_with_delimiter(@record.ras_total.round(2)) %> HTG</td></tr>
+            </table>
+
+          <% when "business_registration" %>
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:35%">Non Antrepriz</td><td class="fw-semibold"><%= @record.biz_nom_entreprise %></td></tr>
+              <tr><td class="text-muted">Fòm Jridik</td><td><%= @record.biz_forme_juridique %></td></tr>
+              <tr><td class="text-muted">Sektè</td><td><%= @record.biz_secteur_label %></td></tr>
+              <tr><td class="text-muted">Dat Kreyasyon</td><td><%= @record.biz_date_creation %></td></tr>
+            </table>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Citizen Signature + QR %>
+      <% submission = @citizen&.identity_submissions&.find_by(status: "approved") %>
+      <% if submission&.signature&.attached? %>
+        <div class="dash-card mb-4" style="background:#FFFBEB;border:1px solid #FDE68A;">
+          <div class="dash-card-header" style="border-bottom:1px solid #FDE68A;"><h6 class="dash-card-title"><i class="ri-quill-pen-line me-2"></i>Siyati Kontribyab (BonID)</h6></div>
+          <div class="dash-card-body p-3">
+            <div class="d-flex justify-content-between align-items-end">
+              <div>
+                <%= image_tag submission.signature.variant(resize_to_limit: [280,100]),
+                      class: "img-fluid", style: "max-height:90px;" %>
+                <div class="mt-2">
+                  <strong><%= @citizen.first_name %> <%= @citizen.last_name %></strong>
+                  <br><code style="color:#00209F;"><%= mask_bonid(@citizen.bonid) %></code>
+                  <% if submission.signature_verified_at.present? %>
+                    <span class="badge bg-success ms-1"><i class="ri-check-line"></i> Verifye</span>
+                  <% end %>
+                </div>
+              </div>
+              <% if submission.respond_to?(:secure_qr_png_base64) && submission.secure_qr_png_base64.present? %>
+                <div class="text-center">
+                  <img src="data:image/png;base64,<%= submission.secure_qr_png_base64 %>" style="width:80px;height:80px;border-radius:6px;" alt="QR Verifikasyon">
+                  <br><small class="text-muted" style="font-size:0.65rem;">Eskane pou verifye</small>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ═══════════════════════════════════════════════ %>
+    <%# Right Column — BonID Profile + Payment Status  %>
+    <%# ═══════════════════════════════════════════════ %>
+    <div class="col-lg-6">
+      <%# BonID Verified Profile %>
+      <div class="dash-card mb-4" style="border-top:3px solid #00209F;">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-shield-check-line me-2"></i>Pwofil BonID Verifye</h6></div>
+        <div class="dash-card-body p-3">
+          <% if @citizen %>
+            <div class="text-center mb-3">
+              <% if @citizen.photo.attached? %>
+                <%= image_tag @citizen.photo, class: "rounded-circle d-block mx-auto", style: "width:64px;height:64px;object-fit:cover;" %>
+              <% else %>
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width:64px;height:64px;background:#00209F;color:#fff;font-size:1.5rem;font-weight:700;">
+                  <%= @citizen.first_name&.first %><%= @citizen.last_name&.first %>
+                </div>
+              <% end %>
+              <h6 class="mt-2 mb-0"><%= @citizen.first_name %> <%= @citizen.last_name %></h6>
+              <code style="color:#00209F;"><%= mask_bonid(@citizen.bonid) %></code>
+              <% if @citizen.bonid_verified? %>
+                <span class="badge bg-success ms-1"><i class="ri-check-line"></i> Verifye</span>
+              <% end %>
+            </div>
+            <table class="table table-borderless table-sm mb-0">
+              <tr><td class="text-muted" style="width:35%">Telefon</td><td><%= @citizen.phone || "—" %></td></tr>
+              <tr><td class="text-muted">Imel</td><td><%= @citizen.email || "—" %></td></tr>
+              <tr><td class="text-muted">Adrès</td><td><%= @citizen.formatted_address.presence || "—" %></td></tr>
+              <tr><td class="text-muted">Dat Nesans</td><td><%= @citizen.dob || "—" %></td></tr>
+              <tr><td class="text-muted">Seks</td><td><%= @citizen.sex == "male" ? "Gason" : @citizen.sex == "female" ? "Fi" : @citizen.sex&.titleize || "—" %></td></tr>
+              <% citizen_cin = @citizen.cin_unique_id.presence || @citizen.identity_submissions&.find_by(status: "approved")&.document_number %>
+              <tr><td class="text-muted">CIN</td><td><code><%= citizen_cin || "—" %></code></td></tr>
+            </table>
+          <% else %>
+            <p class="text-muted text-center">Pwofil sitwayen pa disponib.</p>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Payment Status %>
+      <% if @payment %>
+        <div class="dash-card mb-4" style="border-left:3px solid <%= @payment.completed? ? '#10B981' : '#f59e0b' %>;">
+          <div class="dash-card-body p-3">
+            <h6 class="mb-3"><i class="ri-bank-card-line me-2"></i>Estati Peman</h6>
+            <table class="table table-borderless table-sm mb-0">
+              <tr>
+                <td class="text-muted" style="width:35%">Montan</td>
+                <td class="fw-bold"><%= @payment.formatted_total %></td>
+              </tr>
+              <tr>
+                <td class="text-muted">Taks DGI</td>
+                <td><%= number_with_delimiter(@payment.amount_htg.to_f.round(2)) %> HTG</td>
+              </tr>
+              <tr>
+                <td class="text-muted">Frè Sèvis</td>
+                <td><%= number_with_delimiter(@payment.fee_htg.to_f.round(2)) %> HTG</td>
+              </tr>
+              <tr>
+                <td class="text-muted">Metòd</td>
+                <td><%= @payment.payment_method_label %></td>
+              </tr>
+              <tr>
+                <td class="text-muted">Estati</td>
+                <td><span class="badge <%= @payment.status_badge_class %>"><%= @payment.status_label %></span></td>
+              </tr>
+              <% if @payment.paid_at.present? %>
+                <tr>
+                  <td class="text-muted">Dat Peman</td>
+                  <td><%= @payment.paid_at.strftime("%d/%m/%Y a %H:%M") %></td>
+                </tr>
+              <% end %>
+              <% if @payment.order_id.present? %>
+                <tr>
+                  <td class="text-muted">Nimewo Lòd</td>
+                  <td><code><%= @payment.order_id %></code></td>
+                </tr>
+              <% end %>
+            </table>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ═══════════════════════════════════════════════ %>
+  <%# Action Buttons — Full width below               %>
+  <%# ═══════════════════════════════════════════════ %>
+  <div class="dash-card mt-4">
+    <div class="dash-card-body p-3">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <%= form_tag approve_partner_portal_dgi_review_path(@record), method: :post do %>
+            <button type="submit" class="btn btn-lg btn-success w-100" style="min-height:48px;"
+                    onclick="return confirm('Ou sèten ou vle apwouve deklarasyon sa a?')">
+              <i class="ri-check-double-line me-2"></i>Apwouve
+            </button>
+          <% end %>
+        </div>
+        <div class="col-md-6 mt-2 mt-md-0">
+          <%= form_tag reject_partner_portal_dgi_review_path(@record), method: :post do %>
+            <div class="mb-2">
+              <label for="rejection_code" class="form-label small fw-semibold">Rezon Rejè</label>
+              <select name="rejection_code" id="rejection_code" class="form-select" required>
+                <option value="">— Chwazi yon rezon —</option>
+                <% DgiRejectionReasons::REJECTION_CATEGORIES.each do |prefix, cat| %>
+                  <optgroup label="<%= cat[:label] %>">
+                    <% cat[:codes].each do |code, reason| %>
+                      <option value="<%= code %>"><%= code %>: <%= reason.split("—").first.strip %></option>
+                    <% end %>
+                  </optgroup>
+                <% end %>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label for="rejection_notes" class="form-label small text-muted">Nòt adisyonèl (opsyonèl)</label>
+              <textarea name="rejection_notes" id="rejection_notes" class="form-control" rows="2" placeholder="Detay siplemantè pou sitwayen an..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-lg btn-outline-danger w-100"
+                    onclick="return confirm('Ou sèten ou vle rejte deklarasyon sa a?')">
+              <i class="ri-close-line me-1"></i>Rejte
+            </button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

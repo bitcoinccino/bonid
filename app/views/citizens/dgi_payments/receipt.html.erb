@@ -1,0 +1,385 @@
+<%# Citizen — DGI Payment Receipt %>
+<%# DGI palette: Blue (#00209F) nav + Red (#D21034) accents — scoped to .bongouv-receipt %>
+<% submission = @payment.user.identity_submissions&.find_by(status: "approved") %>
+
+<%# === DGI RECEIPT PAGE === %>
+<div class="d-flex flex-column align-items-center px-3 py-4" style="min-height:100vh;background:#f8fafc;">
+  <div style="width:100%;max-width:680px;">
+
+    <%# === PARTNER LOGO (centered on top) === %>
+    <div class="text-center mb-3">
+      <%= image_tag "partners/dgi-logo.webp", style: "height:56px;", alt: "DGI Haiti" %>
+    </div>
+
+    <%# === COMMAND BAR === %>
+    <div class="bongouv-command-bar">
+      <div>
+        <div class="bongouv-command-bar__flag">REPIBLIK D AYITI</div>
+        <h5 class="mb-0 text-white fw-bold" style="font-size:1.05rem;">Resi Peman DGI <span style="opacity:0.6;font-weight:400;">|</span> BonGouv</h5>
+      </div>
+      <div class="d-flex align-items-center gap-2 d-print-none">
+        <button onclick="window.print()" class="bongouv-header-btn"><i class="ri-printer-line me-1"></i>Enprime</button>
+        <%= link_to (@record ? citizens_dgi_path(@record) : citizens_dgi_index_path), class: "bongouv-header-btn bongouv-header-btn--outline" do %>
+          <i class="ri-arrow-left-line me-1"></i>Retounen
+        <% end %>
+      </div>
+    </div>
+
+    <div class="bongouv-receipt">
+      <div class="bongouv-receipt-card" id="receiptCard">
+
+        <%# ═══════════════════ HEADER ═══════════════════ %>
+        <div class="bongouv-receipt-header">
+          <%= image_tag "partners/dgi-logo.webp", style: "width:64px;height:64px;object-fit:contain;", class: "mb-2", alt: "DGI" %>
+          <h5 class="fw-bold mb-0 text-white">REPIBLIK D AYITI</h5>
+          <p class="mb-0 text-white" style="font-size:0.85rem;">Direction Générale des Impôts</p>
+          <div class="mt-2">
+            <span class="bongouv-receipt-badge">RESI PEMAN OFISYEL</span>
+          </div>
+          <p class="mb-0 mt-2 text-white" style="font-size:0.7rem;">Nimewo: <%= @payment.order_id %></p>
+        </div>
+        <div class="bongouv-receipt-stripe"></div>
+
+        <div class="bongouv-receipt-body">
+
+          <%# ═══════════════════ CITIZEN ═══════════════════ %>
+          <h6 class="bongouv-receipt-section-title">
+            <i class="ri-user-line me-1"></i>Kontribyab (Payè)
+          </h6>
+          <div class="bongouv-receipt-citizen">
+            <% if @payment.user.photo&.attached? %>
+              <%= image_tag @payment.user.photo.variant(resize_to_fill: [60,60]),
+                    class: "bongouv-receipt-avatar" %>
+            <% else %>
+              <div class="bongouv-receipt-avatar-placeholder">
+                <%= @payment.user.first_name&.first %><%= @payment.user.last_name&.first %>
+              </div>
+            <% end %>
+            <div>
+              <strong class="d-block"><%= @payment.user.first_name %> <%= @payment.user.last_name %></strong>
+              <code class="small"><%= mask_bonid(@payment.user.bonid) %></code>
+              <% if @payment.user.bonid_verified? %>
+                <span class="bongouv-receipt-verified-badge"><i class="ri-shield-check-line"></i> Verifye</span>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ═══════════════════ FILING DETAILS ═══════════════════ %>
+          <h6 class="bongouv-receipt-section-title">
+            <i class="ri-file-text-line me-1"></i>Detay Deklarasyon
+          </h6>
+          <table class="table table-borderless table-sm mb-3">
+            <tr><td class="text-muted" style="width:45%">Fòm</td><td class="fw-semibold"><%= @payment.form_type_label %></td></tr>
+            <tr><td class="text-muted">Nimewo Deklarasyon</td><td><code><%= @payment.declaration_number %></code></td></tr>
+            <tr><td class="text-muted">Nimewo Lòd</td><td><code><%= @payment.order_id %></code></td></tr>
+            <tr><td class="text-muted">Tranzaksyon ID</td><td><code><%= @payment.transaction_id %></code></td></tr>
+            <tr><td class="text-muted">Metòd Peman</td><td><%= @payment.payment_method_label %></td></tr>
+            <tr><td class="text-muted">Dat Peman</td><td><%= @payment.paid_at&.strftime("%d %B %Y a %H:%M") %></td></tr>
+          </table>
+
+          <%# ═══════════════════ PAYMENT BREAKDOWN ═══════════════════ %>
+          <h6 class="bongouv-receipt-section-title">
+            <i class="ri-money-dollar-circle-line me-1"></i>Montan
+          </h6>
+          <table class="table table-sm mb-0">
+            <tr><td class="text-muted">Taks DGI</td><td class="text-end"><%= number_with_delimiter(@payment.amount_htg.round(2)) %> HTG</td></tr>
+            <tr><td class="text-muted">Frè Sèvis BonGouv</td><td class="text-end"><%= number_with_delimiter(@payment.fee_htg.round(2)) %> HTG</td></tr>
+            <tr class="bongouv-receipt-total-row">
+              <td class="fw-bold fs-6">Total Peye</td>
+              <td class="text-end fw-bold fs-4 bongouv-receipt-total"><%= @payment.formatted_total %></td>
+            </tr>
+          </table>
+
+          <%# ═══════════════════ PROCESSED BY ═══════════════════ %>
+          <div class="bongouv-receipt-divider">
+            <h6 class="bongouv-receipt-section-title">
+              <i class="ri-user-star-line me-1"></i>Resevwa / Trete Pa
+            </h6>
+            <div class="bongouv-receipt-agent-box">
+              <% if @agent %>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="bongouv-receipt-agent-avatar"><%= @agent.first_name&.first %><%= @agent.last_name&.first %></div>
+                  <div>
+                    <strong><%= @agent.first_name %> <%= @agent.last_name %></strong>
+                    <br><code class="small"><%= mask_bonid(@agent.bonid) %></code>
+                    <br><small class="text-muted">Ajan DGI — <%= @record&.data&.dig("reviewed_at")&.to_date&.strftime("%d/%m/%Y") rescue "—" %></small>
+                  </div>
+                </div>
+              <% elsif @partner %>
+                <div class="d-flex align-items-center gap-3">
+                  <% if @partner.logo&.attached? %>
+                    <%= image_tag url_for(@partner.logo.variant(resize_to_limit: [40,40])),
+                          class: "rounded-circle", style: "width:40px;height:40px;object-fit:cover;" %>
+                  <% else %>
+                    <div class="bongouv-receipt-agent-avatar"><i class="ri-government-line"></i></div>
+                  <% end %>
+                  <div>
+                    <strong><%= @partner.name %></strong>
+                    <br><small class="text-muted">Biwo DGI</small>
+                  </div>
+                </div>
+              <% else %>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="bongouv-receipt-agent-avatar" style="background:#6c757d;"><i class="ri-robot-line"></i></div>
+                  <div>
+                    <strong>BonGouv Otomatik</strong>
+                    <br><small class="text-muted">Trete otomatikman via platfòm dijital</small>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ═══════════════════ SIGNATURE + QR ═══════════════════ %>
+          <div class="bongouv-receipt-divider">
+            <div class="d-flex justify-content-between align-items-end">
+              <div style="flex:1;">
+                <% if submission&.signature&.attached? %>
+                  <%= image_tag submission.signature.variant(resize_to_limit: [200,80]),
+                        class: "img-fluid mb-1", style: "max-height:70px;" %>
+                <% else %>
+                  <div style="border-bottom:1px dashed #adb5bd;width:160px;height:40px;margin-bottom:4px;"></div>
+                <% end %>
+                <small class="text-muted d-block">Siyati Kontribyab</small>
+                <small class="fw-semibold"><%= @payment.user.first_name %> <%= @payment.user.last_name %></small>
+              </div>
+              <div class="text-center" style="flex:0 0 110px;">
+                <% seal_qr = @payment.provider_response&.dig("bongouv_seal", "qr_png_base64") rescue nil %>
+                <% if seal_qr.present? %>
+                  <img src="data:image/png;base64,<%= seal_qr %>" style="width:90px;height:90px;" class="mb-1" alt="BonGouv QR Sekirize">
+                <% elsif submission&.respond_to?(:secure_qr_png_base64) && submission&.secure_qr_png_base64.present? %>
+                  <img src="data:image/png;base64,<%= submission.secure_qr_png_base64 %>" style="width:90px;height:90px;" class="mb-1" alt="QR Sekirize">
+                <% else %>
+                  <div class="d-flex align-items-center justify-content-center border rounded" style="width:90px;height:90px;margin:0 auto;">
+                    <i class="ri-qr-code-line ri-2x text-muted"></i>
+                  </div>
+                <% end %>
+                <small class="text-muted d-block" style="font-size:0.65rem;">Eskane pou verifye dokiman</small>
+              </div>
+            </div>
+          </div>
+
+          <%# ═══════════════════ VERIFICATION SEAL ═══════════════════ %>
+          <div class="text-center mt-4 pt-3" style="border-top:1px solid #e9ecef;">
+            <% if @payment.receipt_sealed? %>
+              <div class="bongouv-receipt-seal bongouv-receipt-seal--valid">
+                <i class="ri-verified-badge-fill me-1"></i>
+                <span class="fw-semibold small">Dokiman Otantik — BonGouv</span>
+              </div>
+              <small class="text-muted d-block mt-1" style="font-size:0.6rem;">
+                Ed25519 Siyen | Token: <code><%= @payment.seal_token %></code>
+              </small>
+            <% else %>
+              <div class="bongouv-receipt-seal bongouv-receipt-seal--unsigned">
+                <i class="ri-verified-badge-fill me-1"></i>
+                <span class="fw-semibold small">Dokiman Otantik — BonGouv</span>
+              </div>
+            <% end %>
+          </div>
+
+          <%# ═══════════════════ FOOTER ═══════════════════ %>
+          <div class="text-center mt-3">
+            <small class="text-muted d-block" style="font-size:0.65rem;">Powered by <strong>BonGouv</strong>, a product of <strong>Verifyem</strong></small>
+            <small class="text-muted d-block mt-1" style="font-size:0.6rem;">Ref: <%= @payment.order_id %> | Payè: <%= mask_bonid(@payment.user.bonid) %> | <%= Time.current.strftime("%d/%m/%Y %H:%M") %></small>
+          </div>
+        </div>
+
+        <div class="bongouv-receipt-stripe"></div>
+      </div>
+
+      <%# Next Steps (not printed) %>
+      <div class="bongouv-receipt-next-steps d-print-none">
+        <h6 class="mb-3"><i class="ri-information-line me-2"></i>Pwochen Etap</h6>
+        <ul class="mb-0">
+          <li class="mb-2">Deklarasyon w ap revize pa yon ajan DGI</li>
+          <li class="mb-2">W ap resevwa yon notifikasyon lè li verifye</li>
+          <li>Konsève nimewo tranzaksyon w: <code><%= @payment.transaction_id %></code></li>
+        </ul>
+      </div>
+    </div><%# close bongouv-receipt %>
+  </div><%# close max-width wrapper %>
+</div><%# close outer centering div %>
+
+<%# ================================================================ %>
+<%# SCOPED DGI RECEIPT STYLES — does NOT affect citizen layout %>
+<%# ================================================================ %>
+<style>
+  /* ---- Command Bar (shared with index) ---- */
+  .bongouv-command-bar {
+    background: linear-gradient(135deg, #00209F 0%, #001570 100%);
+    border-radius: 12px 12px 0 0;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 4px solid #D21034;
+  }
+  .bongouv-command-bar__flag {
+    font-size: 0.6rem;
+    letter-spacing: 2.5px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 600;
+  }
+  .bongouv-header-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .bongouv-header-btn:hover { background: rgba(255,255,255,0.25); color: #fff; }
+  .bongouv-header-btn--outline { background: transparent; border-color: rgba(255,255,255,0.4); }
+
+  /* ---- Receipt Container ---- */
+  .bongouv-receipt {
+    background: #F8F9FA;
+    border-radius: 0 0 12px 12px;
+    padding: 24px;
+  }
+
+  /* ---- Receipt Card ---- */
+  .bongouv-receipt-card {
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .bongouv-receipt-header {
+    text-align: center;
+    padding: 28px 20px 20px;
+    background: linear-gradient(135deg, #00209F 0%, #001570 100%);
+    color: #fff;
+  }
+  .bongouv-receipt-stripe { height: 4px; background: #D21034; }
+  .bongouv-receipt-badge {
+    display: inline-block;
+    padding: 4px 16px;
+    background: #D21034;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .bongouv-receipt-body { padding: 24px; }
+
+  /* ---- Section Titles ---- */
+  .bongouv-receipt-section-title {
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #D21034;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  /* ---- Citizen Block ---- */
+  .bongouv-receipt-citizen {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .bongouv-receipt-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00209F;
+  }
+  .bongouv-receipt-avatar-placeholder {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #00209F;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .bongouv-receipt-verified-badge {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 0.6rem;
+    background: #00209F;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+
+  /* ---- Total Row ---- */
+  .bongouv-receipt-total-row { border-top: 2px solid #00209F; }
+  .bongouv-receipt-total { color: #00209F; }
+
+  /* ---- Agent Box ---- */
+  .bongouv-receipt-divider { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e9ecef; }
+  .bongouv-receipt-agent-box {
+    padding: 12px 16px;
+    background: #f8f9fa;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+  }
+  .bongouv-receipt-agent-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #00209F;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ---- Verification Seal ---- */
+  .bongouv-receipt-seal {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 16px;
+    border-radius: 20px;
+  }
+  .bongouv-receipt-seal--valid { background: #d1fae5; border: 1px solid #059669; color: #059669; }
+  .bongouv-receipt-seal--unsigned { background: #f0f4ff; border: 1px solid #00209F; color: #00209F; }
+
+  /* ---- Next Steps ---- */
+  .bongouv-receipt-next-steps {
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 16px;
+  }
+
+  /* ---- Print ---- */
+  @media print {
+    body * { visibility: hidden; }
+    #receiptCard, #receiptCard * { visibility: visible; }
+    #receiptCard { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none !important; border-radius: 0 !important; }
+    .d-print-none { display: none !important; }
+    .bongouv-command-bar { display: none !important; }
+  }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 767px) {
+    .bongouv-command-bar { border-radius: 0; padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+    .bongouv-receipt { border-radius: 0; padding: 16px; }
+    .bongouv-receipt-body { padding: 16px; }
+  }
+</style>

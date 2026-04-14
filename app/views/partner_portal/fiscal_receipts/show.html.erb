@@ -1,0 +1,209 @@
+<%# Partner Portal — Fiscal Receipt Detail View %>
+
+<div class="partner-dashboard">
+
+  <%# ── Page Header ── %>
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title">
+        <i class="ri-receipt-line me-2"></i>Kes Fiskal
+        <code class="ms-2"><%= @record.receipt_number %></code>
+      </h4>
+      <p class="dash-subtitle">Kreye <%= @record.created_at.strftime("%d/%m/%Y a %H:%M") %></p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to receipt_partner_portal_fiscal_receipt_path(@record),
+          class: "btn btn-outline-secondary", target: "_blank" do %>
+        <i class="ri-printer-line me-1"></i>Enprime
+      <% end %>
+      <%= link_to partner_portal_fiscal_receipts_path, class: "btn btn-outline-secondary" do %>
+        <i class="ri-arrow-left-line me-1"></i>Retounen
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <%# ── LEFT: Receipt Details ── %>
+    <div class="col-lg-8">
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title">
+            <i class="ri-file-list-3-line me-2"></i>Detay Kes
+          </h6>
+          <% if @record.consumed? %>
+            <span class="badge bg-danger">Konsome</span>
+          <% elsif @record.status == "verified" %>
+            <span class="badge bg-success">Verifye — Disponib</span>
+          <% else %>
+            <span class="badge bg-warning text-dark"><%= @record.status&.titleize %></span>
+          <% end %>
+        </div>
+        <div class="dash-card-body">
+          <div class="row g-4">
+
+            <%# Receipt Info %>
+            <div class="col-md-6">
+              <table class="table table-borderless mb-0">
+                <tbody>
+                  <tr>
+                    <td class="text-muted" style="width: 40%;">Nimewo Kes</td>
+                    <td><code class="fw-bold"><%= @record.receipt_number %></code></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Tip Taks</td>
+                    <td><span class="badge bg-light text-dark"><%= @record.tax_type_label %></span></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Montan</td>
+                    <td class="fw-bold fs-5 text-primary"><%= number_with_delimiter(@record.amount_htg) %> HTG</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Dat Peman</td>
+                    <td><%= @record.payment_date %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Metòd Peman</td>
+                    <td><%= @record.payment_method_label %></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <%# Office & Fiscal Year %>
+            <div class="col-md-6">
+              <table class="table table-borderless mb-0">
+                <tbody>
+                  <tr>
+                    <td class="text-muted" style="width: 40%;">Biwo DGI</td>
+                    <td><%= @record.dgi_office_code %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Ane Fiskal</td>
+                    <td><%= @record.fiscal_year %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Kasye</td>
+                    <td><%= @record.cashier_id || "—" %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">ID Rejis</td>
+                    <td><code><%= @record.id %></code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# ── Consumption Status ── %>
+      <div class="dash-card mt-4">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title">
+            <i class="ri-lock-line me-2"></i>Estati Konsomasyon
+          </h6>
+        </div>
+        <div class="dash-card-body">
+          <% if @record.consumed? %>
+            <div class="alert alert-danger mb-0">
+              <div class="d-flex align-items-start">
+                <i class="ri-lock-fill me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>Kes sa a deja konsome</strong>
+                  <p class="mb-0 mt-1">
+                    Konsome pa <strong><%= @record.consumed_by_agency %></strong>
+                    le <strong><%= @record.consumed_at %></strong><br>
+                    Ofisye: <code><%= @record.consumed_by_officer_id %></code>
+                  </p>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <div class="alert alert-success mb-0">
+              <div class="d-flex align-items-start">
+                <i class="ri-shield-check-fill me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>Disponib pou konsomasyon</strong>
+                  <p class="mb-0 mt-1 text-muted">
+                    Kes sa a poko konsome. Yon ajans (tankou Imigrasyon) ka konsome li
+                    atravè API BonID pou konfime peman an.
+                  </p>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# ── RIGHT: Payer Info ── %>
+    <div class="col-lg-4">
+      <div class="dash-card" style="border-left: 4px solid #00209F;">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title">
+            <i class="ri-user-line me-2"></i>Kontribyab
+          </h6>
+        </div>
+        <div class="dash-card-body text-center">
+          <% citizen = @record.user %>
+          <% if citizen %>
+            <%# Photo %>
+            <div class="mb-3">
+              <% verified = citizen.verified_identity_submission %>
+              <% if verified&.selfie&.attached? %>
+                <%= image_tag verified.selfie.variant(resize_to_limit: [120, 120]),
+                    class: "rounded-circle border",
+                    style: "width: 100px; height: 100px; object-fit: cover;" %>
+              <% else %>
+                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center"
+                     style="width: 100px; height: 100px;">
+                  <i class="ri-user-line" style="font-size: 2.5rem; color: #999;"></i>
+                </div>
+              <% end %>
+            </div>
+            <h5 class="mb-1"><%= citizen.full_name %></h5>
+            <code class="d-block mb-3"><%= mask_bonid(citizen.bonid) %></code>
+          <% else %>
+            <div class="mb-3">
+              <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center"
+                   style="width: 100px; height: 100px;">
+                <i class="ri-user-line" style="font-size: 2.5rem; color: #999;"></i>
+              </div>
+            </div>
+          <% end %>
+
+          <hr>
+
+          <div class="text-start small">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Non:</span>
+              <span><%= @record.payer_name || "—" %></span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">BonID:</span>
+              <code><%= @record.payer_bonid || "—" %></code>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">NIF:</span>
+              <code><%= @record.payer_nif || "—" %></code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Receipt Summary Card %>
+      <div class="dash-card mt-4">
+        <div class="dash-card-body text-center">
+          <div style="font-size: 2.5rem; font-weight: 700; color: #00209F;">
+            <%= number_with_delimiter(@record.amount_htg) %>
+            <span style="font-size: 1rem;">HTG</span>
+          </div>
+          <p class="text-muted mt-1 mb-0">
+            <%= @record.tax_type_label %> — <%= @record.fiscal_year %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

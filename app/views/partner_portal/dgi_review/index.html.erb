@@ -1,0 +1,99 @@
+<%# Partner Portal — DGI Review Queue (Citizen-Filed Declarations) %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-inbox-line me-2"></i>Revizyon Deklarasyon Sitwayen</h4>
+      <p class="dash-subtitle">Deklarasyon ki depoze pa sitwayen — annatant apwobasyon</p>
+    </div>
+  </div>
+
+  <div class="dash-metrics">
+    <div class="metric-card metric-card--orange">
+      <div class="metric-icon metric-icon--orange"><i class="ri-time-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= @stats[:total_pending] %></span><span class="metric-label">Annatant</span></div>
+    </div>
+    <div class="metric-card metric-card--blue">
+      <div class="metric-icon metric-icon--blue"><i class="ri-calendar-check-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= @stats[:today] %></span><span class="metric-label">Jodi a</span></div>
+    </div>
+    <% if @stats[:resubmissions] > 0 %>
+      <div class="metric-card metric-card--red">
+        <div class="metric-icon metric-icon--red"><i class="ri-refresh-line"></i></div>
+        <div class="metric-info"><span class="metric-value"><%= @stats[:resubmissions] %></span><span class="metric-label">Re-soumisyon</span></div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Filter %>
+  <div class="dash-card mb-4">
+    <div class="dash-card-body py-2">
+      <%= form_tag partner_portal_dgi_review_index_path, method: :get, class: "row g-2 align-items-end" do %>
+        <div class="col-md-5"><%= text_field_tag :search, params[:search], class: "form-control form-control-sm", placeholder: "Chèche non, NIF, nimewo deklarasyon..." %></div>
+        <div class="col-md-4">
+          <%= select_tag :form_type, options_for_select([
+            ["NIF (Formulaire A)", "nif_registration"],
+            ["Biznis (Formulaire B)", "business_registration"],
+            ["Patant (DGI-F008)", "patente_declaration"],
+            ["TCA", "tca_declaration"],
+            ["RAS IR (DGI-F005)", "ras_ir_declaration"]
+          ], params[:form_type]), class: "form-select form-select-sm", prompt: "Tout fòm" %>
+        </div>
+        <div class="col-md-3"><%= submit_tag "Filtre", class: "btn btn-primary btn-sm w-100" %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Queue Table %>
+  <div class="dash-card">
+    <div class="dash-card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Nimewo</th><th>Fòm</th><th>Sitwayen</th><th>Peman</th><th>Depoze</th><th>Aksyon</th></tr></thead>
+          <tbody>
+            <% @records.each do |r| %>
+              <% citizen = r.user %>
+              <% payment = DgiPayment.find_by(verification_record: r) %>
+              <tr>
+                <td>
+                  <code class="small"><%= r.data["declaration_number"] %></code>
+                  <% if r.data["resubmissions"].present? %>
+                    <br><span class="badge bg-warning text-dark" style="font-size:0.65rem;"><i class="ri-refresh-line me-1"></i>Re-soumisyon #<%= r.data["resubmissions"].size %></span>
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark"><%= r.record_type.titleize.gsub("_", " ") %></span>
+                </td>
+                <td>
+                  <strong><%= citizen&.first_name %> <%= citizen&.last_name %></strong>
+                  <br><code class="small text-muted"><%= mask_bonid(citizen&.bonid) %></code>
+                </td>
+                <td>
+                  <% if payment %>
+                    <span class="badge <%= payment.status_badge_class %>"><%= payment.status_label %></span>
+                  <% else %>
+                    <span class="badge bg-secondary">—</span>
+                  <% end %>
+                </td>
+                <td class="text-muted small"><%= r.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+                <td>
+                  <%= link_to partner_portal_dgi_review_path(r), class: "btn btn-sm btn-primary" do %>
+                    <i class="ri-eye-line me-1"></i>Revize
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @records.empty? %>
+              <tr><td colspan="6" class="text-center text-muted py-4">
+                <i class="ri-checkbox-circle-line ri-2x d-block mb-2" style="color:#198754;"></i>
+                Pa gen deklarasyon annatant. Tout ajou!
+              </td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% if @records.respond_to?(:total_pages) && @records.total_pages > 1 %>
+    <div class="d-flex justify-content-center mt-4"><%= paginate @records %></div>
+  <% end %>
+</div>

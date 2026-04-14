@@ -1,0 +1,170 @@
+<%# Partner Portal — Fiscal Receipts Index (DGI) %>
+
+<div class="partner-dashboard">
+
+  <%# ── Page Header ── %>
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-receipt-line me-2"></i>Kes Fiskal</h4>
+      <p class="dash-subtitle">Tout kes fiskal patnè ou te kreye</p>
+    </div>
+    <%= link_to new_partner_portal_fiscal_receipt_path, class: "dash-cta" do %>
+      <i class="ri-add-line me-2"></i>Nouvo Kes
+    <% end %>
+  </div>
+
+  <%# ── Metric Cards ── %>
+  <div class="dash-metrics">
+    <div class="metric-card metric-card--blue">
+      <div class="metric-icon metric-icon--blue"><i class="ri-receipt-line"></i></div>
+      <div class="metric-info">
+        <span class="metric-value"><%= @stats[:total] %></span>
+        <span class="metric-label">Total Kes</span>
+      </div>
+    </div>
+
+    <div class="metric-card metric-card--green">
+      <div class="metric-icon metric-icon--green"><i class="ri-calendar-check-line"></i></div>
+      <div class="metric-info">
+        <span class="metric-value"><%= @stats[:today] %></span>
+        <span class="metric-label">Jodi a</span>
+      </div>
+    </div>
+
+    <div class="metric-card metric-card--teal">
+      <div class="metric-icon metric-icon--teal"><i class="ri-shield-check-line"></i></div>
+      <div class="metric-info">
+        <span class="metric-value"><%= @stats[:verified] %></span>
+        <span class="metric-label">Verifye</span>
+      </div>
+    </div>
+
+    <div class="metric-card metric-card--purple">
+      <div class="metric-icon metric-icon--purple"><i class="ri-lock-line"></i></div>
+      <div class="metric-info">
+        <span class="metric-value"><%= @stats[:consumed] %></span>
+        <span class="metric-label">Konsome</span>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Filters ── %>
+  <div class="dash-card mb-4">
+    <div class="dash-card-body">
+      <%= form_tag partner_portal_fiscal_receipts_path, method: :get, class: "row g-3 align-items-end" do %>
+        <div class="col-md-3">
+          <label class="form-label">Rechèch</label>
+          <%= text_field_tag :search, params[:search],
+              class: "form-control", placeholder: "Nimewo kes, non, BonID..." %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Tip Taks</label>
+          <%= select_tag :tax_type,
+              options_for_select(
+                [["Tout", ""]] + RecordSchemas::FiscalReceiptSchema::TAX_TYPE_LABELS.map { |key, label| [label, key] },
+                params[:tax_type]
+              ),
+              class: "form-select" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Estati</label>
+          <%= select_tag :status,
+              options_for_select(
+                [["Tout", ""], ["Verifye", "verified"], ["Annatant", "pending"], ["Rejte", "rejected"]],
+                params[:status]
+              ),
+              class: "form-select" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Depi</label>
+          <%= date_field_tag :date_from, params[:date_from], class: "form-control" %>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Jiska</label>
+          <%= date_field_tag :date_to, params[:date_to], class: "form-control" %>
+        </div>
+        <div class="col-md-1">
+          <%= submit_tag "Filtre", class: "btn btn-primary w-100" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Receipts Table ── %>
+  <div class="dash-card">
+    <div class="dash-card-body p-0">
+      <% if @receipts.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead>
+              <tr>
+                <th>Nimewo Kes</th>
+                <th>Tip Taks</th>
+                <th>Montan (HTG)</th>
+                <th>Kontribyab</th>
+                <th>BonID</th>
+                <th>Estati</th>
+                <th>Dat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @receipts.each do |record| %>
+                <tr>
+                  <td>
+                    <code class="text-primary fw-bold"><%= record.receipt_number %></code>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark"><%= record.tax_type_label %></span>
+                  </td>
+                  <td class="fw-semibold">
+                    <%= number_with_delimiter(record.amount_htg) %> HTG
+                  </td>
+                  <td><%= record.payer_name || "—" %></td>
+                  <td>
+                    <% if record.payer_bonid.present? %>
+                      <code><%= record.payer_bonid %></code>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if record.consumed? %>
+                      <span class="badge bg-danger">Konsome</span>
+                    <% elsif record.status == "verified" %>
+                      <span class="badge bg-success">Verifye</span>
+                    <% else %>
+                      <span class="badge bg-warning text-dark"><%= record.status&.titleize %></span>
+                    <% end %>
+                  </td>
+                  <td class="text-muted">
+                    <%= record.created_at.strftime("%d/%m/%Y %H:%M") %>
+                  </td>
+                  <td>
+                    <%= link_to partner_portal_fiscal_receipt_path(record),
+                        class: "btn btn-sm btn-outline-primary" do %>
+                      <i class="ri-eye-line"></i>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+
+        <%# Pagination %>
+        <div class="d-flex justify-content-center py-3">
+          <%= paginate @receipts if @receipts.respond_to?(:total_pages) %>
+        </div>
+      <% else %>
+        <div class="text-center py-5">
+          <i class="ri-receipt-line" style="font-size: 3rem; color: #ccc;"></i>
+          <p class="text-muted mt-3">Pa gen kes fiskal ankò.</p>
+          <%= link_to new_partner_portal_fiscal_receipt_path, class: "btn btn-primary mt-2" do %>
+            <i class="ri-add-line me-1"></i>Kreye Premye Kes
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

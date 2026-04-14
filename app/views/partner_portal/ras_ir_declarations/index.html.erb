@@ -1,0 +1,62 @@
+<%# Partner Portal — RAS IR Declarations Index (DGI-F005) %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-money-dollar-box-line me-2"></i>Deklarasyon RAS IR</h4>
+      <p class="dash-subtitle">DGI-F005 — Retni nan Sous Mansyel</p>
+    </div>
+    <%= link_to new_partner_portal_ras_ir_declaration_path, class: "dash-cta" do %><i class="ri-add-line me-2"></i>Nouvo RAS IR<% end %>
+  </div>
+
+  <div class="dash-metrics">
+    <div class="metric-card metric-card--blue">
+      <div class="metric-icon metric-icon--blue"><i class="ri-money-dollar-box-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= @stats[:total] %></span><span class="metric-label">Total</span></div>
+    </div>
+    <div class="metric-card metric-card--green">
+      <div class="metric-icon metric-icon--green"><i class="ri-calendar-check-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= @stats[:this_month] %></span><span class="metric-label">Mwa sa a</span></div>
+    </div>
+    <div class="metric-card metric-card--teal">
+      <div class="metric-icon metric-icon--teal"><i class="ri-hand-coin-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= number_with_delimiter(@stats[:total_withheld].round(2)) %></span><span class="metric-label">Total Retni (HTG)</span></div>
+    </div>
+  </div>
+
+  <div class="dash-card mb-4">
+    <div class="dash-card-body py-2">
+      <%= form_tag partner_portal_ras_ir_declarations_path, method: :get, class: "row g-2 align-items-end" do %>
+        <div class="col-md-5"><%= text_field_tag :search, params[:search], class: "form-control form-control-sm", placeholder: "Chèche rezon sosyal, NIF..." %></div>
+        <div class="col-md-2"><%= date_field_tag :date_from, params[:date_from], class: "form-control form-control-sm" %></div>
+        <div class="col-md-2"><%= date_field_tag :date_to, params[:date_to], class: "form-control form-control-sm" %></div>
+        <div class="col-md-2"><%= select_tag :status, options_for_select([["Verifye","verified"],["Annatant","pending"]], params[:status]), class: "form-select form-select-sm", prompt: "Tout estati" %></div>
+        <div class="col-md-1"><%= submit_tag "Filtre", class: "btn btn-primary btn-sm w-100" %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="dash-card">
+    <div class="dash-card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Nimewo</th><th>Rezon Sosyal</th><th>Sektè</th><th>Anplwaye</th><th>Total (HTG)</th><th>Dat</th><th></th></tr></thead>
+          <tbody>
+            <% @records.each do |r| %>
+              <tr>
+                <td><code class="small"><%= r.ras_declaration_number %></code></td>
+                <td class="fw-semibold"><%= r.ras_raison_sociale %></td>
+                <td><span class="badge bg-light text-dark"><%= r.ras_secteur_label.truncate(20) %></span></td>
+                <td class="text-center"><%= r.ras_nombre_employes %></td>
+                <td class="fw-bold text-primary"><%= number_with_delimiter(r.ras_total.round(2)) %></td>
+                <td class="text-muted small"><%= r.created_at.strftime("%d/%m/%Y") %></td>
+                <td><%= link_to partner_portal_ras_ir_declaration_path(r), class: "btn btn-sm btn-outline-primary" do %><i class="ri-eye-line"></i><% end %></td>
+              </tr>
+            <% end %>
+            <% if @records.empty? %><tr><td colspan="7" class="text-center text-muted py-4">Pa gen deklarasyon RAS IR ankò.</td></tr><% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% if @records.respond_to?(:total_pages) && @records.total_pages > 1 %><div class="d-flex justify-content-center mt-4"><%= paginate @records %></div><% end %>
+</div>

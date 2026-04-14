@@ -1,0 +1,1089 @@
+<%# Citizen Dashboard — BonGouv DGI Self-Service Filing %>
+<%# Redesigned: Welcome-first, categorized services, progressive disclosure %>
+
+<% verified = current_citizen&.identity_submissions&.approved&.exists? %>
+
+<div class="bongouv-dashboard" id="bongouv-main">
+
+  <%# ================================================================ %>
+  <%# 1. WELCOME HEADER — Personal greeting + compact status %>
+  <%# ================================================================ %>
+  <div class="dgi-welcome-header">
+    <div class="dgi-welcome-header__left">
+      <h4 class="dgi-welcome-header__greeting">
+        Bonjou, <strong><%= current_citizen.first_name %></strong>
+      </h4>
+      <p class="dgi-welcome-header__subtitle">
+        <i class="ri-government-line me-1"></i>Sèvis DGI — Depoze fòm fiskal ou yo anliy
+      </p>
+    </div>
+    <div class="dgi-welcome-header__right">
+      <span class="dgi-verification-badge dgi-verification-badge--<%= verified ? 'verified' : 'pending' %>">
+        <i class="<%= verified ? 'ri-verified-badge-fill' : 'ri-time-line' %> me-1"></i>
+        BonID <%= verified ? 'Verifye' : 'Annatant' %>
+      </span>
+      <% if @stats[:total] > 0 %>
+        <div class="dgi-mini-stats">
+          <span class="dgi-mini-stat" title="Total deklarasyon">
+            <i class="ri-file-list-3-line"></i> <%= @stats[:total] %>
+          </span>
+          <% if @stats[:pending] > 0 %>
+            <span class="dgi-mini-stat dgi-mini-stat--amber" title="Annatant revizyon">
+              <i class="ri-time-line"></i> <%= @stats[:pending] %>
+            </span>
+          <% end %>
+          <% if @stats[:verified] > 0 %>
+            <span class="dgi-mini-stat dgi-mini-stat--green" title="Verifye">
+              <i class="ri-checkbox-circle-line"></i> <%= @stats[:verified] %>
+            </span>
+          <% end %>
+          <% if @stats[:rejected].to_i > 0 %>
+            <span class="dgi-mini-stat dgi-mini-stat--red" title="Rejte">
+              <i class="ri-close-circle-line"></i> <%= @stats[:rejected] %>
+            </span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @stats[:pending] > 0 %>
+    <div class="dgi-pending-alert">
+      <i class="ri-error-warning-line"></i>
+      <span>Ou gen <strong><%= @stats[:pending] %></strong> deklarasyon k ap tann revizyon DGI.</span>
+      <a href="#filings-table" class="dgi-pending-alert__link" id="show-filings-link">Wè deklarasyon yo <i class="ri-arrow-down-s-line"></i></a>
+    </div>
+  <% end %>
+
+  <% if @stats[:rejected].to_i > 0 %>
+    <div class="dgi-pending-alert" style="background:rgba(220,53,69,0.08);border-color:rgba(220,53,69,0.2);">
+      <i class="ri-close-circle-line" style="color:#dc3545;"></i>
+      <span style="color:#dc3545;">Ou gen <strong><%= @stats[:rejected] %></strong> deklarasyon rejte. Ou ka korije epi soumèt yo ankò san peye ankò.</span>
+      <a href="#filings-table" class="dgi-pending-alert__link" style="color:#dc3545;" id="show-rejected-link">Wè deklarasyon yo <i class="ri-arrow-down-s-line"></i></a>
+    </div>
+  <% end %>
+
+  <%# ================================================================ %>
+  <%# 2. SERVICE SELECTOR — Choose a category, then pick a form %>
+  <%# ================================================================ %>
+
+  <h6 class="dgi-section-title mb-3"><i class="ri-file-list-3-line me-2"></i>Kisa ou vle fè?</h6>
+
+  <%# ── Category Selector (two cards) ── %>
+  <div class="dgi-category-selector" id="dgi-category-selector">
+    <button type="button" class="dgi-category-card dgi-category-card--active" data-category="registration">
+      <div class="dgi-category-card__icon dgi-category-card__icon--blue">
+        <i class="ri-file-add-line"></i>
+      </div>
+      <div class="dgi-category-card__body">
+        <h6 class="dgi-category-card__title">Enskripsyon</h6>
+        <p class="dgi-category-card__desc">Anrejistre tèt ou oswa biznis ou nan DGI</p>
+      </div>
+      <span class="dgi-category-card__count">2 fòm</span>
+      <i class="ri-arrow-right-s-line dgi-category-card__arrow"></i>
+    </button>
+
+    <button type="button" class="dgi-category-card" data-category="tax-filing">
+      <div class="dgi-category-card__icon dgi-category-card__icon--green">
+        <i class="ri-calculator-line"></i>
+      </div>
+      <div class="dgi-category-card__body">
+        <h6 class="dgi-category-card__title">Deklarasyon Fiskal</h6>
+        <p class="dgi-category-card__desc">Depoze deklarasyon taks biznis ou yo</p>
+      </div>
+      <span class="dgi-category-card__count">4 fòm</span>
+      <i class="ri-arrow-right-s-line dgi-category-card__arrow"></i>
+    </button>
+
+    <button type="button" class="dgi-category-card" data-category="activity">
+      <div class="dgi-category-card__icon dgi-category-card__icon--amber">
+        <i class="ri-history-line"></i>
+      </div>
+      <div class="dgi-category-card__body">
+        <h6 class="dgi-category-card__title">Aktivite</h6>
+        <p class="dgi-category-card__desc">Wè tout deklarasyon ak peman ou yo</p>
+      </div>
+      <% if @stats[:total] > 0 %>
+        <span class="dgi-category-card__count"><%= @stats[:total] %> deklarasyon</span>
+      <% end %>
+      <i class="ri-arrow-right-s-line dgi-category-card__arrow"></i>
+    </button>
+  </div>
+
+  <%# ── Registration Forms Panel ── %>
+  <div class="dgi-forms-panel" id="panel-registration">
+    <div class="dgi-service-grid">
+      <%# NIF Registration %>
+      <div class="dgi-card">
+        <div class="dgi-card__icon dgi-card__icon--blue">
+          <i class="ri-shield-user-fill"></i>
+        </div>
+        <div class="dgi-card__body">
+          <h6 class="dgi-card__title">Enskripsyon NIF</h6>
+          <p class="dgi-card__desc">Jwenn Nimewo Idantifikasyon Fiskal ou — obligatwa pou tout tranzaksyon fiskal.</p>
+          <div class="dgi-card__meta">
+            <span class="dgi-card__tag">Formulaire A</span>
+            <span class="dgi-card__price">
+              Soti nan <%= number_with_delimiter(DgiPayment::SERVICE_FEES["nif_registration"]) %> HTG
+            </span>
+          </div>
+        </div>
+        <%= link_to new_citizens_dgi_path(form_type: "nif_registration"),
+              class: "dgi-card__action",
+              aria: { label: "Kòmanse enskripsyon NIF" } do %>
+          Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+        <% end %>
+      </div>
+
+      <%# Business Registration %>
+      <div class="dgi-card">
+        <div class="dgi-card__icon dgi-card__icon--indigo">
+          <i class="ri-building-4-fill"></i>
+        </div>
+        <div class="dgi-card__body">
+          <h6 class="dgi-card__title">Anrejistreman Biznis</h6>
+          <p class="dgi-card__desc">Anrejistre antrepriz ou nan DGI pou konfòmite fiskal.</p>
+          <div class="dgi-card__meta">
+            <span class="dgi-card__tag">Formulaire B</span>
+            <span class="dgi-card__price">
+              Soti nan <%= number_with_delimiter(DgiPayment::SERVICE_FEES["business_registration"]) %> HTG
+            </span>
+          </div>
+        </div>
+        <%= link_to new_citizens_dgi_path(form_type: "business_registration"),
+              class: "dgi-card__action",
+              aria: { label: "Kòmanse anrejistreman biznis" } do %>
+          Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Tax Filing Forms Panel (hidden by default) ── %>
+  <div class="dgi-forms-panel d-none" id="panel-tax-filing">
+    <div class="dgi-service-grid">
+      <%# Patente %>
+      <div class="dgi-card">
+        <div class="dgi-card__icon dgi-card__icon--red">
+          <i class="ri-store-3-fill"></i>
+        </div>
+        <div class="dgi-card__body">
+          <h6 class="dgi-card__title">Lisans Patant</h6>
+          <p class="dgi-card__desc">Renouvle oswa jwenn lisans patant biznis ou.</p>
+          <div class="dgi-card__meta">
+            <span class="dgi-card__tag">DGI-F008</span>
+            <span class="dgi-card__price">
+              Soti nan <%= number_with_delimiter(DgiPayment::SERVICE_FEES["patente_declaration"]) %> HTG
+            </span>
+          </div>
+        </div>
+        <%= link_to new_citizens_dgi_path(form_type: "patente_declaration"),
+              class: "dgi-card__action",
+              aria: { label: "Kòmanse deklarasyon patant" } do %>
+          Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+        <% end %>
+      </div>
+
+      <%# TCA Declaration %>
+      <div class="dgi-card">
+        <div class="dgi-card__icon dgi-card__icon--teal">
+          <i class="ri-coins-fill"></i>
+        </div>
+        <div class="dgi-card__body">
+          <h6 class="dgi-card__title">Deklarasyon TCA</h6>
+          <p class="dgi-card__desc">Taks sou Chif Afe — 10% chak mwa.</p>
+          <div class="dgi-card__meta">
+            <span class="dgi-card__tag">Mansyèl</span>
+            <span class="dgi-card__price">
+              Soti nan <%= number_with_delimiter(DgiPayment::BONGOUV_FEES["tca_declaration"]) %> HTG
+            </span>
+          </div>
+        </div>
+        <%= link_to new_citizens_dgi_path(form_type: "tca_declaration"),
+              class: "dgi-card__action",
+              aria: { label: "Kòmanse deklarasyon TCA" } do %>
+          Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+        <% end %>
+      </div>
+
+      <%# RAS IR %>
+      <div class="dgi-card">
+        <div class="dgi-card__icon dgi-card__icon--orange">
+          <i class="ri-money-dollar-box-fill"></i>
+        </div>
+        <div class="dgi-card__body">
+          <h6 class="dgi-card__title">Retni nan Sous (RAS IR)</h6>
+          <p class="dgi-card__desc">Deklare retni sou salè anplwaye ou yo chak mwa.</p>
+          <div class="dgi-card__meta">
+            <span class="dgi-card__tag">DGI-F005</span>
+            <span class="dgi-card__price">
+              Soti nan <%= number_with_delimiter(DgiPayment::BONGOUV_FEES["ras_ir_declaration"]) %> HTG
+            </span>
+          </div>
+        </div>
+        <%= link_to new_citizens_dgi_path(form_type: "ras_ir_declaration"),
+              class: "dgi-card__action",
+              aria: { label: "Kòmanse deklarasyon RAS IR" } do %>
+          Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+        <% end %>
+      </div>
+
+      <%# Fermage (DGI-55) %>
+      <div class="dgi-card">
+        <div class="dgi-card__icon dgi-card__icon--green">
+          <i class="ri-landscape-fill"></i>
+        </div>
+        <div class="dgi-card__body">
+          <h6 class="dgi-card__title">Fèmaj (DGI-55)</h6>
+          <p class="dgi-card__desc">Taks sou lwaye tè — dwa anyèl, sitaks, DTP, solidarite.</p>
+          <div class="dgi-card__meta">
+            <span class="dgi-card__tag">DGI-55</span>
+            <span class="dgi-card__price">
+              Soti nan <%= number_with_delimiter(DgiPayment::SERVICE_FEES["fermage"]) %> HTG
+            </span>
+          </div>
+        </div>
+        <%= link_to new_citizens_dgi_path(form_type: "fermage"),
+              class: "dgi-card__action",
+              aria: { label: "Kòmanse deklarasyon fèmaj" } do %>
+          Kòmanse <i class="ri-arrow-right-line ms-1"></i>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Activity Panel (hidden by default) ── %>
+  <div class="dgi-forms-panel d-none" id="panel-activity">
+
+  <%# ================================================================ %>
+  <%# 3. RECENT PAYMENTS %>
+  <%# ================================================================ %>
+  <% if @payments.any? %>
+    <div class="dgi-payments-section">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="dgi-section-title"><i class="ri-bank-card-line me-2"></i>Dènye Peman</h6>
+        <%= link_to citizens_dgi_payments_path, class: "dgi-link-sm" do %>
+          Tout peman <i class="ri-arrow-right-s-line"></i>
+        <% end %>
+      </div>
+      <div class="dgi-payment-rows">
+        <% @payments.each do |p| %>
+          <div class="dgi-payment-row">
+            <div class="d-flex align-items-center gap-2 flex-grow-1">
+              <div class="dgi-payment-row__icon">
+                <i class="ri-receipt-line"></i>
+              </div>
+              <div>
+                <span class="fw-semibold small"><%= p.form_type_label %></span>
+                <br><code class="text-muted" style="font-size:0.7rem;"><%= p.order_id %></code>
+              </div>
+            </div>
+            <div class="text-end me-3">
+              <span class="fw-bold" style="color:#00209F;"><%= p.formatted_total %></span>
+              <br><span class="text-muted" style="font-size:0.7rem;"><%= p.created_at.strftime("%d/%m/%Y") %></span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="dgi-status-chip dgi-status-chip--<%= p.status %>"><%= p.status_label %></span>
+              <% if p.completed? %>
+                <%= link_to receipt_citizens_dgi_payment_path(p), class: "dgi-receipt-btn", title: "Telechaje Resi" do %>
+                  <i class="ri-download-2-line"></i>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <%# ================================================================ %>
+  <%# 4. FILINGS TABLE — with friendly empty state %>
+  <%# ================================================================ %>
+  <div id="filings-table">
+    <div class="dgi-table-header">
+      <h6 class="dgi-section-title"><i class="ri-file-list-3-line me-2"></i>Tout Deklarasyon</h6>
+      <%# Filter Bar — top right %>
+      <div class="dgi-filters">
+        <%= form_tag citizens_dgi_index_path, method: :get, class: "d-flex align-items-center gap-2 flex-wrap" do %>
+          <label for="filter_form_type" class="visually-hidden">Tip fòm</label>
+          <%= select_tag :form_type,
+              options_for_select(Citizens::DgiController::FORM_LABELS.map { |k, v| [v[:title], k] }, params[:form_type]),
+              class: "form-select form-select-sm dgi-filter-select", prompt: "Tout fòm", id: "filter_form_type" %>
+          <label for="filter_status" class="visually-hidden">Estati</label>
+          <%= select_tag :status,
+              options_for_select([["Annatant","pending"],["Verifye","verified"],["Rejte","rejected"]], params[:status]),
+              class: "form-select form-select-sm dgi-filter-select", prompt: "Tout estati", id: "filter_status" %>
+          <%= submit_tag "Filtre", class: "btn btn-sm btn-outline-secondary" %>
+          <% if params[:form_type].present? || params[:status].present? %>
+            <%= link_to citizens_dgi_index_path, class: "btn btn-sm btn-link text-muted" do %>
+              <i class="ri-close-line"></i> Efase
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="dgi-table-card">
+      <div class="table-responsive">
+        <table class="table dgi-table mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Nimewo</th>
+              <th scope="col">Fòm</th>
+              <th scope="col">Estati</th>
+              <th scope="col">Peman</th>
+              <th scope="col">Dat</th>
+              <th scope="col"><span class="visually-hidden">Aksyon</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if @records.any? %>
+              <% @records.each do |r| %>
+                <% label = Citizens::DgiController::FORM_LABELS[r.record_type] %>
+                <% payment = DgiPayment.find_by(verification_record: r) %>
+                <tr>
+                  <td><code class="dgi-decl-code"><%= r.data["declaration_number"] %></code></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="dgi-form-icon">
+                        <i class="<%= label&.dig(:icon) || 'ri-file-line' %>"></i>
+                      </div>
+                      <span class="fw-semibold"><%= label&.dig(:title) || r.record_type.titleize %></span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="dgi-status-chip dgi-status-chip--<%= r.status %>">
+                      <%= r.status == 'verified' ? 'Verifye' : r.status == 'rejected' ? 'Rejte' : 'Annatant' %>
+                    </span>
+                    <% if r.status == "rejected" && r.data.dig("rejection", "code").present? %>
+                      <br><small class="text-danger" style="font-size:0.65rem;"><%= r.data.dig("rejection", "code") %></small>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% if payment %>
+                      <span class="dgi-status-chip dgi-status-chip--<%= payment.status %>"><%= payment.status_label %></span>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                  <td class="text-muted small"><%= r.created_at.strftime("%d/%m/%Y") %></td>
+                  <td>
+                    <% if r.status == "rejected" %>
+                      <%= link_to citizens_dgi_path(r), class: "dgi-view-btn", style: "background:#dc3545;color:#fff;border-color:#dc3545;" do %>
+                        <i class="ri-edit-line me-1"></i>Korije
+                      <% end %>
+                    <% else %>
+                      <%= link_to citizens_dgi_path(r), class: "dgi-view-btn" do %>
+                        <i class="ri-eye-line me-1"></i>Wè
+                      <% end %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="6">
+                  <div class="dgi-empty-state">
+                    <div class="dgi-empty-state__icon">
+                      <i class="ri-file-search-line"></i>
+                    </div>
+                    <h6 class="dgi-empty-state__title">Ou poko depoze okenn fòm DGI</h6>
+                    <p class="dgi-empty-state__desc">
+                      Kòmanse ak enskripsyon NIF ou — li obligatwa pou tout tranzaksyon fiskal an Ayiti.
+                    </p>
+                    <%= link_to new_citizens_dgi_path(form_type: "nif_registration"), class: "dgi-card__action" do %>
+                      <i class="ri-add-line me-1"></i>Kòmanse Enskripsyon NIF
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <% if @records.respond_to?(:total_pages) && @records.total_pages > 1 %>
+    <div class="d-flex justify-content-center mt-4"><%= paginate @records %></div>
+  <% end %>
+
+  </div><%# /panel-activity %>
+
+  <%# Trust & Security Footer %>
+  <div class="dgi-trust-footer" role="contentinfo">
+    <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
+      <span><i class="ri-lock-line me-1"></i>Done ou yo chifre ak pwoteje</span>
+      <span class="dgi-trust-footer__divider"></span>
+      <span><i class="ri-shield-check-line me-1"></i>Verifye pa BonID</span>
+      <span class="dgi-trust-footer__divider"></span>
+      <span>Powered by <strong>BonGouv</strong>, a product of <strong>Verifyem</strong></span>
+    </div>
+  </div>
+</div>
+
+<%# ================================================================ %>
+<%# STYLES — Redesigned DGI Dashboard %>
+<%# ================================================================ %>
+<style>
+  /* ── Dashboard Container ── */
+  .bongouv-dashboard {
+    background: transparent;
+    padding: 0;
+  }
+
+  /* ============================================================
+     1. WELCOME HEADER
+  ============================================================ */
+  .dgi-welcome-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8faff 0%, #eef2ff 100%);
+    border: 1px solid rgba(0, 32, 159, 0.08);
+    border-radius: 12px;
+  }
+  .dgi-welcome-header__greeting {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .dgi-welcome-header__greeting strong {
+    font-weight: 700;
+  }
+  .dgi-welcome-header__subtitle {
+    font-size: 0.8rem;
+    color: #4b5563;
+    margin: 4px 0 0;
+  }
+  .dgi-welcome-header__right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .dgi-verification-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .dgi-verification-badge--verified {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .dgi-verification-badge--pending {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .dgi-mini-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dgi-mini-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #00209F;
+  }
+  .dgi-mini-stat--amber { color: #92400e; border-color: #fbbf24; background: #fffbeb; }
+  .dgi-mini-stat--green { color: #065f46; border-color: #34d399; background: #ecfdf5; }
+
+  /* ── Pending Alert ── */
+  .dgi-pending-alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    border-left: 4px solid #d97706;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 0.82rem;
+    color: #92400e;
+  }
+  .dgi-pending-alert i {
+    font-size: 1.1rem;
+    color: #d97706;
+    flex-shrink: 0;
+  }
+  .dgi-pending-alert__link {
+    margin-left: auto;
+    color: #00209F;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .dgi-pending-alert__link:hover { text-decoration: underline; }
+
+  /* ============================================================
+     2. CATEGORY SELECTOR + SERVICE CARDS
+  ============================================================ */
+
+  /* Category selector — two clickable cards side by side */
+  .dgi-category-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .dgi-category-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    background: #fff;
+    border: 2px solid #e4e7ec;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    text-align: left;
+    width: 100%;
+  }
+  .dgi-category-card:hover {
+    border-color: #b3c2f0;
+    box-shadow: 0 2px 8px rgba(0, 32, 159, 0.06);
+  }
+  .dgi-category-card--active {
+    border-color: #00209F;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+    box-shadow: 0 2px 12px rgba(0, 32, 159, 0.1);
+  }
+  .dgi-category-card__icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .dgi-category-card__icon--blue { background: #dbeafe; color: #00209F; }
+  .dgi-category-card__icon--green { background: #d1fae5; color: #047857; }
+  .dgi-category-card__icon--amber { background: #fef3c7; color: #d97706; }
+  .dgi-category-card--active .dgi-category-card__icon--blue { background: #00209F; color: #fff; }
+  .dgi-category-card--active .dgi-category-card__icon--green { background: #047857; color: #fff; }
+  .dgi-category-card--active .dgi-category-card__icon--amber { background: #d97706; color: #fff; }
+  .dgi-category-card__body { flex: 1; min-width: 0; }
+  .dgi-category-card__title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .dgi-category-card__desc {
+    font-size: 0.7rem;
+    color: #6b7280;
+    margin: 2px 0 0;
+    line-height: 1.3;
+  }
+  .dgi-category-card__count {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 3px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .dgi-category-card--active .dgi-category-card__count {
+    background: rgba(0, 32, 159, 0.1);
+    color: #00209F;
+  }
+  .dgi-category-card__arrow {
+    font-size: 1.1rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .dgi-category-card--active .dgi-category-card__arrow { color: #00209F; }
+
+  /* Forms panel */
+  .dgi-forms-panel {
+    margin-bottom: 28px;
+  }
+
+  /* Legacy category header (kept for compatibility) */
+  .dgi-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .dgi-category-header__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .dgi-category-header__icon--blue { background: #dbeafe; color: #00209F; }
+  .dgi-category-header__icon--green { background: #d1fae5; color: #047857; }
+  .dgi-category-header__title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  .dgi-category-header__desc {
+    font-size: 0.72rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  /* Service Grid */
+  .dgi-service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* Service Cards */
+  .dgi-card {
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .dgi-card:hover {
+    border-color: #00209F;
+    box-shadow: 0 4px 16px rgba(0, 32, 159, 0.08);
+  }
+  .dgi-card--featured {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+    border-color: #b3c2f0;
+  }
+  .dgi-card--featured .dgi-card__body { flex: 1; }
+  .dgi-card--featured .dgi-card__icon { width: 52px; height: 52px; font-size: 1.5rem; margin-bottom: 0; }
+  .dgi-card--featured .dgi-card__action { margin-top: 0; align-self: center; padding: 8px 20px; }
+
+  .dgi-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+  .dgi-card__icon--blue   { background: #dbeafe; color: #00209F; }
+  .dgi-card__icon--indigo { background: #e0e7ff; color: #4338ca; }
+  .dgi-card__icon--red    { background: #ffe4e6; color: #D21034; }
+  .dgi-card__icon--teal   { background: #ccfbf1; color: #0d9488; }
+  .dgi-card__icon--orange { background: #ffedd5; color: #c2410c; }
+  .dgi-card__icon--green  { background: #d1fae5; color: #047857; }
+
+  .dgi-card__body { flex: 1; }
+  .dgi-card__title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #1a1a2e;
+    margin: 0 0 4px;
+  }
+  .dgi-card__desc {
+    font-size: 0.78rem;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0 0 8px;
+  }
+  .dgi-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dgi-card__tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .dgi-card__price {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #059669;
+  }
+
+  .dgi-card__action {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    background: #00209F;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 12px;
+    transition: background 0.2s;
+    min-height: 40px;
+    align-self: flex-start;
+  }
+  .dgi-card__action:hover { background: #001570; color: #fff; }
+  .dgi-card__action:focus-visible {
+    outline: 2px solid #00209F;
+    outline-offset: 2px;
+  }
+
+  /* ============================================================
+     3. PAYMENTS SECTION
+  ============================================================ */
+  .dgi-payments-section {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .dgi-section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    color: #1a1a2e;
+    font-size: 0.9rem;
+    margin: 0;
+  }
+  .dgi-link-sm {
+    font-size: 0.78rem;
+    color: #00209F;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .dgi-link-sm:hover { text-decoration: underline; }
+
+  .dgi-payment-rows { display: flex; flex-direction: column; gap: 8px; }
+  .dgi-payment-row {
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+  }
+  .dgi-payment-row__icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: #f0f4ff; color: #00209F;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .dgi-receipt-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 6px;
+    background: #059669; color: #fff; font-size: 0.9rem;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .dgi-receipt-btn:hover { background: #047857; color: #fff; }
+
+  /* ============================================================
+     4. STATUS CHIPS
+  ============================================================ */
+  .dgi-status-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .dgi-status-chip--pending     { background: #fef3c7; color: #92400e; }
+  .dgi-status-chip--verified,
+  .dgi-status-chip--completed   { background: #d1fae5; color: #065f46; }
+  .dgi-status-chip--rejected,
+  .dgi-status-chip--failed      { background: #fee2e2; color: #991b1b; }
+  .dgi-status-chip--processing  { background: #dbeafe; color: #1e40af; }
+
+  /* ============================================================
+     5. FILINGS TABLE
+  ============================================================ */
+  .dgi-table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0;
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 10px 10px 0 0;
+    padding: 14px 16px;
+    border-bottom: none;
+  }
+  .dgi-filters {
+    display: flex;
+    align-items: center;
+  }
+  .dgi-filter-select {
+    border-color: #E0E0E0;
+    font-size: 0.82rem;
+    min-width: 130px;
+  }
+  .dgi-table-card {
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .dgi-table {
+    font-size: 0.85rem;
+  }
+  .dgi-table thead th {
+    background: #fafbfc;
+    border-bottom: 2px solid #E0E0E0;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 16px;
+  }
+  .dgi-table tbody td {
+    padding: 14px 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333333;
+  }
+  .dgi-table tbody tr:hover { background: #fafbfe; }
+  .dgi-table tbody tr:last-child td { border-bottom: none; }
+
+  .dgi-decl-code {
+    font-size: 0.72rem;
+    color: #00209F;
+    background: #f0f4ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .dgi-form-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: #f0f4ff; color: #00209F;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+  }
+  .dgi-view-btn {
+    display: inline-flex; align-items: center;
+    padding: 6px 14px; border: 1px solid #E0E0E0;
+    border-radius: 6px; color: #00209F;
+    font-size: 0.75rem; font-weight: 600;
+    text-decoration: none; transition: all 0.15s;
+    min-height: 36px;
+  }
+  .dgi-view-btn:hover {
+    background: #00209F; color: #fff; border-color: #00209F;
+  }
+  .dgi-view-btn:focus-visible {
+    outline: 2px solid #00209F; outline-offset: 2px;
+  }
+
+  /* ============================================================
+     6. EMPTY STATE — Friendly
+  ============================================================ */
+  .dgi-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .dgi-empty-state__icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #f0f4ff; color: #00209F;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; margin: 0 auto 16px;
+  }
+  .dgi-empty-state__title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1a1a2e;
+    margin: 0 0 6px;
+  }
+  .dgi-empty-state__desc {
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin: 0 0 16px;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  /* ============================================================
+     7. TRUST FOOTER
+  ============================================================ */
+  .dgi-trust-footer {
+    text-align: center;
+    padding: 16px 0 8px;
+    margin-top: 8px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    color: #6c757d;
+  }
+  .dgi-trust-footer__divider {
+    display: inline-block;
+    width: 1px; height: 14px;
+    background: #d1d5db;
+    vertical-align: middle;
+  }
+
+  /* ============================================================
+     8. RESPONSIVE
+  ============================================================ */
+  @media (max-width: 767px) {
+    .dgi-welcome-header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 16px;
+    }
+    .dgi-welcome-header__right {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .dgi-mini-stats { flex-wrap: wrap; }
+
+    .dgi-category-selector { grid-template-columns: 1fr; }
+    .dgi-category-card { padding: 14px; }
+
+    .dgi-service-grid {
+      grid-template-columns: 1fr;
+    }
+    .dgi-card__action { align-self: stretch; justify-content: center; }
+
+    .dgi-payment-row { flex-wrap: wrap; gap: 8px; }
+
+    .dgi-table-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .dgi-filters { width: 100%; }
+    .dgi-filters form { width: 100%; }
+    .dgi-filter-select { min-width: 0; flex: 1; }
+
+    .dgi-pending-alert { flex-wrap: wrap; }
+    .dgi-pending-alert__link { margin-left: 0; margin-top: 4px; }
+
+    /* WCAG 2.1 AA: 44px min touch targets */
+    .dgi-card__action { min-height: 44px; padding: 10px 20px; }
+    .dgi-view-btn { min-height: 44px; padding: 8px 16px; }
+    .dgi-filter-select { min-height: 44px; font-size: 16px; }
+
+    .dgi-trust-footer__divider { display: none; }
+    .dgi-trust-footer span { display: block; }
+  }
+
+  @media (min-width: 768px) and (max-width: 991px) {
+    .dgi-service-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* ── Reduced Motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    .dgi-card,
+    .dgi-card__action,
+    .dgi-view-btn,
+    .dgi-receipt-btn {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  function initCategorySelector() {
+    const selector = document.getElementById("dgi-category-selector");
+    if (!selector) return;
+
+    const cards = selector.querySelectorAll(".dgi-category-card");
+    const panels = {
+      "registration": document.getElementById("panel-registration"),
+      "tax-filing": document.getElementById("panel-tax-filing"),
+      "activity": document.getElementById("panel-activity")
+    };
+
+    cards.forEach(function(card) {
+      card.addEventListener("click", function() {
+        var category = card.dataset.category;
+
+        // Toggle active state on cards
+        cards.forEach(function(c) { c.classList.remove("dgi-category-card--active"); });
+        card.classList.add("dgi-category-card--active");
+
+        // Show/hide panels
+        Object.keys(panels).forEach(function(key) {
+          if (panels[key]) {
+            panels[key].classList.toggle("d-none", key !== category);
+          }
+        });
+      });
+    });
+  }
+  function initFilingsLink() {
+    var link = document.getElementById("show-filings-link");
+    if (!link) return;
+
+    link.addEventListener("click", function(e) {
+      e.preventDefault();
+
+      // Activate the Aktivite tab
+      var selector = document.getElementById("dgi-category-selector");
+      if (selector) {
+        selector.querySelectorAll(".dgi-category-card").forEach(function(c) {
+          c.classList.remove("dgi-category-card--active");
+        });
+        var activityCard = selector.querySelector('[data-category="activity"]');
+        if (activityCard) activityCard.classList.add("dgi-category-card--active");
+      }
+
+      // Show activity panel, hide others
+      ["panel-registration", "panel-tax-filing"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.add("d-none");
+      });
+      var activityPanel = document.getElementById("panel-activity");
+      if (activityPanel) activityPanel.classList.remove("d-none");
+
+      // Scroll to filings table
+      var table = document.getElementById("filings-table");
+      if (table) table.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  document.addEventListener("turbo:load", initCategorySelector);
+  document.addEventListener("DOMContentLoaded", initCategorySelector);
+  document.addEventListener("turbo:load", initFilingsLink);
+  document.addEventListener("DOMContentLoaded", initFilingsLink);
+</script>

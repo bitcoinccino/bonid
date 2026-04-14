@@ -1,0 +1,179 @@
+<%# BonGouv — DGI Payment Receipt Email %>
+<%# Sent to citizen after successful payment %>
+
+<%# Greeting %>
+<p style="color: #1a1a2e; line-height: 1.6; margin-top: 0; font-size: 15px;">
+  Bonjou <strong><%= @user.first_name %></strong>,
+</p>
+<p style="color: #4a5568; line-height: 1.6; font-size: 14px;">
+  Peman ou reyisi. Men resi ofisyèl ou pou deklarasyon DGI ou a:
+</p>
+
+<%# ═══════════════════════════════════════════ %>
+<%# DGI HEADER                                 %>
+<%# ═══════════════════════════════════════════ %>
+<div style="background: linear-gradient(135deg, #00209F 0%, #001570 100%); color: #fff; text-align: center; padding: 24px; border-radius: 12px 12px 0 0; margin-top: 20px;">
+  <div style="font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">REPIBLIK D AYITI</div>
+  <div style="font-size: 12px; opacity: 0.7; margin-top: 2px;">Direction Générale des Impôts</div>
+  <div style="margin-top: 10px;">
+    <span style="background: #D21034; color: #fff; padding: 4px 14px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 1px;">RESI PEMAN OFISYEL</span>
+  </div>
+  <div style="margin-top: 8px; opacity: 0.4; font-size: 11px;">Nimewo: <%= @payment.order_id %></div>
+</div>
+
+<%# ═══════════════════════════════════════════ %>
+<%# RECEIPT BODY                               %>
+<%# ═══════════════════════════════════════════ %>
+<%# Red accent stripe — Haitian flag %>
+<div style="height: 4px; background: #D21034;"></div>
+
+<div style="background: #FFFFFF; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; padding: 24px;">
+
+  <%# Citizen Info %>
+  <div style="font-size: 11px; font-weight: 700; color: #D21034; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Kontribyab (Payè)</div>
+  <div style="background: #f8f9fa; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+    <table cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+      <tr>
+        <td style="vertical-align: middle; padding-right: 12px;">
+          <div style="width: 44px; height: 44px; background: #00209F; color: #fff; border-radius: 50%; text-align: center; line-height: 44px; font-weight: 700; font-size: 15px;">
+            <%= @user.first_name&.first %><%= @user.last_name&.first %>
+          </div>
+        </td>
+        <td style="vertical-align: middle;">
+          <div style="font-weight: 700; color: #1a1a2e; font-size: 14px;"><%= @user.first_name %> <%= @user.last_name %></div>
+          <div style="font-family: monospace; font-size: 12px; color: #6b7280; margin-top: 2px;"><%= mask_bonid(@user.bonid) %></div>
+          <% if @user.bonid_verified? %>
+            <span style="background: #d1fae5; color: #059669; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 4px;">&#10003; Verifye</span>
+          <% end %>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <%# Filing Details %>
+  <div style="font-size: 11px; font-weight: 700; color: #D21034; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Detay Deklarasyon</div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Fòm</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right;"><%= @payment.form_type_label %></td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Nimewo Deklarasyon</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right; font-family: monospace; font-size: 12px;"><%= @payment.declaration_number %></td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Nimewo Lòd</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right; font-family: monospace; font-size: 12px;"><%= @payment.order_id %></td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Tranzaksyon ID</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right; font-family: monospace; font-size: 12px;"><%= @payment.transaction_id %></td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Metòd Peman</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right;">
+        <% badge_colors = { "moncash" => ["#FFF3CD","#856404"], "natcash" => ["#D4EDDA","#155724"], "bank_transfer" => ["#CCE5FF","#004085"], "cash_window" => ["#E2E3E5","#383D41"] } %>
+        <% bg, fg = badge_colors[@payment.payment_method] || ["#E2E3E5","#383D41"] %>
+        <span style="background: <%= bg %>; color: <%= fg %>; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;"><%= @payment.payment_method_label %></span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D;">Dat Peman</td>
+      <td style="padding: 8px 0; font-weight: 600; text-align: right;"><%= @payment.paid_at&.strftime("%d %B %Y a %H:%M") %></td>
+    </tr>
+  </table>
+
+  <%# Payment Breakdown %>
+  <div style="font-size: 11px; font-weight: 700; color: #D21034; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Montan</div>
+  <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Taks DGI</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right;"><%= number_with_delimiter(@payment.amount_htg.round(2)) %> HTG</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Frè Sèvis BonGouv</td>
+      <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right;"><%= number_with_delimiter(@payment.fee_htg.round(2)) %> HTG</td>
+    </tr>
+    <tr>
+      <td style="padding: 10px 0; font-weight: 800; font-size: 14px; color: #1a1a2e; border-top: 2px solid #00209F;">Total Peye</td>
+      <td style="padding: 10px 0; font-weight: 800; font-size: 22px; color: #00209F; text-align: right; border-top: 2px solid #00209F;"><%= @payment.formatted_total %></td>
+    </tr>
+  </table>
+
+  <%# Received / Processed By %>
+  <div style="font-size: 11px; font-weight: 700; color: #D21034; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Resevwa / Trete Pa</div>
+  <div style="background: #f0f4ff; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+    <% if @agent %>
+      <table cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td style="vertical-align: middle; padding-right: 10px;">
+            <div style="width: 36px; height: 36px; background: #00209F; color: #fff; border-radius: 50%; text-align: center; line-height: 36px; font-weight: 700; font-size: 12px;">
+              <%= @agent.first_name&.first %><%= @agent.last_name&.first %>
+            </div>
+          </td>
+          <td style="vertical-align: middle;">
+            <div style="font-weight: 700; font-size: 13px; color: #1a1a2e;"><%= @agent.first_name %> <%= @agent.last_name %></div>
+            <div style="font-family: monospace; font-size: 11px; color: #6b7280;"><%= mask_bonid(@agent.bonid) %></div>
+            <div style="font-size: 11px; color: #9ca3af;">Ajan DGI — <%= @record&.data&.dig("reviewed_at")&.to_date&.strftime("%d/%m/%Y") rescue "—" %></div>
+          </td>
+        </tr>
+      </table>
+    <% elsif @partner %>
+      <div style="font-weight: 700; font-size: 13px; color: #1a1a2e;"><%= @partner.name %></div>
+      <div style="font-size: 11px; color: #9ca3af;">Biwo DGI</div>
+    <% else %>
+      <div style="font-weight: 700; font-size: 13px; color: #1a1a2e;">BonGouv Otomatik</div>
+      <div style="font-size: 11px; color: #9ca3af;">Trete otomatikman via platfòm dijital</div>
+    <% end %>
+  </div>
+
+  <%# ═══════════════════════════════════════════ %>
+  <%# DIGITAL SEAL — Dokiman Otantik              %>
+  <%# ═══════════════════════════════════════════ %>
+  <% if @seal.present? %>
+    <div style="text-align: center; margin: 20px 0; padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+      <div style="margin-bottom: 8px;">
+        <span style="background: #d1fae5; color: #059669; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block;">&#10003; Dokiman Otantik — BonGouv</span>
+      </div>
+      <div style="font-size: 10px; color: #6b7280;">
+        Ed25519 Siyen | Token: <span style="font-family: monospace;"><%= @seal["token"] %></span>
+      </div>
+      <% if @verify_url.present? %>
+        <div style="margin-top: 8px;">
+          <a href="<%= @verify_url %>" style="color: #059669; font-size: 11px; text-decoration: none; font-weight: 600;">Verifye resi sa a &rarr;</a>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<%# Bottom red stripe — Haitian flag %>
+<div style="height: 4px; background: #D21034; border-radius: 0 0 12px 12px;"></div>
+
+<%# ═══════════════════════════════════════════ %>
+<%# CTA — View Full Receipt                     %>
+<%# ═══════════════════════════════════════════ %>
+<div style="text-align: center; margin: 28px 0 12px;">
+  <a href="<%= @receipt_url %>"
+     style="display: inline-block; background: #00209F; color: #FFFFFF; padding: 14px 36px; border-radius: 25px; text-decoration: none; font-weight: 700; font-size: 15px;">
+    Wè Resi Konplè
+  </a>
+</div>
+
+<p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 16px;">
+  Resi sa a se prèv peman ofisyèl ou. Konsève li pou dosye ou.
+</p>
+
+<%# Next Steps %>
+<div style="background: #f8f9fa; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 20px;">
+  <div style="font-weight: 700; color: #1a1a2e; font-size: 13px; margin-bottom: 8px;">Pwochen Etap:</div>
+  <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #4a5568; line-height: 1.8;">
+    <li>Deklarasyon w ap revize pa yon ajan DGI</li>
+    <li>W ap resevwa yon notifikasyon lè li verifye</li>
+    <li>Nimewo tranzaksyon w: <strong style="font-family: monospace;"><%= @payment.transaction_id %></strong></li>
+  </ul>
+</div>
+
+<p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 24px;">
+  Powered by <strong>BonGouv</strong>, a product of <strong>Verifyem</strong>
+</p>

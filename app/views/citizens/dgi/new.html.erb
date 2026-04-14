@@ -1,0 +1,2813 @@
+<%# Citizen Self-Service — DGI Filing Form (Multi-Step Wizard) %>
+<%# Uses citizen's own layout (dash-card). BonGouv styles only on DGI index. %>
+<%# Follows USWDS "Complete a complex form" patterns: %>
+<%#   - Establish trust: intro with requirements, time estimate, data safety %>
+<%#   - Progress easily: step indicator, inline validation, help option %>
+<%#   - Keep a record: summary before submit, print button, print stylesheet %>
+<% payment_methods = current_citizen.bank_profiles.where(currently_open: true).order(:account_source) %>
+
+<%# USWDS time estimates by form type %>
+<% time_estimates = {
+  "nif_registration" => "5-8 minit",
+  "business_registration" => "8-12 minit",
+  "patente_declaration" => "5-7 minit",
+  "tca_declaration" => "5-7 minit",
+  "ras_ir_declaration" => "10-15 minit",
+  "fermage" => "5-8 minit"
+} %>
+
+<%# USWDS required info list by form type %>
+<% required_info = {
+  "nif_registration" => ["Non konplè ou", "Dat nesans", "Adrès aktyèl", "Nimewo telefòn", "Tip aktivite"],
+  "business_registration" => ["Non antrepriz la", "Fòm jridik", "Enfòmasyon pwopriyetè", "Adrès biznis"],
+  "patente_declaration" => ["Nimewo NIF", "Rezon sosyal", "Chif afe anyèl"],
+  "tca_declaration" => ["Nimewo NIF", "Rezon sosyal", "Chif afe brit pou mwa a"],
+  "ras_ir_declaration" => ["Nimewo NIF", "Rezon sosyal", "Lis anplwaye ak salè"],
+  "fermage" => ["Non fèmye", "Adrès pwopriyete", "Montan taks (dwa anyèl, sitaks, DTP, solidarite)"]
+} %>
+
+<%# Skip navigation link — USWDS Accessibility %>
+<a href="#bongouv-wizard-main" class="bongouv-skip-nav">Ale nan fòmilè a</a>
+
+<%# Draft auto-save endpoint %>
+<meta name="draft-save-url" content="<%= save_draft_citizens_dgi_index_path %>">
+
+<%# ================================================================ %>
+<%# ONE CARD — banner header + trust intro body %>
+<%# ================================================================ %>
+<div id="bongouv-wizard-main" style="max-width: 1200px; margin: 0 auto; padding: 32px 40px;">
+
+  <%# ARIA live region for screen reader announcements %>
+  <div id="wizardLiveRegion" class="visually-hidden" aria-live="polite" aria-atomic="true">
+    Etap 1 nan <%= time_estimates.key?(@form_type) ? (required_info[@form_type]&.length || 3) : 3 %>
+  </div>
+
+  <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;">
+    <%# Card header — blue with red line %>
+    <div style="background: linear-gradient(135deg, #00209F 0%, #001570 100%); border-bottom: 4px solid #D21034; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;">
+      <div class="d-flex align-items-center gap-3">
+        <%= image_tag "partners/dgi-logo.webp", style: "height:36px;", alt: "DGI" %>
+        <div>
+          <div style="font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.6);">Direksyon Jeneral Enpo</div>
+          <h5 style="margin:0; color:#fff; font-family:'Montserrat',sans-serif; font-size:1rem; font-weight:700;"><%= @form_label[:title] %></h5>
+        </div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span id="draftIndicator" style="font-size:0.7rem; color:rgba(255,255,255,0.6); opacity:0.6; transition:opacity 0.3s;">
+          <i class="ri-save-line me-1"></i><span>Otomatik sovgade</span>
+        </span>
+        <%= link_to citizens_dgi_index_path, style: "color:#fff; font-size:0.78rem; padding:6px 14px; border-radius:6px; background:rgba(255,255,255,0.12); display:inline-flex; align-items:center; gap:4px; text-decoration:none;", aria: { label: "Retounen nan Sèvis DGI" } do %>
+          <i class="ri-arrow-left-line"></i>Retounen
+        <% end %>
+      </div>
+    </div>
+    <% if @resubmission && @draft_data["rejection"].is_a?(Hash) %>
+      <div style="background:#fef2f2; padding:12px 24px; border-bottom:1px solid #fecaca; display:flex; align-items:start; gap:8px;">
+        <i class="ri-error-warning-line" style="color:#dc2626; margin-top:2px;"></i>
+        <div style="font-size:0.82rem; color:#991b1b;">
+          <strong>Rezon rejè:</strong>
+          <span class="badge" style="background:#dc2626; color:#fff; font-size:0.7rem;"><%= @draft_data.dig("rejection", "code") %></span>
+          <%= @draft_data.dig("rejection", "reason") %>
+          <% if @draft_data.dig("rejection", "notes").present? %>
+            <br><small class="text-muted"><i class="ri-message-2-line me-1"></i><%= @draft_data.dig("rejection", "notes") %></small>
+          <% end %>
+          <br><small style="color:#6b7280;">Korije erè yo epi soumèt ankò. Pa gen peman adisyonèl.</small>
+        </div>
+      </div>
+    <% elsif @draft.present? %>
+      <div style="background:#eff6ff; padding:12px 24px; border-bottom:1px solid #bfdbfe; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:0.82rem; color:#1e40af;">
+          <i class="ri-draft-line me-1"></i>Ou gen yon bouyon ki sovgade — etap <%= @draft_step %>.
+          <small style="color:#6b7280;">Dènye modifikasyon: <%= Time.parse(@draft_data["draft_updated_at"]).strftime("%d/%m/%Y %H:%M") rescue "" %></small>
+        </span>
+        <%= link_to new_citizens_dgi_path(form_type: @form_type, discard_draft: true), style: "font-size:0.75rem; color:#dc2626; text-decoration:none;", data: { confirm: "Efase bouyon sa a epi rekòmanse?" } do %>
+          <i class="ri-delete-bin-line me-1"></i>Efase bouyon
+        <% end %>
+      </div>
+    <% end %>
+    <%# Card body — trust intro %>
+    <div style="background: #fff; padding: 20px 24px;" role="region" aria-label="Enfòmasyon avan ou kòmanse">
+      <h5 class="wizard-trust-intro__heading"><i class="ri-shield-check-line me-2" aria-hidden="true"></i>Sa ou bezwen pou ranpli fòm sa a</h5>
+      <ul class="wizard-trust-intro__list">
+        <% (required_info[@form_type] || []).each do |item| %>
+          <li><i class="ri-check-line" aria-hidden="true"></i><%= item %></li>
+        <% end %>
+      </ul>
+      <p class="wizard-trust-intro__meta">
+        <span><i class="ri-time-line" aria-hidden="true"></i>Anviwon <%= time_estimates[@form_type] || "5-10 minit" %></span>
+        <span><i class="ri-lock-line" aria-hidden="true"></i>Done ou yo pwoteje ak BonID</span>
+        <span><i class="ri-magic-line" aria-hidden="true"></i>Chan yo pre-ranpli ak profil BonID ou</span>
+      </p>
+    </div>
+  </div>
+
+  <%# Print header — hidden on screen, shown in print (USWDS "Keep a record") %>
+  <div class="wizard-print-header">
+    <p class="wizard-print-header__title">Direction Generale des Impots — <%= @form_label[:title] %></p>
+    <p class="wizard-print-header__meta">
+      BonGouv | Dat: <%= Date.current.strftime("%d/%m/%Y") %> | Kontribyab: <%= @auto_fill[:first_name] %> <%= @auto_fill[:last_name] %>
+    </p>
+  </div>
+
+  <div>
+      <% form_url = @resubmission ? update_resubmit_citizens_dgi_path(@record) : citizens_dgi_index_path %>
+      <%= form_tag form_url, method: :post, id: "wizardForm", multipart: true, aria: { label: @form_label[:title] } do %>
+        <%= hidden_field_tag :form_type, @form_type %>
+
+        <%# ======================================================= %>
+        <%# NIF REGISTRATION (Formulaire A) — 4 Steps %>
+        <%# ======================================================= %>
+        <% if @form_type == "nif_registration" %>
+
+          <% nif_steps = ["Pèsonèl", "Adrès", "Aktivite", "Revize", "Siyati", "Peyman"] %>
+          <% nif_hints = ["Ranpli enfòmasyon pèsonèl ou", "Adrès aktyèl ak kontak", "Aktivite ekonomik ou", "Revize tout enfòmasyon ou", "Sètifye ak siyen fòm lan", "Frè sèvis ak soumisyon"] %>
+          <div class="dash-card mb-4">
+            <div class="dash-card-body py-3">
+              <div class="dgi-wizard-progress" id="wizardProgress">
+                <% nif_steps.each_with_index do |label, i| %>
+                  <div class="wizard-step-indicator <%= 'active' if i == 0 %>" data-step="<%= i + 1 %>" data-hint="<%= nif_hints[i] %>" role="tab" tabindex="0" aria-current="<%= i == 0 ? 'step' : 'false' %>" aria-label="Etap <%= i + 1 %>: <%= label %>">
+                    <div class="wizard-step-dot" aria-hidden="true"><%= i + 1 %></div>
+                    <span class="wizard-step-label"><%= label %></span>
+                  </div>
+                  <% if i < nif_steps.length - 1 %><div class="wizard-step-line"></div><% end %>
+                <% end %>
+              </div>
+              <p class="wizard-step-hint text-center text-muted small mb-0 mt-2" id="wizardStepHint"><%= nif_hints[0] %></p>
+            </div>
+          </div>
+
+          <%# STEP 1: Personne %>
+          <div class="wizard-step-panel" id="wizardStep1" style="display:block;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">1</span>Enfòmasyon Pèsonèl</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Non <span class="text-danger">*</span></label>
+                    <%= text_field_tag :nom, @auto_fill[:last_name], class: "form-control", required: true, placeholder: "ex: Jòj", readonly: @auto_fill[:last_name].present? %>
+                                      </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Prenon <span class="text-danger">*</span></label>
+                    <%= text_field_tag :prenom, @auto_fill[:first_name], class: "form-control", required: true, placeholder: "ex: Jean", readonly: @auto_fill[:first_name].present? %>
+                                      </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Dat Nesans <span class="text-danger">*</span></label>
+                    <%= date_field_tag :date_naissance, @auto_fill[:date_of_birth], class: "form-control", required: true, readonly: @auto_fill[:date_of_birth].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Kote Ou Fèt <span class="text-danger">*</span></label>
+                    <% lieu = [@auto_fill[:birth_commune], @auto_fill[:birth_department]].compact.join(", ") %>
+                    <%= text_field_tag :lieu_naissance, lieu, class: "form-control", required: true, placeholder: "ex: Pòtoprens, Lwès", readonly: lieu.present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Seks</label>
+                    <%= select_tag :sexe, options_for_select(RecordSchemas::NifRegistrationSchema::SEXES.map { |k, v| [v, k] }, @auto_fill[:sex]),
+                        class: "form-select", prompt: "-- Chwazi --", disabled: @auto_fill[:sex].present? %>
+                    <%= hidden_field_tag :sexe, @auto_fill[:sex] if @auto_fill[:sex].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Eta Sivil</label>
+                    <%= select_tag :etat_civil,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::ETATS_CIVILS.map { |k, v| [v, k] }, @auto_fill[:marital_status]),
+                        class: "form-select", prompt: "-- Chwazi --", disabled: @auto_fill[:marital_status].present? %>
+                    <%= hidden_field_tag :etat_civil, @auto_fill[:marital_status] if @auto_fill[:marital_status].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Nasyonalite</label>
+                    <%= text_field_tag :nationalite, @auto_fill[:nationality], class: "form-control", placeholder: "ex: Ayisyen", readonly: @auto_fill[:nationality].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Nimewo CIN</label>
+                    <%= text_field_tag :numero_cin, @auto_fill[:cin], class: "form-control", placeholder: "00-00-00-0000-00-00000", readonly: @auto_fill[:cin].present? %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              <% end %>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 2: Adresse %>
+          <div class="wizard-step-panel" id="wizardStep2" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">2</span>Adrès ak Kontak</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès</p>
+                <div class="row g-3">
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Depatman <span class="text-danger">*</span></label>
+                    <%= select_tag :departement,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI, @auto_fill[:department]),
+                        class: "form-select", required: true, prompt: "-- Chwazi --", disabled: @auto_fill[:department].present? %>
+                    <%= hidden_field_tag :departement, @auto_fill[:department] if @auto_fill[:department].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Komin <span class="text-danger">*</span></label>
+                    <%= text_field_tag :commune, @auto_fill[:commune], class: "form-control", required: true, placeholder: "ex: Pétion-Ville", readonly: @auto_fill[:commune].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Seksyon Kominal</label>
+                    <%= text_field_tag :section_communale, @auto_fill[:section_communale], class: "form-control", placeholder: "ex: 1è Seksyon", readonly: @auto_fill[:section_communale].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Zòn / Lokalite</label>
+                    <%= text_field_tag :ville, @auto_fill[:locality], class: "form-control", placeholder: "ex: Boulva 15", readonly: @auto_fill[:locality].present? %>
+                  </div>
+                  <div class="col-12 bonid-autofill">
+                    <label class="form-label fw-semibold">Adrès Ri (Nimewo ak Non Ri) <span class="text-danger">*</span></label>
+                    <%= text_field_tag :rue, @auto_fill[:street_address], class: "form-control", required: true, placeholder: "ex: 12 Ri Kapwa", readonly: @auto_fill[:street_address].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Kòd Postal</label>
+                    <%= text_field_tag :code_postal, @auto_fill[:postal_code], class: "form-control", placeholder: "ex: HT6110", readonly: @auto_fill[:postal_code].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Peyi</label>
+                    <%= text_field_tag :pays, @auto_fill[:country] || "Haiti", class: "form-control", readonly: true %>
+                                      </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Telefon <span class="text-danger">*</span></label>
+                    <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", required: true, placeholder: "ex: +509 3XXX XXXX", readonly: @auto_fill[:phone].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Imel</label>
+                    <%= email_field_tag :email_contact, @auto_fill[:email], class: "form-control", placeholder: "ex: non@imel.com", readonly: @auto_fill[:email].present? %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 3: Activite %>
+          <div class="wizard-step-panel" id="wizardStep3" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">3</span>Aktivite Ekonomik</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tip Aktivite</label>
+                    <%= select_tag :type_activite,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::TYPES_ACTIVITE.map { |k, v| [v, k] }),
+                        class: "form-select", prompt: "-- Chwazi --" %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Revni Anyel Estime (HTG)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :revenu_annuel, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Deskripsyon Aktivite</label>
+                    <%= text_area_tag :description_activite, nil, class: "form-control", rows: 2, placeholder: "ex: Vann pwodwi alimantè nan mache..." %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Non Anplwayè (si salarye)</label>
+                    <%= text_field_tag :nom_employeur, nil, class: "form-control", placeholder: "ex: Digicel Haiti" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 4: Revize %>
+          <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">4</span>Revize Enfòmasyon Ou</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
+                  <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
+                </button>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
+                <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
+                  <h6 class="wizard-summary__heading"><i class="ri-file-list-3-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Enskripsyon NIF</h6>
+                  <div id="summaryContent"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 5: Siyati %>
+          <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#92400e;"><span class="badge rounded-pill me-2" style="background:#92400e;">5</span>Sètifikasyon ak Siyati</h6>
+              </div>
+              <div class="dash-card-body">
+                <%= render "citizens/dgi/siyati_content" %>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 6: Peyman %>
+          <div class="wizard-step-panel" id="wizardStep6" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">6</span>Peyman ak Soumisyon</h6>
+              </div>
+              <div class="dash-card-body">
+                <%# Fee Breakdown %>
+                <div class="wizard-trust-intro mb-3" role="status" style="border-left-color:#92400e;background:#fef3c7;">
+                  <h6 class="small fw-bold mb-2"><i class="ri-money-dollar-circle-line me-1"></i>Frè Sèvis</h6>
+                  <table class="table table-sm table-borderless small mb-0">
+                    <tr><td><i class="ri-government-line me-1" aria-hidden="true"></i>DGI (Kat Fiskal)</td><td class="text-end fw-semibold">1,000 HTG</td></tr>
+                    <tr><td><i class="ri-service-line me-1" aria-hidden="true"></i>Frè sèvis</td><td class="text-end fw-semibold text-success"><%= DgiPayment.bongouv_fee_for("nif_registration").to_i %> HTG</td></tr>
+                    <tr class="border-top"><td class="fw-bold">Total</td><td class="text-end fw-bold"><%= number_with_delimiter(DgiPayment.service_fee_for("nif_registration").to_i) %> HTG</td></tr>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="submit" class="btn btn-lg text-white" style="min-height:48px;min-width:200px;background:#D21034;border-color:#D21034;">
+                <i class="ri-send-plane-line me-1" aria-hidden="true"></i> Soumèt Enskripsyon NIF
+              </button>
+            </div>
+          </div>
+
+        <%# ======================================================= %>
+        <%# BUSINESS REGISTRATION (Formulaire B) — 5 Steps %>
+        <%# Matches official DGI Formulaire B: Sections 1-5 %>
+        <%# ======================================================= %>
+        <% elsif @form_type == "business_registration" %>
+
+          <% biz_steps = ["Enfòmasyon", "Pwopriyetè", "Kontak", "Adrès", "Revize", "Siyati", "Peyman"] %>
+          <% biz_hints = ["Enfòmasyon jeneral biznis la", "Enfòmasyon pwopriyetè/direktè", "Kontak biznis la", "Adrès ak etablisman", "Revize tout enfòmasyon ou", "Sètifye ak siyen fòm lan", "Frè sèvis ak soumisyon"] %>
+          <div class="dash-card mb-4">
+            <div class="dash-card-body py-3">
+              <div class="dgi-wizard-progress many-steps" id="wizardProgress">
+                <% biz_steps.each_with_index do |label, i| %>
+                  <div class="wizard-step-indicator <%= 'active' if i == 0 %>" data-step="<%= i + 1 %>" data-hint="<%= biz_hints[i] %>" role="tab" tabindex="0" aria-current="<%= i == 0 ? 'step' : 'false' %>" aria-label="Etap <%= i + 1 %>: <%= label %>" title="<%= label %>">
+                    <div class="wizard-step-dot" aria-hidden="true"><%= i + 1 %></div>
+                    <span class="wizard-step-label"><%= label %></span>
+                  </div>
+                  <% if i < biz_steps.length - 1 %><div class="wizard-step-line"></div><% end %>
+                <% end %>
+              </div>
+              <p class="wizard-step-hint text-center text-muted small mb-0 mt-2" id="wizardStepHint"><%= biz_hints[0] %></p>
+            </div>
+          </div>
+
+          <%# ============================================================ %>
+          <%# STEP 1: Section 1 — Informations Générales (15 fields) %>
+          <%# ============================================================ %>
+          <div class="wizard-step-panel" id="wizardStep1" style="display:block;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">1</span>Enfòmasyon Jeneral</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <%# 1. NIF %>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">1. NIF (Nimewo Idantifikasyon Fiskal)</label>
+                    <%= text_field_tag :nif_entreprise, @auto_fill[:nif], class: "form-control", placeholder: "ex: 000-000-000", readonly: @auto_fill[:nif].present? %>
+                  </div>
+                  <%# 2. Numéro d'enregistrement %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">2. Nimewo Anrejistreman</label>
+                    <%= text_field_tag :numero_enregistrement, nil, class: "form-control", placeholder: "ex: RC-2024-12345" %>
+                  </div>
+                  <%# 3. Raison sociale %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">3. Rezon Sosyal <span class="text-danger">*</span></label>
+                    <%= text_field_tag :nom_entreprise, nil, class: "form-control", required: true, placeholder: "ex: Biznis Ayiti SA" %>
+                  </div>
+                  <%# 4. Nom commercial %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">4. Non Komèsyal (si genyen)</label>
+                    <%= text_field_tag :nom_commercial, nil, class: "form-control", placeholder: "ex: Ti Machann" %>
+                  </div>
+                  <%# 5. Date de création %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">5. Dat Kreyasyon <span class="text-danger">*</span></label>
+                    <%= date_field_tag :date_creation, nil, class: "form-control", required: true %>
+                  </div>
+                  <%# 6. Date de début des opérations %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">6. Dat Kòmansman Operasyon</label>
+                    <%= date_field_tag :date_debut_operations, nil, class: "form-control" %>
+                  </div>
+                  <%# 7. Période financière %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">7. Peryòd Finansyè</label>
+                    <%= text_field_tag :periode_financiere, "#{Time.current.year}-#{Time.current.year + 1}", class: "form-control", placeholder: "ex: 2026-2027" %>
+                  </div>
+                  <%# 8. Nombre d'employés %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">8. Kantite Anplwaye</label>
+                    <%= number_field_tag :nombre_employes, nil, class: "form-control", min: 0, placeholder: "ex: 10" %>
+                  </div>
+                  <%# 9. Patente %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">9. Èske ou gen oswa ap gen yon patant?</label>
+                    <div class="d-flex gap-3 mt-1">
+                      <div class="form-check">
+                        <%= radio_button_tag :a_patente, "oui", false, class: "form-check-input", id: "patenteOui" %>
+                        <label class="form-check-label" for="patenteOui">Wi</label>
+                      </div>
+                      <div class="form-check">
+                        <%= radio_button_tag :a_patente, "non", true, class: "form-check-input", id: "patenteNon" %>
+                        <label class="form-check-label" for="patenteNon">Non</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nimewo Patant (si genyen)</label>
+                    <%= text_field_tag :numero_patente, nil, class: "form-control", placeholder: "ex: PAT-2026-001" %>
+                  </div>
+                  <%# 10. Exemption taxe masse salariale %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">10. Èske ou egzante de Taks sou Mas Salaryal?</label>
+                    <div class="d-flex gap-3 mt-1">
+                      <div class="form-check">
+                        <%= radio_button_tag :exempte_tms, "oui", false, class: "form-check-input", id: "tmsOui" %>
+                        <label class="form-check-label" for="tmsOui">Wi</label>
+                      </div>
+                      <div class="form-check">
+                        <%= radio_button_tag :exempte_tms, "non", true, class: "form-check-input", id: "tmsNon" %>
+                        <label class="form-check-label" for="tmsNon">Non</label>
+                      </div>
+                    </div>
+                  </div>
+                  <%# 11. Forme juridique %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">11. Fòm Jridik <span class="text-danger">*</span></label>
+                    <%= select_tag :forme_juridique,
+                        options_for_select([
+                          ["Antrepriz Endividyel", "individuelle"],
+                          ["Sosyete an Non Kolektif (SNC)", "snc"],
+                          ["Sosyete an Komandit Senp (SCS)", "scs"],
+                          ["Sosyete Anonim (SA)", "sa"],
+                          ["Sosyete a Responsablite Limite (SARL)", "sarl"],
+                          ["Kooperativ", "cooperative"],
+                          ["Asosyasyon / ONG", "association"],
+                          ["Lot", "autre"]
+                        ]),
+                        class: "form-select", required: true, prompt: "-- Chwazi --" %>
+                  </div>
+                  <%# 12. Chiffre d'affaires %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">12. Chif Afe Dènye Eta Finansye</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :chiffre_affaires, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <%# 13. Vérificateur externe %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">13. Eta finansye dwe verifye pa oditè ekstèn? <small class="text-muted">(chif afe &gt; 25M)</small></label>
+                    <div class="d-flex gap-3 mt-1">
+                      <div class="form-check">
+                        <%= radio_button_tag :verificateur_externe, "oui", false, class: "form-check-input", id: "verifOui" %>
+                        <label class="form-check-label" for="verifOui">Wi</label>
+                      </div>
+                      <div class="form-check">
+                        <%= radio_button_tag :verificateur_externe, "non", true, class: "form-check-input", id: "verifNon" %>
+                        <label class="form-check-label" for="verifNon">Non</label>
+                      </div>
+                    </div>
+                  </div>
+                  <%# 14. Secteur d'activité primaire %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">14. Sektè Aktivite Prensipal <span class="text-danger">*</span></label>
+                    <%= select_tag :code_secteur,
+                        options_for_select(RecordSchemas::BusinessRegistrationSchema::SECTEUR_ACTIVITE_BIZ.map { |k, v| ["#{k} — #{v}", k] }),
+                        class: "form-select", required: true, prompt: "-- Chwazi --" %>
+                  </div>
+                  <%# 15. Secteur(s) d'activité(s) secondaires %>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">15. Sektè Aktivite Segondè (si genyen)</label>
+                    <%= text_field_tag :secteur_secondaire, nil, class: "form-control", placeholder: "ex: Komès, Sèvis..." %>
+                  </div>
+                  <%# Objet social %>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Objè Sosyal <span class="text-danger">*</span></label>
+                    <%= text_area_tag :objet_social, nil, class: "form-control", rows: 2, required: true, placeholder: "Deskripsyon aktivite prensipal antrepriz la..." %>
+                  </div>
+                  <%# Capital social %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Kapital Sosyal (HTG)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :capital_social, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              <% end %>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# ============================================================ %>
+          <%# STEP 2: Section 2 — Le propriétaire + Directeur %>
+          <%# ============================================================ %>
+          <div class="wizard-step-panel" id="wizardStep2" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">2</span>Pwopriyetè</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <div class="alert alert-info mb-3 small">
+                  <i class="ri-shield-check-line me-2"></i>Pwopriyetè a dwe soumèt yon Fòmilè A (NIF Individi) apa.
+                </div>
+                <div class="row g-3">
+                  <%# 16. NIF du propriétaire %>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">16. NIF Pwopriyetè</label>
+                    <%= text_field_tag :nif_proprietaire, @auto_fill[:nif], class: "form-control", placeholder: "ex: 000-000-000", readonly: @auto_fill[:nif].present? %>
+                  </div>
+                  <%# 17. Prénom du propriétaire %>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">17. Prenon Pwopriyetè</label>
+                    <input type="text" class="form-control" value="<%= @auto_fill[:first_name] %>" readonly>
+                                      </div>
+                  <%# 18. Nom du propriétaire %>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">18. Non Pwopriyetè</label>
+                    <input type="text" class="form-control" value="<%= @auto_fill[:last_name] %>" readonly>
+                                      </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Seks</label>
+                    <input type="text" class="form-control" value="<%= @auto_fill[:sex] == 'M' ? 'Gason' : 'Fi' %>" readonly>
+                                      </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Dat Nesans</label>
+                    <input type="text" class="form-control" value="<%= @auto_fill[:date_of_birth] %>" readonly>
+                                      </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Nasyonalite</label>
+                    <input type="text" class="form-control" value="<%= @auto_fill[:nationality] %>" readonly>
+                                      </div>
+                </div>
+
+                <%# Director section — if owner is not in Haiti or delegates %>
+                <hr class="my-3">
+                <div class="alert alert-secondary mb-3 small">
+                  <i class="ri-information-line me-2"></i>Si pwopriyetè a pa nan Ayiti, oswa li delege jesyon fiskal la bay yon direktè (anplwaye), ranpli seksyon sa a. Direktè a dwe soumèt yon Fòmilè A apa tou.
+                </div>
+                <div class="row g-3">
+                  <%# 19. NIF du directeur %>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">19. NIF Direktè</label>
+                    <%= text_field_tag :nif_directeur, nil, class: "form-control", placeholder: "ex: 000-000-000" %>
+                  </div>
+                  <%# 20. Prénom du directeur %>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">20. Prenon Direktè</label>
+                    <%= text_field_tag :prenom_directeur, nil, class: "form-control", placeholder: "ex: Jean" %>
+                  </div>
+                  <%# 21. Nom du directeur %>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">21. Non Direktè</label>
+                    <%= text_field_tag :nom_directeur, nil, class: "form-control", placeholder: "ex: Jòj" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# ============================================================ %>
+          <%# STEP 3: Section 3 — Information de contact (7 fields) %>
+          <%# ============================================================ %>
+          <div class="wizard-step-panel" id="wizardStep3" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">3</span>Enfòmasyon Kontak</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <%# 22. Téléphone mobile %>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">22. Nimewo Telefon Mobil <span class="text-danger">*</span></label>
+                    <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", required: true, placeholder: "ex: +509 3XXX XXXX", readonly: @auto_fill[:phone].present? %>
+                  </div>
+                  <%# 23. Téléphone fixe %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">23. Nimewo Telefon Fiks</label>
+                    <%= text_field_tag :telephone_fixe, nil, class: "form-control", placeholder: "ex: +509 2XXX XXXX" %>
+                  </div>
+                  <%# 24. Fax %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">24. Nimewo Faks</label>
+                    <%= text_field_tag :fax, nil, class: "form-control", placeholder: "ex: +509 2XXX XXXX" %>
+                  </div>
+                  <%# 25. Email primaire %>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">25. Adrès Imel Prensipal</label>
+                    <%= email_field_tag :email_contact, @auto_fill[:email], class: "form-control", placeholder: "ex: non@imel.com", readonly: @auto_fill[:email].present? %>
+                  </div>
+                  <%# 26. Email secondaire %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">26. Adrès Imel Segondè</label>
+                    <%= email_field_tag :email_secondaire, nil, class: "form-control", placeholder: "ex: lòt@imel.com" %>
+                  </div>
+                  <%# 27. NIF comptable externe %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">27. NIF Kontab Ekstèn</label>
+                    <%= text_field_tag :nif_comptable, nil, class: "form-control", placeholder: "ex: 000-000-000" %>
+                  </div>
+                  <%# 28. Nom comptable externe %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">28. Non Kontab Ekstèn</label>
+                    <%= text_field_tag :nom_comptable, nil, class: "form-control", placeholder: "ex: Pierre Comptable" %>
+                  </div>
+                  <%# Additional: Sit Wèb %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sit Wèb</label>
+                    <%= text_field_tag :site_web, nil, class: "form-control", placeholder: "www.example.com" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# ============================================================ %>
+          <%# STEP 4: Section 4 — Adresse + Établissements %>
+          <%# ============================================================ %>
+          <div class="wizard-step-panel" id="wizardStep4" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">4</span>Adrès ak Etablisman</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <p class="fw-bold small mb-2" style="color:#00209F;">29. Adrès Prensipal Antrepriz</p>
+                <div class="row g-3">
+                  <%# 29a. Département %>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">29a. Depatman <span class="text-danger">*</span></label>
+                    <%= select_tag :departement,
+                        options_for_select(RecordSchemas::BusinessRegistrationSchema::DEPARTEMENTS_HAITI, @auto_fill[:birth_department]),
+                        class: "form-select", required: true, prompt: "-- Chwazi --", disabled: @auto_fill[:birth_department].present? %>
+                    <%= hidden_field_tag :departement, @auto_fill[:birth_department] if @auto_fill[:birth_department].present? %>
+                  </div>
+                  <%# 29b. Commune %>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">29b. Komin</label>
+                    <%= text_field_tag :commune, @auto_fill[:birth_commune], class: "form-control", placeholder: "ex: Pétion-Ville", readonly: @auto_fill[:birth_commune].present? %>
+                  </div>
+                  <%# 29c. Section communale %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">29c. Seksyon Kominal</label>
+                    <%= text_field_tag :section_communale, nil, class: "form-control", placeholder: "ex: 1è Seksyon" %>
+                  </div>
+                  <%# 29d. Zone %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">29d. Zòn</label>
+                    <%= text_field_tag :zone, nil, class: "form-control", placeholder: "ex: Boulva 15" %>
+                  </div>
+                  <%# 29e. Adresse %>
+                  <div class="col-12 bonid-autofill">
+                    <label class="form-label fw-semibold">29e. Adrès (Nimewo ak Non Ri) <span class="text-danger">*</span></label>
+                    <%= text_field_tag :rue, @auto_fill[:street_address], class: "form-control", required: true, placeholder: "ex: 12 Ri Kapwa", readonly: @auto_fill[:street_address].present? %>
+                  </div>
+                  <%# 29f. Pays de Résidence %>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">29f. Peyi Rezidans</label>
+                    <%= text_field_tag :pays, "Haiti", class: "form-control" %>
+                  </div>
+                  <%# 29g. Information additionnelle %>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">29g. Enfòmasyon Adisyonèl sou Lokalizasyon</label>
+                    <%= text_area_tag :info_localisation, nil, class: "form-control", rows: 2, placeholder: "Pwen repè, direksyon, elatriye..." %>
+                  </div>
+                </div>
+
+                <%# Section 4 — Établissements %>
+                <hr class="my-3">
+                <p class="fw-bold small mb-2" style="color:#00209F;">30. Etablisman</p>
+                <div class="alert alert-secondary mb-3 small">
+                  <i class="ri-information-line me-2"></i>Apa de adrès prensipal la, èske antrepriz la gen lòt etablisman ki bezwen yon patant?
+                </div>
+                <div class="d-flex gap-3 mb-3">
+                  <div class="form-check">
+                    <%= radio_button_tag :autres_etablissements, "oui", false, class: "form-check-input", id: "etablOui" %>
+                    <label class="form-check-label" for="etablOui">Wi</label>
+                  </div>
+                  <div class="form-check">
+                    <%= radio_button_tag :autres_etablissements, "non", true, class: "form-check-input", id: "etablNon" %>
+                    <label class="form-check-label" for="etablNon">Non</label>
+                  </div>
+                </div>
+
+                <div id="etablissementsSection" style="display:none;">
+                  <div id="etablissementRows">
+                    <% (1..2).each do |n| %>
+                      <div class="border rounded p-3 mb-3 etablissement-row">
+                        <p class="fw-semibold small mb-2" style="color:#D21034;">Etablisman <%= n %></p>
+                        <div class="row g-2">
+                          <div class="col-md-6">
+                            <label class="form-label small">30a. Non Komèsyal (si diferan)</label>
+                            <%= text_field_tag "etablissements[#{n}][nom_commercial]", nil, class: "form-control form-control-sm", placeholder: "ex: Ti Machann" %>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label small">30b. Nimewo ak Non Ri</label>
+                            <%= text_field_tag "etablissements[#{n}][adresse]", nil, class: "form-control form-control-sm", placeholder: "ex: 5 Ri Lamè" %>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small">30c. Zòn</label>
+                            <%= text_field_tag "etablissements[#{n}][zone]", nil, class: "form-control form-control-sm", placeholder: "ex: Zòn Endistryel" %>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small">30d. Depatman</label>
+                            <%= select_tag "etablissements[#{n}][departement]",
+                                options_for_select(RecordSchemas::BusinessRegistrationSchema::DEPARTEMENTS_HAITI),
+                                class: "form-select form-select-sm", prompt: "-- Chwazi --" %>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small">30e. Komin</label>
+                            <%= text_field_tag "etablissements[#{n}][commune]", nil, class: "form-control form-control-sm", placeholder: "ex: Pétion-Ville" %>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small">30f. Seksyon Kominal</label>
+                            <%= text_field_tag "etablissements[#{n}][section_communale]", nil, class: "form-control form-control-sm", placeholder: "ex: 1è Seksyon" %>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label small">30g. Peyi</label>
+                            <%= text_field_tag "etablissements[#{n}][pays]", "Haiti", class: "form-control form-control-sm" %>
+                          </div>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="addEtablissementBtn">
+                    <i class="ri-add-line me-1"></i>Ajoute yon Etablisman
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# ============================================================ %>
+          <%# STEP 5: Revize %>
+          <%# ============================================================ %>
+          <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">5</span>Revize Enfòmasyon Ou</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
+                  <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
+                </button>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
+                <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
+                  <h6 class="wizard-summary__heading"><i class="ri-building-2-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Anrejistreman Biznis</h6>
+                  <div id="summaryContent"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 6: Siyati %>
+          <div class="wizard-step-panel" id="wizardStep6" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#92400e;"><span class="badge rounded-pill me-2" style="background:#92400e;">6</span>Seksyon 5 — Sètifikasyon ak Siyati</h6>
+              </div>
+              <div class="dash-card-body">
+                <%= render "citizens/dgi/siyati_content" %>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 7: Peyman %>
+          <div class="wizard-step-panel" id="wizardStep7" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">7</span>Peyman ak Soumisyon</h6>
+              </div>
+              <div class="dash-card-body">
+                <%# Fee Breakdown %>
+                <div class="wizard-trust-intro mb-3" role="status" style="border-left-color:#92400e;background:#fef3c7;">
+                  <h6 class="small fw-bold mb-2"><i class="ri-money-dollar-circle-line me-1"></i>Frè Sèvis</h6>
+                  <table class="table table-sm table-borderless small mb-0">
+                    <tr><td><i class="ri-government-line me-1" aria-hidden="true"></i>DGI (Taks DGI + CIP)</td><td class="text-end fw-semibold">2,168 HTG</td></tr>
+                    <tr><td><i class="ri-service-line me-1" aria-hidden="true"></i>Frè sèvis</td><td class="text-end fw-semibold text-success"><%= DgiPayment.bongouv_fee_for("business_registration").to_i %> HTG</td></tr>
+                    <tr class="border-top"><td class="fw-bold">Total</td><td class="text-end fw-bold"><%= number_with_delimiter(DgiPayment.service_fee_for("business_registration").to_i) %> HTG</td></tr>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="6" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="submit" class="btn btn-lg text-white" style="min-height:48px;min-width:200px;background:#D21034;border-color:#D21034;">
+                <i class="ri-send-plane-line me-1" aria-hidden="true"></i> Soumèt Anrejistreman
+              </button>
+            </div>
+          </div>
+
+        <%# ======================================================= %>
+        <%# PATENTE DECLARATION (DGI-F008) — 3 Steps %>
+        <%# ======================================================= %>
+        <% elsif @form_type == "patente_declaration" %>
+
+          <% pat_steps = ["Idantifikasyon", "Adrès", "Kalkil Taks", "Revize", "Siyati", "Peyman"] %>
+          <% pat_hints = ["Enfòmasyon antrepriz ak NIF", "Adrès biznis ak kontak", "Kalkil patant ak chif afe", "Revize tout enfòmasyon ou", "Sètifye ak siyen fòm lan", "Frè sèvis ak soumisyon"] %>
+          <div class="dash-card mb-4">
+            <div class="dash-card-body py-3">
+              <div class="dgi-wizard-progress" id="wizardProgress">
+                <% pat_steps.each_with_index do |label, i| %>
+                  <div class="wizard-step-indicator <%= 'active' if i == 0 %>" data-step="<%= i + 1 %>" data-hint="<%= pat_hints[i] %>" role="tab" tabindex="0" aria-current="<%= i == 0 ? 'step' : 'false' %>" aria-label="Etap <%= i + 1 %>: <%= label %>">
+                    <div class="wizard-step-dot" aria-hidden="true"><%= i + 1 %></div>
+                    <span class="wizard-step-label"><%= label %></span>
+                  </div>
+                  <% if i < pat_steps.length - 1 %><div class="wizard-step-line"></div><% end %>
+                <% end %>
+              </div>
+              <p class="wizard-step-hint text-center text-muted small mb-0 mt-2" id="wizardStepHint"><%= pat_hints[0] %></p>
+            </div>
+          </div>
+
+          <%# STEP 1: Identification %>
+          <div class="wizard-step-panel" id="wizardStep1" style="display:block;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">1</span>Idantifikasyon Antrepriz</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Ane Fiskal <span class="text-danger">*</span></label>
+                    <%= select_tag :annee_fiscale, options_for_select((Time.current.year.downto(Time.current.year - 5)).map { |y| [y, y] }, Time.current.year), class: "form-select", required: true %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Tip Deklarasyon</label>
+                    <%= select_tag :type_declaration,
+                        options_for_select([["Orijinal", "originale"], ["Rektifikatif", "rectificative"]], "originale"),
+                        class: "form-select" %>
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label fw-semibold">Rezon Sosyal <span class="text-danger">*</span></label>
+                    <%= text_field_tag :raison_sociale, nil, class: "form-control", required: true, placeholder: "ex: Biznis Ayiti SA" %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">NIF Antrepriz</label>
+                    <%= text_field_tag :nif_entreprise, @auto_fill[:nif], class: "form-control", placeholder: "ex: 000-000-000", readonly: @auto_fill[:nif].present? %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sektè Aktivite</label>
+                    <%= select_tag :code_secteur,
+                        options_for_select((@secteurs || {}).map { |k, v| ["#{k} — #{v}", k] }),
+                        class: "form-select", prompt: "-- Chwazi --" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              <% end %>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 2: Adrès ak Kontak %>
+          <div class="wizard-step-panel" id="wizardStep2" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">2</span>Adrès ak Kontak</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
+                <div class="row g-3">
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Depatman</label>
+                    <%= select_tag :departement,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI, @auto_fill[:department]),
+                        class: "form-select", prompt: "-- Chwazi --", disabled: @auto_fill[:department].present? %>
+                    <%= hidden_field_tag :departement, @auto_fill[:department] if @auto_fill[:department].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Komin</label>
+                    <%= text_field_tag :commune, @auto_fill[:commune], class: "form-control", placeholder: "ex: Pétion-Ville", readonly: @auto_fill[:commune].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Seksyon Kominal</label>
+                    <%= text_field_tag :section_communale, @auto_fill[:section_communale], class: "form-control", placeholder: "ex: 1è Seksyon", readonly: @auto_fill[:section_communale].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Zòn / Lokalite</label>
+                    <%= text_field_tag :ville, @auto_fill[:locality], class: "form-control", placeholder: "ex: Boulva 15", readonly: @auto_fill[:locality].present? %>
+                  </div>
+                  <div class="col-12 bonid-autofill">
+                    <label class="form-label fw-semibold">Adrès Ri (Nimewo ak Non Ri)</label>
+                    <%= text_field_tag :adresse, @auto_fill[:street_address], class: "form-control", placeholder: "ex: 12 Ri Kapwa", readonly: @auto_fill[:street_address].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Kòd Postal</label>
+                    <%= text_field_tag :code_postal, @auto_fill[:postal_code], class: "form-control", placeholder: "ex: HT6110", readonly: @auto_fill[:postal_code].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Peyi</label>
+                    <%= text_field_tag :pays, "Haiti", class: "form-control", readonly: true %>
+                                      </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Telefon</label>
+                    <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", placeholder: "ex: +509 3XXX XXXX", readonly: @auto_fill[:phone].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Imel</label>
+                    <%= email_field_tag :email_contact, @auto_fill[:email], class: "form-control", placeholder: "ex: non@imel.com", readonly: @auto_fill[:email].present? %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 3: Tax Calculation %>
+          <div class="wizard-step-panel" id="wizardStep3" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">3</span>Kalkil Patant (Seksyon IV)</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Liy 1 — Pati Fiks (Dwa Fiks) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :droit_fixe, nil, class: "form-control", min: 0, step: 0.01, required: true, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Liy 2 — Chif Afe (Revni) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :chiffre_affaires, nil, class: "form-control", min: 0, step: 0.01, required: true, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Liy 3 — Mas Salaryal</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :patente_proportionnelle, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Egzonerasyon</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :montant_exoneration, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">DSAV</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :dsav, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">CIP</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :cp, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Enterè Reta</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :interets_retard, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Amand</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :amende, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 4: Revize %>
+          <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">4</span>Revize Enfòmasyon Ou</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
+                  <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
+                </button>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
+                <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
+                  <h6 class="wizard-summary__heading"><i class="ri-store-2-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Deklarasyon Patant</h6>
+                  <div id="summaryContent"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 5: Siyati %>
+          <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#92400e;"><span class="badge rounded-pill me-2" style="background:#92400e;">5</span>Sètifikasyon ak Siyati</h6>
+              </div>
+              <div class="dash-card-body">
+                <%= render "citizens/dgi/siyati_content" %>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 6: Peyman %>
+          <div class="wizard-step-panel" id="wizardStep6" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">6</span>Peyman ak Soumisyon</h6>
+              </div>
+              <div class="dash-card-body">
+                <%# Fee Breakdown %>
+                <div class="wizard-trust-intro mb-3" role="status" style="border-left-color:#92400e;background:#fef3c7;">
+                  <h6 class="small fw-bold mb-2"><i class="ri-money-dollar-circle-line me-1"></i>Frè Sèvis</h6>
+                  <table class="table table-sm table-borderless small mb-0">
+                    <tr><td><i class="ri-government-line me-1" aria-hidden="true"></i>DGI (Dwa Fiks)</td><td class="text-end fw-semibold">1,250 – 5,000 HTG</td></tr>
+                    <tr><td><i class="ri-service-line me-1" aria-hidden="true"></i>Frè sèvis</td><td class="text-end fw-semibold text-success"><%= DgiPayment.bongouv_fee_for("patente_declaration").to_i %> HTG</td></tr>
+                    <tr><td><i class="ri-calculator-line me-1" aria-hidden="true"></i>Taks Patant</td><td class="text-end fst-italic text-muted">Kalkile apre soumisyon</td></tr>
+                  </table>
+                  <p class="mb-0 small text-muted mt-2"><i class="ri-information-line me-1" aria-hidden="true"></i>Dwa fiks varye selon gwoup komin ou.</p>
+                </div>
+
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="submit" class="btn btn-lg text-white" style="min-height:48px;min-width:200px;background:#D21034;border-color:#D21034;">
+                <i class="ri-send-plane-line me-1" aria-hidden="true"></i> Soumèt Deklarasyon Patant
+              </button>
+            </div>
+          </div>
+
+        <%# ======================================================= %>
+        <%# TCA DECLARATION — 3 Steps %>
+        <%# ======================================================= %>
+        <% elsif @form_type == "tca_declaration" %>
+
+          <% tca_steps = ["Idantifikasyon", "Adrès", "Kalkil TCA", "Revize", "Siyati", "Peyman"] %>
+          <% tca_hints = ["Enfòmasyon antrepriz ak NIF", "Adrès biznis ak kontak", "Kalkil TCA 10% sou chif afe", "Revize tout enfòmasyon ou", "Sètifye ak siyen fòm lan", "Frè sèvis ak soumisyon"] %>
+          <div class="dash-card mb-4">
+            <div class="dash-card-body py-3">
+              <div class="dgi-wizard-progress" id="wizardProgress">
+                <% tca_steps.each_with_index do |label, i| %>
+                  <div class="wizard-step-indicator <%= 'active' if i == 0 %>" data-step="<%= i + 1 %>" data-hint="<%= tca_hints[i] %>" role="tab" tabindex="0" aria-current="<%= i == 0 ? 'step' : 'false' %>" aria-label="Etap <%= i + 1 %>: <%= label %>">
+                    <div class="wizard-step-dot" aria-hidden="true"><%= i + 1 %></div>
+                    <span class="wizard-step-label"><%= label %></span>
+                  </div>
+                  <% if i < tca_steps.length - 1 %><div class="wizard-step-line"></div><% end %>
+                <% end %>
+              </div>
+              <p class="wizard-step-hint text-center text-muted small mb-0 mt-2" id="wizardStepHint"><%= tca_hints[0] %></p>
+            </div>
+          </div>
+
+          <%# STEP 1: Identification %>
+          <div class="wizard-step-panel" id="wizardStep1" style="display:block;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">1</span>Idantifikasyon Antrepriz</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Ane Fiskal <span class="text-danger">*</span></label>
+                    <%= select_tag :annee_fiscale, options_for_select((Time.current.year.downto(Time.current.year - 5)).map { |y| [y, y] }, Time.current.year), class: "form-select", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Mwa <span class="text-danger">*</span></label>
+                    <%= select_tag :mois_declaration,
+                        options_for_select((1..12).map { |m| [Date::MONTHNAMES[m], m] }, Time.current.month),
+                        class: "form-select", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Tip</label>
+                    <%= select_tag :type_declaration,
+                        options_for_select([["Orijinal", "originale"], ["Rektifikatif", "rectificative"]], "originale"),
+                        class: "form-select" %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Rezon Sosyal <span class="text-danger">*</span></label>
+                    <%= text_field_tag :raison_sociale, nil, class: "form-control", required: true, placeholder: "ex: Biznis Ayiti SA" %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">NIF Antrepriz</label>
+                    <%= text_field_tag :nif_entreprise, @auto_fill[:nif], class: "form-control", placeholder: "ex: 000-000-000", readonly: @auto_fill[:nif].present? %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Nimewo Patant</label>
+                    <%= text_field_tag :numero_patente, nil, class: "form-control", placeholder: "ex: PAT-2026-001" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              <% end %>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 2: Adrès ak Kontak %>
+          <div class="wizard-step-panel" id="wizardStep2" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">2</span>Adrès ak Kontak</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
+                <div class="row g-3">
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Depatman</label>
+                    <%= select_tag :departement,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI, @auto_fill[:department]),
+                        class: "form-select", prompt: "-- Chwazi --", disabled: @auto_fill[:department].present? %>
+                    <%= hidden_field_tag :departement, @auto_fill[:department] if @auto_fill[:department].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Komin</label>
+                    <%= text_field_tag :commune, @auto_fill[:commune], class: "form-control", placeholder: "ex: Pétion-Ville", readonly: @auto_fill[:commune].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Seksyon Kominal</label>
+                    <%= text_field_tag :section_communale, @auto_fill[:section_communale], class: "form-control", placeholder: "ex: 1è Seksyon", readonly: @auto_fill[:section_communale].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Zòn / Lokalite</label>
+                    <%= text_field_tag :ville, @auto_fill[:locality], class: "form-control", placeholder: "ex: Boulva 15", readonly: @auto_fill[:locality].present? %>
+                  </div>
+                  <div class="col-12 bonid-autofill">
+                    <label class="form-label fw-semibold">Adrès Ri (Nimewo ak Non Ri)</label>
+                    <%= text_field_tag :adresse, @auto_fill[:street_address], class: "form-control", placeholder: "ex: 12 Ri Kapwa", readonly: @auto_fill[:street_address].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Kòd Postal</label>
+                    <%= text_field_tag :code_postal, @auto_fill[:postal_code], class: "form-control", placeholder: "ex: HT6110", readonly: @auto_fill[:postal_code].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Peyi</label>
+                    <%= text_field_tag :pays, "Haiti", class: "form-control", readonly: true %>
+                                      </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Telefon</label>
+                    <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", placeholder: "ex: +509 3XXX XXXX", readonly: @auto_fill[:phone].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Imel</label>
+                    <%= email_field_tag :email_contact, @auto_fill[:email], class: "form-control", placeholder: "ex: non@imel.com", readonly: @auto_fill[:email].present? %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 3: TCA Calculation %>
+          <div class="wizard-step-panel" id="wizardStep3" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">3</span>Kalkil TCA (10%)</h6>
+              </div>
+              <div class="dash-card-body">
+                <h6 class="text-muted mb-3">TCA Kolekte</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Chif Afe Brit <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :chiffre_affaires_brut, nil, class: "form-control", min: 0, step: 0.01, required: true, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Vant Egzonere</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :ventes_exonerees, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Vant Ekspòtasyon</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :ventes_exportation, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+                <hr>
+                <h6 class="text-muted mb-3">TCA Dediktib (Kredi)</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Acha Lokal ak TCA</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :achats_locaux_tca, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Enpòtasyon ak TCA</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :achats_importation_tca, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">TCA Retni nan Sous</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :tca_retenu_source, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Enterè Reta</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :interets_retard, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Amand</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :amende, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 4: Revize %>
+          <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">4</span>Revize Enfòmasyon Ou</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
+                  <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
+                </button>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
+                <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
+                  <h6 class="wizard-summary__heading"><i class="ri-percent-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Deklarasyon TCA</h6>
+                  <div id="summaryContent"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 5: Siyati %>
+          <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#92400e;"><span class="badge rounded-pill me-2" style="background:#92400e;">5</span>Sètifikasyon ak Siyati</h6>
+              </div>
+              <div class="dash-card-body">
+                <%= render "citizens/dgi/siyati_content" %>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 6: Peyman %>
+          <div class="wizard-step-panel" id="wizardStep6" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">6</span>Peyman ak Soumisyon</h6>
+              </div>
+              <div class="dash-card-body">
+                <%# Fee Breakdown %>
+                <div class="wizard-trust-intro mb-3" role="status" style="border-left-color:#92400e;background:#fef3c7;">
+                  <h6 class="small fw-bold mb-2"><i class="ri-money-dollar-circle-line me-1"></i>Frè Sèvis</h6>
+                  <table class="table table-sm table-borderless small mb-0">
+                    <tr><td><i class="ri-government-line me-1" aria-hidden="true"></i>DGI (Deklarasyon TCA)</td><td class="text-end fw-semibold">Gratuit</td></tr>
+                    <tr><td><i class="ri-service-line me-1" aria-hidden="true"></i>Frè sèvis</td><td class="text-end fw-semibold text-success"><%= DgiPayment.bongouv_fee_for("tca_declaration").to_i %> HTG</td></tr>
+                    <tr><td><i class="ri-calculator-line me-1" aria-hidden="true"></i>Taks TCA (10%)</td><td class="text-end fst-italic text-muted">Kalkile apre soumisyon</td></tr>
+                  </table>
+                  <p class="mb-0 small text-muted mt-2"><i class="ri-information-line me-1" aria-hidden="true"></i>Montan TCA kalkile sou chif afe brit ou.</p>
+                </div>
+
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="submit" class="btn btn-lg text-white" style="min-height:48px;min-width:200px;background:#D21034;border-color:#D21034;">
+                <i class="ri-send-plane-line me-1" aria-hidden="true"></i> Soumèt Deklarasyon TCA
+              </button>
+            </div>
+          </div>
+
+        <%# ======================================================= %>
+        <%# RAS IR DECLARATION (DGI-F005) — 4 Steps %>
+        <%# ======================================================= %>
+        <% elsif @form_type == "ras_ir_declaration" %>
+
+          <% ras_steps = ["Idantifikasyon", "Adrès", "Kalkil RAS", "Anplwaye", "Revize", "Siyati", "Peyman"] %>
+          <% ras_hints = ["Enfòmasyon antrepriz ak NIF", "Adrès biznis ak kontak", "Kalkil retni nan sous (IR)", "Lis anplwaye ak salè", "Revize tout enfòmasyon ou", "Sètifye ak siyen fòm lan", "Frè sèvis ak soumisyon"] %>
+          <div class="dash-card mb-4">
+            <div class="dash-card-body py-3">
+              <div class="dgi-wizard-progress many-steps" id="wizardProgress">
+                <% ras_steps.each_with_index do |label, i| %>
+                  <div class="wizard-step-indicator <%= 'active' if i == 0 %>" data-step="<%= i + 1 %>" data-hint="<%= ras_hints[i] %>" role="tab" tabindex="0" aria-current="<%= i == 0 ? 'step' : 'false' %>" aria-label="Etap <%= i + 1 %>: <%= label %>">
+                    <div class="wizard-step-dot" aria-hidden="true"><%= i + 1 %></div>
+                    <span class="wizard-step-label"><%= label %></span>
+                  </div>
+                  <% if i < ras_steps.length - 1 %><div class="wizard-step-line"></div><% end %>
+                <% end %>
+              </div>
+              <p class="wizard-step-hint text-center text-muted small mb-0 mt-2" id="wizardStepHint"><%= ras_hints[0] %></p>
+            </div>
+          </div>
+
+          <%# STEP 1: Identification %>
+          <div class="wizard-step-panel" id="wizardStep1" style="display:block;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">1</span>Idantifikasyon Antrepriz</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Ane Fiskal <span class="text-danger">*</span></label>
+                    <%= select_tag :annee_fiscale, options_for_select((Time.current.year.downto(Time.current.year - 5)).map { |y| [y, y] }, Time.current.year), class: "form-select", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Mwa <span class="text-danger">*</span></label>
+                    <%= select_tag :mois_declaration,
+                        options_for_select((1..12).map { |m| [Date::MONTHNAMES[m], m] }, Time.current.month),
+                        class: "form-select", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Tip</label>
+                    <%= select_tag :type_declaration,
+                        options_for_select([["Orijinal", "originale"], ["Rektifikatif", "rectificative"]], "originale"),
+                        class: "form-select" %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Rezon Sosyal <span class="text-danger">*</span></label>
+                    <%= text_field_tag :raison_sociale, nil, class: "form-control", required: true, placeholder: "ex: Biznis Ayiti SA" %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">NIF Antrepriz</label>
+                    <%= text_field_tag :nif_entreprise, @auto_fill[:nif], class: "form-control", placeholder: "ex: 000-000-000", readonly: @auto_fill[:nif].present? %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sektè Aktivite</label>
+                    <%= select_tag :code_secteur,
+                        options_for_select((@secteurs || {}).map { |k, v| ["#{k} — #{v}", k] }),
+                        class: "form-select", prompt: "-- Chwazi --" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              <% end %>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 2: Adrès ak Kontak %>
+          <div class="wizard-step-panel" id="wizardStep2" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">2</span>Adrès ak Kontak</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
+                <div class="row g-3">
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Depatman</label>
+                    <%= select_tag :departement,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI, @auto_fill[:department]),
+                        class: "form-select", prompt: "-- Chwazi --", disabled: @auto_fill[:department].present? %>
+                    <%= hidden_field_tag :departement, @auto_fill[:department] if @auto_fill[:department].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Komin</label>
+                    <%= text_field_tag :commune, @auto_fill[:commune], class: "form-control", placeholder: "ex: Pétion-Ville", readonly: @auto_fill[:commune].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Seksyon Kominal</label>
+                    <%= text_field_tag :section_communale, @auto_fill[:section_communale], class: "form-control", placeholder: "ex: 1è Seksyon", readonly: @auto_fill[:section_communale].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Zòn / Lokalite</label>
+                    <%= text_field_tag :ville, @auto_fill[:locality], class: "form-control", placeholder: "ex: Boulva 15", readonly: @auto_fill[:locality].present? %>
+                  </div>
+                  <div class="col-12 bonid-autofill">
+                    <label class="form-label fw-semibold">Adrès Ri (Nimewo ak Non Ri)</label>
+                    <%= text_field_tag :adresse, @auto_fill[:street_address], class: "form-control", placeholder: "ex: 12 Ri Kapwa", readonly: @auto_fill[:street_address].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Kòd Postal</label>
+                    <%= text_field_tag :code_postal, @auto_fill[:postal_code], class: "form-control", placeholder: "ex: HT6110", readonly: @auto_fill[:postal_code].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Peyi</label>
+                    <%= text_field_tag :pays, "Haiti", class: "form-control", readonly: true %>
+                                      </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Telefon</label>
+                    <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", placeholder: "ex: +509 3XXX XXXX", readonly: @auto_fill[:phone].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Imel</label>
+                    <%= email_field_tag :email_contact, @auto_fill[:email], class: "form-control", placeholder: "ex: non@imel.com", readonly: @auto_fill[:email].present? %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 3: RAS Calculation %>
+          <div class="wizard-step-panel" id="wizardStep3" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">3</span>Kalkil Retni nan Sous (Seksyon IV)</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="mb-3 p-2 rounded small" style="background:#f0f4ff;border:1px solid #ccd6f0;">
+                  <strong style="color:#00209F;"><i class="ri-information-line me-1"></i>Tranch Taks Revni:</strong>
+                  <% @tranches.each do |t| %>
+                    <span class="badge bg-light text-dark border ms-1"><%= t[:label] %></span>
+                  <% end %>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Salè Total Mansyel <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :salaires_montant, nil, class: "form-control", min: 0, step: 0.01, required: true, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Enpo sou Revni Retni (IR)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :salaires_impot, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Boni ak Sipleman Brit</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :bonis_montant, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Enpo sou Boni (10%)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :bonis_impot, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                    <small class="text-muted">Kalkile otomatikman si vid.</small>
+                  </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Dividann Brit</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :dividendes_montant, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Enpo sou Dividann (20%)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :dividendes_impot, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                    <small class="text-muted">Kalkile otomatikman si vid.</small>
+                  </div>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Enterè Reta</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :interets_retard, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Amand</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :amende, 0, class: "form-control", min: 0, step: 0.01, placeholder: "0.00" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 4: Employees %>
+          <div class="wizard-step-panel" id="wizardStep4" style="display:none;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">4</span>Lis Anplwaye (Anèks)</h6>
+              </div>
+              <div class="dash-card-body">
+                <p class="text-muted small mb-3">Ajoute anplwaye ki resevwa salè pandan mwa sa a.</p>
+                <div id="employeeRows">
+                  <% 3.times do |i| %>
+                    <div class="row g-2 mb-2 employee-row align-items-end">
+                      <div class="col-md-4">
+                        <% if i == 0 %><label class="form-label fw-semibold small">Non Anplwaye</label><% end %>
+                        <%= text_field_tag "employes[#{i}][nom_employe]", nil, class: "form-control form-control-sm", placeholder: "ex: Jean Pierre" %>
+                      </div>
+                      <div class="col-md-3">
+                        <% if i == 0 %><label class="form-label fw-semibold small">NIF Anplwaye</label><% end %>
+                        <%= text_field_tag "employes[#{i}][nif_employe]", nil, class: "form-control form-control-sm", placeholder: "000-000-000" %>
+                      </div>
+                      <div class="col-md-2">
+                        <% if i == 0 %><label class="form-label fw-semibold small">Salè Brit</label><% end %>
+                        <%= number_field_tag "employes[#{i}][salaire_brut]", nil, class: "form-control form-control-sm", min: 0, step: 0.01, placeholder: "0.00" %>
+                      </div>
+                      <div class="col-md-2">
+                        <% if i == 0 %><label class="form-label fw-semibold small">IR Retni</label><% end %>
+                        <%= number_field_tag "employes[#{i}][retenue_ir]", nil, class: "form-control form-control-sm", min: 0, step: 0.01, placeholder: "0.00" %>
+                      </div>
+                      <div class="col-md-1">
+                        <% if i > 0 %>
+                          <button type="button" class="btn btn-sm btn-outline-danger w-100 remove-employee-btn"><i class="ri-delete-bin-line"></i></button>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addEmployeeBtn">
+                  <i class="ri-add-line me-1"></i>Ajoute Anplwaye
+                </button>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 5: Revize %>
+          <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">5</span>Revize Enfòmasyon Ou</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
+                  <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
+                </button>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
+                <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
+                  <h6 class="wizard-summary__heading"><i class="ri-money-dollar-box-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Deklarasyon RAS IR</h6>
+                  <div id="summaryContent"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 6: Siyati %>
+          <div class="wizard-step-panel" id="wizardStep6" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#92400e;"><span class="badge rounded-pill me-2" style="background:#92400e;">6</span>Sètifikasyon ak Siyati</h6>
+              </div>
+              <div class="dash-card-body">
+                <%= render "citizens/dgi/siyati_content" %>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 7: Peyman %>
+          <div class="wizard-step-panel" id="wizardStep7" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">7</span>Peyman ak Soumisyon</h6>
+              </div>
+              <div class="dash-card-body">
+                <%# Fee Breakdown %>
+                <div class="wizard-trust-intro mb-3" role="status" style="border-left-color:#92400e;background:#fef3c7;">
+                  <h6 class="small fw-bold mb-2"><i class="ri-money-dollar-circle-line me-1"></i>Frè Sèvis</h6>
+                  <table class="table table-sm table-borderless small mb-0">
+                    <tr><td><i class="ri-government-line me-1" aria-hidden="true"></i>DGI (Deklarasyon RAS IR)</td><td class="text-end fw-semibold">Gratuit</td></tr>
+                    <tr><td><i class="ri-service-line me-1" aria-hidden="true"></i>Frè sèvis</td><td class="text-end fw-semibold text-success"><%= DgiPayment.bongouv_fee_for("ras_ir_declaration").to_i %> HTG</td></tr>
+                    <tr><td><i class="ri-calculator-line me-1" aria-hidden="true"></i>Retni sou salè</td><td class="text-end fst-italic text-muted">Kalkile apre soumisyon</td></tr>
+                  </table>
+                  <p class="mb-0 small text-muted mt-2"><i class="ri-information-line me-1" aria-hidden="true"></i>Montan retni kalkile sou lis salè anplwaye yo.</p>
+                </div>
+
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="6" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="submit" class="btn btn-lg text-white" style="min-height:48px;min-width:200px;background:#D21034;border-color:#D21034;">
+                <i class="ri-send-plane-line me-1" aria-hidden="true"></i> Soumèt Deklarasyon RAS IR
+              </button>
+            </div>
+          </div>
+
+        <%# ======================================================= %>
+        <%# FERMAGE (DGI-55) — Land Lease Tax — 6 Steps %>
+        <%# ======================================================= %>
+        <% elsif @form_type == "fermage" %>
+
+          <% frm_steps = ["Fèmye", "Adrès", "Pwopriyete", "Kalkil Taks", "Revize", "Siyati", "Peyman"] %>
+          <% frm_hints = ["Enfòmasyon sou fèmye a", "Adrès pwopriyete a", "Detay pwopriyete a", "Kalkil taks fèmaj", "Revize tout enfòmasyon ou", "Sètifye ak siyen fòm lan", "Frè sèvis ak soumisyon"] %>
+          <div class="dash-card mb-4">
+            <div class="dash-card-body py-3">
+              <div class="dgi-wizard-progress" id="wizardProgress">
+                <% frm_steps.each_with_index do |label, i| %>
+                  <div class="wizard-step-indicator <%= 'active' if i == 0 %>" data-step="<%= i + 1 %>" data-hint="<%= frm_hints[i] %>" role="tab" tabindex="0" aria-current="<%= i == 0 ? 'step' : 'false' %>" aria-label="Etap <%= i + 1 %>: <%= label %>">
+                    <div class="wizard-step-dot" aria-hidden="true"><%= i + 1 %></div>
+                    <span class="wizard-step-label"><%= label %></span>
+                  </div>
+                  <% if i < frm_steps.length - 1 %><div class="wizard-step-line"></div><% end %>
+                <% end %>
+              </div>
+              <p class="wizard-step-hint text-center text-muted small mb-0 mt-2" id="wizardStepHint"><%= frm_hints[0] %></p>
+            </div>
+          </div>
+
+          <%# STEP 1: Fermier Info %>
+          <div class="wizard-step-panel" id="wizardStep1" style="display:block;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">1</span>Enfòmasyon Fèmye</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-8 bonid-autofill">
+                    <label class="form-label fw-semibold">Non Fèmye <span class="text-danger">*</span></label>
+                    <%= text_field_tag :nom_fermier, @auto_fill[:full_name], class: "form-control", required: true, placeholder: "Non konplè fèmye a", readonly: @auto_fill[:full_name].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Nimewo CIN</label>
+                    <%= text_field_tag :cin_fermier, @auto_fill[:cin], class: "form-control", placeholder: "00-00-00-0000-00-00000", readonly: @auto_fill[:cin].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">NIF</label>
+                    <%= text_field_tag :nif_fermier, @auto_fill[:nif], class: "form-control", placeholder: "ex: 000-000-000", readonly: @auto_fill[:nif].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Demeurant à <span class="text-danger">*</span></label>
+                    <%= text_field_tag :demeurant_a, @auto_fill[:street_address], class: "form-control", required: true, placeholder: "Adrès rezidans", readonly: @auto_fill[:street_address].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Telefon</label>
+                    <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", placeholder: "+509 XXXX XXXX", readonly: @auto_fill[:phone].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Imel</label>
+                    <%= email_field_tag :email_contact, @auto_fill[:email], class: "form-control", placeholder: "non@imel.com", readonly: @auto_fill[:email].present? %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              <% end %>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 2: Address %>
+          <div class="wizard-step-panel" id="wizardStep2" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">2</span>Adrès Pwopriyete</h6>
+                <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
+              </div>
+              <div class="dash-card-body">
+                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Kote pwopriyete a ye</p>
+                <div class="row g-3">
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Depatman <span class="text-danger">*</span></label>
+                    <%= select_tag :departement,
+                        options_for_select(RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI, @auto_fill[:department]),
+                        class: "form-select", required: true, prompt: "-- Chwazi --", disabled: @auto_fill[:department].present? %>
+                    <%= hidden_field_tag :departement, @auto_fill[:department] if @auto_fill[:department].present? %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Komin <span class="text-danger">*</span></label>
+                    <%= text_field_tag :commune, @auto_fill[:commune], class: "form-control", required: true, placeholder: "ex: Côtes-de-Fer", readonly: @auto_fill[:commune].present? %>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Seksyon Kominal <span class="text-danger">*</span></label>
+                    <%= text_field_tag :section_communale, nil, class: "form-control", required: true, placeholder: "ex: 1è Seksyon" %>
+                  </div>
+                  <div class="col-md-6 bonid-autofill">
+                    <label class="form-label fw-semibold">Zòn / Lokalite</label>
+                    <%= text_field_tag :ville, @auto_fill[:locality], class: "form-control", placeholder: "ex: Boulva 15", readonly: @auto_fill[:locality].present? %>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Habitasyon oswa Ri <span class="text-danger">*</span></label>
+                    <%= text_field_tag :habitation_ou_rue, nil, class: "form-control", required: true, placeholder: "Non abitasyon oswa ri kote tè a ye" %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Kòd Postal</label>
+                    <%= text_field_tag :code_postal, @auto_fill[:postal_code], class: "form-control", placeholder: "ex: HT6110", readonly: @auto_fill[:postal_code].present? %>
+                  </div>
+                  <div class="col-md-4 bonid-autofill">
+                    <label class="form-label fw-semibold">Peyi</label>
+                    <%= text_field_tag :pays, @auto_fill[:country] || "Haiti", class: "form-control", readonly: true %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 3: Property Details %>
+          <div class="wizard-step-panel" id="wizardStep3" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">3</span>Detay Pwopriyete</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Egzèsis (Ane Fiskal) <span class="text-danger">*</span></label>
+                    <%= select_tag :exercice, options_for_select((Time.current.year.downto(Time.current.year - 5)).map { |y| ["#{y}-#{y+1}", "#{y}-#{y+1}"] }, "#{Time.current.year}-#{Time.current.year + 1}"), class: "form-select", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Sipèfisi (Karo)</label>
+                    <%= number_field_tag :superficie, nil, class: "form-control", min: 0, step: 0.01, placeholder: "ex: 4.5" %>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">No. Kadast</label>
+                    <%= text_field_tag :no_cadastre, nil, class: "form-control", placeholder: "ex: 27" %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 4: Tax Calculation %>
+          <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">4</span>Kalkil Taks Fèmaj</h6>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Ranpli montan yo jan yo endike sou resi DGI-55 ou a.</p>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Dwa Anyèl (Gdes) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :droit_annuel, nil, class: "form-control", min: 0, step: 0.01, required: true, placeholder: "0.00", id: "droitAnnuel" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Sitaks (Gdes)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :surtaxe, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00", id: "surtaxe" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">D.T.P. (Gdes)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :dtp, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00", id: "dtp" %>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Solidarite (Gdes)</label>
+                    <div class="input-group">
+                      <span class="input-group-text">HTG</span>
+                      <%= number_field_tag :solidarite, nil, class: "form-control", min: 0, step: 0.01, placeholder: "0.00", id: "solidarite" %>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-3 p-3 rounded" style="background:#f0f4ff; border:1px solid #c7d2fe;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="ri-calculator-line me-1" style="color:#00209F;"></i>Montan Total</span>
+                    <span class="fw-bold fs-5" id="fermageTotal" style="color:#00209F;">0.00 HTG</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 5: Revize %>
+          <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">5</span>Revize Enfòmasyon Ou</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn"><i class="ri-printer-line me-1"></i>Enprime</button>
+              </div>
+              <div class="dash-card-body">
+                <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye.</p>
+                <div class="wizard-summary" id="wizardSummary">
+                  <h6 class="wizard-summary__heading"><i class="ri-file-list-3-line me-2" style="color:#00209F;"></i>Rezime Fèmaj DGI-55</h6>
+                  <div id="summaryContent"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 6: Siyati %>
+          <div class="wizard-step-panel" id="wizardStep6" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#92400e;"><span class="badge rounded-pill me-2" style="background:#92400e;">6</span>Sètifikasyon ak Siyati</h6>
+              </div>
+              <div class="dash-card-body">
+                <%= render "citizens/dgi/siyati_content" %>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </div>
+
+          <%# STEP 7: Peyman %>
+          <div class="wizard-step-panel" id="wizardStep7" style="display:none;" aria-hidden="true">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h6 class="dash-card-title" style="color:#D21034;"><span class="badge rounded-pill me-2" style="background:#D21034;">7</span>Peyman ak Soumisyon</h6>
+              </div>
+              <div class="dash-card-body">
+                <div class="wizard-trust-intro mb-3" role="status" style="border-left-color:#92400e;background:#fef3c7;">
+                  <h6 class="small fw-bold mb-2"><i class="ri-money-dollar-circle-line me-1"></i>Frè Sèvis</h6>
+                  <table class="table table-sm table-borderless small mb-0">
+                    <tr><td><i class="ri-government-line me-1"></i>DGI (Taks Fèmaj)</td><td class="text-end fst-italic text-muted">Kalkile nan etap 4</td></tr>
+                    <tr><td><i class="ri-service-line me-1"></i>Frè sèvis</td><td class="text-end fw-semibold text-success"><%= DgiPayment.bongouv_fee_for("fermage").to_i %> HTG</td></tr>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+            <div class="d-flex justify-content-between mt-3">
+              <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="6" style="min-height:48px;">
+                <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
+              </button>
+              <button type="submit" class="btn btn-lg text-white" style="min-height:48px;min-width:200px;background:#D21034;border-color:#D21034;">
+                <i class="ri-send-plane-line me-1"></i> Soumèt Deklarasyon Fèmaj
+              </button>
+            </div>
+          </div>
+
+        <% end %>
+      <% end %>
+
+  </div>
+</div>
+
+<%# ======================================================= %>
+<%# Wizard JS + CSS %>
+<%# ======================================================= %>
+<% wiz_steps = case @form_type
+     when "business_registration", "ras_ir_declaration", "fermage" then 7
+     when "nif_registration", "patente_declaration", "tca_declaration" then 6
+     else 5
+   end %>
+
+<% wiz_summary = case @form_type
+     when "nif_registration"
+       [
+        { group: "Enfòmasyon Pèsonèl", icon: "ri-user-line", fields: [
+          { label: "Non", sel: '[name="nom"]' }, { label: "Prenon", sel: '[name="prenom"]' },
+          { label: "Dat Nesans", sel: '[name="date_naissance"]' },
+          { label: "Kote Ou Fèt", sel: '[name="lieu_naissance"]' },
+          { label: "Seks", sel: '[name="sexe"]' },
+          { label: "Eta Sivil", sel: '[name="etat_civil"]' },
+          { label: "Nasyonalite", sel: '[name="nationalite"]' },
+          { label: "Nimewo CIN", sel: '[name="numero_cin"]' }
+        ]},
+        { group: "Adrès ak Kontak", icon: "ri-map-pin-line", fields: [
+          { label: "Depatman", sel: '[name="departement"]' },
+          { label: "Komin", sel: '[name="commune"]' },
+          { label: "Seksyon Kominal", sel: '[name="section_communale"]' },
+          { label: "Adrès Ri", sel: '[name="rue"]' },
+          { label: "Kòd Postal", sel: '[name="code_postal"]' },
+          { label: "Telefon", sel: '[name="telephone"]' },
+          { label: "Imel", sel: '[name="email_contact"]' }
+        ]},
+        { group: "Aktivite Ekonomik", icon: "ri-briefcase-line", fields: [
+          { label: "Tip Aktivite", sel: '[name="type_activite"]' },
+          { label: "Revni Anyel", sel: '[name="revenu_annuel"]' },
+          { label: "Deskripsyon Aktivite", sel: '[name="description_activite"]' }
+        ]}
+       ]
+     when "business_registration"
+       [
+        { group: "Enfòmasyon Biznis", icon: "ri-building-line", fields: [
+          { label: "Rezon Sosyal", sel: '[name="nom_entreprise"]' }, { label: "Non Komèsyal", sel: '[name="nom_commercial"]' },
+          { label: "Fòm Jridik", sel: '[name="forme_juridique"]' }, { label: "Sektè", sel: '[name="code_secteur"]' },
+          { label: "Dat Kreyasyon", sel: '[name="date_creation"]' }, { label: "Anplwaye", sel: '[name="nombre_employes"]' }
+        ]},
+        { group: "Kontak", icon: "ri-phone-line", fields: [
+          { label: "Telefon", sel: '[name="telephone"]' }, { label: "Imel", sel: '[name="email_contact"]' }
+        ]},
+        { group: "Adrès", icon: "ri-map-pin-line", fields: [
+          { label: "Depatman", sel: '[name="departement"]' }, { label: "Komin", sel: '[name="commune"]' },
+          { label: "Adrès Ri", sel: '[name="rue"]' }
+        ]}
+       ]
+     when "patente_declaration"
+       [
+        { group: "Idantifikasyon", icon: "ri-building-line", fields: [
+          { label: "Ane Fiskal", sel: '[name="annee_fiscale"]' },
+          { label: "Tip Deklarasyon", sel: '[name="type_declaration"]' },
+          { label: "Rezon Sosyal", sel: '[name="raison_sociale"]' },
+          { label: "NIF Antrepriz", sel: '[name="nif_entreprise"]' },
+          { label: "Sektè Aktivite", sel: '[name="code_secteur"]' }
+        ]},
+        { group: "Adrès ak Kontak", icon: "ri-map-pin-line", fields: [
+          { label: "Depatman", sel: '[name="departement"]' },
+          { label: "Komin", sel: '[name="commune"]' },
+          { label: "Adrès Ri", sel: '[name="rue"]' },
+          { label: "Telefon", sel: '[name="telephone"]' }
+        ]},
+        { group: "Kalkil Taks", icon: "ri-calculator-line", fields: [
+          { label: "Chif Afe", sel: '[name="chiffre_affaires"]' },
+          { label: "Dwa Fiks", sel: '[name="droit_fixe"]' }
+        ]}
+       ]
+     when "tca_declaration"
+       [
+        { group: "Idantifikasyon", icon: "ri-building-line", fields: [
+          { label: "Rezon Sosyal", sel: '[name="raison_sociale"]' },
+          { label: "NIF Antrepriz", sel: '[name="nif_entreprise"]' },
+          { label: "Mwa Deklarasyon", sel: '[name="mois_declaration"]' },
+          { label: "Ane Fiskal", sel: '[name="annee_fiscale"]' }
+        ]},
+        { group: "Adrès ak Kontak", icon: "ri-map-pin-line", fields: [
+          { label: "Depatman", sel: '[name="departement"]' },
+          { label: "Komin", sel: '[name="commune"]' },
+          { label: "Telefon", sel: '[name="telephone"]' }
+        ]},
+        { group: "Kalkil TCA", icon: "ri-calculator-line", fields: [
+          { label: "Chif Afe Brit", sel: '[name="chiffre_affaires_brut"]' }
+        ]}
+       ]
+     when "ras_ir_declaration"
+       [
+        { group: "Idantifikasyon", icon: "ri-building-line", fields: [
+          { label: "Rezon Sosyal", sel: '[name="raison_sociale"]' },
+          { label: "NIF Antrepriz", sel: '[name="nif_entreprise"]' },
+          { label: "Mwa Deklarasyon", sel: '[name="mois_declaration"]' },
+          { label: "Ane Fiskal", sel: '[name="annee_fiscale"]' },
+          { label: "Sektè Aktivite", sel: '[name="code_secteur"]' }
+        ]},
+        { group: "Adrès ak Kontak", icon: "ri-map-pin-line", fields: [
+          { label: "Depatman", sel: '[name="departement"]' },
+          { label: "Komin", sel: '[name="commune"]' },
+          { label: "Telefon", sel: '[name="telephone"]' }
+        ]},
+        { group: "Kalkil RAS IR", icon: "ri-calculator-line", fields: [
+          { label: "Salè Total", sel: '[name="salaires_montant"]' }
+        ]}
+       ]
+     when "fermage"
+       [
+        { group: "Enfòmasyon Fèmye", icon: "ri-user-line", fields: [
+          { label: "Non Fèmye", sel: '[name="nom_fermier"]' },
+          { label: "Nimewo CIN", sel: '[name="cin_fermier"]' },
+          { label: "NIF", sel: '[name="nif_fermier"]' },
+          { label: "Demeurant à", sel: '[name="demeurant_a"]' },
+          { label: "Telefon", sel: '[name="telephone"]' },
+          { label: "Imel", sel: '[name="email_contact"]' }
+        ]},
+        { group: "Adrès Pwopriyete", icon: "ri-map-pin-line", fields: [
+          { label: "Depatman", sel: '[name="departement"]' },
+          { label: "Komin", sel: '[name="commune"]' },
+          { label: "Seksyon Kominal", sel: '[name="section_communale"]' },
+          { label: "Zòn / Lokalite", sel: '[name="ville"]' },
+          { label: "Habitasyon/Ri", sel: '[name="habitation_ou_rue"]' },
+          { label: "Kòd Postal", sel: '[name="code_postal"]' },
+          { label: "Peyi", sel: '[name="pays"]' }
+        ]},
+        { group: "Detay Pwopriyete", icon: "ri-landscape-line", fields: [
+          { label: "Egzèsis", sel: '[name="exercice"]' },
+          { label: "Sipèfisi (Karo)", sel: '[name="superficie"]' },
+          { label: "No. Kadast", sel: '[name="no_cadastre"]' }
+        ]},
+        { group: "Kalkil Taks Fèmaj", icon: "ri-calculator-line", fields: [
+          { label: "Dwa Anyèl", sel: '[name="droit_annuel"]' },
+          { label: "Sitaks", sel: '[name="surtaxe"]' },
+          { label: "D.T.P.", sel: '[name="dtp"]' },
+          { label: "Solidarite", sel: '[name="solidarite"]' }
+        ]}
+       ]
+     else []
+   end %>
+
+<%= render "partner_portal/shared/wizard_assets", total_steps: wiz_steps, summary_fields: wiz_summary %>
+
+<% if @draft.present? %>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var draftData = <%= raw @draft_data.to_json %>;
+  var draftStep = <%= @draft_step %>;
+  var form = document.getElementById("wizardForm");
+  if (!form) return;
+
+  // Restore form field values from draft
+  Object.keys(draftData).forEach(function(key) {
+    // Skip internal draft metadata
+    if (key === "draft_step" || key === "draft_updated_at" || key === "filed_by") return;
+    var input = form.querySelector('[name="' + key + '"]');
+    if (!input) return;
+    if (input.type === "file" || input.type === "hidden") return;
+    if (input.readOnly || input.disabled) return;
+
+    if (input.tagName === "SELECT") {
+      // Try to set select value
+      for (var i = 0; i < input.options.length; i++) {
+        if (input.options[i].value === draftData[key]) {
+          input.selectedIndex = i;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+          break;
+        }
+      }
+    } else if (input.type === "radio") {
+      var radios = form.querySelectorAll('[name="' + key + '"]');
+      radios.forEach(function(r) {
+        if (r.value === draftData[key]) {
+          r.checked = true;
+          r.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      });
+    } else if (input.type === "checkbox") {
+      input.checked = draftData[key] === "1" || draftData[key] === "true";
+    } else {
+      input.value = draftData[key];
+    }
+  });
+
+  // Navigate to saved step
+  if (draftStep > 1 && window.__wizardShowStep) {
+    setTimeout(function() {
+      window.__wizardShowStep(draftStep);
+    }, 300);
+  }
+});
+</script>
+<% end %>
+
+<% if @form_type == "business_registration" %>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Toggle établissements section
+  var etablSection = document.getElementById("etablissementsSection");
+  document.querySelectorAll('input[name="autres_etablissements"]').forEach(function(radio) {
+    radio.addEventListener("change", function() {
+      etablSection.style.display = this.value === "oui" ? "block" : "none";
+    });
+  });
+
+  // Add new établissement row
+  var etablIdx = 3;
+  var addEtablBtn = document.getElementById("addEtablissementBtn");
+  if (addEtablBtn) {
+    addEtablBtn.addEventListener("click", function() {
+      var row = document.createElement("div");
+      row.className = "border rounded p-3 mb-3 etablissement-row";
+      row.innerHTML =
+        '<div class="d-flex justify-content-between mb-2"><p class="fw-semibold small mb-0" style="color:#D21034;">Etablisman '+etablIdx+'</p>' +
+        '<button type="button" class="btn btn-sm btn-outline-danger remove-etablissement-btn"><i class="ri-delete-bin-line"></i></button></div>' +
+        '<div class="row g-2">' +
+        '<div class="col-md-6"><label class="form-label small">30a. Non Komèsyal</label><input type="text" name="etablissements['+etablIdx+'][nom_commercial]" class="form-control form-control-sm"></div>' +
+        '<div class="col-md-6"><label class="form-label small">30b. Nimewo ak Non Ri</label><input type="text" name="etablissements['+etablIdx+'][adresse]" class="form-control form-control-sm"></div>' +
+        '<div class="col-md-4"><label class="form-label small">30c. Zòn</label><input type="text" name="etablissements['+etablIdx+'][zone]" class="form-control form-control-sm"></div>' +
+        '<div class="col-md-4"><label class="form-label small">30d. Depatman</label><input type="text" name="etablissements['+etablIdx+'][departement]" class="form-control form-control-sm"></div>' +
+        '<div class="col-md-4"><label class="form-label small">30e. Komin</label><input type="text" name="etablissements['+etablIdx+'][commune]" class="form-control form-control-sm"></div>' +
+        '</div>';
+      document.getElementById("etablissementRows").appendChild(row);
+      etablIdx++;
+    });
+  }
+  document.addEventListener("click", function(e) {
+    if (e.target.closest(".remove-etablissement-btn")) {
+      e.target.closest(".etablissement-row").remove();
+    }
+  });
+});
+</script>
+<% end %>
+
+<% if @form_type == "ras_ir_declaration" %>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var idx = 3;
+  var addBtn = document.getElementById('addEmployeeBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', function() {
+      var row = document.createElement('div');
+      row.className = 'row g-2 mb-2 employee-row align-items-end';
+      row.innerHTML =
+        '<div class="col-md-4"><input type="text" name="employes['+idx+'][nom_employe]" class="form-control form-control-sm"></div>' +
+        '<div class="col-md-3"><input type="text" name="employes['+idx+'][nif_employe]" class="form-control form-control-sm"></div>' +
+        '<div class="col-md-2"><input type="number" name="employes['+idx+'][salaire_brut]" class="form-control form-control-sm" min="0" step="0.01"></div>' +
+        '<div class="col-md-2"><input type="number" name="employes['+idx+'][retenue_ir]" class="form-control form-control-sm" min="0" step="0.01"></div>' +
+        '<div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger w-100 remove-employee-btn"><i class="ri-delete-bin-line"></i></button></div>';
+      document.getElementById('employeeRows').appendChild(row);
+      idx++;
+    });
+  }
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.remove-employee-btn')) {
+      e.target.closest('.employee-row').remove();
+    }
+  });
+});
+</script>
+<% end %>
+
+<% if @form_type == "fermage" %>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var fields = ["droitAnnuel", "surtaxe", "dtp", "solidarite"];
+  var totalEl = document.getElementById("fermageTotal");
+  if (!totalEl) return;
+
+  function updateTotal() {
+    var total = 0;
+    fields.forEach(function(id) {
+      var val = parseFloat(document.getElementById(id)?.value || 0);
+      if (!isNaN(val)) total += val;
+    });
+    totalEl.textContent = total.toLocaleString("fr-HT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " HTG";
+  }
+
+  fields.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("input", updateTotal);
+      el.addEventListener("change", updateTotal);
+    }
+  });
+});
+</script>
+<% end %>
+
+<%# ================================================================ %>
+<%# BONGOUV STYLES — command bar + dashboard (matches DGI index) %>
+<%# ================================================================ %>
+<style>
+  /* ================================================================
+     BONGOUV DESIGN TOKENS — USWDS-aligned
+     Discrete palettes: color, spacing, typography, radius, shadow
+     All component styles reference these tokens exclusively.
+     ================================================================ */
+  :root {
+    /* ---- Color: Primary (Haitian Blue) ---- */
+    --bg-primary:           #00209F;
+    --bg-primary-dark:      #001570;
+    --bg-primary-light:     #f0f4ff;
+    --text-on-primary:      #FFFFFF;
+    --text-primary:         #00209F;
+
+    /* ---- Color: Accent (Haitian Red) ---- */
+    --bg-accent:            #D21034;
+    --text-accent:          #D21034;
+
+    /* ---- Color: Success / Warning / Error ---- */
+    --bg-success-light:     #d1fae5;
+    --text-success:         #065f46;
+    --text-success-vivid:   #059669;
+    --bg-warning-light:     #fef3c7;
+    --bg-warning:           #fffbeb;
+    --border-warning:       #fde68a;
+    --text-warning:         #92400e;
+    --text-warning-vivid:   #d97706;
+    --bg-error-light:       #fee2e2;
+    --text-error:           #991b1b;
+
+    /* ---- Color: Neutral ---- */
+    --bg-white:             #FFFFFF;
+    --bg-base-lightest:     #F8F9FA;
+    --bg-base-lighter:      #f8fafc;
+    --border-base:          #E0E0E0;
+    --border-light:         #e2e8f0;
+    --border-form:          #f3e8c8;
+    --text-base:            #1a1a2e;
+    --text-base-dark:       #374151;
+    --text-muted:           #6c757d;
+    --text-icon:            #64748B;
+    --text-ink:             #4b5563;
+
+    /* ---- Spacing (USWDS units: 1 unit = 8px) ---- */
+    --space-0:              0;
+    --space-05:             0.25rem;   /* 4px  — 0.5 units */
+    --space-1:              0.5rem;    /* 8px  — 1 unit */
+    --space-105:            0.625rem;  /* 10px — 1.25 units */
+    --space-2:              1rem;      /* 16px — 2 units */
+    --space-205:            1.25rem;   /* 20px — 2.5 units */
+    --space-3:              1.5rem;    /* 24px — 3 units */
+    --space-4:              2rem;      /* 32px — 4 units */
+
+    /* ---- Typography scale ---- */
+    --font-family-ui:       'Inter', 'Montserrat', sans-serif;
+    --font-family-heading:  'Montserrat', 'Inter', sans-serif;
+    --font-family-sig:      'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive;
+    --font-3xs:             0.6rem;    /* flag text */
+    --font-2xs:             0.7rem;    /* fees, chips */
+    --font-xs:              0.72rem;   /* labels, muted */
+    --font-sm:              0.78rem;   /* nav, hints */
+    --font-md:              0.8rem;    /* body small */
+    --font-base:            0.85rem;   /* base */
+    --font-lg:              0.88rem;   /* section headings */
+    --font-xl:              0.9rem;    /* card titles */
+    --font-2xl:             0.95rem;   /* icons */
+    --font-3xl:             1.05rem;   /* page title */
+    --font-sig:             1.6rem;    /* signature */
+    --font-weight-normal:   400;
+    --font-weight-medium:   500;
+    --font-weight-semibold: 600;
+    --font-weight-bold:     700;
+
+    /* ---- Border radius ---- */
+    --radius-sm:            4px;
+    --radius-md:            6px;
+    --radius-lg:            10px;
+    --radius-xl:            12px;
+    --radius-pill:          20px;
+
+    /* ---- Focus ---- */
+    --focus-color:          var(--bg-primary);
+    --focus-width:          2px;
+    --focus-offset:         2px;
+    --focus-shadow:         0 0 0 3px rgba(0, 32, 159, 0.25);
+
+    /* ---- Touch targets (WCAG 2.1 AA) ---- */
+    --touch-target-min:     44px;
+    --touch-target-btn:     48px;
+
+    /* ---- Transition ---- */
+    --transition-speed:     0.2s;
+  }
+
+  /* ================================================================
+     SKIP NAVIGATION — USWDS Accessibility
+     ================================================================ */
+  .bongouv-skip-nav {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 9999;
+    padding: var(--space-1) var(--space-2);
+    background: var(--bg-primary);
+    color: var(--text-on-primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-base);
+    text-decoration: none;
+    border-radius: 0 0 var(--radius-md) 0;
+  }
+  .bongouv-skip-nav:focus {
+    left: 0;
+    outline: var(--focus-width) solid var(--bg-accent);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* ================================================================
+     COMMAND BAR
+     ================================================================ */
+  .bongouv-command-bar {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-primary-dark) 100%);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: var(--space-2) var(--space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--space-05) solid var(--bg-accent);
+  }
+  .bongouv-command-bar__flag {
+    font-size: var(--font-3xs);
+    letter-spacing: 2.5px;
+    color: rgba(255,255,255,0.6);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+  }
+  .bongouv-verification-pill {
+    padding: var(--space-05) var(--space-105);
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-semibold);
+    display: inline-flex;
+    align-items: center;
+  }
+  .bongouv-verification-pill--verified { background: var(--bg-success-light); color: var(--text-success); }
+  .bongouv-verification-pill--pending  { background: var(--bg-warning-light); color: var(--text-warning); }
+
+  /* ================================================================
+     DASHBOARD CONTAINER
+     ================================================================ */
+  .bongouv-dashboard {
+    background: var(--bg-base-lightest);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    padding: var(--space-3);
+    font-family: var(--font-family-ui);
+    font-size: var(--font-base);
+    color: var(--text-base);
+  }
+  .bongouv-dashboard .form-label {
+    font-family: var(--font-family-ui);
+    font-size: var(--font-md);
+  }
+  .bongouv-dashboard .form-control,
+  .bongouv-dashboard .form-select {
+    font-family: var(--font-family-ui);
+    font-size: var(--font-base);
+  }
+  .bongouv-dashboard .alert {
+    font-family: var(--font-family-ui);
+    font-size: var(--font-md);
+  }
+
+  /* ================================================================
+     BONID AUTOFILL — locked fields
+     ================================================================ */
+  .bonid-autofill {
+    position: relative;
+  }
+  .bonid-autofill .form-control,
+  .bonid-autofill .form-select {
+    background-color: #f0f4ff !important;
+    border-color: #c7d2fe !important;
+    color: #4b5563 !important;
+    cursor: not-allowed;
+    opacity: 0.85;
+  }
+  .bonid-autofill .form-control:focus,
+  .bonid-autofill .form-select:focus {
+    box-shadow: none !important;
+    border-color: #c7d2fe !important;
+  }
+    font-size: 0.68rem;
+    color: #00209F;
+    font-weight: 500;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  /* ================================================================
+     STEP HINT
+     ================================================================ */
+  .wizard-step-hint {
+    font-size: var(--font-sm);
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ================================================================
+     CARDS — USWDS card pattern
+     ================================================================ */
+  .bongouv-dashboard .dash-card {
+    border: 1px solid var(--border-base) !important;
+    box-shadow: none !important;
+    background: var(--bg-white) !important;
+    border-radius: var(--radius-lg) !important;
+    overflow: hidden;
+    margin-bottom: var(--space-2);
+  }
+  .bongouv-dashboard .dash-card-header {
+    padding: var(--space-2) var(--space-205) !important;
+    border-bottom: 1px solid var(--border-base) !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-105);
+  }
+  .bongouv-dashboard .dash-card-body {
+    padding: var(--space-205) !important;
+  }
+  .bongouv-dashboard .dash-card-title {
+    font-family: var(--font-family-ui);
+    font-size: var(--font-xl) !important;
+    font-weight: var(--font-weight-bold) !important;
+    color: var(--text-base) !important;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+  }
+  .bongouv-dashboard .dash-card-title i {
+    color: var(--text-icon);
+    font-size: var(--font-2xl);
+  }
+
+  /* ================================================================
+     NAV BUTTONS (Help, Return)
+     ================================================================ */
+  .bongouv-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-05) 0.875rem;
+    background: rgba(255,255,255,0.15);
+    color: var(--text-on-primary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-sm);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    transition: background var(--transition-speed);
+    min-height: 36px;
+  }
+  .bongouv-nav-btn:hover { background: rgba(255,255,255,0.25); color: var(--text-on-primary); }
+  .bongouv-nav-btn:focus-visible {
+    outline: var(--focus-width) solid var(--text-on-primary);
+    outline-offset: var(--focus-offset);
+  }
+
+  /* ================================================================
+     CERTIFICATION / SIGNATURE
+     ================================================================ */
+  .dgi-certification-section {
+    background: var(--bg-warning);
+    border: 1px solid var(--border-warning);
+    border-left: var(--space-05) solid var(--text-warning-vivid);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-205);
+  }
+  .dgi-certification-section__heading {
+    font-size: var(--font-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-warning);
+    margin: 0 0 var(--space-1);
+  }
+  .dgi-certification-text {
+    font-size: var(--font-md);
+    color: var(--text-base-dark);
+    line-height: 1.5;
+    padding: var(--space-105) var(--space-2);
+    background: var(--bg-white);
+    border: 1px solid var(--border-form);
+    border-radius: var(--radius-sm);
+  }
+  .dgi-certification-text p { margin-bottom: var(--space-1); }
+  .dgi-certification-checkbox {
+    width: var(--space-205);
+    height: var(--space-205);
+    margin-top: var(--space-05);
+  }
+  .dgi-certification-checkbox:checked {
+    background-color: var(--bg-primary);
+    border-color: var(--bg-primary);
+  }
+  .dgi-certification-checkbox:focus {
+    box-shadow: var(--focus-shadow);
+  }
+
+  /* ================================================================
+     BONID SIGNATURE
+     ================================================================ */
+  .dgi-bonid-signature {
+    padding: var(--space-105) var(--space-2);
+    background: var(--bg-base-lighter);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+  }
+  .dgi-bonid-signature__text {
+    font-family: var(--font-family-sig);
+    font-size: var(--font-sig);
+    color: var(--text-base);
+    border-bottom: 1px solid var(--text-base-dark);
+    padding-bottom: var(--space-05);
+    display: inline-block;
+  }
+
+  /* ================================================================
+     SUBMIT BUTTON DISABLED
+     ================================================================ */
+  .dgi-submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ================================================================
+     FOCUS VISIBLE — USWDS Accessibility
+     ================================================================ */
+  .wizard-step-panel .form-control:focus-visible,
+  .wizard-step-panel .form-select:focus-visible {
+    outline: var(--focus-width) solid var(--focus-color);
+    outline-offset: 1px;
+    box-shadow: none;
+  }
+  .wizard-prev-btn:focus-visible,
+  .wizard-next-btn:focus-visible,
+  .dgi-submit-btn:focus-visible,
+  button[type="submit"]:focus-visible {
+    outline: var(--focus-width) solid var(--focus-color);
+    outline-offset: var(--focus-offset);
+  }
+  .dgi-certification-checkbox:focus-visible {
+    outline: var(--focus-width) solid var(--focus-color);
+    outline-offset: var(--focus-offset);
+    box-shadow: none;
+  }
+
+  /* ================================================================
+     REDUCED MOTION — USWDS Accessibility
+     ================================================================ */
+  @media (prefers-reduced-motion: reduce) {
+    .bongouv-nav-btn,
+    .wizard-step-dot,
+    .wizard-step-line,
+    .dgi-submit-btn {
+      transition: none;
+    }
+  }
+
+  /* ================================================================
+     RESPONSIVE — Mobile-first, WCAG touch targets
+     ================================================================ */
+  @media (max-width: 767px) {
+    .bongouv-command-bar { border-radius: 0; padding: var(--space-105) var(--space-2); }
+    .bongouv-dashboard { border-radius: 0; padding: var(--space-2); }
+    .bongouv-nav-btn { padding: var(--space-05) var(--space-105); font-size: var(--font-xs); }
+    .dgi-certification-section { padding: var(--space-105) 0.875rem; }
+    .dgi-certification-checkbox { width: var(--space-3); height: var(--space-3); }
+    .wizard-prev-btn,
+    .wizard-next-btn,
+    .dgi-submit-btn,
+    button[type="submit"] { min-height: var(--touch-target-btn); }
+    .wizard-step-panel .form-control,
+    .wizard-step-panel .form-select { min-height: var(--touch-target-min); font-size: 16px; }
+  }
+</style>
+
+<%# Certification checkbox enables/disables submit button %>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  var checkbox = document.getElementById("certificationAccepted");
+  var submitBtn = document.querySelector(".dgi-submit-btn");
+  if (checkbox && submitBtn) {
+    checkbox.addEventListener("change", function() {
+      submitBtn.disabled = !this.checked;
+    });
+  }
+});
+</script>

@@ -1,0 +1,105 @@
+<%# Partner Portal — NIF Registration Detail %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-id-card-line me-2"></i>NIF <code class="ms-2"><%= @record.nif_genere %></code></h4>
+      <p class="dash-subtitle">Kreye <%= @record.created_at.strftime("%d/%m/%Y a %H:%M") %></p>
+    </div>
+    <%= link_to partner_portal_nif_registrations_path, class: "btn btn-outline-secondary" do %>
+      <i class="ri-arrow-left-line me-1"></i>Retounen
+    <% end %>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <%# Personne %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-user-3-line me-2"></i>Enfòmasyon Pèsonèl</h6></div>
+        <div class="dash-card-body">
+          <table class="table table-borderless table-sm mb-0">
+            <tr><td class="text-muted" style="width:35%">Non Konplè</td><td class="fw-semibold"><%= @record.nif_nom_complet %></td></tr>
+            <tr><td class="text-muted">Dat Nesans</td><td><%= @record.nif_date_naissance %></td></tr>
+            <tr><td class="text-muted">Kote Fèt</td><td><%= @record.nif_lieu_naissance %></td></tr>
+            <tr><td class="text-muted">Seks</td><td><%= @record.nif_sexe_label %></td></tr>
+            <tr><td class="text-muted">Eta Sivil</td><td><%= @record.nif_etat_civil_label %></td></tr>
+            <tr><td class="text-muted">Nasyonalite</td><td><%= @record.nif_nationalite || "—" %></td></tr>
+            <tr><td class="text-muted">Nimewo CIN</td><td><code><%= @record.nif_numero_cin || "—" %></code></td></tr>
+            <% if @record.nif_numero_passeport.present? %>
+              <tr><td class="text-muted">Paspò</td><td><%= @record.nif_numero_passeport %></td></tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+      <%# Adresse %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-map-pin-line me-2"></i>Adrès</h6></div>
+        <div class="dash-card-body">
+          <table class="table table-borderless table-sm mb-0">
+            <tr><td class="text-muted" style="width:35%">Ri</td><td><%= @record.nif_adresse_rue %></td></tr>
+            <tr><td class="text-muted">Vil</td><td><%= @record.nif_ville %></td></tr>
+            <tr><td class="text-muted">Depatman</td><td><%= @record.nif_departement %></td></tr>
+            <tr><td class="text-muted">Komin</td><td><%= @record.nif_commune || "—" %></td></tr>
+            <tr><td class="text-muted">Telefon</td><td><%= @record.nif_telephone %></td></tr>
+            <tr><td class="text-muted">Imel</td><td><%= @record.nif_email || "—" %></td></tr>
+          </table>
+        </div>
+      </div>
+      <%# Activite %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-briefcase-line me-2"></i>Aktivite</h6></div>
+        <div class="dash-card-body">
+          <table class="table table-borderless table-sm mb-0">
+            <tr><td class="text-muted" style="width:35%">Tip Aktivite</td><td><%= @record.nif_type_activite_label %></td></tr>
+            <% if @record.nif_description_activite.present? %>
+              <tr><td class="text-muted">Deskripsyon</td><td><%= @record.nif_description_activite %></td></tr>
+            <% end %>
+            <% if @record.nif_nom_employeur.present? %>
+              <tr><td class="text-muted">Anplwayè</td><td><%= @record.nif_nom_employeur %></td></tr>
+            <% end %>
+            <% if @record.nif_revenu_annuel > 0 %>
+              <tr><td class="text-muted">Revni Anyel</td><td><%= number_with_delimiter(@record.nif_revenu_annuel.round(2)) %> HTG</td></tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <%# NIF Card %>
+      <div class="dash-card mb-3" style="border-left:4px solid #198754;">
+        <div class="dash-card-body text-center">
+          <span class="text-muted small d-block mb-1">Nimewo Idantifikasyon Fiskal</span>
+          <h3 class="mb-2" style="font-family:monospace;color:#198754;"><%= @record.nif_genere %></h3>
+          <span class="text-muted small">Emèt: <%= @record.nif_date_emission %> | Biwo: <%= @record.nif_bureau_dgi %></span>
+        </div>
+      </div>
+      <%# Status %>
+      <div class="dash-card mb-3">
+        <div class="dash-card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Estati</span>
+            <span class="badge bg-success"><%= @record.status&.titleize %></span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Referans</span>
+            <code><%= @record.nif_reference_number %></code>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Konsòmasyon</span>
+            <span class="badge <%= @record.consumed? ? 'bg-danger' : 'bg-success' %>"><%= @record.consumed? ? 'Konsome' : 'Disponib' %></span>
+          </div>
+        </div>
+      </div>
+      <% if @record.user %>
+        <div class="dash-card mb-3" style="border-left:4px solid #00209F;">
+          <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-user-line me-2"></i>Sitwayen (BonID)</h6></div>
+          <div class="dash-card-body text-center">
+            <h6><%= @record.user.first_name %> <%= @record.user.last_name %></h6>
+            <code><%= mask_bonid(@record.user.bonid) %></code>
+          </div>
+        </div>
+        <%= render "partner_portal/shared/citizen_signature", record: @record %>
+      <% end %>
+    </div>
+  </div>
+</div>

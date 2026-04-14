@@ -1,0 +1,186 @@
+<%# Partner Portal — Business Registration Detail (Formulaire B) %>
+
+<div class="partner-dashboard">
+
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title">
+        <i class="ri-building-2-line me-2"></i>Anrejistreman Biznis
+        <code class="ms-2"><%= @record.biz_reference_number %></code>
+      </h4>
+      <p class="dash-subtitle">Kreye <%= @record.created_at.strftime("%d/%m/%Y a %H:%M") %></p>
+    </div>
+    <%= link_to partner_portal_business_registrations_path, class: "btn btn-outline-secondary" do %>
+      <i class="ri-arrow-left-line me-1"></i>Retounen
+    <% end %>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+
+      <%# Section 1 — Informations Generales %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title"><i class="ri-information-line me-2"></i>Section 1 — Enfòmasyon Jeneral</h6>
+        </div>
+        <div class="dash-card-body">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <table class="table table-borderless table-sm mb-0">
+                <tr><td class="text-muted" style="width:45%">NIF</td><td><code><%= @record.biz_nif || "—" %></code></td></tr>
+                <tr><td class="text-muted">Rezon Sosyal</td><td class="fw-semibold"><%= @record.biz_raison_sociale %></td></tr>
+                <tr><td class="text-muted">Non Komesyal</td><td><%= @record.biz_nom_commercial || "—" %></td></tr>
+                <tr><td class="text-muted">Dat Kreyasyon</td><td><%= @record.biz_date_creation %></td></tr>
+                <tr><td class="text-muted">Dat Operasyon</td><td><%= @record.biz_date_debut_operations || "—" %></td></tr>
+                <tr><td class="text-muted">Peryod Finansyè</td><td><%= @record.biz_periode_financiere || "—" %></td></tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-borderless table-sm mb-0">
+                <tr><td class="text-muted" style="width:45%">Anplwaye</td><td><%= @record.biz_nombre_employes %></td></tr>
+                <tr><td class="text-muted">Patant</td><td><%= @record.biz_a_patente ? "Wi — #{@record.biz_numero_patente}" : "Non" %></td></tr>
+                <tr><td class="text-muted">Egzante TMS</td><td><%= @record.biz_exempte_tms || "—" %></td></tr>
+                <tr><td class="text-muted">Nasyonalite</td><td><%= @record.biz_nationalite || "—" %></td></tr>
+                <tr><td class="text-muted">Chif Afe</td><td><%= @record.biz_chiffre_affaires > 0 ? number_with_delimiter(@record.biz_chiffre_affaires.round(2)) + " HTG" : "—" %></td></tr>
+                <tr><td class="text-muted">Sektè Primè</td><td><span class="badge bg-light text-dark"><%= @record.biz_secteur_primaire_label %></span></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Section 2 — Proprietaire %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title"><i class="ri-user-star-line me-2"></i>Section 2 — Pwopriyetè</h6>
+        </div>
+        <div class="dash-card-body">
+          <div class="row g-2">
+            <div class="col-md-6">
+              <table class="table table-borderless table-sm mb-0">
+                <tr><td class="text-muted" style="width:40%">Non Konplè</td><td class="fw-semibold"><%= @record.biz_proprietaire_nom_complet %></td></tr>
+                <tr><td class="text-muted">NIF</td><td><code><%= @record.biz_proprietaire_nif || "—" %></code></td></tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <% if @record.biz_directeur_nom_complet.present? %>
+                <table class="table table-borderless table-sm mb-0">
+                  <tr><td class="text-muted" style="width:40%">Direktè</td><td class="fw-semibold"><%= @record.biz_directeur_nom_complet %></td></tr>
+                  <tr><td class="text-muted">NIF Direktè</td><td><code><%= @record.biz_directeur_nif || "—" %></code></td></tr>
+                </table>
+              <% else %>
+                <p class="text-muted small mb-0">Pa gen direktè chwazi.</p>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Section 3 — Contact %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title"><i class="ri-contacts-line me-2"></i>Section 3 — Kontak</h6>
+        </div>
+        <div class="dash-card-body">
+          <table class="table table-borderless table-sm mb-0">
+            <tr><td class="text-muted" style="width:30%">Telefon Mobil</td><td><%= @record.biz_telephone_mobile || "—" %></td></tr>
+            <tr><td class="text-muted">Telefon Fiks</td><td><%= @record.biz_telephone_fixe || "—" %></td></tr>
+            <tr><td class="text-muted">Imel Prensipal</td><td><%= @record.biz_email_primaire || "—" %></td></tr>
+            <tr><td class="text-muted">Imel Segondè</td><td><%= @record.biz_email_secondaire || "—" %></td></tr>
+            <% if @record.biz_comptable_nom.present? %>
+              <tr><td class="text-muted">Kontab Estèn</td><td><%= @record.biz_comptable_nom %> (<code><%= @record.biz_comptable_nif %></code>)</td></tr>
+            <% end %>
+          </table>
+        </div>
+      </div>
+
+      <%# Section 4 — Adresse %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header">
+          <h6 class="dash-card-title"><i class="ri-map-pin-line me-2"></i>Section 4 — Adrès</h6>
+        </div>
+        <div class="dash-card-body">
+          <table class="table table-borderless table-sm mb-0">
+            <tr><td class="text-muted" style="width:30%">Adrès</td><td><%= @record.biz_adresse %></td></tr>
+            <tr><td class="text-muted">Depatman</td><td><%= @record.biz_departement %></td></tr>
+            <tr><td class="text-muted">Komin</td><td><%= @record.biz_commune %></td></tr>
+            <% if @record.biz_section_communale.present? %>
+              <tr><td class="text-muted">Seksyon Kominal</td><td><%= @record.biz_section_communale %></td></tr>
+            <% end %>
+            <% if @record.biz_zone.present? %>
+              <tr><td class="text-muted">Zòn</td><td><%= @record.biz_zone %></td></tr>
+            <% end %>
+            <tr><td class="text-muted">Peyi</td><td><%= @record.biz_pays || "Haiti" %></td></tr>
+          </table>
+
+          <% if @record.biz_etablissements.any? %>
+            <hr>
+            <h6 class="mb-2">Etablisman Adisyonèl</h6>
+            <% @record.biz_etablissements.each_with_index do |etab, i| %>
+              <div class="border rounded p-2 mb-2 small">
+                <strong>Etablisman <%= i + 1 %></strong>
+                <% if etab["nom_commercial"].present? %> — <%= etab["nom_commercial"] %><% end %>
+                <br><%= etab["adresse"] %>, <%= etab["commune"] %>, <%= etab["departement"] %>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+
+    <%# RIGHT: Status + Citizen %>
+    <div class="col-lg-4">
+      <%# Status Card %>
+      <div class="dash-card mb-3" style="border-left: 4px solid #198754;">
+        <div class="dash-card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted">Estati</span>
+            <span class="badge bg-success"><%= @record.status&.titleize %></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted">Referans</span>
+            <code><%= @record.biz_reference_number %></code>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted">Verifye</span>
+            <span><%= @record.verified_at&.strftime("%d/%m/%Y %H:%M") || "—" %></span>
+          </div>
+          <% if @record.biz_date_certification.present? %>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted">Sètifye pa</span>
+              <span><%= @record.biz_certifie_par %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Citizen Card %>
+      <% if @record.user %>
+        <div class="dash-card" style="border-left: 4px solid #00209F;">
+          <div class="dash-card-header">
+            <h6 class="dash-card-title"><i class="ri-user-line me-2"></i>Pwopriyetè (BonID)</h6>
+          </div>
+          <div class="dash-card-body text-center">
+            <h6><%= @record.user.first_name %> <%= @record.user.last_name %></h6>
+            <code><%= mask_bonid(@record.user.bonid) %></code>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Consumption %>
+      <div class="dash-card mt-3">
+        <div class="dash-card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted">Konsòmasyon</span>
+            <% if @record.consumed? %>
+              <span class="badge bg-danger">Konsome</span>
+            <% else %>
+              <span class="badge bg-success">Disponib</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

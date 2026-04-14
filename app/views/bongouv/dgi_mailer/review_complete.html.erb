@@ -1,0 +1,74 @@
+<%# BonGouv — Review Complete Email (Approved or Rejected) %>
+<%# Sent to citizen when DGI agent approves or rejects their filing %>
+
+<p style="color: #1a1a2e; line-height: 1.6; margin-top: 0; font-size: 15px;">
+  Bonjou <strong><%= @user.first_name %></strong>,
+</p>
+
+<% if @status == "verified" %>
+  <p style="color: #4a5568; line-height: 1.6; font-size: 14px;">
+    Bon nouvèl! Deklarasyon DGI ou <strong>apwouve</strong> pa yon ajan DGI.
+  </p>
+
+  <div style="background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+    <div style="color: #059669; font-size: 36px; margin-bottom: 8px;">&#10003;</div>
+    <div style="color: #059669; font-size: 18px; font-weight: 800;">APWOUVE</div>
+    <div style="color: #6C757D; font-size: 13px; margin-top: 4px;"><%= @form_label&.dig(:title) %></div>
+    <div style="font-family: monospace; color: #059669; font-size: 16px; font-weight: 700; margin-top: 8px;"><%= @record.data["declaration_number"] %></div>
+  </div>
+
+<% else %>
+  <p style="color: #4a5568; line-height: 1.6; font-size: 14px;">
+    Malerezman, deklarasyon DGI ou <strong>rejte</strong> pa yon ajan DGI.
+  </p>
+
+  <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+    <div style="color: #dc2626; font-size: 36px; margin-bottom: 8px;">&#10007;</div>
+    <div style="color: #dc2626; font-size: 18px; font-weight: 800;">REJTE</div>
+    <div style="color: #6C757D; font-size: 13px; margin-top: 4px;"><%= @form_label&.dig(:title) %></div>
+    <div style="font-family: monospace; color: #dc2626; font-size: 16px; font-weight: 700; margin-top: 8px;"><%= @record.data["declaration_number"] %></div>
+  </div>
+
+  <% if @record.data["rejection_reason"].present? %>
+    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 20px 0;">
+      <div style="font-weight: 700; color: #dc2626; font-size: 13px; margin-bottom: 4px;">Rezon:</div>
+      <p style="color: #4a5568; font-size: 13px; margin: 0;"><%= @record.data["rejection_reason"] %></p>
+    </div>
+  <% end %>
+
+  <p style="color: #4a5568; line-height: 1.6; font-size: 14px;">
+    Ou ka korije enfòmasyon yo epi soumèt yon nouvo deklarasyon.
+  </p>
+<% end %>
+
+<table style="width: 100%; border-collapse: collapse; font-size: 13px; margin: 20px 0;">
+  <tr>
+    <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Fòm</td>
+    <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right;"><%= @form_label&.dig(:subtitle) %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; color: #6C757D; border-bottom: 1px solid #f0f0f0;">Dat Soumisyon</td>
+    <td style="padding: 8px 0; font-weight: 600; border-bottom: 1px solid #f0f0f0; text-align: right;"><%= @record.created_at.strftime("%d %B %Y") %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; color: #6C757D;">Estati</td>
+    <td style="padding: 8px 0; font-weight: 600; text-align: right;">
+      <% if @status == "verified" %>
+        <span style="background: #d1fae5; color: #059669; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Apwouve</span>
+      <% else %>
+        <span style="background: #fecaca; color: #dc2626; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Rejte</span>
+      <% end %>
+    </td>
+  </tr>
+</table>
+
+<div style="text-align: center; margin: 28px 0 12px;">
+  <a href="<%= citizens_dgi_url(@record) %>"
+     style="display: inline-block; background: #00209F; color: #FFFFFF; padding: 14px 36px; border-radius: 25px; text-decoration: none; font-weight: 700; font-size: 15px;">
+    Wè Deklarasyon
+  </a>
+</div>
+
+<p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 24px;">
+  Powered by <strong>BonGouv</strong>, a product of <strong>Verifyem</strong>
+</p>

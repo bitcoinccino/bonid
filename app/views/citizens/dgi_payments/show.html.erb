@@ -1,0 +1,294 @@
+<%# Citizen — BonID Secure Payment %>
+
+<%# Confirmation Modal %>
+<div class="modal fade" id="payConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="border-radius:16px;border:none;border:1px solid #e2e8f0;">
+      <div class="modal-body text-center p-4">
+        <div class="mb-3">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:56px;height:56px;background:#EEF2FF;">
+            <i class="ri-shield-check-line ri-xl" style="color:#00209F;"></i>
+          </div>
+        </div>
+        <h6 class="fw-bold mb-2">Konfime Peman</h6>
+        <p class="text-muted small mb-3">
+          W ap peye <strong id="confirmAmount"><%= @payment.formatted_total %></strong>
+          via <strong id="confirmMethod">—</strong>
+        </p>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn text-white fw-bold" id="confirmPayBtn" style="background:#00209F;min-height:48px;border-radius:10px;">
+            <i class="ri-check-line me-1"></i>Wi, Peye Kounye a
+          </button>
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="min-height:44px;border-radius:10px;">Anile</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-column align-items-center px-3 py-4" style="min-height:100vh;background:#f8fafc;">
+  <div style="width:100%;max-width:480px;">
+
+    <%# Header %>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex align-items-center gap-2">
+        <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#EEF2FF;">
+          <i class="ri-shield-check-line" style="color:#00209F;font-size:1.1rem;"></i>
+        </div>
+        <div>
+          <h6 class="fw-bold mb-0" style="font-size:1rem;">BonID Secure Payment</h6>
+          <span class="text-muted" style="font-size:0.7rem;"><%= @payment.form_type_label %> — <code style="font-size:0.65rem;"><%= @payment.declaration_number %></code></span>
+        </div>
+      </div>
+      <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-sm", style: "border-radius:8px;font-size:0.75rem;" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+    </div>
+
+    <%# Amount Card %>
+    <div class="mb-4" style="background:white;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
+      <div style="height:4px;background:linear-gradient(90deg,#00209F,#3B82F6);"></div>
+      <div class="text-center py-4 px-3">
+        <div class="d-flex justify-content-center mb-3">
+          <%= image_tag "partners/dgi-logo.webp", alt: "DGI Haiti", style: "height:48px;" %>
+        </div>
+        <span class="text-muted small d-block mb-1">Montan Total pou Peye</span>
+        <h2 class="mb-2" style="color:#00209F;font-weight:800;font-size:2rem;"><%= @payment.formatted_total %></h2>
+
+        <%# Collapsible fee breakdown %>
+        <a class="text-muted small text-decoration-none" data-bs-toggle="collapse" href="#feeBreakdown" role="button" style="font-size:0.75rem;">
+          <i class="ri-information-line me-1"></i>Wè detay frè <i class="ri-arrow-down-s-line"></i>
+        </a>
+        <div class="collapse mt-2" id="feeBreakdown">
+          <div class="d-inline-flex gap-4 px-3 py-2 rounded-3" style="background:#f8fafc;">
+            <div><span class="text-muted d-block" style="font-size:0.65rem;">Frè DGI</span><strong style="font-size:0.85rem;"><%= number_with_precision(@payment.amount_htg, precision: 2, delimiter: ",") %> HTG</strong></div>
+            <div style="border-left:1px solid #e2e8f0;"></div>
+            <div><span class="text-muted d-block" style="font-size:0.65rem;">Frè sèvis</span><strong style="font-size:0.85rem;color:#16a34a;"><%= number_with_precision(@payment.fee_htg, precision: 2, delimiter: ",") %> HTG</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Payment Methods %>
+    <div class="mb-4" style="background:white;border-radius:16px;border:1px solid #e2e8f0;">
+      <div class="px-3 py-3" style="border-bottom:1px solid #f1f5f9;">
+        <h6 class="fw-semibold mb-0" style="font-size:0.9rem;"><i class="ri-wallet-3-line me-2 text-muted"></i>Chwazi Metòd Peman</h6>
+      </div>
+      <div class="p-3">
+
+        <% wallet_profiles = @citizen.bank_profiles.select(&:mobile_wallet?) %>
+        <% bank_profiles   = @citizen.bank_profiles.select(&:bank?) %>
+
+        <%# Recommended label %>
+        <% if wallet_profiles.any? %>
+          <div class="d-flex align-items-center gap-1 mb-2">
+            <span class="badge" style="background:#EEF2FF;color:#00209F;font-size:0.65rem;font-weight:600;">Rekòmande</span>
+          </div>
+
+          <%# Primary wallet (first one) %>
+          <% primary_wp = wallet_profiles.first %>
+          <% primary_key = primary_wp.wallet_provider&.downcase %>
+          <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: primary_wp.wallet_provider&.titleize } do %>
+            <%= hidden_field_tag :payment_method, primary_key %>
+            <button type="submit" class="btn w-100 text-white d-flex align-items-center justify-content-center gap-2 pay-btn" style="background:#00209F;min-height:56px;font-weight:700;border-radius:12px;font-size:0.95rem;transition:all 0.2s;">
+              <i class="ri-smartphone-line ri-lg"></i>
+              <span>Peye ak <%= primary_wp.wallet_provider&.titleize %></span>
+            </button>
+            <div class="d-flex justify-content-center align-items-center gap-2 mt-1">
+              <small class="text-muted" style="font-size:0.7rem;"><%= primary_wp.wallet_provider&.titleize %> — <%= primary_wp.cashtag.present? ? primary_wp.cashtag : "••••#{primary_wp.wallet_address&.last(4)}" %></small>
+              <span class="badge bg-success" style="font-size:0.55rem;">Enstantane</span>
+            </div>
+          <% end %>
+
+          <%# Other wallets (outline style) %>
+          <% wallet_profiles.drop(1).each do |wp| %>
+            <% method_key = wp.wallet_provider&.downcase %>
+            <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: wp.wallet_provider&.titleize } do %>
+              <%= hidden_field_tag :payment_method, method_key %>
+              <button type="submit" class="btn w-100 d-flex align-items-center justify-content-center gap-2 pay-btn" style="min-height:52px;font-weight:600;border-radius:12px;border:1.5px solid #CBD5E1;color:#334155;font-size:0.9rem;transition:all 0.2s;">
+                <i class="ri-smartphone-line"></i>
+                <span>Peye ak <%= wp.wallet_provider&.titleize %></span>
+              </button>
+              <small class="text-muted d-block text-center mt-1" style="font-size:0.7rem;"><%= wp.wallet_provider&.titleize %> — <%= wp.cashtag.present? ? wp.cashtag : "••••#{wp.wallet_address&.last(4)}" %></small>
+            <% end %>
+          <% end %>
+
+        <% else %>
+          <%# No saved wallets — generic MonCash as primary %>
+          <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: "MonCash" } do %>
+            <%= hidden_field_tag :payment_method, "moncash" %>
+            <button type="submit" class="btn w-100 text-white d-flex align-items-center justify-content-center gap-2 pay-btn" style="background:#00209F;min-height:56px;font-weight:700;border-radius:12px;font-size:0.95rem;transition:all 0.2s;">
+              <i class="ri-smartphone-line ri-lg"></i>
+              <span>Peye ak MonCash</span>
+            </button>
+            <div class="d-flex justify-content-center align-items-center gap-2 mt-1">
+              <small class="text-muted" style="font-size:0.7rem;">Peman enstantane via Digicel MonCash</small>
+              <span class="badge bg-success" style="font-size:0.55rem;">Enstantane</span>
+            </div>
+          <% end %>
+        <% end %>
+
+        <div class="d-flex align-items-center my-3">
+          <div class="flex-grow-1" style="height:1px;background:#e2e8f0;"></div>
+          <span class="px-2 text-muted" style="font-size:0.7rem;">oswa</span>
+          <div class="flex-grow-1" style="height:1px;background:#e2e8f0;"></div>
+        </div>
+
+        <%# Bank accounts %>
+        <% if bank_profiles.any? %>
+          <% bank_profiles.each do |bp| %>
+            <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: "#{bp.bank_name} (••••#{bp.account_number&.last(4)})" } do %>
+              <%= hidden_field_tag :payment_method, "bank_transfer" %>
+              <button type="submit" class="btn w-100 d-flex align-items-center justify-content-center gap-2 pay-btn" style="min-height:52px;font-weight:600;border-radius:12px;border:1.5px solid #CBD5E1;color:#334155;font-size:0.9rem;transition:all 0.2s;">
+                <i class="ri-bank-line"></i>
+                <span><%= bp.bank_name %> — ••••<%= bp.account_number&.last(4) %></span>
+              </button>
+            <% end %>
+          <% end %>
+        <% else %>
+          <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: "Transfè Bankè" } do %>
+            <%= hidden_field_tag :payment_method, "bank_transfer" %>
+            <button type="submit" class="btn w-100 d-flex align-items-center justify-content-center gap-2 pay-btn" style="min-height:52px;font-weight:600;border-radius:12px;border:1.5px solid #CBD5E1;color:#334155;font-size:0.9rem;transition:all 0.2s;">
+              <i class="ri-bank-line"></i>
+              <span>Transfè Bankè</span>
+            </button>
+            <small class="text-muted d-block text-center mt-1" style="font-size:0.7rem;">BNC / Unibank / Sogebank / BUH — 24-48è</small>
+          <% end %>
+        <% end %>
+
+        <%# Cash at window %>
+        <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: "Kach nan biwo DGI" } do %>
+          <%= hidden_field_tag :payment_method, "cash_window" %>
+          <button type="submit" class="btn w-100 d-flex align-items-center justify-content-center gap-2 pay-btn" style="min-height:52px;font-weight:600;border-radius:12px;border:1.5px solid #CBD5E1;color:#334155;font-size:0.9rem;transition:all 0.2s;">
+            <i class="ri-building-line"></i>
+            <span>M ap peye nan biwo DGI</span>
+          </button>
+          <small class="text-muted d-block text-center mt-1" style="font-size:0.7rem;">Prezante nimewo referans nan fenèt kès DGI</small>
+        <% end %>
+
+      </div>
+    </div>
+
+    <%# Trust Footer %>
+    <div class="text-center mb-4">
+      <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
+        <div class="d-flex align-items-center gap-1">
+          <i class="ri-lock-line" style="color:#00209F;font-size:0.8rem;"></i>
+          <span style="font-size:0.65rem;color:#64748B;">SSL Chifreman</span>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <i class="ri-shield-check-line" style="color:#16a34a;font-size:0.8rem;"></i>
+          <span style="font-size:0.65rem;color:#64748B;">Verifikasyon BonID</span>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <i class="ri-bank-line" style="color:#00209F;font-size:0.8rem;"></i>
+          <span style="font-size:0.65rem;color:#64748B;">Nivo bank</span>
+        </div>
+      </div>
+      <small class="text-muted d-block" style="font-size:0.6rem;">Powered by BonID, a product of Verifyem</small>
+    </div>
+
+    <%# Bank Transfer Instructions (shown if already selected) %>
+    <% if @payment.payment_method == "bank_transfer" && @payment.provider_response&.dig("bank_instructions").present? %>
+      <div class="mb-4" style="background:white;border-radius:16px;border-left:4px solid #3B82F6;border:1px solid #e2e8f0;">
+        <div class="px-3 py-3" style="border-bottom:1px solid #f1f5f9;">
+          <h6 class="fw-semibold mb-0" style="font-size:0.9rem;"><i class="ri-information-line me-2 text-primary"></i>Enstriksyon Transfè Bankè</h6>
+        </div>
+        <div class="p-3">
+          <% instructions = @payment.provider_response["bank_instructions"] %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted">Bank</td><td class="fw-semibold"><%= instructions["bank"] %></td></tr>
+            <tr><td class="text-muted">Kont</td><td><code><%= instructions["account"] %></code></td></tr>
+            <tr><td class="text-muted">Referans</td><td><code class="fs-6"><%= instructions["reference"] %></code></td></tr>
+            <tr><td class="text-muted">Montan</td><td class="fw-bold"><%= number_with_precision(instructions["amount"].to_f, precision: 2, delimiter: ",") %> HTG</td></tr>
+          </table>
+          <div class="alert alert-info mt-3 mb-0 small" style="border-radius:10px;font-size:0.8rem;">
+            <i class="ri-error-warning-line me-1"></i>
+            <%= instructions["instructions"] %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Cash Voucher (shown if cash selected) %>
+    <% if @payment.status == "pending_cash" %>
+      <div class="mb-4" style="background:white;border-radius:16px;border-left:4px solid #6c757d;border:1px solid #e2e8f0;">
+        <div class="px-3 py-3" style="border-bottom:1px solid #f1f5f9;">
+          <h6 class="fw-semibold mb-0" style="font-size:0.9rem;"><i class="ri-ticket-line me-2"></i>Bòdro Peman</h6>
+        </div>
+        <div class="p-3 text-center">
+          <p class="mb-2 small">Prezante nimewo sa a nan biwo DGI:</p>
+          <h3 class="mb-2" style="font-family:monospace;letter-spacing:2px;color:#00209F;"><%= @payment.order_id %></h3>
+          <p class="text-muted small">Montan: <strong><%= @payment.formatted_total %></strong></p>
+          <p class="text-muted small mb-0">Ajan DGI a ap konfime peman w nan sistèm BonID la.</p>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+</div>
+
+<style>
+  .pay-btn:hover {
+    transform: translateY(-1px);
+  }
+  .pay-btn:active {
+    transform: scale(0.98);
+  }
+  .pay-btn.is-loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  .pay-btn.is-loading .btn-text { display: none; }
+  .pay-btn .btn-spinner { display: none; }
+  .pay-btn.is-loading .btn-spinner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+</style>
+
+<script>
+  document.addEventListener("turbo:load", initPaymentPage);
+  document.addEventListener("DOMContentLoaded", initPaymentPage);
+
+  function initPaymentPage() {
+    var forms = document.querySelectorAll(".pay-form");
+    if (!forms.length) return;
+
+    var modal = document.getElementById("payConfirmModal");
+    if (!modal) return;
+
+    var bsModal = new bootstrap.Modal(modal);
+    var confirmBtn = document.getElementById("confirmPayBtn");
+    var confirmMethod = document.getElementById("confirmMethod");
+    var pendingForm = null;
+
+    forms.forEach(function(form) {
+      form.addEventListener("submit", function(e) {
+        e.preventDefault();
+        pendingForm = form;
+        var label = form.dataset.methodLabel || "—";
+        confirmMethod.textContent = label;
+        bsModal.show();
+      });
+    });
+
+    confirmBtn.addEventListener("click", function() {
+      if (!pendingForm) return;
+      bsModal.hide();
+
+      // Show loading state on the button
+      var btn = pendingForm.querySelector(".pay-btn");
+      if (btn) {
+        btn.classList.add("is-loading");
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Ap trete...';
+      }
+
+      // Disable all other buttons
+      document.querySelectorAll(".pay-btn").forEach(function(b) {
+        b.disabled = true;
+      });
+
+      pendingForm.submit();
+    });
+  }
+</script>

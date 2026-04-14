@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kes Fiskal — <%= @record.receipt_number %></title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 30px;
+      color: #1a1a1a;
+    }
+
+    .receipt-header {
+      text-align: center;
+      border-bottom: 3px solid #00209F;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .receipt-header h1 {
+      font-size: 1.6rem;
+      color: #00209F;
+      margin-bottom: 4px;
+    }
+    .receipt-header .subtitle {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .receipt-header .receipt-no {
+      font-family: monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: #f0f4ff;
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 4px;
+      margin-top: 12px;
+      letter-spacing: 1px;
+    }
+
+    .receipt-body { margin-bottom: 30px; }
+    .receipt-section {
+      margin-bottom: 24px;
+    }
+    .receipt-section h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #00209F;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      font-size: 0.9rem;
+    }
+    .receipt-row .label { color: #666; }
+    .receipt-row .value { font-weight: 600; text-align: right; }
+
+    .amount-highlight {
+      text-align: center;
+      background: #00209F;
+      color: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 24px 0;
+    }
+    .amount-highlight .amount {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .amount-highlight .currency {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .receipt-footer {
+      text-align: center;
+      border-top: 2px dashed #ccc;
+      padding-top: 20px;
+      margin-top: 30px;
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    .consumption-stamp {
+      border: 3px solid #dc3545;
+      color: #dc3545;
+      padding: 10px 20px;
+      display: inline-block;
+      transform: rotate(-5deg);
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-top: 16px;
+    }
+
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+    <button onclick="window.print()" style="padding: 10px 24px; background: #00209F; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+      <span style="margin-right: 6px;">&#128424;</span> Enprime Kes
+    </button>
+  </div>
+
+  <div class="receipt-header">
+    <h1>REPIBLIK D AYITI</h1>
+    <div class="subtitle">Direction Generale des Impots (DGI)</div>
+    <div class="subtitle">Kes Fiskal — Resi Ofisyel</div>
+    <div class="receipt-no"><%= @record.receipt_number %></div>
+  </div>
+
+  <div class="receipt-body">
+
+    <div class="amount-highlight">
+      <div class="amount"><%= number_with_delimiter(@record.amount_htg) %></div>
+      <div class="currency">Goud Ayisyen (HTG)</div>
+    </div>
+
+    <div class="receipt-section">
+      <h3>Enfòmasyon Kes</h3>
+      <div class="receipt-row">
+        <span class="label">Tip Taks</span>
+        <span class="value"><%= @record.tax_type&.titleize %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Dat Peman</span>
+        <span class="value"><%= @record.payment_date %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Metòd Peman</span>
+        <span class="value"><%= @record.payment_method&.titleize || "Cash" %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Biwo DGI</span>
+        <span class="value"><%= @record.dgi_office_code %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">Ane Fiskal</span>
+        <span class="value"><%= @record.fiscal_year %></span>
+      </div>
+    </div>
+
+    <div class="receipt-section">
+      <h3>Kontribyab</h3>
+      <div class="receipt-row">
+        <span class="label">Non</span>
+        <span class="value"><%= @record.payer_name || "—" %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">BonID</span>
+        <span class="value"><%= @record.payer_bonid || "—" %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="label">NIF</span>
+        <span class="value"><%= @record.payer_nif || "—" %></span>
+      </div>
+    </div>
+
+    <% if @record.consumed? %>
+      <div class="receipt-section" style="text-align: center;">
+        <div class="consumption-stamp">
+          KONSOME
+        </div>
+        <p style="margin-top: 10px; font-size: 0.8rem; color: #666;">
+          Konsome pa <%= @record.consumed_by_agency %> le <%= @record.consumed_at %><br>
+          Ofisye: <%= @record.consumed_by_officer_id %>
+        </p>
+      </div>
+    <% end %>
+
+  </div>
+
+  <div class="receipt-footer">
+    <p>Dokiman sa a se yon resi ofisyel DGI jenere pa BonID.</p>
+    <p>Verifye nan: bonid.ht/verify/<%= @record.receipt_number %></p>
+    <p style="margin-top: 8px;">Jenere: <%= Time.current.strftime("%d/%m/%Y %H:%M:%S") %></p>
+  </div>
+
+</body>
+</html>

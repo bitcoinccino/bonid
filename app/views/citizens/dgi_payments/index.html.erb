@@ -1,0 +1,45 @@
+<%# Citizen — DGI Payment History %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-bank-card-line me-2"></i>Istwa Peman DGI</h4>
+      <p class="dash-subtitle">Tout peman pou deklarasyon taks ou yo</p>
+    </div>
+    <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+  </div>
+
+  <div class="dash-card">
+    <div class="dash-card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Lòd</th><th>Fòm</th><th>Montan</th><th>Frè</th><th>Total</th><th>Metòd</th><th>Estati</th><th>Dat</th><th></th></tr></thead>
+          <tbody>
+            <% @payments.each do |p| %>
+              <tr>
+                <td><code class="small"><%= p.order_id %></code></td>
+                <td><%= p.form_type_label %></td>
+                <td><%= number_with_delimiter(p.amount_htg.round(2)) %></td>
+                <td class="text-muted"><%= number_with_delimiter(p.fee_htg.round(2)) %></td>
+                <td class="fw-bold"><%= p.formatted_total %></td>
+                <td><%= p.payment_method_label %></td>
+                <td><span class="badge <%= p.status_badge_class %>"><%= p.status_label %></span></td>
+                <td class="text-muted small"><%= p.created_at.strftime("%d/%m/%Y") %></td>
+                <td>
+                  <% if p.completed? %>
+                    <%= link_to receipt_citizens_dgi_payment_path(p), class: "btn btn-sm btn-outline-success" do %><i class="ri-receipt-line"></i><% end %>
+                  <% elsif p.pending? %>
+                    <%= link_to citizens_dgi_payment_path(p), class: "btn btn-sm btn-outline-warning" do %><i class="ri-bank-card-line"></i><% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @payments.empty? %><tr><td colspan="9" class="text-center text-muted py-4">Pa gen peman ankò.</td></tr><% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% if @payments.respond_to?(:total_pages) && @payments.total_pages > 1 %>
+    <div class="d-flex justify-content-center mt-4"><%= paginate @payments %></div>
+  <% end %>
+</div>

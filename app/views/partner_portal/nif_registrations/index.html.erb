@@ -1,0 +1,72 @@
+<%# Partner Portal — NIF Registrations Index %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-id-card-line me-2"></i>Enskripsyon NIF</h4>
+      <p class="dash-subtitle">Formulaire A — Tout enskripsyon NIF</p>
+    </div>
+    <%= link_to new_partner_portal_nif_registration_path, class: "dash-cta" do %>
+      <i class="ri-add-line me-2"></i>Nouvo NIF
+    <% end %>
+  </div>
+
+  <div class="dash-metrics">
+    <div class="metric-card metric-card--blue">
+      <div class="metric-icon metric-icon--blue"><i class="ri-id-card-line"></i></div>
+      <div class="metric-info">
+        <span class="metric-value"><%= @stats[:total] %></span>
+        <span class="metric-label">Total NIF</span>
+      </div>
+    </div>
+    <div class="metric-card metric-card--green">
+      <div class="metric-icon metric-icon--green"><i class="ri-calendar-check-line"></i></div>
+      <div class="metric-info">
+        <span class="metric-value"><%= @stats[:today] %></span>
+        <span class="metric-label">Jodi a</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-card mb-4">
+    <div class="dash-card-body py-2">
+      <%= form_tag partner_portal_nif_registrations_path, method: :get, class: "row g-2 align-items-end" do %>
+        <div class="col-md-4">
+          <%= text_field_tag :search, params[:search], class: "form-control form-control-sm", placeholder: "Chèche non, prenon, NIF..." %>
+        </div>
+        <div class="col-md-3">
+          <%= select_tag :departement, options_for_select(RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI, params[:departement]),
+              class: "form-select form-select-sm", prompt: "Tout depatman" %>
+        </div>
+        <div class="col-md-2"><%= date_field_tag :date_from, params[:date_from], class: "form-control form-control-sm" %></div>
+        <div class="col-md-2"><%= date_field_tag :date_to, params[:date_to], class: "form-control form-control-sm" %></div>
+        <div class="col-md-1"><%= submit_tag "Filtre", class: "btn btn-primary btn-sm w-100" %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="dash-card">
+    <div class="dash-card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Referans</th><th>Non Konplè</th><th>NIF</th><th>Depatman</th><th>Dat</th><th></th></tr></thead>
+          <tbody>
+            <% @records.each do |r| %>
+              <tr>
+                <td><code class="small"><%= r.data["reference_number"] %></code></td>
+                <td class="fw-semibold"><%= r.nif_nom_complet %></td>
+                <td><code><%= r.nif_genere %></code></td>
+                <td><%= r.nif_departement %></td>
+                <td class="text-muted small"><%= r.created_at.strftime("%d/%m/%Y") %></td>
+                <td><%= link_to partner_portal_nif_registration_path(r), class: "btn btn-sm btn-outline-primary" do %><i class="ri-eye-line"></i><% end %></td>
+              </tr>
+            <% end %>
+            <% if @records.empty? %><tr><td colspan="6" class="text-center text-muted py-4">Pa gen enskripsyon NIF ankò.</td></tr><% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% if @records.respond_to?(:total_pages) && @records.total_pages > 1 %>
+    <div class="d-flex justify-content-center mt-4"><%= paginate @records %></div>
+  <% end %>
+</div>

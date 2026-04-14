@@ -1,0 +1,320 @@
+<%# Partner Portal — New RAS IR Declaration (DGI-F005 — Multi-Step Wizard) %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-money-dollar-box-line me-2"></i>Nouvo Deklarasyon RAS IR</h4>
+      <p class="dash-subtitle">DGI-F005 — Retni nan Sous Mansyel</p>
+    </div>
+    <%= link_to partner_portal_ras_ir_declarations_path, class: "btn btn-outline-secondary" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+  </div>
+
+  <%# Progress Bar %>
+  <div class="dash-card mb-4">
+    <div class="dash-card-body py-3">
+      <div class="dgi-wizard-progress">
+        <div class="wizard-step-indicator active" data-step="1"><div class="wizard-step-dot">1</div><span class="wizard-step-label d-none d-md-inline ms-1">BonID</span></div>
+        <div class="wizard-step-line"></div>
+        <div class="wizard-step-indicator" data-step="2"><div class="wizard-step-dot">2</div><span class="wizard-step-label d-none d-md-inline ms-1">Idantifikasyon</span></div>
+        <div class="wizard-step-line"></div>
+        <div class="wizard-step-indicator" data-step="3"><div class="wizard-step-dot">3</div><span class="wizard-step-label d-none d-md-inline ms-1">Kalkil & Anplwaye</span></div>
+        <div class="wizard-step-line"></div>
+        <div class="wizard-step-indicator" data-step="4"><div class="wizard-step-dot">4</div><span class="wizard-step-label d-none d-md-inline ms-1">Konfime</span></div>
+      </div>
+    </div>
+  </div>
+
+  <%= form_tag partner_portal_ras_ir_declarations_path, method: :post, id: "rasIrForm" do %>
+
+    <%# ═══════ Step 1 — BonID Lookup ═══════ %>
+    <div id="wizardStep1" class="wizard-step-panel">
+      <div class="dash-card">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-search-line me-2"></i>Etap 1 — Chèche Kontribyab</h6></div>
+        <div class="dash-card-body">
+          <% if @citizen %>
+            <div class="alert alert-success"><i class="ri-checkbox-circle-line me-2"></i><strong><%= @citizen.first_name %> <%= @citizen.last_name %></strong> — <code><%= mask_bonid(@citizen.bonid) %></code></div>
+            <%= hidden_field_tag :bonid, @citizen.bonid %>
+            <div class="text-end"><button type="button" class="btn btn-primary wizard-next-btn" data-next="2">Kontinye <i class="ri-arrow-right-line ms-1"></i></button></div>
+          <% else %>
+            <div class="row justify-content-center">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Nimewo BonID</label>
+                <div class="input-group">
+                  <%= text_field_tag :bonid_lookup, params[:bonid], class: "form-control", placeholder: "BONID-XXXXXXX" %>
+                  <button type="button" class="btn btn-primary" id="lookupBtn"><i class="ri-search-line me-1"></i>Chèche</button>
+                </div>
+                <% if flash[:alert] %><div class="text-danger small mt-2"><%= flash[:alert] %></div><% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# ═══════ Step 2 — Periode + Identification + Sector ═══════ %>
+    <div id="wizardStep2" class="wizard-step-panel" style="display:none;">
+      <div class="dash-card">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-building-line me-2"></i>Etap 2 — Peryòd & Idantifikasyon</h6></div>
+        <div class="dash-card-body">
+          <h6 class="text-muted mb-3">Section I — Peryòd Enpozisyon</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label">Ane Fiskal <span class="text-danger">*</span></label>
+              <%= text_field_tag :annee_fiscale, "#{Time.current.year}-#{Time.current.year + 1}", class: "form-control", required: true, placeholder: "2025-2026" %>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Mwa Deklarasyon <span class="text-danger">*</span></label>
+              <%= select_tag :mois_declaration, options_for_select((1..12).map { |m| [Date::MONTHNAMES[m], m] }, Time.current.month), class: "form-select", required: true %>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tip Deklarasyon <span class="text-danger">*</span></label>
+              <%= select_tag :type_declaration, options_for_select([["Orijinal", "originale"], ["Rektifikatif", "rectificative"]]), class: "form-select", required: true %>
+            </div>
+          </div>
+
+          <hr>
+          <h6 class="text-muted mb-3">Section III — Idantifikasyon Anplwayè</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Rezon Sosyal <span class="text-danger">*</span></label>
+              <%= text_field_tag :raison_sociale, nil, class: "form-control", required: true %>
+            </div>
+            <div class="col-md-6 <%= 'bonid-autofill' if @auto_fill[:nif].present? %>">
+              <label class="form-label">NIF Antrepriz <span class="text-danger">*</span></label>
+              <%= text_field_tag :nif_entreprise, @auto_fill[:nif], class: "form-control", required: true, placeholder: "XXX-XXX-XXX", readonly: @auto_fill[:nif].present? %>
+              <% if @auto_fill[:nif].present? %><span class="bonid-autofill__hint"><i class="ri-lock-line"></i>Pre-ranpli ak BonID</span><% end %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Sektè Aktivite <span class="text-danger">*</span></label>
+              <%= select_tag :code_secteur, options_for_select(@secteurs.map { |code, name| ["#{code} — #{name}", code] }), class: "form-select", required: true, prompt: "— Chwazi sektè —" %>
+            </div>
+            <div class="col-md-6 <%= 'bonid-autofill' if @auto_fill[:street_address].present? %>">
+              <label class="form-label">Adrès <span class="text-danger">*</span></label>
+              <%= text_field_tag :adresse, @auto_fill[:street_address], class: "form-control", required: true, readonly: @auto_fill[:street_address].present? %>
+              <% if @auto_fill[:street_address].present? %><span class="bonid-autofill__hint"><i class="ri-lock-line"></i>Pre-ranpli ak BonID</span><% end %>
+            </div>
+            <div class="col-md-4 <%= 'bonid-autofill' if @auto_fill[:locality].present? %>">
+              <label class="form-label">Vil <span class="text-danger">*</span></label>
+              <%= text_field_tag :ville, @auto_fill[:locality], class: "form-control", required: true, readonly: @auto_fill[:locality].present? %>
+              <% if @auto_fill[:locality].present? %><span class="bonid-autofill__hint"><i class="ri-lock-line"></i>Pre-ranpli ak BonID</span><% end %>
+            </div>
+            <div class="col-md-4 <%= 'bonid-autofill' if @auto_fill[:phone].present? %>">
+              <label class="form-label">Telefon</label>
+              <%= text_field_tag :telephone, @auto_fill[:phone], class: "form-control", readonly: @auto_fill[:phone].present? %>
+              <% if @auto_fill[:phone].present? %><span class="bonid-autofill__hint"><i class="ri-lock-line"></i>Pre-ranpli ak BonID</span><% end %>
+            </div>
+            <div class="col-md-4 <%= 'bonid-autofill' if @auto_fill[:email].present? %>">
+              <label class="form-label">Imel</label>
+              <%= email_field_tag :email_entreprise, @auto_fill[:email], class: "form-control", readonly: @auto_fill[:email].present? %>
+              <% if @auto_fill[:email].present? %><span class="bonid-autofill__hint"><i class="ri-lock-line"></i>Pre-ranpli ak BonID</span><% end %>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary wizard-prev-btn" data-prev="1"><i class="ri-arrow-left-line me-1"></i>Retounen</button>
+            <button type="button" class="btn btn-primary wizard-next-btn" data-next="3">Kontinye <i class="ri-arrow-right-line ms-1"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ═══════ Step 3 — Calcul RAS + Employee List ═══════ %>
+    <div id="wizardStep3" class="wizard-step-panel" style="display:none;">
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-calculator-line me-2"></i>Etap 3 — Kalkil Retni nan Sous</h6></div>
+        <div class="dash-card-body">
+          <p class="text-muted small mb-3">Ranpli montan pou chak kategori revni. Liy 7-10 ap otomatikman kalkile.</p>
+
+          <%# Income Categories %>
+          <div class="row g-3">
+            <div class="col-12"><span class="badge bg-primary">Kategori 1 — Salè</span></div>
+            <div class="col-md-6">
+              <label class="form-label">Liy 1 — Total Salè Mansyel <span class="text-danger">*</span></label>
+              <%= number_field_tag :salaires_montant, nil, class: "form-control", step: "0.01", min: "0", required: true, id: "salaires_montant" %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Liy 2 — IR Retni sou Salè</label>
+              <%= number_field_tag :salaires_impot, nil, class: "form-control", step: "0.01", min: "0", placeholder: "Otomatik si lis anplwaye ranpli", id: "salaires_impot" %>
+            </div>
+
+            <div class="col-12 mt-3"><span class="badge bg-info">Kategori 2 — Boni & Lè Siplemantè</span></div>
+            <div class="col-md-6">
+              <label class="form-label">Liy 3 — Total Boni Mansyel</label>
+              <%= number_field_tag :bonis_montant, 0, class: "form-control", step: "0.01", min: "0", id: "bonis_montant" %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Liy 4 — IR sou Boni (10%)</label>
+              <%= number_field_tag :bonis_impot, nil, class: "form-control", step: "0.01", min: "0", placeholder: "Otomatik: 10%", id: "bonis_impot" %>
+            </div>
+
+            <div class="col-12 mt-3"><span class="badge bg-warning text-dark">Kategori 3 — Dividand</span></div>
+            <div class="col-md-6">
+              <label class="form-label">Liy 5 — Total Dividand</label>
+              <%= number_field_tag :dividendes_montant, 0, class: "form-control", step: "0.01", min: "0", id: "dividendes_montant" %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Liy 6 — IR sou Dividand (20%)</label>
+              <%= number_field_tag :dividendes_impot, nil, class: "form-control", step: "0.01", min: "0", placeholder: "Otomatik: 20%", id: "dividendes_impot" %>
+            </div>
+
+            <%# Penalties %>
+            <div class="col-12 mt-3"><span class="badge bg-danger">Penalite</span></div>
+            <div class="col-md-6">
+              <label class="form-label">Entere Reta</label>
+              <%= number_field_tag :interets_retard, 0, class: "form-control", step: "0.01", min: "0" %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Amand</label>
+              <%= number_field_tag :amende, 0, class: "form-control", step: "0.01", min: "0" %>
+            </div>
+          </div>
+
+          <%# Tax brackets reference %>
+          <div class="mt-4 p-3 bg-light rounded">
+            <h6 class="mb-2"><i class="ri-information-line me-1"></i>Referans — Trach Enpo sou Revni (Anyel)</h6>
+            <div class="row">
+              <% @tranches.each do |t| %>
+                <div class="col-md-4 col-6 mb-1"><small class="text-muted"><%= t[:label] %></small></div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Employee List (Line 11 — Annexe) %>
+      <div class="dash-card mb-4">
+        <div class="dash-card-header d-flex justify-content-between align-items-center">
+          <h6 class="dash-card-title mb-0"><i class="ri-team-line me-2"></i>Liy 11 — Lis Anplwaye (Anèks)</h6>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="addEmployeeBtn"><i class="ri-add-line me-1"></i>Ajoute</button>
+        </div>
+        <div class="dash-card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0" id="employeeTable">
+              <thead><tr><th>#</th><th>Non Anplwaye</th><th>NIF Anplwaye</th><th>Salè Brit (HTG)</th><th>Retni IR (HTG)</th><th></th></tr></thead>
+              <tbody id="employeeRows">
+                <tr id="empRow0">
+                  <td>1</td>
+                  <td><input type="text" name="employes[0][nom_employe]" class="form-control form-control-sm" placeholder="Non konplè"></td>
+                  <td><input type="text" name="employes[0][nif_employe]" class="form-control form-control-sm" placeholder="XXX-XXX-XXX"></td>
+                  <td><input type="number" name="employes[0][salaire_brut]" class="form-control form-control-sm emp-sal" step="0.01" min="0" placeholder="0.00"></td>
+                  <td><input type="number" name="employes[0][retenue_ir]" class="form-control form-control-sm emp-ir" step="0.01" min="0" placeholder="0.00"></td>
+                  <td><button type="button" class="btn btn-sm btn-outline-danger remove-emp-btn"><i class="ri-delete-bin-line"></i></button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <%# Payment %>
+      <div class="dash-card">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-bank-card-line me-2"></i>Peman</h6></div>
+        <div class="dash-card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Metòd Peman</label>
+              <%= select_tag :methode_paiement, options_for_select(["Kach", "Chèk", "Transfè Bankè", "Lòt"]), class: "form-select", prompt: "— Chwazi —" %>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Nimewo Chèk</label>
+              <%= text_field_tag :numero_cheque, nil, class: "form-control" %>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Bank</label>
+              <%= text_field_tag :banque, nil, class: "form-control" %>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary wizard-prev-btn" data-prev="2"><i class="ri-arrow-left-line me-1"></i>Retounen</button>
+            <button type="button" class="btn btn-primary wizard-next-btn" data-next="4">Kontinye <i class="ri-arrow-right-line ms-1"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ═══════ Step 4 — Signature + Summary + Submit ═══════ %>
+    <div id="wizardStep4" class="wizard-step-panel" style="display:none;">
+      <div class="dash-card mb-4">
+        <div class="dash-card-header"><h6 class="dash-card-title"><i class="ri-quill-pen-line me-2"></i>Etap 4 — Siyati & Konfimasyon</h6></div>
+        <div class="dash-card-body">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Non Deklaran <span class="text-danger">*</span></label>
+              <%= text_field_tag :declarant_nom, nil, class: "form-control", required: true %>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">NIF Deklaran</label>
+              <%= text_field_tag :declarant_nif, nil, class: "form-control", placeholder: "XXX-XXX-XXX" %>
+            </div>
+          </div>
+
+          <hr>
+          <h6 class="text-muted mb-3">Rezime Deklarasyon</h6>
+          <div class="row" id="summaryContent"><p class="text-muted">Chaje...</p></div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary wizard-prev-btn" data-prev="3"><i class="ri-arrow-left-line me-1"></i>Retounen</button>
+            <%= submit_tag "Soumèt Deklarasyon RAS IR", class: "btn btn-lg text-white", style: "background:#00209F;min-height:48px;" %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <% end %>
+</div>
+
+<%= render "partner_portal/shared/wizard_assets", total_steps: 4, summary_fields: [
+  { label: "Rezon Sosyal", sel: "#raison_sociale" },
+  { label: "NIF", sel: "#nif_entreprise" },
+  { label: "Sektè", sel: "#code_secteur" },
+  { label: "Ane Fiskal", sel: "#annee_fiscale" },
+  { label: "Mwa", sel: "#mois_declaration" },
+  { label: "Total Salè", sel: "#salaires_montant" },
+  { label: "Total Boni", sel: "#bonis_montant" },
+  { label: "Total Dividand", sel: "#dividendes_montant" },
+  { label: "Deklaran", sel: "#declarant_nom" }
+] %>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // BonID lookup
+  var lookupBtn = document.getElementById("lookupBtn");
+  if (lookupBtn) {
+    lookupBtn.addEventListener("click", function() {
+      var val = document.getElementById("bonid_lookup").value.trim();
+      if (val) window.location.href = "<%= new_partner_portal_ras_ir_declaration_path %>?bonid=" + encodeURIComponent(val);
+    });
+    document.getElementById("bonid_lookup").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") { e.preventDefault(); lookupBtn.click(); }
+    });
+  }
+
+  // Dynamic employee list
+  var empIdx = 1;
+  document.getElementById("addEmployeeBtn").addEventListener("click", function() {
+    var tbody = document.getElementById("employeeRows");
+    var row = document.createElement("tr");
+    row.id = "empRow" + empIdx;
+    row.innerHTML =
+      '<td>' + (empIdx + 1) + '</td>' +
+      '<td><input type="text" name="employes[' + empIdx + '][nom_employe]" class="form-control form-control-sm" placeholder="Non konplè"></td>' +
+      '<td><input type="text" name="employes[' + empIdx + '][nif_employe]" class="form-control form-control-sm" placeholder="XXX-XXX-XXX"></td>' +
+      '<td><input type="number" name="employes[' + empIdx + '][salaire_brut]" class="form-control form-control-sm emp-sal" step="0.01" min="0" placeholder="0.00"></td>' +
+      '<td><input type="number" name="employes[' + empIdx + '][retenue_ir]" class="form-control form-control-sm emp-ir" step="0.01" min="0" placeholder="0.00"></td>' +
+      '<td><button type="button" class="btn btn-sm btn-outline-danger remove-emp-btn"><i class="ri-delete-bin-line"></i></button></td>';
+    tbody.appendChild(row);
+    empIdx++;
+  });
+
+  document.getElementById("employeeTable").addEventListener("click", function(e) {
+    var btn = e.target.closest(".remove-emp-btn");
+    if (btn) {
+      var row = btn.closest("tr");
+      if (document.querySelectorAll("#employeeRows tr").length > 1) {
+        row.remove();
+        // Re-number rows
+        document.querySelectorAll("#employeeRows tr").forEach(function(r, i) { r.querySelector("td").textContent = i + 1; });
+      }
+    }
+  });
+});
+</script>

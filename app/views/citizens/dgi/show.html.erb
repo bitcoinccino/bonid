@@ -1,0 +1,233 @@
+<%# Citizen — DGI Filing Detail %>
+
+<div class="container-fluid py-4" style="max-width:1100px;">
+
+  <%# Header %>
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+      <h5 class="fw-bold mb-1">
+        <i class="<%= @form_label&.dig(:icon) || 'ri-file-line' %> me-2" style="color:#00209F;"></i><%= @form_label&.dig(:title) || @record.record_type.titleize %>
+        <code class="ms-2" style="font-size:0.75rem;color:#dc3545;"><%= @record.data["declaration_number"] %></code>
+      </h5>
+      <p class="text-muted small mb-0"><%= @form_label&.dig(:subtitle) %> — Depoze <%= @record.created_at.strftime("%d/%m/%Y a %H:%M") %></p>
+    </div>
+    <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-sm", style: "border-radius:8px;" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+  </div>
+
+  <div class="row g-4">
+    <%# ── Left Column ── %>
+    <div class="col-lg-8">
+
+      <%# Status Tracker %>
+      <div class="mb-4 p-3 rounded-3" style="background:white;border:1px solid #e2e8f0;border-radius:12px !important;">
+        <h6 class="fw-semibold small mb-3"><i class="ri-route-line me-2 text-muted"></i>Estati Deklarasyon</h6>
+        <% paid = @payment&.completed? %>
+        <% reviewed = @record.status == "verified" || @record.status == "rejected" %>
+
+        <div class="d-flex align-items-center">
+          <%# Step 1 — Filed %>
+          <div class="text-center flex-shrink-0">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1" style="width:36px;height:36px;background:#198754;color:#fff;font-size:0.9rem;"><i class="ri-check-line"></i></div>
+            <small class="d-block" style="font-size:0.7rem;font-weight:600;">Depoze</small>
+          </div>
+          <div class="flex-grow-1 mx-2" style="height:2px;background:#198754;border-radius:2px;"></div>
+
+          <%# Step 2 — Payment %>
+          <div class="text-center flex-shrink-0">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1" style="width:36px;height:36px;background:<%= paid ? '#198754' : '#f59e0b' %>;color:<%= paid ? '#fff' : '#fff' %>;font-size:0.9rem;">
+              <i class="<%= paid ? 'ri-check-line' : 'ri-bank-card-line' %>"></i>
+            </div>
+            <small class="d-block" style="font-size:0.7rem;font-weight:600;"><%= paid ? 'Peye' : 'Peman' %></small>
+          </div>
+          <div class="flex-grow-1 mx-2" style="height:2px;background:<%= paid ? '#198754' : '#e2e8f0' %>;border-radius:2px;"></div>
+
+          <%# Step 3 — Review %>
+          <div class="text-center flex-shrink-0">
+            <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1" style="width:36px;height:36px;background:<%= reviewed ? (@record.status == 'verified' ? '#198754' : '#dc3545') : '#e2e8f0' %>;color:<%= reviewed ? '#fff' : '#94a3b8' %>;font-size:0.9rem;">
+              <i class="<%= reviewed ? (@record.status == 'verified' ? 'ri-check-double-line' : 'ri-close-line') : 'ri-search-eye-line' %>"></i>
+            </div>
+            <small class="d-block" style="font-size:0.7rem;font-weight:600;"><%= reviewed ? (@record.status == 'verified' ? 'Verifye' : 'Rejte') : 'Revizyon' %></small>
+          </div>
+        </div>
+
+        <% unless paid %>
+          <div class="alert alert-warning mt-3 mb-0 d-flex align-items-center gap-2" style="border-radius:10px;font-size:0.85rem;">
+            <i class="ri-information-line"></i>
+            <span><strong>Peman nesesè.</strong>
+            <% if @payment %>
+              <%= link_to "Peye kounye a →", citizens_dgi_payment_path(@payment), class: "alert-link" %>
+            <% end %></span>
+          </div>
+        <% end %>
+
+        <% if @record.status == "rejected" %>
+          <% rejection = @record.data["rejection"] %>
+          <div class="alert alert-danger mt-3 mb-0" style="border-radius:10px;font-size:0.85rem;">
+            <div class="d-flex align-items-start gap-2">
+              <i class="ri-error-warning-line mt-1"></i>
+              <div class="flex-grow-1">
+                <strong>Deklarasyon Rejte</strong>
+                <% if rejection.is_a?(Hash) %>
+                  <div class="mt-2">
+                    <span class="badge bg-danger me-1"><%= rejection["code"] %></span>
+                    <span class="fw-semibold"><%= rejection["reason"] %></span>
+                  </div>
+                  <% if rejection["notes"].present? %>
+                    <div class="mt-1 text-muted"><i class="ri-message-2-line me-1"></i><%= rejection["notes"] %></div>
+                  <% end %>
+                <% elsif @record.data["rejection_reason"].present? %>
+                  <div class="mt-1"><%= @record.data["rejection_reason"] %></div>
+                <% end %>
+                <div class="mt-2 pt-2" style="border-top:1px solid rgba(220,53,69,0.2);">
+                  <i class="ri-information-line me-1"></i>Ou ka korije fòm ou a epi soumèt li ankò san ou pa peye ankò.
+                </div>
+              </div>
+            </div>
+            <div class="mt-3">
+              <%= link_to resubmit_citizens_dgi_path(@record), class: "btn btn-danger btn-sm w-100", style: "border-radius:8px;" do %>
+                <i class="ri-edit-line me-1"></i>Korije e Soumèt Ankò
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Record Data Summary %>
+      <div class="mb-4 p-3" style="background:white;border:1px solid #e2e8f0;border-radius:12px;">
+        <h6 class="fw-semibold small mb-3"><i class="ri-file-text-line me-2 text-muted"></i>Done Deklarasyon</h6>
+        <% case @record.record_type
+           when "nif_registration" %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted" style="width:35%">Non Konplè</td><td class="fw-semibold"><%= @record.nif_nom_complet %></td></tr>
+            <tr><td class="text-muted">Dat Nesans</td><td><%= @record.nif_date_naissance %></td></tr>
+            <tr><td class="text-muted">Seks</td><td><%= @record.nif_sexe_label %></td></tr>
+            <tr><td class="text-muted">Adrès</td><td><%= @record.nif_adresse_rue %><%= ", #{@record.nif_commune}" if @record.nif_commune.present? %></td></tr>
+            <tr><td class="text-muted">Depatman</td><td><%= @record.nif_departement %></td></tr>
+            <tr><td class="text-muted">Telefon</td><td><%= @record.nif_telephone %></td></tr>
+            <% if @record.nif_genere.present? %>
+              <tr><td class="text-muted">NIF Jenere</td><td><code class="fs-5" style="color:#00209F;"><%= @record.nif_genere %></code></td></tr>
+            <% end %>
+          </table>
+
+        <% when "patente_declaration" %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.patente_raison_sociale %></td></tr>
+            <tr><td class="text-muted">NIF</td><td><code><%= @record.patente_nif %></code></td></tr>
+            <tr><td class="text-muted">Ane Fiskal</td><td><%= @record.patente_annee_fiscale %></td></tr>
+            <tr><td class="text-muted fw-bold">Total Taks</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.patente_total.round(2)) %> HTG</td></tr>
+          </table>
+
+        <% when "tca_declaration" %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.tca_raison_sociale %></td></tr>
+            <tr><td class="text-muted">NIF</td><td><code><%= @record.tca_nif %></code></td></tr>
+            <tr><td class="text-muted">Mwa / Ane</td><td><%= @record.tca_mois_declaration %>/<%= @record.tca_annee_fiscale %></td></tr>
+            <tr><td class="text-muted">Chif Afe Brit</td><td><%= number_with_delimiter(@record.tca_ca_brut.round(2)) %> HTG</td></tr>
+            <tr><td class="text-muted fw-bold">Total TCA</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.tca_total.round(2)) %> HTG</td></tr>
+          </table>
+
+        <% when "ras_ir_declaration" %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.ras_raison_sociale %></td></tr>
+            <tr><td class="text-muted">NIF</td><td><code><%= @record.ras_nif %></code></td></tr>
+            <tr><td class="text-muted">Sektè</td><td><%= @record.ras_secteur_label %></td></tr>
+            <tr><td class="text-muted">Mwa / Ane</td><td><%= @record.ras_mois_declaration %>/<%= @record.ras_annee_fiscale %></td></tr>
+            <tr><td class="text-muted">Anplwaye</td><td><%= @record.ras_nombre_employes %></td></tr>
+            <tr><td class="text-muted fw-bold">Total Retni</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.ras_total.round(2)) %> HTG</td></tr>
+          </table>
+
+        <% when "fermage" %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted" style="width:35%">Non Fèmye</td><td class="fw-semibold"><%= @record.fermage_nom %></td></tr>
+            <tr><td class="text-muted">Komin</td><td><%= @record.fermage_commune %></td></tr>
+            <tr><td class="text-muted">Depatman</td><td><%= @record.fermage_departement %></td></tr>
+            <tr><td class="text-muted">Egzèsis</td><td><%= @record.fermage_exercice %></td></tr>
+            <tr><td class="text-muted fw-bold">Total Fèmaj</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.fermage_total.round(2)) %> HTG</td></tr>
+          </table>
+
+        <% when "business_registration" %>
+          <table class="table table-borderless table-sm mb-0" style="font-size:0.85rem;">
+            <tr><td class="text-muted" style="width:35%">Non Antrepriz</td><td class="fw-semibold"><%= @record.biz_nom_entreprise %></td></tr>
+            <tr><td class="text-muted">Fòm Jridik</td><td><%= @record.biz_forme_juridique %></td></tr>
+            <tr><td class="text-muted">Dat Kreyasyon</td><td><%= @record.biz_date_creation %></td></tr>
+            <tr><td class="text-muted">Sektè</td><td><%= @record.biz_secteur_label %></td></tr>
+          </table>
+        <% end %>
+      </div>
+
+      <%# Signature Section (shared partial) %>
+      <%= render "citizens/dgi/siyati_show", record: @record %>
+    </div>
+
+    <%# ── Right Column ── %>
+    <div class="col-lg-4">
+
+      <%# Payment Card %>
+      <% if @payment %>
+        <div class="mb-3 p-3" style="background:white;border:1px solid #e2e8f0;border-radius:12px;border-left:4px solid <%= @payment.completed? ? '#198754' : '#f59e0b' %>;">
+          <span class="text-muted d-block mb-1" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.5px;">Peman</span>
+          <h4 class="fw-bold mb-3" style="color:<%= @payment.completed? ? '#198754' : '#92400e' %>;"><%= @payment.formatted_total %></h4>
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted" style="font-size:0.8rem;">Frè DGI</span>
+            <span style="font-size:0.8rem;"><%= number_with_precision(@payment.amount_htg, precision: 2, delimiter: ",") %> HTG</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2" style="border-bottom:1px solid #f1f5f9;padding-bottom:8px;">
+            <span class="text-muted" style="font-size:0.8rem;">Frè sèvis</span>
+            <span style="font-size:0.8rem;color:#16a34a;"><%= number_with_precision(@payment.fee_htg, precision: 2, delimiter: ",") %> HTG</span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted" style="font-size:0.8rem;">Estati</span>
+            <span class="badge <%= @payment.status_badge_class %>" style="font-size:0.65rem;"><%= @payment.status_label %></span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-muted" style="font-size:0.8rem;">Metòd</span>
+            <span style="font-size:0.8rem;"><%= @payment.payment_method_label %></span>
+          </div>
+          <% if @payment.transaction_id.present? %>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-muted" style="font-size:0.8rem;">Tranzaksyon</span>
+              <code style="font-size:0.7rem;"><%= @payment.transaction_id %></code>
+            </div>
+          <% end %>
+
+          <% unless @payment.completed? %>
+            <div class="mt-3">
+              <%= link_to citizens_dgi_payment_path(@payment), class: "btn w-100 text-white fw-semibold", style: "background:#00209F;border-radius:10px;min-height:44px;" do %>
+                <i class="ri-bank-card-line me-1"></i>Peye kounye a
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Status Card %>
+      <div class="mb-3 p-3" style="background:white;border:1px solid #e2e8f0;border-radius:12px;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted" style="font-size:0.8rem;">Estati</span>
+          <span class="badge <%= @record.status == 'verified' ? 'bg-success' : @record.status == 'rejected' ? 'bg-danger' : 'bg-warning text-dark' %>" style="font-size:0.65rem;">
+            <%= @record.status == 'verified' ? 'Verifye' : @record.status == 'rejected' ? 'Rejte' : 'Annatant Revizyon' %>
+          </span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted" style="font-size:0.8rem;">Depoze pa</span>
+          <span style="font-size:0.8rem;"><%= @record.data["filed_by"] == "citizen" ? "Ou menm" : "Ajan DGI" %></span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted" style="font-size:0.8rem;">Dat Depo</span>
+          <span style="font-size:0.8rem;"><%= @record.created_at.strftime("%d/%m/%Y") %></span>
+        </div>
+      </div>
+
+      <%# Receipt link %>
+      <% if @payment&.completed? %>
+        <div class="p-3 text-center" style="background:white;border:1px solid #e2e8f0;border-radius:12px;border-left:4px solid #00209F;">
+          <%= link_to receipt_citizens_dgi_payment_path(@payment), class: "btn btn-outline-primary btn-sm w-100", style: "border-radius:8px;" do %>
+            <i class="ri-receipt-line me-1"></i>Wè Resi
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

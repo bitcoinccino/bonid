@@ -1,0 +1,29 @@
+<%# Shared read-only signature display for DGI filing show pages %>
+<%# Locals: record (VerificationRecord) %>
+
+<% citizen = record.user %>
+<% submission = citizen.identity_submissions&.find_by(status: "approved") %>
+<% return unless submission&.signature&.attached? %>
+
+<div class="mb-4 p-3" style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;">
+  <h6 class="fw-semibold small mb-3"><i class="ri-quill-pen-line me-2 text-muted"></i>Siyati Kontribyab</h6>
+
+  <div class="dgi-bonid-signature">
+    <div class="d-flex justify-content-between align-items-end">
+      <div>
+        <%= image_tag submission.signature.variant(resize_to_limit: [250, 100]),
+              class: "img-fluid", style: "max-height:80px;", alt: "Siyati #{citizen.first_name} #{citizen.last_name}" %>
+        <div class="mt-2">
+          <span class="fw-semibold" style="font-size:0.85rem;"><%= citizen.first_name %> <%= citizen.last_name %></span>
+          <br><code class="small" style="color:#00209F;"><%= citizen.bonid.present? ? "#{citizen.bonid[0,3]}#{'X' * [citizen.bonid.length - 9, 0].max}#{citizen.bonid.last(6)}" : "" %></code>
+        </div>
+      </div>
+      <% if submission.respond_to?(:secure_qr_png_base64) && submission.secure_qr_png_base64.present? %>
+        <div class="text-center">
+          <img src="data:image/png;base64,<%= submission.secure_qr_png_base64 %>" style="width:72px;height:72px;border-radius:6px;" alt="QR Verifikasyon">
+          <br><small class="text-muted" style="font-size:0.65rem;">Eskane pou verifye</small>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

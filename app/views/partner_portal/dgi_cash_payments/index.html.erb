@@ -1,0 +1,254 @@
+<%# Partner Portal — DGI Activity Feed (All Payments & Declarations) %>
+<div class="partner-dashboard">
+  <div class="dash-header">
+    <div>
+      <h4 class="dash-title"><i class="ri-pulse-line me-2"></i>Aktivite DGI</h4>
+      <p class="dash-subtitle">Tout peman, deklarasyon, ak tranzaksyon</p>
+    </div>
+    <%= link_to lookup_partner_portal_dgi_cash_payments_path, class: "dash-cta" do %>
+      <i class="ri-qr-scan-2-line me-2"></i>Chèche pa Referans
+    <% end %>
+  </div>
+
+  <%# Metric Cards %>
+  <div class="dash-metrics">
+    <div class="metric-card metric-card--blue">
+      <div class="metric-icon metric-icon--blue"><i class="ri-file-list-3-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= @stats[:total_declarations] %></span><span class="metric-label">Deklarasyon</span></div>
+    </div>
+    <div class="metric-card metric-card--green">
+      <div class="metric-icon metric-icon--green"><i class="ri-bank-card-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= @stats[:completed] %></span><span class="metric-label">Peman Konplete</span></div>
+    </div>
+    <% if @stats[:pending_confirm] > 0 %>
+      <div class="metric-card metric-card--orange">
+        <div class="metric-icon metric-icon--orange"><i class="ri-hand-coin-line"></i></div>
+        <div class="metric-info"><span class="metric-value"><%= @stats[:pending_confirm] %></span><span class="metric-label">Annatant Konfimasyon</span></div>
+      </div>
+    <% end %>
+    <div class="metric-card metric-card--purple" style="border-left:3px solid #7c3aed;">
+      <div class="metric-icon" style="background:#ede9fe;color:#7c3aed;"><i class="ri-money-dollar-circle-line"></i></div>
+      <div class="metric-info"><span class="metric-value"><%= number_with_delimiter(@stats[:revenue_htg]) %></span><span class="metric-label">Revni Total (HTG)</span></div>
+    </div>
+  </div>
+
+  <%# Tabs %>
+  <ul class="nav nav-pills mb-3" style="gap: 6px;">
+    <li class="nav-item">
+      <%= link_to partner_portal_dgi_cash_payments_path(tab: "all"),
+          class: "nav-link #{'active' if @tab == 'all'}",
+          style: @tab == "all" ? "background:#00209F;" : "" do %>
+        Tout (<%= @stats[:total_payments] %>)
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to partner_portal_dgi_cash_payments_path(tab: "pending"),
+          class: "nav-link #{'active' if @tab == 'pending'}",
+          style: @tab == "pending" ? "background:#f59e0b;color:#000;" : "" do %>
+        <i class="ri-time-line me-1"></i>Annatant (<%= @stats[:pending_confirm] %>)
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to partner_portal_dgi_cash_payments_path(tab: "completed"),
+          class: "nav-link #{'active' if @tab == 'completed'}",
+          style: @tab == "completed" ? "background:#10B981;" : "" do %>
+        <i class="ri-check-line me-1"></i>Konplete (<%= @stats[:completed] %>)
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to partner_portal_dgi_cash_payments_path(tab: "declarations"),
+          class: "nav-link #{'active' if @tab == 'declarations'}",
+          style: @tab == "declarations" ? "background:#00209F;" : "" do %>
+        <i class="ri-file-text-line me-1"></i>Deklarasyon (<%= @stats[:total_declarations] %>)
+      <% end %>
+    </li>
+  </ul>
+
+  <%# Search + Filter %>
+  <div class="dash-card mb-3">
+    <div class="dash-card-body py-2">
+      <%= form_tag partner_portal_dgi_cash_payments_path, method: :get, class: "row g-2 align-items-end" do %>
+        <%= hidden_field_tag :tab, @tab %>
+        <div class="col-md-5">
+          <%= text_field_tag :search, params[:search], class: "form-control form-control-sm",
+              placeholder: "Chèche non, referans, imel..." %>
+        </div>
+        <% unless @tab == "declarations" %>
+          <div class="col-md-4">
+            <%= select_tag :method, options_for_select([
+              ["Zellus", "zellus"],
+              ["Kach nan Biwo", "cash_window"],
+              ["Transfè Bankè", "bank_transfer"],
+              ["MonCash", "moncash"]
+            ], params[:method]), class: "form-select form-select-sm", prompt: "Tout metòd" %>
+          </div>
+        <% end %>
+        <div class="col-md-3">
+          <%= submit_tag "Filtre", class: "btn btn-primary btn-sm w-100" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @tab == "declarations" %>
+    <%# ═══════════════════════════════════════════ %>
+    <%# Declarations Table                          %>
+    <%# ═══════════════════════════════════════════ %>
+    <div class="dash-card">
+      <div class="dash-card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>Nimewo</th><th>Fòm</th><th>Sitwayen</th><th>Estati</th><th>Dat</th><th>Aksyon</th></tr></thead>
+            <tbody>
+              <% @declarations.each do |r| %>
+                <% citizen = r.user %>
+                <tr>
+                  <td><code class="small"><%= r.data["declaration_number"] %></code></td>
+                  <td><span class="badge bg-light text-dark"><%= r.record_type.titleize.gsub("_", " ") %></span></td>
+                  <td>
+                    <strong><%= citizen&.first_name %> <%= citizen&.last_name %></strong>
+                    <br><code class="small text-muted"><%= mask_bonid(citizen&.bonid) %></code>
+                  </td>
+                  <td>
+                    <% case r.status
+                       when "pending" %>
+                      <span class="badge bg-warning text-dark"><i class="ri-time-line me-1"></i>Annatant</span>
+                    <% when "verified" %>
+                      <span class="badge bg-success"><i class="ri-check-line me-1"></i>Verifye</span>
+                    <% when "rejected" %>
+                      <span class="badge bg-danger"><i class="ri-close-line me-1"></i>Rejte</span>
+                    <% else %>
+                      <span class="badge bg-secondary"><%= r.status&.titleize %></span>
+                    <% end %>
+                  </td>
+                  <td class="text-muted small"><%= r.created_at.strftime("%d/%m/%Y %H:%M") %></td>
+                  <td>
+                    <%= link_to partner_portal_dgi_review_path(r), class: "btn btn-sm btn-outline-primary" do %>
+                      <i class="ri-eye-line me-1"></i>Wè
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @declarations.empty? %>
+                <tr><td colspan="6" class="text-center text-muted py-4">
+                  <i class="ri-file-text-line ri-2x d-block mb-2 text-muted"></i>
+                  Pa gen deklarasyon.
+                </td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <% if @declarations.respond_to?(:total_pages) && @declarations.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-4"><%= paginate @declarations %></div>
+    <% end %>
+
+  <% else %>
+    <%# ═══════════════════════════════════════════ %>
+    <%# Payments Table (All / Pending / Completed)  %>
+    <%# ═══════════════════════════════════════════ %>
+    <div class="dash-card">
+      <div class="dash-card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>Referans</th><th>Sitwayen</th><th>Fòm</th><th>Montan</th><th>Metòd</th><th>Estati</th><th>Dat</th><th>Aksyon</th></tr></thead>
+            <tbody>
+              <% @payments.each do |p| %>
+                <tr>
+                  <td><code class="small"><%= p.order_id %></code></td>
+                  <td>
+                    <strong><%= p.user&.first_name %> <%= p.user&.last_name %></strong>
+                    <br><code class="small text-muted"><%= mask_bonid(p.user&.bonid) %></code>
+                  </td>
+                  <td><span class="badge bg-light text-dark"><%= p.verification_record&.record_type&.titleize&.gsub("_", " ") || "—" %></span></td>
+                  <td class="fw-bold"><%= p.formatted_total %></td>
+                  <td>
+                    <% case p.payment_method
+                       when "zellus" %>
+                      <span class="badge" style="background:#7c3aed;color:#fff;"><i class="ri-flashlight-line me-1"></i>Zellus</span>
+                    <% when "cash_window" %>
+                      <span class="badge bg-warning text-dark"><i class="ri-money-dollar-circle-line me-1"></i>Kach</span>
+                    <% when "bank_transfer" %>
+                      <span class="badge bg-info"><i class="ri-bank-line me-1"></i>Bank</span>
+                    <% when "moncash" %>
+                      <span class="badge" style="background:#ff6600;color:#fff;"><i class="ri-smartphone-line me-1"></i>MonCash</span>
+                    <% else %>
+                      <span class="badge bg-secondary"><%= p.payment_method&.titleize %></span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <% case p.status
+                       when "completed" %>
+                      <span class="badge bg-success"><i class="ri-check-line me-1"></i>Konplete</span>
+                    <% when "pending_cash", "pending" %>
+                      <span class="badge bg-warning text-dark"><i class="ri-time-line me-1"></i>Annatant</span>
+                    <% when "failed" %>
+                      <span class="badge bg-danger"><i class="ri-close-line me-1"></i>Echwe</span>
+                    <% else %>
+                      <span class="badge bg-secondary"><%= p.status&.titleize %></span>
+                    <% end %>
+                  </td>
+                  <td class="text-muted small"><%= (p.paid_at || p.created_at).strftime("%d/%m/%Y %H:%M") %></td>
+                  <td>
+                    <% if p.status.in?(%w[pending_cash pending]) && p.payment_method.in?(%w[cash_window bank_transfer]) %>
+                      <% if p.payment_method == "cash_window" %>
+                        <%= form_tag confirm_partner_portal_dgi_cash_payment_path(p), method: :post, class: "d-inline" do %>
+                          <button type="submit" class="btn btn-sm btn-success"
+                                  onclick="return confirm('Konfime peman kach <%= p.formatted_total %> pou <%= p.user&.first_name %> <%= p.user&.last_name %>?')">
+                            <i class="ri-check-line me-1"></i>Konfime
+                          </button>
+                        <% end %>
+                      <% else %>
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#bankModal<%= p.id %>">
+                          <i class="ri-check-line me-1"></i>Verifye
+                        </button>
+                        <div class="modal fade" id="bankModal<%= p.id %>" tabindex="-1">
+                          <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                              <%= form_tag confirm_partner_portal_dgi_cash_payment_path(p), method: :post do %>
+                                <div class="modal-header"><h6 class="modal-title">Verifye Transfè</h6></div>
+                                <div class="modal-body">
+                                  <label class="form-label">Referans Transfè Bankè</label>
+                                  <%= text_field_tag :bank_reference, nil, class: "form-control", required: true, placeholder: "Nimewo tranzaksyon bank" %>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anile</button>
+                                  <button type="submit" class="btn btn-success">Konfime</button>
+                                </div>
+                              <% end %>
+                            </div>
+                          </div>
+                        </div>
+                      <% end %>
+                    <% elsif p.status == "completed" && p.verification_record.present? %>
+                      <%= link_to partner_portal_dgi_review_path(p.verification_record), class: "btn btn-sm btn-outline-primary" do %>
+                        <i class="ri-eye-line me-1"></i>Wè
+                      <% end %>
+                    <% else %>
+                      <span class="text-muted">—</span>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+              <% if @payments.empty? %>
+                <tr><td colspan="8" class="text-center text-muted py-4">
+                  <% if @tab == "pending" %>
+                    <i class="ri-checkbox-circle-line ri-2x d-block mb-2" style="color:#198754;"></i>
+                    Pa gen peman annatant. Tout ajou!
+                  <% else %>
+                    <i class="ri-bank-card-line ri-2x d-block mb-2 text-muted"></i>
+                    Pa gen peman pou montre.
+                  <% end %>
+                </td></tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <% if @payments.respond_to?(:total_pages) && @payments.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-4"><%= paginate @payments %></div>
+    <% end %>
+  <% end %>
+</div>

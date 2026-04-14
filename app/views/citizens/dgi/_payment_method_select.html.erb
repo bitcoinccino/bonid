@@ -1,0 +1,31 @@
+<%# Shared payment method selector for all DGI wizard forms %>
+<%# Shows only payment methods the citizen saved in their BonID profile %>
+<%# Locals: payment_methods (ActiveRecord relation of BankProfile) %>
+
+<% wallet_profiles = payment_methods.select(&:mobile_wallet?) %>
+<% bank_acct_profiles = payment_methods.select(&:bank?) %>
+
+<div class="p-3 rounded" style="background:#f0f4ff;border:1px solid #c7d2fe;">
+  <label for="paymentMethod" class="fw-bold small d-block mb-2"><i class="ri-bank-card-line me-1"></i>Chwazi yon metòd peman</label>
+  <select name="payment_method" id="paymentMethod" class="form-select" style="font-size:0.85rem;" required>
+    <option value="" disabled selected>— Chwazi metòd peman —</option>
+    <% if wallet_profiles.any? %>
+      <optgroup label="Pòtfèy Mobil">
+        <% wallet_profiles.each do |pm| %>
+          <option value="wallet_<%= pm.id %>"><%= pm.wallet_provider&.titleize %> — ••••<%= pm.wallet_address&.last(4) %></option>
+        <% end %>
+      </optgroup>
+    <% end %>
+    <% if bank_acct_profiles.any? %>
+      <optgroup label="Kont Labank">
+        <% bank_acct_profiles.each do |pm| %>
+          <option value="bank_<%= pm.id %>"><%= pm.bank_name %> — ••••<%= pm.account_number&.last(4) %></option>
+        <% end %>
+      </optgroup>
+    <% end %>
+    <optgroup label="Lòt opsyon">
+      <option value="cash_window">Peye nan gichè DGI</option>
+      <option value="bank_transfer">Transfè bankè</option>
+    </optgroup>
+  </select>
+</div>

@@ -1,0 +1,40 @@
+<%# Shared Siyati (Certification & Signature) content for all DGI wizard forms %>
+<%# Locals: none required — uses controller instance variables %>
+
+<p class="small text-muted mb-3">Li deklarasyon an epi siyen ak siyati BonID ou pou konfime enfòmasyon yo kòrèk.</p>
+<div class="dgi-certification-section">
+  <div class="dgi-certification-text">
+    <p>Mwen, <strong><%= @auto_fill[:full_name] %></strong>, sètifye ke tout enfòmasyon mwen bay nan fòmilè sa a se laverite, egzak, epi konplè dapre sa mwen konnen. Mwen konprann ke nenpòt fo deklarasyon ka lakòz penalite sivil oswa kriminèl dapre lalwa fiskal Repiblik d Ayiti.</p>
+    <p class="mb-0">Tanpri retounen nan Direksyon Jeneral Enpo (DGI) oswa nan biwo lokal ou pou avize sou nenpòt chanjman nan enfòmasyon ou yo.</p>
+  </div>
+
+  <%# BonID Signature %>
+  <div class="dgi-bonid-signature mt-3">
+    <div class="d-flex align-items-end gap-3">
+      <div>
+        <% if @bonid_submission&.signature&.attached? %>
+          <%= image_tag @bonid_submission.signature.variant(resize_to_limit: [200, 80]), class: "img-fluid", style: "max-height:70px;", alt: "Siyati #{@auto_fill[:full_name]}" %>
+        <% else %>
+          <div class="dgi-bonid-signature__text"><%= @auto_fill[:full_name] %></div>
+        <% end %>
+        <div class="mt-1">
+          <span class="fw-semibold small"><%= @auto_fill[:full_name] %></span>
+          <br><code class="small text-muted"><%= current_citizen.bonid.present? ? "#{current_citizen.bonid[0,3]}#{'X' * [current_citizen.bonid.length - 9, 0].max}#{current_citizen.bonid.last(6)}" : "" %></code>
+        </div>
+      </div>
+      <% if @bonid_submission&.respond_to?(:secure_qr_png_base64) && @bonid_submission&.secure_qr_png_base64.present? %>
+        <div class="text-center">
+          <img src="data:image/png;base64,<%= @bonid_submission.secure_qr_png_base64 %>" style="width:60px;height:60px;" alt="QR Verifikasyon">
+          <br><small class="text-muted" style="font-size:0.65rem;">Verifye</small>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="form-check mt-3">
+    <%= check_box_tag :certification_accepted, "1", false, class: "form-check-input dgi-certification-checkbox", id: "certificationAccepted", required: true %>
+    <label class="form-check-label fw-semibold" for="certificationAccepted">
+      Mwen sètifye ke enfòmasyon sa yo kòrèk epi mwen aksepte kondisyon yo <span class="text-danger">*</span>
+    </label>
+  </div>
+</div>
