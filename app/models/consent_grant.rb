@@ -108,13 +108,19 @@ class ConsentGrant < ApplicationRecord
 
     append_audit!("revoked", reason: reason)
 
-    # Create partner audit entry for transparency
+    # 1. Immediately invalidate all active tokens for this citizen + partner
+    revoked_count = invalidate_partner_tokens!
+
+    # 2. Create partner audit entry for transparency
     PartnerAuditLog.create!(
       partner: partner,
       event: "consent_revoked",
-      details: "Citizen revoked consent (#{citizen.email})",
-      metadata: { grant_id: id, reason: reason }
+      details: "Citizen revoked consent (#{citizen.email}). #{revoked_count} token(s) invalidated.",
+      metadata: { grant_id: id, reason: reason, tokens_revoked: revoked_count }
     )
+
+    # 3. Fire consent.revoked webhook (async — includes data erasure request)
+    ConsentWebhookJob.perform_later(id, "consent.revoked")
   end
 
   # ======================================================
@@ -165,6 +171,23 @@ class ConsentGrant < ApplicationRecord
   # ======================================================
   def generate_grant_token
     self.grant_token ||= SecureRandom.hex(16)
+  end
+
+  # ======================================================
+  # 🔒 Token Invalidation (GDPR Article 17 compliance)
+  # ======================================================
+  def invalidate_partner_tokens!
+    tokens = OauthAccessToken.where(
+      partner_id: partner_id,
+      citizen_id: citizen_id,
+      revoked_at: nil
+    ).where("expires_at > ?", Time.current)
+
+    count = tokens.count
+    tokens.update_all(revoked_at: Time.current) if count > 0
+
+    Rails.logger.info("[ConsentGrant] Revoked #{count} active token(s) for citizen #{citizen_id} + partner #{partner.slug}")
+    count
   end
 
   private

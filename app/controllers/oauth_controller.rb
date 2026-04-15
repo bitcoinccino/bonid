@@ -355,11 +355,19 @@ class OauthController < ApplicationController
       return render json: { error: "Citizen not found" }, status: :not_found
     end
 
+    # Double-check consent grant is still active (defense-in-depth)
+    grant = citizen.consent_grants.find_by(partner_id: access_token.partner_id)
+    unless grant&.active?
+      access_token.revoke!
+      return render json: { error: "Consent revoked", verified: false }, status: :unauthorized
+    end
+
     # Build scope-aware payload using OidcTokenService
     payload = OidcTokenService.new(citizen: citizen, scopes: access_token.scopes).payload
 
     # Always include sub (required by OIDC)
     payload[:sub] = citizen.id
+    payload[:verified] = true
 
     # Add photo_url if profile scope granted and photo attached
     if access_token.scopes.include?("profile") && citizen.respond_to?(:photo) && citizen.photo.attached?
@@ -461,7 +469,15 @@ class OauthController < ApplicationController
   # ------------------------------------------------------------
 
   def validate_redirect_uri(uri)
-    return @partner.primary_redirect_uri if uri.blank?
+    # If no URI provided, use the partner's default
+    if uri.blank?
+      fallback = @partner.primary_redirect_uri
+      if fallback.blank?
+        Rails.logger.error("OAuth blocked: partner #{@partner.slug} has no registered redirect URIs")
+        raise SecurityError, "This partner has no registered redirect URI. Contact the BonID admin to configure one."
+      end
+      return fallback
+    end
 
     normalized_uri = uri.to_s.strip
 

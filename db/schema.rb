@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_14_230000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1233,6 +1233,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_14_230000) do
     t.index ["user_id"], name: "index_officers_on_user_id"
   end
 
+  create_table "one_time_secrets", force: :cascade do |t|
+    t.bigint "partner_id", null: false
+    t.string "token", null: false
+    t.text "encrypted_payload", null: false
+    t.string "label"
+    t.datetime "expires_at", null: false
+    t.datetime "viewed_at"
+    t.string "viewed_ip"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_one_time_secrets_on_expires_at"
+    t.index ["partner_id"], name: "index_one_time_secrets_on_partner_id"
+    t.index ["token"], name: "index_one_time_secrets_on_token", unique: true
+  end
+
   create_table "partner_access_logs", force: :cascade do |t|
     t.bigint "partner_id", null: false
     t.bigint "admin_user_id"
@@ -2313,6 +2328,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_14_230000) do
   add_foreign_key "officers", "departments"
   add_foreign_key "officers", "partners"
   add_foreign_key "officers", "users"
+  add_foreign_key "one_time_secrets", "partners"
   add_foreign_key "partner_access_logs", "admin_users"
   add_foreign_key "partner_access_logs", "partners"
   add_foreign_key "partner_api_logs", "partners"

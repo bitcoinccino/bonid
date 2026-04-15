@@ -5,6 +5,20 @@ class BonidNotifier
   MAX_RETRIES = 3
   BASE_DELAY  = 2 # seconds
 
+  # GDPR erasure webhooks get extended retries (consent.revoked)
+  GDPR_MAX_RETRIES = 10
+  GDPR_RETRY_SCHEDULE = [
+    5.seconds,      # attempt 2
+    30.seconds,     # attempt 3
+    2.minutes,      # attempt 4
+    10.minutes,     # attempt 5
+    30.minutes,     # attempt 6
+    1.hour,         # attempt 7
+    3.hours,        # attempt 8
+    6.hours,        # attempt 9
+    12.hours        # attempt 10
+  ].freeze
+
   class << self
     # ===========================================================
     # Generic partner webhook (existing ApiWebhookEvent-based)
@@ -71,6 +85,18 @@ class BonidNotifier
         payload[:previous_bonid] = alias_record&.old_bonid
       end
 
+      # GDPR Article 17 — data erasure request on consent revocation
+      if event_type == "consent.revoked"
+        payload[:data_erasure] = {
+          requested: true,
+          reason: consent_grant.change_reason || "citizen_revoked_consent",
+          gdpr_article: "Article 17 — Right to Erasure",
+          obligation: "Delete or anonymize all personal data obtained via BonID consent within 30 days.",
+          revoked_at: consent_grant.revoked_at&.iso8601,
+          deadline: (consent_grant.revoked_at + 30.days).iso8601
+        }
+      end
+
       payload_json = payload.to_json
       signature = partner.sign_webhook_payload(payload_json)
 
@@ -104,17 +130,43 @@ class BonidNotifier
       Rails.logger.warn("[BonidNotifier] Consent webhook attempt #{attempt} failed for #{partner&.name}: #{e.message}")
 
       if defined?(webhook_event) && webhook_event&.persisted?
-        webhook_event.update!(status: "failed", payload: webhook_event.payload.merge("error" => e.message))
+        webhook_event.update!(
+          status: "failed",
+          retry_attempts: attempt,
+          payload: webhook_event.payload.merge("error" => e.message, "last_attempt_at" => Time.current.iso8601)
+        )
       end
 
-      if attempt < MAX_RETRIES
-        delay = BASE_DELAY**attempt
-        Rails.logger.info("[BonidNotifier] Retrying consent webhook in #{delay}s")
+      # GDPR-critical events (consent.revoked) get extended retry schedule
+      is_gdpr = event_type == "consent.revoked"
+      max = is_gdpr ? GDPR_MAX_RETRIES : MAX_RETRIES
+
+      if attempt < max
+        delay = if is_gdpr
+                  GDPR_RETRY_SCHEDULE[attempt - 1] || 12.hours
+                else
+                  BASE_DELAY**attempt
+                end
+        Rails.logger.info("[BonidNotifier] Retrying consent webhook in #{delay}s (attempt #{attempt + 1}/#{max}, gdpr=#{is_gdpr})")
         if defined?(webhook_event) && webhook_event&.persisted?
-          WebhookRetryJob.set(wait: delay.seconds).perform_later(partner.id, webhook_event.id, attempt + 1)
+          WebhookRetryJob.set(wait: delay).perform_later(partner.id, webhook_event.id, attempt + 1)
         end
       else
-        Rails.logger.error("[BonidNotifier] Max retries for consent webhook to #{partner&.name}")
+        # Dead letter — all retries exhausted
+        if defined?(webhook_event) && webhook_event&.persisted?
+          webhook_event.update!(status: "dead_letter")
+        end
+        Rails.logger.error("[BonidNotifier] DEAD LETTER: #{event_type} webhook to #{partner&.name} failed after #{max} attempts. Manual intervention required.")
+
+        # Notify BonID admin of undelivered GDPR erasure
+        if is_gdpr
+          PartnerAuditLog.create!(
+            partner: partner,
+            event: "gdpr_erasure_delivery_failed",
+            details: "GDPR erasure webhook failed after #{max} attempts. Manual follow-up required.",
+            metadata: { webhook_event_id: webhook_event&.id, citizen_bonid: citizen&.bonid }
+          )
+        end
       end
     end
 

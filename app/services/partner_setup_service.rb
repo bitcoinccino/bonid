@@ -24,6 +24,8 @@ class PartnerSetupService
 
       setup_partner_admin!
       setup_default_teller! if @partner.sector == "banking"
+      provision_oauth_credentials!
+      generate_webhook_secret!
     end
 
     true
@@ -183,6 +185,52 @@ class PartnerSetupService
   end
 
   # ============================================================================
+  # OAUTH APPLICATION (Auto-provisioned on approval)
+  # ============================================================================
+  def provision_oauth_credentials!
+    return if OauthApplication.exists?(partner_id: @partner.id)
+
+    plain_secret = SecureRandom.hex(32)
+    app = OauthApplication.create!(
+      partner: @partner,
+      name: @partner.name,
+      uid: SecureRandom.uuid,
+      secret_digest: BCrypt::Password.create(plain_secret),
+      redirect_uri: @partner.primary_redirect_uri || "urn:ietf:wg:oauth:2.0:oob"
+    )
+
+    # Create one-time secret portal link (expires in 72 hours, viewable once)
+    secret = OneTimeSecret.create_for(
+      partner: @partner,
+      payload: { client_id: app.uid, client_secret: plain_secret },
+      label: "OAuth Credentials",
+      expires_in: 72.hours
+    )
+
+    @oauth_secret_url = secret.url
+
+    PartnerAuditLog.create!(
+      partner: @partner,
+      admin_user: @admin_user,
+      event: "oauth_credentials_provisioned",
+      details: "OAuth application created. Credentials available via one-time secret link.",
+      metadata: { client_id: app.uid, secret_token: secret.token }
+    )
+
+    Rails.logger.info "[PartnerSetup] OAuth credentials provisioned for #{@partner.name} — client_id: #{app.uid}"
+  end
+
+  # ============================================================================
+  # WEBHOOK SECRET (Auto-generated on approval)
+  # ============================================================================
+  def generate_webhook_secret!
+    return if @partner.webhook_secret.present?
+
+    @partner.update!(webhook_secret: SecureRandom.hex(32))
+    Rails.logger.info "[PartnerSetup] Webhook secret generated for #{@partner.name}"
+  end
+
+  # ============================================================================
   # PASSWORD GENERATION
   # ============================================================================
   def ensure_password(user, default = SecureRandom.hex(8))
@@ -218,7 +266,8 @@ class PartnerSetupService
     Admin::PartnerAdminMailer.invite(
       partner: @partner,
       email: user.email,
-      invite_url: invite_url
+      invite_url: invite_url,
+      oauth_secret_url: @oauth_secret_url
     ).deliver_later
   end
 end

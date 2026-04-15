@@ -43,6 +43,12 @@ FactoryBot.define do
       active { true }
     end
 
+    trait :approved do
+      verified_at { Time.current }
+      active { true }
+      status { :approved }
+    end
+
     # Trait for partner with credits (for API tests)
     trait :with_credits do
       credit_balance { 10_000 }

@@ -148,6 +148,120 @@
   </div>
 
   <%# ══════════════════════════════════════════════════════════ %>
+  <%# ── 1b. OAUTH CREDENTIALS SECTION ── %>
+  <%# ══════════════════════════════════════════════════════════ %>
+  <% if @oauth_app.present? %>
+  <div class="api-card">
+    <div class="api-card-header api-card-header--collapsible"
+         data-action="click->api-keys#toggleSection"
+         data-api-keys-section-param="oauth">
+      <h6 class="api-card-title">
+        <i class="ri-shield-keyhole-line me-2"></i>OAuth Credentials
+      </h6>
+      <div class="d-flex align-items-center gap-3">
+        <span class="api-meta-badge">
+          <i class="ri-checkbox-circle-line me-1"></i>Active
+        </span>
+        <i class="ri-arrow-down-s-line api-collapse-icon" data-api-keys-target="collapseIcon" data-section="oauth"></i>
+      </div>
+    </div>
+    <div class="api-card-body" data-api-keys-target="section" data-section="oauth">
+
+      <% if @oauth_secret_url.present? %>
+        <div class="api-alert api-alert--success" style="margin-bottom: 16px;">
+          <div class="api-alert-icon"><i class="ri-lock-line"></i></div>
+          <div class="api-alert-body">
+            <strong>New OAuth secret generated!</strong> View it via this one-time link:
+            <div class="api-alert-key-row" style="margin-top: 8px;">
+              <a href="<%= @oauth_secret_url %>" target="_blank" class="api-btn api-btn--success" style="text-decoration: none;">
+                <i class="ri-external-link-line me-1"></i>View Credentials (One-Time)
+              </a>
+            </div>
+            <div class="api-alert-hint">This link can only be viewed once and expires in 24 hours.</div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Client ID Row %>
+      <div class="credential-row">
+        <div class="credential-info">
+          <span class="credential-label">Client ID</span>
+          <div class="credential-value-row">
+            <code id="oauthClientId" class="credential-digest"><%= @oauth_app.uid %></code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('oauthClientId', this)" title="Copy Client ID">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="credential-divider"></div>
+
+      <%# Client Secret Row %>
+      <div class="credential-row">
+        <div class="credential-info">
+          <span class="credential-label">Client Secret</span>
+          <div class="credential-value-row">
+            <code class="credential-digest">••••••••••••••••••••••••••••••••</code>
+            <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">Hidden — rotate to get a new one</span>
+          </div>
+        </div>
+        <div class="credential-actions">
+          <%= button_to rotate_oauth_secret_partner_portal_api_keys_path,
+                method: :post,
+                class: "api-btn api-btn--danger-outline",
+                form: { data: { turbo_confirm: "Rotate your OAuth client secret? The current secret will stop working immediately. A one-time link will be generated for the new secret." } } do %>
+            <i class="ri-refresh-line me-1"></i>Rotate Secret
+          <% end %>
+        </div>
+      </div>
+
+      <div class="credential-divider"></div>
+
+      <%# OAuth Endpoints %>
+      <div class="credential-grid">
+        <div class="credential-block">
+          <span class="credential-label">Authorize URL</span>
+          <div class="credential-code-row">
+            <code id="oauthAuthorize" class="credential-code"><%= request.base_url %>/oauth/authorize</code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('oauthAuthorize', this)">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+        <div class="credential-block">
+          <span class="credential-label">Token URL</span>
+          <div class="credential-code-row">
+            <code id="oauthToken" class="credential-code"><%= request.base_url %>/oauth/token</code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('oauthToken', this)">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+        <div class="credential-block">
+          <span class="credential-label">Userinfo URL</span>
+          <div class="credential-code-row">
+            <code id="oauthUserinfo" class="credential-code"><%= request.base_url %>/oauth/userinfo</code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('oauthUserinfo', this)">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+        <div class="credential-block">
+          <span class="credential-label">Redirect URI</span>
+          <div class="credential-code-row">
+            <code id="oauthRedirect" class="credential-code"><%= @oauth_app.redirect_uri %></code>
+            <button type="button" class="api-copy-inline" onclick="copyToClipboard('oauthRedirect', this)">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% end %>
+
+  <%# ══════════════════════════════════════════════════════════ %>
   <%# ── 2. QUICK EXAMPLE (Collapsible + Tabbed) ── %>
   <%# ══════════════════════════════════════════════════════════ %>
   <div class="api-card">

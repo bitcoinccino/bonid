@@ -9,7 +9,9 @@ module PartnerPortal
 
     def index
       @partner = @current_partner
+      @oauth_app = OauthApplication.find_by(partner_id: @current_partner.id)
       @new_api_key_token = flash[:new_api_key_token]
+      @oauth_secret_url = flash[:oauth_secret_url]
     end
 
     # Regenerate the partner's API key
@@ -17,6 +19,36 @@ module PartnerPortal
       new_key = @current_partner.rotate_api_key!
       flash[:new_api_key_token] = new_key
       redirect_to partner_portal_api_keys_path, notice: "API Key regenerated successfully."
+    end
+
+    # Rotate OAuth client_secret — generates new secret, returns via one-time link
+    def rotate_oauth_secret
+      oauth_app = OauthApplication.find_by(partner_id: @current_partner.id)
+      unless oauth_app
+        redirect_to partner_portal_api_keys_path, alert: "No OAuth application found. Contact BonID support."
+        return
+      end
+
+      new_secret = SecureRandom.hex(32)
+      oauth_app.update_column(:secret_digest, BCrypt::Password.create(new_secret))
+
+      # Create one-time secret link
+      secret = OneTimeSecret.create_for(
+        partner: @current_partner,
+        payload: { client_id: oauth_app.uid, client_secret: new_secret },
+        label: "Rotated OAuth Credentials",
+        expires_in: 24.hours
+      )
+
+      PartnerAuditLog.create!(
+        partner: @current_partner,
+        event: "oauth_secret_rotated",
+        details: "OAuth client_secret rotated by partner admin",
+        metadata: { client_id: oauth_app.uid, rotated_at: Time.current.iso8601 }
+      )
+
+      flash[:oauth_secret_url] = secret.url
+      redirect_to partner_portal_api_keys_path, notice: "OAuth secret rotated. Use the secure link below to view your new credentials."
     end
 
     # Generate or refresh a Bearer token for a specific consent grant

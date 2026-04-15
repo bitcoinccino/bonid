@@ -84,6 +84,7 @@ class ApplicationController < ActionController::Base
   def current_resource
     return current_admin_user if respond_to?(:current_admin_user) && current_admin_user
     return current_officer    if respond_to?(:current_officer) && current_officer
+    return current_citizen    if respond_to?(:current_citizen) && current_citizen
     return current_user       if respond_to?(:current_user) && current_user
     nil
   end

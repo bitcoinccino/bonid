@@ -28,6 +28,9 @@ Rails.application.routes.draw do
   get  "/enskri/arrondissements", to: "landing#arrondissements"
   get  "/enskri/communes",        to: "landing#communes"
 
+  # One-time secret portal (OAuth credentials)
+  get "/secrets/:token", to: "one_time_secrets#show", as: :one_time_secret
+
   get "/start",    to: "main#start",    as: :start_verification
   get "/partners", to: "main#partners", as: :partners
   get "/pricing",  to: "main#pricing",  as: :pricing
@@ -759,6 +762,7 @@ end
     get "analytics", to: "analytics#index"
     resources :api_keys, only: [ :index, :create, :destroy ] do
       post :generate_token, on: :collection
+      post :rotate_oauth_secret, on: :collection
     end
 
     # Billing

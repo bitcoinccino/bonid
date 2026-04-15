@@ -32,6 +32,7 @@ class Partner < ApplicationRecord
   has_many :partner_schemas, dependent: :destroy
   has_many :service_applications, dependent: :destroy
   has_many :verification_records, dependent: :nullify
+  has_one :oauth_application, dependent: :destroy
   has_many :consent_grants, dependent: :destroy
   has_many :transaction_consents, dependent: :destroy
   has_many :partner_api_logs, dependent: :destroy
