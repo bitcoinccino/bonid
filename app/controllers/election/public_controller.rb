@@ -53,6 +53,34 @@ module Election
       render "election/public/livreblanc", layout: false
     end
 
+    # GET /election/candidates — public roster of approved candidates.
+    # Read-only, CDN-cacheable. Shows citizens who's on the ballot before
+    # election day. Only candidates with registration_status == "approved"
+    # appear here; anything still under review is kept private.
+    def candidates
+      I18n.locale = %w[ht fr en].include?(params[:lang]) ? params[:lang] : :ht
+      @election_id = params[:election_id] || "2026-presidential-round1"
+      @election = BonvoteElection.find_by(id: @election_id)
+
+      if @election
+        approved = ElectionCandidate.where(election: @election).approved.includes(:election_constituency, :user)
+        @presidents = approved.presidents.order(:full_name).to_a
+        @senators_by_department = approved.senators.order(:full_name).group_by { |c| c.residence_department.presence || c.department_code.presence || "—" }
+        @deputies_by_commune = approved.deputies.order(:full_name).group_by { |c| c.residence_commune.presence || c.commune_id&.to_s || "—" }
+        @total_approved = approved.count
+      else
+        @presidents = []
+        @senators_by_department = {}
+        @deputies_by_commune = {}
+        @total_approved = 0
+      end
+
+      # Certified results don't change, but the candidate list updates as
+      # CEP approves; 5-minute cache balances freshness and edge load.
+      response.headers["Cache-Control"] = "public, max-age=300"
+      render "election/public/candidates", layout: false
+    end
+
     # GET /election/live_stats.json — lightweight polling endpoint for globe updates
     def live_stats
       election_id = params[:election_id] || "2026-presidential-round1"

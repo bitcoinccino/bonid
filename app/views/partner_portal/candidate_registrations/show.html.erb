@@ -82,34 +82,16 @@
             </tbody>
           </table>
 
-          <%# Actions %>
+          <%# Review status — read-only.
+              Approval authority lives with the CEP; this portal is for
+              filing and tracking only. %>
           <% if @candidate.registration_pending? %>
             <hr>
-            <div class="d-flex gap-2 flex-wrap">
-              <% if @candidate.registration_status == "submitted" %>
-                <%= button_to "Kòmanse Revizyon", start_review_partner_portal_candidate_registration_path(@candidate),
-                    method: :post, class: "btn btn-warning px-4" %>
-              <% end %>
-
-              <%= button_to "Apwouve", approve_partner_portal_candidate_registration_path(@candidate),
-                  method: :post, class: "btn btn-success px-4",
-                  data: { confirm: "Apwouve #{@candidate.full_name} kòm kandida?" } %>
-
-              <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="collapse" data-bs-target="#reject-form">
-                Rejte
-              </button>
-            </div>
-
-            <%# Rejection Form %>
-            <div class="collapse mt-3" id="reject-form">
-              <%= form_with url: reject_partner_portal_candidate_registration_path(@candidate), method: :post, local: true do |f| %>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold pp-text-sm">Rezon rejeksyon</label>
-                  <%= f.text_area :rejection_reason, class: "form-control", rows: 3,
-                      placeholder: "Eksplike poukisa kandida a rejte..." %>
-                </div>
-                <%= f.submit "Konfime Rejeksyon", class: "btn btn-danger" %>
-              <% end %>
+            <div class="alert alert-info small mb-0">
+              <i class="ri-time-line me-1"></i>
+              <strong>Nan men CEP a.</strong>
+              Dosye kandida a soumèt epi ap tann revizyon pa Konsèy Elektoral Pwovizwa.
+              W ap resevwa yon notifikasyon lè deseksyon an pran.
             </div>
           <% end %>
 

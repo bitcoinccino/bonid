@@ -4,7 +4,7 @@ module PartnerPortal
   class PartyRegistrationsController < PartnerPortal::BaseController
     before_action :set_election
     before_action :require_election!, except: [ :index ]
-    before_action :set_registration, only: [ :show, :approve, :reject, :start_review, :update_documents ]
+    before_action :set_registration, only: [ :show, :update_documents ]
 
     def index
       if @election
@@ -50,38 +50,10 @@ module PartnerPortal
       end
     end
 
-    def start_review
-      @registration.start_review!
-      redirect_to partner_portal_party_registration_path(@registration),
-                  notice: "Revizyon kòmanse."
-    end
-
-    def approve
-      if @registration.approve!(reviewer: current_partner_admin&.email || "CEP")
-        redirect_to partner_portal_party_registrations_path,
-                    notice: "#{@registration.display_name} apwouve. Pati a ka enskri kandida kounye a."
-      else
-        redirect_to partner_portal_party_registration_path(@registration),
-                    alert: "Erè pandan apwobasyon."
-      end
-    end
-
-    def reject
-      reason = params[:rejection_reason].to_s.strip
-      if reason.blank?
-        redirect_to partner_portal_party_registration_path(@registration),
-                    alert: "Rezon rejeksyon obligatwa."
-        return
-      end
-
-      if @registration.reject!(reviewer: current_partner_admin&.email || "CEP", reason: reason)
-        redirect_to partner_portal_party_registrations_path,
-                    notice: "#{@registration.display_name} rejte."
-      else
-        redirect_to partner_portal_party_registration_path(@registration),
-                    alert: "Erè pandan rejeksyon."
-      end
-    end
+    # Approval authority for party/grouping registrations lives with the CEP,
+    # not with party operators — see Election::Admin::PartyRegistrationsController.
+    # The partner portal is submit-and-track only. (Previous approve/reject/
+    # start_review actions were removed on 2026-04-17 as a separation-of-powers fix.)
 
     private
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_17_170000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_17_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -707,10 +707,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_170000) do
     t.datetime "rejected_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "reviewed_by_admin_user_id"
     t.index ["election_id", "party_name"], name: "idx_party_reg_name", unique: true
     t.index ["election_id", "status"], name: "idx_party_reg_status"
     t.index ["election_id"], name: "index_election_party_registrations_on_election_id"
     t.index ["registration_type"], name: "index_election_party_registrations_on_registration_type"
+    t.index ["reviewed_by_admin_user_id"], name: "idx_on_reviewed_by_admin_user_id_7a52acacc0"
     t.index ["user_id"], name: "index_election_party_registrations_on_user_id"
   end
 
@@ -2411,6 +2413,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_170000) do
   add_foreign_key "election_disputes", "bonvote_elections", column: "election_id"
   add_foreign_key "election_disputes", "election_bodies"
   add_foreign_key "election_disputes", "election_constituencies", column: "constituency_id"
+  add_foreign_key "election_party_registrations", "admin_users", column: "reviewed_by_admin_user_id"
   add_foreign_key "election_party_registrations", "bonvote_elections", column: "election_id"
   add_foreign_key "election_party_registrations", "users"
   add_foreign_key "election_signatures", "bonvote_elections", column: "election_id"

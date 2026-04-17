@@ -12,6 +12,7 @@
 class ElectionPartyRegistration < ApplicationRecord
   belongs_to :election, class_name: "BonvoteElection"
   belongs_to :user, optional: true
+  belongs_to :reviewed_by_admin_user, class_name: "AdminUser", optional: true
   has_many :candidates, class_name: "ElectionCandidate", foreign_key: :party_registration_id, dependent: :nullify
 
   REGISTRATION_TYPES = %w[party grouping].freeze
@@ -83,26 +84,48 @@ class ElectionPartyRegistration < ApplicationRecord
     update!(status: "under_review")
   end
 
-  def approve!(reviewer:)
+  # Approve a submitted/under-review registration.
+  # Prefer `admin:` (an AdminUser) — that stamps the FK and derives the
+  # legacy `reviewed_by` string label from it. `reviewer:` remains supported
+  # for callers that only have a string (legacy / background jobs).
+  def approve!(admin: nil, reviewer: nil)
     return false unless status.in?(%w[submitted under_review])
+
     update!(
       status: "approved",
-      reviewed_by: reviewer,
+      reviewed_by_admin_user: admin,
+      reviewed_by: reviewer_label(admin, reviewer),
       approved_at: Time.current,
       reviewed_at: Time.current
     )
   end
 
-  def reject!(reviewer:, reason:)
+  def reject!(admin: nil, reviewer: nil, reason:)
     return false unless status.in?(%w[submitted under_review])
+
     update!(
       status: "rejected",
-      reviewed_by: reviewer,
+      reviewed_by_admin_user: admin,
+      reviewed_by: reviewer_label(admin, reviewer),
       rejection_reason: reason,
       rejected_at: Time.current,
       reviewed_at: Time.current
     )
   end
+
+  # Human-readable label for the reviewer. Prefers the AdminUser email
+  # when we have the FK, falls back to the legacy string, then "CEP".
+  def reviewer_display
+    reviewed_by_admin_user&.email.presence || reviewed_by.presence || "CEP"
+  end
+
+  private
+
+  def reviewer_label(admin, reviewer)
+    admin&.email.presence || reviewer.presence || "CEP"
+  end
+
+  public
 
   def can_nominate_candidates?
     status == "approved"

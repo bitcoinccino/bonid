@@ -5,7 +5,7 @@ module PartnerPortal
     before_action :set_election
     before_action :require_election!, except: [ :index ]
     before_action :ensure_candidate_registration_phase!, only: [ :new, :create ]
-    before_action :set_candidate, only: [ :show, :approve, :reject, :start_review ]
+    before_action :set_candidate, only: [ :show ]
 
     def index
       if @election
@@ -61,32 +61,11 @@ module PartnerPortal
       end
     end
 
-    def approve
-      if @candidate.approve!(admin: current_admin_user)
-        redirect_to partner_portal_candidate_registrations_path, notice: "#{@candidate.full_name} apwouve."
-      else
-        redirect_to partner_portal_candidate_registration_path(@candidate), alert: "Erè pandan apwobasyon."
-      end
-    end
-
-    def reject
-      reason = params[:rejection_reason].to_s.strip
-      if reason.blank?
-        redirect_to partner_portal_candidate_registration_path(@candidate), alert: "Rezon rejeksyon obligatwa."
-        return
-      end
-
-      if @candidate.reject!(admin: current_admin_user, reason: reason)
-        redirect_to partner_portal_candidate_registrations_path, notice: "#{@candidate.full_name} rejte."
-      else
-        redirect_to partner_portal_candidate_registration_path(@candidate), alert: "Erè pandan rejeksyon."
-      end
-    end
-
-    def start_review
-      @candidate.start_review!
-      redirect_to partner_portal_candidate_registration_path(@candidate), notice: "Revizyon kòmanse."
-    end
+    # Approval authority for candidate nominations lives with the CEP, not
+    # with party operators — see Election::Admin::CandidatesController. The
+    # partner portal is submit-and-track only: parties file the dossier, then
+    # monitor its review status here. (Previous approve/reject/start_review
+    # actions were removed on 2026-04-17 as a separation-of-powers fix.)
 
     private
 

@@ -146,51 +146,21 @@
         </div>
       </div>
 
-      <%# ── CEP Actions ── %>
+      <%# ── Review status — read-only.
+           Approval authority lives with the CEP; this portal is file-and-track only. ── %>
       <% if @registration.status.in?(%w[submitted under_review]) %>
         <div class="pp-card card mb-4">
           <div class="card-header px-4 py-3">
             <h6 class="fw-semibold mb-0 pp-text-sm d-flex align-items-center gap-2">
-              <i class="ri-shield-check-line pp-text-brand"></i>
-              Aksyon CEP
+              <i class="ri-time-line pp-text-warning"></i>
+              Nan men CEP a
             </h6>
           </div>
           <div class="card-body p-4">
-            <div class="d-flex gap-2 flex-wrap">
-              <% if @registration.status == "submitted" %>
-                <%= button_to "Kòmanse Revizyon",
-                    start_review_partner_portal_party_registration_path(@registration),
-                    method: :patch,
-                    class: "btn btn-outline-warning" do %>
-                  <i class="ri-eye-line me-1"></i> Kòmanse Revizyon
-                <% end %>
-              <% end %>
-
-              <%= button_to "Apwouve",
-                  approve_partner_portal_party_registration_path(@registration),
-                  method: :patch,
-                  class: "btn btn-success",
-                  data: { turbo_confirm: "Apwouve #{@registration.display_name}?" } do %>
-                <i class="ri-check-line me-1"></i> Apwouve
-              <% end %>
-
-              <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#rejectForm">
-                <i class="ri-close-line me-1"></i> Rejte
-              </button>
-            </div>
-
-            <div class="collapse mt-3" id="rejectForm">
-              <%= form_with url: reject_partner_portal_party_registration_path(@registration),
-                            method: :patch, local: true do |f| %>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold pp-text-sm">Rezon Rejeksyon</label>
-                  <textarea name="rejection_reason" rows="3" required
-                            class="form-control" placeholder="Eksplike poukisa enskripsyon an rejte..."></textarea>
-                </div>
-                <button type="submit" class="btn btn-danger">
-                  <i class="ri-close-circle-line me-1"></i> Konfime Rejeksyon
-                </button>
-              <% end %>
+            <div class="alert alert-info small mb-0">
+              Enskripsyon an soumèt. Konsèy Elektoral Pwovizwa ap revize dokiman yo.
+              W ap resevwa yon notifikasyon lè deseksyon an pran. Pou kesyon, kontakte
+              biwo CEP santral la.
             </div>
           </div>
         </div>

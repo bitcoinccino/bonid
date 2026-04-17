@@ -47,8 +47,7 @@ module Election
 
       # POST /admin/election/:election_id/party_registrations/:id/approve
       def approve
-        reviewer_label = current_admin_user&.email || "CEP"
-        if @registration.approve!(reviewer: reviewer_label)
+        if @registration.approve!(admin: current_admin_user)
           redirect_to admin_election_election_party_registrations_path(@election.id),
                       notice: "#{@registration.display_name} apwouve — pati a ka enskri kandida kounye a."
         else
@@ -66,8 +65,7 @@ module Election
           return
         end
 
-        reviewer_label = current_admin_user&.email || "CEP"
-        if @registration.reject!(reviewer: reviewer_label, reason: reason)
+        if @registration.reject!(admin: current_admin_user, reason: reason)
           redirect_to admin_election_election_party_registrations_path(@election.id),
                       notice: "#{@registration.display_name} rejte."
         else

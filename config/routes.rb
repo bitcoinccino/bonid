@@ -792,24 +792,19 @@ end
     get  "polling_centers/template", to: "polling_centers#template",       as: :polling_centers_template,
                                      defaults: { format: :csv }
 
-    # Party Registration (CEP — Article 143)
+    # Party Registration (Article 143).
+    # Partner portal is submit-and-track only. Approval authority lives with
+    # CEP admin (Election::Admin::PartyRegistrationsController).
     resources :party_registrations, only: [ :index, :show, :new, :create ] do
       member do
         patch :update_documents
-        patch :start_review
-        patch :approve
-        patch :reject
       end
     end
 
-    # Candidate Registration (CEP)
-    resources :candidate_registrations, only: [ :index, :show, :new, :create ] do
-      member do
-        post :approve
-        post :reject
-        post :start_review
-      end
-    end
+    # Candidate Registration.
+    # Partner portal is submit-and-track only. Approval authority lives with
+    # CEP admin (Election::Admin::CandidatesController).
+    resources :candidate_registrations, only: [ :index, :show, :new, :create ]
 
     get "analytics", to: "analytics#index"
     resources :api_keys, only: [ :index, :create, :destroy ] do
@@ -881,6 +876,7 @@ end
   get "/election/snapshot",  to: "election/audit#snapshot",  as: :election_audit_snapshot
   get "/election/results",      to: "election/public#results",      as: :election_public_results
   get "/election/celebration",  to: "election/public#celebration",  as: :election_public_celebration
+  get "/election/candidates",   to: "election/public#candidates",   as: :election_public_candidates
   get "/election/live_stats",   to: "election/public#live_stats",   as: :election_live_stats
   get "/election/whitepaper",   to: "election/public#whitepaper",   as: :election_whitepaper
   get "/election/livreblanc",   to: "election/public#livreblanc",   as: :election_livreblanc

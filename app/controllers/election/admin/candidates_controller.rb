@@ -35,7 +35,28 @@ module Election
       end
 
       # GET /admin/election/:election_id/candidates/:id
-      def show; end
+      def show
+        # Seat-pressure data for the approve modal. We don't block the admin —
+        # the CEP keeps discretion — but we surface the picture: how many
+        # seats this constituency has, how many are already approved, and
+        # the roster so the admin knows who else is on the ballot.
+        @constituency = @candidate.election_constituency
+        if @constituency
+          @seats_available = @constituency.seats.to_i
+          constituency_scope = ElectionCandidate.where(
+            election: @election,
+            election_constituency_id: @constituency.id
+          )
+          @approved_in_constituency = constituency_scope.approved.where.not(id: @candidate.id).count
+          @other_approved = constituency_scope.approved.where.not(id: @candidate.id).order(:full_name)
+          @seat_pressure = @seats_available.positive? && @approved_in_constituency >= @seats_available
+        else
+          @seats_available = 0
+          @approved_in_constituency = 0
+          @other_approved = ElectionCandidate.none
+          @seat_pressure = false
+        end
+      end
 
       # POST /admin/election/:election_id/candidates/:id/start_review
       def start_review

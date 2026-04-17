@@ -198,6 +198,33 @@
             <p class="mb-2"><%= @candidate.full_name %> ap parèt sou bilten vòt la pou pòs
               <strong><%= @candidate.position.titleize %></strong>.
             </p>
+
+            <%# Constituency seat-pressure — soft warning, never a hard gate. %>
+            <% if @constituency && @seats_available.positive? %>
+              <div class="alert alert-<%= @seat_pressure ? 'warning' : 'light' %> small">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span>
+                    <i class="ri-<%= @seat_pressure ? 'error-warning-line' : 'information-line' %> me-1"></i>
+                    Sikonskripsyon: <strong><%= @constituency.constituency_name rescue @constituency.position.titleize %></strong>
+                  </span>
+                  <span class="fw-bold">
+                    <%= @approved_in_constituency %>/<%= @seats_available %> plas apwouve
+                  </span>
+                </div>
+                <% if @seat_pressure %>
+                  <div class="mt-2">
+                    Sikonskripsyon sa a gen tout plas li yo deja apwouve.
+                    Apwouve <%= @candidate.full_name %> ap ajoute yon kandida ki pi plis pase kantite plas ki disponib.
+                  </div>
+                <% end %>
+                <% if @other_approved.any? %>
+                  <div class="mt-2 pp-text-xs">
+                    Deja apwouve: <%= @other_approved.pluck(:full_name).join(", ") %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
             <% unless @candidate.documents_complete? %>
               <div class="alert alert-warning small mb-0">
                 <i class="ri-alert-line me-1"></i>

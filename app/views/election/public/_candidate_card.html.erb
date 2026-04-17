@@ -1,0 +1,30 @@
+<%# Single approved-candidate card used by the public roster. %>
+<div class="candidate-card h-100">
+  <div class="d-flex gap-3 align-items-center">
+    <% photo = candidate.candidate_photo_url %>
+    <% if photo.present? %>
+      <img src="<%= photo %>" alt="<%= candidate.full_name %>" class="candidate-photo">
+    <% else %>
+      <div class="candidate-photo-placeholder">
+        <i class="ri-user-line"></i>
+      </div>
+    <% end %>
+    <div class="flex-grow-1" style="min-width: 0;">
+      <div class="fw-bold text-truncate" style="font-size: 1rem;">
+        <%= candidate.full_name %>
+      </div>
+      <% if candidate.party_name.present? %>
+        <div class="small text-truncate" style="opacity: 0.75;">
+          <%= candidate.party_acronym.presence || candidate.party_name %>
+        </div>
+      <% elsif candidate.candidacy_type == "independent" %>
+        <div class="small" style="opacity: 0.65;"><em>Endepandan</em></div>
+      <% end %>
+      <% if candidate.ballot_number.present? %>
+        <div class="small mt-1" style="opacity: 0.6;">
+          Nimewo bilten: <strong><%= candidate.ballot_number %></strong>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
