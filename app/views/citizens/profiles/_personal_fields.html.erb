@@ -1,6 +1,9 @@
 <%# Personal Information Section %>
 <% locked = @identity_verified %>
 <div class="card profile-card" data-controller="id-switcher">
+  <div class="card-header">
+    <h5><i class="ri-shield-check-line"></i>Personal Information</h5>
+  </div>
   <div class="card-body">
     <%# Info Banner %>
     <div class="alert alert-info d-flex align-items-start">
@@ -16,14 +19,14 @@
         <i class="ri-lock-line me-2"></i>
         <span>
           Your name, sex, date of birth, and nationality are locked because your identity has been verified.
-          <%= link_to "Request a name change", new_citizens_name_change_request_path, class: "fw-semibold ms-1" %>
+          <%= link_to "Request a name change", new_citizens_name_change_request_path, class: "citizen-link-alert ms-1" %>
         </span>
       </div>
     <% end %>
 
     <div class="row g-4">
       <%# Prefix — always editable (honorific, not on gov ID) %>
-      <div class="col-md-2">
+      <div class="col-6 col-md-2">
         <%= f.input :prefix,
           collection: User::PREFIXES,
           include_blank: "Prefix",
@@ -33,7 +36,7 @@
       </div>
 
       <%# First Name (Required) — LOCKED when verified %>
-      <div class="col-md-5">
+      <div class="col-12 col-md-5">
         <%= f.input :first_name, required: true,
           disabled: locked,
           input_html: {
@@ -46,7 +49,7 @@
       </div>
 
       <%# Middle Name (Optional) — LOCKED when verified %>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <%= f.input :middle_name,
           disabled: locked,
           input_html: {
@@ -59,7 +62,7 @@
       </div>
 
       <%# Suffix — always editable (honorific, not on gov ID) %>
-      <div class="col-md-2">
+      <div class="col-6 col-md-2">
         <%= f.input :suffix,
           collection: User::SUFFIXES,
           include_blank: "Suffix",
@@ -82,7 +85,7 @@
       </div>
 
       <%# Sex — LOCKED when verified %>
-      <div class="col-md-3">
+      <div class="col-6 col-md-3">
         <%= f.input :sex,
           collection: User.sexes.keys.map { |k| [k.titleize, k] },
           include_blank: "Select Sex",
@@ -98,7 +101,7 @@
       </div>
 
       <%# Nationality — LOCKED when verified %>
-      <div class="col-md-3">
+      <div class="col-6 col-md-3">
         <%= f.input :nationality,
           disabled: locked,
           input_html: {
@@ -140,7 +143,7 @@
           haiti_label = "#{haiti.emoji_flag} +#{haiti.country_code}"
         %>
         <div class="input-group">
-          <select class="form-select" style="max-width: 180px; font-size: 0.875rem; background-color: #f8f9fa;" disabled>
+          <select class="form-select" style="max-width: 140px; background-color: #f8f9fa;" disabled>
             <option selected><%= haiti_label %></option>
           </select>
           <input type="tel"

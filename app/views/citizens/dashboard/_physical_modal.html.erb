@@ -1,30 +1,37 @@
 <!-- app/views/citizens/dashboard/_physical_modal.html.erb -->
 <div class="modal fade" id="physicalModal" tabindex="-1" aria-labelledby="physicalModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header bg-haitian-blue text-white">
-        <h5 class="modal-title" id="physicalModalLabel">
-          <i class="ri-body-scan-line me-2"></i>
-          <%= current_citizen.physical_profile.present? ? "Edit" : "Add" %> Physical Characteristics
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
       <%= simple_form_for current_citizen,
             as: :user,
             url: citizens_profile_path,
             method: :patch,
-            html: { data: { turbo: false } } do |f| %>
+            html: { data: { turbo: false }, class: "d-flex flex-column", style: "min-height: 0; max-height: 100%; overflow: hidden;" } do |f| %>
 
-        <%= f.simple_fields_for :physical_profile do |pp| %>
-          <div class="modal-body">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="physicalModalLabel" style="font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 600; color: #fff;">
+            <i class="ri-body-scan-line me-2"></i>
+            Physical Characteristics
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body" style="overflow-y: auto; flex: 1 1 auto;">
+          <%= f.simple_fields_for :physical_profile do |pp| %>
             <%= render "citizens/profiles/physical_fields", f: pp %>
-          </div>
-        <% end %>
+          <% end %>
+        </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <%= f.submit "Save Physical Info", class: "btn btn-haitian-primary fw-semibold" %>
+        <div class="modal-footer" style="border-top: 1px solid #e4e7ec;">
+          <button type="button"
+                  class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem; border-radius: 0.5rem;"
+                  data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <%= f.submit "Save",
+                class: "btn btn-primary fw-semibold px-4 py-2",
+                style: "font-size: 0.85rem; border-radius: 0.5rem;" %>
         </div>
       <% end %>
     </div>

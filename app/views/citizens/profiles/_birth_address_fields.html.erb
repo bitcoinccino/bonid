@@ -1,9 +1,10 @@
 <!-- Birth Address (Department + Commune Only) -->
-<div class="border rounded p-4 mb-4 bg-white shadow-sm position-relative overflow-hidden"
+<div class="card profile-card mb-4"
      data-controller="birth-address">
-  <h5 class="fw-semibold mb-4 text-haitian-blue position-relative font-heading-semibold">
-    Place of Birth
-  </h5>
+  <div class="card-header">
+    <h5><i class="ri-map-pin-line"></i>Place of Birth</h5>
+  </div>
+  <div class="card-body">
 
   <!-- Contextual Info -->
   <div class="alert alert-dismissible fade show alert-info small rounded-3 mb-4 d-flex align-items-start shadow-sm">
@@ -15,10 +16,10 @@
     </div>
   </div>
 
-  <div class="row g-3">
+  <div class="row g-4">
     <!-- Department -->
     <div class="col-md-6">
-      <%= f.label :birth_department_id, "Birth Department", class: "form-label fw-semibold font-body" %>
+      <%= f.label :birth_department_id, "Birth Department", class: "form-label fw-semibold" %>
       <%= f.select :birth_department_id,
             options_from_collection_for_select(Department.all, :id, :name, f.object.birth_department_id),
             { prompt: "Select Department" },
@@ -29,14 +30,14 @@
                 birth_address_target: "department"
               }
             } %>
-      <small class="form-text text-mid-gray font-body">
+      <small class="form-text text-muted">
         Select the department where you were born (e.g., Ouest, Nord, Artibonite).
       </small>
     </div>
 
     <!-- Commune -->
     <div class="col-md-6">
-      <%= f.label :birth_commune_id, "Birth Commune", class: "form-label fw-semibold font-body" %>
+      <%= f.label :birth_commune_id, "Birth Commune", class: "form-label fw-semibold" %>
       <%= f.select :birth_commune_id,
             f.object.birth_department_id.present? ?
               options_from_collection_for_select(
@@ -48,7 +49,7 @@
               class: "form-select rounded-3 shadow-sm",
               data: { birth_address_target: "commune" }
             } %>
-      <small class="form-text text-mid-gray font-body">
+      <small class="form-text text-muted">
         Select the commune within your birth department (e.g., Delmas, Cap-Haïtien).
       </small>
     </div>
@@ -58,4 +59,5 @@
     <i class="ri-lock-line me-1"></i>
     This data is securely stored and only used for official identity verification.
   </p>
+  </div>
 </div>

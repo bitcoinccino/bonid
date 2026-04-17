@@ -224,12 +224,11 @@ class IdentitySubmission < ApplicationRecord
       size: 240
     )
 
-    # IMPORTANT: write to the correct column your API expects
-    if respond_to?(:qr_png_base64=)
-      self.qr_png_base64 = Base64.strict_encode64(png.to_s)
-    else
-      self.public_qr_png_base64 = Base64.strict_encode64(png.to_s)
-    end
+    encoded = Base64.strict_encode64(png.to_s)
+    # Primary: public_qr_png_base64 — what qr_for(:citizen) reads
+    self.public_qr_png_base64 = encoded
+    # Mirror to legacy column for API backward-compat
+    self.qr_png_base64 = encoded if respond_to?(:qr_png_base64=)
 
     Rails.logger.info "✅ Public QR generated for submission #{id} (#{url})"
   rescue => e

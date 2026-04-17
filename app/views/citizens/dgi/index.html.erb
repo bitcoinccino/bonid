@@ -5,45 +5,21 @@
 
 <div class="bongouv-dashboard" id="bongouv-main">
 
-  <%# ================================================================ %>
-  <%# 1. WELCOME HEADER — Personal greeting + compact status %>
-  <%# ================================================================ %>
-  <div class="dgi-welcome-header">
-    <div class="dgi-welcome-header__left">
-      <h4 class="dgi-welcome-header__greeting">
-        Bonjou, <strong><%= current_citizen.first_name %></strong>
-      </h4>
-      <p class="dgi-welcome-header__subtitle">
-        <i class="ri-government-line me-1"></i>Sèvis DGI — Depoze fòm fiskal ou yo anliy
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="citizen-page-title mb-1">
+        <i class="ri-government-line me-2"></i>Sèvis DGI
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        Depoze fòm fiskal ou yo anliy, <%= current_citizen.first_name %>.
       </p>
     </div>
-    <div class="dgi-welcome-header__right">
+    <div class="d-flex align-items-center gap-2">
       <span class="dgi-verification-badge dgi-verification-badge--<%= verified ? 'verified' : 'pending' %>">
         <i class="<%= verified ? 'ri-verified-badge-fill' : 'ri-time-line' %> me-1"></i>
         BonID <%= verified ? 'Verifye' : 'Annatant' %>
       </span>
-      <% if @stats[:total] > 0 %>
-        <div class="dgi-mini-stats">
-          <span class="dgi-mini-stat" title="Total deklarasyon">
-            <i class="ri-file-list-3-line"></i> <%= @stats[:total] %>
-          </span>
-          <% if @stats[:pending] > 0 %>
-            <span class="dgi-mini-stat dgi-mini-stat--amber" title="Annatant revizyon">
-              <i class="ri-time-line"></i> <%= @stats[:pending] %>
-            </span>
-          <% end %>
-          <% if @stats[:verified] > 0 %>
-            <span class="dgi-mini-stat dgi-mini-stat--green" title="Verifye">
-              <i class="ri-checkbox-circle-line"></i> <%= @stats[:verified] %>
-            </span>
-          <% end %>
-          <% if @stats[:rejected].to_i > 0 %>
-            <span class="dgi-mini-stat dgi-mini-stat--red" title="Rejte">
-              <i class="ri-close-circle-line"></i> <%= @stats[:rejected] %>
-            </span>
-          <% end %>
-        </div>
-      <% end %>
     </div>
   </div>
 
@@ -279,7 +255,7 @@
               </div>
             </div>
             <div class="text-end me-3">
-              <span class="fw-bold" style="color:#00209F;"><%= p.formatted_total %></span>
+              <span class="fw-bold" style="color:var(--primary);"><%= p.formatted_total %></span>
               <br><span class="text-muted" style="font-size:0.7rem;"><%= p.created_at.strftime("%d/%m/%Y") %></span>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -498,7 +474,7 @@
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #00209F;
+    color: var(--primary);
   }
   .dgi-mini-stat--amber { color: #92400e; border-color: #fbbf24; background: #fffbeb; }
   .dgi-mini-stat--green { color: #065f46; border-color: #34d399; background: #ecfdf5; }
@@ -524,7 +500,7 @@
   }
   .dgi-pending-alert__link {
     margin-left: auto;
-    color: #00209F;
+    color: var(--primary);
     font-weight: 600;
     text-decoration: none;
     white-space: nowrap;
@@ -560,7 +536,7 @@
     box-shadow: 0 2px 8px rgba(0, 32, 159, 0.06);
   }
   .dgi-category-card--active {
-    border-color: #00209F;
+    border-color: var(--primary);
     background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
     box-shadow: 0 2px 12px rgba(0, 32, 159, 0.1);
   }
@@ -574,10 +550,10 @@
     font-size: 1.1rem;
     flex-shrink: 0;
   }
-  .dgi-category-card__icon--blue { background: #dbeafe; color: #00209F; }
+  .dgi-category-card__icon--blue { background: #dbeafe; color: var(--primary); }
   .dgi-category-card__icon--green { background: #d1fae5; color: #047857; }
   .dgi-category-card__icon--amber { background: #fef3c7; color: #d97706; }
-  .dgi-category-card--active .dgi-category-card__icon--blue { background: #00209F; color: #fff; }
+  .dgi-category-card--active .dgi-category-card__icon--blue { background: var(--primary); color: #fff; }
   .dgi-category-card--active .dgi-category-card__icon--green { background: #047857; color: #fff; }
   .dgi-category-card--active .dgi-category-card__icon--amber { background: #d97706; color: #fff; }
   .dgi-category-card__body { flex: 1; min-width: 0; }
@@ -606,7 +582,7 @@
   }
   .dgi-category-card--active .dgi-category-card__count {
     background: rgba(0, 32, 159, 0.1);
-    color: #00209F;
+    color: var(--primary);
   }
   .dgi-category-card__arrow {
     font-size: 1.1rem;
@@ -614,7 +590,7 @@
     flex-shrink: 0;
     transition: color 0.15s;
   }
-  .dgi-category-card--active .dgi-category-card__arrow { color: #00209F; }
+  .dgi-category-card--active .dgi-category-card__arrow { color: var(--primary); }
 
   /* Forms panel */
   .dgi-forms-panel {
@@ -638,7 +614,7 @@
     font-size: 1rem;
     flex-shrink: 0;
   }
-  .dgi-category-header__icon--blue { background: #dbeafe; color: #00209F; }
+  .dgi-category-header__icon--blue { background: #dbeafe; color: var(--primary); }
   .dgi-category-header__icon--green { background: #d1fae5; color: #047857; }
   .dgi-category-header__title {
     font-family: 'Montserrat', sans-serif;
@@ -673,7 +649,7 @@
     position: relative;
   }
   .dgi-card:hover {
-    border-color: #00209F;
+    border-color: var(--primary);
     box-shadow: 0 4px 16px rgba(0, 32, 159, 0.08);
   }
   .dgi-card--featured {
@@ -699,7 +675,7 @@
     margin-bottom: 12px;
     flex-shrink: 0;
   }
-  .dgi-card__icon--blue   { background: #dbeafe; color: #00209F; }
+  .dgi-card__icon--blue   { background: #dbeafe; color: var(--primary); }
   .dgi-card__icon--indigo { background: #e0e7ff; color: #4338ca; }
   .dgi-card__icon--red    { background: #ffe4e6; color: #D21034; }
   .dgi-card__icon--teal   { background: #ccfbf1; color: #0d9488; }
@@ -747,7 +723,7 @@
     display: inline-flex;
     align-items: center;
     padding: 8px 18px;
-    background: #00209F;
+    background: var(--primary);
     color: #fff;
     border-radius: 6px;
     font-size: 0.8rem;
@@ -760,7 +736,7 @@
   }
   .dgi-card__action:hover { background: #001570; color: #fff; }
   .dgi-card__action:focus-visible {
-    outline: 2px solid #00209F;
+    outline: 2px solid var(--primary);
     outline-offset: 2px;
   }
 
@@ -783,7 +759,7 @@
   }
   .dgi-link-sm {
     font-size: 0.78rem;
-    color: #00209F;
+    color: var(--primary);
     font-weight: 600;
     text-decoration: none;
   }
@@ -800,7 +776,7 @@
   }
   .dgi-payment-row__icon {
     width: 36px; height: 36px; border-radius: 8px;
-    background: #f0f4ff; color: #00209F;
+    background: #f0f4ff; color: var(--primary);
     display: flex; align-items: center; justify-content: center;
     font-size: 1rem; flex-shrink: 0;
   }
@@ -885,30 +861,30 @@
 
   .dgi-decl-code {
     font-size: 0.72rem;
-    color: #00209F;
+    color: var(--primary);
     background: #f0f4ff;
     padding: 2px 6px;
     border-radius: 4px;
   }
   .dgi-form-icon {
     width: 28px; height: 28px; border-radius: 6px;
-    background: #f0f4ff; color: #00209F;
+    background: #f0f4ff; color: var(--primary);
     display: inline-flex; align-items: center; justify-content: center;
     font-size: 0.85rem; flex-shrink: 0;
   }
   .dgi-view-btn {
     display: inline-flex; align-items: center;
     padding: 6px 14px; border: 1px solid #E0E0E0;
-    border-radius: 6px; color: #00209F;
+    border-radius: 6px; color: var(--primary);
     font-size: 0.75rem; font-weight: 600;
     text-decoration: none; transition: all 0.15s;
     min-height: 36px;
   }
   .dgi-view-btn:hover {
-    background: #00209F; color: #fff; border-color: #00209F;
+    background: var(--primary); color: #fff; border-color: var(--primary);
   }
   .dgi-view-btn:focus-visible {
-    outline: 2px solid #00209F; outline-offset: 2px;
+    outline: 2px solid var(--primary); outline-offset: 2px;
   }
 
   /* ============================================================
@@ -920,7 +896,7 @@
   }
   .dgi-empty-state__icon {
     width: 64px; height: 64px; border-radius: 50%;
-    background: #f0f4ff; color: #00209F;
+    background: #f0f4ff; color: var(--primary);
     display: flex; align-items: center; justify-content: center;
     font-size: 1.8rem; margin: 0 auto 16px;
   }

@@ -15,6 +15,11 @@ module Citizens
       @last_submission = @submissions.first
       @approved_submission = @submissions.find(&:status_approved?)
 
+      # Ensure the blue public QR exists for the modal — regenerate if missing
+      if @approved_submission && @approved_submission.public_qr_png_base64.blank?
+        @approved_submission.regenerate_combined_qr!
+      end
+
       # Pending transaction consents (banks, wallets requesting approval)
       @pending_consents = @citizen.transaction_consents
                                   .active

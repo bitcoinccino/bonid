@@ -20,8 +20,51 @@ module Citizens
   module Election
     class VoteController < BaseController
       before_action :require_verified_bonid!
-      before_action :require_active_election!, only: [ :begin, :ballot, :cast ]
-      before_action :enable_immersive_form, only: [ :ballot, :cast, :receipt ]
+      before_action :require_active_election!, only: [:begin, :ballot, :cast]
+      before_action :enable_immersive_form, only: [:ballot, :cast, :receipt]
+
+      # ── Step 0: Oath of Voting Integrity ───────────────────────
+      # A sworn, per-session acknowledgment shown before anything else.
+      # Explains what the citizen is about to do, the security measures
+      # that protect their vote, and the civil + criminal consequences
+      # of attempting to defraud the election. Must be signed (checkbox)
+      # once per session — the flag clears on logout.
+      def oath
+        @election = active_election
+        @already_signed = oath_signed?
+        @bonid_submission = current_citizen.identity_submissions.find_by(status: "approved")
+      end
+
+      # Records the oath both as a durable DB row (for CEP / tribunal
+      # audit) and in the session (so the gate doesn't re-prompt within
+      # the same browsing session). The DB row is the source of truth —
+      # session is just a soft cache.
+      def sign_oath
+        unless params[:oath_accepted] == "1"
+          redirect_to citizens_election_vote_oath_path,
+                      alert: "Ou dwe aksepte sèman an pou w kapab vote."
+          return
+        end
+
+        election = active_election
+        record = if election
+          VoterOathAcknowledgement.sign!(
+            user: current_citizen,
+            bonvote_election: election,
+            identity_submission: current_citizen.identity_submissions.find_by(status: "approved"),
+            ip_address: request.remote_ip,
+            user_agent: request.user_agent
+          )
+        end
+
+        session[:election_oath_signed_at] = (record&.accepted_at || Time.current).iso8601
+        Rails.logger.info(
+          "[Citizens::Election::Vote] Oath signed by user ##{current_citizen.id} " \
+          "election=#{election&.id || 'none'} record_id=#{record&.id || 'n/a'} " \
+          "digest=#{record&.digest&.first(12) || 'n/a'}"
+        )
+        redirect_to citizens_election_vote_path
+      end
 
       # ── Step 1: Eligibility Check ──────────────────────────────
       # Shows election info + checks if citizen can vote.
@@ -36,9 +79,35 @@ module Citizens
           return
         end
 
+        # Sworn oath is a prerequisite. Skip the gate once the voter has
+        # already cast (they'll see the receipt path) so the oath doesn't
+        # re-prompt on a refresh of the post-vote state.
+        unless oath_signed?
+          redirect_to citizens_election_vote_oath_path
+          return
+        end
+
         # Check voter roll
         @voter_record = VoterEligibilityRecord.check_eligibility(election: @election, bonid: current_citizen.bonid)
         @has_cin = @voter_record&.eligible? || current_citizen.id_number.present?
+
+        # Gate #1 — Enrollment face must exist on the roll. The fallback
+        # biometric_anchor (BonID hash) can't match against a real Rekognition
+        # face, so a liveness scan for a voter without a biometric_fingerprint
+        # would fail the downstream CompareFaces step anyway. Refuse to render
+        # the scan button at all.
+        @has_enrolled_face = @voter_record&.biometric_fingerprint.present?
+
+        # Gate #2 — Per-user 5-min scan cooldown. Set on every successful
+        # `begin` hit so a citizen can't re-fire the billed AWS session by
+        # refreshing / back-buttoning.
+        @scan_cooldown_remaining = scan_cooldown_remaining_seconds
+
+        # Resumable verification — a previously-passed liveness session that
+        # hasn't been cast yet. Lives 15 min in Rails.cache; lets a citizen
+        # close the tab / log out / come back without paying for AWS again.
+        @resume_payload = Rails.cache.read(resume_cache_key(@election.id))
+        @resume_remaining = resume_cache_remaining_seconds(@election.id) if @resume_payload
 
         # Generate nullifier to check double-voting (using biometric anchor from voter roll)
         if @voter_record&.eligible?
@@ -72,8 +141,41 @@ module Citizens
           return
         end
 
-        # Resolve biometric anchor from voter roll (Rekognition face_id hash)
+        # Gate #1 — Refuse if the voter has no enrolled biometric face on the roll.
+        # (Fallback BonID-hash anchor can't satisfy downstream CompareFaces.)
         voter_record = VoterEligibilityRecord.check_eligibility(election: election, bonid: current_citizen.bonid)
+        unless voter_record&.biometric_fingerprint.present?
+          redirect_to citizens_election_vote_path,
+                      alert: "Ou pa gen anrejistreman biyometrik. Ale nan yon biwo CEP pou w enskri figi ou anvan w vote."
+          return
+        end
+
+        # Gate #1b — Identity binding. Liveness only proves a real live face
+        # was in front of the camera. This call proves the face was THIS
+        # citizen's face, by comparing the liveness selfie to the selfie
+        # approved at KYC. Fails closed on any AWS / storage error.
+        match = ::Election::VoterFaceMatchService.call(
+          user: current_citizen,
+          liveness_blob_signed_id: liveness_session_id
+        )
+        unless match.matched?
+          Rails.logger.warn(
+            "[Citizens::Election::Vote] Face match refused for user ##{current_citizen.id}: " \
+            "status=#{match.status} similarity=#{match.similarity}"
+          )
+          mark_scan_cooldown!
+          redirect_to citizens_election_vote_path,
+                      alert: "Figi eskané a pa matche ak figi ki nan dosye idantite ou. Pou sekirite vòt ou, nou pa ka kontinye."
+          return
+        end
+
+        # Gate #2 — 5-minute per-user scan cooldown. `begin` is the first
+        # server hit after a billed AWS liveness session fires, so stamping
+        # the cooldown here stops repeat scans from double-submits, refreshes,
+        # and back-button flows within the same 5-minute window.
+        mark_scan_cooldown!
+
+        # Resolve biometric anchor from voter roll (Rekognition face_id hash)
         biometric_anchor = voter_record&.biometric_anchor || OpenSSL::Digest::SHA256.hexdigest(current_citizen.bonid.to_s)
 
         # Derive voter key: BonID + liveness session + biometric anchor
@@ -110,7 +212,7 @@ module Citizens
         ballot_route = ::Election::BallotRoutingService.route(current_citizen, election.id)
 
         # Store in session (not the full candidate list — re-fetch in ballot action)
-        session[:election_vote] = {
+        vote_payload = {
           election_id: election.id,
           voter_key: voter_key,
           nullifier: nullifier,
@@ -121,7 +223,51 @@ module Citizens
           department: ballot_route[:department],
           started_at: Time.current.iso8601
         }
+        session[:election_vote] = vote_payload
 
+        # Mirror the payload into Rails.cache so the citizen can resume
+        # after a logout / tab close without rescanning (15-min window).
+        Rails.cache.write(
+          resume_cache_key(election.id),
+          vote_payload.merge(cached_at: Time.current.to_i),
+          expires_in: RESUME_WINDOW
+        )
+
+        redirect_to citizens_election_vote_ballot_path
+      end
+
+      # ── Resume Voting (post-liveness, pre-cast) ────────────────
+      # Restores a cached verification payload into the session so the
+      # citizen can pick up where they left off without a new AWS scan.
+      def resume
+        election = active_election
+        unless election
+          redirect_to citizens_election_vote_path, alert: t("citizens.election.session_expired")
+          return
+        end
+
+        payload = Rails.cache.read(resume_cache_key(election.id))
+        unless payload && payload[:election_id] == election.id
+          redirect_to citizens_election_vote_path, alert: t("citizens.election.session_expired")
+          return
+        end
+
+        # Double-vote check — payload could be stale if the ballot was cast
+        # from another device since the cache was written.
+        if ::Election::EligibilityProofService.already_voted?(payload[:nullifier], election.id)
+          Rails.cache.delete(resume_cache_key(election.id))
+          redirect_to citizens_election_vote_path, alert: t("citizens.election.already_voted")
+          return
+        end
+
+        # Re-arm the challenge nonce so the ballot action's expiry check passes.
+        Rails.cache.write(
+          "election_challenge:#{current_citizen.id}:#{election.id}",
+          payload[:challenge_nonce],
+          expires_in: 10.minutes
+        )
+
+        session[:election_vote] = payload.except(:cached_at)
         redirect_to citizens_election_vote_ballot_path
       end
 
@@ -184,6 +330,7 @@ module Citizens
             timestamp: existing.cast_at&.iso8601
           }
           session.delete(:election_vote)
+          Rails.cache.delete(resume_cache_key(election_id))
           redirect_to citizens_election_vote_receipt_path
           return
         end
@@ -236,10 +383,12 @@ module Citizens
         }
 
         session.delete(:election_vote)
+        Rails.cache.delete(resume_cache_key(election_id))
         redirect_to citizens_election_vote_receipt_path
 
       rescue ::Election::BallotService::AlreadyVotedError
         session.delete(:election_vote)
+        Rails.cache.delete(resume_cache_key(election_id))
         redirect_to citizens_election_vote_path, alert: t("citizens.election.already_voted")
       rescue => e
         Rails.logger.error("[Citizens::Election::Vote] Cast failed: #{e.message}")
@@ -262,6 +411,80 @@ module Citizens
 
       def enable_immersive_form
         @immersive_form = true
+      end
+
+      # ── Oath ───────────────────────────────────────────────────
+      # The DB is the source of truth for audit integrity. The session
+      # is only a soft cache; if the session says "signed" but no DB
+      # row exists (e.g. legacy session from before the audit table
+      # existed) we backfill so every signed state leaves an evidence
+      # trail the CEP can see.
+      def oath_signed?
+        election = active_election
+        return session[:election_oath_signed_at].present? unless election
+
+        signed = VoterOathAcknowledgement.signed?(
+          user: current_citizen, bonvote_election: election
+        )
+
+        if !signed && session[:election_oath_signed_at].present?
+          record = VoterOathAcknowledgement.sign!(
+            user: current_citizen,
+            bonvote_election: election,
+            identity_submission: current_citizen.identity_submissions.find_by(status: "approved"),
+            ip_address: request.remote_ip,
+            user_agent: request.user_agent
+          )
+          Rails.logger.info(
+            "[Citizens::Election::Vote] Oath backfilled for user ##{current_citizen.id} " \
+            "election=#{election.id} record_id=#{record&.id} digest=#{record&.digest&.first(12)}"
+          )
+          signed = record.present?
+        end
+
+        # Keep the session warm so subsequent requests skip the lookup.
+        session[:election_oath_signed_at] ||= Time.current.iso8601 if signed
+        signed
+      end
+
+      # ── Resume window ──────────────────────────────────────────
+      # How long a passed-but-not-cast verification survives so a citizen
+      # can resume without rescanning. Longer than the 10-min challenge
+      # nonce because `resume` re-arms the nonce on pick-up.
+      RESUME_WINDOW = 15.minutes
+
+      def resume_cache_key(election_id)
+        "election:verified:#{current_citizen.id}:#{election_id}"
+      end
+
+      def resume_cache_remaining_seconds(election_id)
+        payload = Rails.cache.read(resume_cache_key(election_id))
+        return 0 unless payload && payload[:cached_at]
+
+        remaining = RESUME_WINDOW.to_i - (Time.current.to_i - payload[:cached_at].to_i)
+        [remaining, 0].max
+      end
+
+      # ── Scan cooldown ──────────────────────────────────────────
+      # 5-minute per-citizen cooldown between billed AWS FaceLiveness
+      # sessions. Cheap Rails.cache counter, keyed by citizen id.
+      SCAN_COOLDOWN = 5.minutes
+
+      def scan_cooldown_key
+        "election:scan_cooldown:#{current_citizen.id}"
+      end
+
+      # Seconds left on the cooldown, or 0 if not active.
+      def scan_cooldown_remaining_seconds
+        started_at = Rails.cache.read(scan_cooldown_key)
+        return 0 unless started_at
+
+        remaining = SCAN_COOLDOWN.to_i - (Time.current.to_i - started_at.to_i)
+        [remaining, 0].max
+      end
+
+      def mark_scan_cooldown!
+        Rails.cache.write(scan_cooldown_key, Time.current.to_i, expires_in: SCAN_COOLDOWN)
       end
     end
   end

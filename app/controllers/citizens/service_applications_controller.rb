@@ -11,8 +11,8 @@
 module Citizens
   class ServiceApplicationsController < Citizens::BaseController
     before_action :set_citizen
-    before_action :enable_immersive_form, only: [ :new, :create, :show ]
-    before_action :find_application, only: [ :show, :update, :submit, :receipt ]
+    before_action :enable_immersive_form, only: [:new, :create, :show]
+    before_action :find_application, only: [:show, :update, :submit, :receipt]
 
     # ============================================================
     # INDEX — My Applications (Aplikasyon Mwen)
@@ -623,18 +623,18 @@ module Citizens
         expected = rule["value"].to_s
 
         matched = case rule["operator"]
-        when "equals" then field_val == expected
-        when "not_equals" then field_val != expected
-        when "greater_than" then field_val.to_f > expected.to_f
-        when "less_than" then field_val.to_f < expected.to_f
-        when "age_less_than"
+                  when "equals" then field_val == expected
+                  when "not_equals" then field_val != expected
+                  when "greater_than" then field_val.to_f > expected.to_f
+                  when "less_than" then field_val.to_f < expected.to_f
+                  when "age_less_than"
                     age = calculate_age_from_date(field_val)
                     age.present? && age < expected.to_f
-        when "age_greater_than_or_equal"
+                  when "age_greater_than_or_equal"
                     age = calculate_age_from_date(field_val)
                     age.present? && age >= expected.to_f
-        else false
-        end
+                  else false
+                  end
 
         return { price: rule["price"], label: rule["label"] } if matched
       end
@@ -707,8 +707,8 @@ module Citizens
       @application.frozen_fields.each do |field|
         next unless field["is_quantity"] && field["linked_to_field"] == "__base_price__"
         qty_val = data[field["key"]].to_f
-        qty_val = [ qty_val, (field["min"] || 1).to_f ].max
-        qty_val = [ qty_val, field["max"].to_f ].min if field["max"].present?
+        qty_val = [qty_val, (field["min"] || 1).to_f].max
+        qty_val = [qty_val, field["max"].to_f].min if field["max"].present?
         qty_multiplier = qty_val
         qty_field_info = { field: field["label"], quantity: qty_val, unit: field["unit"] }
         break # only one quantity field per form
@@ -795,12 +795,12 @@ module Citizens
         qty_multi = 1
         if linked_qty
           qty_val = data[linked_qty["key"]].to_f
-          qty_val = [ qty_val, (linked_qty["min"] || 1).to_f ].max
-          qty_val = [ qty_val, linked_qty["max"].to_f ].min if linked_qty["max"].present?
+          qty_val = [qty_val, (linked_qty["min"] || 1).to_f].max
+          qty_val = [qty_val, linked_qty["max"].to_f].min if linked_qty["max"].present?
           qty_multi = qty_val
         end
 
-        chosen_values = chosen.is_a?(Array) ? chosen : [ chosen ]
+        chosen_values = chosen.is_a?(Array) ? chosen : [chosen]
         options.each do |opt|
           next unless opt.is_a?(Hash) && chosen_values.include?(opt["value"])
           extra_per = (opt["extra_price"].to_f * 100).round

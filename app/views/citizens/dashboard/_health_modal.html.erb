@@ -2,34 +2,36 @@
 <div class="modal fade" id="healthModal" tabindex="-1" aria-labelledby="healthModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header bg-haitian-blue text-white">
-        <h5 class="modal-title" id="healthModalLabel">
-          <i class="ri-heart-pulse-line me-2"></i>
-          <%= current_citizen.health_profile.present? ? "Edit" : "Add" %> Health Information
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-
       <%= simple_form_for current_citizen,
             as: :user,
             url: citizens_profile_path,
             method: :patch,
-            html: { data: { turbo: false } } do |f| %>
+            html: { data: { turbo: false }, class: "d-flex flex-column", style: "min-height: 0; max-height: 100%; overflow: hidden;" } do |f| %>
 
-        <%= f.simple_fields_for :health_profile do |hp| %>
-          <div class="modal-body">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="healthModalLabel" style="font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 600; color: #fff;">
+            <i class="ri-heart-pulse-line me-2"></i>
+            Health Information
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body" style="overflow-y: auto; flex: 1 1 auto;">
+          <%= f.simple_fields_for :health_profile do |hp| %>
             <%= render "citizens/profiles/health_fields", f: hp %>
-          </div>
-        <% end %>
+          <% end %>
+        </div>
 
-        <div class="modal-footer" style="border-top: none; position: sticky; bottom: 0; background: #fff; z-index: 1;">
+        <div class="modal-footer" style="border-top: 1px solid #e4e7ec;">
           <button type="button"
-                  class="btn btn-ghost-cancel rounded-pill px-4"
+                  class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem; border-radius: 0.5rem;"
                   data-bs-dismiss="modal">
             Cancel
           </button>
           <%= f.submit "Save",
-                class: "btn btn-haitian-primary fw-semibold rounded-pill px-4" %>
+                class: "btn btn-primary fw-semibold px-4 py-2",
+                style: "font-size: 0.85rem; border-radius: 0.5rem;" %>
         </div>
       <% end %>
     </div>

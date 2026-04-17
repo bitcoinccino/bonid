@@ -15,6 +15,15 @@
   </li>
 
   <li class="nav-item">
+    <%= link_to citizens_activity_path,
+                class: "nav-link #{'active' if request.path.start_with?(citizens_activity_path)}" do %>
+      <i class="ri-pulse-line"></i>
+      <span>Aktivite</span>
+    <% end %>
+  </li>
+
+  <%# ── Mobile-only: Sèvis and Aplikasyon Mwen also appear in the desktop topbar ── %>
+  <li class="nav-item d-lg-none">
     <%= link_to citizens_services_path,
                 class: "nav-link #{'active' if request.path.start_with?(citizens_services_path)}" do %>
       <i class="ri-apps-2-line"></i>
@@ -22,7 +31,7 @@
     <% end %>
   </li>
 
-  <li class="nav-item">
+  <li class="nav-item d-lg-none">
     <%= link_to citizens_service_applications_path,
                 class: "nav-link #{'active' if request.path.start_with?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
       <i class="ri-file-list-3-line"></i>
@@ -34,71 +43,25 @@
     <% end %>
   </li>
 
-  <li class="nav-item">
-    <%= link_to scan_history_citizens_identity_submissions_path,
-                class: "nav-link #{'active' if current_page?(scan_history_citizens_identity_submissions_path)}" do %>
-      <i class="ri-qr-scan-2-line"></i>
-      <span>BonID Scans</span>
-      <% if @total_scans && @total_scans > 0 %>
-        <span class="badge bg-danger ms-auto"><%= @total_scans %></span>
-      <% end %>
-    <% end %>
-  </li>
-
-  <li class="nav-item">
-    <%= link_to citizens_consents_path,
-                class: "nav-link #{'active' if request.path.start_with?(citizens_consents_path)}" do %>
-      <i class="ri-id-card-line"></i>
-      <span>Manage BonID</span>
-    <% end %>
-  </li>
-
-  <li class="nav-item">
-    <%= link_to citizens_transaction_consents_path,
-                class: "nav-link #{'active' if request.path.start_with?(citizens_transaction_consents_path)}" do %>
-      <i class="ri-exchange-funds-line"></i>
-      <span>Transactions</span>
-      <% pending_txn = Rails.cache.fetch("citizen_pending_txn_#{current_citizen&.id}", expires_in: 30.seconds) { current_citizen&.transaction_consents&.active&.count || 0 } %>
-      <% if pending_txn > 0 %>
-        <span class="badge bg-danger ms-auto"><%= pending_txn %></span>
-      <% end %>
-    <% end %>
-  </li>
-
-  <%# ── ELEKSYON ────────────────────────────── %>
+  <%# ── ELEKSYON ──────────────────────────────
+      Links are ordered + badged based on the active election's lifecycle
+      (draft → open → closed → certified) by CitizenElectionSidebarPresenter.
+      The "Vote" link carries a live day-countdown so every login reinforces
+      the election date. %>
   <li class="sidebar-section-label">Eleksyon</li>
 
-  <li class="nav-item">
-    <%= link_to citizens_election_vote_path,
-                class: "nav-link #{'active' if request.path.include?('election/vote')}" do %>
-      <i class="ri-checkbox-circle-line"></i>
-      <span>Vote</span>
-    <% end %>
-  </li>
-
-  <li class="nav-item">
-    <%= link_to citizens_election_calendar_path,
-                class: "nav-link #{'active' if request.path.include?('election/kalandriye')}" do %>
-      <i class="ri-calendar-event-line"></i>
-      <span>Kalandriye</span>
-    <% end %>
-  </li>
-
-  <li class="nav-item">
-    <%= link_to citizens_election_verify_path,
-                class: "nav-link #{'active' if request.path.include?('election/verifye')}" do %>
-      <i class="ri-shield-check-line"></i>
-      <span>Verifye Vòt Mwen</span>
-    <% end %>
-  </li>
-
-  <li class="nav-item">
-    <%= link_to citizens_election_results_path,
-                class: "nav-link #{'active' if request.path.include?('election/rezilta')}" do %>
-      <i class="ri-bar-chart-box-line"></i>
-      <span>Rezilta</span>
-    <% end %>
-  </li>
+  <% CitizenElectionSidebarPresenter.for_today.links.each do |link| %>
+    <li class="nav-item">
+      <%= link_to link.path,
+                  class: "nav-link #{'active' if request.path.include?(link.active_match)}" do %>
+        <i class="<%= link.icon %>"></i>
+        <span><%= link.label %></span>
+        <% if link.badge.present? %>
+          <span class="sidebar-badge <%= link.badge_class %>"><%= link.badge %></span>
+        <% end %>
+      <% end %>
+    </li>
+  <% end %>
 
   <%# ── SIPÒ ────────────────────────────── %>
   <li class="sidebar-section-label">Sipò</li>

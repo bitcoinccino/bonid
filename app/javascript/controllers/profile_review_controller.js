@@ -37,22 +37,21 @@ export default class extends Controller {
       const hasNew = photoInput?.files?.length > 0
       const hasExisting = !!el.querySelector("img.photo-preview:not(.d-none)")
 
+      const imgStyle = "width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid #e4e7ec;"
       if (hasNew) {
         const file = photoInput.files[0]
         const url = URL.createObjectURL(file)
+        this.reviewPhotoTarget.classList.add("text-center")
         this.reviewPhotoTarget.innerHTML = `
-          <div class="d-flex align-items-center gap-3">
-            <img src="${url}" alt="Photo preview" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #e4e7ec;">
-            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>New photo selected</span>
-          </div>`
+          <img src="${url}" alt="Photo preview" class="d-block mx-auto mb-2" style="${imgStyle}">
+          <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>New photo selected</span>`
       } else if (hasExisting) {
         const existingImg = el.querySelector("img.photo-preview:not(.d-none)")
         const src = existingImg ? existingImg.src : ""
+        this.reviewPhotoTarget.classList.add("text-center")
         this.reviewPhotoTarget.innerHTML = `
-          <div class="d-flex align-items-center gap-3">
-            ${src ? `<img src="${src}" alt="Photo preview" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #e4e7ec;">` : ""}
-            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Photo uploaded</span>
-          </div>`
+          ${src ? `<img src="${src}" alt="Photo preview" class="d-block mx-auto mb-2" style="${imgStyle}">` : ""}
+          <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Photo uploaded</span>`
       }
       // If neither, keep server-rendered default
     }

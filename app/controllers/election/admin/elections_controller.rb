@@ -80,6 +80,31 @@ module Election
         redirect_to admin_election_election_multi_sig_path(@election_id), alert: e.message
       end
 
+      # GET /election/:id/oaths
+      # Signed-oath audit trail for the election — one row per voter
+      # (per oath_version). CEP uses this for dispute investigations and
+      # the evidentiary chain that precedes every ballot.
+      def oaths
+        scope = VoterOathAcknowledgement
+                  .includes(:user, :identity_submission)
+                  .for_election(@election)
+                  .recent_first
+
+        if params[:q].present?
+          q = params[:q].to_s.strip
+          scope = scope.joins(:user).where(
+            "users.bonid ILIKE :q OR users.first_name ILIKE :q OR users.last_name ILIKE :q",
+            q: "%#{q}%"
+          )
+        end
+
+        @oath_total = VoterOathAcknowledgement.for_election(@election).count
+        @oath_latest = VoterOathAcknowledgement.for_election(@election).maximum(:accepted_at)
+        @oath_records = scope.page(params[:page]).per(50)
+
+        render "election/admin/oaths"
+      end
+
       # GET /election/:id/results
       # Official results (only after multi-sig quorum)
       def results

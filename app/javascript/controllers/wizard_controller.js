@@ -106,6 +106,7 @@ export default class extends Controller {
       const active = index + 1 === this.currentStepValue
       step.classList.toggle("active", active)
       step.classList.toggle("d-none", !active)
+      step.style.display = active ? "" : "none"
     })
     this.updateProgress()
     sessionStorage.setItem(this._storageKey(), this.currentStepValue)

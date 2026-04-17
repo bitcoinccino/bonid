@@ -209,6 +209,7 @@ module Citizens
       end
 
       # Audit login
+      geo = (request.location rescue nil)
       CitizenSession.create!(
         user: user,
         citizen_profile: citizen_profile,
@@ -217,6 +218,8 @@ module Citizens
         ip_address: request.remote_ip,
         user_agent: request.user_agent,
         device_fingerprint: request_fingerprint,
+        city: geo&.city.presence,
+        country: geo&.country_code.presence,
         used_at: Time.current,
         expires_at: 30.minutes.from_now
       )

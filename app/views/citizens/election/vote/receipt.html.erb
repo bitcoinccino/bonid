@@ -1,164 +1,231 @@
 <%# Step 5: Receipt — Ballot confirmation with hash + QR + share %>
 
-<div style="min-height: 100vh; background: linear-gradient(180deg, #00209F 0%, #001466 40%, #0a0f1f 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 1.5rem; font-family: 'Montserrat', 'Inter', sans-serif;">
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Success Animation ── %>
-  <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(52, 211, 153, 0.15);
-              display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;
-              animation: pulse 2s ease-in-out infinite;">
-    <svg width="40" height="40" viewBox="0 0 20 20" fill="#34d399">
-      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-    </svg>
-  </div>
-
-  <%# ── Title ── %>
-  <h1 style="font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 800; color: #ffffff;
-             margin: 0 0 0.5rem; text-align: center; letter-spacing: -0.02em;">
-    <%= t("citizens.election.vote_registered") %>
-  </h1>
-  <p style="font-size: clamp(0.85rem, 2.5vw, 1rem); color: rgba(255,255,255,0.7);
-            margin: 0 0 2rem; text-align: center; max-width: 360px; line-height: 1.5;">
-    <%= t("citizens.election.thank_you") %>
-  </p>
-
-  <%# ── Receipt Card ── %>
-  <div class="receipt-card" style="width: 100%; max-width: 380px; background: #ffffff;
-              border-radius: 1.25rem; padding: 2rem 1.5rem; position: relative;
-              box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;">
-
-    <%# Channel badge %>
-    <div style="position: absolute; top: 12px; right: 12px;">
-      <span style="font-size: 0.65rem; font-weight: 700; background: #D1FAE5; color: #065F46;
-                   padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em;">
-        <%= t("citizens.election.remote") %>
-      </span>
-    </div>
-
-    <%# BonID + Election branding %>
-    <div style="text-align: center; margin-bottom: 1.25rem;">
-      <div style="font-family: 'Orbitron', 'Montserrat', sans-serif; font-size: 0.75rem;
-                  font-weight: 800; color: #00209F; letter-spacing: 2px; margin-bottom: 4px;">
-        BONID &middot; ELEKSYON 2026
-      </div>
-      <div style="font-size: 0.7rem; color: #94A3B8;">
-        <%= @receipt["election_id"] %>
-      </div>
-    </div>
-
-    <%# Receipt hash %>
-    <div style="margin-bottom: 1.25rem;">
-      <label style="display: block; font-size: 0.65rem; font-weight: 700; color: #94A3B8;
-                    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">
-        <%= t("citizens.election.receipt_number") %>
-      </label>
-      <div style="font-family: 'Courier New', monospace; font-size: 0.75rem; background: #F0F4FF;
-                  color: #1E293B; padding: 0.85rem 1rem; border-radius: 0.75rem;
-                  border: 1px solid rgba(0,32,159,0.12); word-break: break-all; line-height: 1.5;
-                  letter-spacing: 0.02em;">
-        <%= @receipt["ballot_hash"] %>
-      </div>
-    </div>
-
-    <%# QR Code %>
-    <div style="text-align: center; margin-bottom: 1rem;">
-      <div style="display: inline-block; padding: 12px; background: #fff;
-                  border: 2px solid #E2E8F0; border-radius: 12px;">
-        <% qr = RQRCode::QRCode.new(@verify_url, size: 6, level: :m) %>
-        <%= raw qr.as_svg(
-          module_size: 3,
-          use_path: true,
-          fill: "ffffff",
-          color: "1E293B",
-          shape_rendering: "crispEdges",
-          viewbox: true
-        ) %>
-      </div>
-    </div>
-
-    <p style="font-size: 0.68rem; color: #94A3B8; text-align: center; line-height: 1.5;
-              margin: 0 0 1rem; padding: 0 0.5rem;">
-      <%= t("citizens.election.scan_qr") %>
+  <%# ── Page Header (wizard style — matches whole election flow) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-checkbox-circle-line me-2"></i><%= t("citizens.election.vote_registered") %>
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      <%= t("citizens.election.thank_you") %>
     </p>
+  </div>
 
-    <%# Timestamp + receipt ID %>
-    <div style="border-top: 1px solid #E2E8F0; padding-top: 1rem;">
-      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748B;">
-        <span>Dat</span>
-        <span style="font-weight: 600; color: #1E293B;">
-          <%= Time.parse(@receipt["timestamp"]).strftime("%d %b %Y, %H:%M") rescue Time.current.strftime("%d %b %Y, %H:%M") %>
-        </span>
+  <div class="row">
+    <div class="col-lg-6">
+      <%# ── Proof Banner ── %>
+      <div class="receipt-proof-banner mb-3">
+        <i class="ri-shield-star-line"></i>
+        <span><%= t("citizens.election.receipt_proof_banner") %></span>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #64748B; margin-top: 6px;">
-        <span>Resi ID</span>
-        <span style="font-family: monospace; font-weight: 600; color: #1E293B;">
-          <%= @receipt["receipt_id"].to_s[0..7].upcase %>
-        </span>
+
+      <%# ── Receipt Card ── %>
+      <div class="card election-card mb-4">
+        <div class="card-body p-4">
+
+          <%# Channel badge %>
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <div style="font-family: 'Montserrat', sans-serif; font-size: 0.72rem; font-weight: 800; color: var(--primary); letter-spacing: 1px;">
+                BONID &middot; ELEKSYON 2026
+              </div>
+              <div class="text-muted" style="font-size: 0.7rem;"><%= @receipt["election_id"] %></div>
+            </div>
+            <span class="election-badge election-badge--lg election-badge--green">
+              <%= t("citizens.election.remote") %>
+            </span>
+          </div>
+
+          <%# Receipt hash %>
+          <div class="mb-3">
+            <label class="election-form-label--sm" style="margin-bottom: 0.5rem;">
+              <%= t("citizens.election.receipt_number") %>
+            </label>
+            <div class="receipt-hash-box">
+              <%= @receipt["ballot_hash"] %>
+            </div>
+          </div>
+
+          <%# QR Code %>
+          <div class="text-center mb-3">
+            <div class="receipt-qr-wrapper">
+              <% qr = RQRCode::QRCode.new(@verify_url, size: 6, level: :m) %>
+              <%= raw qr.as_svg(
+                module_size: 3,
+                use_path: true,
+                fill: "ffffff",
+                color: "1E293B",
+                shape_rendering: "crispEdges",
+                viewbox: true
+              ) %>
+            </div>
+          </div>
+
+          <p class="text-muted text-center" style="font-size: 0.72rem;">
+            <%= t("citizens.election.scan_qr") %>
+          </p>
+
+          <%# Timestamp + receipt ID %>
+          <div style="border-top: 1px solid #E2E8F0; padding-top: 1rem;" class="mt-3">
+            <div class="receipt-detail-row">
+              <span>Dat</span>
+              <span class="receipt-detail-value">
+                <%= Time.parse(@receipt["timestamp"]).strftime("%d %b %Y, %H:%M") rescue Time.current.strftime("%d %b %Y, %H:%M") %>
+              </span>
+            </div>
+            <div class="receipt-detail-row mt-2">
+              <span>Resi ID</span>
+              <span class="receipt-detail-value--mono">
+                <%= @receipt["receipt_id"].to_s[0..7].upcase %>
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <%# ── Action Buttons ── %>
+      <% share_text = t("citizens.election.share_text") %>
+
+      <%# PRIMARY — Copy hash (the proof) %>
+      <button type="button"
+              class="receipt-copy-btn mb-2"
+              data-hash="<%= @receipt['ballot_hash'] %>"
+              data-toast-success="<%= t('citizens.election.copy_toast_success') %>"
+              onclick="copyBallotHash(this)">
+        <i class="ri-file-copy-line"></i>
+        <span class="receipt-copy-btn__label"><%= t("citizens.election.copy_hash_button") %></span>
+      </button>
+
+      <%# Secondary — WhatsApp share %>
+      <a href="https://wa.me/?text=<%= CGI.escape(share_text) %>"
+         target="_blank" rel="noopener"
+         class="btn btn-outline-success rounded-pill w-100 py-2 mb-2">
+        <i class="ri-whatsapp-line me-2" style="font-size: 1.1rem;"></i>
+        <%= t("citizens.election.share_whatsapp") %>
+      </a>
+
+      <a href="<%= citizens_election_verify_path %>" class="btn btn-outline-primary rounded-pill w-100 py-2 mb-2">
+        <i class="ri-shield-check-line me-1"></i>
+        <%= t("citizens.election.verify_my_vote") %>
+      </a>
+
+      <a href="<%= citizens_dashboard_path %>" class="d-block text-center text-muted py-2" style="font-size: 0.78rem;">
+        <%= t("citizens.election.return_home") %>
+      </a>
+
+      <%# ── Toast ── %>
+      <div id="receipt-toast" class="receipt-toast" role="status" aria-live="polite"></div>
+
+      <script>
+        (function() {
+          window.copyBallotHash = function(btn) {
+            var hash = btn.getAttribute('data-hash');
+            var msg  = btn.getAttribute('data-toast-success');
+            navigator.clipboard.writeText(hash).then(function() {
+              btn.classList.add('is-copied');
+              var label = btn.querySelector('.receipt-copy-btn__label');
+              if (label) label.textContent = '✓';
+              var toast = document.getElementById('receipt-toast');
+              toast.textContent = msg;
+              toast.classList.add('is-visible');
+              setTimeout(function() { toast.classList.remove('is-visible'); }, 2400);
+            });
+          };
+        })();
+      </script>
+
+      <style>
+        /* Proof banner — impossible to miss */
+        .receipt-proof-banner {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.875rem 1.1rem;
+          background: linear-gradient(90deg, #FEF3C7, #FDE68A);
+          border: 1px solid #F59E0B;
+          border-radius: 0.75rem;
+          color: #78350F;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 0.88rem;
+          font-weight: 700;
+          line-height: 1.3;
+        }
+        .receipt-proof-banner i {
+          color: #B45309;
+          font-size: 1.25rem;
+          flex-shrink: 0;
+        }
+
+        /* Primary copy button — big, pulsing */
+        .receipt-copy-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          width: 100%;
+          padding: 1rem 1.25rem;
+          background: var(--primary);
+          color: #fff;
+          border: none;
+          border-radius: 1rem;
+          font-family: 'Montserrat', sans-serif;
+          font-size: 1.02rem;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 6px 18px rgba(0, 32, 159, 0.25);
+          transition: all 0.2s ease;
+          animation: receiptCopyPulse 2.2s ease-in-out infinite;
+        }
+        .receipt-copy-btn:hover {
+          background: #001570;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 22px rgba(0, 32, 159, 0.32);
+        }
+        .receipt-copy-btn i { font-size: 1.2rem; }
+        .receipt-copy-btn.is-copied {
+          background: #059669;
+          animation: none;
+          box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+        }
+        @keyframes receiptCopyPulse {
+          0%, 100% { box-shadow: 0 6px 18px rgba(0, 32, 159, 0.25); }
+          50%      { box-shadow: 0 6px 22px rgba(0, 32, 159, 0.45); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .receipt-copy-btn { animation: none; }
+        }
+
+        /* Toast */
+        .receipt-toast {
+          position: fixed;
+          left: 50%;
+          bottom: 24px;
+          transform: translate(-50%, 20px);
+          background: #1a1a2e;
+          color: #fff;
+          padding: 0.7rem 1.1rem;
+          border-radius: 999px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease, transform 0.2s ease;
+          z-index: 1080;
+          max-width: 90vw;
+          text-align: center;
+        }
+        .receipt-toast.is-visible {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      </style>
+
+      <p class="election-footnote mt-3">
+        <i class="ri-lock-line me-1"></i>
+        <%= t("citizens.election.privacy_footer") %>
+      </p>
     </div>
-  </div>
-
-  <%# ── Action Buttons ── %>
-  <div style="margin-top: 2rem; width: 100%; max-width: 380px;">
-    <%# WhatsApp share %>
-    <% share_text = t("citizens.election.share_text") %>
-    <a href="https://wa.me/?text=<%= CGI.escape(share_text) %>"
-       target="_blank" rel="noopener"
-       style="width: 100%; padding: 1rem; background: #25D366; color: #ffffff;
-              font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 700;
-              border: none; border-radius: 0.85rem; cursor: pointer;
-              display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-              box-shadow: 0 4px 12px rgba(37,211,102,0.3); text-decoration: none;">
-      <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i>
-      <%= t("citizens.election.share_whatsapp") %>
-    </a>
-
-    <%# Copy hash %>
-    <button onclick="navigator.clipboard.writeText('<%= @receipt['ballot_hash'] %>').then(() => this.textContent = 'Kopye!')"
-            style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
-                   font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600;
-                   border: 1px solid rgba(255,255,255,0.15); border-radius: 0.85rem; cursor: pointer;
-                   margin-top: 0.75rem;">
-      <i class="ri-file-copy-line" style="margin-right: 4px;"></i>
-      <%= t("citizens.election.copy_receipt") %>
-    </button>
-
-    <%# Verify link %>
-    <a href="<%= citizens_election_verify_path %>"
-       style="display: block; text-align: center; padding: 0.75rem;
-              color: rgba(255,255,255,0.6); font-size: 0.82rem; font-weight: 600;
-              text-decoration: none; margin-top: 0.5rem;">
-      <i class="ri-shield-check-line" style="margin-right: 4px;"></i>
-      <%= t("citizens.election.verify_my_vote") %>
-    </a>
-
-    <%# Return home %>
-    <a href="<%= citizens_dashboard_path %>"
-       style="display: block; text-align: center; padding: 0.75rem;
-              color: rgba(255,255,255,0.4); font-size: 0.78rem; font-weight: 500;
-              text-decoration: none; margin-top: 0.25rem;">
-      <%= t("citizens.election.return_home") %>
-    </a>
-  </div>
-
-  <%# ── Security Footer ── %>
-  <div style="margin-top: 2rem; text-align: center; max-width: 360px;">
-    <p style="font-size: 0.65rem; color: rgba(255,255,255,0.35); line-height: 1.6;">
-      <i class="ri-lock-line" style="margin-right: 2px;"></i>
-      <%= t("citizens.election.privacy_footer") %>
-    </p>
   </div>
 </div>
-
-<style>
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.9; }
-  }
-  @media print {
-    body { background: #fff !important; }
-    .no-print { display: none !important; }
-    .receipt-card { box-shadow: none !important; border: 2px solid #000 !important; }
-  }
-</style>

@@ -1,0 +1,136 @@
+<%# Shared form — new + edit for ElectoralOffice.
+    Reuses the polymorphic Address via nested attributes. The Haitian
+    geographic hierarchy (Department → Arrondissement → Commune →
+    Communal Section) is handled by the Address model's own callbacks. %>
+
+<%= form_with model: [:admin, @office], local: true do |f| %>
+
+  <% if @office.errors.any? %>
+    <div class="alert alert-danger">
+      <strong>Erè:</strong>
+      <ul class="mb-0 ps-3">
+        <% @office.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3"><i class="ri-information-line me-1"></i>Enfòmasyon biwo</h6>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= f.label :name, "Non biwo", class: "form-label" %>
+          <%= f.text_field :name, class: "form-control",
+                            placeholder: "Ex: BED Ouest, BEK Pétion-Ville" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :office_type, "Tip", class: "form-label" %>
+          <%= f.select :office_type,
+                        ElectoralOffice::OFFICE_TYPES.map { |t| [t.upcase, t] },
+                        { include_blank: "— Chwazi —" },
+                        class: "form-select" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :status, "Estati", class: "form-label" %>
+          <%= f.select :status,
+                        ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
+                        {}, class: "form-select" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :department_id, "Depatman (pou BED)", class: "form-label" %>
+          <%= f.collection_select :department_id, Department.order(:name), :id, :name,
+                                    { include_blank: "— Chwazi —" }, class: "form-select" %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :commune_id, "Komin (pou BEK)", class: "form-label" %>
+          <%= f.collection_select :commune_id, Commune.order(:name), :id, :name,
+                                    { include_blank: "— Chwazi —" }, class: "form-select" %>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :phone, "Telefòn", class: "form-label" %>
+          <%= f.text_field :phone, class: "form-control", placeholder: "+509 …" %>
+        </div>
+
+        <div class="col-md-5">
+          <%= f.label :hours_note, "Orè", class: "form-label" %>
+          <%= f.text_field :hours_note, class: "form-control",
+                            placeholder: "Ex: L-V 8am-4pm" %>
+        </div>
+
+        <div class="col-md-3">
+          <%= f.label :priority, "Priyorite", class: "form-label" %>
+          <%= f.number_field :priority, class: "form-control", min: 0 %>
+        </div>
+
+        <div class="col-12">
+          <%= f.label :notes, "Nòt", class: "form-label" %>
+          <%= f.text_area :notes, rows: 2, class: "form-control" %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3"><i class="ri-map-pin-line me-1"></i>Adrès</h6>
+
+      <%= f.fields_for :address do |a| %>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <%= a.label :street_address, "Adrès / Ri", class: "form-label" %>
+            <%= a.text_field :street_address, class: "form-control",
+                              placeholder: "Ex: Rue Capois, Bicentenaire" %>
+          </div>
+          <div class="col-md-4">
+            <%= a.label :locality, "Lokalite", class: "form-label" %>
+            <%= a.text_field :locality, class: "form-control" %>
+          </div>
+
+          <div class="col-md-6">
+            <%= a.label :department_id, "Depatman", class: "form-label" %>
+            <%= a.collection_select :department_id, Department.order(:name), :id, :name,
+                                      { include_blank: "— Chwazi —" }, class: "form-select" %>
+          </div>
+          <div class="col-md-6">
+            <%= a.label :arrondissement_id, "Arondisman", class: "form-label" %>
+            <%= a.collection_select :arrondissement_id, Arrondissement.order(:name), :id, :name,
+                                      { include_blank: "— Chwazi —" }, class: "form-select" %>
+          </div>
+          <div class="col-md-6">
+            <%= a.label :commune_id, "Komin", class: "form-label" %>
+            <%= a.collection_select :commune_id, Commune.order(:name), :id, :name,
+                                      { include_blank: "— Chwazi —" }, class: "form-select" %>
+          </div>
+          <div class="col-md-6">
+            <%= a.label :communal_section_id, "Seksyon Komunal", class: "form-label" %>
+            <%= a.collection_select :communal_section_id, CommunalSection.order(:name), :id, :name,
+                                      { include_blank: "— Chwazi —" }, class: "form-select" %>
+          </div>
+
+          <div class="col-md-4">
+            <%= a.label :postal_code, "Kòd Postal", class: "form-label" %>
+            <%= a.text_field :postal_code, class: "form-control", placeholder: "HT6110" %>
+          </div>
+          <div class="col-md-4">
+            <%= a.label :country, "Peyi", class: "form-label" %>
+            <%= a.text_field :country, class: "form-control", value: (a.object&.country || "Haiti") %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <%= f.submit(@office.new_record? ? "Kreye Biwo" : "Anrejistre Chanjman",
+                  class: "btn btn-primary") %>
+    <%= link_to "Anile", admin_electoral_offices_path, class: "btn btn-outline-secondary" %>
+  </div>
+<% end %>

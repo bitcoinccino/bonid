@@ -1,30 +1,24 @@
 <%# app/views/citizens/officer_complaints/new.html.erb %>
 <%# Complaint form — 5 pillars as wizard steps + Review step (Step 6) %>
 
-<div class="citizen-profile-page container-fluid py-4">
-<div class="mb-5 bg-white shadow-sm overflow-hidden complaint-form-wrapper" style="border-radius: 0.5rem;">
+<div class="px-0">
 
-  <%# ── Blue Header ── %>
-  <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #00209F;">
-    <div class="d-flex align-items-center gap-3">
-      <%= image_tag "haiti_flag.png", style: "height: 32px; width: auto; opacity: 0.9;", alt: "Drapeau d'Haïti" %>
-      <div>
-        <h4 class="mb-1 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">
-          <i class="ri-shield-check-line me-2"></i>Déposer une Plainte
-        </h4>
-        <p class="mb-0 text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
-          Votre plainte sera transmise à l'IGPNH — Direction régionale compétente.
-          Un certificat de dépôt vous sera remis immédiatement.
-        </p>
-      </div>
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="citizen-page-title mb-1">
+        <i class="ri-shield-check-line me-2"></i>Déposer une Plainte
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        Votre plainte sera transmise à l'IGPNH — Direction régionale compétente.
+      </p>
     </div>
-    <%= link_to citizens_officer_complaints_path, class: "btn btn-outline-light rounded-pill ms-3 flex-shrink-0", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
-      <i class="ri-arrow-left-line me-1"></i>Mes Plaintes
+    <%= link_to citizens_officer_complaints_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="ri-arrow-left-line"></i>
     <% end %>
   </div>
 
-  <%# ── Form Body ── %>
-  <div class="p-4 p-md-5">
+<div class="complaint-form-wrapper">
 
   <%# Flash rendered by citizen layout %>
 
@@ -51,13 +45,10 @@
         ] %>
         <% step_labels.each_with_index do |step, i| %>
           <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
-            <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if i == 0 %>"
-                 style="width: 36px; height: 36px; font-size: 0.75rem; font-weight: 600;
-                        border: 2px solid #e4e7ec; background: #fff; color: #98a2b3;
-                        transition: all 0.3s ease;">
+            <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if i == 0 %>">
               <i class="<%= step[:icon] %>" style="font-size: 0.9rem;"></i>
             </div>
-            <div style="font-size: 0.62rem; color: #98a2b3; margin-top: 4px; font-weight: 500;">
+            <div class="step-label" style="font-size: 0.62rem; color: #98a2b3; margin-top: 4px; font-weight: 500;">
               <%= step[:label] %>
             </div>
           </div>
@@ -66,7 +57,7 @@
       <%# Progress bar %>
       <div style="height: 4px; background: #e4e7ec; border-radius: 4px; max-width: 600px; margin: 0 auto;">
         <div data-wizard-target="progressBar"
-             style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary, #00209F), #1a4fa8);
+             style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #1a4fa8);
                     border-radius: 4px; transition: width 0.4s ease;">
         </div>
       </div>
@@ -78,15 +69,15 @@
     <div data-wizard-target="step">
       <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
             <i class="ri-user-3-line me-2"></i>1. Enfòmasyon sou Plenyant lan
             <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Complainant Information</span>
           </h6>
           <%# Pre-filled from BonID — shown as read-only with a note %>
           <div class="alert rounded-3 mb-3 complaint-bonid-alert" style="font-size: 0.8rem;">
-            <i class="ri-lock-line me-2" style="color: var(--primary, #00209F);"></i>
+            <i class="ri-lock-line me-2" style="color: var(--primary);"></i>
             Vos informations BonID ont été pré-remplies et vérifiées.
-            <strong style="color: var(--primary, #00209F);"><%= current_citizen.bonid %></strong>
+            <strong style="color: var(--primary);"><%= current_citizen.bonid %></strong>
           </div>
 
           <div class="row g-3">
@@ -133,8 +124,8 @@
 
       <%# Navigation %>
       <div class="d-flex justify-content-end">
-        <button type="button" class="btn text-white fw-semibold px-4 py-2"
-                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
           Continuer <i class="ri-arrow-right-line ms-1"></i>
         </button>
@@ -144,11 +135,11 @@
     <%# ═══════════════════════════════════════════════════════ %>
     <%# STEP 2 — Incident Details %>
     <%# ═══════════════════════════════════════════════════════ %>
-    <div data-wizard-target="step" class="d-none">
+    <div data-wizard-target="step" class="d-none" style="display:none">
       <div class="card border-0 shadow-sm rounded-4 mb-4">
         <%# address_controller handles 3-level cascade: dept → commune → section %>
         <div class="card-body p-4" data-controller="address">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
             <i class="ri-map-pin-2-line me-2"></i>2. Detay sou Ensidan an
             <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Incident Details</span>
           </h6>
@@ -169,8 +160,8 @@
           <%# ── SECTION A: Incident Address ── %>
           <div class="mb-4">
             <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-              <i class="ri-home-4-line me-2" style="color: var(--primary, #00209F); font-size: 1rem;"></i>
-              <span class="fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: var(--primary, #00209F);">Adresse de l'incident</span>
+              <i class="ri-home-4-line me-2" style="color: var(--primary); font-size: 1rem;"></i>
+              <span class="fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: var(--primary);">Adresse de l'incident</span>
             </div>
             <div class="row g-3">
               <%# Department — triggers arrondissement cascade %>
@@ -301,8 +292,8 @@
           <%# ── SECTION B: Incident Info ── %>
           <div>
             <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-              <i class="ri-calendar-event-line me-2" style="color: var(--primary, #00209F); font-size: 1rem;"></i>
-              <span class="fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: var(--primary, #00209F);">Détails de l'incident</span>
+              <i class="ri-calendar-event-line me-2" style="color: var(--primary); font-size: 1rem;"></i>
+              <span class="fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px; color: var(--primary);">Détails de l'incident</span>
             </div>
             <div class="row g-3">
               <div class="col-md-6">
@@ -324,7 +315,6 @@
               </div>
             </div>
           </div>
-          </div>
         </div>
       </div>
 
@@ -334,21 +324,22 @@
                 data-action="click->wizard#previous">
           <i class="ri-arrow-left-line me-1"></i> Précédent
         </button>
-        <button type="button" class="btn text-white fw-semibold px-4 py-2"
-                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
           Continuer <i class="ri-arrow-right-line ms-1"></i>
         </button>
       </div>
     </div>
 
+
     <%# ═══════════════════════════════════════════════════════ %>
     <%# STEP 3 — Officer Identification %>
     <%# ═══════════════════════════════════════════════════════ %>
-    <div data-wizard-target="step" class="d-none">
+    <div data-wizard-target="step" class="d-none" style="display:none">
       <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
             <i class="ri-user-search-line me-2"></i>3. Idantifikasyon Polisye a
             <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Officer Identification</span>
           </h6>
@@ -410,8 +401,8 @@
                 data-action="click->wizard#previous">
           <i class="ri-arrow-left-line me-1"></i> Précédent
         </button>
-        <button type="button" class="btn text-white fw-semibold px-4 py-2"
-                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
           Continuer <i class="ri-arrow-right-line ms-1"></i>
         </button>
@@ -421,10 +412,10 @@
     <%# ═══════════════════════════════════════════════════════ %>
     <%# STEP 4 — Nature of Allegations %>
     <%# ═══════════════════════════════════════════════════════ %>
-    <div data-wizard-target="step" class="d-none">
+    <div data-wizard-target="step" class="d-none" style="display:none">
       <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
             <i class="ri-scales-3-line me-2"></i>4. Kalite Plent lan
             <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Nature of Allegations</span>
           </h6>
@@ -468,8 +459,8 @@
                 data-action="click->wizard#previous">
           <i class="ri-arrow-left-line me-1"></i> Précédent
         </button>
-        <button type="button" class="btn text-white fw-semibold px-4 py-2"
-                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
           Continuer <i class="ri-arrow-right-line ms-1"></i>
         </button>
@@ -479,10 +470,10 @@
     <%# ═══════════════════════════════════════════════════════ %>
     <%# STEP 5 — Evidence & Narrative %>
     <%# ═══════════════════════════════════════════════════════ %>
-    <div data-wizard-target="step" class="d-none">
+    <div data-wizard-target="step" class="d-none" style="display:none">
       <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
             <i class="ri-file-text-line me-2"></i>5. Deklarasyon ak Prèv
             <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Statement & Evidence</span>
           </h6>
@@ -540,13 +531,13 @@
                 <%# Step 1: BonID suffix input %>
                 <div class="witness-bonid-field mb-2">
                   <label class="form-label mb-1" style="font-size: 0.78rem; font-weight: 500; color: var(--dark-gray);">
-                    <i class="ri-shield-check-line me-1" style="color: var(--primary, #00209F);"></i>
+                    <i class="ri-shield-check-line me-1" style="color: var(--primary);"></i>
                     BonID ou BonTouris — 6 à 8 derniers chiffres
                   </label>
                   <div class="d-flex gap-2 align-items-center">
                     <div class="input-group input-group-sm" style="max-width: 320px;">
                       <span class="input-group-text" style="background: rgba(0,32,159,0.06); border-color: rgba(0,32,159,0.2);">
-                        <i class="ri-fingerprint-line" style="color: var(--primary, #00209F);"></i>
+                        <i class="ri-fingerprint-line" style="color: var(--primary);"></i>
                       </span>
                       <input type="text"
                              class="form-control form-control-sm witness-bonid-input"
@@ -637,8 +628,8 @@
                 data-action="click->wizard#previous">
           <i class="ri-arrow-left-line me-1"></i> Précédent
         </button>
-        <button type="button" class="btn text-white fw-semibold px-4 py-2"
-                style="background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-size: 0.85rem;"
+        <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
           Réviser la Plainte <i class="ri-arrow-right-line ms-1"></i>
         </button>
@@ -648,10 +639,10 @@
     <%# ═══════════════════════════════════════════════════════ %>
     <%# STEP 6 — Review & Submit %>
     <%# ═══════════════════════════════════════════════════════ %>
-    <div data-wizard-target="step" class="d-none">
+    <div data-wizard-target="step" class="d-none" style="display:none">
       <div class="card border-0 shadow-sm rounded-4 mb-4 complaint-review-card">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary, #00209F);">
+          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
             <i class="ri-checkbox-circle-line me-2"></i>Récapitulatif de votre Plainte
             <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Review & Submit</span>
           </h6>
@@ -664,7 +655,7 @@
           <%# Section 1: Complainant %>
           <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
                 <i class="ri-user-3-line me-1"></i>1. Informations du Plaignant
               </h6>
               <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
@@ -680,7 +671,7 @@
           <%# Section 2: Incident Details %>
           <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
                 <i class="ri-calendar-event-line me-1"></i>2. Détails de l'Incident
               </h6>
               <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
@@ -696,7 +687,7 @@
           <%# Section 3: Officer Identification %>
           <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
                 <i class="ri-user-search-line me-1"></i>3. Identification du Policier
               </h6>
               <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
@@ -712,7 +703,7 @@
           <%# Section 4: Allegations %>
           <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
                 <i class="ri-scales-3-line me-1"></i>4. Nature de la Plainte
               </h6>
               <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
@@ -728,7 +719,7 @@
           <%# Section 5: Evidence & Narrative %>
           <div class="mb-3 p-3 rounded-3" style="background: #fff; border: 1px solid #e4e7ec;">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary, #00209F); margin: 0;">
+              <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
                 <i class="ri-file-text-line me-1"></i>5. Déclaration & Preuves
               </h6>
               <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
@@ -744,7 +735,7 @@
           <%# Legal declaration checkbox %>
           <div class="mt-4 p-3 rounded-3 complaint-legal-box">
             <div class="d-flex gap-3 align-items-start">
-              <i class="ri-government-line flex-shrink-0" style="font-size: 1.3rem; color: var(--primary, #00209F); margin-top: 2px;"></i>
+              <i class="ri-government-line flex-shrink-0" style="font-size: 1.3rem; color: var(--primary); margin-top: 2px;"></i>
               <div>
                 <div class="form-check">
                   <input type="checkbox" class="form-check-input" id="legal_declaration"
@@ -774,8 +765,8 @@
           <i class="ri-arrow-left-line me-1"></i> Précédent
         </button>
         <%= f.submit "Soumettre la Plainte — Dépoze Plent lan",
-            class: "btn text-white fw-semibold py-2 px-4",
-            style: "background: linear-gradient(135deg, var(--primary, #00209F), #1a4fa8); font-family: 'Montserrat', sans-serif; font-size: 0.85rem; letter-spacing: 0.02em;",
+            class: "btn btn-primary fw-semibold py-2 px-4",
+            style: "font-size: 0.85rem;",
             disabled: true,
             data: { complaint_form_target: "submitButton" } %>
       </div>
@@ -786,6 +777,5 @@
 
   <% end %>
 
-  </div><%# close form body %>
-</div><%# close card %>
-</div>
+</div><%# close complaint-form-wrapper %>
+</div><%# close px-0 %>

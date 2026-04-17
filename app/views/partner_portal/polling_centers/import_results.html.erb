@@ -1,0 +1,85 @@
+<%# Per-row import outcome — shown after CSV upload %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+
+      <h4 class="pp-page-title">
+        <i class="ri-checkbox-circle-line me-2 pp-text-success"></i>Rezilta Enpòtasyon
+      </h4>
+      <p class="pp-page-subtitle mb-4">
+        <%= @election.title %>
+      </p>
+
+      <%# Summary Cards %>
+      <div class="row g-3 mb-4">
+        <% [
+          ["Liy Trete",       @result.rows_processed,    "pp-text-primary"],
+          ["Sant Kreye",      @result.centers_created,   "pp-text-success"],
+          ["Sant Mete Ajou",  @result.centers_updated,   "pp-text-warning"],
+          ["BV Kreye",        @result.stations_created,  "pp-text-brand"],
+          ["Erè",             @result.errors.size,       @result.errors.any? ? "pp-text-danger" : "pp-text-muted"]
+        ].each do |label, count, color_class| %>
+          <div class="col-md">
+            <div class="pp-stat-card card">
+              <div class="pp-stat-number-lg <%= color_class %>">
+                <%= number_with_delimiter(count) %>
+              </div>
+              <div class="pp-stat-label"><%= label %></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <%# Errors Table %>
+      <% if @result.errors.any? %>
+        <div class="pp-card card mb-4">
+          <div class="card-header bg-danger-subtle border-0">
+            <h6 class="mb-0 text-danger fw-bold">
+              <i class="ri-error-warning-line me-1"></i>
+              <%= @result.errors.size %> liy pa t enpòte
+            </h6>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 80px;">Liy</th>
+                  <th>Non Sant</th>
+                  <th>Erè</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @result.errors.each do |err| %>
+                  <tr>
+                    <td><code>#<%= err[:line] %></code></td>
+                    <td><%= err[:name].presence || "—" %></td>
+                    <td class="text-danger"><%= err[:message] %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Success State %>
+      <% if @result.errors.empty? && @result.rows_processed.positive? %>
+        <div class="alert alert-success">
+          <i class="ri-check-double-line me-1"></i>
+          Tout <%= @result.rows_processed %> liy yo enpòte san pwoblèm.
+        </div>
+      <% end %>
+
+      <div class="d-flex gap-2 mt-4">
+        <%= link_to "Wè Sant Vòt",
+                    partner_portal_polling_centers_path,
+                    class: "btn pp-btn-brand px-4" %>
+        <%= link_to "Enpòte yon lòt CSV",
+                    partner_portal_polling_centers_import_path,
+                    class: "btn btn-outline-secondary px-4" %>
+      </div>
+
+    </div>
+  </div>
+</div>

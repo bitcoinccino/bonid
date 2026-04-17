@@ -23,6 +23,7 @@ class BonvoteElection < ApplicationRecord
   has_many :election_staff_assignments, foreign_key: :election_id, dependent: :destroy
   has_many :electoral_calendars,       dependent: :destroy
   has_many :voter_eligibility_records, dependent: :destroy
+  has_many :polling_centers,           dependent: :destroy
 
   belongs_to :parent_election, class_name: "BonvoteElection", optional: true
   has_one    :runoff_election, class_name: "BonvoteElection", foreign_key: :parent_election_id

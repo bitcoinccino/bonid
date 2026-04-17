@@ -1,76 +1,65 @@
 <%# Electoral Calendar — Citizen view %>
 
-<div class="container-fluid py-4" style="max-width: 680px; margin: 0 auto;">
-  <div class="text-center mb-4">
-    <h2 style="font-size: 1.3rem; font-weight: 800; color: #1E293B; margin-bottom: 4px;">
-      <i class="ri-calendar-event-line" style="color: #00209F; margin-right: 6px;"></i>
-      <%= t("citizens.election.calendar_title") %>
-    </h2>
-    <% if @election %>
-      <p style="font-size: 0.82rem; color: #64748B;">
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
+
+  <%# ── Page Header (wizard style — matches whole election flow) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-calendar-event-line me-2"></i><%= t("citizens.election.calendar_title") %>
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      <% if @election %>
         <%= @election.title.presence || @election.id %>
-      </p>
-    <% end %>
+      <% else %>
+        <%= t("citizens.election.calendar_subtitle", default: "View the timeline and phases for upcoming elections.") %>
+      <% end %>
+    </p>
   </div>
 
-  <% if @phases.any? %>
-    <div style="position: relative; padding-left: 2rem;">
-      <%# Timeline line %>
-      <div style="position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: #E2E8F0;"></div>
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <% if @phases.any? %>
+        <div class="election-timeline">
+          <div class="election-timeline-line"></div>
 
-      <% @phases.each do |phase| %>
-        <% is_current = phase == @current_phase %>
-        <% is_past = phase.end_date && phase.end_date < Date.current %>
-        <div style="position: relative; margin-bottom: 1.5rem;">
-          <%# Timeline dot %>
-          <div style="position: absolute; left: -2rem; top: 4px; width: 12px; height: 12px;
-                      border-radius: 50%; border: 2px solid <%= is_current ? '#00209F' : (is_past ? '#10B981' : '#CBD5E1') %>;
-                      background: <%= is_current ? '#00209F' : (is_past ? '#10B981' : '#fff') %>;
-                      z-index: 1;"></div>
+          <% @phases.each do |phase| %>
+            <% is_current = phase == @current_phase %>
+            <% is_past = phase.end_date && phase.end_date < Date.current %>
+            <div class="election-timeline-item">
+              <div class="election-timeline-dot election-timeline-dot--<%= is_current ? 'current' : (is_past ? 'past' : 'future') %>"></div>
 
-          <div class="card border-0 shadow-sm" style="border-radius: 0.75rem;
-                      <%= 'border-left: 3px solid #00209F;' if is_current %>">
-            <div class="card-body p-3">
-              <div class="d-flex align-items: center; justify-content: space-between; margin-bottom: 4px;">
-                <h5 style="font-size: 0.88rem; font-weight: 700; color: #1E293B; margin: 0;">
-                  <%= phase.name %>
-                </h5>
-                <% if is_current %>
-                  <span style="font-size: 0.6rem; font-weight: 700; background: #DBEAFE; color: #1E40AF;
-                               padding: 2px 8px; border-radius: 1rem;">
-                    <%= t("citizens.election.current_phase") %>
-                  </span>
-                <% elsif is_past %>
-                  <span style="font-size: 0.6rem; font-weight: 700; background: #D1FAE5; color: #065F46;
-                               padding: 2px 8px; border-radius: 1rem;">
-                    <i class="ri-check-line"></i>
-                  </span>
-                <% end %>
+              <div class="card election-timeline-card <%= 'election-timeline-card--current' if is_current %>">
+                <div class="card-body p-3">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <h5 class="election-phase-name"><%= phase.name %></h5>
+                    <% if is_current %>
+                      <span class="election-badge election-badge--blue"><%= t("citizens.election.current_phase") %></span>
+                    <% elsif is_past %>
+                      <span class="election-badge election-badge--green"><i class="ri-check-line"></i></span>
+                    <% end %>
+                  </div>
+                  <p class="election-phase-date">
+                    <%= phase.start_date.strftime("%d %b %Y") %>
+                    <% if phase.end_date %>
+                      &mdash; <%= phase.end_date.strftime("%d %b %Y") %>
+                    <% end %>
+                  </p>
+                  <% if phase.description.present? %>
+                    <p class="election-phase-desc"><%= phase.description %></p>
+                  <% end %>
+                </div>
               </div>
-              <p style="font-size: 0.72rem; color: #64748B; margin: 0;">
-                <%= phase.start_date.strftime("%d %b %Y") %>
-                <% if phase.end_date %>
-                  &mdash; <%= phase.end_date.strftime("%d %b %Y") %>
-                <% end %>
-              </p>
-              <% if phase.description.present? %>
-                <p style="font-size: 0.75rem; color: #475569; margin: 0.5rem 0 0; line-height: 1.5;">
-                  <%= phase.description %>
-                </p>
-              <% end %>
             </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="card election-card">
+          <div class="card-body p-4 text-center">
+            <i class="ri-calendar-line election-empty-icon"></i>
+            <p class="election-empty-text"><%= t("citizens.election.no_calendar") %></p>
           </div>
         </div>
       <% end %>
     </div>
-  <% else %>
-    <div class="card border-0 shadow-sm" style="border-radius: 1rem;">
-      <div class="card-body p-4 text-center">
-        <i class="ri-calendar-line" style="font-size: 2.5rem; color: #CBD5E1; display: block; margin-bottom: 0.75rem;"></i>
-        <p style="font-size: 0.88rem; color: #64748B; margin: 0;">
-          <%= t("citizens.election.no_calendar") %>
-        </p>
-      </div>
-    </div>
-  <% end %>
+  </div>
 </div>

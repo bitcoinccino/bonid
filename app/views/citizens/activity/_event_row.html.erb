@@ -1,0 +1,57 @@
+<% details = event.details %>
+<% expandable = details.any? %>
+<% export_mode = local_assigns[:export_mode] %>
+
+<% if expandable %>
+  <details class="scan-log-item activity-event-row activity-event-row--<%= event.kind %>"
+           <%= "open" if export_mode %>>
+    <summary class="activity-row-summary">
+      <div class="scan-log-icon">
+        <i class="<%= event.icon %>"></i>
+      </div>
+      <div class="scan-log-body">
+        <div class="scan-log-title"><%= event.title %></div>
+        <% if event.subtitle.present? %>
+          <div class="scan-log-meta"><%= event.subtitle %></div>
+        <% end %>
+      </div>
+      <div class="scan-log-time"><%= event.timestamp_label %></div>
+      <span class="activity-chevron" aria-hidden="true">
+        <i class="ri-arrow-down-s-line"></i>
+      </span>
+    </summary>
+
+    <div class="activity-row-details">
+      <dl class="activity-details-list">
+        <% details.each do |label, value| %>
+          <div class="activity-details-pair">
+            <dt><%= label %></dt>
+            <dd><%= value %></dd>
+          </div>
+        <% end %>
+      </dl>
+
+      <% if event.deep_link.present? %>
+        <div class="activity-details-actions">
+          <%= link_to event.deep_link, class: "activity-details-link", data: { turbo: false } do %>
+            <i class="ri-external-link-line"></i>
+            <span>Wè paj konplè</span>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </details>
+<% else %>
+  <div class="scan-log-item activity-event-row activity-event-row--<%= event.kind %>">
+    <div class="scan-log-icon">
+      <i class="<%= event.icon %>"></i>
+    </div>
+    <div class="scan-log-body">
+      <div class="scan-log-title"><%= event.title %></div>
+      <% if event.subtitle.present? %>
+        <div class="scan-log-meta"><%= event.subtitle %></div>
+      <% end %>
+    </div>
+    <div class="scan-log-time"><%= event.timestamp_label %></div>
+  </div>
+<% end %>

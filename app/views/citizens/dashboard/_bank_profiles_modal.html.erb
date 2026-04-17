@@ -2,10 +2,10 @@
 <div class="modal fade" id="bankModal" tabindex="-1" aria-labelledby="bankModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
-      <div class="modal-header bg-haitian-blue text-white">
-        <h5 class="modal-title" id="bankModalLabel">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="bankModalLabel" style="font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 600; color: #fff;">
           <i class="ri-bank-line me-2"></i>
-          <%= current_citizen.bank_profiles.any? ? "Edit" : "Add" %> Financial Accounts
+          Financial Accounts
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -18,14 +18,14 @@
             wrapper: :vertical_form do |f| %>
 
         <div class="modal-body" data-controller="nested-form" data-nested-form-wrapper-class="bank-profile-wrapper">
-          <%# Info Banner %>
-          <div class="alert alert-info d-flex align-items-start mb-4 rounded-3">
-            <i class="ri-2x ri-shield-check-line me-3 text-info"></i>
-            <div>
-              <strong>Your financial information is encrypted and secure.</strong><br>
-              Link your bank accounts or crypto wallets for <strong>faster identity verification</strong> with financial partners.
-              BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
-            </div>
+          <%# Compact Info Banner (dismissible) %>
+          <div class="alert alert-info alert-dismissible d-flex align-items-start mb-4 rounded-3 compact-info-banner" role="alert">
+            <i class="ri-shield-check-line me-2 mt-1"></i>
+            <span>
+              <strong>Your financial information is encrypted and secure.</strong>
+              Link accounts for <strong>faster identity verification</strong>. BonID shares your data <strong>only with your explicit consent</strong>.
+            </span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
 
           <div data-nested-form-target="wrapper" class="bank-profile-wrapper">
@@ -43,7 +43,8 @@
 
           <div class="text-center mt-3">
             <button type="button"
-                    class="btn btn-outline-primary btn-sm rounded-pill px-4"
+                    class="btn btn-outline-primary btn-sm fw-semibold px-4"
+                    style="border-radius: 0.5rem;"
                     data-action="click->nested-form#addAssociation">
               <i class="ri-add-line me-1"></i> Add Another Account
             </button>
@@ -58,9 +59,16 @@
           </template>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
-          <%= f.submit "Save", class: "btn btn-haitian-primary fw-semibold rounded-pill text-white" %>
+        <div class="modal-footer" style="border-top: 1px solid #e4e7ec;">
+          <button type="button"
+                  class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem; border-radius: 0.5rem;"
+                  data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <%= f.submit "Save",
+                class: "btn btn-primary fw-semibold px-4 py-2",
+                style: "font-size: 0.85rem; border-radius: 0.5rem;" %>
         </div>
       <% end %>
     </div>

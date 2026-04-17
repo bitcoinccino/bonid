@@ -1,6 +1,9 @@
 /* =============================================================
    Citizens – Sidebar (BonID Portal)
    Matches Officer/Partner sidebar structure • Haitian Blue Theme
+
+   All nav styling uses `.citizen-sidebar-nav` — a shared class on
+   both the desktop <aside> and the offcanvas inner wrapper.
    ============================================================= */
 
 /* Haitian Blue color variable */
@@ -39,14 +42,12 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
     display: none !important;
   }
 
-  /* Offcanvas sidebar styling */
   .offcanvas#sidebarOffcanvas {
     width: 280px !important;
     background: #fff !important;
     z-index: 1060 !important;
   }
 
-  /* Offcanvas backdrop must sit above topbar (z-index 1050) */
   .offcanvas-backdrop {
     z-index: 1055 !important;
   }
@@ -54,6 +55,10 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   .offcanvas#sidebarOffcanvas .offcanvas-header {
     background: $haitian-blue !important;
     color: #fff !important;
+
+    .offcanvas-title {
+      color: #fff !important;
+    }
   }
 
   .offcanvas#sidebarOffcanvas .offcanvas-body {
@@ -73,7 +78,7 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   text-align: center !important;
   padding: 0.75rem 0.5rem 1.25rem !important;
   margin-bottom: 1rem !important;
-  border-bottom: 1px solid rgba(0, 32, 159, 0.1) !important;
+  border-bottom: 1px solid $haitian-blue-light !important;
 }
 
 .citizen-logo-wrapper {
@@ -126,11 +131,9 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
 }
 
 /* ============================================================
-   NAV ITEMS - Matching Partner/Officer Style
+   NAV ITEMS — Single shared selector for all contexts
 ============================================================ */
-#citizen-sidebar .sidebar-nav,
-.citizen-sidebar .sidebar-nav,
-.offcanvas#sidebarOffcanvas .sidebar-nav {
+.citizen-sidebar-nav .sidebar-nav {
   flex: 1 !important;
   gap: 0.25rem !important;
   list-style: none !important;
@@ -138,16 +141,13 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   margin: 0 !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-item,
-.citizen-sidebar .sidebar-nav .nav-item,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-item {
+.citizen-sidebar-nav .sidebar-nav .nav-item {
   margin-bottom: 0 !important;
   list-style: none !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link,
-.citizen-sidebar .sidebar-nav .nav-link,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link {
+.citizen-sidebar-nav .sidebar-nav .nav-link {
+  position: relative !important;
   display: flex !important;
   align-items: center !important;
   gap: 0.75rem !important;
@@ -163,9 +163,7 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   background: transparent !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link > i:first-child,
-.citizen-sidebar .sidebar-nav .nav-link > i:first-child,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link > i:first-child {
+.citizen-sidebar-nav .sidebar-nav .nav-link > i:first-child {
   font-size: 1.125rem !important;
   width: 1.25rem !important;
   text-align: center !important;
@@ -174,47 +172,50 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   font-weight: 400 !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link:hover,
-.citizen-sidebar .sidebar-nav .nav-link:hover,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link:hover {
+/* ── Hover ── */
+.citizen-sidebar-nav .sidebar-nav .nav-link:hover {
   background-color: $haitian-blue-hover !important;
   color: $haitian-blue !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link:hover > i:first-child,
-.citizen-sidebar .sidebar-nav .nav-link:hover > i:first-child,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link:hover > i:first-child {
+.citizen-sidebar-nav .sidebar-nav .nav-link:hover > i:first-child {
   color: $haitian-blue !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link.active,
-.citizen-sidebar .sidebar-nav .nav-link.active,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link.active {
+/* ── Active ── */
+.citizen-sidebar-nav .sidebar-nav .nav-link.active {
   background-color: $haitian-blue-light !important;
   color: $haitian-blue !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 32, 159, 0.08) !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link.active > i:first-child,
-.citizen-sidebar .sidebar-nav .nav-link.active > i:first-child,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link.active > i:first-child {
+/* Left-border accent bar on the active nav item — makes it pop
+   against the white sidebar without relying on the pale blue fill alone. */
+.citizen-sidebar-nav .sidebar-nav .nav-link.active::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -2px;
+  width: 4px;
+  border-radius: 4px;
+  background: $haitian-blue;
+}
+
+.citizen-sidebar-nav .sidebar-nav .nav-link.active > i:first-child {
   color: $haitian-blue !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link:focus,
-#citizen-sidebar .sidebar-nav .nav-link:focus-visible,
-.citizen-sidebar .sidebar-nav .nav-link:focus,
-.citizen-sidebar .sidebar-nav .nav-link:focus-visible,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link:focus,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link:focus-visible {
+/* ── Focus ── */
+.citizen-sidebar-nav .sidebar-nav .nav-link:focus,
+.citizen-sidebar-nav .sidebar-nav .nav-link:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* Section labels (Operasyon, Sèvis Leta, Sipò) — matches partner sidebar */
-#citizen-sidebar .sidebar-nav .sidebar-section-label,
-.citizen-sidebar .sidebar-nav .sidebar-section-label,
-.offcanvas#sidebarOffcanvas .sidebar-nav .sidebar-section-label {
+/* ── Section labels (Operasyon, Eleksyon, Sipò) ── */
+.citizen-sidebar-nav .sidebar-nav .sidebar-section-label {
   font-family: 'Montserrat', sans-serif !important;
   font-size: 0.65rem !important;
   font-weight: 700 !important;
@@ -228,36 +229,29 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   user-select: none !important;
 }
 
-#citizen-sidebar .sidebar-nav .sidebar-section-label:first-child,
-.citizen-sidebar .sidebar-nav .sidebar-section-label:first-child,
-.offcanvas#sidebarOffcanvas .sidebar-nav .sidebar-section-label:first-child {
+.citizen-sidebar-nav .sidebar-nav .sidebar-section-label:first-child {
   padding-top: 0.25rem !important;
 }
 
-/* Sidebar divider */
-#citizen-sidebar .sidebar-nav .sidebar-divider,
-.citizen-sidebar .sidebar-nav .sidebar-divider,
-.offcanvas#sidebarOffcanvas .sidebar-nav .sidebar-divider {
+/* ── Sidebar divider ── */
+.citizen-sidebar-nav .sidebar-nav .sidebar-divider {
   height: 1px !important;
-  background-color: rgba(0, 32, 159, 0.1) !important;
+  background-color: $haitian-blue-light !important;
   margin: 0.75rem 0 !important;
   list-style: none !important;
 }
 
-/* Badge styling */
-#citizen-sidebar .sidebar-nav .nav-link .badge,
-.citizen-sidebar .sidebar-nav .nav-link .badge,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link .badge {
+/* ── Badge styling ── */
+.citizen-sidebar-nav .sidebar-nav .nav-link .badge {
   font-size: 0.65rem !important;
   font-weight: 600 !important;
   padding: 0.2rem 0.5rem !important;
   border-radius: 0.25rem !important;
+  margin-left: auto !important;
 }
 
-/* "Byento" (Coming Soon) badge */
-#citizen-sidebar .sidebar-nav .sidebar-badge-soon,
-.citizen-sidebar .sidebar-nav .sidebar-badge-soon,
-.offcanvas#sidebarOffcanvas .sidebar-nav .sidebar-badge-soon {
+/* ── "Byento" (Coming Soon) badge ── */
+.citizen-sidebar-nav .sidebar-nav .sidebar-badge-soon {
   font-size: 0.58rem !important;
   font-weight: 600 !important;
   padding: 0.15rem 0.45rem !important;
@@ -268,18 +262,51 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   line-height: 1.2 !important;
 }
 
-/* Coming-soon disabled nav links (non-clickable) */
-#citizen-sidebar .sidebar-nav .nav-link.sidebar-coming-soon,
-.citizen-sidebar .sidebar-nav .nav-link.sidebar-coming-soon,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link.sidebar-coming-soon {
+/* ── Election-state sidebar badges ──
+     Set by CitizenElectionSidebarPresenter on election nav-links so
+     each login shows "nan 136 jou" → "Demen" → "LOUVRI" as the cycle
+     progresses. Variants: --amber (countdown), --live (polls open),
+     --muted (closed), --success (certified). */
+.citizen-sidebar-nav .sidebar-nav .nav-link .sidebar-badge {
+  margin-left: auto !important;
+  font-size: 0.58rem !important;
+  font-weight: 700 !important;
+  padding: 0.15rem 0.45rem !important;
+  border-radius: 0.75rem !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+.citizen-sidebar-nav .sidebar-nav .nav-link .sidebar-badge--amber {
+  background: #FEF3C7 !important;
+  color: #92400E !important;
+}
+.citizen-sidebar-nav .sidebar-nav .nav-link .sidebar-badge--live {
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  animation: sidebar-badge-pulse 1.6s ease-in-out infinite !important;
+}
+.citizen-sidebar-nav .sidebar-nav .nav-link .sidebar-badge--muted {
+  background: #F1F5F9 !important;
+  color: #475569 !important;
+}
+.citizen-sidebar-nav .sidebar-nav .nav-link .sidebar-badge--success {
+  background: #D1FAE5 !important;
+  color: #047857 !important;
+}
+@keyframes sidebar-badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+  50%      { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+}
+
+/* ── Coming-soon disabled nav links ── */
+.citizen-sidebar-nav .sidebar-nav .nav-link.sidebar-coming-soon {
   opacity: 0.55 !important;
   cursor: default !important;
   pointer-events: none !important;
 }
 
-#citizen-sidebar .sidebar-nav .nav-link.sidebar-coming-soon:hover,
-.citizen-sidebar .sidebar-nav .nav-link.sidebar-coming-soon:hover,
-.offcanvas#sidebarOffcanvas .sidebar-nav .nav-link.sidebar-coming-soon:hover {
+.citizen-sidebar-nav .sidebar-nav .nav-link.sidebar-coming-soon:hover {
   background: transparent !important;
   color: #343A40 !important;
 }
@@ -287,24 +314,18 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
 /* ============================================================
    LOGOUT BUTTON
 ============================================================ */
-#citizen-sidebar .sidebar-logout,
-.citizen-sidebar .sidebar-logout,
-.offcanvas#sidebarOffcanvas .sidebar-logout {
+.citizen-sidebar-nav .sidebar-logout {
   margin-top: auto !important;
   padding: 1rem 0.25rem 0.5rem !important;
   border-top: none !important;
 }
 
-#citizen-sidebar .sidebar-logout form,
-.citizen-sidebar .sidebar-logout form,
-.offcanvas#sidebarOffcanvas .sidebar-logout form {
+.citizen-sidebar-nav .sidebar-logout form {
   margin: 0 !important;
   padding: 0 !important;
 }
 
-#citizen-sidebar .logout-btn,
-.citizen-sidebar .logout-btn,
-.offcanvas#sidebarOffcanvas .logout-btn {
+.citizen-sidebar-nav .logout-btn {
   display: flex !important;
   align-items: center !important;
   gap: 0.75rem !important;
@@ -321,27 +342,19 @@ $haitian-blue-hover: rgba(0, 32, 159, 0.06);
   transition: all 0.15s ease !important;
 }
 
-#citizen-sidebar .logout-btn i,
-.citizen-sidebar .logout-btn i,
-.offcanvas#sidebarOffcanvas .logout-btn i {
+.citizen-sidebar-nav .logout-btn i {
   font-size: 1.125rem !important;
   color: #E63946 !important;
   font-weight: 400 !important;
 }
 
-#citizen-sidebar .logout-btn:hover,
-.citizen-sidebar .logout-btn:hover,
-.offcanvas#sidebarOffcanvas .logout-btn:hover {
+.citizen-sidebar-nav .logout-btn:hover {
   background-color: rgba(230, 57, 70, 0.06) !important;
   color: #E63946 !important;
 }
 
-#citizen-sidebar .logout-btn:focus,
-#citizen-sidebar .logout-btn:focus-visible,
-.citizen-sidebar .logout-btn:focus,
-.citizen-sidebar .logout-btn:focus-visible,
-.offcanvas#sidebarOffcanvas .logout-btn:focus,
-.offcanvas#sidebarOffcanvas .logout-btn:focus-visible {
+.citizen-sidebar-nav .logout-btn:focus,
+.citizen-sidebar-nav .logout-btn:focus-visible {
   outline: none !important;
   box-shadow: none !important;
 }

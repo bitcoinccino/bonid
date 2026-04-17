@@ -1,19 +1,18 @@
 <%# Health Information Section — Monochrome Redesign %>
-
 <%# Compact Info Banner (dismissible) %>
-<div class="alert alert-info alert-dismissible d-flex align-items-start mb-4 rounded-3" role="alert" style="padding: 0.6rem 1rem;">
-  <i class="ri-shield-check-line me-2 mt-1" style="color: #00209F; font-size: 1rem;"></i>
-  <span style="font-size: 0.82rem; color: #343A40;">
+<div class="alert alert-info alert-dismissible d-flex align-items-start mb-4 rounded-3 compact-info-banner" role="alert">
+  <i class="ri-shield-check-line me-2 mt-1"></i>
+  <span>
     <strong>Your health information is encrypted and secure.</strong>
     Share your health profile for <strong>faster identity verification</strong> with medical partners. BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
   </span>
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.6rem;"></button>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 
 <%# Blood Type — Full-width row %>
 <div class="mb-3">
-  <label class="form-label fw-semibold" style="font-size: 0.85rem; color: #343A40;">
-    <i class="ri-drop-line me-1" style="color: #00209F;"></i> Blood Type
+  <label class="form-label fw-semibold health-field-label">
+    <i class="ri-drop-line me-1"></i> Blood Type
   </label>
   <%= f.select :blood_type,
         options_for_select(
@@ -25,22 +24,22 @@
 </div>
 
 <%# Organ Donor — Own row for prominence %>
-<div class="mb-4 p-3 rounded-3" style="background: #f8f9fa; border: 1px solid #e5e7eb;">
+<div class="mb-4 p-3 rounded-3 health-organ-donor">
   <div class="form-check form-switch d-flex align-items-center gap-2 mb-0">
     <%= f.check_box :organ_donor, class: "form-check-input", role: "switch", id: "organDonorSwitch" %>
-    <label class="form-check-label fw-semibold" for="organDonorSwitch" style="font-size: 0.85rem; color: #343A40;">
-      <i class="ri-heart-add-line me-1" style="color: #00209F;"></i> Organ Donor
+    <label class="form-check-label fw-semibold health-field-label" for="organDonorSwitch">
+      <i class="ri-heart-add-line me-1"></i> Organ Donor
     </label>
   </div>
-  <small class="text-muted d-block mt-1" style="font-size: 0.75rem; padding-left: 2.5rem;">
+  <small class="text-muted d-block mt-1 health-organ-helper">
     Critical for emergency responders. This is visible on your BonID health card.
   </small>
 </div>
 
 <%# Allergies — Multi-select with inline chips %>
 <div class="mb-3">
-  <label class="form-label fw-semibold" style="font-size: 0.85rem; color: #343A40;">
-    <i class="ri-alarm-warning-line me-1" style="color: #00209F;"></i> Allergies
+  <label class="form-label fw-semibold health-field-label">
+    <i class="ri-alarm-warning-line me-1"></i> Allergies
   </label>
   <div class="dropdown health-multiselect" data-controller="health-multiselect" data-field="allergies">
     <button class="form-select text-start dropdown-toggle d-flex justify-content-between align-items-center rounded-3 health-chip-trigger"
@@ -53,7 +52,7 @@
         <span data-health-multiselect-target="label" class="text-muted">None known</span>
       </span>
     </button>
-    <ul class="dropdown-menu w-100 p-2" style="max-height: 280px; overflow-y: auto; border: 1px solid #e5e7eb;">
+    <ul class="dropdown-menu w-100 p-2">
       <% HealthProfile::COMMON_ALLERGIES.each do |allergy| %>
         <li>
           <label class="dropdown-item d-flex align-items-center gap-2 rounded-2 py-2">
@@ -74,8 +73,8 @@
 
 <%# Chronic Conditions — Multi-select with inline chips %>
 <div class="mb-3">
-  <label class="form-label fw-semibold" style="font-size: 0.85rem; color: #343A40;">
-    <i class="ri-heart-pulse-line me-1" style="color: #00209F;"></i> Chronic Conditions
+  <label class="form-label fw-semibold health-field-label">
+    <i class="ri-heart-pulse-line me-1"></i> Chronic Conditions
   </label>
   <div class="dropdown health-multiselect" data-controller="health-multiselect" data-field="chronic_conditions">
     <button class="form-select text-start dropdown-toggle d-flex justify-content-between align-items-center rounded-3 health-chip-trigger"
@@ -88,7 +87,7 @@
         <span data-health-multiselect-target="label" class="text-muted">None known</span>
       </span>
     </button>
-    <ul class="dropdown-menu w-100 p-2" style="max-height: 280px; overflow-y: auto; border: 1px solid #e5e7eb;">
+    <ul class="dropdown-menu w-100 p-2">
       <% HealthProfile::COMMON_CONDITIONS.each do |condition| %>
         <li>
           <label class="dropdown-item d-flex align-items-center gap-2 rounded-2 py-2">
@@ -109,8 +108,8 @@
 
 <%# Medications — Multi-select with inline chips %>
 <div class="mb-3">
-  <label class="form-label fw-semibold" style="font-size: 0.85rem; color: #343A40;">
-    <i class="ri-capsule-line me-1" style="color: #00209F;"></i> Medications
+  <label class="form-label fw-semibold health-field-label">
+    <i class="ri-capsule-line me-1"></i> Medications
   </label>
   <div class="dropdown health-multiselect" data-controller="health-multiselect" data-field="medications">
     <button class="form-select text-start dropdown-toggle d-flex justify-content-between align-items-center rounded-3 health-chip-trigger"
@@ -123,7 +122,7 @@
         <span data-health-multiselect-target="label" class="text-muted">None known</span>
       </span>
     </button>
-    <ul class="dropdown-menu w-100 p-2" style="max-height: 280px; overflow-y: auto; border: 1px solid #e5e7eb;">
+    <ul class="dropdown-menu w-100 p-2">
       <% HealthProfile::COMMON_MEDICATIONS.each do |medication| %>
         <li>
           <label class="dropdown-item d-flex align-items-center gap-2 rounded-2 py-2">
@@ -143,9 +142,9 @@
 </div>
 
 <%# Privacy Footer — compact %>
-<div class="d-flex align-items-center mt-3 mb-0" style="padding: 0.5rem 0;">
-  <i class="ri-lock-line me-2" style="color: #9ca3af; font-size: 0.85rem;"></i>
-  <small style="color: #6c757d; font-size: 0.75rem;">
+<div class="d-flex align-items-center mt-3 mb-0 health-privacy-footer">
+  <i class="ri-lock-line me-2"></i>
+  <small>
     BonID follows strict <strong>health data protection</strong> standards.
     Your information will <strong>never be shared without consent</strong>.
   </small>

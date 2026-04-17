@@ -25,6 +25,12 @@ module Citizens
           icon: "ri-user-settings-line",
           label: t("citizens.support.categories.account"),
           questions: %w[q8 q9]
+        },
+        {
+          key: "election",
+          icon: "ri-government-line",
+          label: t("citizens.support.categories.election"),
+          questions: %w[q13 q14 q15 q16 q17 q18 q19]
         }
       ]
 

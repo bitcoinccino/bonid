@@ -15,19 +15,23 @@
     transition: color 0.15s;
   }
   .sevis-back:hover {
-    color: #00209F;
+    color: var(--primary);
   }
 
   /* ── Partner Header ── */
   .sevis-partner-header {
     display: flex;
-    align-items: center;
-    gap: 1.25rem;
+    flex-direction: column;
     padding: 1.5rem;
     background: #fff;
     border: 1px solid #E5E7EB;
     border-radius: 1rem;
     margin-bottom: 1.5rem;
+  }
+  .sevis-partner-header-top {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
   }
   .sevis-partner-logo-wrap {
     position: relative;
@@ -68,7 +72,11 @@
   }
   .sevis-verified-badge i {
     font-size: 0.9rem;
-    color: #00209F;
+    color: var(--primary);
+  }
+  .sevis-partner-info {
+    flex: 1;
+    min-width: 0;
   }
   .sevis-partner-info h1 {
     font-family: 'Montserrat', sans-serif;
@@ -104,11 +112,7 @@
     border: 1px solid #FDE68A;
   }
   .sevis-alert i { font-size: 1.2rem; flex-shrink: 0; }
-  .sevis-alert a {
-    color: inherit;
-    font-weight: 600;
-    text-decoration: underline;
-  }
+
 
   /* ── Services Section ── */
   .sevis-section-title {
@@ -122,7 +126,7 @@
     gap: 0.5rem;
   }
   .sevis-section-title i {
-    color: #00209F;
+    color: var(--primary);
   }
 
   /* ── Service Cards ── */
@@ -153,7 +157,7 @@
     cursor: pointer;
   }
   .sevis-service-card--live:hover {
-    border-color: #00209F;
+    border-color: var(--primary);
     box-shadow: 0 4px 16px rgba(0, 32, 159, 0.1);
     transform: translateY(-1px);
   }
@@ -175,7 +179,7 @@
   }
   .sevis-service-card--live .sevis-service-icon {
     background: rgba(0, 32, 159, 0.1);
-    color: #00209F;
+    color: var(--primary);
   }
   .sevis-service-card--soon .sevis-service-icon {
     background: #F3F4F6;
@@ -212,7 +216,7 @@
     white-space: nowrap;
   }
   .sevis-service-btn--live {
-    background: #00209F;
+    background: var(--primary);
     color: #fff;
   }
   .sevis-service-card--live:hover .sevis-service-btn--live {
@@ -265,49 +269,140 @@
     min-width: 80px;
   }
 
+  /* ── Contact Toggle + Menu ── */
+  .sevis-contact-toggle {
+    flex-shrink: 0;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    color: #6B7280;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s;
+  }
+  .sevis-contact-toggle:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+  .sevis-contact-toggle i { font-size: 1rem; }
+
+  .sevis-contact-menu {
+    display: none;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid #E5E7EB;
+  }
+  .sevis-contact-menu.is-open { display: flex; }
+  .sevis-contact-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    color: var(--primary);
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .sevis-contact-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .sevis-contact-btn i { font-size: 1.1rem; }
+
   /* ── Mobile ── */
   @media (max-width: 576px) {
-    .sevis-partner-header {
-      flex-direction: column;
-      text-align: center;
-      gap: 0.75rem;
-      padding: 1.25rem;
-    }
+    .sevis-partner-header { padding: 1.25rem; }
+    .sevis-partner-header-top { gap: 0.75rem; }
     .sevis-partner-info h1 { font-size: 1.1rem; }
     .sevis-service-card { padding: 0.875rem 1rem; }
     .sevis-service-btn { padding: 5px 10px; font-size: 0.68rem; }
   }
 </style>
 
-<%# ── Back Link ── %>
-<%= link_to citizens_services_path, class: "sevis-back" do %>
-  <i class="ri-arrow-left-s-line"></i> Retounen nan Sèvis
-<% end %>
+<div class="px-0">
 
-<%# ── Partner Header ── %>
+<%# ── Page Header ── %>
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <%= link_to citizens_services_path, class: "sevis-back", data: { turbo: false } do %>
+      <i class="ri-arrow-left-s-line"></i> Retounen nan Sèvis
+    <% end %>
+    <div class="text-center mb-4">
+      <h3 class="citizen-page-title mb-1">
+        <i class="ri-store-2-line me-2"></i><%= @partner.name %>
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        Sèvis disponib pou patnè sa a.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+<%# ── Partner Info ── %>
 <div class="sevis-partner-header">
-  <div class="sevis-partner-logo-wrap">
-    <% if @partner.logo.attached? %>
-      <%= image_tag url_for(@partner.logo), class: "sevis-partner-logo", alt: @partner.name %>
-    <% else %>
-      <div class="sevis-partner-logo-placeholder" style="background: <%= @sector_color %>;">
-        <%= @partner.name.first(2).upcase %>
-      </div>
-    <% end %>
-    <% if @partner.verified_at.present? %>
-      <div class="sevis-verified-badge" title="Patnè Verifye">
-        <i class="ri-verified-badge-fill"></i>
-      </div>
+  <div class="sevis-partner-header-top">
+    <div class="sevis-partner-logo-wrap">
+      <% if @partner.logo.attached? %>
+        <%= image_tag url_for(@partner.logo), class: "sevis-partner-logo", alt: @partner.name %>
+      <% else %>
+        <div class="sevis-partner-logo-placeholder" style="background: <%= @sector_color %>;">
+          <%= @partner.name.first(2).upcase %>
+        </div>
+      <% end %>
+      <% if @partner.verified_at.present? %>
+        <div class="sevis-verified-badge" title="Patnè Verifye">
+          <i class="ri-verified-badge-fill"></i>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="sevis-partner-info">
+      <h1><%= @partner.name %></h1>
+      <span class="sevis-partner-badge" style="background: <%= @sector_color %>;">
+        <i class="<%= @sector_icon %>" style="font-size: 0.7rem;"></i>
+        <%= @sector_group %>
+      </span>
+    </div>
+
+    <% if @partner.phone_number.present? || @partner.email.present? %>
+      <button type="button"
+              class="sevis-contact-toggle"
+              aria-label="Kontak"
+              aria-expanded="false"
+              onclick="const el=this.closest('.sevis-partner-header').querySelector('.sevis-contact-menu');const open=el.classList.toggle('is-open');this.setAttribute('aria-expanded', open);">
+        <i class="ri-more-fill"></i>
+      </button>
     <% end %>
   </div>
 
-  <div class="sevis-partner-info">
-    <h1><%= @partner.name %></h1>
-    <span class="sevis-partner-badge" style="background: <%= @sector_color %>;">
-      <i class="<%= @sector_icon %>" style="font-size: 0.7rem;"></i>
-      <%= @sector_group %>
-    </span>
-  </div>
+  <% if @partner.phone_number.present? || @partner.email.present? %>
+    <div class="sevis-contact-menu">
+      <% if @partner.phone_number.present? %>
+        <%= link_to "tel:#{@partner.phone_number}", class: "sevis-contact-btn", aria: { label: "Rele" }, title: "Rele" do %>
+          <i class="ri-phone-line"></i>
+        <% end %>
+      <% end %>
+      <% if @partner.email.present? %>
+        <%= link_to "mailto:#{@partner.email}", class: "sevis-contact-btn", aria: { label: "Imèl" }, title: "Imèl" do %>
+          <i class="ri-mail-line"></i>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
 </div>
 
 <%# ── Verification Alert ── %>
@@ -316,7 +411,7 @@
     <i class="ri-error-warning-line"></i>
     <span>
       Ou bezwen verifye idantite ou anvan ou ka itilize sèvis sa yo.
-      <%= link_to "Verifye kounye a", new_citizens_identity_submission_path %>
+      <%= link_to "Verifye kounye a", new_citizens_identity_submission_path, class: "citizen-link-alert" %>
     </span>
   </div>
 <% end %>
@@ -387,32 +482,20 @@
 </div>
 
 <%# ── Partner Details ── %>
-<% if @partner.commune.present? || @partner.department.present? || @partner.phone_number.present? %>
+<% if @partner.commune.present? || @partner.department.present? %>
   <div class="sevis-partner-details">
     <h3 class="sevis-section-title" style="font-size: 0.85rem; margin-bottom: 0.5rem;">
       <i class="ri-information-line"></i>
       Enfòmasyon Patnè
     </h3>
 
-    <% if @partner.commune.present? || @partner.department.present? %>
-      <div class="sevis-detail-row">
-        <i class="ri-map-pin-line"></i>
-        <span><%= [@partner.commune, @partner.department].compact.join(", ") %></span>
-      </div>
-    <% end %>
-
-    <% if @partner.phone_number.present? %>
-      <div class="sevis-detail-row">
-        <i class="ri-phone-line"></i>
-        <span><%= @partner.phone_number %></span>
-      </div>
-    <% end %>
-
-    <% if @partner.email.present? %>
-      <div class="sevis-detail-row">
-        <i class="ri-mail-line"></i>
-        <span><%= @partner.email %></span>
-      </div>
-    <% end %>
+    <div class="sevis-detail-row">
+      <i class="ri-map-pin-line"></i>
+      <span><%= [@partner.commune, @partner.department].compact.join(", ") %></span>
+    </div>
   </div>
 <% end %>
+
+  </div>
+</div>
+</div>

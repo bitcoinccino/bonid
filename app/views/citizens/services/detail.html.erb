@@ -12,7 +12,7 @@
     text-decoration: none; padding: 0.75rem 0;
     transition: color 0.15s;
   }
-  .sd-back:hover { color: #00209F; }
+  .sd-back:hover { color: var(--primary); }
 
   /* Cover Image */
   .sd-cover {
@@ -50,7 +50,7 @@
   }
   .sd-price i { font-size: 1rem; }
   .sd-price--free { color: #059669; }
-  .sd-price--paid { color: #00209F; }
+  .sd-price--paid { color: var(--primary); }
 
   /* Info Cards */
   .sd-info-section { margin-bottom: 1rem; }
@@ -62,7 +62,7 @@
     font-size: 0.78rem; font-weight: 700; color: #374151;
     display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem;
   }
-  .sd-info-title i { color: #00209F; font-size: 0.95rem; }
+  .sd-info-title i { color: var(--primary); font-size: 0.95rem; }
   .sd-info-row {
     display: flex; align-items: center; gap: 0.5rem;
     font-size: 0.82rem; color: #374151; padding: 0.35rem 0;
@@ -87,7 +87,7 @@
   }
   .sd-cta-btn {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-    width: 100%; padding: 0.85rem; background: #00209F; color: #fff;
+    width: 100%; padding: 0.85rem; background: var(--primary); color: #fff;
     border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 700;
     font-family: 'Montserrat', sans-serif; cursor: pointer;
     text-decoration: none; transition: all 0.2s;
@@ -113,6 +113,30 @@
   .sd-category-badge--appointment { background: #FEF3C7; color: #92400E; }
   .sd-category-badge--survey { background: #F5F3FF; color: #7C3AED; }
 
+  /* Contact toggle + popover */
+  .sd-contact-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: #fff; border: 1px solid #E5E7EB; color: #6B7280;
+    cursor: pointer; padding: 0; transition: all 0.15s;
+  }
+  .sd-contact-toggle:hover { color: var(--primary); border-color: var(--primary); }
+  .sd-contact-toggle i { font-size: 1rem; }
+
+  .sd-contact-menu {
+    display: none; gap: 0.5rem; margin-top: 0.6rem;
+    padding-top: 0.6rem; border-top: 1px solid #E5E7EB;
+  }
+  .sd-contact-menu.is-open { display: flex; }
+  .sd-contact-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 10px;
+    background: #fff; border: 1px solid #E5E7EB; color: var(--primary);
+    text-decoration: none; transition: all 0.15s;
+  }
+  .sd-contact-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .sd-contact-btn i { font-size: 1.1rem; }
+
   /* Capacity */
   .sd-capacity-badge {
     display: inline-flex; align-items: center; gap: 0.3rem;
@@ -128,6 +152,8 @@
   }
 </style>
 
+<div class="row justify-content-center">
+  <div class="col-lg-8">
 <div class="sd-container">
 
   <%# ── Back ── %>
@@ -268,25 +294,40 @@
   <%# ── Partner Info ── %>
   <% if @partner.commune.present? || @partner.phone_number.present? || @partner.email.present? %>
     <div class="sd-info-card">
-      <div class="sd-info-title"><i class="ri-building-line"></i> Enfòmasyon Patnè</div>
+      <div class="sd-info-title" style="justify-content: space-between;">
+        <span style="display:inline-flex;align-items:center;gap:0.4rem;">
+          <i class="ri-building-line"></i> Enfòmasyon Patnè
+        </span>
+        <% if @partner.phone_number.present? || @partner.email.present? %>
+          <button type="button"
+                  class="sd-contact-toggle"
+                  aria-label="Kontak"
+                  aria-expanded="false"
+                  onclick="const el=this.closest('.sd-info-card').querySelector('.sd-contact-menu');const open=el.classList.toggle('is-open');this.setAttribute('aria-expanded', open);">
+            <i class="ri-more-fill"></i>
+          </button>
+        <% end %>
+      </div>
       <% if @partner.commune.present? || @partner.department.present? %>
         <div class="sd-info-row">
           <i class="ri-map-pin-line"></i>
           <span><%= [@partner.commune, @partner.department].compact.join(", ") %></span>
         </div>
       <% end %>
-      <div style="display:flex;gap:0.6rem;margin-top:0.4rem;">
-        <% if @partner.phone_number.present? %>
-          <%= link_to "tel:#{@partner.phone_number}", class: "sd-info-row", style: "border:none;padding:0.35rem 0.5rem;background:#F3F4F6;border-radius:8px;display:inline-flex;text-decoration:none;" do %>
-            <i class="ri-phone-line" style="font-size:1.1rem;color:#00209F;"></i>
+      <% if @partner.phone_number.present? || @partner.email.present? %>
+        <div class="sd-contact-menu">
+          <% if @partner.phone_number.present? %>
+            <%= link_to "tel:#{@partner.phone_number}", class: "sd-contact-btn", aria: { label: "Rele" }, title: "Rele" do %>
+              <i class="ri-phone-line"></i>
+            <% end %>
           <% end %>
-        <% end %>
-        <% if @partner.email.present? %>
-          <%= link_to "mailto:#{@partner.email}", class: "sd-info-row", style: "border:none;padding:0.35rem 0.5rem;background:#F3F4F6;border-radius:8px;display:inline-flex;text-decoration:none;" do %>
-            <i class="ri-mail-line" style="font-size:1.1rem;color:#00209F;"></i>
+          <% if @partner.email.present? %>
+            <%= link_to "mailto:#{@partner.email}", class: "sd-contact-btn", aria: { label: "Imèl" }, title: "Imèl" do %>
+              <i class="ri-mail-line"></i>
+            <% end %>
           <% end %>
-        <% end %>
-      </div>
+        </div>
+      <% end %>
     </div>
   <% end %>
 
@@ -310,4 +351,6 @@
     <% end %>
   </div>
 
+</div>
+  </div>
 </div>

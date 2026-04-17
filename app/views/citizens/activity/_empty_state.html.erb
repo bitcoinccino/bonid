@@ -1,0 +1,22 @@
+<% copy = case tab
+          when "scans"        then { icon: "ri-qr-scan-2-line",      title: "Okenn eskanè poko fèt",          body: "Lè yon patnè oswa yon ofisye eskane BonID ou, l ap parèt la." }
+          when "consents"     then { icon: "ri-id-card-line",        title: "Okenn konsantman poko bay",       body: "Konsantman ou bay pou aksè a done ou yo ap parèt la." }
+          when "transactions" then { icon: "ri-exchange-funds-line", title: "Okenn tranzaksyon poko fèt",      body: "Apwobasyon tranzaksyon yo ap parèt la." }
+          when "applications" then { icon: "ri-file-list-3-line",    title: "Okenn aplikasyon poko soumèt",    body: "Aplikasyon ou soumèt bay patnè yo ap parèt la." }
+          when "sessions"     then { icon: "ri-login-box-line",      title: "Okenn koneksyon poko anrejistre", body: "Chak fwa w konekte sou BonID ou, l ap parèt isit la." }
+          else                     { icon: "ri-pulse-line",          title: "Okenn aktivite poko anrejistre", body: "Tout aktivite BonID ou a ap parèt isit la an tan reyèl." }
+          end %>
+
+<div class="activity-empty">
+  <i class="<%= copy[:icon] %> activity-empty-icon"></i>
+  <h5 class="fw-bold"><%= copy[:title] %></h5>
+  <p class="text-muted mb-1" style="font-size: 0.82rem;"><%= copy[:body] %></p>
+  <% if @from && @to %>
+    <p class="text-muted mb-0" style="font-size: 0.72rem;">
+      <i class="ri-calendar-2-line"></i>
+      Peryòd: <%= l(@from, format: :long) rescue @from %> — <%= l(@to, format: :long) rescue @to %>.
+      <br>
+      Agrandi peryòd la anlè pou wè aktivite ki pi lwen.
+    </p>
+  <% end %>
+</div>

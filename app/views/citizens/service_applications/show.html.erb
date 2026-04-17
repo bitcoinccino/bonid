@@ -6,11 +6,11 @@
 <style>
   .sa-container { max-width: 640px; margin: 0 auto; }
   .sa-back { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; color: #6B7280; text-decoration: none; margin-bottom: 1rem; }
-  .sa-back:hover { color: #00209F; }
+  .sa-back:hover { color: var(--primary); }
 
   .sa-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
   .sa-card-title { font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
-  .sa-card-title i { color: #00209F; }
+  .sa-card-title i { color: var(--primary); }
 
   .sa-status-banner {
     padding: 1rem; border-radius: 10px; text-align: center; margin-bottom: 1rem;
@@ -38,13 +38,13 @@
     margin-top: 0.75rem;
   }
   .sa-verification-code-label { font-size: 0.68rem; text-transform: uppercase; color: #6B7280; font-weight: 600; }
-  .sa-verification-code-value { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 700; color: #00209F; letter-spacing: 2px; margin-top: 0.25rem; }
+  .sa-verification-code-value { font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 700; color: var(--primary); letter-spacing: 2px; margin-top: 0.25rem; }
 
   .sa-rejection-reason { padding: 0.75rem; background: #FEF2F2; border-radius: 8px; font-size: 0.82rem; color: #991B1B; margin-top: 0.75rem; }
 
   .sa-pdf-btn {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.5rem 1.25rem; background: #00209F; color: #fff;
+    padding: 0.5rem 1.25rem; background: var(--primary); color: #fff;
     border-radius: 8px; font-size: 0.82rem; font-weight: 600;
     text-decoration: none; transition: background 0.15s;
   }
@@ -52,9 +52,20 @@
 </style>
 
 <div class="sa-container">
-  <%= link_to citizens_service_applications_path, class: "sa-back" do %>
-    <i class="ri-arrow-left-line"></i> Aktivite Mwen
-  <% end %>
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="citizen-page-title mb-1">
+        <i class="ri-file-list-3-line me-2"></i><%= @schema.name %>
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        <%= @application.partner.name %> — <%= @application.status_label %>
+      </p>
+    </div>
+    <%= link_to citizens_service_applications_path, class: "btn btn-outline-secondary btn-sm rounded-pill px-3" do %>
+      <i class="ri-arrow-left-line me-1"></i>Aktivite Mwen
+    <% end %>
+  </div>
 
   <%# ── Status Banner ── %>
   <div class="sa-status-banner sa-status-banner--<%= @application.status %>">
@@ -108,10 +119,10 @@
       <span class="sa-info-value" style="display:flex;align-items:center;gap:0.5rem;">
         <%= @partner.name %>
         <% if @partner.phone_number.present? %>
-          <%= link_to "tel:#{@partner.phone_number}", style: "color:#00209F;font-size:1rem;line-height:1;" do %><i class="ri-phone-line"></i><% end %>
+          <%= link_to "tel:#{@partner.phone_number}", class: "citizen-link-contact" do %><i class="ri-phone-line"></i><% end %>
         <% end %>
         <% if @partner.email.present? %>
-          <%= link_to "mailto:#{@partner.email}", style: "color:#00209F;font-size:1rem;line-height:1;" do %><i class="ri-mail-line"></i><% end %>
+          <%= link_to "mailto:#{@partner.email}", class: "citizen-link-contact" do %><i class="ri-mail-line"></i><% end %>
         <% end %>
       </span>
     </div>
@@ -189,7 +200,7 @@
       <% end %>
       <div class="sa-info-row" style="border-top: 2px solid #0F172A; padding-top: 0.5rem;">
         <span class="sa-info-label" style="font-weight: 700;">Total</span>
-        <span class="sa-info-value" style="font-weight: 700; color: #00209F;"><%= fmt.call(snap["total_cents"]) %></span>
+        <span class="sa-info-value" style="font-weight: 700; color: var(--primary);"><%= fmt.call(snap["total_cents"]) %></span>
       </div>
       <% if @zellus_balance.present? %>
         <div class="sa-info-row" style="border-top: none;">
@@ -231,7 +242,7 @@
 
     <% @form_fields.each do |step| %>
       <% if @form_fields.length > 1 %>
-        <div style="font-size: 0.75rem; font-weight: 700; color: #00209F; text-transform: uppercase;
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase;
           letter-spacing: 0.03em; margin: 0.75rem 0 0.5rem; padding-top: 0.5rem; border-top: 1px solid #F1F5F9;">
           <%= step[:name] %>
         </div>
@@ -268,7 +279,7 @@
               <% if rows.any? %>
                 <% rows.each_with_index do |row, row_idx| %>
                   <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 0.6rem; margin-bottom: 0.4rem;">
-                    <div style="font-size: 0.68rem; font-weight: 700; color: #00209F; margin-bottom: 0.35rem;">#<%= row_idx + 1 %></div>
+                    <div style="font-size: 0.68rem; font-weight: 700; color: var(--primary); margin-bottom: 0.35rem;">#<%= row_idx + 1 %></div>
                     <% sub_fields.each do |sf| %>
                       <% sf_val = row.is_a?(Hash) ? row[sf["key"]] : nil %>
                       <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding: 0.15rem 0;">

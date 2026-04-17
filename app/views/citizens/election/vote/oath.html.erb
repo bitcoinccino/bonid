@@ -1,0 +1,613 @@
+<%# Step 0: Sèman Vòt la — per-session oath shown BEFORE the eligibility
+    check. Explains what the citizen is about to do, the security posture
+    that protects their vote, and the legal consequences of fraud. A
+    checkbox gate (matching the KYC review pattern) disables the
+    continue button until signed. %>
+
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
+
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-quill-pen-line me-2"></i>Sèman Vòt la
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      Anvan w kòmanse vote, li atansyon e siyen.
+    </p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <%# ── Guideline cards (accordion, partner-portal style) ────
+          Four collapsible cards the voter reads before signing.
+          Pattern mirrors partner_portal/guidelines_acceptance so the
+          voter gets the same "review & acknowledge" feel an admin does
+          before entering their portal. %>
+      <div class="oath-gl-cards">
+
+        <%# 1. Sa w pral fè %>
+        <div class="oath-gl-card" data-oath-guideline="sa_w_pral_fe">
+          <button class="oath-gl-card-header" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#oath-gl-collapse-sa-w-pral-fe"
+                  aria-expanded="false"
+                  aria-controls="oath-gl-collapse-sa-w-pral-fe">
+            <div class="oath-gl-card-header-left">
+              <div class="oath-gl-card-icon" style="background: #1D4ED815; color: #1D4ED8;">
+                <i class="ri-government-line"></i>
+              </div>
+              <div>
+                <span class="oath-gl-card-title">Sa w pral fè</span>
+                <span class="oath-gl-card-summary">Ou pral vote ak BonID nan eleksyon istorik la</span>
+              </div>
+            </div>
+            <div class="oath-gl-card-chevron"><i class="ri-arrow-down-s-line"></i></div>
+          </button>
+          <div class="collapse" id="oath-gl-collapse-sa-w-pral-fe">
+            <div class="oath-gl-card-body">
+              <div class="oath-gl-item">
+                <i class="ri-checkbox-circle-line oath-gl-item-check" style="color: #1D4ED8;"></i>
+                <span class="oath-gl-item-text">
+                  Ou pral vote nan
+                  <strong><%= @election&.title.presence || "Eleksyon Jeneral 2026" %></strong>,
+                  premye eleksyon istorik peyi d Ayiti ki sèvi ak BonID pou verifye
+                  idantite chak votè.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-checkbox-circle-line oath-gl-item-check" style="color: #1D4ED8;"></i>
+                <span class="oath-gl-item-text">
+                  Chwa w ap <strong>kache</strong>, non w ap <strong>kenbe sekrè</strong>.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-checkbox-circle-line oath-gl-item-check" style="color: #1D4ED8;"></i>
+                <span class="oath-gl-item-text">
+                  Sistèm la ap ba w yon <strong>resi kriptografik</strong> ki pwouve w te vote,
+                  san li pa ekspoze pou kilès w te vote.
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="oath-gl-read-indicator d-none" id="oath-gl-read-sa_w_pral_fe">
+            <i class="ri-check-line"></i> Li
+          </div>
+        </div>
+
+        <%# 2. Yon moman istorik %>
+        <div class="oath-gl-card" data-oath-guideline="moman_istorik">
+          <button class="oath-gl-card-header" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#oath-gl-collapse-moman-istorik"
+                  aria-expanded="false"
+                  aria-controls="oath-gl-collapse-moman-istorik">
+            <div class="oath-gl-card-header-left">
+              <div class="oath-gl-card-icon" style="background: #B4530915; color: #B45309;">
+                <i class="ri-bookmark-line"></i>
+              </div>
+              <div>
+                <span class="oath-gl-card-title">Yon moman istorik</span>
+                <span class="oath-gl-card-summary">Premye fwa Ayiti gen yon eleksyon ak verifikasyon biyometrik</span>
+              </div>
+            </div>
+            <div class="oath-gl-card-chevron"><i class="ri-arrow-down-s-line"></i></div>
+          </button>
+          <div class="collapse" id="oath-gl-collapse-moman-istorik">
+            <div class="oath-gl-card-body">
+              <div class="oath-gl-item">
+                <i class="ri-checkbox-circle-line oath-gl-item-check" style="color: #B45309;"></i>
+                <span class="oath-gl-item-text">
+                  Pou premye fwa nan istwa Ayiti, yon eleksyon nasyonal ap sèvi ak
+                  <strong>verifikasyon biyometrik</strong> pou chak votè.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-checkbox-circle-line oath-gl-item-check" style="color: #B45309;"></i>
+                <span class="oath-gl-item-text">
+                  Sistèm la bloke <strong>dub vòt</strong> pou chak sitwayen, okenn moun pa ka vote
+                  de fwa.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-checkbox-circle-line oath-gl-item-check" style="color: #B45309;"></i>
+                <span class="oath-gl-item-text">
+                  Chak sitwayen ka <strong>verifye pwòp vòt li</strong> apre koze a fèmen.
+                  <strong>Vòt ou konte, epi w ka pwouve l.</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="oath-gl-read-indicator d-none" id="oath-gl-read-moman_istorik">
+            <i class="ri-check-line"></i> Li
+          </div>
+        </div>
+
+        <%# 3. Sekirite %>
+        <div class="oath-gl-card" data-oath-guideline="sekirite">
+          <button class="oath-gl-card-header" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#oath-gl-collapse-sekirite"
+                  aria-expanded="false"
+                  aria-controls="oath-gl-collapse-sekirite">
+            <div class="oath-gl-card-header-left">
+              <div class="oath-gl-card-icon" style="background: #05966915; color: #059669;">
+                <i class="ri-shield-check-line"></i>
+              </div>
+              <div>
+                <span class="oath-gl-card-title">Sekirite pou pwoteje vòt ou</span>
+                <span class="oath-gl-card-summary">Senk mezi sekirite ki pwoteje chak vòt</span>
+              </div>
+            </div>
+            <div class="oath-gl-card-chevron"><i class="ri-arrow-down-s-line"></i></div>
+          </button>
+          <div class="collapse" id="oath-gl-collapse-sekirite">
+            <div class="oath-gl-card-body">
+              <div class="oath-gl-item">
+                <i class="ri-fingerprint-line oath-gl-item-check" style="color: #059669;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Verifikasyon biyometrik an dirèk.</strong>
+                  Nou eskane figi w an dirèk (liveness) epi nou konpare l ak figi
+                  ONI apwouve nan anrejistreman w.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-user-forbid-line oath-gl-item-check" style="color: #059669;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Menm figi, menm moun.</strong>
+                  Si yon lòt moun eseye eskane figi l pandan ou konekte, sistèm la
+                  ap refize vòt la otomatikman.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-lock-2-line oath-gl-item-check" style="color: #059669;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Chifreman bon jan.</strong>
+                  Chwa w chifre sou telefòn ou anvan l pati. Okenn moun, ni BonID,
+                  ni CEP pa kapab li l jiskaske komite a dekripte rezilta yo.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-shuffle-line oath-gl-item-check" style="color: #059669;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Pwoteksyon kont dub vòt.</strong>
+                  Yon <em>nullifier</em> kriptografik asire yon moun pa ka vote de
+                  fwa, menm si li eseye anliy apre an pèsòn oswa vis versa.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-eye-line oath-gl-item-check" style="color: #059669;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Ou ka verifye tèt ou.</strong>
+                  Apre w vote, w ap resevwa yon resi piblik. Ou mem ka al verifye
+                  vòt ou antre nan kont final la.
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="oath-gl-read-indicator d-none" id="oath-gl-read-sekirite">
+            <i class="ri-check-line"></i> Li
+          </div>
+        </div>
+
+        <%# 4. Konsekans legal %>
+        <div class="oath-gl-card" data-oath-guideline="konsekans_legal">
+          <button class="oath-gl-card-header" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#oath-gl-collapse-konsekans-legal"
+                  aria-expanded="false"
+                  aria-controls="oath-gl-collapse-konsekans-legal">
+            <div class="oath-gl-card-header-left">
+              <div class="oath-gl-card-icon" style="background: #B91C1C15; color: #B91C1C;">
+                <i class="ri-scales-3-line"></i>
+              </div>
+              <div>
+                <span class="oath-gl-card-title">Konsekans legal pou fwod</span>
+                <span class="oath-gl-card-summary">Sivil, kriminèl, ak odit. Chak tantativ fwod gen konsekans.</span>
+              </div>
+            </div>
+            <div class="oath-gl-card-chevron"><i class="ri-arrow-down-s-line"></i></div>
+          </button>
+          <div class="collapse" id="oath-gl-collapse-konsekans-legal">
+            <div class="oath-gl-card-body">
+              <div class="oath-gl-item">
+                <i class="ri-alert-line oath-gl-item-check" style="color: #B91C1C;"></i>
+                <span class="oath-gl-item-text">
+                  Eseye vote pou yon lòt moun, pase pwòp kat idantite w ak lòt moun,
+                  oswa itilize BonID on lòt moun se yon <strong>zak kriminèl</strong>
+                  dapre lwa elektoral Ayiti a.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-building-4-line oath-gl-item-check" style="color: #B91C1C;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Sivil.</strong> Anilasyon imedya vòt la, pèt dwa pou vote nan eleksyon
+                  kap vini yo, ak amann.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-scales-2-line oath-gl-item-check" style="color: #B91C1C;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Kriminèl.</strong> Pousuit devan tribinal dapre Kòd Penal ayisyen,
+                  posibilite prizon selon atik ki aplikab yo sou fwod elektoral.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-file-search-line oath-gl-item-check" style="color: #B91C1C;"></i>
+                <span class="oath-gl-item-text">
+                  <strong>Odit.</strong> Chak tantativ ekri nan yon jounal odit kriptografik
+                  ki ka sèvi kòm prèv devan CEP ak tribinal.
+                </span>
+              </div>
+              <div class="oath-gl-item">
+                <i class="ri-quill-pen-line oath-gl-item-check" style="color: #B91C1C;"></i>
+                <span class="oath-gl-item-text">
+                  Siyen ou anba a gen menm valè legal ak yon <strong>sèman ekri devan CEP</strong>.
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="oath-gl-read-indicator d-none" id="oath-gl-read-konsekans_legal">
+            <i class="ri-check-line"></i> Li
+          </div>
+        </div>
+
+      </div>
+
+      <%# Expand all link %>
+      <div class="text-center mt-3 mb-4">
+        <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" id="oathGlExpandAll">
+          <i class="ri-expand-up-down-line me-1"></i>
+          Louvri tout seksyon
+        </button>
+      </div>
+
+      <%# ── 5. BonID Signature + Continue ─────────────────────
+          Mirrors the DGI siyati pattern: show the citizen's actual
+          BonID signature image (from their approved KYC submission),
+          their full name, masked BonID, and the QR. Falls back to a
+          typed-name script if no signature was attached at KYC. %>
+      <%= form_with url: citizens_election_vote_sign_oath_path, method: :post, local: true do |f| %>
+        <div class="oath-signature">
+
+          <%# Declaration %>
+          <label class="form-check-label oath-signature__label" for="oath_accepted">
+            Mwen, <strong><%= current_citizen.full_name %></strong>, deklare ke
+            mwen se moun ki mansyone nan BonID sa a, ke se
+            <strong>mwen menm sèlman</strong> kap vote ak kont sa a, epi mwen
+            konprann konsekans sivil ak kriminèl pou nenpòt tantativ fwod.
+            <strong>Mwen siyen sèman sa a ak siyati BonID mwen an.</strong>
+          </label>
+
+          <%# BonID signature card — signature image + full name + BonID + QR.
+              Includes a source badge so the voter understands the signature
+              was pulled from their approved BonID, not drawn here. %>
+          <div class="oath-bonid-card mt-3">
+            <div class="oath-bonid-card__source">
+              <i class="ri-verified-badge-fill"></i>
+              Siyati sa a soti nan <strong>BonID</strong> ou
+            </div>
+            <div class="d-flex align-items-end gap-3 flex-wrap">
+              <div class="oath-bonid-card__signature">
+                <% if @bonid_submission&.signature&.attached? %>
+                  <%= image_tag @bonid_submission.signature.variant(resize_to_limit: [420, 160]),
+                                class: "oath-bonid-card__signature-img",
+                                alt: "Siyati #{current_citizen.full_name}" %>
+                <% else %>
+                  <div class="oath-bonid-card__script"><%= current_citizen.full_name %></div>
+                <% end %>
+                <div class="mt-2">
+                  <span class="oath-bonid-card__name"><%= current_citizen.full_name %></span>
+                  <br>
+                  <code class="oath-bonid-card__id"><%= mask_bonid(current_citizen.bonid) %></code>
+                </div>
+              </div>
+
+              <% if @bonid_submission&.respond_to?(:secure_qr_png_base64) && @bonid_submission&.secure_qr_png_base64.present? %>
+                <div class="text-center">
+                  <img src="data:image/png;base64,<%= @bonid_submission.secure_qr_png_base64 %>"
+                       style="width: 72px; height: 72px;"
+                       alt="QR Verifikasyon">
+                  <br>
+                  <small class="oath-bonid-card__qr-label">Verifye</small>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# Final consent checkbox %>
+          <div class="form-check mt-3">
+            <%= f.check_box :oath_accepted,
+                            { class: "form-check-input",
+                              id: "oath_accepted",
+                              required: true,
+                              onchange: "document.getElementById('oath_submit').disabled = !this.checked;" },
+                            "1", "0" %>
+            <label class="form-check-label oath-signature__confirm-label" for="oath_accepted">
+              Mwen konfime siyati BonID mwen an anwo a e mwen aksepte sèman an
+              <span class="text-danger">*</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" id="oath_submit" class="election-btn-primary mt-3" disabled>
+          <i class="ri-arrow-right-line"></i>
+          Mwen aksepte, kontinye
+        </button>
+      <% end %>
+
+      <a href="<%= citizens_dashboard_path %>" class="d-block text-center text-muted py-3 mt-2" style="font-size: 0.78rem;">
+        <i class="ri-arrow-left-line me-1"></i>Anile epi retounen nan dashboard
+      </a>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── Guideline cards (accordion) — mirror the partner-portal
+       guidelines-acceptance pattern so voters get the same
+       "review & acknowledge" UX that partner admins get before
+       entering their portal. ──────────────────────────────── */
+  .oath-gl-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+  }
+  .oath-gl-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .oath-gl-card:hover { border-color: #c7d2fe; }
+  .oath-gl-card.oath-gl-card--read { border-color: #a7f3d0; }
+
+  .oath-gl-card-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: background 0.15s;
+  }
+  .oath-gl-card-header:hover { background: #f9fafb; }
+  .oath-gl-card-header[aria-expanded="true"] {
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .oath-gl-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .oath-gl-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+  .oath-gl-card-title {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.3;
+  }
+  .oath-gl-card-summary {
+    display: block;
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .oath-gl-card-chevron {
+    color: #9ca3af;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    display: inline-flex;
+  }
+  .oath-gl-card-header[aria-expanded="true"] .oath-gl-card-chevron {
+    transform: rotate(180deg);
+  }
+
+  .oath-gl-card-body { padding: 4px 18px 16px; }
+  .oath-gl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid #f9fafb;
+  }
+  .oath-gl-item:last-child { border-bottom: none; }
+  .oath-gl-item-check {
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+    line-height: 1;
+  }
+  .oath-gl-item-text {
+    font-size: 0.86rem;
+    color: #374151;
+    line-height: 1.55;
+  }
+  .oath-gl-item-text strong {
+    color: #0F172A;
+    font-weight: 700;
+  }
+
+  .oath-gl-read-indicator {
+    position: absolute;
+    top: 14px;
+    right: 48px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Signature block — matches the KYC confirmation pattern:
+     icon + checkbox + legal label inside a soft-background rounded box. */
+  .oath-signature {
+    background: #F8F9FC;
+    border: 1px solid #E4E7EC;
+    border-radius: 0.875rem;
+    padding: 1rem 1.1rem;
+  }
+  .oath-signature__icon {
+    flex-shrink: 0;
+    font-size: 1.4rem;
+    color: var(--primary);
+    margin-top: 0.1rem;
+  }
+  .oath-signature__label {
+    font-size: 0.82rem;
+    color: #344054;
+    line-height: 1.55;
+    cursor: pointer;
+  }
+  .oath-signature .form-check-input {
+    margin-top: 0.25rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  /* BonID signature card — mirrors DGI siyati pattern but in a bordered box
+     so it reads as a formal signature block, not inline text. */
+  .oath-bonid-card {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 0.75rem;
+    padding: 0.9rem 1rem 1rem;
+  }
+  /* Source badge — tells voter where the signature came from. */
+  .oath-bonid-card__source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #92400E;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.65rem;
+  }
+  .oath-bonid-card__source i {
+    font-size: 0.9rem;
+    color: #B45309;
+  }
+  .oath-bonid-card__signature {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .oath-bonid-card__signature-img {
+    display: block;
+    max-width: 100%;
+    max-height: 130px;
+    height: auto;
+    width: auto;
+  }
+  /* Fallback script style when no signature image is attached. */
+  .oath-bonid-card__script {
+    font-family: 'Homemade Apple', 'Dancing Script', cursive;
+    font-size: 2.4rem;
+    color: #0F172A;
+    line-height: 1.1;
+    display: inline-block;
+  }
+  .oath-bonid-card__name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .oath-bonid-card__id {
+    font-size: 0.8rem;
+    color: #64748B;
+    background: transparent;
+    padding: 0;
+    letter-spacing: 0.4px;
+  }
+  .oath-bonid-card__qr-label {
+    font-size: 0.7rem;
+    color: #64748B;
+  }
+
+  .oath-signature__confirm-label {
+    font-size: 0.82rem;
+    color: #344054;
+    line-height: 1.5;
+  }
+
+  /* Disabled primary button — greyed until the checkbox is ticked. */
+  .election-btn-primary[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+  }
+</style>
+
+<script>
+  // Oath page accordion — mirrors the partner-portal guidelines pattern:
+  // opening a card marks it "read" (green border + "Li" badge), and the
+  // "Louvri tout seksyon" button toggles all cards at once.
+  (function() {
+    function init() {
+      var cards = document.querySelectorAll(".oath-gl-card");
+      if (!cards.length) return;
+      var collapses = document.querySelectorAll(".oath-gl-cards .collapse");
+      var expandAllBtn = document.getElementById("oathGlExpandAll");
+      var readSections = new Set();
+
+      collapses.forEach(function(el) {
+        if (el.dataset.oathBound === "1") return;
+        el.dataset.oathBound = "1";
+        el.addEventListener("shown.bs.collapse", function() {
+          var card = this.closest(".oath-gl-card");
+          if (!card) return;
+          var key = card.dataset.oathGuideline;
+          readSections.add(key);
+          var indicator = document.getElementById("oath-gl-read-" + key);
+          if (indicator) indicator.classList.remove("d-none");
+          card.classList.add("oath-gl-card--read");
+        });
+      });
+
+      if (expandAllBtn && expandAllBtn.dataset.oathBound !== "1") {
+        expandAllBtn.dataset.oathBound = "1";
+        expandAllBtn.addEventListener("click", function() {
+          var allOpen = readSections.size === cards.length;
+          collapses.forEach(function(c) {
+            var bsCollapse = bootstrap.Collapse.getOrCreateInstance(c, { toggle: false });
+            if (allOpen) { bsCollapse.hide(); } else { bsCollapse.show(); }
+          });
+          this.innerHTML = allOpen
+            ? '<i class="ri-expand-up-down-line me-1"></i> Louvri tout seksyon'
+            : '<i class="ri-contract-up-down-line me-1"></i> Fèmen tout seksyon';
+        });
+      }
+    }
+    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("turbo:load", init);
+  })();
+</script>

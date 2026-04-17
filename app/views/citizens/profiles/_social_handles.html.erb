@@ -1,17 +1,17 @@
 <%# Social Media Handles Section %>
 <div data-controller="social-handles">
     <%# Compact Dismissible Info Banner %>
-    <div class="alert alert-info alert-dismissible d-flex align-items-start mb-3" role="alert" style="padding: 0.6rem 1rem;">
-      <i class="ri-shield-check-line me-2 mt-1" style="color: #00209F; font-size: 1rem;"></i>
-      <span style="font-size: 0.82rem;">
+    <div class="alert alert-info alert-dismissible d-flex align-items-start mb-3 compact-info-banner" role="alert">
+      <i class="ri-shield-check-line me-2 mt-1"></i>
+      <span>
         <strong>Your social media information is encrypted and secure.</strong>
         Link your social accounts for <strong>faster identity verification</strong> with partners. BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
       </span>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.6rem;"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 
     <%# Column Headers (desktop only) %>
-    <div class="row g-3 d-none d-md-flex social-col-header mb-2">
+    <div class="row g-4 d-none d-md-flex social-col-header mb-2">
       <div class="col-md-3">Platform</div>
       <div class="col-md-4">Handle</div>
       <div class="col-md-2">
@@ -19,8 +19,8 @@
         <span data-bs-toggle="tooltip"
               data-bs-placement="top"
               title="Private: only you can see this. Partners: shared with verified agencies for visa processing."
-              style="cursor: help;">
-          <i class="ri-information-line" style="font-size: 0.7rem; opacity: 0.6;"></i>
+              class="social-tooltip-icon">
+          <i class="ri-information-line"></i>
         </span>
       </div>
       <div class="col-md-3">Status</div>
@@ -37,17 +37,16 @@
       <% row_id = handle.persisted? ? handle.id : sh_form.index %>
       <% current_vis = handle.visibility || "partners_only" %>
 
-      <div class="border rounded-3 p-3 mb-2 nested-fields"
+      <div class="border rounded-3 p-3 mb-2 nested-fields social-handle-row"
            data-new-record="<%= handle.new_record? %>"
-           data-verified="<%= is_verified %>"
-           style="background: #fafbfc;">
+           data-verified="<%= is_verified %>">
 
         <%# Hidden active field — active by default when row exists %>
         <%= sh_form.hidden_field :active, value: true %>
 
-        <div class="row g-3 align-items-center">
+        <div class="row g-4 align-items-center">
           <%# Platform %>
-          <div class="col-md-3">
+          <div class="col-12 col-md-3">
             <%= sh_form.input :platform,
                   collection: SocialHandle::PLATFORMS.invert,
                   prompt: "Select Platform",
@@ -56,7 +55,7 @@
           </div>
 
           <%# Handle %>
-          <div class="col-md-4">
+          <div class="col-12 col-md-4">
             <%= sh_form.input :handle,
                   placeholder: "@username",
                   label: false,
@@ -64,7 +63,7 @@
           </div>
 
           <%# Visibility — Segmented Toggle %>
-          <div class="col-md-2">
+          <div class="col-6 col-md-2">
             <div class="btn-group btn-group-sm w-100 social-vis-toggle" role="group" aria-label="Visibility">
               <input type="radio"
                      class="btn-check"
@@ -93,8 +92,8 @@
           </div>
 
           <%# Status + Remove (combined) %>
-          <div class="col-md-3">
-            <div class="d-flex justify-content-between align-items-center" style="min-height: 38px;">
+          <div class="col-6 col-md-3">
+            <div class="d-flex justify-content-between align-items-center">
               <%# Status %>
               <% case status %>
               <% when "verified" %>

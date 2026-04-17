@@ -7,7 +7,7 @@
       <div class="modal-body text-center p-4">
         <div class="mb-3">
           <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:56px;height:56px;background:#EEF2FF;">
-            <i class="ri-shield-check-line ri-xl" style="color:#00209F;"></i>
+            <i class="ri-shield-check-line ri-xl" style="color: var(--primary);"></i>
           </div>
         </div>
         <h6 class="fw-bold mb-2">Konfime Peman</h6>
@@ -16,7 +16,7 @@
           via <strong id="confirmMethod">—</strong>
         </p>
         <div class="d-grid gap-2">
-          <button type="button" class="btn text-white fw-bold" id="confirmPayBtn" style="background:#00209F;min-height:48px;border-radius:10px;">
+          <button type="button" class="btn text-white fw-bold" id="confirmPayBtn" style="background: var(--primary);min-height:48px;border-radius:10px;">
             <i class="ri-check-line me-1"></i>Wi, Peye Kounye a
           </button>
           <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="min-height:44px;border-radius:10px;">Anile</button>
@@ -29,29 +29,30 @@
 <div class="d-flex flex-column align-items-center px-3 py-4" style="min-height:100vh;background:#f8fafc;">
   <div style="width:100%;max-width:480px;">
 
-    <%# Header %>
+    <%# ── Page Header ── %>
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <div class="d-flex align-items-center gap-2">
-        <div class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:#EEF2FF;">
-          <i class="ri-shield-check-line" style="color:#00209F;font-size:1.1rem;"></i>
-        </div>
-        <div>
-          <h6 class="fw-bold mb-0" style="font-size:1rem;">BonID Secure Payment</h6>
-          <span class="text-muted" style="font-size:0.7rem;"><%= @payment.form_type_label %> — <code style="font-size:0.65rem;"><%= @payment.declaration_number %></code></span>
-        </div>
+      <div>
+        <h3 class="citizen-page-title mb-1">
+          <i class="ri-bank-card-line me-2"></i>BonID Secure Payment
+        </h3>
+        <p class="text-muted mb-0" style="font-size: 0.78rem;">
+          <%= @payment.form_type_label %> — <code style="font-size:0.7rem;"><%= @payment.declaration_number %></code>
+        </p>
       </div>
-      <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-sm", style: "border-radius:8px;font-size:0.75rem;" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+      <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-sm rounded-pill px-3" do %>
+        <i class="ri-arrow-left-line me-1"></i>Retounen
+      <% end %>
     </div>
 
     <%# Amount Card %>
     <div class="mb-4" style="background:white;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;">
-      <div style="height:4px;background:linear-gradient(90deg,#00209F,#3B82F6);"></div>
+      <div style="height:4px;background:linear-gradient(90deg, var(--primary),#3B82F6);"></div>
       <div class="text-center py-4 px-3">
         <div class="d-flex justify-content-center mb-3">
           <%= image_tag "partners/dgi-logo.webp", alt: "DGI Haiti", style: "height:48px;" %>
         </div>
         <span class="text-muted small d-block mb-1">Montan Total pou Peye</span>
-        <h2 class="mb-2" style="color:#00209F;font-weight:800;font-size:2rem;"><%= @payment.formatted_total %></h2>
+        <h2 class="mb-2" style="color:var(--primary);font-weight:800;font-size:2rem;"><%= @payment.formatted_total %></h2>
 
         <%# Collapsible fee breakdown %>
         <a class="text-muted small text-decoration-none" data-bs-toggle="collapse" href="#feeBreakdown" role="button" style="font-size:0.75rem;">
@@ -80,7 +81,7 @@
         <%# Recommended label %>
         <% if wallet_profiles.any? %>
           <div class="d-flex align-items-center gap-1 mb-2">
-            <span class="badge" style="background:#EEF2FF;color:#00209F;font-size:0.65rem;font-weight:600;">Rekòmande</span>
+            <span class="badge" style="background:#EEF2FF;color:var(--primary);font-size:0.65rem;font-weight:600;">Rekòmande</span>
           </div>
 
           <%# Primary wallet (first one) %>
@@ -88,7 +89,7 @@
           <% primary_key = primary_wp.wallet_provider&.downcase %>
           <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: primary_wp.wallet_provider&.titleize } do %>
             <%= hidden_field_tag :payment_method, primary_key %>
-            <button type="submit" class="btn w-100 text-white d-flex align-items-center justify-content-center gap-2 pay-btn" style="background:#00209F;min-height:56px;font-weight:700;border-radius:12px;font-size:0.95rem;transition:all 0.2s;">
+            <button type="submit" class="btn w-100 text-white d-flex align-items-center justify-content-center gap-2 pay-btn" style="background:var(--primary);min-height:56px;font-weight:700;border-radius:12px;font-size:0.95rem;transition:all 0.2s;">
               <i class="ri-smartphone-line ri-lg"></i>
               <span>Peye ak <%= primary_wp.wallet_provider&.titleize %></span>
             </button>
@@ -115,7 +116,7 @@
           <%# No saved wallets — generic MonCash as primary %>
           <%= form_tag pay_citizens_dgi_payment_path(@payment), method: :post, class: "mb-2 pay-form", data: { method_label: "MonCash" } do %>
             <%= hidden_field_tag :payment_method, "moncash" %>
-            <button type="submit" class="btn w-100 text-white d-flex align-items-center justify-content-center gap-2 pay-btn" style="background:#00209F;min-height:56px;font-weight:700;border-radius:12px;font-size:0.95rem;transition:all 0.2s;">
+            <button type="submit" class="btn w-100 text-white d-flex align-items-center justify-content-center gap-2 pay-btn" style="background:var(--primary);min-height:56px;font-weight:700;border-radius:12px;font-size:0.95rem;transition:all 0.2s;">
               <i class="ri-smartphone-line ri-lg"></i>
               <span>Peye ak MonCash</span>
             </button>
@@ -171,7 +172,7 @@
     <div class="text-center mb-4">
       <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
         <div class="d-flex align-items-center gap-1">
-          <i class="ri-lock-line" style="color:#00209F;font-size:0.8rem;"></i>
+          <i class="ri-lock-line" style="color:var(--primary);font-size:0.8rem;"></i>
           <span style="font-size:0.65rem;color:#64748B;">SSL Chifreman</span>
         </div>
         <div class="d-flex align-items-center gap-1">
@@ -179,7 +180,7 @@
           <span style="font-size:0.65rem;color:#64748B;">Verifikasyon BonID</span>
         </div>
         <div class="d-flex align-items-center gap-1">
-          <i class="ri-bank-line" style="color:#00209F;font-size:0.8rem;"></i>
+          <i class="ri-bank-line" style="color:var(--primary);font-size:0.8rem;"></i>
           <span style="font-size:0.65rem;color:#64748B;">Nivo bank</span>
         </div>
       </div>
@@ -216,7 +217,7 @@
         </div>
         <div class="p-3 text-center">
           <p class="mb-2 small">Prezante nimewo sa a nan biwo DGI:</p>
-          <h3 class="mb-2" style="font-family:monospace;letter-spacing:2px;color:#00209F;"><%= @payment.order_id %></h3>
+          <h3 class="mb-2" style="font-family:monospace;letter-spacing:2px;color:var(--primary);"><%= @payment.order_id %></h3>
           <p class="text-muted small">Montan: <strong><%= @payment.formatted_total %></strong></p>
           <p class="text-muted small mb-0">Ajan DGI a ap konfime peman w nan sistèm BonID la.</p>
         </div>

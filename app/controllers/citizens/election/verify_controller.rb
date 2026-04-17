@@ -7,6 +7,11 @@ module Citizens
     class VerifyController < BaseController
       def index
         @election = recent_election
+        @prefill_hash = params[:hash].to_s.strip
+        @voter_record = @election && VoterEligibilityRecord.check_eligibility(
+          election: @election, bonid: current_citizen.bonid
+        )
+        @has_voted = @voter_record&.has_voted == true
       end
 
       def check

@@ -8,13 +8,27 @@ is_edit         = submission.persisted?
 <%= stylesheet_link_tag "liveness", media: "all" %>
 <%= javascript_include_tag "liveness", type: "module", defer: true %>
 
-<div class="container py-4" style="max-width: 900px;">
-  <div class="card profile-card"
-       data-controller="form-handler">
+<div class="px-0">
 
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="citizen-page-title mb-1">
+        <i class="ri-shield-user-line me-2"></i>Verify Your Identity
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        Upload your ID, complete a face check, sign, and review your submission.
+      </p>
+    </div>
+    <%= link_to citizens_identity_submissions_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="ri-arrow-left-line"></i>
+    <% end %>
+  </div>
+
+  <div class="complaint-form-wrapper">
     <%= simple_form_for [:citizens, submission],
         html: { class: "needs-validation", novalidate: true, multipart: true,
-                data: { controller: "wizard submission-review",
+                data: { controller: "wizard submission-review form-handler",
                         wizard_current_step_value: "1",
                         wizard_skip_steps_value: [].tap { |s|
                           s << 2 if @skip_liveness
@@ -22,164 +36,173 @@ is_edit         = submission.persisted?
                         }.to_json,
                         action: "wizard:stepChanged->submission-review#onStepChanged" } } do |f| %>
 
-      <%# ── Header with Steps ── %>
-      <div class="border-0 pb-3 pt-3 px-4"
-           style="background: #00209F; border-radius: var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius) 0 0;">
-        <%# Current Step Title %>
-        <p class="mb-2 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600;">
-          <span data-wizard-target="stepTitle">Step 1: Upload your ID type and a supporting document.</span>
-          <span data-wizard-target="stepTitle" class="d-none">
-            <% if @skip_liveness %>
-              Step 2: Face check verified ✓ (from previous submission)
-            <% else %>
-              Step 2: Complete a quick face liveness check.
-            <% end %>
-          </span>
-          <span data-wizard-target="stepTitle" class="d-none">
-            <% if @skip_signature %>
-              Step 3: Signature verified ✓ (from previous submission)
-            <% else %>
-              Step 3: Upload a scanned signature or draw one below.
-            <% end %>
-          </span>
-          <span data-wizard-target="stepTitle" class="d-none">Step 4: Review & confirm your submission.</span>
-        </p>
-
-        <%# Step Progress %>
-        <div class="d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center" data-wizard-target="stepIndicator">
-            <span class="step-circle active">1</span>
-            <span class="step-label text-white-50">Documents</span>
-          </div>
-          <div class="step-line" style="background: rgba(255, 255, 255, 0.2);"></div>
-          <div class="d-flex align-items-center" data-wizard-target="stepIndicator">
-            <span class="step-circle">2</span>
-            <span class="step-label text-white-50">Face Check</span>
-          </div>
-          <div class="step-line" style="background: rgba(255, 255, 255, 0.2);"></div>
-          <div class="d-flex align-items-center" data-wizard-target="stepIndicator">
-            <span class="step-circle">3</span>
-            <span class="step-label text-white-50">Signature</span>
-          </div>
-          <div class="step-line" style="background: rgba(255, 255, 255, 0.2);"></div>
-          <div class="d-flex align-items-center" data-wizard-target="stepIndicator">
-            <span class="step-circle">4</span>
-            <span class="step-label text-white-50">Review</span>
+      <%# ── Step Indicator ── %>
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 600px; margin: 0 auto;">
+          <% submission_steps = [
+            { icon: "ri-id-card-line", label: "Documents" },
+            { icon: "ri-camera-lens-line", label: "Face Check" },
+            { icon: "ri-quill-pen-line", label: "Signature" },
+            { icon: "ri-checkbox-circle-line", label: "Review" }
+          ] %>
+          <% submission_steps.each_with_index do |step, i| %>
+            <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
+              <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if i == 0 %>">
+                <i class="<%= step[:icon] %>" style="font-size: 0.9rem;"></i>
+              </div>
+              <div style="font-size: 0.62rem; color: #98a2b3; margin-top: 4px; font-weight: 500;">
+                <%= step[:label] %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div style="height: 4px; background: #e4e7ec; border-radius: 4px; max-width: 600px; margin: 0 auto;">
+          <div data-wizard-target="progressBar"
+               style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #1a4fa8);
+                      border-radius: 4px; transition: width 0.4s ease;">
           </div>
         </div>
       </div>
 
-      <div class="card-body">
+      <%# ── Step Titles (shown one at a time) ── %>
+      <p class="mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);">
+        <span data-wizard-target="stepTitle">Step 1: Upload your ID type and a supporting document.</span>
+        <span data-wizard-target="stepTitle" class="d-none">
+          <% if @skip_liveness %>
+            Step 2: Face check verified ✓ (from previous submission)
+          <% else %>
+            Step 2: Complete a quick face liveness check.
+          <% end %>
+        </span>
+        <span data-wizard-target="stepTitle" class="d-none">
+          <% if @skip_signature %>
+            Step 3: Signature verified ✓ (from previous submission)
+          <% else %>
+            Step 3: Upload a scanned signature or draw one below.
+          <% end %>
+        </span>
+        <span data-wizard-target="stepTitle" class="d-none">Step 4: Review & confirm your submission.</span>
+      </p>
 
-        <%# Step-specific alerts %>
-        <div data-wizard-target="stepAlert" class="d-flex align-items-start mb-4 p-3 rounded-2" style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
-          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
-          <div>
-            <strong>Important:</strong> Your CIN, passport, and supporting documents must match the
-            personal information in your profile — including your <strong>full name</strong> and
-            <strong>date of birth</strong>. Mismatched information will result in rejection.
-          </div>
+      <%# Step-specific alerts %>
+      <div data-wizard-target="stepAlert" class="d-flex align-items-start mb-4 p-3 rounded-2" style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+        <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
+        <div>
+          <strong>Important:</strong> Your CIN, passport, and supporting documents must match the
+          personal information in your profile — including your <strong>full name</strong> and
+          <strong>date of birth</strong>. Mismatched information will result in rejection.
         </div>
-        <%# Step 2 alert placeholder (empty — React Get Ready screen provides its own guidance) %>
-        <div data-wizard-target="stepAlert" class="d-none"></div>
-        <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
-          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem;"></i>
-          <div>
-            <strong>Important:</strong> Your signature must be consistent with the one on your ID.
-            Upload a scanned copy or draw it below.
-          </div>
-        </div>
-        <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
-          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem;"></i>
-          <div>
-            <strong>Important:</strong> Review all information carefully before submitting.
-            Incorrect or mismatched data will result in rejection.
-          </div>
-        </div>
-
-        <%# Preserve submission_type so create knows initial vs resubmission %>
-        <%= f.hidden_field :submission_type, value: submission.submission_type %>
-
-        <%# ══════════ STEP 1 ══════════ %>
-        <section data-wizard-target="step" data-step="1" class="wizard-step active">
-          <div data-controller="id-switcher">
-            <%= render "citizens/identity_submissions/id_upload_section", f: f, submission: submission %>
-          </div>
-
-          <div class="d-flex justify-content-end mt-4">
-            <button type="button" class="btn btn-haitian-blue"
-                    data-action="wizard#next">
-              Continue <i class="ri-arrow-right-line ms-2"></i>
-            </button>
-          </div>
-        </section>
-
-        <%# ══════════ STEP 2 ══════════ %>
-        <section data-wizard-target="step" data-step="2" class="wizard-step d-none">
-          <%= render "citizens/identity_submissions/additional_documents_section",
-                f: f, submission: submission %>
-
-          <div class="d-flex justify-content-between mt-4">
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
-                    style="font-size: 0.85rem;"
-                    data-action="wizard#previous">
-              <i class="ri-arrow-left-line me-1"></i> Back
-            </button>
-            <button type="button" class="btn btn-haitian-blue"
-                    data-action="wizard#next">
-              Next <i class="ri-arrow-right-line ms-2"></i>
-            </button>
-          </div>
-        </section>
-
-        <%# ══════════ STEP 3 — Signature ══════════ %>
-        <section data-wizard-target="step" data-step="3" class="wizard-step d-none">
-          <%= render "citizens/identity_submissions/signature_submit_section",
-                f: f, submission: submission %>
-
-          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
-                    style="font-size: 0.85rem;"
-                    data-action="wizard#previous">
-              <i class="ri-arrow-left-line me-1"></i> Back
-            </button>
-            <button type="button" class="btn btn-haitian-blue"
-                    data-action="wizard#next">
-              Review <i class="ri-arrow-right-line ms-2"></i>
-            </button>
-          </div>
-        </section>
-
-        <%# ══════════ STEP 4 — Review & Confirm ══════════ %>
-        <section data-wizard-target="step" data-step="4" class="wizard-step d-none">
-          <%= render "citizens/identity_submissions/review_section", submission: submission %>
-
-          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 pt-3 border-top">
-            <button type="button" class="btn btn-outline-secondary rounded-pill px-4"
-                    style="font-size: 0.85rem;"
-                    data-action="wizard#previous">
-              <i class="ri-arrow-left-line me-1"></i> Back
-            </button>
-
-            <%= f.submit (is_edit ? "Update Submission" : "Submit for Verification"),
-                class: "btn btn-success rounded-pill px-4 px-md-5 fw-bold",
-                style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem;",
-                disabled: true,
-                data: { disable_with: "Submitting...",
-                        submission_review_target: "submitButton" } %>
-          </div>
-        </section>
-
       </div>
+      <%# Step 2 alert placeholder (empty — React Get Ready screen provides its own guidance) %>
+      <div data-wizard-target="stepAlert" class="d-none"></div>
+      <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+        <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+        <div>
+          <strong>Important:</strong> Your signature must be consistent with the one on your ID.
+          Upload a scanned copy or draw it below.
+        </div>
+      </div>
+      <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+        <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+        <div>
+          <strong>Important:</strong> Review all information carefully before submitting.
+          Incorrect or mismatched data will result in rejection.
+        </div>
+      </div>
+
+      <%# Preserve submission_type so create knows initial vs resubmission %>
+      <%= f.hidden_field :submission_type, value: submission.submission_type %>
+
+      <%# ══════════ STEP 1 ══════════ %>
+      <section data-wizard-target="step" data-step="1" class="wizard-step active">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body p-4">
+            <div data-controller="id-switcher">
+              <%= render "citizens/identity_submissions/id_upload_section", f: f, submission: submission %>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#next">
+            Continue <i class="ri-arrow-right-line ms-1"></i>
+          </button>
+        </div>
+      </section>
+
+      <%# ══════════ STEP 2 ══════════ %>
+      <section data-wizard-target="step" data-step="2" class="wizard-step d-none" style="display:none">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body p-4">
+            <%= render "citizens/identity_submissions/additional_documents_section",
+                  f: f, submission: submission %>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+          <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#next">
+            Next <i class="ri-arrow-right-line ms-1"></i>
+          </button>
+        </div>
+      </section>
+
+      <%# ══════════ STEP 3 — Signature ══════════ %>
+      <section data-wizard-target="step" data-step="3" class="wizard-step d-none" style="display:none">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+          <div class="card-body p-4">
+            <%= render "citizens/identity_submissions/signature_submit_section",
+                  f: f, submission: submission %>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+          <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#next">
+            Review <i class="ri-arrow-right-line ms-1"></i>
+          </button>
+        </div>
+      </section>
+
+      <%# ══════════ STEP 4 — Review & Confirm ══════════ %>
+      <section data-wizard-target="step" data-step="4" class="wizard-step d-none" style="display:none">
+        <%= render "citizens/identity_submissions/review_section", submission: submission %>
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+
+          <%= f.submit (is_edit ? "Update Submission" : "Submit for Verification"),
+              class: "btn btn-success fw-semibold px-4 py-2",
+              style: "font-size: 0.85rem;",
+              disabled: true,
+              data: { disable_with: "Submitting...",
+                      submission_review_target: "submitButton" } %>
+        </div>
+      </section>
 
     <% end %>
 
-    <%# ── Privacy Footer ── %>
-    <div class="privacy-footer px-4 pb-3">
-      <i class="ri-lock-2-fill text-success me-2"></i>
-      <strong>Encrypted • Haiti Government Compliant</strong>
+    <div class="mt-4 text-center small text-muted">
+      <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
     </div>
-
   </div>
 </div>
 

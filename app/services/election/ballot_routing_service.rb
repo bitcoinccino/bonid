@@ -44,16 +44,20 @@ module Election
       end
     end
 
-    # Check if a location code represents a diaspora voter
+    # Check if a location code represents a diaspora voter.
+    #
+    # Haitian department codes take precedence over ISO country codes
+    # because several collide (SE = Sud-Est AND Sweden, NE = Nord-Est AND
+    # Niger, GA = Grande-Anse AND Gabon, CE = Centre AND unknown, etc.).
+    # Any voter whose BonID carries a Haitian department code is domestic
+    # by definition — BonID issuance already resolved that question.
     def self.diaspora?(location_code)
       return true if location_code.blank?
+      return false if DEPARTMENTS.key?(location_code)
 
-      # If it's a valid ISO country code AND not Haiti → diaspora
-      country = ISO3166::Country[location_code] rescue nil
-      return true if country.present? && location_code != "HT"
-
-      # If it's NOT a known Haitian department code → assume diaspora
-      !DEPARTMENTS.key?(location_code)
+      # Not a Haitian department — must be a country code (diaspora) unless
+      # it's literally "HT" which we treat as domestic without a department.
+      location_code != "HT"
     end
 
     private

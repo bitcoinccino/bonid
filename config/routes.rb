@@ -225,6 +225,10 @@ end
       end
     end
 
+    # Electoral Offices (BED / BEK) — CEP's physical field offices.
+    # CRUD managed by CEP administrators through the admin portal.
+    resources :electoral_offices
+
     # Election Admin (CEP Dashboard)
     # Controller: Election::Admin::ElectionsController
     get    "election/:id",          to: "/election/admin/elections#show",     as: :election_election
@@ -233,6 +237,8 @@ end
     get    "election/:id/multi_sig", to: "/election/admin/elections#multi_sig", as: :election_election_multi_sig
     post   "election/:id/sign",      to: "/election/admin/elections#sign",      as: :election_election_sign
     get    "election/:id/results",   to: "/election/admin/elections#results",   as: :election_election_results
+    # Signed oath audit trail — one row per (user, election, oath_version)
+    get    "election/:id/oaths",     to: "/election/admin/elections#oaths",    as: :election_election_oaths
 
     # (UNCHANGED — all your admin routes preserved)
     resources :partners, param: :uuid do
@@ -416,6 +422,10 @@ end
     # ✅ Support Center Route
     get "support", to: "support#index", as: :support
 
+    # ✅ Unified Activity Feed (Aktivite) — consolidates scans, consents,
+    # transaction consents, and service applications into one timeline.
+    get "activity", to: "activity#index", as: :activity
+
     resource  :profile, only: [ :new, :create, :show, :edit, :update ]
     resources :verification_records
     resources :addresses, only: [ :create ]
@@ -507,9 +517,23 @@ end
     namespace :election do
       get "kalandriye", to: "calendar#index", as: :calendar
 
+      # Self-service enrollment / registration-status page
+      get  "enskri", to: "enrollment#show",   as: :enrollment
+      post "enskri", to: "enrollment#create"
+
+      # BonID-generated voter receipt (PDF with QR for poll workers)
+      get  "resi/telechaje", to: "receipts#download", as: :receipt_download
+      get  "resi/enprime",   to: "receipts#print",    as: :receipt_print
+
+      # BED/BEK locator — where citizens can go for walk-in help
+      get  "biwo", to: "offices#index", as: :offices
+
       # Voting flow (multi-step wizard)
       get  "vote",             to: "vote#eligibility", as: :vote
+      get  "vote/seman",       to: "vote#oath",        as: :vote_oath
+      post "vote/seman",       to: "vote#sign_oath",   as: :vote_sign_oath
       post "vote/begin",       to: "vote#begin",       as: :vote_begin
+      post "vote/resume",      to: "vote#resume",      as: :vote_resume
       get  "vote/ballot",      to: "vote#ballot",      as: :vote_ballot
       post "vote/cast",        to: "vote#cast",        as: :vote_cast
       get  "vote/receipt",     to: "vote#receipt",      as: :vote_receipt
@@ -739,6 +763,13 @@ end
     # Voter Registry / Lis Elektoral (CEP)
     get  "voter_registry", to: "voter_registry#index", as: :voter_registry
     post "voter_registry/build", to: "voter_registry#build", as: :voter_registry_build
+
+    # Polling Centers (Sant Vòt) — CEP + Consulate roster + CSV import
+    get  "polling_centers",          to: "polling_centers#index",          as: :polling_centers
+    get  "polling_centers/import",   to: "polling_centers#import",         as: :polling_centers_import
+    post "polling_centers/import",   to: "polling_centers#process_import"
+    get  "polling_centers/template", to: "polling_centers#template",       as: :polling_centers_template,
+                                     defaults: { format: :csv }
 
     # Party Registration (CEP — Article 143)
     resources :party_registrations, only: [ :index, :show, :new, :create ] do

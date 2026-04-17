@@ -1,0 +1,166 @@
+<%# app/views/election/admin/oaths.html.erb %>
+<%# CEP Admin — signed-oath audit trail for a given election. %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-quill-pen-line me-2 pp-text-brand"></i>Sèman Siyen
+      </h4>
+      <p class="pp-page-subtitle">
+        Rejis sèman pou <%= @election&.title || @election_id %>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to admin_election_election_path(@election_id),
+                  class: "btn btn-sm btn-outline-secondary" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen Tablo Elektoral
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Summary Stats ── %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="pp-card card p-3">
+        <div class="d-flex align-items-center gap-3">
+          <i class="ri-quill-pen-line pp-icon-lg pp-text-brand"></i>
+          <div>
+            <div class="fw-bold pp-text-xl pp-text-brand"><%= number_with_delimiter(@oath_total) %></div>
+            <div class="pp-stat-label">Sèman total ki siyen</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="pp-card card p-3">
+        <div class="d-flex align-items-center gap-3">
+          <i class="ri-time-line pp-icon-lg pp-text-warning"></i>
+          <div>
+            <div class="fw-bold pp-text-lg">
+              <%= @oath_latest ? @oath_latest.strftime("%d %b %Y %H:%M") : "—" %>
+            </div>
+            <div class="pp-stat-label">Dènye sèman</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="pp-card card p-3">
+        <div class="d-flex align-items-center gap-3">
+          <i class="ri-shield-check-line pp-icon-lg pp-text-success"></i>
+          <div>
+            <div class="fw-bold pp-text-lg">SHA-256</div>
+            <div class="pp-stat-label">Chak sèman gen yon anprent anti-fwod</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Search ── %>
+  <div class="pp-card card mb-4">
+    <div class="card-body p-3">
+      <%= form_with url: admin_election_election_oaths_path(@election_id), method: :get, local: true, class: "d-flex gap-2 flex-wrap" do %>
+        <input type="text"
+               name="q"
+               value="<%= params[:q] %>"
+               placeholder="Chèche pa BonID, non, oswa siyati..."
+               class="form-control form-control-sm"
+               style="max-width: 400px;">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="ri-search-line me-1"></i> Chèche
+        </button>
+        <% if params[:q].present? %>
+          <%= link_to "Efase", admin_election_election_oaths_path(@election_id),
+                      class: "btn btn-sm btn-outline-secondary" %>
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Records Table ── %>
+  <div class="pp-card card">
+    <div class="card-header px-4 py-3">
+      <h6 class="fw-semibold mb-0 pp-text-sm d-flex align-items-center gap-2">
+        <i class="ri-list-check-2 pp-text-secondary"></i>
+        Rejis Sèman
+      </h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="pp-bg-slate-50">
+          <tr>
+            <th class="pp-text-xs fw-semibold pp-text-secondary text-uppercase">Votè</th>
+            <th class="pp-text-xs fw-semibold pp-text-secondary text-uppercase">BonID</th>
+            <th class="pp-text-xs fw-semibold pp-text-secondary text-uppercase">Vèsyon</th>
+            <th class="pp-text-xs fw-semibold pp-text-secondary text-uppercase">Siyen</th>
+            <th class="pp-text-xs fw-semibold pp-text-secondary text-uppercase">IP</th>
+            <th class="pp-text-xs fw-semibold pp-text-secondary text-uppercase">Anprent (SHA-256)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @oath_records.any? %>
+            <% @oath_records.each do |record| %>
+              <tr>
+                <td>
+                  <div class="fw-semibold pp-text-sm">
+                    <%= record.user&.full_name || "—" %>
+                  </div>
+                  <% if record.identity_submission_id.present? %>
+                    <div class="pp-text-xs pp-text-muted">
+                      <i class="ri-verified-badge-line"></i>
+                      BonID KYC #<%= record.identity_submission_id %>
+                    </div>
+                  <% end %>
+                </td>
+                <td>
+                  <code class="pp-text-xs"><%= mask_bonid(record.user&.bonid) %></code>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border"><%= record.oath_version %></span>
+                </td>
+                <td class="pp-text-xs">
+                  <%= record.accepted_at&.strftime("%d %b %Y %H:%M:%S") %>
+                </td>
+                <td class="pp-text-xs pp-text-muted">
+                  <%= record.ip_address || "—" %>
+                </td>
+                <td>
+                  <code class="pp-text-xs pp-text-muted" title="<%= record.digest %>">
+                    <%= record.digest.first(16) %>…
+                  </code>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="6" class="text-center py-5 pp-text-muted">
+                <i class="ri-inbox-line pp-icon-lg d-block mb-2"></i>
+                <% if params[:q].present? %>
+                  Okenn sèman pa matche rechèch ou an.
+                <% else %>
+                  Okenn sèman pa siyen pou eleksyon sa a ankò.
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% if @oath_records.respond_to?(:total_pages) && @oath_records.total_pages > 1 %>
+      <div class="card-footer px-4 py-3">
+        <%= paginate @oath_records %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Legal footnote ── %>
+  <p class="pp-text-xs pp-text-muted mt-3">
+    Chak liy reprezante yon sèman ki siyen pa yon votè verifye. Anprent SHA-256 la
+    asire okenn moun pa ka modifye liy lan san detekte apre sa. Yon sèman siyen
+    anvan vòt la kite yon chenn prèv pou CEP ak tribinal la.
+  </p>
+</div>

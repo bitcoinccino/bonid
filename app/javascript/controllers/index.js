@@ -96,6 +96,7 @@ register("certificate-toggle", () =>
   register("otp-consent", () => import("./otp_consent_controller"))
   register("consent-focus", () => import("./consent_focus_controller"))
   register("consent-liveness", () => import("./consent_liveness_controller"))
+  register("liveness-gate", () => import("./liveness_gate_controller"))
 
   // ───────── Wizard / Units ─────────
   register("multi-step-schema-form", () => import("./multi_step_schema_form_controller"))

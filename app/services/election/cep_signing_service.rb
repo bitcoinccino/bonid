@@ -1,0 +1,92 @@
+# frozen_string_literal: true
+
+require "openssl"
+require "base64"
+require "json"
+
+module Election
+  # Produces an Ed25519 signature over a receipt payload so CEP-issued
+  # verification tablets can confirm authenticity offline.
+  #
+  # The private key is loaded from encrypted credentials:
+  #   Rails.application.credentials.dig(:election, :cep_signing_keys, election_id)
+  # stored as a base64-encoded 32-byte Ed25519 seed.
+  #
+  # Phase 1 behavior:
+  #   - When the key is present, signs and returns a base64 signature.
+  #   - When absent (default today), raises NotConfiguredError. Callers
+  #     rescue and skip signing — the receipt still renders, just without a
+  #     cryptographic attestation.
+  #
+  # Verification is symmetric: a tablet app computes the same payload,
+  # applies the public key, and accepts only matching signatures.
+  class CepSigningService
+    class NotConfiguredError < StandardError; end
+    class InvalidKeyError    < StandardError; end
+
+    # Signs the canonical JSON of `payload` with the election's private key.
+    # Returns base64url-encoded signature bytes.
+    def self.sign(election:, payload:)
+      new(election: election).sign(payload)
+    end
+
+    def self.verify(election:, payload:, signature_b64:)
+      new(election: election).verify(payload, signature_b64)
+    end
+
+    def initialize(election:)
+      @election = election
+    end
+
+    def sign(payload)
+      key = load_private_key
+      sig = key.sign(OpenSSL::Digest.new("SHA512"), canonical_json(payload))
+      Base64.urlsafe_encode64(sig, padding: false)
+    end
+
+    def verify(payload, signature_b64)
+      pub = load_public_key
+      raw = Base64.urlsafe_decode64(signature_b64)
+      pub.verify(OpenSSL::Digest.new("SHA512"), raw, canonical_json(payload))
+    rescue ArgumentError, OpenSSL::PKey::PKeyError
+      false
+    end
+
+    private
+
+    # Deterministic JSON for signing — sorted keys, no whitespace variance.
+    def canonical_json(payload)
+      JSON.generate(deep_sort(payload))
+    end
+
+    def deep_sort(obj)
+      case obj
+      when Hash  then obj.keys.sort_by(&:to_s).each_with_object({}) { |k, h| h[k] = deep_sort(obj[k]) }
+      when Array then obj.map { |e| deep_sort(e) }
+      else obj
+      end
+    end
+
+    def load_private_key
+      seed_b64 = Rails.application.credentials.dig(
+        :election, :cep_signing_keys, @election.id.to_s, :private
+      )
+      raise NotConfiguredError, "CEP signing key not set for election #{@election.id}" if seed_b64.blank?
+
+      seed = Base64.decode64(seed_b64)
+      raise InvalidKeyError, "Ed25519 seed must be 32 bytes" unless seed.bytesize == 32
+
+      OpenSSL::PKey.new_raw_private_key("ED25519", seed)
+    end
+
+    def load_public_key
+      pub_b64 = Rails.application.credentials.dig(
+        :election, :cep_signing_keys, @election.id.to_s, :public
+      )
+      raise NotConfiguredError, "CEP public key not set for election #{@election.id}" if pub_b64.blank?
+
+      raw = Base64.decode64(pub_b64)
+      OpenSSL::PKey.new_raw_public_key("ED25519", raw)
+    end
+  end
+end

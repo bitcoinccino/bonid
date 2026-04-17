@@ -1,0 +1,133 @@
+<%# Polling Centers (Sant Vòt) — CEP + Consulate roster %>
+
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-building-2-line me-2 pp-text-brand"></i>Sant Vòt
+      </h4>
+      <p class="pp-page-subtitle">
+        <% if @election %>
+          <%= @election.title %> — Rejis sant vòt ak biwo vòt (BV)
+        <% else %>
+          Pa gen eleksyon aktif
+        <% end %>
+      </p>
+    </div>
+    <% if @election %>
+      <%= link_to partner_portal_polling_centers_import_path,
+                  class: "btn pp-btn-brand px-4" do %>
+        <i class="ri-upload-2-line me-1"></i>Enpòte CSV
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @election && @centers.any? %>
+    <%# Stats Cards %>
+    <div class="row g-3 mb-4">
+      <% [
+        ["Sant Total",     @stats[:total_centers],     "pp-text-primary"],
+        ["Domestik",       @stats[:domestic_centers],  "pp-text-success"],
+        ["Dyaspora",       @stats[:diaspora_centers],  "pp-text-purple"],
+        ["BV Total",       @stats[:total_stations],    "pp-text-brand"],
+        ["Kapasite",       @stats[:total_capacity],    "pp-text-warning"],
+        ["Deja Anrejistre", @stats[:total_registered], "pp-text-primary"]
+      ].each do |label, count, color_class| %>
+        <div class="col-md-2">
+          <div class="pp-stat-card card">
+            <div class="pp-stat-number-lg <%= color_class %>">
+              <%= number_with_delimiter(count) %>
+            </div>
+            <div class="pp-stat-label"><%= label %></div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Centers Table %>
+    <div class="pp-card card">
+      <div class="table-responsive">
+        <table class="table table-hover pp-table">
+          <thead class="table-light">
+            <tr>
+              <th>Non Sant</th>
+              <th>Tip</th>
+              <th>Sikonskripsyon</th>
+              <th>Adrès</th>
+              <th>BV</th>
+              <th>Kapasite</th>
+              <th>Anrejistre</th>
+              <th>Estati</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @centers.each do |center| %>
+              <% stations = center.polling_stations %>
+              <% capacity = stations.sum(&:capacity) %>
+              <% registered = stations.sum(&:registered_count) %>
+              <tr>
+                <td><strong><%= center.name %></strong></td>
+                <td>
+                  <% if center.domestic? %>
+                    <span class="badge bg-success-subtle text-success">Domestik</span>
+                  <% else %>
+                    <span class="badge bg-info-subtle text-info">Dyaspora</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if center.domestic? %>
+                    <%= center.communal_section&.name || "—" %>
+                    <% if center.commune %>
+                      <div class="text-muted small"><%= center.commune.name %></div>
+                    <% end %>
+                  <% else %>
+                    <code><%= center.diplomatic_mission_id %></code>
+                  <% end %>
+                </td>
+                <td class="text-muted small"><%= center.formatted_address.presence || "—" %></td>
+                <td><%= stations.size %></td>
+                <td><%= number_with_delimiter(capacity) %></td>
+                <td>
+                  <% if capacity.positive? %>
+                    <%= number_with_delimiter(registered) %>
+                    <span class="text-muted small">(<%= ((registered.to_f / capacity) * 100).round(1) %>%)</span>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+                <td>
+                  <span class="badge bg-<%= { 'open' => 'success', 'planned' => 'secondary', 'closed' => 'dark' }[center.status] %> pp-badge-sm">
+                    <%= center.status.capitalize %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  <% elsif @election %>
+    <div class="pp-card card">
+      <div class="pp-empty-state">
+        <i class="ri-building-2-line"></i>
+        <h5>Pa gen sant vòt anrejistre</h5>
+        <p>Enpòte yon fichye CSV pou bati lis sant vòt ak BV yo.</p>
+        <%= link_to partner_portal_polling_centers_import_path,
+                    class: "btn pp-btn-brand mt-3" do %>
+          <i class="ri-upload-2-line me-1"></i>Enpòte Premye CSV
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="pp-card card">
+      <div class="pp-empty-state">
+        <i class="ri-calendar-close-line"></i>
+        <h5>Pa gen eleksyon aktif</h5>
+        <p>Sant vòt yo ap disponib lè yon eleksyon kreye.</p>
+      </div>
+    </div>
+  <% end %>
+
+</div>

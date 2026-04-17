@@ -35,7 +35,36 @@
 <%# ================================================================ %>
 <%# ONE CARD — banner header + trust intro body %>
 <%# ================================================================ %>
-<div id="bongouv-wizard-main" style="max-width: 1200px; margin: 0 auto; padding: 32px 40px;">
+<div id="bongouv-wizard-main" class="px-0">
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <%= link_to citizens_dgi_index_path, class: "dgi-back-link", data: { turbo: false } do %>
+      <i class="ri-arrow-left-s-line"></i> Retounen
+    <% end %>
+    <span id="draftIndicator" class="text-muted" style="font-size:0.7rem; opacity:0.6;">
+      <i class="ri-save-line me-1"></i><span>Otomatik sovgade</span>
+    </span>
+  </div>
+  <div class="text-center mb-4">
+    <h3 class="citizen-page-title mb-1">
+      <i class="ri-file-edit-line me-2"></i><%= @form_label[:title] %>
+    </h3>
+    <p class="text-muted mb-0" style="font-size: 0.78rem;">
+      Direksyon Jeneral Enpo — Depoze fòm fiskal ou anliy.
+    </p>
+  </div>
+  <style>
+    .dgi-back-link {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.82rem; font-weight: 500; color: #6B7280;
+      text-decoration: none; transition: color 0.15s;
+    }
+    .dgi-back-link:hover { color: var(--primary); }
+  </style>
 
   <%# ARIA live region for screen reader announcements %>
   <div id="wizardLiveRegion" class="visually-hidden" aria-live="polite" aria-atomic="true">
@@ -43,24 +72,6 @@
   </div>
 
   <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px;">
-    <%# Card header — blue with red line %>
-    <div style="background: linear-gradient(135deg, #00209F 0%, #001570 100%); border-bottom: 4px solid #D21034; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;">
-      <div class="d-flex align-items-center gap-3">
-        <%= image_tag "partners/dgi-logo.webp", style: "height:36px;", alt: "DGI" %>
-        <div>
-          <div style="font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.6);">Direksyon Jeneral Enpo</div>
-          <h5 style="margin:0; color:#fff; font-family:'Montserrat',sans-serif; font-size:1rem; font-weight:700;"><%= @form_label[:title] %></h5>
-        </div>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <span id="draftIndicator" style="font-size:0.7rem; color:rgba(255,255,255,0.6); opacity:0.6; transition:opacity 0.3s;">
-          <i class="ri-save-line me-1"></i><span>Otomatik sovgade</span>
-        </span>
-        <%= link_to citizens_dgi_index_path, style: "color:#fff; font-size:0.78rem; padding:6px 14px; border-radius:6px; background:rgba(255,255,255,0.12); display:inline-flex; align-items:center; gap:4px; text-decoration:none;", aria: { label: "Retounen nan Sèvis DGI" } do %>
-          <i class="ri-arrow-left-line"></i>Retounen
-        <% end %>
-      </div>
-    </div>
     <% if @resubmission && @draft_data["rejection"].is_a?(Hash) %>
       <div style="background:#fef2f2; padding:12px 24px; border-bottom:1px solid #fecaca; display:flex; align-items:start; gap:8px;">
         <i class="ri-error-warning-line" style="color:#dc2626; margin-top:2px;"></i>
@@ -190,7 +201,7 @@
               <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               <% end %>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -204,7 +215,7 @@
                 <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
               </div>
               <div class="dash-card-body">
-                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);"><i class="ri-map-pin-line me-1"></i>Adrès</p>
                 <div class="row g-3">
                   <div class="col-md-6 bonid-autofill">
                     <label class="form-label fw-semibold">Depatman <span class="text-danger">*</span></label>
@@ -252,7 +263,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -294,7 +305,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -304,7 +315,7 @@
           <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
             <div class="dash-card">
               <div class="dash-card-header">
-                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">4</span>Revize Enfòmasyon Ou</h6>
+                <h6 class="dash-card-title" style="color:var(--primary);"><span class="badge rounded-pill me-2" style="background:var(--primary);">4</span>Revize Enfòmasyon Ou</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
                   <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
                 </button>
@@ -312,7 +323,7 @@
               <div class="dash-card-body">
                 <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
                 <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
-                  <h6 class="wizard-summary__heading"><i class="ri-file-list-3-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Enskripsyon NIF</h6>
+                  <h6 class="wizard-summary__heading"><i class="ri-file-list-3-line me-2" style="color:var(--primary);" aria-hidden="true"></i>Rezime Enskripsyon NIF</h6>
                   <div id="summaryContent"></div>
                 </div>
               </div>
@@ -321,7 +332,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -341,7 +352,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -551,7 +562,7 @@
               <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               <% end %>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -628,7 +639,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -691,7 +702,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -707,7 +718,7 @@
                 <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
               </div>
               <div class="dash-card-body">
-                <p class="fw-bold small mb-2" style="color:#00209F;">29. Adrès Prensipal Antrepriz</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);">29. Adrès Prensipal Antrepriz</p>
                 <div class="row g-3">
                   <%# 29a. Département %>
                   <div class="col-md-6 bonid-autofill">
@@ -751,7 +762,7 @@
 
                 <%# Section 4 — Établissements %>
                 <hr class="my-3">
-                <p class="fw-bold small mb-2" style="color:#00209F;">30. Etablisman</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);">30. Etablisman</p>
                 <div class="alert alert-secondary mb-3 small">
                   <i class="ri-information-line me-2"></i>Apa de adrès prensipal la, èske antrepriz la gen lòt etablisman ki bezwen yon patant?
                 </div>
@@ -816,7 +827,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -828,7 +839,7 @@
           <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
             <div class="dash-card">
               <div class="dash-card-header">
-                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">5</span>Revize Enfòmasyon Ou</h6>
+                <h6 class="dash-card-title" style="color:var(--primary);"><span class="badge rounded-pill me-2" style="background:var(--primary);">5</span>Revize Enfòmasyon Ou</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
                   <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
                 </button>
@@ -836,7 +847,7 @@
               <div class="dash-card-body">
                 <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
                 <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
-                  <h6 class="wizard-summary__heading"><i class="ri-building-2-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Anrejistreman Biznis</h6>
+                  <h6 class="wizard-summary__heading"><i class="ri-building-2-line me-2" style="color:var(--primary);" aria-hidden="true"></i>Rezime Anrejistreman Biznis</h6>
                   <div id="summaryContent"></div>
                 </div>
               </div>
@@ -845,7 +856,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -865,7 +876,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -961,7 +972,7 @@
               <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               <% end %>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -975,7 +986,7 @@
                 <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
               </div>
               <div class="dash-card-body">
-                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
                 <div class="row g-3">
                   <div class="col-md-6 bonid-autofill">
                     <label class="form-label fw-semibold">Depatman</label>
@@ -1023,7 +1034,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1100,7 +1111,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1110,7 +1121,7 @@
           <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
             <div class="dash-card">
               <div class="dash-card-header">
-                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">4</span>Revize Enfòmasyon Ou</h6>
+                <h6 class="dash-card-title" style="color:var(--primary);"><span class="badge rounded-pill me-2" style="background:var(--primary);">4</span>Revize Enfòmasyon Ou</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
                   <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
                 </button>
@@ -1118,7 +1129,7 @@
               <div class="dash-card-body">
                 <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
                 <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
-                  <h6 class="wizard-summary__heading"><i class="ri-store-2-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Deklarasyon Patant</h6>
+                  <h6 class="wizard-summary__heading"><i class="ri-store-2-line me-2" style="color:var(--primary);" aria-hidden="true"></i>Rezime Deklarasyon Patant</h6>
                   <div id="summaryContent"></div>
                 </div>
               </div>
@@ -1127,7 +1138,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -1147,7 +1158,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -1248,7 +1259,7 @@
               <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               <% end %>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1262,7 +1273,7 @@
                 <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
               </div>
               <div class="dash-card-body">
-                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
                 <div class="row g-3">
                   <div class="col-md-6 bonid-autofill">
                     <label class="form-label fw-semibold">Depatman</label>
@@ -1310,7 +1321,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1394,7 +1405,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1404,7 +1415,7 @@
           <div class="wizard-step-panel" id="wizardStep4" style="display:none;" aria-hidden="true">
             <div class="dash-card">
               <div class="dash-card-header">
-                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">4</span>Revize Enfòmasyon Ou</h6>
+                <h6 class="dash-card-title" style="color:var(--primary);"><span class="badge rounded-pill me-2" style="background:var(--primary);">4</span>Revize Enfòmasyon Ou</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
                   <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
                 </button>
@@ -1412,7 +1423,7 @@
               <div class="dash-card-body">
                 <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
                 <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
-                  <h6 class="wizard-summary__heading"><i class="ri-percent-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Deklarasyon TCA</h6>
+                  <h6 class="wizard-summary__heading"><i class="ri-percent-line me-2" style="color:var(--primary);" aria-hidden="true"></i>Rezime Deklarasyon TCA</h6>
                   <div id="summaryContent"></div>
                 </div>
               </div>
@@ -1421,7 +1432,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="5" style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -1441,7 +1452,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="6" disabled style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -1544,7 +1555,7 @@
               <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               <% end %>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1558,7 +1569,7 @@
                 <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
               </div>
               <div class="dash-card-body">
-                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);"><i class="ri-map-pin-line me-1"></i>Adrès Biznis</p>
                 <div class="row g-3">
                   <div class="col-md-6 bonid-autofill">
                     <label class="form-label fw-semibold">Depatman</label>
@@ -1606,7 +1617,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1620,7 +1631,7 @@
               </div>
               <div class="dash-card-body">
                 <div class="mb-3 p-2 rounded small" style="background:#f0f4ff;border:1px solid #ccd6f0;">
-                  <strong style="color:#00209F;"><i class="ri-information-line me-1"></i>Tranch Taks Revni:</strong>
+                  <strong style="color:var(--primary);"><i class="ri-information-line me-1"></i>Tranch Taks Revni:</strong>
                   <% @tranches.each do |t| %>
                     <span class="badge bg-light text-dark border ms-1"><%= t[:label] %></span>
                   <% end %>
@@ -1701,7 +1712,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1751,7 +1762,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1761,7 +1772,7 @@
           <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
             <div class="dash-card">
               <div class="dash-card-header">
-                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">5</span>Revize Enfòmasyon Ou</h6>
+                <h6 class="dash-card-title" style="color:var(--primary);"><span class="badge rounded-pill me-2" style="background:var(--primary);">5</span>Revize Enfòmasyon Ou</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn" aria-label="Enprime rezime sa a">
                   <i class="ri-printer-line me-1" aria-hidden="true"></i>Enprime
                 </button>
@@ -1769,7 +1780,7 @@
               <div class="dash-card-body">
                 <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye. Ou ka retounen nan nenpòt etap pou korije.</p>
                 <div class="wizard-summary" id="wizardSummary" role="region" aria-label="Rezime enfòmasyon ou">
-                  <h6 class="wizard-summary__heading"><i class="ri-money-dollar-box-line me-2" style="color:#00209F;" aria-hidden="true"></i>Rezime Deklarasyon RAS IR</h6>
+                  <h6 class="wizard-summary__heading"><i class="ri-money-dollar-box-line me-2" style="color:var(--primary);" aria-hidden="true"></i>Rezime Deklarasyon RAS IR</h6>
                   <div id="summaryContent"></div>
                 </div>
               </div>
@@ -1778,7 +1789,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -1798,7 +1809,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1" aria-hidden="true"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1" aria-hidden="true"></i>
               </button>
             </div>
@@ -1896,7 +1907,7 @@
               <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-lg", style: "min-height:48px;" do %>
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               <% end %>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="2" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1910,7 +1921,7 @@
                 <span class="badge bg-success"><i class="ri-magic-line me-1"></i>BonID Pre-ranpli</span>
               </div>
               <div class="dash-card-body">
-                <p class="fw-bold small mb-2" style="color:#00209F;"><i class="ri-map-pin-line me-1"></i>Kote pwopriyete a ye</p>
+                <p class="fw-bold small mb-2" style="color:var(--primary);"><i class="ri-map-pin-line me-1"></i>Kote pwopriyete a ye</p>
                 <div class="row g-3">
                   <div class="col-md-6 bonid-autofill">
                     <label class="form-label fw-semibold">Depatman <span class="text-danger">*</span></label>
@@ -1950,7 +1961,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="1" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="3" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -1983,7 +1994,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="2" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="4" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -2029,8 +2040,8 @@
                 </div>
                 <div class="mt-3 p-3 rounded" style="background:#f0f4ff; border:1px solid #c7d2fe;">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-bold"><i class="ri-calculator-line me-1" style="color:#00209F;"></i>Montan Total</span>
-                    <span class="fw-bold fs-5" id="fermageTotal" style="color:#00209F;">0.00 HTG</span>
+                    <span class="fw-bold"><i class="ri-calculator-line me-1" style="color:var(--primary);"></i>Montan Total</span>
+                    <span class="fw-bold fs-5" id="fermageTotal" style="color:var(--primary);">0.00 HTG</span>
                   </div>
                 </div>
               </div>
@@ -2039,7 +2050,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="3" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-primary btn-lg wizard-next-btn" data-next="5" style="min-height:48px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -2049,13 +2060,13 @@
           <div class="wizard-step-panel" id="wizardStep5" style="display:none;" aria-hidden="true">
             <div class="dash-card">
               <div class="dash-card-header">
-                <h6 class="dash-card-title" style="color:#00209F;"><span class="badge rounded-pill me-2" style="background:#00209F;">5</span>Revize Enfòmasyon Ou</h6>
+                <h6 class="dash-card-title" style="color:var(--primary);"><span class="badge rounded-pill me-2" style="background:var(--primary);">5</span>Revize Enfòmasyon Ou</h6>
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="wizardPrintBtn"><i class="ri-printer-line me-1"></i>Enprime</button>
               </div>
               <div class="dash-card-body">
                 <p class="small text-muted mb-3">Verifye enfòmasyon ou yo anvan ou kontinye.</p>
                 <div class="wizard-summary" id="wizardSummary">
-                  <h6 class="wizard-summary__heading"><i class="ri-file-list-3-line me-2" style="color:#00209F;"></i>Rezime Fèmaj DGI-55</h6>
+                  <h6 class="wizard-summary__heading"><i class="ri-file-list-3-line me-2" style="color:var(--primary);"></i>Rezime Fèmaj DGI-55</h6>
                   <div id="summaryContent"></div>
                 </div>
               </div>
@@ -2064,7 +2075,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="4" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn" data-next="6" style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -2084,7 +2095,7 @@
               <button type="button" class="btn btn-outline-secondary btn-lg wizard-prev-btn" data-prev="5" style="min-height:48px;">
                 <i class="ri-arrow-left-line me-1"></i> Retounen
               </button>
-              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:#00209F;border-color:#00209F;">
+              <button type="button" class="btn btn-lg text-white wizard-next-btn dgi-submit-btn" data-next="7" disabled style="min-height:48px;min-width:200px;background:var(--primary);border-color:var(--primary);">
                 Kontinye <i class="ri-arrow-right-line ms-1"></i>
               </button>
             </div>
@@ -2121,6 +2132,8 @@
       <% end %>
 
   </div>
+  </div>
+</div>
 </div>
 
 <%# ======================================================= %>
@@ -2423,11 +2436,11 @@ document.addEventListener("DOMContentLoaded", function() {
      ================================================================ */
   :root {
     /* ---- Color: Primary (Haitian Blue) ---- */
-    --bg-primary:           #00209F;
+    --bg-primary:           var(--primary);
     --bg-primary-dark:      #001570;
     --bg-primary-light:     #f0f4ff;
     --text-on-primary:      #FFFFFF;
-    --text-primary:         #00209F;
+    --text-primary:         var(--primary);
 
     /* ---- Color: Accent (Haitian Red) ---- */
     --bg-accent:            #D21034;
@@ -2606,7 +2619,7 @@ document.addEventListener("DOMContentLoaded", function() {
     border-color: #c7d2fe !important;
   }
     font-size: 0.68rem;
-    color: #00209F;
+    color: var(--primary);
     font-weight: 500;
     margin-top: 2px;
     display: flex;
@@ -2713,9 +2726,11 @@ document.addEventListener("DOMContentLoaded", function() {
     height: var(--space-205);
     margin-top: var(--space-05);
   }
-  .dgi-certification-checkbox:checked {
-    background-color: var(--bg-primary);
-    border-color: var(--bg-primary);
+  .form-check-input.dgi-certification-checkbox:checked,
+  input[type="checkbox"].dgi-certification-checkbox:checked {
+    background-color: #00209F !important;
+    border-color: #00209F !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e") !important;
   }
   .dgi-certification-checkbox:focus {
     box-shadow: var(--focus-shadow);

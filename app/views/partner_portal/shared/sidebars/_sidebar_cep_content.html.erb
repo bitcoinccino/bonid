@@ -159,6 +159,19 @@
       <% end %>
     </li>
 
+    <%# Polling Centers (Sant Vòt) — venues + BVs %>
+    <li class="nav-item">
+      <%= link_to partner_portal_polling_centers_path,
+                  class: "nav-link #{'active' if request.path.include?('polling_centers')}" do %>
+        <i class="ri-building-2-line"></i>
+        <span>Sant Vòt</span>
+        <% center_count = cep_election ? PollingCenter.where(bonvote_election: cep_election).count : 0 %>
+        <% if center_count > 0 %>
+          <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.6rem;"><%= number_with_delimiter(center_count) %></span>
+        <% end %>
+      <% end %>
+    </li>
+
     <%# Party Registration (Article 143) %>
     <li class="nav-item">
       <%= link_to partner_portal_party_registrations_path,

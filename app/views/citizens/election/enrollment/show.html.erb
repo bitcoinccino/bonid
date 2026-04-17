@@ -1,0 +1,501 @@
+<%# Eleksyon Mwen — unified registration state page
+    Chrome matches the ballot wizard (.ballot-head / .ballot-section) so the
+    whole election flow reads as one continuous wizard, not two disjoint pages. %>
+
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
+
+  <%# ── Page Header (wizard style) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-user-voice-line me-2"></i><%= "Eleksyon Mwen" %>
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      <% if @election %>
+        <%= @election.title %>
+      <% else %>
+        Enskri pou vote ak swivi estati w
+      <% end %>
+    </p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <%# Site-wide CEP postponement banner — remove partial once CEP
+          announces the new registration dates. %>
+      <%= render "citizens/election/enrollment/postponement_banner" %>
+
+      <% case @state
+         when :no_election %>
+        <%# ─── NO ELECTION ─── %>
+        <div class="card election-card">
+          <div class="card-body p-4 text-center">
+            <div class="election-icon-circle" style="background: #F1F5F9;">
+              <i class="ri-calendar-close-line" style="color: #64748B;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Pa gen eleksyon aktif</h5>
+            <p class="text-muted mb-3" style="font-size: 0.88rem;">
+              Lè CEP anonse yon eleksyon, ou ka enskri isit la pou w vote.
+            </p>
+            <%= link_to citizens_election_calendar_path, class: "election-btn-primary election-btn-primary--sm" do %>
+              <i class="ri-calendar-event-line"></i> Wè Kalandriye
+            <% end %>
+          </div>
+        </div>
+
+      <% when :voted %>
+        <%# ─── ALREADY VOTED ─── %>
+        <div class="card election-card">
+          <div class="card-body p-4 text-center">
+            <div class="election-icon-circle" style="background: #DCFCE7;">
+              <i class="ri-checkbox-circle-fill" style="color: #16A34A;"></i>
+            </div>
+            <h5 class="fw-bold mb-2 text-success">Ou deja vote</h5>
+            <p class="text-muted mb-3" style="font-size: 0.88rem;">
+              Vòt ou anrejistre nan sistèm nan.
+              <% if @record.voted_at %>
+                <br>
+                <span class="small">
+                  <%= l(@record.voted_at, format: :short) %>
+                  <% if @record.voted_channel.present? %>
+                    — kanal: <strong><%= @record.voted_channel.humanize %></strong>
+                  <% end %>
+                </span>
+              <% end %>
+            </p>
+            <%= link_to citizens_election_verify_path, class: "election-btn-primary election-btn-primary--sm" do %>
+              <i class="ri-shield-check-line"></i> Verifye Vòt Mwen
+            <% end %>
+          </div>
+        </div>
+
+      <% when :registered %>
+        <%# ─── REGISTERED ─── %>
+        <% geo = @record.geographic_chain %>
+
+        <% if flash[:just_registered] %>
+          <%# First render after a successful enroll: play the success reveal.
+              The JS hides the overlay after ~1.6s and reveals the card. %>
+          <div class="enroll-success-overlay" id="enroll-success-overlay">
+            <div class="enroll-success-inner">
+              <div class="enroll-success-check">
+                <svg viewBox="0 0 64 64" aria-hidden="true">
+                  <circle class="enroll-success-circle" cx="32" cy="32" r="28"></circle>
+                  <path class="enroll-success-tick" d="M20 33 l9 9 l16 -18" fill="none"></path>
+                </svg>
+              </div>
+              <div class="enroll-success-title">Ou anrejistre!</div>
+              <div class="enroll-success-subtitle">N ap afiche kat votè ou…</div>
+            </div>
+          </div>
+          <script>
+            (function() {
+              const overlay = document.getElementById('enroll-success-overlay');
+              if (!overlay) return;
+              document.body.classList.add('enroll-success-active');
+              setTimeout(function() {
+                overlay.classList.add('is-leaving');
+                document.body.classList.remove('enroll-success-active');
+              }, 1600);
+              setTimeout(function() {
+                overlay.parentNode && overlay.parentNode.removeChild(overlay);
+              }, 2200);
+            })();
+          </script>
+        <% end %>
+
+        <div class="card election-card mb-3">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="election-icon-circle ms-0 me-3 mb-0" style="background: #DCFCE7; width: 48px; height: 48px;">
+                <i class="ri-checkbox-circle-fill" style="color: #16A34A; font-size: 1.2rem;"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold mb-0">Ou anrejistre pou vote</h5>
+                <p class="text-muted mb-0 small">
+                  <% if @record.registered_by_partner_id.present? %>
+                    Anrejistre pa <%= @record.registered_by_partner&.name.presence || "CEP/Konsila" %>
+                  <% else %>
+                    Anrejistre anliy
+                  <% end %>
+                </p>
+              </div>
+            </div>
+
+            <%# Voter reference badge — bank-style presentation %>
+            <div class="p-3 mb-3"
+                 style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 0.75rem;">
+              <div class="text-muted small text-uppercase" style="letter-spacing: 0.05em;">
+                Nimewo Votè
+              </div>
+              <div class="fw-bold" style="font-family: 'SF Mono', Menlo, monospace; font-size: 1rem; color: #0F172A;">
+                <%= @record.voter_reference %>
+              </div>
+              <% if @record.registered_at.present? %>
+                <div class="small text-muted mt-1">
+                  <i class="ri-calendar-line me-1"></i>
+                  Enskri <%= l(@record.registered_at, format: :long) %>
+                </div>
+              <% end %>
+            </div>
+
+            <table class="table table-sm mb-0" style="font-size: 0.9rem;">
+              <tbody>
+                <tr>
+                  <td class="text-muted" style="width: 40%;">Depatman</td>
+                  <td class="fw-semibold">
+                    <%= geo[:department] %>
+                    <% if @record.diaspora? %>
+                      <span class="badge bg-info-subtle text-info ms-1">Dyaspora</span>
+                    <% end %>
+                  </td>
+                </tr>
+                <% if geo[:arrondissement].present? %>
+                  <tr>
+                    <td class="text-muted">Arondisman</td>
+                    <td class="fw-semibold"><%= geo[:arrondissement] %></td>
+                  </tr>
+                <% end %>
+                <% if geo[:commune].present? %>
+                  <tr>
+                    <td class="text-muted">Komin</td>
+                    <td class="fw-semibold"><%= geo[:commune] %></td>
+                  </tr>
+                <% end %>
+                <% if geo[:section].present? %>
+                  <tr>
+                    <td class="text-muted">Seksyon Komunal</td>
+                    <td class="fw-semibold"><%= geo[:section] %></td>
+                  </tr>
+                <% end %>
+                <% if @record.constituency_name.present? && @record.constituency_name != @record.department_code %>
+                  <tr>
+                    <td class="text-muted">Sikonskripsyon</td>
+                    <td class="fw-semibold"><%= @record.constituency_name %></td>
+                  </tr>
+                <% end %>
+
+                <% if @record.polling_station.present? %>
+                  <% station = @record.polling_station %>
+                  <% center  = station.polling_center %>
+                  <tr>
+                    <td colspan="2"
+                        class="pt-3 pb-2 text-uppercase small fw-semibold"
+                        style="letter-spacing: 0.06em; color: #475569; background: #F8FAFC; border-top: 1px solid #E2E8F0;">
+                      <i class="ri-map-pin-2-line me-1" style="color: #64748B;"></i>Biwo Vòt
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Nimewo BV</td>
+                    <td class="fw-semibold">BV #<%= station.bv_number %></td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Sant Vòt</td>
+                    <td class="fw-semibold"><%= center.name %></td>
+                  </tr>
+                  <% if center.formatted_address.present? %>
+                    <tr>
+                      <td class="text-muted">Adrès Sant</td>
+                      <td><%= center.formatted_address %></td>
+                    </tr>
+                  <% end %>
+                <% else %>
+                  <tr>
+                    <td class="text-muted">Biwo Vòt</td>
+                    <td class="text-warning">
+                      <i class="ri-time-line me-1"></i>Pa ko atribye
+                      <div class="small text-muted">CEP ap atribye biwo vòt ou byento.</div>
+                    </td>
+                  </tr>
+                <% end %>
+
+                <tr>
+                  <td class="text-muted">Kanal prefere</td>
+                  <td>
+                    <% if @record.preferred_channel == "online" %>
+                      <span class="badge bg-primary-subtle text-primary">Anliy</span>
+                    <% else %>
+                      <span class="badge bg-secondary-subtle text-secondary">An pèsòn</span>
+                    <% end %>
+                    <% if @record.preferred_channel == "online" && !@election.allows_online_voting %>
+                      <div class="small text-warning mt-1">
+                        <i class="ri-alert-line me-1"></i>
+                        Vòt anliy pa disponib pou eleksyon sa a. W ap bezwen ale an pèsòn.
+                      </div>
+                    <% end %>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <%# Receipt actions — download or print the BonID-generated PDF with
+            QR code. Citizen brings this to their BV on election day; the
+            poll worker scans the QR to verify. %>
+        <div class="d-flex gap-2 mb-3 flex-wrap">
+          <%= link_to citizens_election_receipt_download_path(format: :pdf),
+                      class: "btn btn-outline-primary flex-fill" do %>
+            <i class="ri-download-2-line me-1"></i>Telechaje Resi
+          <% end %>
+          <%= link_to citizens_election_receipt_print_path(format: :pdf),
+                      class: "btn btn-outline-secondary flex-fill",
+                      target: "_blank", rel: "noopener" do %>
+            <i class="ri-printer-line me-1"></i>Enprime Resi
+          <% end %>
+        </div>
+
+        <%# Voting-day CTA — honors the citizen's declared channel preference.
+            Someone who enrolled as in-person must go to their assigned BV;
+            we don't surface the online path to them even on an open election. %>
+        <% if @election.open? %>
+          <% if @record.preferred_channel == "online" && @election.allows_online_voting %>
+            <%= link_to citizens_election_vote_path, class: "election-btn-primary w-100" do %>
+              <i class="ri-checkbox-circle-line"></i> Ale Vote Kounye a
+            <% end %>
+          <% else %>
+            <%# In-person preference OR online not allowed for this election —
+                point them at the BV details shown above instead of the online flow. %>
+            <div class="election-in-person-cta">
+              <div class="election-in-person-cta__icon">
+                <i class="ri-map-pin-line"></i>
+              </div>
+              <div>
+                <div class="election-in-person-cta__title">Ou chwazi vote an pèsòn</div>
+                <div class="election-in-person-cta__desc">
+                  Ale nan biwo vòt ou a
+                  <% if @record.polling_station&.polling_center&.name.present? %>
+                    (<strong><%= @record.polling_station.polling_center.name %></strong>)
+                  <% end %>
+                  jou eleksyon an ak pyès idantite ou.
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% else %>
+          <div class="text-center text-muted small">
+            <i class="ri-time-line me-1"></i>
+            Vòt la ap kòmanse
+            <% if @election.election_date %>
+              <strong><%= l(@election.election_date, format: :long) %></strong>
+            <% end %>
+          </div>
+        <% end %>
+
+      <% when :registrable_digital %>
+        <%# ─── CAN ENROLL ONLINE ─── %>
+        <%
+          addr              = current_citizen.address
+          citizen_name      = current_citizen.full_name.presence || current_citizen.first_name.presence || "Sitwayen"
+          commune_name      = addr&.commune&.name.presence
+          dept_full         = addr&.department&.name.presence
+          dept_abbr         = dept_full&.to_s&.split(/[\s\-]+/)&.map { |w| w[0]&.upcase }&.join&.presence
+          context_loc       = [commune_name, dept_abbr].compact.join(", ").presence
+          online_ok         = @election.allows_online_voting
+          digital_enroll_ok = @election.respond_to?(:allows_digital_enrollment) && @election.allows_digital_enrollment
+        %>
+
+        <% unless digital_enroll_ok %>
+          <%# Self-service is off — CEP-authorized channel only. Point
+              the citizen at the locator instead of a broken CTA. %>
+          <div class="card election-card mb-3">
+            <div class="card-body p-4 text-center">
+              <div class="election-icon-circle" style="background: #DBEAFE;">
+                <i class="ri-map-pin-line" style="color: #1D4ED8;"></i>
+              </div>
+              <h5 class="fw-bold mb-2">Enskripsyon an pèsòn sèlman</h5>
+              <p class="text-muted mb-3" style="font-size: 0.88rem;">
+                Pou moman an, enskripsyon elektoral la fèt sèlman an pèsòn nan biwo CEP yo.
+                BonID ap pre-veri idantite w pou w gen yon enskripsyon pi rapid.
+              </p>
+              <%= link_to citizens_election_offices_path, class: "election-btn-primary" do %>
+                <i class="ri-map-pin-line me-1"></i>Jwenn BED / BEK mwen
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <% if digital_enroll_ok %>
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+
+            <%# Wizard-style section head: bold title + subdued desc + divider %>
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Enskri pou Vote</h2>
+              <p class="ballot-section-desc mb-0">
+                Ou elijib pou vote nan <strong><%= @election.title %></strong>.
+                Enskri kounye a pou w sekirize plas ou.
+              </p>
+            </div>
+
+            <%# Citizen context strip — "system already knows who you are" %>
+            <div class="enroll-context-strip">
+              <div>
+                <div class="enroll-context-strip-name"><%= citizen_name %></div>
+                <% if context_loc %>
+                  <div class="enroll-context-strip-loc">
+                    <i class="ri-map-pin-line"></i>
+                    <span><%= context_loc %></span>
+                  </div>
+                <% end %>
+              </div>
+              <span class="enroll-context-strip-verified">
+                <i class="ri-verified-badge-line"></i>
+                BonID verifye
+              </span>
+            </div>
+
+            <%= form_with url: citizens_election_enrollment_path, method: :post, local: true,
+                          class: "enroll-form" do |f| %>
+              <label class="election-form-label mb-2">Kijan ou planifye vote?</label>
+
+              <%# ── Method Card: In-person (reuses .candidate-card wizard style) ── %>
+              <label class="ballot-candidate-label mb-2">
+                <input class="ballot-radio" type="radio" name="preferred_channel"
+                       id="channel_in_person" value="in_person" checked
+                       onchange="selectEnrollMethod(this)">
+                <div class="enroll-method-card is-selected">
+                  <div class="enroll-method-icon">
+                    <i class="ri-archive-drawer-line"></i>
+                  </div>
+                  <div class="candidate-meta">
+                    <div class="enroll-method-title">An pèsòn nan yon biwo vòt</div>
+                    <div class="enroll-method-desc">
+                      Ou ap parèt nan BV yo asiyen ou jou eleksyon an.
+                    </div>
+                  </div>
+                  <div class="candidate-card-check">
+                    <i class="ri-check-line"></i>
+                  </div>
+                </div>
+              </label>
+
+              <%# ── Method Card: Online (locked when unavailable) ── %>
+              <label class="ballot-candidate-label">
+                <input class="ballot-radio" type="radio" name="preferred_channel"
+                       id="channel_online" value="online"
+                       <%= "disabled" unless online_ok %>
+                       onchange="selectEnrollMethod(this)">
+                <div class="enroll-method-card <%= 'enroll-method-card--locked' unless online_ok %>">
+                  <div class="enroll-method-icon">
+                    <% if online_ok %>
+                      <i class="ri-smartphone-line"></i>
+                    <% else %>
+                      <i class="ri-lock-2-line"></i>
+                    <% end %>
+                  </div>
+                  <div class="candidate-meta">
+                    <div class="enroll-method-title">
+                      Anliy nan aplikasyon an
+                      <% unless online_ok %>
+                        <span class="enroll-method-badge">Pral disponib byento</span>
+                      <% end %>
+                    </div>
+                    <div class="enroll-method-desc">
+                      <% if online_ok %>
+                        Vote dirèkteman nan BonID jou eleksyon an.
+                      <% else %>
+                        Pa disponib pou eleksyon sa a — ale an pèsòn pou kounye a.
+                      <% end %>
+                    </div>
+                  </div>
+                  <div class="candidate-card-check">
+                    <i class="ri-check-line"></i>
+                  </div>
+                </div>
+              </label>
+
+              <%# Helpful tip — surfaced just above CTA (was footer before) %>
+              <div class="enroll-helpful-tip">
+                <i class="ri-information-line"></i>
+                <div>
+                  <strong>Konsèy:</strong>
+                  Ou ka pase nan nenpòt biwo CEP oswa konsila pou w enskri an pèsòn tou.
+                </div>
+              </div>
+
+              <%# Strengthened CTA with shield + spinner %>
+              <button type="submit" class="election-btn-primary w-100 enroll-submit">
+                <span class="enroll-submit-default">
+                  <i class="ri-shield-check-line"></i>
+                  <span>Konfime Enskripsyon</span>
+                </span>
+                <span class="enroll-submit-loading" aria-hidden="true">
+                  <span class="enroll-spinner"></span>
+                  <span>N ap anrejistre…</span>
+                </span>
+              </button>
+            <% end %>
+          </div>
+        </div>
+        <% end %>
+        <%# /digital_enroll_ok %>
+
+        <script>
+          (function() {
+            // Mirror the ballot wizard's selectCandidate pattern: toggle
+            // .is-selected on the enroll-method-card for the chosen radio.
+            window.selectEnrollMethod = function(radio) {
+              const form = radio.closest('form');
+              if (!form) return;
+              form.querySelectorAll('input[name="preferred_channel"]').forEach(function(r) {
+                const card = r.closest('label').querySelector('.enroll-method-card');
+                card && card.classList.remove('is-selected');
+              });
+              const card = radio.closest('label').querySelector('.enroll-method-card');
+              card && card.classList.add('is-selected');
+            };
+
+            // Scoped handler: disable + swap label to spinner on submit so the
+            // ~1s FOR UPDATE SKIP LOCKED BV-assignment window can't be double-clicked.
+            const form = document.querySelector('.enroll-form');
+            if (!form) return;
+            form.addEventListener('submit', function() {
+              const btn = form.querySelector('.enroll-submit');
+              if (!btn) return;
+              btn.classList.add('is-submitting');
+              btn.disabled = true;
+            });
+          })();
+        </script>
+
+      <% when :ineligible %>
+        <%# ─── INELIGIBLE ─── %>
+        <div class="card election-card">
+          <div class="card-body p-4 text-center">
+            <div class="election-icon-circle" style="background: #FEF3C7;">
+              <i class="ri-error-warning-line" style="color: #D97706;"></i>
+            </div>
+            <h5 class="fw-bold mb-2">Ou pa elijib pou eleksyon sa a</h5>
+
+            <% if @ineligibility_reason == "underage" %>
+              <p class="text-muted mb-3" style="font-size: 0.88rem;">
+                Ou dwe gen 18 an oswa plis pou w ka vote.
+              </p>
+            <% elsif @ineligibility_reason == "no_cin" && !current_citizen.bonid_verified? %>
+              <p class="text-muted mb-3" style="font-size: 0.88rem;">
+                Ou bezwen fini verifikasyon BonID ou anvan ou enskri pou vote.
+              </p>
+              <%= link_to citizens_identity_submissions_path, class: "election-btn-primary election-btn-primary--sm" do %>
+                <i class="ri-id-card-line"></i> Fini Verifikasyon
+              <% end %>
+            <% elsif @ineligibility_reason == "no_cin" %>
+              <p class="text-muted mb-3" style="font-size: 0.88rem;">
+                Ou bezwen ajoute yon CIN verifye nan pwofil ou anvan ou enskri pou vote.
+              </p>
+              <%= link_to citizens_profile_path, class: "election-btn-primary election-btn-primary--sm" do %>
+                <i class="ri-user-settings-line"></i> Mete Ajou Pwofil
+              <% end %>
+            <% else %>
+              <p class="text-muted mb-0" style="font-size: 0.88rem;">
+                Kontakte CEP pou plis enfòmasyon.
+              </p>
+            <% end %>
+          </div>
+        </div>
+
+      <% end %>
+
+    </div>
+  </div>
+</div>

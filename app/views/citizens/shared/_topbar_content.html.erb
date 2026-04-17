@@ -1,9 +1,9 @@
 <%# Citizen Topbar — matches partner navbar style %>
 <nav id="citizen-topbar" class="navbar fixed-top px-3"
-     style="background: linear-gradient(135deg, #00209F 0%, #001570 100%); border-bottom: 4px solid #D21034;">
+     style="background: linear-gradient(135deg, var(--primary) 0%, #001570 100%); border-bottom: 4px solid #D21034;">
   <div class="container-fluid justify-content-between align-items-center">
 
-    <%# Left: Mobile Sidebar Toggle %>
+    <%# Left: Mobile Sidebar Toggle only %>
     <div class="d-flex align-items-center gap-3">
       <button class="btn d-lg-none text-white p-0"
               type="button"
@@ -15,9 +15,109 @@
       </button>
     </div>
 
-    <%# Right: Greeting + Notifications + Profile %>
+    <style>
+      /* Single "Menu" icon that groups the system-level links
+         (Sèvis, Aplikasyon Mwen). Shown on desktop only — mobile users
+         reach these via the hamburger → sidebar. */
+      .citizen-topbar-menu-btn {
+        display: none;
+      }
+      @media (min-width: 992px) {
+        .citizen-topbar-menu-btn { display: inline-flex !important; }
+      }
+      .citizen-topbar-menu-btn {
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 0.55rem;
+        background: rgba(255, 255, 255, 0.10);
+        color: #fff !important;
+        border: none;
+        position: relative;
+        transition: background 0.15s ease-in-out;
+      }
+      .citizen-topbar-menu-btn:hover,
+      .citizen-topbar-menu-btn[aria-expanded="true"] {
+        background: rgba(255, 255, 255, 0.22);
+      }
+      .citizen-topbar-menu-btn i { font-size: 1.2rem; }
+
+      .citizen-topbar-menu-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        min-width: 0.95rem;
+        height: 0.95rem;
+        padding: 0 0.25rem;
+        font-size: 0.55rem;
+        font-weight: 700;
+        background: #FBBF24;
+        color: #78350F;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #001570;
+      }
+
+      .citizen-topbar-menu-panel {
+        min-width: 240px;
+        padding: 0.4rem;
+        border: 1px solid rgba(0, 32, 159, 0.12);
+        border-radius: 0.85rem;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+      }
+      .citizen-topbar-menu-item {
+        display: flex !important;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.6rem 0.75rem !important;
+        border-radius: 0.55rem !important;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #1E293B !important;
+        transition: background 0.12s ease-in-out;
+      }
+      .citizen-topbar-menu-item i {
+        font-size: 1.1rem;
+        color: #00209F;
+      }
+      .citizen-topbar-menu-item:hover {
+        background: rgba(0, 32, 159, 0.08) !important;
+      }
+      .citizen-topbar-menu-item--active {
+        background: rgba(0, 32, 159, 0.1) !important;
+        color: #00209F !important;
+      }
+      .citizen-topbar-menu-item .badge {
+        margin-left: auto;
+      }
+    </style>
+
+    <%# Right: Primary nav links (desktop) + Greeting + Notifications + Profile %>
     <% if current_citizen %>
       <div class="d-flex align-items-center gap-3">
+
+        <%# Primary nav links — desktop only, shown at the right side of the navbar %>
+        <div class="citizen-topbar-nav">
+          <%= link_to citizens_services_path,
+                      class: "citizen-topbar-link #{'citizen-topbar-link--active' if request.path.start_with?(citizens_services_path)}" do %>
+            <i class="ri-apps-2-line"></i>
+            <span>Sèvis</span>
+          <% end %>
+
+          <%= link_to citizens_service_applications_path,
+                      class: "citizen-topbar-link #{'citizen-topbar-link--active' if request.path.start_with?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
+            <i class="ri-file-list-3-line"></i>
+            <span>Aplikasyon Mwen</span>
+            <% draft_count = current_citizen&.service_applications&.drafts&.count || 0 %>
+            <% if draft_count > 0 %>
+              <span class="citizen-topbar-badge"><%= draft_count %></span>
+            <% end %>
+          <% end %>
+        </div>
 
         <span class="d-none d-md-inline" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);">
           Byenveni, <strong style="color: #fff;"><%= current_citizen.first_name || "Sitwayen" %></strong>

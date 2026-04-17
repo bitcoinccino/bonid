@@ -1,35 +1,32 @@
 <%# app/views/citizens/name_change_requests/new.html.erb %>
 
-<div class="citizen-profile-page container-fluid py-4">
-  <div class="mb-5 bg-white shadow-sm overflow-hidden" style="border-radius: 0.5rem;">
-    <%# ── Blue Header ── %>
-    <div class="d-flex justify-content-between align-items-center px-4 py-3" style="background: #00209F;">
-      <div>
-        <h4 class="mb-1 text-white" style="font-family: 'Montserrat', sans-serif; font-size: 1.1rem; font-weight: 600;">
-          <i class="ri-edit-line me-2"></i>Request a Name Change
-        </h4>
-        <p class="mb-0 text-white-50" style="font-size: 0.85rem; line-height: 1.5;">
-          Submit a request to update your legal name. You'll need to provide a reason and
-          supporting documentation (e.g., marriage certificate, court order). An administrator will review your request.
-        </p>
-      </div>
-      <%= link_to edit_citizens_profile_path, class: "btn btn-outline-light rounded-pill ms-3 flex-shrink-0", style: "font-family: 'Montserrat', sans-serif; font-size: 0.85rem; font-weight: 500;" do %>
-        <i class="ri-arrow-left-line me-1"></i>Back to Profile
-      <% end %>
+<div class="px-0">
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="citizen-page-title mb-1">
+        <i class="ri-edit-line me-2"></i>Request a Name Change
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        Submit a request to update your legal name with supporting documentation.
+      </p>
     </div>
+    <%= link_to edit_citizens_profile_path, class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="ri-arrow-left-line"></i>
+    <% end %>
+  </div>
 
-    <%# ── Form Body ── %>
-    <div class="p-4 p-md-5">
+  <div class="complaint-form-wrapper">
     <%= simple_form_for @name_change_request,
           url: citizens_name_change_requests_path,
           html: { class: "profile-form", multipart: true, data: { turbo: false } } do |f| %>
 
       <%# Current Name (read-only) %>
-      <div class="card profile-card mb-4">
+      <div class="card profile-card">
+        <div class="card-header">
+          <h5><i class="ri-user-line"></i>Current Name</h5>
+        </div>
         <div class="card-body">
-          <h6 class="fw-bold text-haitian-blue mb-3">
-            <i class="ri-user-line me-2"></i>Current Name
-          </h6>
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label text-muted small">First Name</label>
@@ -48,11 +45,11 @@
       </div>
 
       <%# New Name %>
-      <div class="card profile-card mb-4">
+      <div class="card profile-card">
+        <div class="card-header">
+          <h5><i class="ri-pencil-line"></i>New Name</h5>
+        </div>
         <div class="card-body">
-          <h6 class="fw-bold text-haitian-blue mb-3">
-            <i class="ri-pencil-line me-2"></i>New Name
-          </h6>
           <div class="row g-3">
             <div class="col-md-4">
               <%= f.input :new_first_name, required: true,
@@ -89,11 +86,11 @@
       </div>
 
       <%# Reason & Document %>
-      <div class="card profile-card mb-4" data-controller="name-change-reason">
+      <div class="card profile-card" data-controller="name-change-reason">
+        <div class="card-header">
+          <h5><i class="ri-file-text-line"></i>Reason &amp; Supporting Document</h5>
+        </div>
         <div class="card-body">
-          <h6 class="fw-bold text-haitian-blue mb-3">
-            <i class="ri-file-text-line me-2"></i>Reason & Supporting Document
-          </h6>
           <div class="row g-3">
             <div class="col-md-6">
               <%= f.input :reason, required: true,
@@ -146,20 +143,22 @@
       </div>
 
       <%# Submit %>
-      <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-        <%= link_to edit_citizens_profile_path, class: "btn btn-outline-secondary rounded-pill px-4" do %>
+      <div class="d-flex justify-content-between align-items-center">
+        <%= link_to edit_citizens_profile_path,
+              class: "btn btn-outline-secondary fw-semibold px-4 py-2",
+              style: "font-size: 0.85rem;" do %>
           <i class="ri-arrow-left-line me-1"></i> Cancel
         <% end %>
 
         <%= f.submit "Submit Request",
-          class: "btn btn-haitian-blue btn-lg rounded-pill px-5 shadow-sm fw-bold",
-          data: { disable_with: "Submitting..." } %>
+            class: "btn btn-primary fw-semibold px-4 py-2",
+            style: "font-size: 0.85rem;",
+            data: { disable_with: "Submitting..." } %>
       </div>
     <% end %>
 
-    <div class="mt-4 pt-3 border-top text-center small text-muted">
+    <div class="mt-4 text-center small text-muted">
       <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
     </div>
-    </div><%# close form body %>
-  </div><%# close card %>
+  </div>
 </div>

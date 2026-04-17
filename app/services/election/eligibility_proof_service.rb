@@ -20,8 +20,8 @@ module Election
     def self.generate_nullifier(voter_private_key, election_id)
       OpenSSL::HMAC.hexdigest(
         "SHA256",
-        voter_private_key,
-        election_id
+        voter_private_key.to_s,
+        election_id.to_s
       )
     end
 
@@ -34,7 +34,10 @@ module Election
     # @param biometric_hash [String] Hash of face comparison result
     # @return [String] Ephemeral private key for this voting session
     def self.derive_voter_key(bonid, liveness_session_id, biometric_hash)
-      # HKDF-like derivation: deterministic but not reversible
+      # HKDF-like derivation: deterministic but not reversible.
+      # Coerce all inputs to strings — callers frequently pass integers
+      # (e.g. election.id), and OpenSSL rejects non-String data silently
+      # with a TypeError if we don't normalise here.
       OpenSSL::HMAC.hexdigest(
         "SHA256",
         "bonid-election-voter-key-v1",

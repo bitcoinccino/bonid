@@ -1,0 +1,122 @@
+<%# Admin — Electoral Offices (BED / BEK) index %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="mb-1"><i class="ri-building-line me-2"></i>Biwo Elektoral</h4>
+      <p class="text-muted mb-0 small">
+        BED ak BEK CEP — biwo kote sitwayen ka ale pou èd ak enskripsyon.
+      </p>
+    </div>
+    <%= link_to new_admin_electoral_office_path,
+                class: "btn btn-primary" do %>
+      <i class="ri-add-line me-1"></i>Nouvo Biwo
+    <% end %>
+  </div>
+
+  <%# Stats %>
+  <div class="row g-3 mb-4">
+    <% [
+      ["Total",   @counts[:total],   "text-primary"],
+      ["BED",     @counts[:bed],     "text-info"],
+      ["BEK",     @counts[:bek],     "text-success"],
+      ["Louvri",  @counts[:open],    "text-success"],
+      ["Planifye", @counts[:planned], "text-warning"]
+    ].each do |label, count, color| %>
+      <div class="col-md">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center py-3">
+            <div class="fs-4 fw-bold <%= color %>"><%= count %></div>
+            <div class="small text-muted text-uppercase" style="letter-spacing: 0.05em;"><%= label %></div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Filters %>
+  <%= form_with url: admin_electoral_offices_path, method: :get, local: true,
+                class: "row g-2 mb-3" do |f| %>
+    <div class="col-md-4">
+      <%= text_field_tag :q, params[:q], placeholder: "Chache pa non…", class: "form-control" %>
+    </div>
+    <div class="col-md-2">
+      <%= select_tag :office_type,
+            options_for_select(
+              [["Tout tip", ""]] +
+                ElectoralOffice::OFFICE_TYPES.map { |t| [t.upcase, t] },
+              @office_type_filter),
+            class: "form-select" %>
+    </div>
+    <div class="col-md-2">
+      <%= select_tag :status,
+            options_for_select(
+              [["Tout estati", ""]] +
+                ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
+              @status_filter),
+            class: "form-select" %>
+    </div>
+    <div class="col-md-2">
+      <%= submit_tag "Filtre", class: "btn btn-outline-primary w-100" %>
+    </div>
+  <% end %>
+
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Non</th>
+            <th>Tip</th>
+            <th>Depatman / Komin</th>
+            <th>Estati</th>
+            <th>Telefòn</th>
+            <th>Orè</th>
+            <th class="text-end">Aksyon</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @offices.any? %>
+            <% @offices.each do |o| %>
+              <tr>
+                <td class="fw-semibold"><%= o.name %></td>
+                <td>
+                  <span class="badge <%= o.bed? ? 'bg-info-subtle text-info' : 'bg-success-subtle text-success' %>">
+                    <%= o.office_type.upcase %>
+                  </span>
+                </td>
+                <td class="small"><%= o.bed? ? o.department&.name : o.commune&.name %></td>
+                <td>
+                  <span class="badge <%=
+                    case o.status
+                    when 'open' then 'bg-success-subtle text-success'
+                    when 'closed' then 'bg-danger-subtle text-danger'
+                    else 'bg-warning-subtle text-warning' end %>">
+                    <%= o.status.titleize %>
+                  </span>
+                </td>
+                <td class="small"><%= o.phone.presence || "—" %></td>
+                <td class="small"><%= o.hours_note.presence || "—" %></td>
+                <td class="text-end">
+                  <%= link_to "Modifye", edit_admin_electoral_office_path(o),
+                              class: "btn btn-sm btn-outline-secondary" %>
+                  <%= button_to "Efase", admin_electoral_office_path(o),
+                                method: :delete,
+                                form: { data: { turbo_confirm: "Efase biwo sa?" } },
+                                class: "btn btn-sm btn-outline-danger" %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="7" class="text-center text-muted py-5">
+                <i class="ri-inbox-line d-block mb-2" style="font-size: 2rem;"></i>
+                Pa gen biwo elektoral. Klike "Nouvo Biwo" pou ajoute youn.
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

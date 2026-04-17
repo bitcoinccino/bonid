@@ -1,0 +1,513 @@
+<div class="px-0">
+
+  <%# ── Page Header ── %>
+  <div class="text-center mb-4">
+    <h3 class="citizen-page-title mb-1">
+      <i class="ri-pulse-line me-2"></i>Aktivite
+    </h3>
+    <p class="text-muted mb-0" style="font-size: 0.78rem;">
+      Tout sa ki pase ak idantite BonID ou a — nan yon sèl kote.
+    </p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <%# ── Security reassurance line ── %>
+      <div class="activity-security-note mb-3">
+        <i class="ri-shield-check-line"></i>
+        <span>Tout aktivite sou BonID ou yo anrejistre epi yo pwoteje. Ou ka wè tout bagay isit la.</span>
+      </div>
+
+      <%# ── Filter bar: two tidy rows (dates + export, then categories) ── %>
+      <% export_mode = local_assigns[:export_mode] %>
+      <% unless export_mode %>
+        <div class="activity-filter-bar mb-3">
+          <%= form_with url: citizens_activity_path, method: :get, local: true,
+                        class: "activity-filter-row", data: { turbo: false } do |f| %>
+            <%= hidden_field_tag :tab,    @tab %>
+            <%= hidden_field_tag :filter, @filter %>
+
+            <div class="activity-filter-dates">
+              <span class="activity-filter-label">Peryòd</span>
+              <%= date_field_tag :from, @from, class: "activity-date-input", aria: { label: "Soti" } %>
+              <span class="activity-date-sep">—</span>
+              <%= date_field_tag :to,   @to,   class: "activity-date-input", aria: { label: "Rive" } %>
+              <button type="submit" class="activity-filter-apply">
+                <i class="ri-filter-3-line"></i>
+                <span>Aplike</span>
+              </button>
+            </div>
+
+            <%= link_to citizens_activity_path(tab: @tab, filter: @filter, from: @from, to: @to, format: :pdf),
+                        class: "activity-export-btn",
+                        data: { turbo: false } do %>
+              <i class="ri-download-2-line"></i>
+              <span>Exporte PDF</span>
+            <% end %>
+          <% end %>
+
+          <div class="activity-filter-row">
+            <span class="activity-filter-label">Kategori</span>
+            <div class="activity-filter-categories" role="group" aria-label="Kategori">
+              <% categories = [
+                { key: "all",            label: "Tout" },
+                { key: "security",       label: "Sekirite" },
+                { key: "financial",      label: "Finansye" },
+                { key: "administrative", label: "Administratif" }
+              ] %>
+              <% categories.each do |c| %>
+                <% active = (@filter == c[:key]) %>
+                <%= link_to c[:label],
+                            citizens_activity_path(tab: @tab, filter: c[:key], from: @from, to: @to),
+                            class: "activity-filter-pill #{'activity-filter-pill--active' if active}" %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# ── Tab pills ── %>
+      <% tabs = [
+        { key: "all",          label: "Tout",        icon: "ri-list-check", count: nil },
+        { key: "scans",        label: "Eskanè",      icon: "ri-qr-scan-2-line", count: @counts[:scans] },
+        { key: "consents",     label: "Konsantman",  icon: "ri-id-card-line", count: @counts[:consents] },
+        { key: "transactions", label: "Tranzaksyon", icon: "ri-exchange-funds-line", count: @counts[:transactions] },
+        { key: "applications", label: "Aplikasyon",  icon: "ri-file-list-3-line", count: @counts[:applications] },
+        { key: "sessions",     label: "Koneksyon",   icon: "ri-login-box-line", count: @counts[:sessions] }
+      ] %>
+
+      <% unless export_mode %>
+        <div class="activity-tabs mb-3" role="tablist">
+          <% tabs.each do |t| %>
+            <% active = (@tab == t[:key]) %>
+            <%= link_to citizens_activity_path(tab: t[:key], filter: @filter, from: @from, to: @to),
+                        class: "activity-tab #{'activity-tab--active' if active}" do %>
+              <i class="<%= t[:icon] %>"></i>
+              <span class="activity-tab-label"><%= t[:label] %></span>
+              <% if t[:count].to_i > 0 %>
+                <span class="activity-tab-count"><%= t[:count] %></span>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if export_mode %>
+        <div class="export-meta mb-3">
+          <div><strong>Seksyon:</strong> <%= (tabs.find { |t| t[:key] == @tab } || {})[:label] %></div>
+          <div><strong>Kategori:</strong> <%= @filter == "all" ? "Tout" : @filter.humanize %></div>
+          <div><strong>Peryòd:</strong> <%= l(@from, format: :long) rescue @from %> — <%= l(@to, format: :long) rescue @to %></div>
+          <div><strong>Jenere:</strong> <%= l(Time.current, format: :long) rescue Time.current.to_s %></div>
+        </div>
+      <% end %>
+
+      <%# ── Events list, grouped by day ── %>
+      <% if @events.any? %>
+        <div class="scan-history-card">
+          <div class="scan-log-list">
+            <% current_bucket = nil %>
+            <% @events.each do |event| %>
+              <% if event.date_bucket != current_bucket %>
+                <% current_bucket = event.date_bucket %>
+                <div class="activity-day-divider">
+                  <%= CitizenActivityEvent.date_bucket_label(current_bucket) %>
+                </div>
+              <% end %>
+              <%= render "event_row", event: event, export_mode: export_mode %>
+            <% end %>
+          </div>
+        </div>
+
+        <% unless export_mode %>
+          <div class="d-flex justify-content-center mt-3">
+            <%= paginate @events %>
+          </div>
+        <% end %>
+      <% else %>
+        <%= render "empty_state", tab: @tab %>
+      <% end %>
+
+    </div>
+  </div>
+
+</div>
+
+<style>
+  /* ── Security note ──────────────────────────────── */
+  .activity-security-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: #F0F9FF;
+    border: 1px solid #BAE6FD;
+    color: #0C4A6E;
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+  .activity-security-note i {
+    font-size: 0.95rem;
+    color: #0284C7;
+    flex-shrink: 0;
+  }
+
+  /* ── Filter bar ─────────────────────────────────── */
+  .activity-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.65rem 0.8rem;
+    border-radius: 0.6rem;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+  }
+  .activity-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+  .activity-filter-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748B;
+    margin-right: 0.15rem;
+  }
+
+  .activity-filter-dates {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .activity-date-input {
+    font-size: 0.72rem;
+    padding: 0.32rem 0.5rem;
+    border: 1px solid #CBD5E1;
+    border-radius: 0.4rem;
+    background: #fff;
+    color: #0F172A;
+    line-height: 1.2;
+  }
+  .activity-date-input:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+    border-color: var(--primary);
+  }
+  .activity-date-sep { color: #94A3B8; font-size: 0.8rem; }
+  .activity-filter-apply {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border: 1px solid #CBD5E1;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+  }
+  .activity-filter-apply:hover { background: #F1F5F9; color: var(--primary); border-color: var(--primary); }
+
+  .activity-filter-categories {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    background: #fff;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.5rem;
+    padding: 0.2rem;
+  }
+  .activity-filter-pill {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    padding: 0.3rem 0.7rem;
+    border-radius: 0.35rem;
+    white-space: nowrap;
+  }
+  .activity-filter-pill:hover { color: var(--primary); background: #F1F5F9; }
+  .activity-filter-pill--active {
+    background: var(--primary);
+    color: #fff !important;
+  }
+
+  /* Export button is a subtle ghost button pushed to the right of row 1.
+     Lower visual weight than the active category pill so they don't compete. */
+  .activity-export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.4rem;
+    background: #fff;
+    color: #475569 !important;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #CBD5E1;
+  }
+  .activity-export-btn:hover {
+    color: var(--primary) !important;
+    border-color: var(--primary);
+    background: #F1F5F9;
+  }
+  .activity-export-btn i { font-size: 0.9rem; }
+
+  @media (max-width: 575.98px) {
+    .activity-filter-dates { width: 100%; }
+    .activity-export-btn { margin-left: 0; width: 100%; justify-content: center; }
+    .activity-filter-categories { width: 100%; justify-content: flex-start; }
+  }
+
+  /* ── Export meta (PDF only) ─────────────────────── */
+  .export-meta {
+    font-size: 0.78rem;
+    color: #334155;
+    padding: 0.6rem 0.8rem;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.45rem;
+  }
+  .export-meta div + div { margin-top: 0.15rem; }
+
+  /* ── Activity tab pills ─────────────────────────── */
+  .activity-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .activity-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 2rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #475569;
+    background: #F1F5F9;
+    border: 1px solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease-in-out;
+  }
+  .activity-tab:hover {
+    background: #E2E8F0;
+    color: var(--primary);
+  }
+  .activity-tab--active {
+    background: var(--primary);
+    color: #fff !important;
+  }
+  .activity-tab--active:hover {
+    background: var(--primary);
+    filter: brightness(1.08);
+  }
+  .activity-tab i { font-size: 0.95rem; }
+  .activity-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding: 0 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.25);
+    color: inherit;
+  }
+  .activity-tab:not(.activity-tab--active) .activity-tab-count {
+    background: #fff;
+    color: #475569;
+  }
+  @media (max-width: 575.98px) {
+    .activity-tab-label { display: none; }
+    .activity-tab { padding: 0.5rem 0.7rem; }
+  }
+
+  /* ── Day dividers ───────────────────────────────── */
+  .activity-day-divider {
+    padding: 0.4rem 1rem;
+    background: #F8FAFC;
+    color: #64748B;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-top: 1px solid #F1F3F5;
+    border-bottom: 1px solid #F1F3F5;
+  }
+  .activity-day-divider:first-child {
+    border-top: 0;
+  }
+  /* Collapse the auto border-top between sibling items when a divider sits
+     directly above a row — the divider already provides a separator. */
+  .activity-day-divider + .activity-event-row .scan-log-item,
+  .activity-day-divider + .activity-event-row {
+    border-top: 0 !important;
+  }
+
+  /* ── Visual hierarchy tweaks (activity only) ────── */
+  .activity-event-row .scan-log-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    color: #0F172A;
+  }
+  .activity-event-row .scan-log-meta {
+    font-size: 0.7rem;
+    color: #64748B;
+    margin-top: 0.15rem;
+  }
+  .activity-event-row .scan-log-time {
+    font-size: 0.68rem;
+    color: #94A3B8;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ── Per-kind icon tint ─────────────────────────── */
+  .activity-event-row--scan        .scan-log-icon i { color: #0EA5E9; }
+  .activity-event-row--consent     .scan-log-icon i { color: var(--primary); }
+  .activity-event-row--transaction .scan-log-icon i { color: #0F766E; }
+  .activity-event-row--application .scan-log-icon i { color: #7C3AED; }
+  .activity-event-row--session     .scan-log-icon i { color: #0284C7; }
+
+  .activity-event-row.scan-log-item {
+    transition: background 0.1s ease-in-out;
+  }
+  .activity-event-row.scan-log-item:hover {
+    background: #F8FAFC;
+  }
+
+  /* ── Expandable detail row (native <details>/<summary>) ─────── */
+  details.activity-event-row {
+    display: block;
+    padding: 0 !important;
+  }
+  details.activity-event-row > .activity-row-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  details.activity-event-row > .activity-row-summary::-webkit-details-marker {
+    display: none;
+  }
+  details.activity-event-row > .activity-row-summary::marker {
+    display: none;
+    content: "";
+  }
+  details.activity-event-row > .activity-row-summary .scan-log-body {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  details.activity-event-row .activity-chevron {
+    flex: 0 0 auto;
+    color: #94A3B8;
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.2s ease-in-out;
+  }
+  details.activity-event-row[open] .activity-chevron {
+    transform: rotate(180deg);
+    color: var(--primary);
+  }
+  details.activity-event-row[open] > .activity-row-summary {
+    background: #F8FAFC;
+  }
+  details.activity-event-row > .activity-row-summary:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+  }
+
+  .activity-row-details {
+    padding: 0.75rem 1rem 1rem;
+    background: #FAFBFC;
+    border-top: 1px solid #EEF2F6;
+  }
+  .activity-details-list {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem 1rem;
+  }
+  @media (min-width: 576px) {
+    .activity-details-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .activity-details-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.35rem 0.55rem;
+    border-radius: 0.4rem;
+    background: #fff;
+    border: 1px solid #EEF2F6;
+  }
+  .activity-details-pair dt {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748B;
+  }
+  .activity-details-pair dd {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #0F172A;
+    word-break: break-word;
+  }
+  .activity-details-actions {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .activity-details-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--primary) !important;
+    text-decoration: none;
+    border: 1px solid #CBD5E1;
+    background: #fff;
+  }
+  .activity-details-link:hover {
+    background: #F1F5F9;
+    border-color: var(--primary);
+  }
+
+  /* ── Empty state ────────────────────────────────── */
+  .activity-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.75rem;
+  }
+  .activity-empty-icon {
+    font-size: 2.5rem;
+    color: #CBD5E1;
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+</style>

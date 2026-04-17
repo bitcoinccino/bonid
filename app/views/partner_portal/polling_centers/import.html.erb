@@ -1,0 +1,135 @@
+<%# CSV upload form for polling centers %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <h4 class="pp-page-title">
+        <i class="ri-upload-2-line me-2 pp-text-brand"></i>Enpòte Sant Vòt
+      </h4>
+      <p class="pp-page-subtitle mb-4">
+        Chaje yon fichye CSV ki gen tout sant vòt (Sant Vòt) pou eleksyon an. Sistèm nan ap jenere BV yo otomatikman.
+      </p>
+
+      <% if flash.now[:alert].present? %>
+        <div class="alert alert-warning"><%= flash.now[:alert] %></div>
+      <% end %>
+
+      <% unless @election %>
+        <div class="pp-card card">
+          <div class="pp-empty-state">
+            <i class="ri-calendar-close-line"></i>
+            <h5>Pa gen eleksyon aktif</h5>
+            <p>Ou dwe kreye yon eleksyon anvan ou enpòte sant vòt.</p>
+          </div>
+        </div>
+      <% else %>
+
+        <div class="pp-card card mb-4">
+          <div class="card-body p-4">
+            <%= form_with url: partner_portal_polling_centers_import_path,
+                          method: :post,
+                          multipart: true,
+                          local: true,
+                          data: { turbo: false } do |f| %>
+              <div class="mb-3">
+                <label class="form-label fw-semibold pp-text-sm">Fichye CSV</label>
+                <%= file_field_tag :csv_file, accept: ".csv,text/csv",
+                                  class: "form-control form-control-lg",
+                                  required: true %>
+                <div class="form-text">
+                  Yon liy pa sant vòt. Sistèm nan ap kreye
+                  <code>(kapasite / 450)</code> BV pou chak sant.
+                </div>
+              </div>
+              <div class="d-flex gap-2">
+                <%= f.submit "Enpòte", class: "btn pp-btn-brand px-4" %>
+                <%= link_to "Telechaje Modèl CSV",
+                            partner_portal_polling_centers_template_path(format: :csv),
+                            class: "btn btn-outline-secondary px-4" %>
+                <%= link_to "Anile",
+                            partner_portal_polling_centers_path,
+                            class: "btn btn-link px-4" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <%# CSV Schema Reference %>
+        <div class="pp-card card">
+          <div class="card-body p-4">
+            <h6 class="fw-bold mb-3">
+              <i class="ri-file-list-3-line me-1 pp-text-brand"></i>
+              Kolòn yo (entèt liy 1)
+            </h6>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>Kolòn</th>
+                    <th>Obligatwa</th>
+                    <th>Egzanp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>center_type</code></td>
+                    <td><span class="text-danger">Wi</span></td>
+                    <td><code>domestic</code> oswa <code>diaspora</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>name</code></td>
+                    <td><span class="text-danger">Wi</span></td>
+                    <td>Lycée Saint-Louis de Gonzague</td>
+                  </tr>
+                  <tr>
+                    <td><code>total_capacity</code></td>
+                    <td><span class="text-danger">Wi</span></td>
+                    <td>1800</td>
+                  </tr>
+                  <tr>
+                    <td><code>communal_section_id</code></td>
+                    <td>Domestik sèlman</td>
+                    <td>217</td>
+                  </tr>
+                  <tr>
+                    <td><code>diplomatic_mission_id</code></td>
+                    <td>Dyaspora sèlman</td>
+                    <td>HT-CON-MIA</td>
+                  </tr>
+                  <tr>
+                    <td><code>priority</code></td>
+                    <td>Opsyonèl</td>
+                    <td>10 (pi piti = pi prioritè)</td>
+                  </tr>
+                  <tr>
+                    <td><code>address_line_1</code>, <code>city</code>, <code>country_code</code>…</td>
+                    <td>Opsyonèl</td>
+                    <td>Adrès fizik la</td>
+                  </tr>
+                  <tr>
+                    <td><code>department_id</code>, <code>arrondissement_id</code>, <code>commune_id</code></td>
+                    <td>Opsyonèl</td>
+                    <td>Redondans jeografik</td>
+                  </tr>
+                  <tr>
+                    <td><code>notes</code></td>
+                    <td>Opsyonèl</td>
+                    <td>Tèks lib</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="small text-muted mb-0">
+              <i class="ri-information-line me-1"></i>
+              Rejete yon CSV ki deja enpòte = mete ajou sant ki egziste yo. Yo p ap klone.
+              BV ki deja gen votè anrejistre yo pa janm sipresye.
+            </p>
+          </div>
+        </div>
+
+      <% end %>
+
+    </div>
+  </div>
+</div>

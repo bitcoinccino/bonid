@@ -1,17 +1,21 @@
 <%# Citizen — DGI Filing Detail %>
 
-<div class="container-fluid py-4" style="max-width:1100px;">
+<div class="px-0">
 
-  <%# Header %>
-  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <%# ── Page Header ── %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h5 class="fw-bold mb-1">
-        <i class="<%= @form_label&.dig(:icon) || 'ri-file-line' %> me-2" style="color:#00209F;"></i><%= @form_label&.dig(:title) || @record.record_type.titleize %>
+      <h3 class="citizen-page-title mb-1">
+        <i class="<%= @form_label&.dig(:icon) || 'ri-file-line' %> me-2"></i><%= @form_label&.dig(:title) || @record.record_type.titleize %>
+      </h3>
+      <p class="text-muted mb-0" style="font-size: 0.78rem;">
+        <%= @form_label&.dig(:subtitle) %> — Depoze <%= @record.created_at.strftime("%d/%m/%Y a %H:%M") %>
         <code class="ms-2" style="font-size:0.75rem;color:#dc3545;"><%= @record.data["declaration_number"] %></code>
-      </h5>
-      <p class="text-muted small mb-0"><%= @form_label&.dig(:subtitle) %> — Depoze <%= @record.created_at.strftime("%d/%m/%Y a %H:%M") %></p>
+      </p>
     </div>
-    <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-sm", style: "border-radius:8px;" do %><i class="ri-arrow-left-line me-1"></i>Retounen<% end %>
+    <%= link_to citizens_dgi_index_path, class: "btn btn-outline-secondary btn-sm rounded-pill px-3" do %>
+      <i class="ri-arrow-left-line me-1"></i>Retounen
+    <% end %>
   </div>
 
   <div class="row g-4">
@@ -105,7 +109,7 @@
             <tr><td class="text-muted">Depatman</td><td><%= @record.nif_departement %></td></tr>
             <tr><td class="text-muted">Telefon</td><td><%= @record.nif_telephone %></td></tr>
             <% if @record.nif_genere.present? %>
-              <tr><td class="text-muted">NIF Jenere</td><td><code class="fs-5" style="color:#00209F;"><%= @record.nif_genere %></code></td></tr>
+              <tr><td class="text-muted">NIF Jenere</td><td><code class="fs-5" style="color:var(--primary);"><%= @record.nif_genere %></code></td></tr>
             <% end %>
           </table>
 
@@ -114,7 +118,7 @@
             <tr><td class="text-muted" style="width:35%">Rezon Sosyal</td><td class="fw-semibold"><%= @record.patente_raison_sociale %></td></tr>
             <tr><td class="text-muted">NIF</td><td><code><%= @record.patente_nif %></code></td></tr>
             <tr><td class="text-muted">Ane Fiskal</td><td><%= @record.patente_annee_fiscale %></td></tr>
-            <tr><td class="text-muted fw-bold">Total Taks</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.patente_total.round(2)) %> HTG</td></tr>
+            <tr><td class="text-muted fw-bold">Total Taks</td><td class="fw-bold fs-5" style="color:var(--primary);"><%= number_with_delimiter(@record.patente_total.round(2)) %> HTG</td></tr>
           </table>
 
         <% when "tca_declaration" %>
@@ -123,7 +127,7 @@
             <tr><td class="text-muted">NIF</td><td><code><%= @record.tca_nif %></code></td></tr>
             <tr><td class="text-muted">Mwa / Ane</td><td><%= @record.tca_mois_declaration %>/<%= @record.tca_annee_fiscale %></td></tr>
             <tr><td class="text-muted">Chif Afe Brit</td><td><%= number_with_delimiter(@record.tca_ca_brut.round(2)) %> HTG</td></tr>
-            <tr><td class="text-muted fw-bold">Total TCA</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.tca_total.round(2)) %> HTG</td></tr>
+            <tr><td class="text-muted fw-bold">Total TCA</td><td class="fw-bold fs-5" style="color:var(--primary);"><%= number_with_delimiter(@record.tca_total.round(2)) %> HTG</td></tr>
           </table>
 
         <% when "ras_ir_declaration" %>
@@ -133,7 +137,7 @@
             <tr><td class="text-muted">Sektè</td><td><%= @record.ras_secteur_label %></td></tr>
             <tr><td class="text-muted">Mwa / Ane</td><td><%= @record.ras_mois_declaration %>/<%= @record.ras_annee_fiscale %></td></tr>
             <tr><td class="text-muted">Anplwaye</td><td><%= @record.ras_nombre_employes %></td></tr>
-            <tr><td class="text-muted fw-bold">Total Retni</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.ras_total.round(2)) %> HTG</td></tr>
+            <tr><td class="text-muted fw-bold">Total Retni</td><td class="fw-bold fs-5" style="color:var(--primary);"><%= number_with_delimiter(@record.ras_total.round(2)) %> HTG</td></tr>
           </table>
 
         <% when "fermage" %>
@@ -142,7 +146,7 @@
             <tr><td class="text-muted">Komin</td><td><%= @record.fermage_commune %></td></tr>
             <tr><td class="text-muted">Depatman</td><td><%= @record.fermage_departement %></td></tr>
             <tr><td class="text-muted">Egzèsis</td><td><%= @record.fermage_exercice %></td></tr>
-            <tr><td class="text-muted fw-bold">Total Fèmaj</td><td class="fw-bold fs-5" style="color:#00209F;"><%= number_with_delimiter(@record.fermage_total.round(2)) %> HTG</td></tr>
+            <tr><td class="text-muted fw-bold">Total Fèmaj</td><td class="fw-bold fs-5" style="color:var(--primary);"><%= number_with_delimiter(@record.fermage_total.round(2)) %> HTG</td></tr>
           </table>
 
         <% when "business_registration" %>
@@ -194,7 +198,7 @@
 
           <% unless @payment.completed? %>
             <div class="mt-3">
-              <%= link_to citizens_dgi_payment_path(@payment), class: "btn w-100 text-white fw-semibold", style: "background:#00209F;border-radius:10px;min-height:44px;" do %>
+              <%= link_to citizens_dgi_payment_path(@payment), class: "btn w-100 text-white fw-semibold", style: "background:var(--primary);border-radius:10px;min-height:44px;" do %>
                 <i class="ri-bank-card-line me-1"></i>Peye kounye a
               <% end %>
             </div>
@@ -222,7 +226,7 @@
 
       <%# Receipt link %>
       <% if @payment&.completed? %>
-        <div class="p-3 text-center" style="background:white;border:1px solid #e2e8f0;border-radius:12px;border-left:4px solid #00209F;">
+        <div class="p-3 text-center" style="background:white;border:1px solid #e2e8f0;border-radius:12px;border-left:4px solid var(--primary);">
           <%= link_to receipt_citizens_dgi_payment_path(@payment), class: "btn btn-outline-primary btn-sm w-100", style: "border-radius:8px;" do %>
             <i class="ri-receipt-line me-1"></i>Wè Resi
           <% end %>
