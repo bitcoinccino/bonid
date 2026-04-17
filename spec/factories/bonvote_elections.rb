@@ -7,6 +7,9 @@ FactoryBot.define do
     round { 1 }
     status { "draft" }
     election_date { Date.new(2026, 8, 30) }
+    # Specs exercising the register_digital_voter! path need the CEP flag on.
+    # Flip via `allows_digital_enrollment { false }` when testing the gate.
+    allows_digital_enrollment { true }
 
     trait :open do
       status { "open" }
