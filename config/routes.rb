@@ -226,8 +226,9 @@ end
     end
 
     # Electoral Offices (BED / BEK) — CEP's physical field offices.
-    # CRUD managed by CEP administrators through the admin portal.
-    resources :electoral_offices
+    # CRUD managed by CEP administrators through the Command Center;
+    # controller lives under Election::Admin:: to mirror ElectionsController.
+    resources :electoral_offices, controller: "/election/admin/electoral_offices"
 
     # Election Admin (CEP Dashboard)
     # Controller: Election::Admin::ElectionsController
