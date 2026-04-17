@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :election_signature do
-    association :election, factory: [:bonvote_election, :closed]
+    association :election, factory: [ :bonvote_election, :closed ]
     sequence(:bonid) { |n| "VP-1970-M-OU-P#{1000 + n}-#{SecureRandom.hex(2).upcase}" }
     sequence(:role) { |n| ElectionSignature::ROLES[n % ElectionSignature::ROLES.size] }
     signatory_name { "Manm CEP" }

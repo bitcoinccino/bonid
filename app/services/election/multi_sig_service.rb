@@ -94,7 +94,7 @@ module Election
       result = {
         signatures_count: signatures.size,
         quorum_met: signatures.size >= QUORUM_REQUIRED,
-        remaining: [QUORUM_REQUIRED - signatures.size, 0].max,
+        remaining: [ QUORUM_REQUIRED - signatures.size, 0 ].max,
         signatories: signatures.map { |s| { role: s[:role], name: s[:name], signed_at: s[:signed_at] } }
       }
 
@@ -118,7 +118,7 @@ module Election
         total: signatures.size,
         required: QUORUM_REQUIRED,
         met: signatures.size >= QUORUM_REQUIRED,
-        remaining: [QUORUM_REQUIRED - signatures.size, 0].max,
+        remaining: [ QUORUM_REQUIRED - signatures.size, 0 ].max,
         signatories: signatures.map do |s|
           {
             role: s[:role],

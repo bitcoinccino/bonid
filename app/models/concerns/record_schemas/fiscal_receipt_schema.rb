@@ -266,11 +266,11 @@ module RecordSchemas
 
     # Class-level helpers for forms
     def self.tax_type_options
-      TAX_TYPE_LABELS.map { |key, label| [label, key] }
+      TAX_TYPE_LABELS.map { |key, label| [ label, key ] }
     end
 
     def self.payment_method_options
-      PAYMENT_METHOD_LABELS.map { |key, label| [label, key] }
+      PAYMENT_METHOD_LABELS.map { |key, label| [ label, key ] }
     end
   end
 end

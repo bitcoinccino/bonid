@@ -20,8 +20,8 @@ module Citizens
   module Election
     class VoteController < BaseController
       before_action :require_verified_bonid!
-      before_action :require_active_election!, only: [:begin, :ballot, :cast]
-      before_action :enable_immersive_form, only: [:ballot, :cast, :receipt]
+      before_action :require_active_election!, only: [ :begin, :ballot, :cast ]
+      before_action :enable_immersive_form, only: [ :ballot, :cast, :receipt ]
 
       # ── Step 1: Eligibility Check ──────────────────────────────
       # Shows election info + checks if citizen can vote.

@@ -26,7 +26,7 @@ module Reviewers
 
       # ── Top rejection reasons ──
       @rejection_reasons = submissions.rejected
-        .where.not(rejection_reason: [nil, ""])
+        .where.not(rejection_reason: [ nil, "" ])
         .group(:rejection_reason)
         .order(Arel.sql("count(*) DESC"))
         .limit(10)

@@ -12,15 +12,15 @@ module PartnerPortal
     def create
       payload = if request.content_type == "application/json"
                   parse_input(request).presence || {}
-                elsif params[:bonid_lookup].present?
+      elsif params[:bonid_lookup].present?
                   params.require(:bonid_lookup)
                         .permit(:bonid, :timestamp, :signature, :partner,
                                 :verification_token, :authenticity_token, :qr_payload)
                         .to_h
                         .symbolize_keys
-                else
+      else
                   {}
-                end
+      end
 
       # If a raw Ed25519 v2 QR payload was sent, parse it and use it directly.
       # This preserves all fields (v, iss, typ, sub, ts, exp, sig) needed for

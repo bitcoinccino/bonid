@@ -113,7 +113,7 @@ class BonidNotifier
         event_type:     event_type,
         bonid:          citizen.bonid,
         payload:        payload,
-        retry_attempts: [attempt - 1, 0].max,
+        retry_attempts: [ attempt - 1, 0 ].max,
         direction:      "outbound",
         status:         "pending"
       )
@@ -144,9 +144,9 @@ class BonidNotifier
       if attempt < max
         delay = if is_gdpr
                   GDPR_RETRY_SCHEDULE[attempt - 1] || 12.hours
-                else
+        else
                   BASE_DELAY**attempt
-                end
+        end
         Rails.logger.info("[BonidNotifier] Retrying consent webhook in #{delay}s (attempt #{attempt + 1}/#{max}, gdpr=#{is_gdpr})")
         if defined?(webhook_event) && webhook_event&.persisted?
           WebhookRetryJob.set(wait: delay).perform_later(partner.id, webhook_event.id, attempt + 1)

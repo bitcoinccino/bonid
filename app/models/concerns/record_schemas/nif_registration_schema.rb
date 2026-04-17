@@ -122,7 +122,7 @@ module RecordSchemas
     def nif_numero_passeport = data.dig("personne", "numero_passeport")
 
     def nif_nom_complet
-      [nif_prenom, nif_nom].compact.join(" ")
+      [ nif_prenom, nif_nom ].compact.join(" ")
     end
 
     def nif_sexe_label

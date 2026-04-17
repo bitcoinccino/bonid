@@ -17,8 +17,8 @@
 module Citizens
   class DgiController < Citizens::BaseController
     before_action :set_citizen
-    before_action :find_record, only: [:show, :resubmit, :update_resubmit]
-    before_action :enable_immersive_form, only: [:new, :create, :show, :resubmit]
+    before_action :find_record, only: [ :show, :resubmit, :update_resubmit ]
+    before_action :enable_immersive_form, only: [ :new, :create, :show, :resubmit ]
 
     FORM_TYPES = %w[
       nif_registration

@@ -15,8 +15,8 @@ class CreateElectoralCalendars < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :electoral_calendars, [:bonvote_election_id, :phase]
-    add_index :electoral_calendars, [:start_date, :end_date]
+    add_index :electoral_calendars, [ :bonvote_election_id, :phase ]
+    add_index :electoral_calendars, [ :start_date, :end_date ]
     add_index :electoral_calendars, :phase
   end
 end

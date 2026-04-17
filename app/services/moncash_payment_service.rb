@@ -139,7 +139,7 @@ class MoncashPaymentService
     expires_in = (data["expires_in"] || 3600).to_i
 
     # Cache with 5-minute buffer
-    Rails.cache.write("moncash:access_token", token, expires_in: [expires_in - 300, 60].max)
+    Rails.cache.write("moncash:access_token", token, expires_in: [ expires_in - 300, 60 ].max)
 
     token
   end

@@ -3,9 +3,9 @@
 module PartnerPortal
   class ApiKeysController < PartnerPortal::BaseController
     before_action :authenticate_partner_admin!
-    before_action :load_api_stats, only: [:index]
-    before_action :load_recent_lookups, only: [:index]
-    before_action :load_consent_grants, only: [:index]
+    before_action :load_api_stats, only: [ :index ]
+    before_action :load_recent_lookups, only: [ :index ]
+    before_action :load_consent_grants, only: [ :index ]
 
     def index
       @partner = @current_partner

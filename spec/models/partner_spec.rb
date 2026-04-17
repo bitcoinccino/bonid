@@ -168,7 +168,7 @@ RSpec.describe Partner, type: :model do
   # ── OAuth ───────────────────────────────────────────────────
   describe "OAuth" do
     describe "#valid_redirect_uri?" do
-      let(:partner) { build(:partner, redirect_uris: ["https://app.example.com/callback"]) }
+      let(:partner) { build(:partner, redirect_uris: [ "https://app.example.com/callback" ]) }
 
       it "validates registered URIs" do
         expect(partner.valid_redirect_uri?("https://app.example.com/callback")).to be true
@@ -190,7 +190,7 @@ RSpec.describe Partner, type: :model do
       end
 
       it "checks against allowed scopes" do
-        partner = build(:partner, allowed_scopes: ["identity:verify"])
+        partner = build(:partner, allowed_scopes: [ "identity:verify" ])
         expect(partner.scope_allowed?("identity:verify")).to be true
         expect(partner.scope_allowed?("crime:full")).to be false
       end

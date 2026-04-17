@@ -38,8 +38,8 @@ class CreateSettlements < ActiveRecord::Migration[8.0]
 
     add_index :settlements, :status
     add_index :settlements, :batch_id
-    add_index :settlements, [:partner_id, :status], name: "idx_settlements_partner_status"
+    add_index :settlements, [ :partner_id, :status ], name: "idx_settlements_partner_status"
     add_index :settlements, :payment_order_id
-    add_index :settlements, [:period_start, :period_end], name: "idx_settlements_period"
+    add_index :settlements, [ :period_start, :period_end ], name: "idx_settlements_period"
   end
 end

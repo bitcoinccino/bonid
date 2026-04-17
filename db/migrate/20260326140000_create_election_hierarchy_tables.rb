@@ -28,9 +28,9 @@ class CreateElectionHierarchyTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_bodies, [:election_id, :body_type]
-    add_index :election_bodies, [:election_id, :code], unique: true
-    add_index :election_bodies, [:election_id, :department_code]
+    add_index :election_bodies, [ :election_id, :body_type ]
+    add_index :election_bodies, [ :election_id, :code ], unique: true
+    add_index :election_bodies, [ :election_id, :department_code ]
     add_index :election_bodies, :commune_id
 
     # ── Election Accreditations ─────────────────────────────────
@@ -59,13 +59,13 @@ class CreateElectionHierarchyTables < ActiveRecord::Migration[7.1]
       t.string  :issued_by                                          # CEP officer who issued
       t.datetime :issued_at
       t.datetime :revoked_at
-      t.string  :revocation_reason
+      t.string :revocation_reason
       t.timestamps
     end
 
-    add_index :election_accreditations, [:election_id, :accreditation_type]
-    add_index :election_accreditations, [:election_id, :accreditation_code], unique: true, name: "idx_accreditations_code"
-    add_index :election_accreditations, [:election_id, :bonid], unique: true, name: "idx_accreditations_bonid"
+    add_index :election_accreditations, [ :election_id, :accreditation_type ]
+    add_index :election_accreditations, [ :election_id, :accreditation_code ], unique: true, name: "idx_accreditations_code"
+    add_index :election_accreditations, [ :election_id, :bonid ], unique: true, name: "idx_accreditations_bonid"
     add_index :election_accreditations, :organization
 
     # ── Election Disputes (BCEN) ────────────────────────────────
@@ -104,9 +104,9 @@ class CreateElectionHierarchyTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_disputes, [:election_id, :reference_code], unique: true, name: "idx_disputes_reference"
-    add_index :election_disputes, [:election_id, :status]
-    add_index :election_disputes, [:election_id, :dispute_type]
+    add_index :election_disputes, [ :election_id, :reference_code ], unique: true, name: "idx_disputes_reference"
+    add_index :election_disputes, [ :election_id, :status ]
+    add_index :election_disputes, [ :election_id, :dispute_type ]
     add_index :election_disputes, :department_code
 
     # ── Election Staff Assignments ──────────────────────────────
@@ -127,8 +127,8 @@ class CreateElectionHierarchyTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_staff_assignments, [:election_id, :user_id, :election_body_id], unique: true, name: "idx_staff_election_body"
-    add_index :election_staff_assignments, [:election_id, :role]
-    add_index :election_staff_assignments, [:election_body_id, :role]
+    add_index :election_staff_assignments, [ :election_id, :user_id, :election_body_id ], unique: true, name: "idx_staff_election_body"
+    add_index :election_staff_assignments, [ :election_id, :role ]
+    add_index :election_staff_assignments, [ :election_body_id, :role ]
   end
 end

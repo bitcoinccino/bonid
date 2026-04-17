@@ -140,8 +140,8 @@ module RecordSchemas
       TRANCHES_IR.each do |tranche|
         break if salary <= 0
 
-        taxable_in_bracket = [salary, tranche[:max]].min - [tranche[:min] - 1, 0].max
-        taxable_in_bracket = [taxable_in_bracket, 0].max
+        taxable_in_bracket = [ salary, tranche[:max] ].min - [ tranche[:min] - 1, 0 ].max
+        taxable_in_bracket = [ taxable_in_bracket, 0 ].max
         tax += taxable_in_bracket * tranche[:rate]
         salary -= taxable_in_bracket
       end

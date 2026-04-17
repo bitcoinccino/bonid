@@ -77,7 +77,7 @@ module Citizens
       @verified = current_citizen.identity_submissions.where(status: :approved).exists?
       @search = params[:search].to_s.strip
       @sector_filter = params[:sector].to_s.strip
-      @page = [params[:page].to_i, 1].max
+      @page = [ params[:page].to_i, 1 ].max
 
       partners = Partner.where(status: :approved, active: true, deleted_at: nil)
                         .with_attached_logo
@@ -202,11 +202,11 @@ module Citizens
             icon: "ri-shield-check-line", status: :coming_soon }
         ]
       when "oni"
-        [{ key: "cin_application", name: "Mande CIN", desc: "Aplike pou Kat Idantite Nasyonal",
-            icon: "ri-id-card-line", status: :coming_soon }]
+        [ { key: "cin_application", name: "Mande CIN", desc: "Aplike pou Kat Idantite Nasyonal",
+            icon: "ri-id-card-line", status: :coming_soon } ]
       when "onaca"
-        [{ key: "cadastral_plan", name: "Plan Kadastral", desc: "Jwenn yon plan kadastral pou tè ou",
-            icon: "ri-map-2-line", status: :coming_soon }]
+        [ { key: "cadastral_plan", name: "Plan Kadastral", desc: "Jwenn yon plan kadastral pou tè ou",
+            icon: "ri-map-2-line", status: :coming_soon } ]
       when "archives_nationales"
         [
           { key: "birth_certificate", name: "Ekstrè Nesans", desc: "Mande yon ekstrè ak nesans",
@@ -215,14 +215,14 @@ module Citizens
             icon: "ri-heart-2-line", status: :coming_soon }
         ]
       when "immigration", "customs"
-        [{ key: "passport_application", name: "Aplike pou Paspò", desc: "Soumèt aplikasyon paspò ou",
-            icon: "ri-passport-line", status: :coming_soon }]
+        [ { key: "passport_application", name: "Aplike pou Paspò", desc: "Soumèt aplikasyon paspò ou",
+            icon: "ri-passport-line", status: :coming_soon } ]
       when "cep"
-        [{ key: "voter_registration", name: "Enskripsyon Elektoral", desc: "Enskri pou vote nan eleksyon",
-            icon: "ri-checkbox-circle-line", status: :coming_soon }]
+        [ { key: "voter_registration", name: "Enskripsyon Elektoral", desc: "Enskri pou vote nan eleksyon",
+            icon: "ri-checkbox-circle-line", status: :coming_soon } ]
       else
-        [{ key: "identity_verification", name: "Verifikasyon Idantite", desc: "Verifye idantite ou ak #{partner.name}",
-            icon: "ri-shield-keyhole-line", status: :coming_soon }]
+        [ { key: "identity_verification", name: "Verifikasyon Idantite", desc: "Verifye idantite ou ak #{partner.name}",
+            icon: "ri-shield-keyhole-line", status: :coming_soon } ]
       end
     end
   end

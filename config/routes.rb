@@ -307,7 +307,7 @@ end
     end
 
     # Incident Analytics Dashboard
-    resources :incident_analytics, only: [:index] do
+    resources :incident_analytics, only: [ :index ] do
       collection do
         get :hotspots
         get :officers
@@ -342,7 +342,7 @@ end
     get "billing/payments",      to: "billing#payments",      as: :billing_payments
 
     # Settlements
-    resources :settlements, only: [:index, :show] do
+    resources :settlements, only: [ :index, :show ] do
       collection do
         post :settle_batch
       end
@@ -352,7 +352,7 @@ end
       collection { post :confirm }
     end
 
-    resources :waitlist_signups, only: [:index, :show] do
+    resources :waitlist_signups, only: [ :index, :show ] do
       member do
         post :invite
         post :convert
@@ -363,7 +363,7 @@ end
       end
     end
 
-    resources :invite_codes, only: [:index, :new, :create, :show, :destroy] do
+    resources :invite_codes, only: [ :index, :new, :create, :show, :destroy ] do
       member do
         post :toggle_active
       end
@@ -464,7 +464,7 @@ end
     end
 
     # DGI Self-Service Filing (Citizen files their own tax forms)
-    resources :dgi, only: [:index, :new, :create, :show], controller: "dgi" do
+    resources :dgi, only: [ :index, :new, :create, :show ], controller: "dgi" do
       collection do
         post :save_draft
       end
@@ -475,7 +475,7 @@ end
     end
 
     # DGI Payments
-    resources :dgi_payments, only: [:index, :show], param: :order_id, controller: "dgi_payments" do
+    resources :dgi_payments, only: [ :index, :show ], param: :order_id, controller: "dgi_payments" do
       member do
         post :pay
         get  :receipt
@@ -487,10 +487,10 @@ end
     end
 
     # Browse Partner Services
-    resources :services, only: [:index, :show], param: :slug
+    resources :services, only: [ :index, :show ], param: :slug
 
     # Service Applications — citizen applies to partner services
-    resources :service_applications, only: [:index, :show, :create, :update] do
+    resources :service_applications, only: [ :index, :show, :create, :update ] do
       member do
         post :submit
         get  :receipt
@@ -523,8 +523,8 @@ end
     end
 
     # Private Services (legacy — kept for backward compat)
-    resources :bank_services, only: [:index]
-    resources :bill_payments, only: [:index]
+    resources :bank_services, only: [ :index ]
+    resources :bill_payments, only: [ :index ]
   end
 
 
@@ -574,7 +574,7 @@ end
     resources :tickets
     # BonID lookups - only create and confirm actions for officers
     # Index/show/failed are for partner admin only
-    resources :bonid_lookups, only: [:create] do
+    resources :bonid_lookups, only: [ :create ] do
       member do
         post :confirm
       end
@@ -657,7 +657,7 @@ end
     resources :ras_ir_declarations, only: [ :index, :new, :create, :show ]
 
     # DGI Review Queue — Citizen-filed declarations pending approval
-    resources :dgi_review, only: [:index, :show], controller: "dgi_review" do
+    resources :dgi_review, only: [ :index, :show ], controller: "dgi_review" do
       member do
         post :approve
         post :reject
@@ -665,7 +665,7 @@ end
     end
 
     # DGI Cash/Bank Payment Confirmation
-    resources :dgi_cash_payments, only: [:index], controller: "dgi_cash_payments" do
+    resources :dgi_cash_payments, only: [ :index ], controller: "dgi_cash_payments" do
       member do
         post :confirm
       end
@@ -675,7 +675,7 @@ end
     end
 
     # ── Service Builder (all sectors) ──────────────────────
-    resources :services, only: [:index, :new, :create, :edit, :update, :destroy] do
+    resources :services, only: [ :index, :new, :create, :edit, :update, :destroy ] do
       member do
         patch :toggle
         patch :publish
@@ -687,7 +687,7 @@ end
     end
 
     # Citizen submissions — partner admin reviews & approves/rejects
-    resources :submissions, only: [:index, :show], controller: "submissions" do
+    resources :submissions, only: [ :index, :show ], controller: "submissions" do
       member do
         patch :approve
         patch :reject
@@ -703,7 +703,7 @@ end
     end
 
     # Unified team management (all sectors except law enforcement)
-    resources :team, only: [:index, :new, :create, :destroy] do
+    resources :team, only: [ :index, :new, :create, :destroy ] do
       collection do
         post :lookup
       end
@@ -715,7 +715,7 @@ end
     end
 
     # Elections (CEP — create & manage)
-    resources :elections, only: [:index, :new, :create, :show], controller: "elections" do
+    resources :elections, only: [ :index, :new, :create, :show ], controller: "elections" do
       member do
         post :open_election
         post :close_election
@@ -741,7 +741,7 @@ end
     post "voter_registry/build", to: "voter_registry#build", as: :voter_registry_build
 
     # Party Registration (CEP — Article 143)
-    resources :party_registrations, only: [:index, :show, :new, :create] do
+    resources :party_registrations, only: [ :index, :show, :new, :create ] do
       member do
         patch :update_documents
         patch :start_review
@@ -751,7 +751,7 @@ end
     end
 
     # Candidate Registration (CEP)
-    resources :candidate_registrations, only: [:index, :show, :new, :create] do
+    resources :candidate_registrations, only: [ :index, :show, :new, :create ] do
       member do
         post :approve
         post :reject
@@ -859,12 +859,12 @@ end
       post "request_consent", to: "consents#create"
 
       # Per-Transaction Consent (financial partners)
-      resources :transaction_consents, only: [:create, :show], param: :consent_token do
+      resources :transaction_consents, only: [ :create, :show ], param: :consent_token do
         member do
           post :decide
         end
       end
-      get  "bonid_status",    to: "bonid_status#show"
+      get "bonid_status",    to: "bonid_status#show"
       get "public/bonid_lookup", to: "public_bonid_lookup#show"
       post "webhooks",        to: "webhooks#create"
       get  "/userinfo",       to: "userinfo#show"
@@ -919,7 +919,7 @@ end
       # Search incident reports by BonID
       # GET /api/v1/incident_reports?bonid=DV-1989-M-SE-P8697XDS
       # Scopes required: crime:reports
-      resources :incident_reports, only: [:index] do
+      resources :incident_reports, only: [ :index ] do
         member do
           # Get incident report certificate (JSON or PDF)
           # GET /api/v1/incident_reports/:id/certificate

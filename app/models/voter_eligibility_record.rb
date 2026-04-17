@@ -119,7 +119,7 @@ class VoterEligibilityRecord < ApplicationRecord
 
   # Bulk import from all verified BonID users
   def self.build_electoral_list!(election:)
-    User.where.not(bonid: [nil, ""])
+    User.where.not(bonid: [ nil, "" ])
         .joins(:identity_submissions)
         .where(identity_submissions: { status: :approved })
         .distinct

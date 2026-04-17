@@ -45,14 +45,14 @@ class ElectionPartyRegistration < ApplicationRecord
     { field: :doc_sigle,               label: "Sigle du parti politique", ref: 7 },
     { field: :doc_embleme,             label: "Emblème (Logo) du parti en couleur", ref: 8 },
     { field: :doc_cin_representant,    label: "Copie couleur CIN valide du représentant officiel ou mandataire", ref: 9 },
-    { field: :doc_logo_numerique,      label: "Logo en format JPEG ou PNG (numérique)", ref: 10 },
+    { field: :doc_logo_numerique,      label: "Logo en format JPEG ou PNG (numérique)", ref: 10 }
   ].freeze
 
   # Additional documents for groupings/regroupements
   GROUPING_DOCUMENTS = PARTY_DOCUMENTS + [
     { field: :doc_liste_partis_signataires,     label: "Liste des partis signataires d'un accord notarié", ref: 11 },
     { field: :doc_accord_embleme_unique,        label: "Accord notarié pour emblème unique du groupement", ref: 12 },
-    { field: :doc_actes_reconnaissance_membres, label: "Actes de reconnaissance de chaque parti membre", ref: 13 },
+    { field: :doc_actes_reconnaissance_membres, label: "Actes de reconnaissance de chaque parti membre", ref: 13 }
   ].freeze
 
   def required_documents

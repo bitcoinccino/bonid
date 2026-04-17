@@ -28,12 +28,12 @@ FactoryBot.define do
 
     trait :senator do
       position { "senator" }
-      association :election_constituency, factory: [:election_constituency, :senator]
+      association :election_constituency, factory: [ :election_constituency, :senator ]
     end
 
     trait :deputy do
       position { "deputy" }
-      association :election_constituency, factory: [:election_constituency, :deputy]
+      association :election_constituency, factory: [ :election_constituency, :deputy ]
     end
   end
 end

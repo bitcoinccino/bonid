@@ -16,7 +16,7 @@ module HaitianDiplomaticMissions
     { id: "HT-CON-CHI", name: "Chicago, IL", type: "consulate_general", country: "US", region: "north_america" },
     { id: "HT-CON-MIA", name: "Miami, FL", type: "consulate_general", country: "US", region: "north_america" },
     { id: "HT-CON-NYC", name: "New York, NY", type: "consulate_general", country: "US", region: "north_america" },
-    { id: "HT-CON-ORL", name: "Orlando, FL", type: "consulate_general", country: "US", region: "north_america" },
+    { id: "HT-CON-ORL", name: "Orlando, FL", type: "consulate_general", country: "US", region: "north_america" }
   ].freeze
 
   # ── DOMINICAN REPUBLIC ─────────────────────────────────────────
@@ -25,7 +25,7 @@ module HaitianDiplomaticMissions
     { id: "HT-CON-BAR", name: "Barahona", type: "consulate_general", country: "DO", region: "caribbean" },
     { id: "HT-CON-DAJ", name: "Dajabón", type: "consulate_general", country: "DO", region: "caribbean" },
     { id: "HT-CON-HIG", name: "Higüey", type: "consulate_general", country: "DO", region: "caribbean" },
-    { id: "HT-CON-STI", name: "Santiago de los Caballeros", type: "consulate_general", country: "DO", region: "caribbean" },
+    { id: "HT-CON-STI", name: "Santiago de los Caballeros", type: "consulate_general", country: "DO", region: "caribbean" }
   ].freeze
 
   # ── OTHER AMERICAS ─────────────────────────────────────────────
@@ -42,7 +42,7 @@ module HaitianDiplomaticMissions
     { id: "HT-EMB-MEX", name: "Mexico City", type: "embassy", country: "MX", region: "north_america" },
     { id: "HT-EMB-PTY", name: "Panama City", type: "embassy", country: "PA", region: "central_america" },
     { id: "HT-CON-PBM", name: "Paramaribo", type: "consulate_general", country: "SR", region: "south_america" },
-    { id: "HT-EMB-CCS", name: "Caracas", type: "embassy", country: "VE", region: "south_america" },
+    { id: "HT-EMB-CCS", name: "Caracas", type: "embassy", country: "VE", region: "south_america" }
   ].freeze
 
   # ── EUROPE & OTHER ─────────────────────────────────────────────
@@ -63,7 +63,7 @@ module HaitianDiplomaticMissions
     { id: "HT-EMB-TYO", name: "Tokyo", type: "embassy", country: "JP", region: "asia" },
     { id: "HT-EMB-DOH", name: "Doha", type: "embassy", country: "QA", region: "middle_east" },
     { id: "HT-EMB-TPE", name: "Taipei", type: "embassy", country: "TW", region: "asia" },
-    { id: "HT-EMB-HAN", name: "Hanoi", type: "embassy", country: "VN", region: "asia" },
+    { id: "HT-EMB-HAN", name: "Hanoi", type: "embassy", country: "VN", region: "asia" }
   ].freeze
 
   # ── ALL MISSIONS ───────────────────────────────────────────────

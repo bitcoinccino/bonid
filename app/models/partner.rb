@@ -476,7 +476,7 @@ class Partner < ApplicationRecord
   end
 
   def free_portal_lookups_remaining
-    [CreditLedgerEntry::FREE_DAILY_PORTAL_LOOKUPS - portal_lookups_today, 0].max
+    [ CreditLedgerEntry::FREE_DAILY_PORTAL_LOOKUPS - portal_lookups_today, 0 ].max
   end
 
   def within_free_portal_allowance?
@@ -584,9 +584,9 @@ class Partner < ApplicationRecord
     # All other sectors use the raw department_sector value directly.
     self.sector = if group == "Law Enforcement"
                     "law_enforcement"
-                  else
+    else
                     department_sector
-                  end
+    end
   end
 
   # ============================================================

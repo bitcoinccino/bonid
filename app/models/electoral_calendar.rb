@@ -89,7 +89,7 @@ class ElectoralCalendar < ApplicationRecord
     total = (end_date - start_date).to_i
     return 100 if total.zero?
 
-    [(elapsed.to_f / total * 100).round, 100].min
+    [ (elapsed.to_f / total * 100).round, 100 ].min
   end
 
   def phase_label

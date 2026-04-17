@@ -9,8 +9,8 @@
 module Citizens
   class DgiPaymentsController < Citizens::BaseController
     before_action :set_citizen
-    before_action :find_payment, only: [:show, :pay, :receipt]
-    before_action :set_immersive, only: [:show, :receipt]
+    before_action :find_payment, only: [ :show, :pay, :receipt ]
+    before_action :set_immersive, only: [ :show, :receipt ]
 
     # ============================================================
     # SHOW — Payment page (pick method, see breakdown)

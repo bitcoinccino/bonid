@@ -3,8 +3,8 @@
 module PartnerPortal
   class PartyRegistrationsController < PartnerPortal::BaseController
     before_action :set_election
-    before_action :require_election!, except: [:index]
-    before_action :set_registration, only: [:show, :approve, :reject, :start_review, :update_documents]
+    before_action :require_election!, except: [ :index ]
+    before_action :set_registration, only: [ :show, :approve, :reject, :start_review, :update_documents ]
 
     def index
       if @election

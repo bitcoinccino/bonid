@@ -8,7 +8,7 @@ class AddPricingToPartnerSchemas < ActiveRecord::Migration[8.0]
     add_column :partner_schemas, :position, :integer, default: 0
     add_column :partner_schemas, :citizen_facing, :boolean, default: false
 
-    add_index :partner_schemas, [:partner_id, :citizen_facing]
-    add_index :partner_schemas, [:citizen_facing, :active]
+    add_index :partner_schemas, [ :partner_id, :citizen_facing ]
+    add_index :partner_schemas, [ :citizen_facing, :active ]
   end
 end

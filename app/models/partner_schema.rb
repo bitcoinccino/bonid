@@ -63,7 +63,7 @@ class PartnerSchema < ApplicationRecord
   # Returns the full form code with revision, e.g. "DGI-F008-201908"
   def form_code_display
     return nil if form_code.blank?
-    [form_code, form_revision].compact_blank.join("-")
+    [ form_code, form_revision ].compact_blank.join("-")
   end
 
   def price_display
@@ -157,7 +157,7 @@ class PartnerSchema < ApplicationRecord
     all_fields = fields
     all_steps = steps
 
-    return [{ name: "Fòm", fields: all_fields }] if all_steps.empty?
+    return [ { name: "Fòm", fields: all_fields } ] if all_steps.empty?
 
     result = []
     all_steps.each do |step|

@@ -144,7 +144,7 @@ class PartnerSetupService
     # ✅ Remove any existing roles (especially citizen) before adding officer roles
     if user.persisted?
       user.roles.each do |role|
-        user.remove_role(role.name) unless [:officer, :partner_admin].include?(role.name.to_sym)
+        user.remove_role(role.name) unless [ :officer, :partner_admin ].include?(role.name.to_sym)
       end
     end
 

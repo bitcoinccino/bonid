@@ -30,7 +30,7 @@ class BonvoteElection < ApplicationRecord
   # ── Validations ───────────────────────────────────────────────
   validates :title, presence: true
   validates :election_type, presence: true, inclusion: { in: %w[general presidential legislative referendum simulation] }
-  validates :round, presence: true, inclusion: { in: [1, 2] }
+  validates :round, presence: true, inclusion: { in: [ 1, 2 ] }
   validates :status, presence: true, inclusion: { in: %w[draft open closed certified cancelled] }
   validates :election_date, presence: true
 

@@ -162,12 +162,12 @@ module Api
           # BonTouris: keep T- prefix visible
           parts = bonid.split("-")
           return bonid if parts.length < 6
-          [parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1]].join("-")
+          [ parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1] ].join("-")
         else
           # Citizen BonID: MB••••••••697280
           stripped = bonid.gsub("-", "")
           last6 = stripped.last(6)
-          dots = "•" * [stripped.length - 8, 6].max
+          dots = "•" * [ stripped.length - 8, 6 ].max
           "MB#{dots}#{last6}"
         end
       end

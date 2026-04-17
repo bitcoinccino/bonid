@@ -112,11 +112,11 @@ module RecordSchemas
       ir  = interets_retard.to_f
       am  = amende.to_f
 
-      difference         = [ca - ms, 0].max
+      difference         = [ ca - ms, 0 ].max
       impot_variable     = (difference * TAUX_PARTIE_VARIABLE).round(2)
       montant_calcule    = pf + impot_variable
-      impot_a_payer      = [montant_calcule - idp, 0].max
-      montant_apres_exo  = [impot_a_payer - exo, 0].max
+      impot_a_payer      = [ montant_calcule - idp, 0 ].max
+      montant_apres_exo  = [ impot_a_payer - exo, 0 ].max
       dsav               = (montant_apres_exo * TAUX_DSAV).round(2)
       montant_a_payer    = montant_apres_exo + dsav + cp
       total              = montant_a_payer + ir + am

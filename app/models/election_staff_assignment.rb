@@ -18,7 +18,7 @@ class ElectionStaffAssignment < ApplicationRecord
 
   validates :role, presence: true
   validates :status, inclusion: { in: %w[assigned active completed removed] }
-  validates :user_id, uniqueness: { scope: [:election_id, :election_body_id], message: "deja asiye nan biwo sa a" }
+  validates :user_id, uniqueness: { scope: [ :election_id, :election_body_id ], message: "deja asiye nan biwo sa a" }
 
   scope :active,    -> { where(status: %w[assigned active]) }
   scope :checked_in, -> { where.not(checked_in_at: nil) }

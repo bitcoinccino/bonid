@@ -18,12 +18,12 @@ module Api
   module V1
     module Election
       class BallotsController < BaseController
-        before_action :authenticate_voter!, only: [:eligibility, :cast]
-        skip_before_action :verify_app_attestation!, only: [:verify]
-        skip_before_action :authenticate_voter!, only: [:verify]
-        skip_before_action :authenticate_partner_or_token!, only: [:verify]
-        skip_before_action :enforce_scope!, only: [:verify], raise: false
-        skip_before_action :ensure_api_request!, only: [:verify], raise: false
+        before_action :authenticate_voter!, only: [ :eligibility, :cast ]
+        skip_before_action :verify_app_attestation!, only: [ :verify ]
+        skip_before_action :authenticate_voter!, only: [ :verify ]
+        skip_before_action :authenticate_partner_or_token!, only: [ :verify ]
+        skip_before_action :enforce_scope!, only: [ :verify ], raise: false
+        skip_before_action :ensure_api_request!, only: [ :verify ], raise: false
 
         # ── GET /api/v1/election/:election_id/eligibility ──────────────
         # Checks if the voter is on the CEP roll and hasn't voted yet.
@@ -133,8 +133,8 @@ module Api
           election_id = params[:election_id]
           payload = params.permit(
             :nullifier, :zkp_commitment, :liveness_session_id, :biometric_hash,
-            zkp_proof: [:challenge, :response, :public_commitment],
-            encrypted_choice: [:encrypted_choice, :encrypted_key, :iv, :auth_tag]
+            zkp_proof: [ :challenge, :response, :public_commitment ],
+            encrypted_choice: [ :encrypted_choice, :encrypted_key, :iv, :auth_tag ]
           )
 
           # Validate election is open

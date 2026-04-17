@@ -233,7 +233,7 @@ RSpec.describe IdentitySubmission, type: :model do
 
     it "returns false when documents are missing" do
       submission = build(:identity_submission)
-      allow(submission).to receive(:missing_documents).and_return(["selfie"])
+      allow(submission).to receive(:missing_documents).and_return([ "selfie" ])
       expect(submission.ready_for_approval?).to be false
     end
   end

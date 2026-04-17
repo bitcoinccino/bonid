@@ -107,7 +107,7 @@ class CrimeCertificateService
 
     pdf = Prawn::Document.new(
       page_size: "LETTER",
-      margin: [50, 50, 50, 50]
+      margin: [ 50, 50, 50, 50 ]
     )
 
     # Header
@@ -252,12 +252,12 @@ class CrimeCertificateService
 
   def render_pdf_header(pdf)
     # Haiti coat of arms area (placeholder)
-    pdf.bounding_box([0, pdf.cursor], width: 100, height: 80) do
+    pdf.bounding_box([ 0, pdf.cursor ], width: 100, height: 80) do
       pdf.text "🇭🇹", size: 40, align: :center
     end
 
     # Header text
-    pdf.bounding_box([120, pdf.cursor + 70], width: 350, height: 80) do
+    pdf.bounding_box([ 120, pdf.cursor + 70 ], width: 350, height: 80) do
       pdf.text "RÉPUBLIQUE D'HAÏTI", size: 14, style: :bold, align: :center
       pdf.move_down 5
       pdf.text "POLICE NATIONALE D'HAÏTI", size: 12, align: :center
@@ -277,7 +277,7 @@ class CrimeCertificateService
     pdf.move_down 20
 
     # Certificate info box
-    pdf.bounding_box([0, pdf.cursor], width: pdf.bounds.width, height: 60) do
+    pdf.bounding_box([ 0, pdf.cursor ], width: pdf.bounds.width, height: 60) do
       pdf.stroke_bounds
       pdf.indent(10) do
         pdf.move_down 10
@@ -297,14 +297,14 @@ class CrimeCertificateService
     pdf.move_down 10
 
     data = [
-      ["Type de Crime / Crime Type:", @report.crime_type],
-      ["Code:", @report.crime_type_record&.code || "N/A"],
-      ["Niveau de Gravité / Severity:", "#{@report.crime_severity_level} - #{severity_label(@report.crime_severity_level)}"],
-      ["Date de l'Incident / Incident Date:", @report.occurred_at&.strftime("%d %B %Y à %H:%M") || "Non spécifié"],
-      ["Statut / Status:", @report.status.humanize]
+      [ "Type de Crime / Crime Type:", @report.crime_type ],
+      [ "Code:", @report.crime_type_record&.code || "N/A" ],
+      [ "Niveau de Gravité / Severity:", "#{@report.crime_severity_level} - #{severity_label(@report.crime_severity_level)}" ],
+      [ "Date de l'Incident / Incident Date:", @report.occurred_at&.strftime("%d %B %Y à %H:%M") || "Non spécifié" ],
+      [ "Statut / Status:", @report.status.humanize ]
     ]
 
-    pdf.table(data, cell_style: { size: 10, padding: [5, 10] }, column_widths: [180, 320])
+    pdf.table(data, cell_style: { size: 10, padding: [ 5, 10 ] }, column_widths: [ 180, 320 ])
     pdf.move_down 15
 
     # Description
@@ -319,7 +319,7 @@ class CrimeCertificateService
     pdf.stroke_horizontal_rule
     pdf.move_down 10
 
-    headers = ["Rôle/Role", "Statut/Status", "Type ID", "ID (Masqué)"]
+    headers = [ "Rôle/Role", "Statut/Status", "Type ID", "ID (Masqué)" ]
     rows = @report.person_involvements.map do |pi|
       [
         role_label(pi.role),
@@ -330,10 +330,10 @@ class CrimeCertificateService
     end
 
     if rows.any?
-      pdf.table([headers] + rows,
+      pdf.table([ headers ] + rows,
         header: true,
-        cell_style: { size: 9, padding: [5, 8] },
-        row_colors: ["FFFFFF", "F5F5F5"]
+        cell_style: { size: 9, padding: [ 5, 8 ] },
+        row_colors: [ "FFFFFF", "F5F5F5" ]
       )
     else
       pdf.text "Aucune personne enregistrée / No persons recorded.", size: 10, style: :italic
@@ -392,13 +392,13 @@ class CrimeCertificateService
     pdf.move_down 30
 
     # Signature boxes
-    pdf.bounding_box([0, pdf.cursor], width: 200, height: 60) do
+    pdf.bounding_box([ 0, pdf.cursor ], width: 200, height: 60) do
       pdf.stroke_bounds
       pdf.move_down 40
       pdf.text "Officier Responsable / Responsible Officer", size: 8, align: :center
     end
 
-    pdf.bounding_box([300, pdf.cursor + 60], width: 200, height: 60) do
+    pdf.bounding_box([ 300, pdf.cursor + 60 ], width: 200, height: 60) do
       pdf.stroke_bounds
       pdf.move_down 40
       pdf.text "Cachet Officiel / Official Stamp", size: 8, align: :center
@@ -409,14 +409,14 @@ class CrimeCertificateService
     pdf.move_down 30
 
     # QR code placeholder
-    pdf.bounding_box([0, pdf.cursor], width: 80, height: 80) do
+    pdf.bounding_box([ 0, pdf.cursor ], width: 80, height: 80) do
       pdf.stroke_bounds
       pdf.move_down 30
       pdf.text "QR", size: 20, align: :center
     end
 
     # Footer text
-    pdf.bounding_box([100, pdf.cursor + 70], width: 400, height: 80) do
+    pdf.bounding_box([ 100, pdf.cursor + 70 ], width: 400, height: 80) do
       pdf.text "Scanner pour vérifier / Scan to verify", size: 8
       pdf.text generate_qr_url, size: 7, color: "666666"
       pdf.move_down 10
@@ -455,12 +455,12 @@ class CrimeCertificateService
     if bonid.start_with?("T-")
       # BonTouris: keep T- prefix visible
       parts = bonid.split("-")
-      [parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1]].join("-")
+      [ parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1] ].join("-")
     else
       # Citizen BonID: MB••••••••697280
       stripped = bonid.gsub("-", "")
       last6 = stripped.last(6)
-      dots = "•" * [stripped.length - 8, 6].max
+      dots = "•" * [ stripped.length - 8, 6 ].max
       "MB#{dots}#{last6}"
     end
   end

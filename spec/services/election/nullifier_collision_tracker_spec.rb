@@ -159,7 +159,7 @@ RSpec.describe Election::NullifierCollisionTracker do
   # ─────────────────────────────────────────────────────────
   describe ".reset!" do
     it "clears all collision keys" do
-      allow(redis).to receive(:keys).and_return(["k1", "k2"])
+      allow(redis).to receive(:keys).and_return([ "k1", "k2" ])
       expect(redis).to receive(:del).with("k1", "k2")
 
       described_class.reset!(election_id)

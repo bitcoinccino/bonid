@@ -52,7 +52,7 @@ class ServiceApplicationPdfGenerator
   private
 
   def build_pdf
-    Prawn::Document.new(page_size: "A4", margin: [40, 40, 50, 40]) do |pdf|
+    Prawn::Document.new(page_size: "A4", margin: [ 40, 40, 50, 40 ]) do |pdf|
       configure_fonts(pdf)
 
       render_partner_header(pdf)
@@ -135,23 +135,23 @@ class ServiceApplicationPdfGenerator
     pdf.font "Inter", size: 9
     pdf.fill_color TEXT_MUTED
 
-    citizen_name = [@citizen.first_name, @citizen.last_name].compact.join(" ")
+    citizen_name = [ @citizen.first_name, @citizen.last_name ].compact.join(" ")
 
     info_table = [
-      ["Sitwayen", citizen_name],
-      ["BonID", @citizen.try(:bonid) || "—"],
-      ["Dat Soumisyon", @app.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—"],
-      ["Estati", @app.status_label]
+      [ "Sitwayen", citizen_name ],
+      [ "BonID", @citizen.try(:bonid) || "—" ],
+      [ "Dat Soumisyon", @app.submitted_at&.strftime("%d/%m/%Y %H:%M") || "—" ],
+      [ "Estati", @app.status_label ]
     ]
 
     if @app.total_price_cents.to_i > 0
-      info_table << ["Montan", @app.price_display]
+      info_table << [ "Montan", @app.price_display ]
     end
 
     pdf.table(info_table, width: pdf.bounds.width, cell_style: {
-      borders: [:bottom],
+      borders: [ :bottom ],
       border_color: BORDER_LIGHT,
-      padding: [5, 8],
+      padding: [ 5, 8 ],
       font: "Inter",
       size: 9
     }) do |t|
@@ -215,7 +215,7 @@ class ServiceApplicationPdfGenerator
       currency = field["currency"] || "HTG"
       pdf.text calc_value.present? ? "#{calc_value} #{currency}" : "—"
     when "checkbox"
-      pdf.text value == true || value == "true" ? "Wi" : "Non"
+      pdf.text((value == true || value == "true") ? "Wi" : "Non")
     when "select"
       pdf.text value.present? ? value.to_s : "—"
     when "currency"
@@ -273,7 +273,7 @@ class ServiceApplicationPdfGenerator
     pdf.move_down 4
     pdf.font "Inter", size: 7
     pdf.fill_color TEXT_MUTED
-    citizen_name = [@citizen.first_name, @citizen.last_name].compact.join(" ")
+    citizen_name = [ @citizen.first_name, @citizen.last_name ].compact.join(" ")
     pdf.text "Siyen pa: #{citizen_name} · #{@app.signature_applied_at&.strftime('%d/%m/%Y %H:%M') || '—'}"
 
     pdf.move_down 15
@@ -295,14 +295,14 @@ class ServiceApplicationPdfGenerator
       y = pdf.cursor
       pdf.stroke_color SEAL_GREEN
       pdf.dash(2, space: 2)
-      pdf.stroke_circle [x + 50, y - 50], 45
+      pdf.stroke_circle [ x + 50, y - 50 ], 45
       pdf.undash
 
       pdf.fill_color SEAL_GREEN
       pdf.font "Montserrat", style: :bold, size: 7
-      pdf.text_box "SÈL OFISYÈL", at: [x + 10, y - 30], width: 80, align: :center
+      pdf.text_box "SÈL OFISYÈL", at: [ x + 10, y - 30 ], width: 80, align: :center
       pdf.font "Inter", size: 6
-      pdf.text_box @partner.name, at: [x + 5, y - 42], width: 90, align: :center
+      pdf.text_box @partner.name, at: [ x + 5, y - 42 ], width: 90, align: :center
     end
 
     # Seal metadata
@@ -342,7 +342,7 @@ class ServiceApplicationPdfGenerator
       qr = RQRCode::QRCode.new(qr_url, level: :m)
       qr_png = qr.as_png(size: 120, border_modules: 1)
 
-      Tempfile.open(["qr_#{@app.verification_code}", ".png"]) do |tmp|
+      Tempfile.open([ "qr_#{@app.verification_code}", ".png" ]) do |tmp|
         tmp.binmode
         tmp.write(qr_png.to_s)
         tmp.rewind
@@ -379,11 +379,11 @@ class ServiceApplicationPdfGenerator
       pdf.save_graphics_state do
         pdf.fill_color "CCCCCC"
         pdf.transparent(0.15) do
-          pdf.rotate(45, origin: [pdf.bounds.width / 2, pdf.bounds.height / 2]) do
+          pdf.rotate(45, origin: [ pdf.bounds.width / 2, pdf.bounds.height / 2 ]) do
             pdf.font("Montserrat", style: :bold, size: 48) do
               pdf.text_box(
                 watermark_text,
-                at: [0, pdf.bounds.height / 2 + 20],
+                at: [ 0, pdf.bounds.height / 2 + 20 ],
                 width: pdf.bounds.width,
                 height: 80,
                 align: :center,
@@ -403,7 +403,7 @@ class ServiceApplicationPdfGenerator
   def render_attached_image(pdf, attachment, width: 100, position: :left)
     return unless attachment.attached?
 
-    Tempfile.open(["bonid_img", ".#{attachment.filename.extension}"]) do |tmp|
+    Tempfile.open([ "bonid_img", ".#{attachment.filename.extension}" ]) do |tmp|
       tmp.binmode
       tmp.write(attachment.download)
       tmp.rewind

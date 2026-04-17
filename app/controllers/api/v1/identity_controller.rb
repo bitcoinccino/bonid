@@ -425,7 +425,7 @@ module Api
 
       def lookup_identity_uncached(bonid)
         # Eager-load associations to eliminate N+1 queries (~15-25ms savings)
-        user = User.includes(:health_profile, :physical_profile, :social_handles, :emergency_contacts, :family_members, address: [:commune, :department])
+        user = User.includes(:health_profile, :physical_profile, :social_handles, :emergency_contacts, :family_members, address: [ :commune, :department ])
                     .find_by(bonid: bonid)
         if user
           submission = user.identity_submissions
@@ -447,7 +447,7 @@ module Api
         # Try BonID alias resolution (name change: JM → VP)
         resolved_bonid = BonidAlias.resolve(bonid)
         if resolved_bonid
-          user = User.includes(:health_profile, :physical_profile, :social_handles, :emergency_contacts, :family_members, address: [:commune, :department])
+          user = User.includes(:health_profile, :physical_profile, :social_handles, :emergency_contacts, :family_members, address: [ :commune, :department ])
                       .find_by(bonid: resolved_bonid)
           if user
             submission = user.identity_submissions
@@ -473,7 +473,7 @@ module Api
 
         # Try 6-digit suffix lookup
         if bonid.match?(/^\d{6}$/)
-          user = User.includes(:health_profile, :physical_profile, :social_handles, :emergency_contacts, :family_members, address: [:commune, :department])
+          user = User.includes(:health_profile, :physical_profile, :social_handles, :emergency_contacts, :family_members, address: [ :commune, :department ])
                       .where("bonid LIKE ?", "%-#{bonid[0..3]}-#{bonid[4..5]}%").first
           if user
             submission = user.identity_submissions
@@ -585,7 +585,7 @@ module Api
             first_name: visitor.first_name,
             middle_name: visitor.middle_name,
             last_name: visitor.last_name,
-            full_name: [visitor.first_name, visitor.middle_name, visitor.last_name].compact.join(" "),
+            full_name: [ visitor.first_name, visitor.middle_name, visitor.last_name ].compact.join(" "),
             date_of_birth: visitor.dob&.iso8601,
             age: visitor.dob.present? ? ((Date.current - visitor.dob.to_date) / 365.25).to_i : nil,
             sex: visitor.sex,
@@ -779,7 +779,7 @@ module Api
         # Citizen BonID: MB••••••••697280
         stripped = bonid.gsub("-", "")
         last6 = stripped.last(6)
-        dots = "•" * [stripped.length - 8, 6].max
+        dots = "•" * [ stripped.length - 8, 6 ].max
         "MB#{dots}#{last6}"
       end
 
@@ -789,7 +789,7 @@ module Api
         parts = bonid.split("-")
         return bonid if parts.length < 6
 
-        [parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1]].join("-")
+        [ parts[0], parts[1], "••••", "•", parts[-3], parts[-2], parts[-1] ].join("-")
       end
 
       # Mask passport number: AB123456 → AB••••56

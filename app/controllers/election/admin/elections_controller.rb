@@ -10,7 +10,7 @@ module Election
   module Admin
     class ElectionsController < ::Admin::BaseController
       before_action :require_cep_admin!
-      before_action :set_election, except: [:snapshot]
+      before_action :set_election, except: [ :snapshot ]
 
       # GET /election/:id
       # The main tally dashboard
@@ -175,7 +175,7 @@ module Election
 
       def generate_snapshot_csv(snapshot)
         CSV.generate do |csv|
-          csv << ["Election ID", "Date", "Total Votes", "Merkle Root", "Published At"]
+          csv << [ "Election ID", "Date", "Total Votes", "Merkle Root", "Published At" ]
           csv << [
             snapshot[:election_id],
             snapshot[:snapshot_date],
@@ -184,11 +184,11 @@ module Election
             snapshot[:published_at]
           ]
           csv << []
-          csv << ["Channel", "Vote Count"]
-          (snapshot[:votes_by_channel] || {}).each { |k, v| csv << [k, v] }
+          csv << [ "Channel", "Vote Count" ]
+          (snapshot[:votes_by_channel] || {}).each { |k, v| csv << [ k, v ] }
           csv << []
-          csv << ["Hour", "Vote Count"]
-          (snapshot[:votes_by_hour] || {}).each { |k, v| csv << [k, v] }
+          csv << [ "Hour", "Vote Count" ]
+          (snapshot[:votes_by_hour] || {}).each { |k, v| csv << [ k, v ] }
         end
       end
     end

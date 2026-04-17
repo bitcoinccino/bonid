@@ -2,7 +2,7 @@
 
 module PartnerPortal
   class SubmissionsController < BaseController
-    before_action :set_submission, only: [:show, :approve, :reject, :add_note, :check_in]
+    before_action :set_submission, only: [ :show, :approve, :reject, :add_note, :check_in ]
 
     # GET /partner_portal/submissions
     def index
@@ -250,7 +250,7 @@ module PartnerPortal
     def build_type_stats
       case @category
       when "transaction"
-        paid = @submissions.unscope(:order).where.not(total_price_cents: [nil, 0])
+        paid = @submissions.unscope(:order).where.not(total_price_cents: [ nil, 0 ])
         @tx_stats = {
           total_revenue: paid.sum(:total_price_cents),
           total_sold: paid.count,
@@ -323,7 +323,7 @@ module PartnerPortal
     def generate_csv(submissions)
       require "csv"
       CSV.generate(headers: true, col_sep: ",") do |csv|
-        csv << ["Kòd", "Sitwayen", "Sèvis", "Kategori", "Estati", "Pri", "Soumèt", "Tcheke"]
+        csv << [ "Kòd", "Sitwayen", "Sèvis", "Kategori", "Estati", "Pri", "Soumèt", "Tcheke" ]
 
         submissions.each do |sub|
           csv << [

@@ -63,7 +63,7 @@ module Election
       end
 
       by_country = ElectionBallot.where(election_id: election.id)
-                                  .where.not(ip_country: [nil, ""])
+                                  .where.not(ip_country: [ nil, "" ])
                                   .group(:ip_country)
                                   .count
 
@@ -133,7 +133,7 @@ module Election
         @diaspora_votes = 0
         @participation_rate = nil
         @top_departments = []
-        @voting_countries = ["HT"]
+        @voting_countries = [ "HT" ]
         @certified_hash = @results_hash || ""
         return
       end
@@ -165,11 +165,11 @@ module Election
       dept_labels = ElectionBallot::DEPARTMENT_LABELS
       @top_departments = ballot_by_dept.sort_by { |_, v| -v }
                                        .first(3)
-                                       .map { |code, count| [dept_labels[code] || code, count] }
+                                       .map { |code, count| [ dept_labels[code] || code, count ] }
 
       # Diaspora votes grouped by country (for globe markers)
       @diaspora_by_country = ElectionBallot.where(election_id: @election.id)
-                                            .where.not(ip_country: [nil, ""])
+                                            .where.not(ip_country: [ nil, "" ])
                                             .group(:ip_country)
                                             .count
 

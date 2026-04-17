@@ -2,7 +2,7 @@
 
 module PartnerPortal
   class ElectionsController < BaseController
-    before_action :set_election, only: [:show, :open_election, :close_election, :certify_election, :generate_calendar]
+    before_action :set_election, only: [ :show, :open_election, :close_election, :certify_election, :generate_calendar ]
 
     def index
       @elections = BonvoteElection.order(created_at: :desc).page(params[:page]).per(10)

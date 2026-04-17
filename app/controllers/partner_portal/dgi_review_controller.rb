@@ -13,7 +13,7 @@ module PartnerPortal
     include DgiRejectionReasons
 
     before_action :set_partner
-    before_action :find_record, only: [:show, :approve, :reject]
+    before_action :find_record, only: [ :show, :approve, :reject ]
 
     REVIEWABLE_TYPES = %w[
       nif_registration business_registration

@@ -7,7 +7,7 @@ module PartnerPortal
     layout "partner_portal/public"
 
     before_action :ensure_partner_exists
-    before_action :check_if_already_accepted, only: [:index]
+    before_action :check_if_already_accepted, only: [ :index ]
 
     CURRENT_VERSION = "1.0"
 

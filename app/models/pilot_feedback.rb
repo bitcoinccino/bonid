@@ -16,9 +16,9 @@
 class PilotFeedback < ApplicationRecord
   # ── Validations ──
   validates :election_id,  presence: true
-  validates :time_to_vote, presence: true, inclusion: { in: [1, 2, 3] }
-  validates :photo_clarity, presence: true, inclusion: { in: [1, 2, 3] }
-  validates :trust_level,  presence: true, inclusion: { in: [1, 2, 3] }
+  validates :time_to_vote, presence: true, inclusion: { in: [ 1, 2, 3 ] }
+  validates :photo_clarity, presence: true, inclusion: { in: [ 1, 2, 3 ] }
+  validates :trust_level,  presence: true, inclusion: { in: [ 1, 2, 3 ] }
   validates :receipt_id,   uniqueness: true, allow_blank: true
   validates :comment,      length: { maximum: 1000 }
 
@@ -71,7 +71,7 @@ class PilotFeedback < ApplicationRecord
         no_trust:   scope.where(trust_level: 3).count
       },
       trust_score: (scope.where(trust_level: 1).count.to_f / total * 100).round(1),
-      comments: scope.where.not(comment: [nil, ""]).count
+      comments: scope.where.not(comment: [ nil, "" ]).count
     }
   end
 end

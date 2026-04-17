@@ -120,7 +120,7 @@ class ServiceApplication < ApplicationRecord
     all_fields = frozen_fields
     all_steps = frozen_steps
 
-    return [{ name: "Fòm", fields: all_fields }] if all_steps.empty?
+    return [ { name: "Fòm", fields: all_fields } ] if all_steps.empty?
 
     result = []
     all_steps.each do |step|

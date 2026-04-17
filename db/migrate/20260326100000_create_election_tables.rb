@@ -21,7 +21,7 @@ class CreateElectionTables < ActiveRecord::Migration[7.1]
     end
 
     add_index :bonvote_elections, :status
-    add_index :bonvote_elections, [:election_type, :round]
+    add_index :bonvote_elections, [ :election_type, :round ]
 
     # ── Constituencies ───────────────────────────────────────────
     # Maps senate/deputy seats to geographic areas.
@@ -41,8 +41,8 @@ class CreateElectionTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_constituencies, [:election_id, :position]
-    add_index :election_constituencies, [:election_id, :department_code]
+    add_index :election_constituencies, [ :election_id, :position ]
+    add_index :election_constituencies, [ :election_id, :department_code ]
 
     # ── Candidates ───────────────────────────────────────────────
     # One row per candidate per constituency per election.
@@ -65,8 +65,8 @@ class CreateElectionTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_candidates, [:election_id, :position]
-    add_index :election_candidates, [:election_id, :department_code]
+    add_index :election_candidates, [ :election_id, :position ]
+    add_index :election_candidates, [ :election_id, :department_code ]
 
     # ── Ballots ──────────────────────────────────────────────────
     # Append-only, immutable. One row per vote cast.
@@ -93,12 +93,12 @@ class CreateElectionTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_ballots, [:election_id, :nullifier], unique: true, name: "idx_ballots_election_nullifier"
+    add_index :election_ballots, [ :election_id, :nullifier ], unique: true, name: "idx_ballots_election_nullifier"
     add_index :election_ballots, :ballot_hash, unique: true
     add_index :election_ballots, :receipt_id, unique: true
-    add_index :election_ballots, [:election_id, :position]
-    add_index :election_ballots, [:election_id, :channel]
-    add_index :election_ballots, [:election_id, :department_code]
+    add_index :election_ballots, [ :election_id, :position ]
+    add_index :election_ballots, [ :election_id, :channel ]
+    add_index :election_ballots, [ :election_id, :department_code ]
     add_index :election_ballots, :cast_at
 
     # ── Multi-Sig Signatures ────────────────────────────────────
@@ -115,7 +115,7 @@ class CreateElectionTables < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_signatures, [:election_id, :role], unique: true
-    add_index :election_signatures, [:election_id, :bonid], unique: true
+    add_index :election_signatures, [ :election_id, :role ], unique: true
+    add_index :election_signatures, [ :election_id, :bonid ], unique: true
   end
 end

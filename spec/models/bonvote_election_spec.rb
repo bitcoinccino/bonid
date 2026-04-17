@@ -21,7 +21,7 @@ RSpec.describe BonvoteElection, type: :model do
     it { is_expected.to validate_presence_of(:election_type) }
     it { is_expected.to validate_presence_of(:election_date) }
     it { is_expected.to validate_inclusion_of(:election_type).in_array(%w[general presidential legislative referendum]) }
-    it { is_expected.to validate_inclusion_of(:round).in_array([1, 2]) }
+    it { is_expected.to validate_inclusion_of(:round).in_array([ 1, 2 ]) }
     it { is_expected.to validate_inclusion_of(:status).in_array(%w[draft open closed certified cancelled]) }
 
     it "is valid with factory defaults" do

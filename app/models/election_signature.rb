@@ -34,7 +34,7 @@ class ElectionSignature < ApplicationRecord
       total: sigs.count,
       required: QUORUM,
       met: sigs.where(liveness_verified: true).count >= QUORUM,
-      remaining: [QUORUM - sigs.where(liveness_verified: true).count, 0].max,
+      remaining: [ QUORUM - sigs.where(liveness_verified: true).count, 0 ].max,
       signatories: sigs.map { |s| { role: s.role, name: s.signatory_name, verified: s.liveness_verified, signed_at: s.signed_at } },
       available_roles: ROLES - signed_roles
     }

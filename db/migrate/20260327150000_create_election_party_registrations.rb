@@ -47,8 +47,8 @@ class CreateElectionPartyRegistrations < ActiveRecord::Migration[7.1]
       t.timestamps
     end
 
-    add_index :election_party_registrations, [:election_id, :party_name], unique: true, name: "idx_party_reg_name"
-    add_index :election_party_registrations, [:election_id, :status], name: "idx_party_reg_status"
+    add_index :election_party_registrations, [ :election_id, :party_name ], unique: true, name: "idx_party_reg_name"
+    add_index :election_party_registrations, [ :election_id, :status ], name: "idx_party_reg_status"
     add_index :election_party_registrations, :registration_type
 
     # Link candidates to their registered party

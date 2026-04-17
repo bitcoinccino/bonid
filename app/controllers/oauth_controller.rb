@@ -634,9 +634,9 @@ class OauthController < ApplicationController
     if auth_header.start_with?("Basic ")
       decoded = Base64.decode64(auth_header.sub("Basic ", ""))
       client_id, client_secret = decoded.split(":", 2)
-      [client_id, client_secret]
+      [ client_id, client_secret ]
     else
-      [params[:client_id], params[:client_secret]]
+      [ params[:client_id], params[:client_secret] ]
     end
   end
 

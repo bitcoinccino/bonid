@@ -22,7 +22,7 @@ if Rails.env.development? || Rails.env.test?
   Geocoder::Lookup::Test.set_default_stub(
     [
       {
-        "coordinates"  => [18.5944, -72.3074],
+        "coordinates"  => [ 18.5944, -72.3074 ],
         "address"      => "Port-au-Prince, Haiti",
         "city"         => "Port-au-Prince",
         "state"        => "Ouest",

@@ -32,7 +32,7 @@ FactoryBot.define do
 
     trait :round_two do
       round { 2 }
-      association :parent_election, factory: [:bonvote_election, :closed]
+      association :parent_election, factory: [ :bonvote_election, :closed ]
     end
 
     trait :with_constituency do

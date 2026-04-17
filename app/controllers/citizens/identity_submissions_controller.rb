@@ -59,13 +59,13 @@ module Citizens
 
           flash[:info] = if previous.status_revoked?
                            "Please upload your updated ID documents for the name change."
-                         elsif @skip_liveness && @skip_signature
+          elsif @skip_liveness && @skip_signature
                            "Your face verification and signature from your previous submission are still valid. Just upload corrected documents."
-                         elsif @skip_liveness
+          elsif @skip_liveness
                            "Your face verification from your previous submission is still valid. Just upload corrected documents."
-                         else
+          else
                            "Resubmission pre-filled from your previous attempt. Update as needed."
-                         end
+          end
         else
           redirect_to citizens_dashboard_path, alert: "⚠️ Invalid resubmission request."
           nil

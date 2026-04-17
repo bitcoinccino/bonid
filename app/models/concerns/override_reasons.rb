@@ -17,7 +17,7 @@ module OverrideReasons
   }.freeze
 
   def self.options_for_select
-    REASONS.map { |key, label| [label, key] }
+    REASONS.map { |key, label| [ label, key ] }
   end
 
   def self.valid?(reason)

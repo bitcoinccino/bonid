@@ -3,9 +3,9 @@
 module PartnerPortal
   class CandidateRegistrationsController < PartnerPortal::BaseController
     before_action :set_election
-    before_action :require_election!, except: [:index]
-    before_action :ensure_candidate_registration_phase!, only: [:new, :create]
-    before_action :set_candidate, only: [:show, :approve, :reject, :start_review]
+    before_action :require_election!, except: [ :index ]
+    before_action :ensure_candidate_registration_phase!, only: [ :new, :create ]
+    before_action :set_candidate, only: [ :show, :approve, :reject, :start_review ]
 
     def index
       if @election
@@ -145,7 +145,7 @@ module PartnerPortal
       candidate.full_name      ||= user.full_name
       candidate.cin_number     ||= user.id_number if user.cin?
       candidate.date_of_birth  ||= user.dob
-      candidate.place_of_birth ||= [user.birth_commune&.name, user.birth_department&.name].compact.join(", ").presence || user.place_of_birth
+      candidate.place_of_birth ||= [ user.birth_commune&.name, user.birth_department&.name ].compact.join(", ").presence || user.place_of_birth
       candidate.sex            ||= user.sex == "male" ? "M" : (user.sex == "female" ? "F" : nil)
       candidate.marital_status ||= user.marital_status
       candidate.nationality    ||= user.nationality || "haitian"
@@ -178,7 +178,7 @@ module PartnerPortal
       end
 
       # NIF from verification records
-      nif_record = user.verification_records.where.not(nif: [nil, ""]).first
+      nif_record = user.verification_records.where.not(nif: [ nil, "" ]).first
       candidate.profession ||= nif_record&.owner_role_custom
 
       # DGI tax compliance check — has the citizen filed taxes?

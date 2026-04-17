@@ -3,7 +3,7 @@
 module PartnerPortal
   class RasIrDeclarationsController < PartnerPortal::BaseController
     before_action :set_partner
-    before_action :find_record, only: [:show]
+    before_action :find_record, only: [ :show ]
 
     def index
       @records = @partner.verification_records

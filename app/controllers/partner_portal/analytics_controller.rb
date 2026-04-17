@@ -200,12 +200,12 @@ module PartnerPortal
       @revenue_by_method = {}
       completed.find_each do |p|
         method = case p.payment_method
-                 when "zellus" then "Zellus"
-                 when "cash_window" then "Kach"
-                 when "bank_transfer" then "Transfè Bankè"
-                 when "moncash" then "MonCash"
-                 else p.payment_method&.titleize || "Lòt"
-                 end
+        when "zellus" then "Zellus"
+        when "cash_window" then "Kach"
+        when "bank_transfer" then "Transfè Bankè"
+        when "moncash" then "MonCash"
+        else p.payment_method&.titleize || "Lòt"
+        end
         @payments_by_method[method] ||= 0
         @payments_by_method[method] += 1
         @revenue_by_method[method] ||= 0

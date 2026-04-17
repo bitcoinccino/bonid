@@ -97,7 +97,7 @@ class FaceCollectionService
         image: { bytes: selfie_bytes },
         external_image_id: user_id.to_s,
         max_faces: 1,
-        detection_attributes: ["DEFAULT"],
+        detection_attributes: [ "DEFAULT" ],
         quality_filter: "AUTO"
       )
 
@@ -122,7 +122,7 @@ class FaceCollectionService
 
       rekognition_client.delete_faces(
         collection_id: COLLECTION_ID,
-        face_ids: [face_id]
+        face_ids: [ face_id ]
       )
 
       Rails.logger.info "[FaceCollectionService] Removed face_id=#{face_id} from collection"

@@ -52,7 +52,7 @@ class ElectionCandidate < ApplicationRecord
     { field: :doc_immigration_cert,       label: "Sètifika imigrasyon", ref: 9, conditional: true },
     { field: :doc_discharge,              label: "Dechaj (si ansyen fonksyonè leta)", ref: 10, conditional: true },
     { field: :doc_party_mandate,          label: "Atestasyon pati politik", ref: 11, candidacy_types: %w[party grouping] },
-    { field: :doc_support_petition,       label: "Petisyon 2% elektè (endepandan)", ref: 12, candidacy_types: %w[independent] },
+    { field: :doc_support_petition,       label: "Petisyon 2% elektè (endepandan)", ref: 12, candidacy_types: %w[independent] }
   ].freeze
 
   # ============================================================
@@ -96,7 +96,7 @@ class ElectionCandidate < ApplicationRecord
   # ============================================================
 
   def submit!
-    return false unless registration_status.in?([nil, "draft"])
+    return false unless registration_status.in?([ nil, "draft" ])
 
     self.registration_fee_gourdes = calculate_fee
     self.recepisse_number = generate_recepisse_number

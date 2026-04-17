@@ -28,9 +28,9 @@ module PartnerPortal
   class TeamController < PartnerPortal::BaseController
     before_action :set_partner_alias
     before_action :redirect_law_enforcement
-    before_action :set_member, only: [:destroy, :suspend, :reactivate, :update_role]
-    before_action :require_admin!, only: [:new, :lookup, :create, :destroy, :update_role]
-    before_action :require_admin_or_supervisor!, only: [:suspend, :reactivate]
+    before_action :set_member, only: [ :destroy, :suspend, :reactivate, :update_role ]
+    before_action :require_admin!, only: [ :new, :lookup, :create, :destroy, :update_role ]
+    before_action :require_admin_or_supervisor!, only: [ :suspend, :reactivate ]
 
     # === LIST TEAM MEMBERS ===
     def index

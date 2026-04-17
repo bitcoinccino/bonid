@@ -10,7 +10,7 @@ module Election
   class PilotFeedbackController < ApplicationController
     skip_before_action :authenticate_user!, raise: false
     skip_before_action :authenticate_citizen!, raise: false
-    skip_forgery_protection only: [:create]
+    skip_forgery_protection only: [ :create ]
 
     # POST /election/feedback
     def create
@@ -30,7 +30,7 @@ module Election
       election_id = params[:election_id] || "2026-test-pilot-1"
       @stats = PilotFeedback.stats(election_id)
       @feedbacks = PilotFeedback.for_election(election_id)
-                                .where.not(comment: [nil, ""])
+                                .where.not(comment: [ nil, "" ])
                                 .order(created_at: :desc)
                                 .limit(50)
 

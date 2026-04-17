@@ -47,8 +47,8 @@ class CreateServiceApplications < ActiveRecord::Migration[8.0]
 
     add_index :service_applications, :status
     add_index :service_applications, :verification_code, unique: true
-    add_index :service_applications, [:citizen_id, :status]
-    add_index :service_applications, [:partner_id, :status]
-    add_index :service_applications, [:partner_schema_id, :schema_version], name: "idx_svc_app_schema_version"
+    add_index :service_applications, [ :citizen_id, :status ]
+    add_index :service_applications, [ :partner_id, :status ]
+    add_index :service_applications, [ :partner_schema_id, :schema_version ], name: "idx_svc_app_schema_version"
   end
 end

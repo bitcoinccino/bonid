@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :election_ballot do
-    association :election, factory: [:bonvote_election, :open]
+    association :election, factory: [ :bonvote_election, :open ]
     sequence(:nullifier) { |n| SecureRandom.hex(16) }
     position { "president" }
     encrypted_choice { { encrypted_choice: SecureRandom.hex(32), encrypted_key: SecureRandom.hex(16), iv: SecureRandom.hex(8), auth_tag: SecureRandom.hex(8) }.to_json }

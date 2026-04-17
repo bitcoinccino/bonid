@@ -47,7 +47,7 @@ RSpec.describe FaceCollectionService do
           similarity: 95.72
         )
         allow(rekognition_client).to receive(:search_faces_by_image).and_return(
-          double(face_matches: [match])
+          double(face_matches: [ match ])
         )
       end
 
@@ -71,7 +71,7 @@ RSpec.describe FaceCollectionService do
           similarity: 98.5
         )
         allow(rekognition_client).to receive(:search_faces_by_image).and_return(
-          double(face_matches: [match])
+          double(face_matches: [ match ])
         )
       end
 
@@ -141,7 +141,7 @@ RSpec.describe FaceCollectionService do
       before do
         face_record = double(face: double(face_id: fake_face_id))
         allow(rekognition_client).to receive(:index_faces).and_return(
-          double(face_records: [face_record])
+          double(face_records: [ face_record ])
         )
       end
 
@@ -156,7 +156,7 @@ RSpec.describe FaceCollectionService do
           image: { bytes: selfie_bytes },
           external_image_id: current_user_id.to_s,
           max_faces: 1,
-          detection_attributes: ["DEFAULT"],
+          detection_attributes: [ "DEFAULT" ],
           quality_filter: "AUTO"
         )
         described_class.index(selfie_bytes, current_user_id)
@@ -206,7 +206,7 @@ RSpec.describe FaceCollectionService do
       it "calls delete_faces with correct params" do
         expect(rekognition_client).to receive(:delete_faces).with(
           collection_id: "bonid-verified-faces",
-          face_ids: [fake_face_id]
+          face_ids: [ fake_face_id ]
         )
         described_class.remove(fake_face_id)
       end

@@ -23,8 +23,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "record_id", null: false
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
-    t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
-    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+    t.index [ "blob_id" ], name: "index_active_storage_attachments_on_blob_id"
+    t.index [ "record_type", "record_id", "name", "blob_id" ], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
@@ -36,13 +36,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "byte_size", null: false
     t.string "checksum"
     t.datetime "created_at", null: false
-    t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
+    t.index [ "key" ], name: "index_active_storage_blobs_on_key", unique: true
   end
 
   create_table "active_storage_variant_records", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
-    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+    t.index [ "blob_id", "variation_digest" ], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
   create_table "addresses", force: :cascade do |t|
@@ -62,9 +62,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "department_id"
     t.bigint "arrondissement_id"
     t.string "plus_code"
-    t.index ["addressable_type", "addressable_id"], name: "index_addresses_on_addressable"
-    t.index ["communal_section_id"], name: "index_addresses_on_communal_section_id"
-    t.index ["partner_id"], name: "index_addresses_on_partner_id"
+    t.index [ "addressable_type", "addressable_id" ], name: "index_addresses_on_addressable"
+    t.index [ "communal_section_id" ], name: "index_addresses_on_communal_section_id"
+    t.index [ "partner_id" ], name: "index_addresses_on_partner_id"
   end
 
   create_table "admin_users", force: :cascade do |t|
@@ -75,8 +75,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["email"], name: "index_admin_users_on_email", unique: true
-    t.index ["reset_password_token"], name: "index_admin_users_on_reset_password_token", unique: true
+    t.index [ "email" ], name: "index_admin_users_on_email", unique: true
+    t.index [ "reset_password_token" ], name: "index_admin_users_on_reset_password_token", unique: true
   end
 
   create_table "admin_users_roles", id: false, force: :cascade do |t|
@@ -96,8 +96,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.float "duration_ms"
     t.integer "status"
     t.string "response_message"
-    t.index ["partner_id"], name: "index_api_access_logs_on_partner_id"
-    t.index ["user_id"], name: "index_api_access_logs_on_user_id"
+    t.index [ "partner_id" ], name: "index_api_access_logs_on_partner_id"
+    t.index [ "user_id" ], name: "index_api_access_logs_on_user_id"
   end
 
   create_table "api_webhook_events", force: :cascade do |t|
@@ -111,9 +111,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "direction", default: "outbound"
     t.datetime "delivered_at"
     t.string "status", default: "pending"
-    t.index ["event_type"], name: "index_api_webhook_events_on_event_type"
-    t.index ["partner_id"], name: "index_api_webhook_events_on_partner_id"
-    t.index ["status"], name: "index_api_webhook_events_on_status"
+    t.index [ "event_type" ], name: "index_api_webhook_events_on_event_type"
+    t.index [ "partner_id" ], name: "index_api_webhook_events_on_partner_id"
+    t.index [ "status" ], name: "index_api_webhook_events_on_status"
   end
 
   create_table "arrondissements", force: :cascade do |t|
@@ -123,8 +123,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "code"
-    t.index ["department_id"], name: "index_arrondissements_on_department_id"
-    t.index ["name"], name: "index_arrondissements_on_name"
+    t.index [ "department_id" ], name: "index_arrondissements_on_department_id"
+    t.index [ "name" ], name: "index_arrondissements_on_name"
   end
 
   create_table "audit_logs", force: :cascade do |t|
@@ -168,16 +168,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "account_source", default: "bank", null: false
     t.string "chain"
     t.string "cashtag"
-    t.index ["account_number"], name: "index_bank_profiles_on_account_number"
-    t.index ["account_source"], name: "index_bank_profiles_on_account_source"
-    t.index ["bank_id"], name: "index_bank_profiles_on_bank_id"
-    t.index ["currently_open"], name: "index_bank_profiles_on_currently_open"
-    t.index ["kyc_verified"], name: "index_bank_profiles_on_kyc_verified"
-    t.index ["linked_at"], name: "index_bank_profiles_on_linked_at"
-    t.index ["metadata"], name: "index_bank_profiles_on_metadata", using: :gin
-    t.index ["status"], name: "index_bank_profiles_on_status"
-    t.index ["user_id"], name: "index_bank_profiles_on_user_id"
-    t.index ["wallet_address"], name: "index_bank_profiles_on_wallet_address"
+    t.index [ "account_number" ], name: "index_bank_profiles_on_account_number"
+    t.index [ "account_source" ], name: "index_bank_profiles_on_account_source"
+    t.index [ "bank_id" ], name: "index_bank_profiles_on_bank_id"
+    t.index [ "currently_open" ], name: "index_bank_profiles_on_currently_open"
+    t.index [ "kyc_verified" ], name: "index_bank_profiles_on_kyc_verified"
+    t.index [ "linked_at" ], name: "index_bank_profiles_on_linked_at"
+    t.index [ "metadata" ], name: "index_bank_profiles_on_metadata", using: :gin
+    t.index [ "status" ], name: "index_bank_profiles_on_status"
+    t.index [ "user_id" ], name: "index_bank_profiles_on_user_id"
+    t.index [ "wallet_address" ], name: "index_bank_profiles_on_wallet_address"
   end
 
   create_table "banks", force: :cascade do |t|
@@ -189,8 +189,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "integration_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["slug"], name: "index_banks_on_slug"
-    t.index ["swift_code"], name: "index_banks_on_swift_code", unique: true
+    t.index [ "slug" ], name: "index_banks_on_slug"
+    t.index [ "swift_code" ], name: "index_banks_on_swift_code", unique: true
   end
 
   create_table "bonid_aliases", force: :cascade do |t|
@@ -199,9 +199,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "new_bonid", null: false
     t.string "reason"
     t.datetime "created_at", null: false
-    t.index ["new_bonid"], name: "index_bonid_aliases_on_new_bonid"
-    t.index ["old_bonid"], name: "index_bonid_aliases_on_old_bonid", unique: true
-    t.index ["user_id"], name: "index_bonid_aliases_on_user_id"
+    t.index [ "new_bonid" ], name: "index_bonid_aliases_on_new_bonid"
+    t.index [ "old_bonid" ], name: "index_bonid_aliases_on_old_bonid", unique: true
+    t.index [ "user_id" ], name: "index_bonid_aliases_on_user_id"
   end
 
   create_table "bonvote_elections", force: :cascade do |t|
@@ -218,9 +218,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_type", "round"], name: "index_bonvote_elections_on_election_type_and_round"
-    t.index ["parent_election_id"], name: "index_bonvote_elections_on_parent_election_id"
-    t.index ["status"], name: "index_bonvote_elections_on_status"
+    t.index [ "election_type", "round" ], name: "index_bonvote_elections_on_election_type_and_round"
+    t.index [ "parent_election_id" ], name: "index_bonvote_elections_on_parent_election_id"
+    t.index [ "status" ], name: "index_bonvote_elections_on_status"
   end
 
   create_table "border_entries", force: :cascade do |t|
@@ -239,13 +239,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "officer_unit_name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["entered_at"], name: "index_border_entries_on_entered_at"
-    t.index ["entry_mode"], name: "index_border_entries_on_entry_mode"
-    t.index ["exited_at"], name: "index_border_entries_on_exited_at"
-    t.index ["officer_id"], name: "index_border_entries_on_officer_id"
-    t.index ["partner_id"], name: "index_border_entries_on_partner_id"
-    t.index ["unit_code"], name: "index_border_entries_on_unit_code"
-    t.index ["visitor_submission_id"], name: "index_border_entries_on_visitor_submission_id"
+    t.index [ "entered_at" ], name: "index_border_entries_on_entered_at"
+    t.index [ "entry_mode" ], name: "index_border_entries_on_entry_mode"
+    t.index [ "exited_at" ], name: "index_border_entries_on_exited_at"
+    t.index [ "officer_id" ], name: "index_border_entries_on_officer_id"
+    t.index [ "partner_id" ], name: "index_border_entries_on_partner_id"
+    t.index [ "unit_code" ], name: "index_border_entries_on_unit_code"
+    t.index [ "visitor_submission_id" ], name: "index_border_entries_on_visitor_submission_id"
   end
 
   create_table "citizen_profiles", force: :cascade do |t|
@@ -254,8 +254,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["bonid"], name: "index_citizen_profiles_on_bonid"
-    t.index ["user_id"], name: "index_citizen_profiles_on_user_id"
+    t.index [ "bonid" ], name: "index_citizen_profiles_on_bonid"
+    t.index [ "user_id" ], name: "index_citizen_profiles_on_user_id"
   end
 
   create_table "citizen_sessions", force: :cascade do |t|
@@ -270,9 +270,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "login_source"
     t.string "ip_address"
     t.string "user_agent"
-    t.index ["citizen_profile_id"], name: "index_citizen_sessions_on_citizen_profile_id"
-    t.index ["login_source"], name: "index_citizen_sessions_on_login_source"
-    t.index ["user_id"], name: "index_citizen_sessions_on_user_id"
+    t.index [ "citizen_profile_id" ], name: "index_citizen_sessions_on_citizen_profile_id"
+    t.index [ "login_source" ], name: "index_citizen_sessions_on_login_source"
+    t.index [ "user_id" ], name: "index_citizen_sessions_on_user_id"
   end
 
   create_table "communal_sections", force: :cascade do |t|
@@ -283,8 +283,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "updated_at", null: false
     t.string "pcode"
     t.string "postal_code"
-    t.index ["commune_id"], name: "index_communal_sections_on_commune_id"
-    t.index ["name"], name: "index_communal_sections_on_name"
+    t.index [ "commune_id" ], name: "index_communal_sections_on_commune_id"
+    t.index [ "name" ], name: "index_communal_sections_on_name"
   end
 
   create_table "communes", force: :cascade do |t|
@@ -297,9 +297,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "postal_code"
     t.bigint "department_id", null: false
     t.boolean "launched", default: false, null: false
-    t.index ["arrondissement_id"], name: "index_communes_on_arrondissement_id"
-    t.index ["department_id"], name: "index_communes_on_department_id"
-    t.index ["name"], name: "index_communes_on_name"
+    t.index [ "arrondissement_id" ], name: "index_communes_on_arrondissement_id"
+    t.index [ "department_id" ], name: "index_communes_on_department_id"
+    t.index [ "name" ], name: "index_communes_on_name"
   end
 
   create_table "consent_grants", force: :cascade do |t|
@@ -324,12 +324,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.text "granted_scopes", default: [], null: false, array: true
     t.datetime "last_accessed_at"
     t.integer "access_count", default: 0, null: false
-    t.index ["citizen_id", "partner_id"], name: "index_consent_grants_on_citizen_id_and_partner_id", unique: true
-    t.index ["citizen_id"], name: "index_consent_grants_on_citizen_id"
-    t.index ["deleted_at"], name: "index_consent_grants_on_deleted_at"
-    t.index ["grant_token"], name: "index_consent_grants_on_grant_token", unique: true
-    t.index ["last_accessed_at"], name: "index_consent_grants_on_last_accessed_at"
-    t.index ["partner_id"], name: "index_consent_grants_on_partner_id"
+    t.index [ "citizen_id", "partner_id" ], name: "index_consent_grants_on_citizen_id_and_partner_id", unique: true
+    t.index [ "citizen_id" ], name: "index_consent_grants_on_citizen_id"
+    t.index [ "deleted_at" ], name: "index_consent_grants_on_deleted_at"
+    t.index [ "grant_token" ], name: "index_consent_grants_on_grant_token", unique: true
+    t.index [ "last_accessed_at" ], name: "index_consent_grants_on_last_accessed_at"
+    t.index [ "partner_id" ], name: "index_consent_grants_on_partner_id"
   end
 
   create_table "credit_ledger_entries", force: :cascade do |t|
@@ -346,10 +346,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["endpoint_key"], name: "index_credit_ledger_entries_on_endpoint_key"
-    t.index ["entry_type"], name: "index_credit_ledger_entries_on_entry_type"
-    t.index ["partner_id", "created_at"], name: "idx_ledger_partner_time"
-    t.index ["partner_id"], name: "index_credit_ledger_entries_on_partner_id"
+    t.index [ "endpoint_key" ], name: "index_credit_ledger_entries_on_endpoint_key"
+    t.index [ "entry_type" ], name: "index_credit_ledger_entries_on_entry_type"
+    t.index [ "partner_id", "created_at" ], name: "idx_ledger_partner_time"
+    t.index [ "partner_id" ], name: "index_credit_ledger_entries_on_partner_id"
   end
 
   create_table "crime_categories", force: :cascade do |t|
@@ -360,8 +360,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active"], name: "index_crime_categories_on_active"
-    t.index ["code"], name: "index_crime_categories_on_code", unique: true
+    t.index [ "active" ], name: "index_crime_categories_on_active"
+    t.index [ "code" ], name: "index_crime_categories_on_code", unique: true
   end
 
   create_table "crime_hotspots", force: :cascade do |t|
@@ -375,10 +375,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "breakdown", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["commune_id", "period_start", "period_end"], name: "idx_hotspots_commune_period"
-    t.index ["commune_id"], name: "index_crime_hotspots_on_commune_id"
-    t.index ["crime_category_id"], name: "index_crime_hotspots_on_crime_category_id"
-    t.index ["severity_score"], name: "index_crime_hotspots_on_severity_score"
+    t.index [ "commune_id", "period_start", "period_end" ], name: "idx_hotspots_commune_period"
+    t.index [ "commune_id" ], name: "index_crime_hotspots_on_commune_id"
+    t.index [ "crime_category_id" ], name: "index_crime_hotspots_on_crime_category_id"
+    t.index [ "severity_score" ], name: "index_crime_hotspots_on_severity_score"
   end
 
   create_table "crime_types", force: :cascade do |t|
@@ -396,11 +396,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active"], name: "index_crime_types_on_active"
-    t.index ["base_severity"], name: "index_crime_types_on_base_severity"
-    t.index ["code"], name: "index_crime_types_on_code", unique: true
-    t.index ["crime_category_id", "active"], name: "index_crime_types_on_crime_category_id_and_active"
-    t.index ["crime_category_id"], name: "index_crime_types_on_crime_category_id"
+    t.index [ "active" ], name: "index_crime_types_on_active"
+    t.index [ "base_severity" ], name: "index_crime_types_on_base_severity"
+    t.index [ "code" ], name: "index_crime_types_on_code", unique: true
+    t.index [ "crime_category_id", "active" ], name: "index_crime_types_on_crime_category_id_and_active"
+    t.index [ "crime_category_id" ], name: "index_crime_types_on_crime_category_id"
   end
 
   create_table "currency_rates", force: :cascade do |t|
@@ -413,7 +413,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "fetched_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["from_currency", "to_currency", "created_at"], name: "idx_currency_rates_lookup"
+    t.index [ "from_currency", "to_currency", "created_at" ], name: "idx_currency_rates_lookup"
   end
 
   create_table "departments", force: :cascade do |t|
@@ -422,8 +422,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "slug"
-    t.index ["name"], name: "index_departments_on_name", unique: true
-    t.index ["slug"], name: "index_departments_on_slug", unique: true
+    t.index [ "name" ], name: "index_departments_on_name", unique: true
+    t.index [ "slug" ], name: "index_departments_on_slug", unique: true
   end
 
   create_table "dgi_payments", force: :cascade do |t|
@@ -445,13 +445,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "failure_reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["form_type"], name: "index_dgi_payments_on_form_type"
-    t.index ["order_id"], name: "index_dgi_payments_on_order_id", unique: true
-    t.index ["transaction_id"], name: "index_dgi_payments_on_transaction_id"
-    t.index ["user_id", "status"], name: "index_dgi_payments_on_user_id_and_status"
-    t.index ["user_id"], name: "index_dgi_payments_on_user_id"
-    t.index ["verification_record_id", "status"], name: "index_dgi_payments_on_verification_record_id_and_status"
-    t.index ["verification_record_id"], name: "index_dgi_payments_on_verification_record_id"
+    t.index [ "form_type" ], name: "index_dgi_payments_on_form_type"
+    t.index [ "order_id" ], name: "index_dgi_payments_on_order_id", unique: true
+    t.index [ "transaction_id" ], name: "index_dgi_payments_on_transaction_id"
+    t.index [ "user_id", "status" ], name: "index_dgi_payments_on_user_id_and_status"
+    t.index [ "user_id" ], name: "index_dgi_payments_on_user_id"
+    t.index [ "verification_record_id", "status" ], name: "index_dgi_payments_on_verification_record_id_and_status"
+    t.index [ "verification_record_id" ], name: "index_dgi_payments_on_verification_record_id"
   end
 
   create_table "election_accreditations", force: :cascade do |t|
@@ -476,13 +476,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "revocation_reason"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["assigned_body_id"], name: "index_election_accreditations_on_assigned_body_id"
-    t.index ["election_id", "accreditation_code"], name: "idx_accreditations_code", unique: true
-    t.index ["election_id", "accreditation_type"], name: "idx_on_election_id_accreditation_type_67ca1597e4"
-    t.index ["election_id", "bonid"], name: "idx_accreditations_bonid", unique: true
-    t.index ["election_id"], name: "index_election_accreditations_on_election_id"
-    t.index ["organization"], name: "index_election_accreditations_on_organization"
-    t.index ["user_id"], name: "index_election_accreditations_on_user_id"
+    t.index [ "assigned_body_id" ], name: "index_election_accreditations_on_assigned_body_id"
+    t.index [ "election_id", "accreditation_code" ], name: "idx_accreditations_code", unique: true
+    t.index [ "election_id", "accreditation_type" ], name: "idx_on_election_id_accreditation_type_67ca1597e4"
+    t.index [ "election_id", "bonid" ], name: "idx_accreditations_bonid", unique: true
+    t.index [ "election_id" ], name: "index_election_accreditations_on_election_id"
+    t.index [ "organization" ], name: "index_election_accreditations_on_organization"
+    t.index [ "user_id" ], name: "index_election_accreditations_on_user_id"
   end
 
   create_table "election_ballots", force: :cascade do |t|
@@ -506,14 +506,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "cast_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["ballot_hash"], name: "index_election_ballots_on_ballot_hash", unique: true
-    t.index ["cast_at"], name: "index_election_ballots_on_cast_at"
-    t.index ["election_id", "channel"], name: "index_election_ballots_on_election_id_and_channel"
-    t.index ["election_id", "department_code"], name: "index_election_ballots_on_election_id_and_department_code"
-    t.index ["election_id", "nullifier"], name: "idx_ballots_election_nullifier", unique: true
-    t.index ["election_id", "position"], name: "index_election_ballots_on_election_id_and_position"
-    t.index ["election_id"], name: "index_election_ballots_on_election_id"
-    t.index ["receipt_id"], name: "index_election_ballots_on_receipt_id", unique: true
+    t.index [ "ballot_hash" ], name: "index_election_ballots_on_ballot_hash", unique: true
+    t.index [ "cast_at" ], name: "index_election_ballots_on_cast_at"
+    t.index [ "election_id", "channel" ], name: "index_election_ballots_on_election_id_and_channel"
+    t.index [ "election_id", "department_code" ], name: "index_election_ballots_on_election_id_and_department_code"
+    t.index [ "election_id", "nullifier" ], name: "idx_ballots_election_nullifier", unique: true
+    t.index [ "election_id", "position" ], name: "index_election_ballots_on_election_id_and_position"
+    t.index [ "election_id" ], name: "index_election_ballots_on_election_id"
+    t.index [ "receipt_id" ], name: "index_election_ballots_on_receipt_id", unique: true
   end
 
   create_table "election_bodies", force: :cascade do |t|
@@ -534,12 +534,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["commune_id"], name: "index_election_bodies_on_commune_id"
-    t.index ["election_id", "body_type"], name: "index_election_bodies_on_election_id_and_body_type"
-    t.index ["election_id", "code"], name: "index_election_bodies_on_election_id_and_code", unique: true
-    t.index ["election_id", "department_code"], name: "index_election_bodies_on_election_id_and_department_code"
-    t.index ["election_id"], name: "index_election_bodies_on_election_id"
-    t.index ["parent_body_id"], name: "index_election_bodies_on_parent_body_id"
+    t.index [ "commune_id" ], name: "index_election_bodies_on_commune_id"
+    t.index [ "election_id", "body_type" ], name: "index_election_bodies_on_election_id_and_body_type"
+    t.index [ "election_id", "code" ], name: "index_election_bodies_on_election_id_and_code", unique: true
+    t.index [ "election_id", "department_code" ], name: "index_election_bodies_on_election_id_and_department_code"
+    t.index [ "election_id" ], name: "index_election_bodies_on_election_id"
+    t.index [ "parent_body_id" ], name: "index_election_bodies_on_parent_body_id"
   end
 
   create_table "election_candidates", force: :cascade do |t|
@@ -603,16 +603,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "fee_reduction_reason"
     t.string "recepisse_number"
     t.datetime "recepisse_issued_at"
-    t.index ["candidacy_type"], name: "index_election_candidates_on_candidacy_type"
-    t.index ["election_constituency_id"], name: "index_election_candidates_on_election_constituency_id"
-    t.index ["election_id", "bonid"], name: "idx_candidate_election_bonid"
-    t.index ["election_id", "department_code"], name: "index_election_candidates_on_election_id_and_department_code"
-    t.index ["election_id", "position"], name: "index_election_candidates_on_election_id_and_position"
-    t.index ["election_id"], name: "index_election_candidates_on_election_id"
-    t.index ["party_registration_id"], name: "index_election_candidates_on_party_registration_id"
-    t.index ["recepisse_number"], name: "index_election_candidates_on_recepisse_number", unique: true, where: "(recepisse_number IS NOT NULL)"
-    t.index ["registration_status"], name: "index_election_candidates_on_registration_status"
-    t.index ["user_id"], name: "index_election_candidates_on_user_id"
+    t.index [ "candidacy_type" ], name: "index_election_candidates_on_candidacy_type"
+    t.index [ "election_constituency_id" ], name: "index_election_candidates_on_election_constituency_id"
+    t.index [ "election_id", "bonid" ], name: "idx_candidate_election_bonid"
+    t.index [ "election_id", "department_code" ], name: "index_election_candidates_on_election_id_and_department_code"
+    t.index [ "election_id", "position" ], name: "index_election_candidates_on_election_id_and_position"
+    t.index [ "election_id" ], name: "index_election_candidates_on_election_id"
+    t.index [ "party_registration_id" ], name: "index_election_candidates_on_party_registration_id"
+    t.index [ "recepisse_number" ], name: "index_election_candidates_on_recepisse_number", unique: true, where: "(recepisse_number IS NOT NULL)"
+    t.index [ "registration_status" ], name: "index_election_candidates_on_registration_status"
+    t.index [ "user_id" ], name: "index_election_candidates_on_user_id"
   end
 
   create_table "election_constituencies", force: :cascade do |t|
@@ -628,9 +628,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "electoral_system", default: "absolute_majority_two_round", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_id", "department_code"], name: "idx_on_election_id_department_code_231ace3839"
-    t.index ["election_id", "position"], name: "index_election_constituencies_on_election_id_and_position"
-    t.index ["election_id"], name: "index_election_constituencies_on_election_id"
+    t.index [ "election_id", "department_code" ], name: "idx_on_election_id_department_code_231ace3839"
+    t.index [ "election_id", "position" ], name: "index_election_constituencies_on_election_id_and_position"
+    t.index [ "election_id" ], name: "index_election_constituencies_on_election_id"
   end
 
   create_table "election_disputes", force: :cascade do |t|
@@ -661,13 +661,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "appeal_deadline"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["constituency_id"], name: "index_election_disputes_on_constituency_id"
-    t.index ["department_code"], name: "index_election_disputes_on_department_code"
-    t.index ["election_body_id"], name: "index_election_disputes_on_election_body_id"
-    t.index ["election_id", "dispute_type"], name: "index_election_disputes_on_election_id_and_dispute_type"
-    t.index ["election_id", "reference_code"], name: "idx_disputes_reference", unique: true
-    t.index ["election_id", "status"], name: "index_election_disputes_on_election_id_and_status"
-    t.index ["election_id"], name: "index_election_disputes_on_election_id"
+    t.index [ "constituency_id" ], name: "index_election_disputes_on_constituency_id"
+    t.index [ "department_code" ], name: "index_election_disputes_on_department_code"
+    t.index [ "election_body_id" ], name: "index_election_disputes_on_election_body_id"
+    t.index [ "election_id", "dispute_type" ], name: "index_election_disputes_on_election_id_and_dispute_type"
+    t.index [ "election_id", "reference_code" ], name: "idx_disputes_reference", unique: true
+    t.index [ "election_id", "status" ], name: "index_election_disputes_on_election_id_and_status"
+    t.index [ "election_id" ], name: "index_election_disputes_on_election_id"
   end
 
   create_table "election_party_registrations", force: :cascade do |t|
@@ -703,11 +703,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "rejected_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_id", "party_name"], name: "idx_party_reg_name", unique: true
-    t.index ["election_id", "status"], name: "idx_party_reg_status"
-    t.index ["election_id"], name: "index_election_party_registrations_on_election_id"
-    t.index ["registration_type"], name: "index_election_party_registrations_on_registration_type"
-    t.index ["user_id"], name: "index_election_party_registrations_on_user_id"
+    t.index [ "election_id", "party_name" ], name: "idx_party_reg_name", unique: true
+    t.index [ "election_id", "status" ], name: "idx_party_reg_status"
+    t.index [ "election_id" ], name: "index_election_party_registrations_on_election_id"
+    t.index [ "registration_type" ], name: "index_election_party_registrations_on_registration_type"
+    t.index [ "user_id" ], name: "index_election_party_registrations_on_user_id"
   end
 
   create_table "election_signatures", force: :cascade do |t|
@@ -721,9 +721,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "signed_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_id", "bonid"], name: "index_election_signatures_on_election_id_and_bonid", unique: true
-    t.index ["election_id", "role"], name: "index_election_signatures_on_election_id_and_role", unique: true
-    t.index ["election_id"], name: "index_election_signatures_on_election_id"
+    t.index [ "election_id", "bonid" ], name: "index_election_signatures_on_election_id_and_bonid", unique: true
+    t.index [ "election_id", "role" ], name: "index_election_signatures_on_election_id_and_role", unique: true
+    t.index [ "election_id" ], name: "index_election_signatures_on_election_id"
   end
 
   create_table "election_staff_assignments", force: :cascade do |t|
@@ -739,12 +739,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "checked_out_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_body_id", "role"], name: "index_election_staff_assignments_on_election_body_id_and_role"
-    t.index ["election_body_id"], name: "index_election_staff_assignments_on_election_body_id"
-    t.index ["election_id", "role"], name: "index_election_staff_assignments_on_election_id_and_role"
-    t.index ["election_id", "user_id", "election_body_id"], name: "idx_staff_election_body", unique: true
-    t.index ["election_id"], name: "index_election_staff_assignments_on_election_id"
-    t.index ["user_id"], name: "index_election_staff_assignments_on_user_id"
+    t.index [ "election_body_id", "role" ], name: "index_election_staff_assignments_on_election_body_id_and_role"
+    t.index [ "election_body_id" ], name: "index_election_staff_assignments_on_election_body_id"
+    t.index [ "election_id", "role" ], name: "index_election_staff_assignments_on_election_id_and_role"
+    t.index [ "election_id", "user_id", "election_body_id" ], name: "idx_staff_election_body", unique: true
+    t.index [ "election_id" ], name: "index_election_staff_assignments_on_election_id"
+    t.index [ "user_id" ], name: "index_election_staff_assignments_on_user_id"
   end
 
   create_table "electoral_calendars", force: :cascade do |t|
@@ -758,10 +758,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.boolean "public_visible", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["bonvote_election_id", "phase"], name: "index_electoral_calendars_on_bonvote_election_id_and_phase"
-    t.index ["bonvote_election_id"], name: "index_electoral_calendars_on_bonvote_election_id"
-    t.index ["phase"], name: "index_electoral_calendars_on_phase"
-    t.index ["start_date", "end_date"], name: "index_electoral_calendars_on_start_date_and_end_date"
+    t.index [ "bonvote_election_id", "phase" ], name: "index_electoral_calendars_on_bonvote_election_id_and_phase"
+    t.index [ "bonvote_election_id" ], name: "index_electoral_calendars_on_bonvote_election_id"
+    t.index [ "phase" ], name: "index_electoral_calendars_on_phase"
+    t.index [ "start_date", "end_date" ], name: "index_electoral_calendars_on_start_date_and_end_date"
   end
 
   create_table "emergency_contacts", force: :cascade do |t|
@@ -776,7 +776,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "updated_at", null: false
     t.integer "visibility", default: 0, null: false
     t.integer "verification_status", default: 0, null: false
-    t.index ["user_id"], name: "index_emergency_contacts_on_user_id"
+    t.index [ "user_id" ], name: "index_emergency_contacts_on_user_id"
   end
 
   create_table "failed_bonid_lookups", force: :cascade do |t|
@@ -789,7 +789,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "user_agent"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["officer_id"], name: "index_failed_bonid_lookups_on_officer_id"
+    t.index [ "officer_id" ], name: "index_failed_bonid_lookups_on_officer_id"
   end
 
   create_table "family_members", force: :cascade do |t|
@@ -815,12 +815,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "birth_department_id"
     t.bigint "birth_commune_id"
     t.integer "verification_status", default: 0, null: false
-    t.index ["birth_commune_id"], name: "index_family_members_on_birth_commune_id"
-    t.index ["birth_department_id"], name: "index_family_members_on_birth_department_id"
-    t.index ["link_consent_token"], name: "idx_family_link_consent_token", unique: true, where: "(link_consent_token IS NOT NULL)"
-    t.index ["linked_user_id"], name: "idx_family_linked_user", where: "(linked_user_id IS NOT NULL)"
-    t.index ["user_id", "relationship"], name: "idx_family_one_mother_one_father", unique: true, where: "(relationship = ANY (ARRAY[0, 1]))"
-    t.index ["user_id"], name: "index_family_members_on_user_id"
+    t.index [ "birth_commune_id" ], name: "index_family_members_on_birth_commune_id"
+    t.index [ "birth_department_id" ], name: "index_family_members_on_birth_department_id"
+    t.index [ "link_consent_token" ], name: "idx_family_link_consent_token", unique: true, where: "(link_consent_token IS NOT NULL)"
+    t.index [ "linked_user_id" ], name: "idx_family_linked_user", where: "(linked_user_id IS NOT NULL)"
+    t.index [ "user_id", "relationship" ], name: "idx_family_one_mother_one_father", unique: true, where: "(relationship = ANY (ARRAY[0, 1]))"
+    t.index [ "user_id" ], name: "index_family_members_on_user_id"
   end
 
   create_table "health_profiles", force: :cascade do |t|
@@ -835,7 +835,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "allergies_other"
     t.string "chronic_conditions_other"
     t.string "medications_other"
-    t.index ["user_id"], name: "index_health_profiles_on_user_id"
+    t.index [ "user_id" ], name: "index_health_profiles_on_user_id"
   end
 
   create_table "identity_submissions", force: :cascade do |t|
@@ -887,18 +887,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "country_of_residence", default: "HT"
     t.string "host_country_id_type"
     t.string "diaspora_proof_type"
-    t.index ["created_at"], name: "index_identity_submissions_on_created_at"
-    t.index ["document_number"], name: "index_identity_submissions_on_document_number"
-    t.index ["ninu"], name: "index_identity_submissions_on_ninu"
-    t.index ["partner_id"], name: "index_identity_submissions_on_partner_id"
-    t.index ["public_token"], name: "index_identity_submissions_on_public_token", unique: true
-    t.index ["signature_hash"], name: "index_identity_submissions_on_signature_hash"
-    t.index ["signature_verified_at"], name: "index_identity_submissions_on_signature_verified_at"
-    t.index ["signature_verifier_id"], name: "index_identity_submissions_on_signature_verifier_id"
-    t.index ["status"], name: "index_identity_submissions_on_status"
-    t.index ["user_id", "status", "created_at"], name: "idx_submissions_user_status_recent"
-    t.index ["user_id", "status"], name: "idx_identity_submissions_user_status"
-    t.index ["user_id"], name: "index_identity_submissions_on_user_id"
+    t.index [ "created_at" ], name: "index_identity_submissions_on_created_at"
+    t.index [ "document_number" ], name: "index_identity_submissions_on_document_number"
+    t.index [ "ninu" ], name: "index_identity_submissions_on_ninu"
+    t.index [ "partner_id" ], name: "index_identity_submissions_on_partner_id"
+    t.index [ "public_token" ], name: "index_identity_submissions_on_public_token", unique: true
+    t.index [ "signature_hash" ], name: "index_identity_submissions_on_signature_hash"
+    t.index [ "signature_verified_at" ], name: "index_identity_submissions_on_signature_verified_at"
+    t.index [ "signature_verifier_id" ], name: "index_identity_submissions_on_signature_verifier_id"
+    t.index [ "status" ], name: "index_identity_submissions_on_status"
+    t.index [ "user_id", "status", "created_at" ], name: "idx_submissions_user_status_recent"
+    t.index [ "user_id", "status" ], name: "idx_identity_submissions_user_status"
+    t.index [ "user_id" ], name: "index_identity_submissions_on_user_id"
   end
 
   create_table "incident_links", force: :cascade do |t|
@@ -910,11 +910,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "created_by_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["created_by_type", "created_by_id"], name: "index_incident_links_on_created_by"
-    t.index ["incident_report_id", "linked_incident_id"], name: "idx_incident_links_unique", unique: true
-    t.index ["incident_report_id"], name: "index_incident_links_on_incident_report_id"
-    t.index ["link_type"], name: "index_incident_links_on_link_type"
-    t.index ["linked_incident_id"], name: "index_incident_links_on_linked_incident_id"
+    t.index [ "created_by_type", "created_by_id" ], name: "index_incident_links_on_created_by"
+    t.index [ "incident_report_id", "linked_incident_id" ], name: "idx_incident_links_unique", unique: true
+    t.index [ "incident_report_id" ], name: "index_incident_links_on_incident_report_id"
+    t.index [ "link_type" ], name: "index_incident_links_on_link_type"
+    t.index [ "linked_incident_id" ], name: "index_incident_links_on_linked_incident_id"
   end
 
   create_table "incident_reports", force: :cascade do |t|
@@ -942,19 +942,19 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "report_signed_at"
     t.string "signed_by_badge_id"
     t.datetime "officer_attested_at"
-    t.index ["bonid_case_number"], name: "index_incident_reports_on_bonid_case_number"
-    t.index ["crime_type"], name: "index_incident_reports_on_crime_type"
-    t.index ["crime_type_record_id"], name: "index_incident_reports_on_crime_type_record_id"
-    t.index ["occurred_at"], name: "index_incident_reports_on_occurred_at"
-    t.index ["officer_bonid"], name: "index_incident_reports_on_officer_bonid"
-    t.index ["officer_id", "status", "created_at"], name: "idx_incidents_officer_status_date"
-    t.index ["officer_id"], name: "index_incident_reports_on_officer_id"
-    t.index ["partner_id", "status"], name: "idx_incidents_partner_status"
-    t.index ["partner_id"], name: "index_incident_reports_on_partner_id"
-    t.index ["report_id"], name: "index_incident_reports_on_report_id", unique: true
-    t.index ["status"], name: "index_incident_reports_on_status"
-    t.index ["submitted_at"], name: "index_incident_reports_on_submitted_at"
-    t.index ["uuid"], name: "index_incident_reports_on_uuid", unique: true
+    t.index [ "bonid_case_number" ], name: "index_incident_reports_on_bonid_case_number"
+    t.index [ "crime_type" ], name: "index_incident_reports_on_crime_type"
+    t.index [ "crime_type_record_id" ], name: "index_incident_reports_on_crime_type_record_id"
+    t.index [ "occurred_at" ], name: "index_incident_reports_on_occurred_at"
+    t.index [ "officer_bonid" ], name: "index_incident_reports_on_officer_bonid"
+    t.index [ "officer_id", "status", "created_at" ], name: "idx_incidents_officer_status_date"
+    t.index [ "officer_id" ], name: "index_incident_reports_on_officer_id"
+    t.index [ "partner_id", "status" ], name: "idx_incidents_partner_status"
+    t.index [ "partner_id" ], name: "index_incident_reports_on_partner_id"
+    t.index [ "report_id" ], name: "index_incident_reports_on_report_id", unique: true
+    t.index [ "status" ], name: "index_incident_reports_on_status"
+    t.index [ "submitted_at" ], name: "index_incident_reports_on_submitted_at"
+    t.index [ "uuid" ], name: "index_incident_reports_on_uuid", unique: true
   end
 
   create_table "incident_reviews", force: :cascade do |t|
@@ -969,12 +969,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.integer "priority", default: 0
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["assigned_by_id"], name: "index_incident_reviews_on_assigned_by_id"
-    t.index ["incident_report_id", "created_at"], name: "index_incident_reviews_on_incident_report_id_and_created_at"
-    t.index ["incident_report_id"], name: "index_incident_reviews_on_incident_report_id"
-    t.index ["priority"], name: "index_incident_reviews_on_priority"
-    t.index ["reviewer_id", "decision"], name: "index_incident_reviews_on_reviewer_id_and_decision"
-    t.index ["reviewer_id"], name: "index_incident_reviews_on_reviewer_id"
+    t.index [ "assigned_by_id" ], name: "index_incident_reviews_on_assigned_by_id"
+    t.index [ "incident_report_id", "created_at" ], name: "index_incident_reviews_on_incident_report_id_and_created_at"
+    t.index [ "incident_report_id" ], name: "index_incident_reviews_on_incident_report_id"
+    t.index [ "priority" ], name: "index_incident_reviews_on_priority"
+    t.index [ "reviewer_id", "decision" ], name: "index_incident_reviews_on_reviewer_id_and_decision"
+    t.index [ "reviewer_id" ], name: "index_incident_reviews_on_reviewer_id"
   end
 
   create_table "invite_codes", force: :cascade do |t|
@@ -990,11 +990,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "note"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_invite_codes_on_code", unique: true
-    t.index ["code_type"], name: "index_invite_codes_on_code_type"
-    t.index ["commune_id"], name: "index_invite_codes_on_commune_id"
-    t.index ["partner_id"], name: "index_invite_codes_on_partner_id"
-    t.index ["user_id"], name: "index_invite_codes_on_user_id"
+    t.index [ "code" ], name: "index_invite_codes_on_code", unique: true
+    t.index [ "code_type" ], name: "index_invite_codes_on_code_type"
+    t.index [ "commune_id" ], name: "index_invite_codes_on_commune_id"
+    t.index [ "partner_id" ], name: "index_invite_codes_on_partner_id"
+    t.index [ "user_id" ], name: "index_invite_codes_on_user_id"
   end
 
   create_table "local_contacts", force: :cascade do |t|
@@ -1009,9 +1009,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "updated_at", null: false
     t.bigint "visitor_submission_id"
     t.string "phone_country_code"
-    t.index ["bonid"], name: "index_local_contacts_on_bonid"
-    t.index ["user_id"], name: "index_local_contacts_on_user_id"
-    t.index ["visitor_submission_id"], name: "index_local_contacts_on_visitor_submission_id"
+    t.index [ "bonid" ], name: "index_local_contacts_on_bonid"
+    t.index [ "user_id" ], name: "index_local_contacts_on_user_id"
+    t.index [ "visitor_submission_id" ], name: "index_local_contacts_on_visitor_submission_id"
   end
 
   create_table "name_change_requests", force: :cascade do |t|
@@ -1031,9 +1031,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "reviewed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["reviewed_by_id"], name: "index_name_change_requests_on_reviewed_by_id"
-    t.index ["status"], name: "index_name_change_requests_on_status"
-    t.index ["user_id"], name: "index_name_change_requests_on_user_id"
+    t.index [ "reviewed_by_id" ], name: "index_name_change_requests_on_reviewed_by_id"
+    t.index [ "status" ], name: "index_name_change_requests_on_status"
+    t.index [ "user_id" ], name: "index_name_change_requests_on_user_id"
   end
 
   create_table "o_auth_access_tokens", force: :cascade do |t|
@@ -1046,11 +1046,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "refresh_token"
-    t.index ["citizen_id"], name: "index_o_auth_access_tokens_on_citizen_id"
-    t.index ["expires_at"], name: "index_o_auth_access_tokens_on_expires_at"
-    t.index ["partner_id"], name: "index_o_auth_access_tokens_on_partner_id"
-    t.index ["refresh_token"], name: "index_o_auth_access_tokens_on_refresh_token", unique: true
-    t.index ["token"], name: "index_o_auth_access_tokens_on_token", unique: true
+    t.index [ "citizen_id" ], name: "index_o_auth_access_tokens_on_citizen_id"
+    t.index [ "expires_at" ], name: "index_o_auth_access_tokens_on_expires_at"
+    t.index [ "partner_id" ], name: "index_o_auth_access_tokens_on_partner_id"
+    t.index [ "refresh_token" ], name: "index_o_auth_access_tokens_on_refresh_token", unique: true
+    t.index [ "token" ], name: "index_o_auth_access_tokens_on_token", unique: true
   end
 
   create_table "oauth_applications", force: :cascade do |t|
@@ -1062,7 +1062,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "partner_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["partner_id"], name: "index_oauth_applications_on_partner_id"
+    t.index [ "partner_id" ], name: "index_oauth_applications_on_partner_id"
   end
 
   create_table "oauth_authorization_codes", force: :cascade do |t|
@@ -1074,9 +1074,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.text "redirect_uri"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["code_digest"], name: "index_oauth_authorization_codes_on_code_digest", unique: true
-    t.index ["oauth_application_id"], name: "index_oauth_authorization_codes_on_oauth_application_id"
-    t.index ["user_id"], name: "index_oauth_authorization_codes_on_user_id"
+    t.index [ "code_digest" ], name: "index_oauth_authorization_codes_on_code_digest", unique: true
+    t.index [ "oauth_application_id" ], name: "index_oauth_authorization_codes_on_oauth_application_id"
+    t.index [ "user_id" ], name: "index_oauth_authorization_codes_on_user_id"
   end
 
   create_table "oauth_events", force: :cascade do |t|
@@ -1088,10 +1088,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.text "last_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["event_type"], name: "index_oauth_events_on_event_type"
-    t.index ["oauth_application_id"], name: "index_oauth_events_on_oauth_application_id"
-    t.index ["status"], name: "index_oauth_events_on_status"
-    t.index ["user_id"], name: "index_oauth_events_on_user_id"
+    t.index [ "event_type" ], name: "index_oauth_events_on_event_type"
+    t.index [ "oauth_application_id" ], name: "index_oauth_events_on_oauth_application_id"
+    t.index [ "status" ], name: "index_oauth_events_on_status"
+    t.index [ "user_id" ], name: "index_oauth_events_on_user_id"
   end
 
   create_table "officer_complaints", force: :cascade do |t|
@@ -1142,22 +1142,22 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "locality"
     t.string "postal_code"
     t.string "country", default: "Haiti"
-    t.index ["accused_officer_id"], name: "index_officer_complaints_on_accused_officer_id"
-    t.index ["allegation_category"], name: "index_officer_complaints_on_allegation_category"
-    t.index ["arrondissement_id"], name: "index_officer_complaints_on_arrondissement_id"
-    t.index ["assigned_to_id"], name: "index_officer_complaints_on_assigned_to_id"
-    t.index ["communal_section_id"], name: "index_officer_complaints_on_communal_section_id"
-    t.index ["commune_id"], name: "index_officer_complaints_on_commune_id"
-    t.index ["complainant_bonid"], name: "index_officer_complaints_on_complainant_bonid"
-    t.index ["complainant_type"], name: "index_officer_complaints_on_complainant_type"
-    t.index ["department_id"], name: "index_officer_complaints_on_department_id"
-    t.index ["occurred_at"], name: "index_officer_complaints_on_occurred_at"
-    t.index ["routed_directorate"], name: "index_officer_complaints_on_routed_directorate"
-    t.index ["status"], name: "index_officer_complaints_on_status"
-    t.index ["tracking_number"], name: "index_officer_complaints_on_tracking_number", unique: true
-    t.index ["user_id"], name: "index_officer_complaints_on_user_id"
-    t.index ["uuid"], name: "index_officer_complaints_on_uuid", unique: true
-    t.index ["visitor_submission_id"], name: "index_officer_complaints_on_visitor_submission_id"
+    t.index [ "accused_officer_id" ], name: "index_officer_complaints_on_accused_officer_id"
+    t.index [ "allegation_category" ], name: "index_officer_complaints_on_allegation_category"
+    t.index [ "arrondissement_id" ], name: "index_officer_complaints_on_arrondissement_id"
+    t.index [ "assigned_to_id" ], name: "index_officer_complaints_on_assigned_to_id"
+    t.index [ "communal_section_id" ], name: "index_officer_complaints_on_communal_section_id"
+    t.index [ "commune_id" ], name: "index_officer_complaints_on_commune_id"
+    t.index [ "complainant_bonid" ], name: "index_officer_complaints_on_complainant_bonid"
+    t.index [ "complainant_type" ], name: "index_officer_complaints_on_complainant_type"
+    t.index [ "department_id" ], name: "index_officer_complaints_on_department_id"
+    t.index [ "occurred_at" ], name: "index_officer_complaints_on_occurred_at"
+    t.index [ "routed_directorate" ], name: "index_officer_complaints_on_routed_directorate"
+    t.index [ "status" ], name: "index_officer_complaints_on_status"
+    t.index [ "tracking_number" ], name: "index_officer_complaints_on_tracking_number", unique: true
+    t.index [ "user_id" ], name: "index_officer_complaints_on_user_id"
+    t.index [ "uuid" ], name: "index_officer_complaints_on_uuid", unique: true
+    t.index [ "visitor_submission_id" ], name: "index_officer_complaints_on_visitor_submission_id"
   end
 
   create_table "officer_metrics", force: :cascade do |t|
@@ -1173,8 +1173,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "crime_type_breakdown", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["officer_id", "period_start"], name: "index_officer_metrics_on_officer_id_and_period_start", unique: true
-    t.index ["officer_id"], name: "index_officer_metrics_on_officer_id"
+    t.index [ "officer_id", "period_start" ], name: "index_officer_metrics_on_officer_id_and_period_start", unique: true
+    t.index [ "officer_id" ], name: "index_officer_metrics_on_officer_id"
   end
 
   create_table "officers", force: :cascade do |t|
@@ -1220,17 +1220,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "invited_by_type"
     t.integer "invitations_count", default: 0
     t.string "department_directorate"
-    t.index ["arrondissement_id"], name: "index_officers_on_arrondissement_id"
-    t.index ["badge_id"], name: "index_officers_on_badge_id", unique: true
-    t.index ["communal_section_id"], name: "index_officers_on_communal_section_id"
-    t.index ["commune_id"], name: "index_officers_on_commune_id"
-    t.index ["department_id"], name: "index_officers_on_department_id"
-    t.index ["email"], name: "index_officers_on_email", unique: true
-    t.index ["invitation_token"], name: "index_officers_on_invitation_token", unique: true
-    t.index ["invited_by_id", "invited_by_type"], name: "index_officers_on_invited_by_id_and_invited_by_type"
-    t.index ["partner_id"], name: "index_officers_on_partner_id"
-    t.index ["reset_password_token"], name: "index_officers_on_reset_password_token"
-    t.index ["user_id"], name: "index_officers_on_user_id"
+    t.index [ "arrondissement_id" ], name: "index_officers_on_arrondissement_id"
+    t.index [ "badge_id" ], name: "index_officers_on_badge_id", unique: true
+    t.index [ "communal_section_id" ], name: "index_officers_on_communal_section_id"
+    t.index [ "commune_id" ], name: "index_officers_on_commune_id"
+    t.index [ "department_id" ], name: "index_officers_on_department_id"
+    t.index [ "email" ], name: "index_officers_on_email", unique: true
+    t.index [ "invitation_token" ], name: "index_officers_on_invitation_token", unique: true
+    t.index [ "invited_by_id", "invited_by_type" ], name: "index_officers_on_invited_by_id_and_invited_by_type"
+    t.index [ "partner_id" ], name: "index_officers_on_partner_id"
+    t.index [ "reset_password_token" ], name: "index_officers_on_reset_password_token"
+    t.index [ "user_id" ], name: "index_officers_on_user_id"
   end
 
   create_table "one_time_secrets", force: :cascade do |t|
@@ -1243,9 +1243,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "viewed_ip"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["expires_at"], name: "index_one_time_secrets_on_expires_at"
-    t.index ["partner_id"], name: "index_one_time_secrets_on_partner_id"
-    t.index ["token"], name: "index_one_time_secrets_on_token", unique: true
+    t.index [ "expires_at" ], name: "index_one_time_secrets_on_expires_at"
+    t.index [ "partner_id" ], name: "index_one_time_secrets_on_partner_id"
+    t.index [ "token" ], name: "index_one_time_secrets_on_token", unique: true
   end
 
   create_table "partner_access_logs", force: :cascade do |t|
@@ -1256,10 +1256,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["action"], name: "index_partner_access_logs_on_action"
-    t.index ["admin_user_id"], name: "index_partner_access_logs_on_admin_user_id"
-    t.index ["created_at"], name: "index_partner_access_logs_on_created_at"
-    t.index ["partner_id"], name: "index_partner_access_logs_on_partner_id"
+    t.index [ "action" ], name: "index_partner_access_logs_on_action"
+    t.index [ "admin_user_id" ], name: "index_partner_access_logs_on_admin_user_id"
+    t.index [ "created_at" ], name: "index_partner_access_logs_on_created_at"
+    t.index [ "partner_id" ], name: "index_partner_access_logs_on_partner_id"
   end
 
   create_table "partner_api_logs", force: :cascade do |t|
@@ -1277,7 +1277,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "log_status"
-    t.index ["partner_id"], name: "index_partner_api_logs_on_partner_id"
+    t.index [ "partner_id" ], name: "index_partner_api_logs_on_partner_id"
   end
 
   create_table "partner_applications", force: :cascade do |t|
@@ -1302,7 +1302,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.integer "status", default: 0, null: false
     t.boolean "approved", default: false, null: false
     t.integer "partner_plan_id"
-    t.index ["partner_id"], name: "index_partner_applications_on_partner_id"
+    t.index [ "partner_id" ], name: "index_partner_applications_on_partner_id"
   end
 
   create_table "partner_audit_logs", force: :cascade do |t|
@@ -1313,9 +1313,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["admin_user_id"], name: "index_partner_audit_logs_on_admin_user_id"
-    t.index ["created_at"], name: "index_partner_audit_logs_on_created_at"
-    t.index ["partner_id"], name: "index_partner_audit_logs_on_partner_id"
+    t.index [ "admin_user_id" ], name: "index_partner_audit_logs_on_admin_user_id"
+    t.index [ "created_at" ], name: "index_partner_audit_logs_on_created_at"
+    t.index [ "partner_id" ], name: "index_partner_audit_logs_on_partner_id"
   end
 
   create_table "partner_branches", force: :cascade do |t|
@@ -1325,8 +1325,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_partner_branches_on_code"
-    t.index ["partner_id"], name: "index_partner_branches_on_partner_id"
+    t.index [ "code" ], name: "index_partner_branches_on_code"
+    t.index [ "partner_id" ], name: "index_partner_branches_on_partner_id"
   end
 
   create_table "partner_payments", force: :cascade do |t|
@@ -1352,13 +1352,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.integer "reconciliation_attempts", default: 0
     t.string "last_reconciliation_error"
     t.decimal "credits", precision: 10, scale: 2
-    t.index ["order_id"], name: "index_partner_payments_on_order_id", unique: true
-    t.index ["partner_id", "status"], name: "index_partner_payments_on_partner_id_and_status"
-    t.index ["partner_id"], name: "index_partner_payments_on_partner_id"
-    t.index ["partner_plan_id"], name: "index_partner_payments_on_partner_plan_id"
-    t.index ["payment_type"], name: "index_partner_payments_on_payment_type"
-    t.index ["status"], name: "index_partner_payments_on_status"
-    t.index ["transaction_id"], name: "index_partner_payments_on_transaction_id"
+    t.index [ "order_id" ], name: "index_partner_payments_on_order_id", unique: true
+    t.index [ "partner_id", "status" ], name: "index_partner_payments_on_partner_id_and_status"
+    t.index [ "partner_id" ], name: "index_partner_payments_on_partner_id"
+    t.index [ "partner_plan_id" ], name: "index_partner_payments_on_partner_plan_id"
+    t.index [ "payment_type" ], name: "index_partner_payments_on_payment_type"
+    t.index [ "status" ], name: "index_partner_payments_on_status"
+    t.index [ "transaction_id" ], name: "index_partner_payments_on_transaction_id"
   end
 
   create_table "partner_plans", force: :cascade do |t|
@@ -1385,8 +1385,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.decimal "price_per_extra_verif_htg", precision: 10, scale: 2, default: "0.0"
     t.decimal "price_per_extra_admin_htg", precision: 10, scale: 2, default: "0.0"
     t.integer "rate_limit", default: 20, comment: "API requests per minute (or per day for free)"
-    t.index ["slug"], name: "index_partner_plans_on_slug", unique: true
-    t.index ["stripe_price_id"], name: "index_partner_plans_on_stripe_price_id"
+    t.index [ "slug" ], name: "index_partner_plans_on_slug", unique: true
+    t.index [ "stripe_price_id" ], name: "index_partner_plans_on_stripe_price_id"
   end
 
   create_table "partner_schemas", force: :cascade do |t|
@@ -1422,14 +1422,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.integer "capacity"
     t.datetime "starts_at"
     t.datetime "ends_at"
-    t.index ["approved_by_id"], name: "index_partner_schemas_on_approved_by_id"
-    t.index ["citizen_facing", "active"], name: "index_partner_schemas_on_citizen_facing_and_active"
-    t.index ["form_code"], name: "index_partner_schemas_on_form_code"
-    t.index ["partner_id", "citizen_facing"], name: "index_partner_schemas_on_partner_id_and_citizen_facing"
-    t.index ["partner_id", "record_type", "schema_status"], name: "idx_schemas_partner_record_status"
-    t.index ["partner_id"], name: "index_partner_schemas_on_partner_id"
-    t.index ["sector"], name: "index_partner_schemas_on_sector"
-    t.index ["template"], name: "index_partner_schemas_on_template"
+    t.index [ "approved_by_id" ], name: "index_partner_schemas_on_approved_by_id"
+    t.index [ "citizen_facing", "active" ], name: "index_partner_schemas_on_citizen_facing_and_active"
+    t.index [ "form_code" ], name: "index_partner_schemas_on_form_code"
+    t.index [ "partner_id", "citizen_facing" ], name: "index_partner_schemas_on_partner_id_and_citizen_facing"
+    t.index [ "partner_id", "record_type", "schema_status" ], name: "idx_schemas_partner_record_status"
+    t.index [ "partner_id" ], name: "index_partner_schemas_on_partner_id"
+    t.index [ "sector" ], name: "index_partner_schemas_on_sector"
+    t.index [ "template" ], name: "index_partner_schemas_on_template"
   end
 
   create_table "partners", force: :cascade do |t|
@@ -1508,21 +1508,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "guidelines_accepted_at"
     t.string "guidelines_version"
     t.bigint "guidelines_accepted_by_id"
-    t.index ["allowed_scopes"], name: "index_partners_on_allowed_scopes", using: :gin
-    t.index ["allowed_transaction_types"], name: "index_partners_on_allowed_transaction_types", using: :gin
-    t.index ["api_key_digest"], name: "index_partners_on_api_key_digest"
-    t.index ["billing_period_end"], name: "index_partners_on_billing_period_end"
-    t.index ["deleted_at"], name: "index_partners_on_deleted_at"
-    t.index ["guidelines_accepted_at"], name: "index_partners_on_guidelines_accepted_at"
-    t.index ["moncash_customer_id"], name: "index_partners_on_moncash_customer_id"
-    t.index ["partner_plan_id"], name: "index_partners_on_partner_plan_id"
-    t.index ["payment_method"], name: "index_partners_on_payment_method"
-    t.index ["plan_status"], name: "index_partners_on_plan_status"
-    t.index ["redirect_uris"], name: "index_partners_on_redirect_uris", using: :gin
-    t.index ["stripe_customer_id"], name: "index_partners_on_stripe_customer_id"
-    t.index ["suspended_at"], name: "index_partners_on_suspended_at"
-    t.index ["unit_type"], name: "index_partners_on_unit_type"
-    t.index ["uuid"], name: "index_partners_on_uuid", unique: true
+    t.index [ "allowed_scopes" ], name: "index_partners_on_allowed_scopes", using: :gin
+    t.index [ "allowed_transaction_types" ], name: "index_partners_on_allowed_transaction_types", using: :gin
+    t.index [ "api_key_digest" ], name: "index_partners_on_api_key_digest"
+    t.index [ "billing_period_end" ], name: "index_partners_on_billing_period_end"
+    t.index [ "deleted_at" ], name: "index_partners_on_deleted_at"
+    t.index [ "guidelines_accepted_at" ], name: "index_partners_on_guidelines_accepted_at"
+    t.index [ "moncash_customer_id" ], name: "index_partners_on_moncash_customer_id"
+    t.index [ "partner_plan_id" ], name: "index_partners_on_partner_plan_id"
+    t.index [ "payment_method" ], name: "index_partners_on_payment_method"
+    t.index [ "plan_status" ], name: "index_partners_on_plan_status"
+    t.index [ "redirect_uris" ], name: "index_partners_on_redirect_uris", using: :gin
+    t.index [ "stripe_customer_id" ], name: "index_partners_on_stripe_customer_id"
+    t.index [ "suspended_at" ], name: "index_partners_on_suspended_at"
+    t.index [ "unit_type" ], name: "index_partners_on_unit_type"
+    t.index [ "uuid" ], name: "index_partners_on_uuid", unique: true
   end
 
   create_table "permissions", force: :cascade do |t|
@@ -1530,15 +1530,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["action"], name: "index_permissions_on_action", unique: true
+    t.index [ "action" ], name: "index_permissions_on_action", unique: true
   end
 
   create_table "permissions_roles", id: false, force: :cascade do |t|
     t.bigint "permission_id", null: false
     t.bigint "role_id", null: false
-    t.index ["permission_id", "role_id"], name: "index_permissions_roles_on_permission_id_and_role_id", unique: true
-    t.index ["permission_id"], name: "index_permissions_roles_on_permission_id"
-    t.index ["role_id"], name: "index_permissions_roles_on_role_id"
+    t.index [ "permission_id", "role_id" ], name: "index_permissions_roles_on_permission_id_and_role_id", unique: true
+    t.index [ "permission_id" ], name: "index_permissions_roles_on_permission_id"
+    t.index [ "role_id" ], name: "index_permissions_roles_on_role_id"
   end
 
   create_table "person_involvements", force: :cascade do |t|
@@ -1572,13 +1572,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "id_type"
     t.boolean "notify_emergency_contact", default: false, null: false
     t.bigint "visitor_submission_id"
-    t.index ["address_id"], name: "index_person_involvements_on_address_id"
-    t.index ["bonid"], name: "index_person_involvements_on_bonid"
-    t.index ["incident_report_id", "role"], name: "idx_pi_report_role"
-    t.index ["incident_report_id"], name: "index_person_involvements_on_incident_report_id"
-    t.index ["role"], name: "index_person_involvements_on_role"
-    t.index ["user_id"], name: "index_person_involvements_on_user_id"
-    t.index ["visitor_submission_id"], name: "index_person_involvements_on_visitor_submission_id"
+    t.index [ "address_id" ], name: "index_person_involvements_on_address_id"
+    t.index [ "bonid" ], name: "index_person_involvements_on_bonid"
+    t.index [ "incident_report_id", "role" ], name: "idx_pi_report_role"
+    t.index [ "incident_report_id" ], name: "index_person_involvements_on_incident_report_id"
+    t.index [ "role" ], name: "index_person_involvements_on_role"
+    t.index [ "user_id" ], name: "index_person_involvements_on_user_id"
+    t.index [ "visitor_submission_id" ], name: "index_person_involvements_on_visitor_submission_id"
   end
 
   create_table "physical_profiles", force: :cascade do |t|
@@ -1598,7 +1598,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "hair_style"
-    t.index ["user_id"], name: "index_physical_profiles_on_user_id"
+    t.index [ "user_id" ], name: "index_physical_profiles_on_user_id"
   end
 
   create_table "pilot_feedbacks", force: :cascade do |t|
@@ -1616,9 +1616,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "user_agent"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["election_id"], name: "index_pilot_feedbacks_on_election_id"
-    t.index ["receipt_id"], name: "index_pilot_feedbacks_on_receipt_id", unique: true
-    t.index ["trust_level"], name: "index_pilot_feedbacks_on_trust_level"
+    t.index [ "election_id" ], name: "index_pilot_feedbacks_on_election_id"
+    t.index [ "receipt_id" ], name: "index_pilot_feedbacks_on_receipt_id", unique: true
+    t.index [ "trust_level" ], name: "index_pilot_feedbacks_on_trust_level"
   end
 
   create_table "plan_add_ons", force: :cascade do |t|
@@ -1628,7 +1628,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "partner_plan_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["partner_plan_id"], name: "index_plan_add_ons_on_partner_plan_id"
+    t.index [ "partner_plan_id" ], name: "index_plan_add_ons_on_partner_plan_id"
   end
 
   create_table "plan_features", force: :cascade do |t|
@@ -1638,7 +1638,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.bigint "partner_plan_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["partner_plan_id"], name: "index_plan_features_on_partner_plan_id"
+    t.index [ "partner_plan_id" ], name: "index_plan_features_on_partner_plan_id"
   end
 
   create_table "qr_scan_logs", force: :cascade do |t|
@@ -1656,10 +1656,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "city"
     t.string "region"
     t.string "organization"
-    t.index ["identity_submission_id"], name: "index_qr_scan_logs_on_identity_submission_id"
-    t.index ["officer_id"], name: "index_qr_scan_logs_on_officer_id"
-    t.index ["partner_id"], name: "index_qr_scan_logs_on_partner_id"
-    t.index ["qr_scan_id"], name: "index_qr_scan_logs_on_qr_scan_id"
+    t.index [ "identity_submission_id" ], name: "index_qr_scan_logs_on_identity_submission_id"
+    t.index [ "officer_id" ], name: "index_qr_scan_logs_on_officer_id"
+    t.index [ "partner_id" ], name: "index_qr_scan_logs_on_partner_id"
+    t.index [ "qr_scan_id" ], name: "index_qr_scan_logs_on_qr_scan_id"
   end
 
   create_table "qr_scans", force: :cascade do |t|
@@ -1686,11 +1686,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.float "longitude"
     t.integer "status"
     t.bigint "banking_agent_id"
-    t.index ["banking_agent_id"], name: "index_qr_scans_on_banking_agent_id"
-    t.index ["identity_submission_id"], name: "index_qr_scans_on_identity_submission_id"
-    t.index ["latitude", "longitude"], name: "index_qr_scans_on_latitude_and_longitude"
-    t.index ["officer_id"], name: "index_qr_scans_on_officer_id"
-    t.index ["partner_id"], name: "index_qr_scans_on_partner_id"
+    t.index [ "banking_agent_id" ], name: "index_qr_scans_on_banking_agent_id"
+    t.index [ "identity_submission_id" ], name: "index_qr_scans_on_identity_submission_id"
+    t.index [ "latitude", "longitude" ], name: "index_qr_scans_on_latitude_and_longitude"
+    t.index [ "officer_id" ], name: "index_qr_scans_on_officer_id"
+    t.index [ "partner_id" ], name: "index_qr_scans_on_partner_id"
   end
 
   create_table "related_crime_types", force: :cascade do |t|
@@ -1700,9 +1700,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.float "correlation_score", default: 0.5
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["crime_type_id", "related_crime_type_id"], name: "idx_related_crimes_unique", unique: true
-    t.index ["crime_type_id"], name: "index_related_crime_types_on_crime_type_id"
-    t.index ["related_crime_type_id"], name: "index_related_crime_types_on_related_crime_type_id"
+    t.index [ "crime_type_id", "related_crime_type_id" ], name: "idx_related_crimes_unique", unique: true
+    t.index [ "crime_type_id" ], name: "index_related_crime_types_on_crime_type_id"
+    t.index [ "related_crime_type_id" ], name: "index_related_crime_types_on_related_crime_type_id"
   end
 
   create_table "review_comments", force: :cascade do |t|
@@ -1713,9 +1713,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "comment_type"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["admin_user_id"], name: "index_review_comments_on_admin_user_id"
-    t.index ["incident_review_id"], name: "index_review_comments_on_incident_review_id"
-    t.index ["person_involvement_id"], name: "index_review_comments_on_person_involvement_id"
+    t.index [ "admin_user_id" ], name: "index_review_comments_on_admin_user_id"
+    t.index [ "incident_review_id" ], name: "index_review_comments_on_incident_review_id"
+    t.index [ "person_involvement_id" ], name: "index_review_comments_on_person_involvement_id"
   end
 
   create_table "reviewer_activities", force: :cascade do |t|
@@ -1727,10 +1727,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "ip_address"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["action"], name: "index_reviewer_activities_on_action"
-    t.index ["created_at"], name: "index_reviewer_activities_on_created_at"
-    t.index ["target_type", "target_id"], name: "index_reviewer_activities_on_target_type_and_target_id"
-    t.index ["user_id"], name: "index_reviewer_activities_on_user_id"
+    t.index [ "action" ], name: "index_reviewer_activities_on_action"
+    t.index [ "created_at" ], name: "index_reviewer_activities_on_created_at"
+    t.index [ "target_type", "target_id" ], name: "index_reviewer_activities_on_target_type_and_target_id"
+    t.index [ "user_id" ], name: "index_reviewer_activities_on_user_id"
   end
 
   create_table "reviewers", force: :cascade do |t|
@@ -1745,17 +1745,17 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "resource_type"
     t.integer "resource_id"
     t.string "slug"
-    t.index ["name"], name: "index_roles_on_name"
-    t.index ["resource_id"], name: "index_roles_on_resource_id"
-    t.index ["resource_type"], name: "index_roles_on_resource_type"
-    t.index ["slug"], name: "index_roles_on_slug"
+    t.index [ "name" ], name: "index_roles_on_name"
+    t.index [ "resource_id" ], name: "index_roles_on_resource_id"
+    t.index [ "resource_type" ], name: "index_roles_on_resource_type"
+    t.index [ "slug" ], name: "index_roles_on_slug"
   end
 
   create_table "roles_users", id: false, force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "role_id", null: false
-    t.index ["role_id", "user_id"], name: "index_roles_users_on_role_id_and_user_id"
-    t.index ["user_id", "role_id"], name: "index_roles_users_on_user_id_and_role_id", unique: true
+    t.index [ "role_id", "user_id" ], name: "index_roles_users_on_role_id_and_user_id"
+    t.index [ "user_id", "role_id" ], name: "index_roles_users_on_user_id_and_role_id", unique: true
   end
 
   create_table "service_applications", force: :cascade do |t|
@@ -1791,16 +1791,16 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "payment_token"
     t.string "payment_transaction_id"
     t.datetime "checked_in_at"
-    t.index ["citizen_id", "status"], name: "index_service_applications_on_citizen_id_and_status"
-    t.index ["citizen_id"], name: "index_service_applications_on_citizen_id"
-    t.index ["partner_id", "status"], name: "index_service_applications_on_partner_id_and_status"
-    t.index ["partner_id"], name: "index_service_applications_on_partner_id"
-    t.index ["partner_schema_id", "schema_version"], name: "idx_svc_app_schema_version"
-    t.index ["partner_schema_id"], name: "index_service_applications_on_partner_schema_id"
-    t.index ["payment_token"], name: "index_service_applications_on_payment_token", unique: true, where: "(payment_token IS NOT NULL)"
-    t.index ["reviewed_by_id"], name: "index_service_applications_on_reviewed_by_id"
-    t.index ["status"], name: "index_service_applications_on_status"
-    t.index ["verification_code"], name: "index_service_applications_on_verification_code", unique: true
+    t.index [ "citizen_id", "status" ], name: "index_service_applications_on_citizen_id_and_status"
+    t.index [ "citizen_id" ], name: "index_service_applications_on_citizen_id"
+    t.index [ "partner_id", "status" ], name: "index_service_applications_on_partner_id_and_status"
+    t.index [ "partner_id" ], name: "index_service_applications_on_partner_id"
+    t.index [ "partner_schema_id", "schema_version" ], name: "idx_svc_app_schema_version"
+    t.index [ "partner_schema_id" ], name: "index_service_applications_on_partner_schema_id"
+    t.index [ "payment_token" ], name: "index_service_applications_on_payment_token", unique: true, where: "(payment_token IS NOT NULL)"
+    t.index [ "reviewed_by_id" ], name: "index_service_applications_on_reviewed_by_id"
+    t.index [ "status" ], name: "index_service_applications_on_status"
+    t.index [ "verification_code" ], name: "index_service_applications_on_verification_code", unique: true
   end
 
   create_table "settlements", force: :cascade do |t|
@@ -1824,13 +1824,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.date "period_end"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["batch_id"], name: "index_settlements_on_batch_id"
-    t.index ["dgi_payment_id"], name: "index_settlements_on_dgi_payment_id"
-    t.index ["partner_id", "status"], name: "idx_settlements_partner_status"
-    t.index ["partner_id"], name: "index_settlements_on_partner_id"
-    t.index ["payment_order_id"], name: "index_settlements_on_payment_order_id"
-    t.index ["period_start", "period_end"], name: "idx_settlements_period"
-    t.index ["status"], name: "index_settlements_on_status"
+    t.index [ "batch_id" ], name: "index_settlements_on_batch_id"
+    t.index [ "dgi_payment_id" ], name: "index_settlements_on_dgi_payment_id"
+    t.index [ "partner_id", "status" ], name: "idx_settlements_partner_status"
+    t.index [ "partner_id" ], name: "index_settlements_on_partner_id"
+    t.index [ "payment_order_id" ], name: "index_settlements_on_payment_order_id"
+    t.index [ "period_start", "period_end" ], name: "idx_settlements_period"
+    t.index [ "status" ], name: "index_settlements_on_status"
   end
 
   create_table "severity_rules", force: :cascade do |t|
@@ -1841,8 +1841,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.text "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["crime_type_id", "condition_type"], name: "index_severity_rules_on_crime_type_id_and_condition_type"
-    t.index ["crime_type_id"], name: "index_severity_rules_on_crime_type_id"
+    t.index [ "crime_type_id", "condition_type" ], name: "index_severity_rules_on_crime_type_id_and_condition_type"
+    t.index [ "crime_type_id" ], name: "index_severity_rules_on_crime_type_id"
   end
 
   create_table "signature_logs", force: :cascade do |t|
@@ -1857,11 +1857,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.text "note"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["action"], name: "index_signature_logs_on_action"
-    t.index ["identity_submission_id"], name: "index_signature_logs_on_identity_submission_id"
-    t.index ["signature_hash"], name: "index_signature_logs_on_signature_hash"
-    t.index ["user_id"], name: "index_signature_logs_on_user_id"
-    t.index ["verifier_id"], name: "index_signature_logs_on_verifier_id"
+    t.index [ "action" ], name: "index_signature_logs_on_action"
+    t.index [ "identity_submission_id" ], name: "index_signature_logs_on_identity_submission_id"
+    t.index [ "signature_hash" ], name: "index_signature_logs_on_signature_hash"
+    t.index [ "user_id" ], name: "index_signature_logs_on_user_id"
+    t.index [ "verifier_id" ], name: "index_signature_logs_on_verifier_id"
   end
 
   create_table "social_handles", force: :cascade do |t|
@@ -1879,7 +1879,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "access_token"
     t.string "refresh_token"
     t.datetime "expires_at"
-    t.index ["user_id"], name: "index_social_handles_on_user_id"
+    t.index [ "user_id" ], name: "index_social_handles_on_user_id"
   end
 
   create_table "suspect_alerts", force: :cascade do |t|
@@ -1897,12 +1897,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["active", "priority"], name: "index_suspect_alerts_on_active_and_priority"
-    t.index ["alert_type"], name: "index_suspect_alerts_on_alert_type"
-    t.index ["bonid"], name: "index_suspect_alerts_on_bonid"
-    t.index ["created_by_type", "created_by_id"], name: "index_suspect_alerts_on_created_by"
-    t.index ["source_incident_id"], name: "index_suspect_alerts_on_source_incident_id"
-    t.index ["user_id"], name: "index_suspect_alerts_on_user_id"
+    t.index [ "active", "priority" ], name: "index_suspect_alerts_on_active_and_priority"
+    t.index [ "alert_type" ], name: "index_suspect_alerts_on_alert_type"
+    t.index [ "bonid" ], name: "index_suspect_alerts_on_bonid"
+    t.index [ "created_by_type", "created_by_id" ], name: "index_suspect_alerts_on_created_by"
+    t.index [ "source_incident_id" ], name: "index_suspect_alerts_on_source_incident_id"
+    t.index [ "user_id" ], name: "index_suspect_alerts_on_user_id"
   end
 
   create_table "transaction_consents", force: :cascade do |t|
@@ -1937,13 +1937,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "data_accessed_at"
     t.boolean "burn_after_read", default: false, null: false
     t.integer "data_access_window_minutes"
-    t.index ["citizen_id", "partner_id", "reference_id"], name: "idx_tx_consent_citizen_partner_ref", unique: true
-    t.index ["citizen_id"], name: "index_transaction_consents_on_citizen_id"
-    t.index ["consent_token", "partner_id"], name: "idx_tx_consent_token_partner"
-    t.index ["consent_token"], name: "index_transaction_consents_on_consent_token", unique: true
-    t.index ["expires_at"], name: "index_transaction_consents_on_expires_at"
-    t.index ["partner_id"], name: "index_transaction_consents_on_partner_id"
-    t.index ["status"], name: "index_transaction_consents_on_status"
+    t.index [ "citizen_id", "partner_id", "reference_id" ], name: "idx_tx_consent_citizen_partner_ref", unique: true
+    t.index [ "citizen_id" ], name: "index_transaction_consents_on_citizen_id"
+    t.index [ "consent_token", "partner_id" ], name: "idx_tx_consent_token_partner"
+    t.index [ "consent_token" ], name: "index_transaction_consents_on_consent_token", unique: true
+    t.index [ "expires_at" ], name: "index_transaction_consents_on_expires_at"
+    t.index [ "partner_id" ], name: "index_transaction_consents_on_partner_id"
+    t.index [ "status" ], name: "index_transaction_consents_on_status"
   end
 
   create_table "users", force: :cascade do |t|
@@ -2012,30 +2012,30 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "suffix"
     t.string "ninu", limit: 10
     t.datetime "last_seen_at"
-    t.index ["active"], name: "index_users_on_active"
-    t.index ["address_id"], name: "index_users_on_address_id"
-    t.index ["agent_rank"], name: "index_users_on_agent_rank"
-    t.index ["bonid"], name: "index_users_on_bonid_unique", unique: true, where: "(bonid IS NOT NULL)"
-    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
-    t.index ["dob"], name: "index_users_on_dob"
-    t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["invitation_token"], name: "index_users_on_invitation_token", unique: true
-    t.index ["invited_by_id"], name: "index_users_on_invited_by_id"
-    t.index ["invited_by_type", "invited_by_id"], name: "index_users_on_invited_by"
-    t.index ["ninu"], name: "index_users_on_ninu"
-    t.index ["partner_branch_id"], name: "index_users_on_partner_branch_id"
-    t.index ["partner_id"], name: "index_users_on_partner_id"
-    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
-    t.index ["sex"], name: "index_users_on_sex"
-    t.index ["type"], name: "index_users_on_type"
+    t.index [ "active" ], name: "index_users_on_active"
+    t.index [ "address_id" ], name: "index_users_on_address_id"
+    t.index [ "agent_rank" ], name: "index_users_on_agent_rank"
+    t.index [ "bonid" ], name: "index_users_on_bonid_unique", unique: true, where: "(bonid IS NOT NULL)"
+    t.index [ "confirmation_token" ], name: "index_users_on_confirmation_token", unique: true
+    t.index [ "dob" ], name: "index_users_on_dob"
+    t.index [ "email" ], name: "index_users_on_email", unique: true
+    t.index [ "invitation_token" ], name: "index_users_on_invitation_token", unique: true
+    t.index [ "invited_by_id" ], name: "index_users_on_invited_by_id"
+    t.index [ "invited_by_type", "invited_by_id" ], name: "index_users_on_invited_by"
+    t.index [ "ninu" ], name: "index_users_on_ninu"
+    t.index [ "partner_branch_id" ], name: "index_users_on_partner_branch_id"
+    t.index [ "partner_id" ], name: "index_users_on_partner_id"
+    t.index [ "reset_password_token" ], name: "index_users_on_reset_password_token", unique: true
+    t.index [ "sex" ], name: "index_users_on_sex"
+    t.index [ "type" ], name: "index_users_on_type"
   end
 
   create_table "users_roles", id: false, force: :cascade do |t|
     t.bigint "user_id", null: false
     t.bigint "role_id", null: false
-    t.index ["role_id"], name: "index_users_roles_on_role_id"
-    t.index ["user_id", "role_id"], name: "index_users_roles_on_user_id_and_role_id"
-    t.index ["user_id"], name: "index_users_roles_on_user_id"
+    t.index [ "role_id" ], name: "index_users_roles_on_role_id"
+    t.index [ "user_id", "role_id" ], name: "index_users_roles_on_user_id_and_role_id"
+    t.index [ "user_id" ], name: "index_users_roles_on_user_id"
   end
 
   create_table "verification_records", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2056,25 +2056,25 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "updated_at", null: false
     t.string "visibility"
     t.bigint "partner_id"
-    t.index ["access_level"], name: "idx_access_level"
-    t.index ["access_level"], name: "index_verification_records_on_access_level"
-    t.index ["created_at"], name: "index_verification_records_on_created_at"
-    t.index ["data"], name: "idx_verification_records_data_gin", using: :gin
-    t.index ["data"], name: "index_verification_records_on_data", using: :gin
-    t.index ["metadata"], name: "idx_verification_records_metadata_gin", where: "(metadata IS NOT NULL)", using: :gin
-    t.index ["partner_id", "record_type"], name: "idx_partner_record_type"
-    t.index ["partner_id"], name: "index_verification_records_on_partner_id"
-    t.index ["record_type", "category"], name: "idx_verification_type_category"
-    t.index ["record_type"], name: "index_verification_records_on_record_type"
-    t.index ["source"], name: "idx_source"
-    t.index ["status"], name: "index_verification_records_on_status"
-    t.index ["user_id", "record_type"], name: "idx_user_record_type"
-    t.index ["user_id", "status"], name: "idx_user_status"
-    t.index ["user_id"], name: "index_verification_records_on_user_id"
-    t.index ["verified_at"], name: "idx_verified_at"
-    t.index ["verifier_id"], name: "index_verification_records_on_verifier_id"
-    t.index ["verifier_type", "verifier_id"], name: "idx_verifier"
-    t.index ["verifier_type"], name: "index_verification_records_on_verifier_type"
+    t.index [ "access_level" ], name: "idx_access_level"
+    t.index [ "access_level" ], name: "index_verification_records_on_access_level"
+    t.index [ "created_at" ], name: "index_verification_records_on_created_at"
+    t.index [ "data" ], name: "idx_verification_records_data_gin", using: :gin
+    t.index [ "data" ], name: "index_verification_records_on_data", using: :gin
+    t.index [ "metadata" ], name: "idx_verification_records_metadata_gin", where: "(metadata IS NOT NULL)", using: :gin
+    t.index [ "partner_id", "record_type" ], name: "idx_partner_record_type"
+    t.index [ "partner_id" ], name: "index_verification_records_on_partner_id"
+    t.index [ "record_type", "category" ], name: "idx_verification_type_category"
+    t.index [ "record_type" ], name: "index_verification_records_on_record_type"
+    t.index [ "source" ], name: "idx_source"
+    t.index [ "status" ], name: "index_verification_records_on_status"
+    t.index [ "user_id", "record_type" ], name: "idx_user_record_type"
+    t.index [ "user_id", "status" ], name: "idx_user_status"
+    t.index [ "user_id" ], name: "index_verification_records_on_user_id"
+    t.index [ "verified_at" ], name: "idx_verified_at"
+    t.index [ "verifier_id" ], name: "index_verification_records_on_verifier_id"
+    t.index [ "verifier_type", "verifier_id" ], name: "idx_verifier"
+    t.index [ "verifier_type" ], name: "index_verification_records_on_verifier_type"
   end
 
   create_table "visitor_access_grants", force: :cascade do |t|
@@ -2084,8 +2084,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "consumed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["token"], name: "index_visitor_access_grants_on_token", unique: true
-    t.index ["visitor_submission_id"], name: "index_visitor_access_grants_on_visitor_submission_id"
+    t.index [ "token" ], name: "index_visitor_access_grants_on_token", unique: true
+    t.index [ "visitor_submission_id" ], name: "index_visitor_access_grants_on_visitor_submission_id"
   end
 
   create_table "visitor_scan_events", force: :cascade do |t|
@@ -2110,10 +2110,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "occurred_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["bon_touris_id"], name: "index_visitor_scan_events_on_bon_touris_id"
-    t.index ["notified_at"], name: "index_visitor_scan_events_on_notified_at"
-    t.index ["visitor_submission_id", "occurred_at"], name: "idx_on_visitor_submission_id_occurred_at_c12dbb6195"
-    t.index ["visitor_submission_id"], name: "index_visitor_scan_events_on_visitor_submission_id"
+    t.index [ "bon_touris_id" ], name: "index_visitor_scan_events_on_bon_touris_id"
+    t.index [ "notified_at" ], name: "index_visitor_scan_events_on_notified_at"
+    t.index [ "visitor_submission_id", "occurred_at" ], name: "idx_on_visitor_submission_id_occurred_at_c12dbb6195"
+    t.index [ "visitor_submission_id" ], name: "index_visitor_scan_events_on_visitor_submission_id"
   end
 
   create_table "visitor_submissions", force: :cascade do |t|
@@ -2164,18 +2164,18 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.jsonb "liveness_metadata", default: {}
     t.date "entry_date"
     t.date "arrival_date"
-    t.index ["bonid"], name: "index_visitor_submissions_on_bonid", unique: true
-    t.index ["country_code"], name: "index_visitor_submissions_on_country_code"
-    t.index ["email"], name: "index_visitor_submissions_on_email"
-    t.index ["email_otp"], name: "index_visitor_submissions_on_email_otp"
-    t.index ["entry_mode", "transport_provider"], name: "index_visitor_submissions_on_entry_mode_and_transport_provider"
-    t.index ["entry_mode"], name: "index_visitor_submissions_on_entry_mode"
-    t.index ["identity_submission_id"], name: "index_visitor_submissions_on_identity_submission_id"
-    t.index ["passport_number"], name: "index_visitor_submissions_on_passport_number"
-    t.index ["public_id"], name: "index_visitor_submissions_on_public_id", unique: true
-    t.index ["status"], name: "index_visitor_submissions_on_status"
-    t.index ["transport_provider"], name: "index_visitor_submissions_on_transport_provider"
-    t.index ["user_id"], name: "index_visitor_submissions_on_user_id"
+    t.index [ "bonid" ], name: "index_visitor_submissions_on_bonid", unique: true
+    t.index [ "country_code" ], name: "index_visitor_submissions_on_country_code"
+    t.index [ "email" ], name: "index_visitor_submissions_on_email"
+    t.index [ "email_otp" ], name: "index_visitor_submissions_on_email_otp"
+    t.index [ "entry_mode", "transport_provider" ], name: "index_visitor_submissions_on_entry_mode_and_transport_provider"
+    t.index [ "entry_mode" ], name: "index_visitor_submissions_on_entry_mode"
+    t.index [ "identity_submission_id" ], name: "index_visitor_submissions_on_identity_submission_id"
+    t.index [ "passport_number" ], name: "index_visitor_submissions_on_passport_number"
+    t.index [ "public_id" ], name: "index_visitor_submissions_on_public_id", unique: true
+    t.index [ "status" ], name: "index_visitor_submissions_on_status"
+    t.index [ "transport_provider" ], name: "index_visitor_submissions_on_transport_provider"
+    t.index [ "user_id" ], name: "index_visitor_submissions_on_user_id"
   end
 
   create_table "voter_eligibility_records", force: :cascade do |t|
@@ -2195,12 +2195,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "biometric_fingerprint"
-    t.index ["bonvote_election_id", "bonid"], name: "idx_voter_election_bonid", unique: true
-    t.index ["bonvote_election_id", "department_code"], name: "idx_voter_election_dept"
-    t.index ["bonvote_election_id"], name: "index_voter_eligibility_records_on_bonvote_election_id"
-    t.index ["has_voted"], name: "index_voter_eligibility_records_on_has_voted"
-    t.index ["status"], name: "index_voter_eligibility_records_on_status"
-    t.index ["user_id"], name: "index_voter_eligibility_records_on_user_id"
+    t.index [ "bonvote_election_id", "bonid" ], name: "idx_voter_election_bonid", unique: true
+    t.index [ "bonvote_election_id", "department_code" ], name: "idx_voter_election_dept"
+    t.index [ "bonvote_election_id" ], name: "index_voter_eligibility_records_on_bonvote_election_id"
+    t.index [ "has_voted" ], name: "index_voter_eligibility_records_on_has_voted"
+    t.index [ "status" ], name: "index_voter_eligibility_records_on_status"
+    t.index [ "user_id" ], name: "index_voter_eligibility_records_on_user_id"
   end
 
   create_table "waitlist_signups", force: :cascade do |t|
@@ -2224,11 +2224,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_200000) do
     t.string "rank"
     t.string "unit_type"
     t.string "unit_name"
-    t.index ["commune_id"], name: "index_waitlist_signups_on_commune_id"
-    t.index ["email"], name: "index_waitlist_signups_on_email", unique: true
-    t.index ["referral_code"], name: "index_waitlist_signups_on_referral_code", unique: true
-    t.index ["signup_type"], name: "index_waitlist_signups_on_signup_type"
-    t.index ["status"], name: "index_waitlist_signups_on_status"
+    t.index [ "commune_id" ], name: "index_waitlist_signups_on_commune_id"
+    t.index [ "email" ], name: "index_waitlist_signups_on_email", unique: true
+    t.index [ "referral_code" ], name: "index_waitlist_signups_on_referral_code", unique: true
+    t.index [ "signup_type" ], name: "index_waitlist_signups_on_signup_type"
+    t.index [ "status" ], name: "index_waitlist_signups_on_status"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

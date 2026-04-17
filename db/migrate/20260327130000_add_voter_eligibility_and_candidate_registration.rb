@@ -23,8 +23,8 @@ class AddVoterEligibilityAndCandidateRegistration < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :voter_eligibility_records, [:bonvote_election_id, :bonid], unique: true, name: "idx_voter_election_bonid"
-    add_index :voter_eligibility_records, [:bonvote_election_id, :department_code], name: "idx_voter_election_dept"
+    add_index :voter_eligibility_records, [ :bonvote_election_id, :bonid ], unique: true, name: "idx_voter_election_bonid"
+    add_index :voter_eligibility_records, [ :bonvote_election_id, :department_code ], name: "idx_voter_election_dept"
     add_index :voter_eligibility_records, :status
     add_index :voter_eligibility_records, :has_voted
 
@@ -45,7 +45,7 @@ class AddVoterEligibilityAndCandidateRegistration < ActiveRecord::Migration[8.0]
     end
 
     add_index :election_candidates, :registration_status
-    add_index :election_candidates, [:election_id, :bonid], name: "idx_candidate_election_bonid"
+    add_index :election_candidates, [ :election_id, :bonid ], name: "idx_candidate_election_bonid"
     add_foreign_key :election_candidates, :admin_users, column: :approved_by_id
     add_foreign_key :election_candidates, :admin_users, column: :rejected_by_id
   end

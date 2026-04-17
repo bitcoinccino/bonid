@@ -311,7 +311,7 @@ class DgiPaymentService
 
     data = JSON.parse(response.body)
     token = data["access_token"]
-    Rails.cache.write("moncash:access_token", token, expires_in: [(data["expires_in"] || 3600).to_i - 300, 60].max)
+    Rails.cache.write("moncash:access_token", token, expires_in: [ (data["expires_in"] || 3600).to_i - 300, 60 ].max)
     token
   end
 

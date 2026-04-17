@@ -130,7 +130,6 @@ class DgiPayment < ApplicationRecord
 
     # Record in settlement ledger — tracks what BonID owes the partner
     SettlementService.record_payment(self)
-
   end
 
   # Generate the BonGouv digital seal for this receipt.

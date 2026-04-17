@@ -422,7 +422,7 @@ module PartnerPortal
       when "transaction"
         tx_ids = @current_partner.partner_schemas.where(service_category: "transaction").pluck(:id)
         tx_subs = all_subs.where(partner_schema_id: tx_ids)
-        paid = tx_subs.where.not(total_price_cents: [nil, 0])
+        paid = tx_subs.where.not(total_price_cents: [ nil, 0 ])
         currency = @current_partner.partner_schemas
                      .where(service_category: "transaction")
                      .pick(:currency) || "HTG"
@@ -459,7 +459,7 @@ module PartnerPortal
     def build_submission_type_stats
       case @sub_category
       when "transaction"
-        paid = @submissions.unscope(:order, :limit).where.not(total_price_cents: [nil, 0])
+        paid = @submissions.unscope(:order, :limit).where.not(total_price_cents: [ nil, 0 ])
         @sub_tx_stats = {
           total_revenue: paid.sum(:total_price_cents),
           total_sold: paid.count,

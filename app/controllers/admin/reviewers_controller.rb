@@ -12,7 +12,7 @@
 #
 module Admin
   class ReviewersController < Admin::ApplicationController
-    before_action :set_reviewer, only: [:destroy]
+    before_action :set_reviewer, only: [ :destroy ]
 
     # ─────────────────────────────────────────────────────────
     # INDEX — List all reviewers

@@ -11,7 +11,7 @@ module Citizens
           icon: "ri-bank-fill",
           color: "#00209F",
           description: "Pi gwo bank komèsyal an Ayiti. Kont epay, kont kouran, ak sèvis anliy.",
-          services: ["Kont Epay", "Kont Kouran", "Kat Debi"],
+          services: [ "Kont Epay", "Kont Kouran", "Kat Debi" ],
           status: :coming_soon
         },
         {
@@ -20,7 +20,7 @@ module Citizens
           icon: "ri-bank-fill",
           color: "#006B3F",
           description: "Bank ki ofri sèvis konplè pou endividi ak antrepriz.",
-          services: ["Kont Epay", "Kont Kouran", "Prè Pèsonèl"],
+          services: [ "Kont Epay", "Kont Kouran", "Prè Pèsonèl" ],
           status: :coming_soon
         },
         {
@@ -29,7 +29,7 @@ module Citizens
           icon: "ri-government-fill",
           color: "#C8102E",
           description: "Bank Nasyonal de Kredi — bank leta ki sipòte devlopman ekonomik.",
-          services: ["Kont Epay", "Kont Kouran", "Prè Agrikòl"],
+          services: [ "Kont Epay", "Kont Kouran", "Prè Agrikòl" ],
           status: :coming_soon
         }
       ]

@@ -11,7 +11,7 @@ class CreateReviewerActivities < ActiveRecord::Migration[8.0]
     end
 
     add_index :reviewer_activities, :action
-    add_index :reviewer_activities, [:target_type, :target_id]
+    add_index :reviewer_activities, [ :target_type, :target_id ]
     add_index :reviewer_activities, :created_at
   end
 end

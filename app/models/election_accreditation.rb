@@ -67,11 +67,11 @@ class ElectionAccreditation < ApplicationRecord
     return if accreditation_code.present?
 
     prefix = case accreditation_type
-             when "mandataire" then "MAN"
-             when "national_observer" then "OBS-N"
-             when "international_observer" then "OBS-I"
-             else "ACC"
-             end
+    when "mandataire" then "MAN"
+    when "national_observer" then "OBS-N"
+    when "international_observer" then "OBS-I"
+    else "ACC"
+    end
     self.accreditation_code = "#{prefix}-#{SecureRandom.hex(4).upcase}"
   end
 end

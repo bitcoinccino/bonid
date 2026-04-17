@@ -338,7 +338,7 @@ RSpec.describe "BonID → VoterEligibilityRecord Handoff", type: :model do
       # Step 5: ZKP proves eligibility
       proof = ::Election::EligibilityProofService.generate_proof(voter_key, election.id.to_s, nullifier)
       verified = ::Election::EligibilityProofService.verify_proof(
-        proof, election.id.to_s, nullifier, Set.new([nullifier])
+        proof, election.id.to_s, nullifier, Set.new([ nullifier ])
       )
       expect(verified).to be true
     end

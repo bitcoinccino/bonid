@@ -79,13 +79,13 @@ module RecordSchemas
       ir     = interets_retard.to_f
       am     = amende.to_f
 
-      taxable       = [brut - exo - export, 0].max
+      taxable       = [ brut - exo - export, 0 ].max
       tca_collectee = (taxable * TAUX_TCA).round(2)
       total_credit  = al_tca + ai_tca + trs
       tca_nette     = (tca_collectee - total_credit).round(2)
 
       credit_reportable = tca_nette < 0 ? tca_nette.abs : 0
-      tca_due           = [tca_nette, 0].max
+      tca_due           = [ tca_nette, 0 ].max
       total             = tca_due + ir + am
 
       {

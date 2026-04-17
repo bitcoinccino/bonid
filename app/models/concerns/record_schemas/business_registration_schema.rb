@@ -193,11 +193,11 @@ module RecordSchemas
     def biz_directeur_nom          = data.dig("proprietaire", "nom_directeur")
 
     def biz_proprietaire_nom_complet
-      [biz_proprietaire_prenom, biz_proprietaire_nom].compact.join(" ")
+      [ biz_proprietaire_prenom, biz_proprietaire_nom ].compact.join(" ")
     end
 
     def biz_directeur_nom_complet
-      nom = [data.dig("proprietaire", "prenom_directeur"), data.dig("proprietaire", "nom_directeur")].compact.join(" ")
+      nom = [ data.dig("proprietaire", "prenom_directeur"), data.dig("proprietaire", "nom_directeur") ].compact.join(" ")
       nom.present? ? nom : nil
     end
 

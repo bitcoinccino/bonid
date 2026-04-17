@@ -125,6 +125,6 @@ module GovernmentRoleConstants
 
   # For form dropdowns: [["Administratè — Jere pòtay...", "partner_admin"], ...]
   def self.role_options_for(sector)
-    roles_for(sector).map { |r| ["#{r[:label]} — #{r[:description]}", r[:key]] }
+    roles_for(sector).map { |r| [ "#{r[:label]} — #{r[:description]}", r[:key] ] }
   end
 end

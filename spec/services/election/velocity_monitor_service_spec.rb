@@ -50,7 +50,7 @@ RSpec.describe Election::VelocityMonitorService do
   describe ".snapshot" do
     it "returns velocity metrics" do
       allow(redis).to receive(:get).and_return("10")
-      allow(redis).to receive(:lrange).and_return(["8", "10", "12", "9", "11"])
+      allow(redis).to receive(:lrange).and_return([ "8", "10", "12", "9", "11" ])
 
       snap = described_class.snapshot(election_id)
 
@@ -61,7 +61,7 @@ RSpec.describe Election::VelocityMonitorService do
 
     it "detects rising trend" do
       allow(redis).to receive(:get).with(/global.*#{election_id}/).and_return("20", "10")
-      allow(redis).to receive(:lrange).and_return(["15", "10", "8"])
+      allow(redis).to receive(:lrange).and_return([ "15", "10", "8" ])
 
       snap = described_class.snapshot(election_id)
       expect(snap[:trend]).to eq("rising")
@@ -69,7 +69,7 @@ RSpec.describe Election::VelocityMonitorService do
 
     it "detects falling trend" do
       allow(redis).to receive(:get).with(/global.*#{election_id}/).and_return("5", "15")
-      allow(redis).to receive(:lrange).and_return(["10", "15", "12"])
+      allow(redis).to receive(:lrange).and_return([ "10", "15", "12" ])
 
       snap = described_class.snapshot(election_id)
       expect(snap[:trend]).to eq("falling")
@@ -82,7 +82,7 @@ RSpec.describe Election::VelocityMonitorService do
   describe ".check_and_alert!" do
     it "does not alert when below threshold" do
       allow(redis).to receive(:get).and_return("5")
-      allow(redis).to receive(:lrange).and_return(["4", "5", "6", "4", "5"])
+      allow(redis).to receive(:lrange).and_return([ "4", "5", "6", "4", "5" ])
 
       expect(ActionCable.server).not_to receive(:broadcast)
       result = described_class.check_and_alert!(election_id)
@@ -93,7 +93,7 @@ RSpec.describe Election::VelocityMonitorService do
       # Simulate a massive spike: 100 votes in a window where avg is 5
       allow(redis).to receive(:get).and_return("100", "5")
       allow(redis).to receive(:lrange).and_return(
-        (["5"] * 50) + ["100"] # 50 windows of 5 + current spike, total > MIN_VOTES
+        ([ "5" ] * 50) + [ "100" ] # 50 windows of 5 + current spike, total > MIN_VOTES
       )
 
       expect(ActionCable.server).to receive(:broadcast).with(
@@ -109,7 +109,7 @@ RSpec.describe Election::VelocityMonitorService do
     it "skips alert when total votes below minimum" do
       # Spike but too few total votes (early election)
       allow(redis).to receive(:get).and_return("10", "0")
-      allow(redis).to receive(:lrange).and_return(["0", "0", "10"]) # total = 10 < MIN_VOTES
+      allow(redis).to receive(:lrange).and_return([ "0", "0", "10" ]) # total = 10 < MIN_VOTES
 
       result = described_class.check_and_alert!(election_id)
       expect(result).to be_nil
@@ -136,7 +136,7 @@ RSpec.describe Election::VelocityMonitorService do
   # ─────────────────────────────────────────────────────────
   describe ".reset!" do
     it "deletes all velocity keys for the election" do
-      allow(redis).to receive(:keys).and_return(["key1", "key2"])
+      allow(redis).to receive(:keys).and_return([ "key1", "key2" ])
       expect(redis).to receive(:del).with("key1", "key2")
 
       described_class.reset!(election_id)

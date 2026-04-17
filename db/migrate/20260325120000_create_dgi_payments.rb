@@ -36,8 +36,8 @@ class CreateDgiPayments < ActiveRecord::Migration[7.1]
 
     add_index :dgi_payments, :order_id, unique: true
     add_index :dgi_payments, :transaction_id
-    add_index :dgi_payments, [:user_id, :status]
-    add_index :dgi_payments, [:verification_record_id, :status]
+    add_index :dgi_payments, [ :user_id, :status ]
+    add_index :dgi_payments, [ :verification_record_id, :status ]
     add_index :dgi_payments, :form_type
   end
 end

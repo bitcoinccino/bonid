@@ -160,7 +160,7 @@ class TeamInvitationService
     return nil if email.blank?
     local, domain = email.split("@")
     return email if local.length <= 2
-    "#{local[0..1]}#{'*' * [local.length - 2, 4].min}@#{domain}"
+    "#{local[0..1]}#{'*' * [ local.length - 2, 4 ].min}@#{domain}"
   end
 
   private

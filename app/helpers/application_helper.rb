@@ -296,7 +296,7 @@ module ApplicationHelper
 
     stripped = bonid.gsub("-", "")
     last6 = stripped.last(6)
-    dots = "•" * [stripped.length - 8, 6].max
+    dots = "•" * [ stripped.length - 8, 6 ].max
     "MB#{dots}#{last6}"
   end
 
@@ -388,5 +388,4 @@ module ApplicationHelper
   rescue
     false
   end
-
 end

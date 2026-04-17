@@ -72,14 +72,14 @@ class ElectionBallot < ApplicationRecord
 
   def ticker_location
     if department_code.present? && DEPARTMENT_LABELS[department_code]
-      ["ht", "#{DEPARTMENT_LABELS[department_code]}, HT"]
+      [ "ht", "#{DEPARTMENT_LABELS[department_code]}, HT" ]
     elsif consulate_id.present? && CONSULATE_CITIES[consulate_id]
       country = ip_country&.downcase || "us"
-      ["#{country}", "#{CONSULATE_CITIES[consulate_id]}, #{ip_country || 'XX'}"]
+      [ "#{country}", "#{CONSULATE_CITIES[consulate_id]}, #{ip_country || 'XX'}" ]
     elsif ip_country.present?
-      ["#{ip_country.downcase}", "#{ip_country}"]
+      [ "#{ip_country.downcase}", "#{ip_country}" ]
     else
-      ["ht", "Ayiti"]
+      [ "ht", "Ayiti" ]
     end
   end
 
@@ -127,7 +127,7 @@ class ElectionBallot < ApplicationRecord
       by_department: ballots.group(:department_code).count,
       by_channel: ballots.group(:channel).count,
       by_hour: ballots.group_by_hour(:cast_at, range: 24.hours.ago..Time.current).count,
-      by_country: ballots.where.not(ip_country: [nil, ""]).group(:ip_country).count
+      by_country: ballots.where.not(ip_country: [ nil, "" ]).group(:ip_country).count
     }
   rescue => e
     # group_by_hour requires groupdate gem; fallback
@@ -140,7 +140,7 @@ class ElectionBallot < ApplicationRecord
       by_position: ballots.group(:position).count,
       by_department: ballots.group(:department_code).count,
       by_channel: ballots.group(:channel).count,
-      by_country: ballots.where.not(ip_country: [nil, ""]).group(:ip_country).count
+      by_country: ballots.where.not(ip_country: [ nil, "" ]).group(:ip_country).count
     }
   end
 end
