@@ -1,0 +1,250 @@
+<%# app/views/election/admin/candidates/show.html.erb %>
+<%# CEP admin — single-candidate review. Docs checklist + approve/reject. %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-user-star-line me-2 pp-text-brand"></i><%= @candidate.full_name %>
+      </h4>
+      <p class="pp-page-subtitle">
+        <%= @candidate.position.titleize %>
+        <% if @candidate.party_name.present? %>· <%= @candidate.party_name %><% end %>
+        · Resi <%= @candidate.recepisse_number || "—" %>
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="badge bg-<%= @candidate.registration_status_color %>-subtle text-<%= @candidate.registration_status_color %> px-3 py-2">
+        <%= @candidate.registration_status_label %>
+      </span>
+      <%= link_to admin_election_election_candidates_path(@election.id),
+                  class: "btn btn-sm btn-outline-secondary" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <%# ── Left column: identity & documents ── %>
+    <div class="col-lg-8">
+
+      <div class="pp-card card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0 fw-semibold pp-text-sm">Enfòmasyon kandida</h6>
+        </div>
+        <div class="card-body p-4">
+          <dl class="row mb-0 pp-text-sm">
+            <dt class="col-sm-4 text-muted">BonID</dt>
+            <dd class="col-sm-8"><%= @candidate.bonid.presence || "—" %></dd>
+            <dt class="col-sm-4 text-muted">CIN</dt>
+            <dd class="col-sm-8"><%= @candidate.cin_number.presence || "—" %></dd>
+            <dt class="col-sm-4 text-muted">Dat nesans</dt>
+            <dd class="col-sm-8"><%= @candidate.date_of_birth&.strftime("%d %b %Y") || "—" %></dd>
+            <dt class="col-sm-4 text-muted">Depatman</dt>
+            <dd class="col-sm-8"><%= @candidate.residence_department.presence || @candidate.department_code.presence || "—" %></dd>
+            <dt class="col-sm-4 text-muted">Pwofesyon</dt>
+            <dd class="col-sm-8"><%= @candidate.profession.presence || "—" %></dd>
+            <dt class="col-sm-4 text-muted">Tip kandidati</dt>
+            <dd class="col-sm-8"><%= @candidate.candidacy_type&.titleize || "—" %></dd>
+            <dt class="col-sm-4 text-muted">Frè enskripsyon</dt>
+            <dd class="col-sm-8">
+              <%= @candidate.fee_label %>
+              <% if @candidate.fee_paid? %>
+                <span class="badge bg-success-subtle text-success ms-1">Peye</span>
+              <% else %>
+                <span class="badge bg-warning-subtle text-warning ms-1">Pa peye</span>
+              <% end %>
+            </dd>
+          </dl>
+
+          <% if @candidate.platform_statement.present? %>
+            <div class="mt-3">
+              <div class="pp-text-xs text-muted mb-1">Deklarasyon plafòm</div>
+              <div class="pp-text-sm"><%= simple_format(@candidate.platform_statement) %></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="pp-card card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-semibold pp-text-sm">
+            Dokiman (Atik 181)
+          </h6>
+          <span class="pp-text-xs text-muted">
+            <%= @candidate.documents_submitted_count %>/<%= @candidate.documents_total_count %> soumèt
+          </span>
+        </div>
+        <ul class="list-group list-group-flush">
+          <% @candidate.required_documents.each do |doc| %>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span class="pp-text-sm">
+                <span class="text-muted me-2">#<%= doc[:ref] %></span>
+                <%= doc[:label] %>
+              </span>
+              <% if @candidate.send(doc[:field]) %>
+                <i class="ri-check-line pp-text-success"></i>
+              <% else %>
+                <i class="ri-close-line text-danger"></i>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+
+      <% if @candidate.registration_status == "rejected" && @candidate.rejection_reason.present? %>
+        <div class="alert alert-danger mt-3 pp-text-sm">
+          <strong>Rezon rejeksyon:</strong>
+          <%= @candidate.rejection_reason %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# ── Right column: actions ── %>
+    <div class="col-lg-4">
+      <div class="pp-card card">
+        <div class="card-header">
+          <h6 class="mb-0 fw-semibold pp-text-sm">Aksyon</h6>
+        </div>
+        <div class="card-body p-3 d-grid gap-2">
+
+          <% if @candidate.registration_status == "submitted" %>
+            <%= button_to admin_start_review_election_election_candidate_path(@election.id, @candidate),
+                          method: :post,
+                          class: "btn btn-outline-primary btn-sm" do %>
+              <i class="ri-search-eye-line me-1"></i> Kòmanse revizyon
+            <% end %>
+          <% end %>
+
+          <% if @candidate.registration_status.in?(%w[submitted under_review]) %>
+            <button type="button"
+                    class="btn btn-success btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#approveCandidateModal">
+              <i class="ri-check-line me-1"></i> Apwouve
+            </button>
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#rejectCandidateModal">
+              <i class="ri-close-line me-1"></i> Rejte
+            </button>
+          <% elsif @candidate.registration_status == "approved" %>
+            <div class="alert alert-success small mb-0">
+              <i class="ri-shield-check-line me-1"></i>
+              Apwouve pa
+              <%= @candidate.approved_by&.email || "—" %>
+              le <%= @candidate.approved_at&.strftime("%d %b %Y %H:%M") %>.
+            </div>
+          <% elsif @candidate.registration_status == "rejected" %>
+            <div class="alert alert-danger small mb-0">
+              <i class="ri-close-circle-line me-1"></i>
+              Rejte pa
+              <%= @candidate.rejected_by&.email || "—" %>
+              le <%= @candidate.rejected_at&.strftime("%d %b %Y %H:%M") %>.
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# Timeline %>
+      <div class="pp-card card mt-3">
+        <div class="card-header">
+          <h6 class="mb-0 fw-semibold pp-text-sm">Istwa</h6>
+        </div>
+        <ul class="list-group list-group-flush pp-text-xs">
+          <% if @candidate.submitted_at %>
+            <li class="list-group-item">
+              <span class="text-muted">Soumèt:</span>
+              <%= @candidate.submitted_at.strftime("%d %b %Y %H:%M") %>
+            </li>
+          <% end %>
+          <% if @candidate.approved_at %>
+            <li class="list-group-item">
+              <span class="text-muted">Apwouve:</span>
+              <%= @candidate.approved_at.strftime("%d %b %Y %H:%M") %>
+            </li>
+          <% end %>
+          <% if @candidate.rejected_at %>
+            <li class="list-group-item">
+              <span class="text-muted">Rejte:</span>
+              <%= @candidate.rejected_at.strftime("%d %b %Y %H:%M") %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── Approve modal ── %>
+<% if @candidate.registration_status.in?(%w[submitted under_review]) %>
+  <div class="modal fade" id="approveCandidateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <%= form_with url: admin_approve_election_election_candidate_path(@election.id, @candidate),
+                      method: :post, local: true do |f| %>
+          <div class="modal-header bg-success-subtle">
+            <h5 class="modal-title fw-bold">
+              <i class="ri-check-line me-1"></i>
+              Apwouve kandida
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-2"><%= @candidate.full_name %> ap parèt sou bilten vòt la pou pòs
+              <strong><%= @candidate.position.titleize %></strong>.
+            </p>
+            <% unless @candidate.documents_complete? %>
+              <div class="alert alert-warning small mb-0">
+                <i class="ri-alert-line me-1"></i>
+                Atansyon: dokiman yo pa konplè
+                (<%= @candidate.documents_submitted_count %>/<%= @candidate.documents_total_count %>).
+              </div>
+            <% end %>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Anile</button>
+            <%= f.submit "Apwouve kounye a", class: "btn btn-success",
+                          data: { turbo_confirm: "Konfime apwobasyon?" } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Reject modal ── %>
+  <div class="modal fade" id="rejectCandidateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <%= form_with url: admin_reject_election_election_candidate_path(@election.id, @candidate),
+                      method: :post, local: true do |f| %>
+          <div class="modal-header bg-danger-subtle">
+            <h5 class="modal-title fw-bold">
+              <i class="ri-close-line me-1"></i>
+              Rejte kandida
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold pp-text-sm">
+                Rezon rejeksyon (obligatwa)
+              </label>
+              <textarea name="rejection_reason" class="form-control" rows="4" required
+                        placeholder="Dokiman ki manke, kritè ki pa satisfè, elatriye…"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Anile</button>
+            <%= f.submit "Rejte kandida", class: "btn btn-danger",
+                          data: { turbo_confirm: "Konfime rejeksyon? Kandida a ap retire nan bilten vòt la." } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

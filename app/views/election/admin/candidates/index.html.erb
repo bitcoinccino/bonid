@@ -1,0 +1,149 @@
+<%# app/views/election/admin/candidates/index.html.erb %>
+<%# CEP admin — candidate nomination review queue. %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-user-star-line me-2 pp-text-brand"></i>Kandida
+      </h4>
+      <p class="pp-page-subtitle">
+        Revizyon kandidati pou <%= @election.title %>
+      </p>
+    </div>
+    <%= link_to admin_election_election_path(@election.id),
+                class: "btn btn-sm btn-outline-secondary" do %>
+      <i class="ri-arrow-left-line me-1"></i> Retounen Tablo CEP
+    <% end %>
+  </div>
+
+  <%# ── Summary stats ── %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Total</div>
+        <div class="fw-bold pp-text-2xl pp-text-brand"><%= @stats[:total] %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Anba revizyon</div>
+        <div class="fw-bold pp-text-2xl pp-text-warning"><%= @stats[:submitted] + @stats[:under_review] %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Apwouve</div>
+        <div class="fw-bold pp-text-2xl pp-text-success"><%= @stats[:approved] %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Rejte</div>
+        <div class="fw-bold pp-text-2xl pp-text-danger"><%= @stats[:rejected] %></div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Filter chips + search ── %>
+  <div class="pp-card card mb-3">
+    <div class="card-body p-3">
+      <%= form_with url: admin_election_election_candidates_path(@election.id),
+                    method: :get, local: true,
+                    class: "d-flex gap-2 flex-wrap align-items-center" do %>
+        <%= select_tag :status,
+                       options_for_select(
+                         [["Tout estati", ""]] + ElectionCandidate::REGISTRATION_STATUSES.map { |s| [s.titleize, s] },
+                         params[:status]
+                       ),
+                       class: "form-select form-select-sm w-auto" %>
+        <%= select_tag :position,
+                       options_for_select(
+                         [["Tout pòs", ""]] + ElectionCandidate::POSITIONS.map { |p| [p.titleize, p] },
+                         params[:position]
+                       ),
+                       class: "form-select form-select-sm w-auto" %>
+        <%= select_tag :candidacy_type,
+                       options_for_select(
+                         [["Tout tip", ""]] + ElectionCandidate::CANDIDACY_TYPES.map { |c| [c.titleize, c] },
+                         params[:candidacy_type]
+                       ),
+                       class: "form-select form-select-sm w-auto" %>
+        <%= text_field_tag :search, params[:search],
+                           class: "form-control form-control-sm flex-grow-1",
+                           placeholder: "Chèche pa non, pati, oswa BonID…" %>
+        <button class="btn btn-sm btn-primary">Filtre</button>
+        <%= link_to "Reset", admin_election_election_candidates_path(@election.id),
+                    class: "btn btn-sm btn-outline-secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Table ── %>
+  <div class="pp-card card">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th class="pp-text-xs">Kandida</th>
+            <th class="pp-text-xs">Pòs</th>
+            <th class="pp-text-xs">Pati</th>
+            <th class="pp-text-xs">Dokiman</th>
+            <th class="pp-text-xs">Estati</th>
+            <th class="pp-text-xs">Soumèt</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @candidates.each do |c| %>
+            <tr>
+              <td>
+                <div class="fw-semibold"><%= c.full_name %></div>
+                <div class="pp-text-xs pp-text-secondary"><%= c.bonid.presence || "—" %></div>
+              </td>
+              <td class="pp-text-sm"><%= c.position.titleize %></td>
+              <td>
+                <div class="pp-text-sm"><%= c.party_name.presence || "—" %></div>
+                <div class="pp-text-xs pp-text-secondary"><%= c.candidacy_type&.titleize %></div>
+              </td>
+              <td>
+                <div class="progress" style="height: 6px; width: 80px;">
+                  <div class="progress-bar bg-success" style="width: <%= c.documents_progress_percentage %>%"></div>
+                </div>
+                <div class="pp-text-xs pp-text-secondary mt-1">
+                  <%= c.documents_submitted_count %>/<%= c.documents_total_count %>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-<%= c.registration_status_color %>-subtle text-<%= c.registration_status_color %>">
+                  <%= c.registration_status_label %>
+                </span>
+              </td>
+              <td class="pp-text-xs pp-text-secondary">
+                <%= c.submitted_at&.strftime("%d %b %Y") || "—" %>
+              </td>
+              <td class="text-end">
+                <%= link_to admin_election_election_candidate_path(@election.id, c),
+                            class: "btn btn-sm btn-outline-primary" do %>
+                  Wè
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @candidates.empty? %>
+            <tr><td colspan="7" class="text-center text-muted py-4">Pa gen kandida ki koresponn ak filtè a.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if @candidates.respond_to?(:total_pages) && @candidates.total_pages > 1 %>
+    <div class="mt-3">
+      <%= paginate @candidates if respond_to?(:paginate) %>
+    </div>
+  <% end %>
+
+</div>

@@ -246,6 +246,21 @@ end
     # Certify election — stamps winners + locks results
     post   "election/:id/certify",   to: "/election/admin/elections#certify",  as: :election_election_certify
 
+    # Candidate nomination review (Gap 6).
+    # Submission happens in the partner portal; CEP approval happens here.
+    get  "election/:election_id/candidates",                  to: "/election/admin/candidates#index",        as: :election_election_candidates
+    get  "election/:election_id/candidates/:id",              to: "/election/admin/candidates#show",         as: :election_election_candidate
+    post "election/:election_id/candidates/:id/start_review", to: "/election/admin/candidates#start_review", as: :start_review_election_election_candidate
+    post "election/:election_id/candidates/:id/approve",      to: "/election/admin/candidates#approve",      as: :approve_election_election_candidate
+    post "election/:election_id/candidates/:id/reject",       to: "/election/admin/candidates#reject",       as: :reject_election_election_candidate
+
+    # Party / grouping registration review (Gap 7).
+    get  "election/:election_id/party_registrations",                  to: "/election/admin/party_registrations#index",        as: :election_election_party_registrations
+    get  "election/:election_id/party_registrations/:id",              to: "/election/admin/party_registrations#show",         as: :election_election_party_registration
+    post "election/:election_id/party_registrations/:id/start_review", to: "/election/admin/party_registrations#start_review", as: :start_review_election_election_party_registration
+    post "election/:election_id/party_registrations/:id/approve",      to: "/election/admin/party_registrations#approve",      as: :approve_election_election_party_registration
+    post "election/:election_id/party_registrations/:id/reject",       to: "/election/admin/party_registrations#reject",       as: :reject_election_election_party_registration
+
     # (UNCHANGED — all your admin routes preserved)
     resources :partners, param: :uuid do
       member do

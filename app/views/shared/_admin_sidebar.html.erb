@@ -220,6 +220,28 @@
         <span>Biwo BED / BEK</span>
       <% end %>
     </li>
+    <li class="nav-item">
+      <%= link_to admin_election_election_candidates_path(election_id),
+                  class: "nav-link #{'active' if request.path.include?('/candidates')}" do %>
+        <i class="ri-user-star-line"></i>
+        <span>Kandida</span>
+        <% pending_cands = ElectionCandidate.where(election_id: election_id).pending_review.count rescue 0 %>
+        <% if pending_cands > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 9px;"><%= pending_cands %></span>
+        <% end %>
+      <% end %>
+    </li>
+    <li class="nav-item">
+      <%= link_to admin_election_election_party_registrations_path(election_id),
+                  class: "nav-link #{'active' if request.path.include?('/party_registrations')}" do %>
+        <i class="ri-flag-2-line"></i>
+        <span>Pati Politik</span>
+        <% pending_parties = ElectionPartyRegistration.where(election_id: election_id).pending_review.count rescue 0 %>
+        <% if pending_parties > 0 %>
+          <span class="badge bg-warning text-dark rounded-pill ms-auto" style="font-size: 9px;"><%= pending_parties %></span>
+        <% end %>
+      <% end %>
+    </li>
 
     <%# ══════════════════════════════════════════════ %>
     <%# ── API / TEKNIK ── %>
