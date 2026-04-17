@@ -1,0 +1,134 @@
+<%# app/views/election/admin/edit.html.erb %>
+<%# CEP Admin — policy flags + basic metadata for an election. %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-settings-3-line me-2 pp-text-brand"></i>Modifye Règ Eleksyon
+      </h4>
+      <p class="pp-page-subtitle">
+        <%= @election.title %> — <%= @election.election_date&.strftime("%-d %b %Y") %>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <%= link_to admin_election_election_path(@election.id),
+                  class: "btn btn-sm btn-outline-secondary" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen Tablo Elektoral
+      <% end %>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+
+          <%= form_with model: @election,
+                        url: admin_election_election_path(@election.id),
+                        method: :patch,
+                        local: true,
+                        html: { class: "needs-validation", novalidate: true } do |f| %>
+
+            <%# ── Basic metadata ── %>
+            <div class="mb-3">
+              <%= f.label :title, "Non Eleksyon", class: "form-label fw-semibold" %>
+              <%= f.text_field :title, class: "form-control", required: true %>
+            </div>
+
+            <div class="mb-4">
+              <%= f.label :election_date, "Dat Eleksyon", class: "form-label fw-semibold" %>
+              <%= f.date_field :election_date, class: "form-control",
+                               disabled: @election.certified? %>
+              <% if @election.certified? %>
+                <small class="text-muted">Dat la fèmen paske eleksyon an sètifye.</small>
+              <% end %>
+            </div>
+
+            <hr class="my-4">
+
+            <%# ── CEP policy flags ── %>
+            <h6 class="fw-bold mb-3">
+              <i class="ri-shield-keyhole-line me-1"></i>Règ CEP
+            </h6>
+
+            <div class="form-check form-switch mb-3">
+              <%= f.check_box :allows_digital_enrollment,
+                              class: "form-check-input",
+                              disabled: @election.certified? %>
+              <%= f.label :allows_digital_enrollment,
+                          "Enskripsyon dijital otorize",
+                          class: "form-check-label fw-semibold" %>
+              <div class="form-text">
+                Lè aktive, sitwayen ka enskri anliy nan BonID. Lè dezaktive,
+                sèlman ajan CEP nan BED/BEK kapab enskri elektè.
+              </div>
+            </div>
+
+            <div class="form-check form-switch mb-3">
+              <%= f.check_box :allows_online_voting,
+                              class: "form-check-input",
+                              disabled: @election.certified? %>
+              <%= f.label :allows_online_voting,
+                          "Vote anliy otorize",
+                          class: "form-check-label fw-semibold" %>
+              <div class="form-text">
+                Lè aktive, sitwayen ki enskri kapab vote dirèkteman nan
+                aplikasyon BonID a. Lè dezaktive, yo dwe ale an pèsòn
+                nan biwo vòt yo asiyen yo.
+              </div>
+            </div>
+
+            <div class="alert alert-warning small mb-4">
+              <i class="ri-information-line me-1"></i>
+              <strong>Note:</strong> Chanje règ yo pandan yon eleksyon louvri
+              kapab konfonn sitwayen yo. Modifye sèlman anvan eleksyon an kòmanse.
+            </div>
+
+            <div class="d-flex gap-2">
+              <%= f.submit "Anrejistre", class: "btn btn-primary" %>
+              <%= link_to "Anile",
+                          admin_election_election_path(@election.id),
+                          class: "btn btn-outline-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="fw-bold mb-3">Detay Eleksyon</h6>
+          <dl class="mb-0 small">
+            <dt>Eta</dt>
+            <dd><span class="badge bg-light text-dark border"><%= @election.status %></span></dd>
+
+            <dt>Tip</dt>
+            <dd><%= @election.election_type %></dd>
+
+            <dt>Tou</dt>
+            <dd><%= @election.round %><%= " (rannou)" if @election.runoff? %></dd>
+
+            <% if @election.opened_at %>
+              <dt>Louvri</dt>
+              <dd><%= l @election.opened_at, format: :short %></dd>
+            <% end %>
+
+            <% if @election.closed_at %>
+              <dt>Fèmen</dt>
+              <dd><%= l @election.closed_at, format: :short %></dd>
+            <% end %>
+
+            <% if @election.certified_at %>
+              <dt>Sètifye</dt>
+              <dd><%= l @election.certified_at, format: :short %></dd>
+            <% end %>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

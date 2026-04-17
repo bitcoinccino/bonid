@@ -240,6 +240,11 @@ end
     get    "election/:id/results",   to: "/election/admin/elections#results",   as: :election_election_results
     # Signed oath audit trail — one row per (user, election, oath_version)
     get    "election/:id/oaths",     to: "/election/admin/elections#oaths",    as: :election_election_oaths
+    # Edit election — toggle policy flags (online voting, digital enrollment)
+    get    "election/:id/edit",      to: "/election/admin/elections#edit",     as: :edit_election_election
+    patch  "election/:id",           to: "/election/admin/elections#update"
+    # Certify election — stamps winners + locks results
+    post   "election/:id/certify",   to: "/election/admin/elections#certify",  as: :election_election_certify
 
     # (UNCHANGED — all your admin routes preserved)
     resources :partners, param: :uuid do

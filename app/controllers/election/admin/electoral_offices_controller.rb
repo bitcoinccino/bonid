@@ -12,7 +12,7 @@
 module Election
   module Admin
     class ElectoralOfficesController < ::Admin::BaseController
-      before_action :require_cep_admin!
+      include Election::Admin::CepAdminGate
       before_action :set_office, only: %i[show edit update destroy]
 
       # GET /admin/electoral_offices
@@ -81,16 +81,6 @@ module Election
       end
 
       private
-
-      # Matches Election::Admin::ElectionsController — CEP admin gate. Today
-      # this is a logged-in-admin check; a proper CEP role predicate should
-      # land in a shared concern (`Election::Admin::CepAdminGate`) next.
-      def require_cep_admin!
-        return if current_admin_user.present?
-
-        redirect_to admin_login_path,
-                    alert: "Aksè refize. Sèlman administratè CEP ka jere biwo BED/BEK."
-      end
 
       def set_office
         @office = ElectoralOffice.includes(:address).find(params[:id])

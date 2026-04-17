@@ -15,11 +15,34 @@
           Eleksyon Jeneral &middot; 30 Out 2026 &middot; Premye Tou
         </p>
         <div class="mt-2">
-          <span class="badge bg-success-subtle text-success px-3 py-1 pp-text-xs">
-            <span class="d-inline-block rounded-circle bg-success me-1" style="width: 6px; height: 6px;"></span>
-            DECHIFRE &middot; OFISYÈL
-          </span>
+          <% if @election&.certified? %>
+            <span class="badge bg-success-subtle text-success px-3 py-1 pp-text-xs">
+              <i class="ri-shield-check-line me-1"></i>
+              SÈTIFYE &middot; OFISYÈL
+            </span>
+          <% else %>
+            <span class="badge bg-success-subtle text-success px-3 py-1 pp-text-xs">
+              <span class="d-inline-block rounded-circle bg-success me-1" style="width: 6px; height: 6px;"></span>
+              DECHIFRE
+            </span>
+          <% end %>
         </div>
+
+        <%# Certify CTA — available once quorum is met and election closed. %>
+        <% if @election && @election.closed? && @sig_status&.dig(:met) %>
+          <div class="mt-3">
+            <%= button_to admin_election_election_certify_path(@election.id),
+                          method: :post,
+                          class: "btn btn-success",
+                          data: { turbo_confirm: "Konfime sètifikasyon final? Sa ap anrejistre genyan yo pèmanan." } do %>
+              <i class="ri-shield-check-line me-1"></i>
+              Sètifye Eleksyon An
+            <% end %>
+            <div class="pp-text-xs text-muted mt-1">
+              Aksyon sa ap anrejistre genyan yo nan rejis eleksyon ki sètifye yo.
+            </div>
+          </div>
+        <% end %>
       </div>
 
       <%# ── Total Participation ── %>

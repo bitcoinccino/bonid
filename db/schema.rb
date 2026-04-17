@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_16_230000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_17_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -749,6 +749,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_16_230000) do
     t.index ["election_id", "user_id", "election_body_id"], name: "idx_staff_election_body", unique: true
     t.index ["election_id"], name: "index_election_staff_assignments_on_election_id"
     t.index ["user_id"], name: "index_election_staff_assignments_on_user_id"
+  end
+
+  create_table "election_winners", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.bigint "election_constituency_id", null: false
+    t.bigint "election_candidate_id", null: false
+    t.string "seat_label", null: false
+    t.integer "round", default: 1, null: false
+    t.integer "vote_count", default: 0, null: false
+    t.decimal "vote_share", precision: 6, scale: 4
+    t.integer "total_votes", default: 0, null: false
+    t.datetime "stamped_at", null: false
+    t.bigint "stamped_by_admin_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_candidate_id"], name: "index_election_winners_on_election_candidate_id"
+    t.index ["election_constituency_id"], name: "index_election_winners_on_election_constituency_id"
+    t.index ["election_id", "seat_label", "round"], name: "idx_election_winners_seat_unique", unique: true
+    t.index ["election_id"], name: "index_election_winners_on_election_id"
+    t.index ["stamped_by_admin_user_id"], name: "index_election_winners_on_stamped_by_admin_user_id"
   end
 
   create_table "electoral_calendars", force: :cascade do |t|
@@ -2397,6 +2417,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_16_230000) do
   add_foreign_key "election_staff_assignments", "bonvote_elections", column: "election_id"
   add_foreign_key "election_staff_assignments", "election_bodies"
   add_foreign_key "election_staff_assignments", "users"
+  add_foreign_key "election_winners", "admin_users", column: "stamped_by_admin_user_id"
+  add_foreign_key "election_winners", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_winners", "election_candidates"
+  add_foreign_key "election_winners", "election_constituencies"
   add_foreign_key "electoral_calendars", "bonvote_elections", on_delete: :cascade
   add_foreign_key "electoral_offices", "communes"
   add_foreign_key "electoral_offices", "departments"

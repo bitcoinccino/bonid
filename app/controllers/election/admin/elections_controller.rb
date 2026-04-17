@@ -9,7 +9,7 @@
 module Election
   module Admin
     class ElectionsController < ::Admin::BaseController
-      before_action :require_cep_admin!
+      include Election::Admin::CepAdminGate
       before_action :set_election, except: [ :snapshot ]
 
       # GET /election/:id
@@ -116,6 +116,57 @@ module Election
         render "election/admin/results"
       end
 
+      # GET /admin/election/:id/edit
+      # Edit policy flags (online voting / digital enrollment) + title/date
+      # before an election opens. CEP-only; see CepAdminGate.
+      def edit
+        return redirect_missing unless @election
+
+        render "election/admin/edit"
+      end
+
+      # PATCH /admin/election/:id
+      def update
+        return redirect_missing unless @election
+
+        if @election.update(election_update_params)
+          Election::ElectionCache.bust(@election.id) if defined?(Election::ElectionCache)
+          redirect_to admin_election_election_path(@election.id),
+                      notice: "Règ eleksyon yo mete ajou."
+        else
+          flash.now[:alert] = @election.errors.full_messages.to_sentence
+          render "election/admin/edit", status: :unprocessable_entity
+        end
+      end
+
+      # POST /admin/election/:id/certify
+      # Stamps durable winners into the `election_winners` table, then
+      # flips status → certified. Requires the quorum + decrypt to have
+      # already happened (results must be visible before certification).
+      def certify
+        return redirect_missing unless @election
+
+        unless @election.closed?
+          redirect_to admin_election_election_results_path(@election.id),
+                      alert: "Yon eleksyon dwe fèmen anvan sètifikasyon."
+          return
+        end
+
+        sig_status = ElectionSignature.status_for(@election_id)
+        unless sig_status[:met]
+          redirect_to admin_election_election_multi_sig_path(@election.id),
+                      alert: "Kowòm siyati pa atenn. #{sig_status[:remaining]} rete."
+          return
+        end
+
+        result = Election::WinnerStampingService.call(@election, stamped_by: current_admin_user)
+        redirect_to admin_election_election_results_path(@election.id),
+                    notice: "Eleksyon sètifye — #{result[:winners_count]} genyan anrejistre."
+      rescue Election::WinnerStampingService::Error => e
+        redirect_to admin_election_election_results_path(@election.id),
+                    alert: "Sètifikasyon echwe: #{e.message}"
+      end
+
       # POST /election/:id/decrypt
       # The "Grand Decryption" — requires multi-sig authorization
       def decrypt
@@ -140,16 +191,27 @@ module Election
 
       private
 
+      # The handful of fields CEP admins can change via the web UI. Status
+      # transitions (open/close/certify) happen through dedicated actions,
+      # never free-form updates. Round + election_type are locked once the
+      # election exists to prevent accidental reshaping of a live ballot.
+      def election_update_params
+        params.require(:bonvote_election).permit(
+          :title,
+          :election_date,
+          :allows_online_voting,
+          :allows_digital_enrollment
+        )
+      end
+
+      def redirect_missing
+        redirect_to admin_root_path, alert: "Eleksyon pa jwenn."
+      end
+
       def set_election
         @election_id = params[:id]
         @election = BonvoteElection.find_by(id: @election_id)
         @election_closed = @election&.closed? || @election&.certified? || false
-      end
-
-      def require_cep_admin!
-        unless current_admin_user.present?
-          redirect_to admin_login_path, alert: "Aksè refize. Sèlman administratè CEP ka wè paj sa a."
-        end
       end
 
       def build_stats(election_id)
@@ -180,21 +242,39 @@ module Election
       end
 
       def build_results(election_id)
-        candidates = ElectionCandidate.where(election_id: election_id, position: "president", status: "active")
-                                      .order(votes_round1: :desc)
-
         election = BonvoteElection.find_by(id: election_id)
         round = election&.round || 1
         vote_field = round == 2 ? :votes_round2 : :votes_round1
+
+        # Once certified, serve from the durable winners table so the
+        # numbers can't drift if a candidate row is edited later.
+        if election&.certified? && ElectionWinner.for_election(election).exists?
+          winners = ElectionWinner.for_election(election).includes(:election_candidate).ordered
+          candidate_results = winners.each_with_object({}) do |w, hash|
+            hash[w.election_candidate.display_name] = w.vote_count
+          end
+
+          return {
+            election_id:  election_id,
+            decrypted_at: election.certified_at.iso8601,
+            candidates:   candidate_results,
+            source:       "certified_winners"
+          }
+        end
+
+        # Pre-certification: compute on-the-fly for live preview.
+        candidates = ElectionCandidate.where(election_id: election_id, position: "president", status: "active")
+                                      .order(vote_field => :desc)
 
         candidate_results = candidates.each_with_object({}) do |c, hash|
           hash[c.display_name] = c.send(vote_field)
         end
 
         {
-          election_id: election_id,
+          election_id:  election_id,
           decrypted_at: election&.certified_at&.iso8601 || Time.current.iso8601,
-          candidates: candidate_results
+          candidates:   candidate_results,
+          source:       "live"
         }
       end
 
