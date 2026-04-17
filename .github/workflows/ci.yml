@@ -36,7 +36,14 @@ jobs:
           cache: yarn
 
       - name: Scan for security vulnerabilities in JavaScript dependencies
-        run: yarn audit --groups dependencies --level high
+        # yarn 1.x exit code reflects *any* finding regardless of --level; parse
+        # the printed severity line instead so we only fail on High / Critical.
+        run: |
+          yarn audit --groups dependencies --level high | tee audit.log
+          if grep -Eq 'Severity:.*(High|Critical)' audit.log; then
+            echo "::error::High or Critical JS vulnerabilities found"
+            exit 1
+          fi
 
   lint:
     runs-on: ubuntu-latest
