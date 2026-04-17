@@ -52,13 +52,3 @@ class Vehicle < ApplicationRecord
     end
   end
 end
-
-
-For the Citizen: They get a notification: "Votre assurance OAVCT expire dans 5 jours. Payez 3,000 HTG via MonCash pour renouveler."
-4. Updated Citizen Dashboard View
-Your UI should now show a "Garage" section:
-Vehicle: Toyota Hilux (Grey)
-Plate: AA-12345
-Insurance: VALID (Expires Dec 2026)
-Registration: VERIFIED
-Outstanding Fines: 0 HTG

@@ -219,7 +219,7 @@ class DocumentOcrService
     cleaned = value.to_s.strip
     if (m = cleaned.match(%r{\A(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\z}))
       "%04d-%02d-%02d" % [m[3].to_i, m[2].to_i, m[1].to_i]
-    elsif (m = cleaned.match(/\A(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\z/))
+    elsif (m = cleaned.match(%r{\A(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})\z}))
       "%04d-%02d-%02d" % [m[1].to_i, m[2].to_i, m[3].to_i]
     else
       cleaned
