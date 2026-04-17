@@ -139,10 +139,23 @@ module Election
         end
       end
 
+      # The phrase a CEP admin must type into the confirmation modal
+      # before certification will proceed. Matches the election title
+      # verbatim (case-insensitive, whitespace-tolerant) — typing is
+      # friction on purpose: certification is legally irreversible.
+      def self.certification_phrase_for(election)
+        election.title.to_s.strip.downcase
+      end
+
       # POST /admin/election/:id/certify
       # Stamps durable winners into the `election_winners` table, then
       # flips status → certified. Requires the quorum + decrypt to have
       # already happened (results must be visible before certification).
+      #
+      # Typed-confirmation guard: caller must POST `confirmation_phrase`
+      # matching the election title. Protects against accidental
+      # double-submits, CSRF replay via stolen session, and "oops I clicked
+      # the wrong button" mistakes on what is a legally-frozen action.
       def certify
         return redirect_missing unless @election
 
@@ -156,6 +169,14 @@ module Election
         unless sig_status[:met]
           redirect_to admin_election_election_multi_sig_path(@election.id),
                       alert: "Kowòm siyati pa atenn. #{sig_status[:remaining]} rete."
+          return
+        end
+
+        expected = self.class.certification_phrase_for(@election)
+        submitted = params[:confirmation_phrase].to_s.strip.downcase
+        if submitted != expected || !ActiveModel::Type::Boolean.new.cast(params[:confirmation_ack]).eql?(true)
+          redirect_to admin_election_election_results_path(@election.id),
+                      alert: "Sètifikasyon anile: konfimasyon pa koresponn. Tape tit eleksyon an egzakteman."
           return
         end
 

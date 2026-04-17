@@ -28,20 +28,128 @@
           <% end %>
         </div>
 
-        <%# Certify CTA — available once quorum is met and election closed. %>
+        <%# Certify CTA — available once quorum is met and election closed.
+            Opens a typed-confirmation modal rather than firing a single
+            click, because certification is legally frozen and irreversible. %>
         <% if @election && @election.closed? && @sig_status&.dig(:met) %>
           <div class="mt-3">
-            <%= button_to admin_election_election_certify_path(@election.id),
-                          method: :post,
-                          class: "btn btn-success",
-                          data: { turbo_confirm: "Konfime sètifikasyon final? Sa ap anrejistre genyan yo pèmanan." } do %>
+            <button type="button"
+                    class="btn btn-success"
+                    data-bs-toggle="modal"
+                    data-bs-target="#certifyElectionModal">
               <i class="ri-shield-check-line me-1"></i>
               Sètifye Eleksyon An
-            <% end %>
+            </button>
             <div class="pp-text-xs text-muted mt-1">
               Aksyon sa ap anrejistre genyan yo nan rejis eleksyon ki sètifye yo.
             </div>
           </div>
+
+          <%# ── Certification confirmation modal ── %>
+          <div class="modal fade"
+               id="certifyElectionModal"
+               tabindex="-1"
+               aria-labelledby="certifyElectionModalLabel"
+               aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <%= form_with url: admin_election_election_certify_path(@election.id),
+                              method: :post,
+                              local: true,
+                              html: { id: "certifyElectionForm" } do |f| %>
+                  <div class="modal-header bg-success-subtle border-0">
+                    <h5 class="modal-title fw-bold" id="certifyElectionModalLabel">
+                      <i class="ri-shield-check-line me-1"></i>
+                      Sètifikasyon Final Eleksyon
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+
+                  <div class="modal-body">
+                    <div class="alert alert-warning small mb-3">
+                      <i class="ri-alarm-warning-line me-1"></i>
+                      <strong>Atansyon:</strong> Yon fwa yon eleksyon sètifye, rezilta yo
+                      <em>pa kapab modifye</em>. Genyan yo ap ekri nan rejis la pou toujou.
+                      Sa a se yon aksyon legal — pa klike si w pa si.
+                    </div>
+
+                    <dl class="small mb-3">
+                      <dt class="text-muted">Tit Eleksyon</dt>
+                      <dd class="fw-bold"><%= @election.title %></dd>
+                      <dt class="text-muted">Dat</dt>
+                      <dd><%= @election.election_date&.strftime("%-d %b %Y") %></dd>
+                      <dt class="text-muted">Tou</dt>
+                      <dd><%= @election.round %><%= " (rannou)" if @election.runoff? %></dd>
+                    </dl>
+
+                    <div class="mb-3">
+                      <label for="confirmation_phrase" class="form-label fw-semibold">
+                        Pou konfime, tape tit eleksyon an egzakteman:
+                      </label>
+                      <div class="pp-text-xs text-muted mb-2 font-monospace">
+                        <%= @election.title %>
+                      </div>
+                      <input type="text"
+                             name="confirmation_phrase"
+                             id="confirmation_phrase"
+                             class="form-control"
+                             autocomplete="off"
+                             spellcheck="false"
+                             required
+                             placeholder="Tape tit la isit la…"
+                             data-expected-phrase="<%= @election.title.to_s.strip.downcase %>">
+                    </div>
+
+                    <div class="form-check mb-0">
+                      <input type="checkbox"
+                             class="form-check-input"
+                             id="confirmation_ack"
+                             name="confirmation_ack"
+                             value="1"
+                             required>
+                      <label class="form-check-label small" for="confirmation_ack">
+                        Mwen konprann ke aksyon sa a pa kapab defèt, epi mwen otorize
+                        sètifikasyon final rezilta yo.
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                      Anile
+                    </button>
+                    <%= f.submit "Sètifye Definitivman",
+                                 id: "certifyElectionSubmit",
+                                 class: "btn btn-success",
+                                 disabled: true,
+                                 data: { turbo_confirm: "Dènye verifikasyon: ou si ou vle sètifye eleksyon sa a?" } %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+
+          <script>
+            // Live-validate the typed phrase + ack checkbox. The submit
+            // button unlocks only when both match — client-side UX sugar.
+            // Server still enforces the same guard for safety.
+            (function () {
+              var form  = document.getElementById("certifyElectionForm");
+              if (!form) return;
+              var phraseInput = form.querySelector("#confirmation_phrase");
+              var ackInput    = form.querySelector("#confirmation_ack");
+              var submitBtn   = form.querySelector("#certifyElectionSubmit");
+              var expected    = (phraseInput.dataset.expectedPhrase || "").trim().toLowerCase();
+
+              function normalize(s) { return (s || "").trim().toLowerCase(); }
+              function evaluate() {
+                submitBtn.disabled = !(normalize(phraseInput.value) === expected && ackInput.checked);
+              }
+              phraseInput.addEventListener("input",  evaluate);
+              ackInput.addEventListener("change",    evaluate);
+              evaluate();
+            })();
+          </script>
         <% end %>
       </div>
 
