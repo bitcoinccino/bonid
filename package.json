@@ -30,7 +30,7 @@
     "build:css": "sass --no-source-map --load-path=node_modules app/assets/stylesheets/application.scss:app/assets/builds/application.css app/assets/stylesheets/officer.scss:app/assets/builds/officer.css app/assets/stylesheets/citizen.scss:app/assets/builds/citizen.css app/assets/stylesheets/partner_portal_public.scss:app/assets/builds/partner_portal_public.css",
     "watch:css": "nodemon --watch app/assets/stylesheets --ext scss --exec \"yarn build:css\"",
     "build": "esbuild app/javascript/application.js --bundle --sourcemap --format=esm --minify --outdir=app/assets/builds --public-path=/assets --loader:.png=dataurl --loader:.svg=dataurl --loader:.css=empty && esbuild app/javascript/liveness.jsx --bundle --sourcemap --format=esm --minify --outdir=app/assets/builds --public-path=/assets --loader:.png=dataurl --loader:.svg=dataurl",
-    "postinstall": "patch-package && sed -i '' 's/\\[class\\*=amplify\\]{all:unset;box-sizing:border-box}/[class*=amplify]{box-sizing:border-box}/g' node_modules/@aws-amplify/ui-react/dist/styles.css",
+    "postinstall": "patch-package && sed -i.bak 's/\\[class\\*=amplify\\]{all:unset;box-sizing:border-box}/[class*=amplify]{box-sizing:border-box}/g' node_modules/@aws-amplify/ui-react/dist/styles.css && rm -f node_modules/@aws-amplify/ui-react/dist/styles.css.bak",
     "dev": "concurrently \"yarn watch:css\" \"esbuild app/javascript/application.js --bundle --watch --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets --loader:.png=dataurl --loader:.svg=dataurl --loader:.css=empty\" \"esbuild app/javascript/liveness.jsx --bundle --watch --sourcemap --format=esm --outdir=app/assets/builds --public-path=/assets --loader:.png=dataurl --loader:.svg=dataurl\""
   }
 }
