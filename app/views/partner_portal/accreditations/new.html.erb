@@ -1,0 +1,116 @@
+<%# Accreditation intake form %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <%= link_to partner_portal_accreditations_path,
+                  class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen
+      <% end %>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+          <h4 class="pp-page-title mb-1">
+            <i class="ri-shield-user-line me-2 pp-text-brand"></i>
+            Depoze Akreditasyon
+          </h4>
+          <p class="pp-page-subtitle">
+            Chak akreditasyon ap tache ak yon BonID espesifik epi yon biwo
+            vòt. CEP a ap revize anvan ou ka enprime badj la.
+          </p>
+
+          <%= form_with model: @accreditation,
+                        url: partner_portal_accreditations_path,
+                        local: true,
+                        class: "mt-3" do |f| %>
+
+            <% if @accreditation.errors.any? %>
+              <div class="alert alert-danger small">
+                <ul class="mb-0">
+                  <% @accreditation.errors.full_messages.each do |m| %>
+                    <li><%= m %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <%= f.label :accreditation_type, "Kalite akreditasyon", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.select :accreditation_type,
+                      [
+                        ["Mandatè Pati Politik", "mandataire"],
+                        ["Obsèvatè Nasyonal", "national_observer"],
+                        ["Obsèvatè Entènasyonal", "international_observer"],
+                        ["Laprès Nasyonal", "press"],
+                        ["Laprès Entènasyonal", "international_media"]
+                      ],
+                      { prompt: "Chwazi..." },
+                      { class: "form-select", required: true } %>
+              </div>
+
+              <div class="col-md-6">
+                <%= f.label :bonid, "BonID (si disponib)", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :bonid, class: "form-control",
+                                 placeholder: "BON-XXXX-XXXX-XXXX" %>
+                <small class="text-muted">Si BonID verifye, non/CIN/depatman ap pre-ranpli.</small>
+              </div>
+
+              <div class="col-md-6">
+                <%= f.label :full_name, "Non konplè", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :full_name, class: "form-control", required: true %>
+              </div>
+
+              <div class="col-md-6">
+                <%= f.label :cin_number, "Nimewo CIN", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :cin_number, class: "form-control" %>
+              </div>
+
+              <div class="col-md-6">
+                <%= f.label :organization, "Òganizasyon", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :organization,
+                                 class: "form-control",
+                                 value: @accreditation.organization.presence || current_partner&.name,
+                                 required: true %>
+              </div>
+
+              <div class="col-md-6">
+                <%= f.label :organization_acronym, "Akwonim", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :organization_acronym, class: "form-control" %>
+              </div>
+
+              <div class="col-md-4">
+                <%= f.label :department_code, "Depatman", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :department_code, class: "form-control",
+                                 placeholder: "OUE, ART, CEN..." %>
+              </div>
+
+              <div class="col-md-4">
+                <%= f.label :assigned_station_code, "Kòd Biwo Vòt (BV)", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :assigned_station_code, class: "form-control",
+                                 placeholder: "BV-XXX-XXX" %>
+              </div>
+
+              <div class="col-md-4">
+                <%= f.label :photo_url, "URL foto", class: "form-label fw-semibold pp-text-sm" %>
+                <%= f.text_field :photo_url, class: "form-control",
+                                 placeholder: "https://..." %>
+              </div>
+            </div>
+
+            <div class="alert alert-info small mt-4">
+              <i class="ri-information-line me-1"></i>
+              <strong>Pwochen etap:</strong> CEP ap verifye epi aktive akreditasyon an.
+              Badj PDF la ap disponib apre aktivasyon.
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+              <%= f.submit "Depoze", class: "btn btn-primary" %>
+              <%= link_to "Anile", partner_portal_accreditations_path, class: "btn btn-outline-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

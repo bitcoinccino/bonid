@@ -38,6 +38,7 @@ const registerControllers = () => {
 
   // ───────── Identity ─────────
   register("bonid-lookup", () => import("./bonid_lookup_controller"))
+  register("candidate-bonid-prefill", () => import("./candidate_bonid_prefill_controller"))
   register("id-switcher", () => import("./id_switcher_controller"))
   register("id-format", () => import("./id_format_controller"))
   register("reason", () => import("./reason_controller"))

@@ -1,0 +1,106 @@
+<%# Rejected-candidate dispute filing.
+    Routed to BCEN via ElectionDispute (filer_type: "candidate"). %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <%= link_to partner_portal_candidate_registration_path(@candidate),
+                  class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen nan dosye kandida a
+      <% end %>
+
+      <div class="alert alert-danger pp-text-sm">
+        <strong>Kandida sa a rejte.</strong>
+        <% if @candidate.rejection_reason.present? %>
+          <div class="mt-2"><em>Rezon CEP:</em> <%= @candidate.rejection_reason %></div>
+        <% end %>
+      </div>
+
+      <h4 class="pp-page-title mb-1">
+        <i class="ri-scales-3-line me-2 pp-text-brand"></i>File Kontestasyon
+      </h4>
+      <p class="pp-page-subtitle mb-4">
+        Biwo Kontestasyon Elektoral Nasyonal (BCEN) · Dekrè Elektoral Atik 189
+      </p>
+
+      <% if @dispute.errors.any? %>
+        <div class="alert alert-danger">
+          <strong><%= pluralize(@dispute.errors.count, "erè") %>:</strong>
+          <ul class="mb-0 mt-2">
+            <% @dispute.errors.full_messages.each do |m| %>
+              <li><%= m %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+
+          <%= form_with model: @dispute,
+                url: create_dispute_partner_portal_candidate_registration_path(@candidate),
+                local: true do |f| %>
+
+            <%# Pre-filled context — read-only summary %>
+            <div class="alert alert-light border pp-text-sm mb-4">
+              <div><strong>Kandida:</strong> <%= @candidate.full_name %></div>
+              <div><strong>Pozisyon:</strong> <%= @candidate.position&.titleize %></div>
+              <div><strong>Sikonskripsyon:</strong>
+                <%= @candidate.election_constituency&.constituency_name || "—" %>
+              </div>
+              <% if @candidate.party_name.present? %>
+                <div><strong>Pati / Gwoupman:</strong> <%= @candidate.party_name %></div>
+              <% end %>
+              <div><strong>Resi:</strong> <code><%= @candidate.recepisse_number %></code></div>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :subject, "Sijè kontestasyon *", class: "form-label fw-semibold pp-text-sm" %>
+              <%= f.text_field :subject, class: "form-control",
+                    placeholder: "Rezime kòt kontestasyon an", required: true %>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :description, "Deskripsyon ak motif legal *", class: "form-label fw-semibold pp-text-sm" %>
+              <%= f.text_area :description, class: "form-control", rows: 6, required: true,
+                    placeholder: "Ekri an detay poukisa desizyon CEP la dwe revize — rele atik Dekrè yo, fè referans ak dokiman ki te soumèt…" %>
+              <small class="text-muted">BCEN ap evalye dosye a sou fondman legal, non pa pèsonèl.</small>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :evidence_summary, "Prèv / dokiman sipò", class: "form-label fw-semibold pp-text-sm" %>
+              <%= f.text_area :evidence_summary, class: "form-control", rows: 4,
+                    placeholder: "Endike ki dokiman / temwayaj ou pral prezante nan odyans lan (foto, video, atestasyon…)" %>
+            </div>
+
+            <div class="mb-4">
+              <%= f.label :priority, "Priyorite", class: "form-label fw-semibold pp-text-sm" %>
+              <%= f.select :priority,
+                    [["Nòmal", "normal"], ["Ijan (mande delè rapid)", "urgent"]],
+                    {}, class: "form-select" %>
+              <small class="text-muted">
+                Mak <em>Ijan</em> sèlman si delè elektoral ap ekspire — BCEN ap verifye ijan an.
+              </small>
+            </div>
+
+            <div class="alert alert-warning small">
+              <i class="ri-scales-3-line me-1"></i>
+              Lè w soumèt, yon referans BCEN ap jenere. Dosye a ap parèt nan "Kontestasyon Mwen".
+              BCEN gen 5 jou pou pran pozisyon (Dekrè Atik 191).
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <%= link_to "Anile", partner_portal_candidate_registration_path(@candidate),
+                          class: "btn btn-outline-secondary" %>
+              <%= f.submit "Soumèt Kontestasyon nan BCEN", class: "btn btn-danger px-4",
+                    data: { turbo_confirm: "Konfime soumisyon? Apre sa, sèl BCEN ki ka retire dosye a." } %>
+            </div>
+
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -16,10 +16,16 @@
       </p>
     </div>
     <% if @election %>
-      <%= link_to partner_portal_polling_centers_import_path,
-                  class: "btn pp-btn-brand px-4" do %>
-        <i class="ri-upload-2-line me-1"></i>Enpòte CSV
-      <% end %>
+      <div class="d-flex gap-2">
+        <%= link_to new_partner_portal_polling_center_path,
+                    class: "btn btn-outline-primary px-4" do %>
+          <i class="ri-add-circle-line me-1"></i>Kreye Sant
+        <% end %>
+        <%= link_to partner_portal_polling_centers_import_path,
+                    class: "btn pp-btn-brand px-4" do %>
+          <i class="ri-upload-2-line me-1"></i>Enpòte CSV
+        <% end %>
+      </div>
     <% end %>
   </div>
 
@@ -59,6 +65,7 @@
               <th>Kapasite</th>
               <th>Anrejistre</th>
               <th>Estati</th>
+              <th class="text-end">Aksyon</th>
             </tr>
           </thead>
           <tbody>
@@ -67,7 +74,11 @@
               <% capacity = stations.sum(&:capacity) %>
               <% registered = stations.sum(&:registered_count) %>
               <tr>
-                <td><strong><%= center.name %></strong></td>
+                <td>
+                  <%= link_to center.name,
+                              partner_portal_polling_center_path(center),
+                              class: "fw-semibold text-decoration-none" %>
+                </td>
                 <td>
                   <% if center.domestic? %>
                     <span class="badge bg-success-subtle text-success">Domestik</span>
@@ -100,6 +111,14 @@
                   <span class="badge bg-<%= { 'open' => 'success', 'planned' => 'secondary', 'closed' => 'dark' }[center.status] %> pp-badge-sm">
                     <%= center.status.capitalize %>
                   </span>
+                </td>
+                <td class="text-end">
+                  <%= link_to "Detay",
+                              partner_portal_polling_center_path(center),
+                              class: "btn btn-link btn-sm p-0 me-2" %>
+                  <%= link_to "Modifye",
+                              edit_partner_portal_polling_center_path(center),
+                              class: "btn btn-link btn-sm p-0" %>
                 </td>
               </tr>
             <% end %>

@@ -95,6 +95,53 @@
             </div>
           <% end %>
 
+          <%# Due-process path — rejected candidates can challenge via BCEN.
+              Only open while no dispute has been filed for this candidacy;
+              prior filings are summarized (by recepisse) below. %>
+          <% if @candidate.registration_status == "rejected" %>
+            <hr>
+            <%# Match filings by recepisse_number (always unique per candidacy).
+                BonID is an additional signal but not all candidates have one. %>
+            <% existing_disputes = if @candidate.recepisse_number.present?
+                 ElectionDispute
+                   .where(election_id: @candidate.election_id)
+                   .where("subject ILIKE ?", "%#{@candidate.recepisse_number}%")
+                   .order(filed_at: :desc)
+               else
+                 ElectionDispute.none
+               end %>
+
+            <% if existing_disputes.any? %>
+              <div class="alert alert-warning small">
+                <strong><i class="ri-scales-3-line me-1"></i>Kontestasyon deja depoze</strong>
+                <ul class="mb-0 mt-2">
+                  <% existing_disputes.each do |d| %>
+                    <li>
+                      <code><%= d.reference_code %></code> —
+                      <%= d.status.titleize %>
+                      <% if d.decided? %>
+                        (<%= d.decision_type&.titleize %>,
+                        <%= d.decided_at&.strftime("%d %b %Y") %>)
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            <% else %>
+              <div class="alert alert-danger small mb-0">
+                <div class="mb-2">
+                  <strong><i class="ri-error-warning-line me-1"></i>Dosye rejte.</strong>
+                  Si w panse desizyon an pa jis, ou gen dwa depoze yon kontestasyon
+                  devan Biwo Kontestasyon Elektoral Nasyonal (BCEN).
+                </div>
+                <%= link_to new_dispute_partner_portal_candidate_registration_path(@candidate),
+                            class: "btn btn-danger btn-sm" do %>
+                  <i class="ri-scales-3-line me-1"></i>File Kontestasyon
+                <% end %>
+              </div>
+            <% end %>
+          <% end %>
+
         </div>
       </div>
 

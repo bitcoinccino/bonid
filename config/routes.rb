@@ -254,6 +254,16 @@ end
     post "election/:election_id/candidates/:id/approve",      to: "/election/admin/candidates#approve",      as: :approve_election_election_candidate
     post "election/:election_id/candidates/:id/reject",       to: "/election/admin/candidates#reject",       as: :reject_election_election_candidate
 
+    # Electoral disputes (Gap 9) — BCEN (Bureau du Contentieux Electoral
+    # National). Filings come from the partner portal or citizen side; this
+    # namespace is the adjudicator surface.
+    get  "election/:election_id/disputes",                      to: "/election/admin/disputes#index",            as: :election_election_disputes
+    get  "election/:election_id/disputes/:id",                  to: "/election/admin/disputes#show",             as: :election_election_dispute
+    post "election/:election_id/disputes/:id/start_review",     to: "/election/admin/disputes#start_review",     as: :start_review_election_election_dispute
+    post "election/:election_id/disputes/:id/schedule_hearing", to: "/election/admin/disputes#schedule_hearing", as: :schedule_hearing_election_election_dispute
+    post "election/:election_id/disputes/:id/decide",           to: "/election/admin/disputes#decide",           as: :decide_election_election_dispute
+    post "election/:election_id/disputes/:id/close",            to: "/election/admin/disputes#close",            as: :close_election_election_dispute
+
     # Party / grouping registration review (Gap 7).
     get  "election/:election_id/party_registrations",                  to: "/election/admin/party_registrations#index",        as: :election_election_party_registrations
     get  "election/:election_id/party_registrations/:id",              to: "/election/admin/party_registrations#show",         as: :election_election_party_registration
@@ -786,11 +796,19 @@ end
     post "voter_registry/build", to: "voter_registry#build", as: :voter_registry_build
 
     # Polling Centers (Sant Vòt) — CEP + Consulate roster + CSV import
-    get  "polling_centers",          to: "polling_centers#index",          as: :polling_centers
-    get  "polling_centers/import",   to: "polling_centers#import",         as: :polling_centers_import
-    post "polling_centers/import",   to: "polling_centers#process_import"
-    get  "polling_centers/template", to: "polling_centers#template",       as: :polling_centers_template,
-                                     defaults: { format: :csv }
+    # Custom collection routes (import / template) are declared INSIDE the
+    # resources block so they take precedence over the implicit `:show` route
+    # for `polling_centers/:id` (otherwise "/import" would be parsed as id).
+    resources :polling_centers do
+      collection do
+        get  :import
+        post :import, action: :process_import, as: :process_import
+        get  :template, defaults: { format: :csv }
+      end
+      # Nested BV (Biwo Vòt) management — single-station create/edit/delete
+      # under a parent Sant Vòt. Index lives on the center's #show.
+      resources :polling_stations, only: [:new, :create, :edit, :update, :destroy], as: :stations
+    end
 
     # Party Registration (Article 143).
     # Partner portal is submit-and-track only. Approval authority lives with
@@ -804,7 +822,26 @@ end
     # Candidate Registration.
     # Partner portal is submit-and-track only. Approval authority lives with
     # CEP admin (Election::Admin::CandidatesController).
-    resources :candidate_registrations, only: [ :index, :show, :new, :create ]
+    resources :candidate_registrations, only: [ :index, :show, :new, :create ] do
+      collection do
+        get :lookup_bonid
+      end
+      member do
+        get  :new_dispute
+        post :create_dispute
+      end
+    end
+
+    # Accreditations — mandataires, observers (national / international),
+    # press, and international media. Intake filed here by the partner;
+    # CEP activates in admin namespace. Badge PDF renders only for
+    # active accreditations.
+    resources :accreditations, only: [ :index, :show, :new, :create ] do
+      member do
+        get  :badge
+        post :revoke
+      end
+    end
 
     get "analytics", to: "analytics#index"
     resources :api_keys, only: [ :index, :create, :destroy ] do

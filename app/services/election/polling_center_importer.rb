@@ -100,6 +100,8 @@ module Election
         commune_id:            row[:commune_id].presence,
         communal_section_id:   row[:communal_section_id].presence,
         diplomatic_mission_id: row[:diplomatic_mission_id]&.upcase&.strip.presence,
+        contact_phone:         row[:contact_phone]&.strip,
+        contact_hours:         row[:contact_hours]&.strip,
         notes:                 row[:notes]&.strip
       }
     end
@@ -145,6 +147,8 @@ module Election
         commune_id:            attrs[:commune_id],
         communal_section_id:   attrs[:communal_section_id],
         diplomatic_mission_id: attrs[:diplomatic_mission_id],
+        contact_phone:         attrs[:contact_phone],
+        contact_hours:         attrs[:contact_hours],
         notes:                 attrs[:notes]
       )
       # Centers imported into an already-open election must be immediately

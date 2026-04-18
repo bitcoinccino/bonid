@@ -43,6 +43,7 @@ module PartnerPortal
       nif_registrations business_registrations patente_declarations tca_declarations ras_ir_declarations
       dgi_review dgi_cash_payments election_dashboard electoral_calendar voter_eligibility
       voter_registry polling_centers candidate_registrations party_registrations partner_audit_logs
+      accreditations
     ].freeze
 
     private

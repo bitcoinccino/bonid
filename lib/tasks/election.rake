@@ -138,4 +138,98 @@ namespace :election do
     puts "  By department: #{stats[:by_department]}"
     puts "  Multi-sig: #{ElectionSignature.status_for(election.id)[:total]}/#{ElectionSignature::QUORUM} signatures"
   end
+
+  desc "Load Haiti administrative hierarchy (departments, arrondissements, communes, communal sections) from db/data CSVs. Idempotent — skips rows that already exist. Does NOT destroy any data."
+  task load_haiti_geography: :environment do
+    require "csv"
+
+    puts "Loading departments..."
+    CSV.foreach(Rails.root.join("db/data/departments.csv"), headers: true) do |row|
+      Department.find_or_create_by!(id: row["id"].to_i) do |d|
+        d.name = row["department_name"]
+        d.postal_code_prefix = row["postal_code_prefix"]
+      end
+    end
+    puts "  → #{Department.count} departments"
+
+    puts "Loading arrondissements..."
+    CSV.foreach(Rails.root.join("db/data/arrondissements.csv"), headers: true) do |row|
+      Arrondissement.find_or_create_by!(id: row["id"].to_i) do |a|
+        a.name          = row["arrondissement_name"]
+        a.department_id = row["department_id"].to_i
+        a.code          = row["postal_code_prefix"]
+      end
+    end
+    puts "  → #{Arrondissement.count} arrondissements"
+
+    puts "Loading communes..."
+    dept_by_arrondissement = Arrondissement.all.index_by(&:id).transform_values(&:department_id)
+    CSV.foreach(Rails.root.join("db/data/communes.csv"), headers: true) do |row|
+      arrondissement_id = row["arrondissement_id"].to_i
+      Commune.find_or_create_by!(id: row["id"].to_i) do |c|
+        c.code              = row["commune_id"]
+        c.name              = row["commune_name"]
+        c.arrondissement_id = arrondissement_id
+        c.postal_code       = row["postal_code_prefix"]
+        c.department_id     = dept_by_arrondissement[arrondissement_id]
+      end
+    end
+    puts "  → #{Commune.count} communes"
+
+    puts "Loading communal sections..."
+    commune_code_to_id = Commune.all.index_by(&:code).transform_values(&:id)
+    CSV.foreach(Rails.root.join("db/data/communal_sections.csv"), headers: true) do |row|
+      next if row["postal_code"].blank? || row["commune_id"].blank?
+
+      commune_id = commune_code_to_id[row["commune_id"]]
+      next unless commune_id
+
+      CommunalSection.find_or_create_by!(id: row["id"].to_i) do |s|
+        s.name        = row["section_name"]
+        s.commune_id  = commune_id
+        s.postal_code = row["postal_code"]
+      end
+    end
+    puts "  → #{CommunalSection.count} communal sections"
+
+    puts "Done. Haiti administrative hierarchy is loaded."
+  end
+
+  desc "Generate an Ed25519 signing keypair for BonVote-signed voter receipts. Emits YAML ready to paste into `rails credentials:edit`."
+  task :generate_signing_keys, [:election_id] => :environment do |_, args|
+    require "openssl"
+    require "base64"
+
+    election_id = args[:election_id].to_s.presence ||
+                  BonvoteElection.order(created_at: :desc).first&.id.to_s
+
+    if election_id.blank?
+      abort "No election found. Pass an election_id: rails \"election:generate_signing_keys[1]\""
+    end
+
+    key    = OpenSSL::PKey.generate_key("ED25519")
+    priv64 = Base64.strict_encode64(key.raw_private_key)
+    pub64  = Base64.strict_encode64(key.raw_public_key)
+
+    puts <<~YAML
+
+      # Paste the following under your :election key in credentials.yml.enc
+      # via `EDITOR="code --wait" bin/rails credentials:edit`.
+      # DO NOT commit the private key to version control.
+
+      election:
+        bonvote_signing_keys:
+          "#{election_id}":
+            private: #{priv64}
+            public:  #{pub64}
+
+      # Public key (safe to distribute to tablets / observer verifiers):
+      # #{pub64}
+    YAML
+
+    puts "# Test after install:"
+    puts "#   rec = VoterEligibilityRecord.where(bonvote_election_id: #{election_id}).last"
+    puts "#   rec.stamp_bonvote_signature!"
+    puts "#   rec.reload.bonvote_signature.present? # => true"
+  end
 end

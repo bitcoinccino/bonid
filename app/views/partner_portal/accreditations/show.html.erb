@@ -1,0 +1,108 @@
+<%# Accreditation detail — review + badge download %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <%= link_to partner_portal_accreditations_path,
+                  class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
+        <i class="ri-arrow-left-line me-1"></i> Retounen nan lis la
+      <% end %>
+
+      <div class="pp-card card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+              <h4 class="pp-page-title mb-1"><%= @accreditation.full_name %></h4>
+              <div class="d-flex gap-2">
+                <span class="badge" style="background: <%= @accreditation.badge_color %>;">
+                  <%= @accreditation.type_label %>
+                </span>
+                <% color = { "pending" => "warning", "active" => "success",
+                             "suspended" => "info", "revoked" => "danger" }[@accreditation.status] %>
+                <span class="badge bg-<%= color %>-subtle text-<%= color %>">
+                  <%= @accreditation.status.titleize %>
+                </span>
+              </div>
+            </div>
+            <code class="pp-text-sm"><%= @accreditation.accreditation_code %></code>
+          </div>
+
+          <table class="table table-sm pp-table-detail">
+            <tbody>
+              <tr>
+                <td>Òganizasyon</td>
+                <td>
+                  <%= @accreditation.organization %>
+                  <% if @accreditation.organization_acronym.present? %>
+                    (<%= @accreditation.organization_acronym %>)
+                  <% end %>
+                </td>
+              </tr>
+              <% if @accreditation.bonid.present? %>
+                <tr>
+                  <td>BonID</td>
+                  <td><code><%= @accreditation.bonid %></code></td>
+                </tr>
+              <% end %>
+              <% if @accreditation.cin_number.present? %>
+                <tr><td>CIN</td><td><%= @accreditation.cin_number %></td></tr>
+              <% end %>
+              <% if @accreditation.department_code.present? %>
+                <tr><td>Depatman</td><td><%= @accreditation.department_code %></td></tr>
+              <% end %>
+              <% if @accreditation.assigned_station_code.present? %>
+                <tr><td>Biwo Vòt</td><td><code><%= @accreditation.assigned_station_code %></code></td></tr>
+              <% end %>
+              <tr>
+                <td>Idantite verifye</td>
+                <td><%= @accreditation.identity_verified? ? "Wi" : "Non" %></td>
+              </tr>
+              <% if @accreditation.issued_at.present? %>
+                <tr><td>Dat emisyon</td><td><%= @accreditation.issued_at.strftime("%d/%m/%Y %H:%M") %></td></tr>
+              <% end %>
+              <% if @accreditation.revoked_at.present? %>
+                <tr>
+                  <td>Revoke</td>
+                  <td class="text-danger">
+                    <%= @accreditation.revoked_at.strftime("%d/%m/%Y") %>
+                    — <%= @accreditation.revocation_reason %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+
+          <%# Status-driven CTA %>
+          <% case @accreditation.status %>
+          <% when "pending" %>
+            <div class="alert alert-warning small mb-0">
+              <i class="ri-time-line me-1"></i>
+              <strong>Nan men CEP a.</strong>
+              Badj la ap disponib lè CEP aktive akreditasyon an.
+            </div>
+          <% when "active" %>
+            <hr>
+            <div class="d-flex gap-2 flex-wrap">
+              <%= link_to badge_partner_portal_accreditation_path(@accreditation, format: :pdf),
+                          class: "btn btn-primary btn-sm", target: "_blank" do %>
+                <i class="ri-download-line me-1"></i> Telechaje Badj (PDF)
+              <% end %>
+
+              <%= button_to revoke_partner_portal_accreditation_path(@accreditation),
+                            method: :post,
+                            data: { turbo_confirm: "Revoke akreditasyon sa a?" },
+                            class: "btn btn-outline-danger btn-sm" do %>
+                <i class="ri-close-circle-line me-1"></i> Revoke
+              <% end %>
+            </div>
+          <% when "revoked" %>
+            <div class="alert alert-danger small mb-0">
+              <i class="ri-close-circle-line me-1"></i>
+              Akreditasyon revoke. Badj la pa valid.
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -12,7 +12,13 @@
 # BonVote fixes this: each accreditation is tied to a BonID + assigned station.
 #
 class ElectionAccreditation < ApplicationRecord
-  TYPES = %w[mandataire national_observer international_observer].freeze
+  TYPES = %w[
+    mandataire
+    national_observer
+    international_observer
+    press
+    international_media
+  ].freeze
 
   belongs_to :election, class_name: "BonvoteElection"
   belongs_to :user, optional: true
@@ -33,9 +39,13 @@ class ElectionAccreditation < ApplicationRecord
 
   before_validation :generate_accreditation_code, on: :create
 
-  def mandataire?            = accreditation_type == "mandataire"
-  def national_observer?     = accreditation_type == "national_observer"
+  def mandataire?             = accreditation_type == "mandataire"
+  def national_observer?      = accreditation_type == "national_observer"
   def international_observer? = accreditation_type == "international_observer"
+  def press?                  = accreditation_type == "press"
+  def international_media?    = accreditation_type == "international_media"
+  def media?                  = press? || international_media?
+  def observer?               = national_observer? || international_observer?
 
   def active?   = status == "active"
   def revoked?  = status == "revoked"
@@ -58,7 +68,22 @@ class ElectionAccreditation < ApplicationRecord
   def type_label
     { "mandataire" => "Mandatè Pati Politik",
       "national_observer" => "Obsèvatè Nasyonal",
-      "international_observer" => "Obsèvatè Entènasyonal" }[accreditation_type]
+      "international_observer" => "Obsèvatè Entènasyonal",
+      "press" => "Laprès Nasyonal",
+      "international_media" => "Laprès Entènasyonal" }[accreditation_type]
+  end
+
+  # Badge color band by type — used by the PDF badge generator for
+  # at-a-glance visual identification at polling stations.
+  def badge_color
+    case accreditation_type
+    when "mandataire"             then "#dc3545"   # red
+    when "national_observer"      then "#0d6efd"   # blue
+    when "international_observer" then "#6610f2"   # indigo
+    when "press"                  then "#198754"   # green
+    when "international_media"    then "#fd7e14"   # orange
+    else "#6c757d"                                 # gray fallback
+    end
   end
 
   private
@@ -70,6 +95,8 @@ class ElectionAccreditation < ApplicationRecord
     when "mandataire" then "MAN"
     when "national_observer" then "OBS-N"
     when "international_observer" then "OBS-I"
+    when "press" then "PRS"
+    when "international_media" then "PRS-I"
     else "ACC"
     end
     self.accreditation_code = "#{prefix}-#{SecureRandom.hex(4).upcase}"

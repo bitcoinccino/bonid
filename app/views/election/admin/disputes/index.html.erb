@@ -1,0 +1,157 @@
+<%# app/views/election/admin/disputes/index.html.erb %>
+<%# BCEN — Bureau du Contentieux Electoral National. Dispute queue. %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-scales-3-line me-2 pp-text-brand"></i>Kontestasyon (BCEN)
+      </h4>
+      <p class="pp-page-subtitle">
+        Biwo Kontestasyon Elektoral Nasyonal — <%= @election.title %>
+      </p>
+    </div>
+    <%= link_to admin_election_election_path(@election.id),
+                class: "btn btn-sm btn-outline-secondary" do %>
+      <i class="ri-arrow-left-line me-1"></i> Retounen Tablo CEP
+    <% end %>
+  </div>
+
+  <%# ── Summary stats ── %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Total</div>
+        <div class="fw-bold pp-text-2xl pp-text-brand"><%= @stats[:total] %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Ouvè</div>
+        <div class="fw-bold pp-text-2xl pp-text-warning"><%= @stats[:open] %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Desizyon pran</div>
+        <div class="fw-bold pp-text-2xl pp-text-success"><%= @stats[:decided] %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Ijan</div>
+        <div class="fw-bold pp-text-2xl pp-text-danger"><%= @stats[:urgent] %></div>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Filters ── %>
+  <div class="pp-card card mb-3">
+    <div class="card-body p-3">
+      <%= form_with url: admin_election_election_disputes_path(@election.id),
+                    method: :get, local: true,
+                    class: "d-flex gap-2 flex-wrap align-items-center" do %>
+        <%= select_tag :status,
+                       options_for_select(
+                         [["Tout estati", ""]] + ElectionDispute::STATUSES.map { |s| [s.titleize, s] },
+                         params[:status]
+                       ),
+                       class: "form-select form-select-sm w-auto" %>
+        <%= select_tag :dispute_type,
+                       options_for_select(
+                         [["Tout tip", ""]] + ElectionDispute::DISPUTE_TYPES.map { |t| [t.titleize, t] },
+                         params[:dispute_type]
+                       ),
+                       class: "form-select form-select-sm w-auto" %>
+        <%= select_tag :priority,
+                       options_for_select(
+                         [["Tout priyorite", ""], ["Ijan", "urgent"], ["Nòmal", "normal"]],
+                         params[:priority]
+                       ),
+                       class: "form-select form-select-sm w-auto" %>
+        <%= text_field_tag :search, params[:search],
+                           class: "form-control form-control-sm flex-grow-1",
+                           placeholder: "Chèche pa referans, filè, oswa sijè…" %>
+        <button class="btn btn-sm btn-primary">Filtre</button>
+        <%= link_to "Reset", admin_election_election_disputes_path(@election.id),
+                    class: "btn btn-sm btn-outline-secondary" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Table ── %>
+  <div class="pp-card card">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle">
+        <thead class="table-light">
+          <tr>
+            <th class="pp-text-xs">Referans</th>
+            <th class="pp-text-xs">Tip</th>
+            <th class="pp-text-xs">Sijè</th>
+            <th class="pp-text-xs">Depoze pa</th>
+            <th class="pp-text-xs">Depatman</th>
+            <th class="pp-text-xs">Estati</th>
+            <th class="pp-text-xs">Dat</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @disputes.each do |d| %>
+            <tr>
+              <td>
+                <div class="fw-semibold pp-font-mono pp-text-xs"><%= d.reference_code %></div>
+                <% if d.priority == "urgent" %>
+                  <span class="badge bg-danger pp-badge-sm">IJAN</span>
+                <% end %>
+              </td>
+              <td class="pp-text-sm"><%= d.dispute_type.titleize %></td>
+              <td class="pp-text-sm" style="max-width: 280px;">
+                <div class="text-truncate"><%= d.subject %></div>
+              </td>
+              <td>
+                <div class="pp-text-sm"><%= d.filed_by_name %></div>
+                <div class="pp-text-xs pp-text-secondary"><%= d.filed_by_type.titleize %></div>
+              </td>
+              <td class="pp-text-xs pp-text-secondary"><%= d.department_code || "—" %></td>
+              <td>
+                <% color = case d.status
+                           when "filed" then "warning"
+                           when "under_review" then "info"
+                           when "hearing_scheduled" then "primary"
+                           when "decided" then "success"
+                           when "appealed" then "warning"
+                           when "closed" then "secondary"
+                           else "light"
+                           end %>
+                <span class="badge bg-<%= color %>-subtle text-<%= color %>">
+                  <%= d.status.titleize %>
+                </span>
+              </td>
+              <td class="pp-text-xs pp-text-secondary">
+                <%= d.filed_at&.strftime("%d %b %Y") || "—" %>
+              </td>
+              <td class="text-end">
+                <%= link_to admin_election_election_dispute_path(@election.id, d),
+                            class: "btn btn-sm btn-outline-primary" do %>
+                  Wè
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <% if @disputes.empty? %>
+            <tr><td colspan="8" class="text-center text-muted py-4">Pa gen kontestasyon ki koresponn ak filtè a.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if @disputes.respond_to?(:total_pages) && @disputes.total_pages > 1 %>
+    <div class="mt-3">
+      <%= paginate @disputes if respond_to?(:paginate) %>
+    </div>
+  <% end %>
+
+</div>

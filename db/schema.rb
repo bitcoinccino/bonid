@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_17_180000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1708,6 +1708,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_180000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "contact_phone"
+    t.string "contact_hours"
     t.index ["arrondissement_id"], name: "index_polling_centers_on_arrondissement_id"
     t.index ["bonvote_election_id", "communal_section_id"], name: "idx_polling_centers_election_section"
     t.index ["bonvote_election_id", "diplomatic_mission_id"], name: "idx_polling_centers_election_mission"
@@ -2299,8 +2301,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_180000) do
     t.string "diplomatic_mission_id"
     t.string "source", default: "digital", null: false
     t.bigint "registered_by_electoral_office_id"
-    t.text "cep_signature"
-    t.datetime "cep_signed_at"
+    t.text "bonvote_signature"
+    t.datetime "bonvote_signed_at"
     t.datetime "receipt_generated_at"
     t.index ["bonvote_election_id", "bonid"], name: "idx_voter_election_bonid", unique: true
     t.index ["bonvote_election_id", "cin_number"], name: "idx_voter_election_cin_unique", unique: true, where: "(cin_number IS NOT NULL)"

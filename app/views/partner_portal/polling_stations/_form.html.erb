@@ -1,0 +1,39 @@
+<%= form_with model: @station,
+              url: @station.persisted? ?
+                   partner_portal_polling_center_station_path(@center, @station) :
+                   partner_portal_polling_center_stations_path(@center),
+              method: @station.persisted? ? :patch : :post,
+              local: true do |f| %>
+
+  <% if @station.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0 small">
+        <% @station.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <%= f.label :bv_number, "Nimewo BV", class: "form-label" %>
+      <%= f.number_field :bv_number, class: "form-control", min: 1, required: true %>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :capacity, "Kapasite", class: "form-label" %>
+      <%= f.number_field :capacity, class: "form-control", min: 1, required: true %>
+      <div class="form-text small">Default LEEC: 450</div>
+    </div>
+    <div class="col-md-4">
+      <%= f.label :status, "Estati", class: "form-label" %>
+      <%= f.select :status,
+                   PollingStation::STATUSES.map { |s| [s.capitalize, s] },
+                   {}, class: "form-select" %>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <%= link_to "Anile", partner_portal_polling_center_path(@center), class: "btn btn-link" %>
+    <%= f.submit (@station.persisted? ? "Mete a jou" : "Kreye BV"),
+                 class: "btn pp-btn-brand px-4" %>
+  </div>
+<% end %>

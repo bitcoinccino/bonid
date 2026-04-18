@@ -1,0 +1,130 @@
+<%# Accreditations — partner intake list %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-shield-user-line me-2 pp-text-brand"></i>
+        Akreditasyon Jou Vòt
+      </h4>
+      <p class="pp-page-subtitle mb-0">
+        Depoze mandatè, obsèvatè, oswa jounalis ou yo pou eleksyon an.
+      </p>
+    </div>
+    <% if @election %>
+      <%= link_to new_partner_portal_accreditation_path,
+                  class: "btn btn-primary btn-sm" do %>
+        <i class="ri-add-line me-1"></i> Nouvo Akreditasyon
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @election.blank? %>
+    <div class="alert alert-warning">Pa gen eleksyon aktif.</div>
+  <% else %>
+    <%# Stats %>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="pp-card card p-3">
+          <small class="text-muted">Total</small>
+          <h5 class="mb-0 fw-bold"><%= @stats[:total] %></h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pp-card card p-3">
+          <small class="text-muted">Aktif</small>
+          <h5 class="mb-0 fw-bold text-success"><%= @stats[:active] %></h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pp-card card p-3">
+          <small class="text-muted">An atant</small>
+          <h5 class="mb-0 fw-bold text-warning"><%= @stats[:pending] %></h5>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="pp-card card p-3">
+          <small class="text-muted">Revoke</small>
+          <h5 class="mb-0 fw-bold text-danger"><%= @stats[:revoked] %></h5>
+        </div>
+      </div>
+    </div>
+
+    <%# Filter chips %>
+    <%= form_with url: partner_portal_accreditations_path, method: :get, local: true, class: "mb-3 d-flex gap-2 flex-wrap" do %>
+      <%= text_field_tag :search, params[:search], placeholder: "Chèche non / òganizasyon / kòd",
+                         class: "form-control form-control-sm", style: "max-width: 260px;" %>
+      <%= select_tag :type,
+            options_for_select([
+              ["Tout kalite", ""],
+              ["Mandatè", "mandataire"],
+              ["Obsèvatè Nasyonal", "national_observer"],
+              ["Obsèvatè Entènasyonal", "international_observer"],
+              ["Laprès", "press"],
+              ["Laprès Entènasyonal", "international_media"]
+            ], params[:type]),
+            class: "form-select form-select-sm", style: "max-width: 200px;" %>
+      <%= select_tag :status,
+            options_for_select([
+              ["Tout estati", ""],
+              ["An atant", "pending"],
+              ["Aktif", "active"],
+              ["Revoke", "revoked"]
+            ], params[:status]),
+            class: "form-select form-select-sm", style: "max-width: 160px;" %>
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Filtre</button>
+    <% end %>
+
+    <%# Table %>
+    <div class="pp-card card">
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0 pp-text-sm">
+          <thead class="bg-light">
+            <tr>
+              <th>Kòd</th>
+              <th>Non</th>
+              <th>Kalite</th>
+              <th>Òganizasyon</th>
+              <th>Depatman</th>
+              <th>Estati</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @accreditations.each do |a| %>
+              <tr>
+                <td><code><%= a.accreditation_code %></code></td>
+                <td><%= a.full_name %></td>
+                <td>
+                  <span class="badge" style="background: <%= a.badge_color %>;">
+                    <%= a.type_label %>
+                  </span>
+                </td>
+                <td><%= a.organization %></td>
+                <td><%= a.department_code.presence || "—" %></td>
+                <td>
+                  <% color = { "pending" => "warning", "active" => "success",
+                               "suspended" => "info", "revoked" => "danger" }[a.status] %>
+                  <span class="badge bg-<%= color %>-subtle text-<%= color %>">
+                    <%= a.status.titleize %>
+                  </span>
+                </td>
+                <td class="text-end">
+                  <%= link_to "Wè", partner_portal_accreditation_path(a),
+                              class: "btn btn-sm btn-outline-secondary" %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @accreditations.empty? %>
+              <tr><td colspan="7" class="text-center py-4 text-muted">Pa gen akreditasyon ankò.</td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <%= paginate @accreditations if respond_to?(:paginate) %>
+    </div>
+  <% end %>
+</div>

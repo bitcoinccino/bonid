@@ -1,84 +1,606 @@
-<%# New Candidate Registration %>
+<%# New Candidate Registration — multi-step wizard (matches citizen-profile
+    wizard shape used by identity_submissions/_form.html.erb). %>
 
 <div class="container-fluid py-4">
   <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-9">
 
       <%= link_to partner_portal_candidate_registrations_path, class: "text-decoration-none mb-3 d-inline-block pp-text-sm" do %>
         <i class="ri-arrow-left-line me-1"></i> Retounen nan lis la
       <% end %>
 
-      <h4 class="pp-page-title mb-4">
-        <i class="ri-user-star-line me-2 pp-text-brand"></i>Nouvo Enskripsyon Kandida
-      </h4>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h3 class="citizen-page-title mb-1">
+            <i class="ri-user-star-line me-2"></i>Nouvo Enskripsyon Kandida
+          </h3>
+          <p class="text-muted mb-0" style="font-size: 0.78rem;">
+            Ranpli dosye kandidati ou a selon Dekrè Elektoral Atik 180–181.
+          </p>
+        </div>
+      </div>
 
-      <div class="pp-card card">
-        <div class="card-body p-4">
+      <% if @candidate.errors.any? %>
+        <div class="alert alert-danger mb-4">
+          <strong><%= pluralize(@candidate.errors.count, "erè") %>:</strong>
+          <ul class="mb-0 mt-2">
+            <% @candidate.errors.full_messages.each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
 
-          <% if @candidate.errors.any? %>
-            <div class="alert alert-danger mb-4">
-              <strong><%= pluralize(@candidate.errors.count, "erè") %>:</strong>
-              <ul class="mb-0 mt-2">
-                <% @candidate.errors.full_messages.each do |msg| %>
-                  <li><%= msg %></li>
-                <% end %>
-              </ul>
+      <div class="complaint-form-wrapper">
+        <%= form_with model: @candidate,
+              url: partner_portal_candidate_registrations_path,
+              local: true,
+              html: { class: "needs-validation", novalidate: true,
+                      data: { controller: "wizard candidate-bonid-prefill",
+                              wizard_current_step_value: "1" } } do |f| %>
+
+          <%# ── Step Indicator ── %>
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 720px; margin: 0 auto;">
+              <% wizard_steps = [
+                { icon: "ri-user-line",         label: "Idantite" },
+                { icon: "ri-government-line",   label: "Kandidati" },
+                { icon: "ri-home-line",         label: "Rezidans" },
+                { icon: "ri-file-text-line",    label: "Frè & Platfòm" },
+                { icon: "ri-folders-line",      label: "Dokiman" },
+                { icon: "ri-checkbox-circle-line", label: "Revize" }
+              ] %>
+              <% wizard_steps.each_with_index do |step, i| %>
+                <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
+                  <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if i == 0 %>">
+                    <i class="<%= step[:icon] %>" style="font-size: 0.9rem;"></i>
+                  </div>
+                  <div style="font-size: 0.62rem; color: #98a2b3; margin-top: 4px; font-weight: 500;">
+                    <%= step[:label] %>
+                  </div>
+                </div>
+              <% end %>
             </div>
-          <% end %>
-
-          <%= form_with model: @candidate, url: partner_portal_candidate_registrations_path, local: true do |f| %>
-
-            <div class="mb-3">
-              <%= f.label :full_name, "Non konplè", class: "form-label fw-semibold" %>
-              <%= f.text_field :full_name, class: "form-control", placeholder: "Non ak siyati kandida a" %>
-            </div>
-
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <%= f.label :position, "Pozisyon", class: "form-label fw-semibold" %>
-                <%= f.select :position,
-                    [["Prezidan", "president"], ["Senatè", "senator"], ["Depite", "deputy"]],
-                    { prompt: "Chwazi pozisyon" }, class: "form-select" %>
+            <div style="height: 4px; background: #e4e7ec; border-radius: 4px; max-width: 720px; margin: 0 auto;">
+              <div data-wizard-target="progressBar"
+                   style="height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #1a4fa8);
+                          border-radius: 4px; transition: width 0.4s ease;">
               </div>
-              <div class="col-md-6">
-                <%= f.label :election_constituency_id, "Sikonskripsyon", class: "form-label fw-semibold" %>
-                <%= f.select :election_constituency_id,
-                    @constituencies.map { |c| [c.constituency_name, c.id] },
-                    { prompt: "Chwazi sikonskripsyon" }, class: "form-select" %>
+            </div>
+          </div>
+
+          <%# ── Step Titles ── %>
+          <p class="mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);">
+            <span data-wizard-target="stepTitle">Etap 1: Idantite kandida a.</span>
+            <span data-wizard-target="stepTitle" class="d-none">Etap 2: Pozisyon, sikonskripsyon, ak tip kandidati.</span>
+            <span data-wizard-target="stepTitle" class="d-none">Etap 3: Rezidans legal kandida a.</span>
+            <span data-wizard-target="stepTitle" class="d-none">Etap 4: Frè enskripsyon ak platfòm politik.</span>
+            <span data-wizard-target="stepTitle" class="d-none">Etap 5: Dokiman jistifikatif (Atik 181).</span>
+            <span data-wizard-target="stepTitle" class="d-none">Etap 6: Revize ak soumèt dosye a.</span>
+          </p>
+
+          <%# Step alerts %>
+          <div data-wizard-target="stepAlert" class="d-flex align-items-start mb-4 p-3 rounded-2" style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+            <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
+            <div>
+              <strong>Enfòmasyon legal:</strong> Non, dat nesans, ak CIN kandida a dwe kòrèkteman
+              matche dokiman ofisyèl yo. Enfòmasyon ki pa matche ap mennen rejèt dosye a pa CEP.
+            </div>
+          </div>
+          <div data-wizard-target="stepAlert" class="alert alert-info d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+            <i class="ri-information-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+            <div>
+              Chwazi pozisyon an anvan — sa ap detèmine ki dokiman obligatwa pou dosye a.
+              Kandida endepandan dwe prezante petisyon 2% elektè sikonskripsyon an (Atik 181.12).
+            </div>
+          </div>
+          <div data-wizard-target="stepAlert" class="alert alert-info d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+            <i class="ri-information-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+            <div>
+              Kandida prezidansyèl / senatoryal dwe demontre rezidans kontinyèl nan peyi a
+              pou omwen 5 lane avan eleksyon yo (Atik 135 Konstitisyon).
+            </div>
+          </div>
+          <div data-wizard-target="stepAlert" class="alert alert-info d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+            <i class="ri-bank-card-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+            <div>
+              Frè enskripsyon: <strong>Prezidan 500,000 HTG</strong> · <strong>Senatè 200,000 HTG</strong> ·
+              <strong>Depite 100,000 HTG</strong>. Frè a peye atravè DGI (kitans nan Etap 5).
+            </div>
+          </div>
+          <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+            <i class="ri-alert-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+            <div>
+              <strong>Atik 181:</strong> Tout dokiman ki nan lis la dwe dispozib anvan CEP apwouve
+              dosye a. Tcheke bwat pou chak dokiman ki deja soumèt.
+            </div>
+          </div>
+          <div data-wizard-target="stepAlert" class="alert alert-success d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
+            <i class="ri-checkbox-circle-line me-2 mt-1" style="font-size: 1.1rem;"></i>
+            <div>
+              Revize enfòmasyon yo byen. Lè w soumèt, dosye a ap pase nan revizyon CEP (Atik 184).
+            </div>
+          </div>
+
+          <%# ══════════ STEP 1 — IDANTITE ══════════ %>
+          <section data-wizard-target="step" data-step="1" class="wizard-step active">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-user-line me-2 pp-text-brand"></i>Enfòmasyon Idantite
+                </h5>
+
+                <div class="mb-3">
+                  <%= f.label :bonid, "BonID (opsyonèl — pou pre-ranpli)", class: "form-label fw-semibold pp-text-sm" %>
+                  <div class="input-group">
+                    <%= f.text_field :bonid,
+                          class: "form-control pp-font-mono",
+                          placeholder: "BON-XXXX-XXXX (si kandida a genyen youn)",
+                          data: { candidate_bonid_prefill_target: "code" } %>
+                    <button type="button"
+                            class="btn btn-outline-primary"
+                            data-action="candidate-bonid-prefill#fetch"
+                            data-candidate-bonid-prefill-url-value="<%= lookup_bonid_partner_portal_candidate_registrations_path %>">
+                      <i class="ri-magic-line me-1"></i>Pre-ranpli
+                    </button>
+                  </div>
+                  <small class="form-text text-muted"
+                         data-candidate-bonid-prefill-target="hint">
+                    Si kandida a gen yon kont BonID verifye, klike <em>Pre-ranpli</em> pou ranpli chan yo otomatikman.
+                  </small>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-8">
+                    <%= f.label :full_name, "Non konplè *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :full_name, class: "form-control",
+                          placeholder: "Non ak siyati legal", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <%= f.label :cin_number, "Nimewo CIN", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :cin_number, class: "form-control pp-font-mono",
+                          placeholder: "CIN ONI" %>
+                  </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-md-4">
+                    <%= f.label :date_of_birth, "Dat nesans *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.date_field :date_of_birth, class: "form-control", required: true %>
+                  </div>
+                  <div class="col-md-4">
+                    <%= f.label :sex, "Sèks *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :sex,
+                          [["Gason", "M"], ["Fi", "F"]],
+                          { prompt: "Chwazi" },
+                          { class: "form-select", required: true } %>
+                  </div>
+                  <div class="col-md-4">
+                    <%= f.label :marital_status, "Eta sivil", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :marital_status,
+                          [["Selibatè", "single"], ["Marye", "married"],
+                           ["Divòse", "divorced"], ["Vèv", "widowed"]],
+                          { prompt: "Chwazi" }, class: "form-select" %>
+                  </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <%= f.label :place_of_birth, "Kote nesans", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :place_of_birth, class: "form-control",
+                          placeholder: "Vil, Depatman" %>
+                  </div>
+                  <div class="col-md-3">
+                    <%= f.label :nationality, "Nasyonalite", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :nationality,
+                          [["Ayisyen", "haitian"], ["Lòt", "other"]],
+                          { selected: "haitian" }, class: "form-select" %>
+                  </div>
+                  <div class="col-md-3">
+                    <%= f.label :profession, "Pwofesyon", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :profession, class: "form-control",
+                          placeholder: "ex: Enjenyè, Avoka" %>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <%= f.label :party_name, "Non Pati (opsyonèl)", class: "form-label fw-semibold" %>
-                <%= f.text_field :party_name, class: "form-control", placeholder: "Endepandan si vid" %>
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#next">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </section>
+
+          <%# ══════════ STEP 2 — KANDIDATI ══════════ %>
+          <section data-wizard-target="step" data-step="2" class="wizard-step d-none" style="display:none">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-government-line me-2 pp-text-brand"></i>Pozisyon & Afilyasyon
+                </h5>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <%= f.label :position, "Pozisyon *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :position,
+                          [["Prezidan Repiblik la", "president"],
+                           ["Senatè", "senator"],
+                           ["Depite", "deputy"]],
+                          { prompt: "Chwazi pozisyon" },
+                          { class: "form-select", required: true } %>
+                  </div>
+                  <div class="col-md-6">
+                    <%= f.label :election_constituency_id, "Sikonskripsyon *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :election_constituency_id,
+                          @constituencies.map { |c| [c.constituency_name, c.id] },
+                          { prompt: "Chwazi sikonskripsyon" },
+                          { class: "form-select", required: true } %>
+                  </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <%= f.label :candidacy_type, "Tip kandidati *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :candidacy_type,
+                          [["Pati politik", "party"],
+                           ["Gwoupman politik", "grouping"],
+                           ["Endepandan", "independent"]],
+                          { prompt: "Chwazi tip" },
+                          { class: "form-select", required: true } %>
+                  </div>
+                  <div class="col-md-6">
+                    <%= f.label :party_registration_id, "Pati apwouve (si pati/gwoupman)", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :party_registration_id,
+                          @approved_parties.map { |p| ["#{p.party_name} (#{p.party_acronym})", p.id] },
+                          { prompt: "— Pa gen (endepandan) —", include_blank: true },
+                          class: "form-select" %>
+                    <small class="form-text text-muted">
+                      Sèlman pati ak gwoupman CEP apwouve parèt la.
+                    </small>
+                  </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <%= f.label :party_name, "Non pati (manyèl, si pa nan lis la)", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :party_name, class: "form-control",
+                          placeholder: "Ranpli si pa chwazi nan lis la" %>
+                  </div>
+                  <div class="col-md-6">
+                    <%= f.label :party_acronym, "Akwonim", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :party_acronym, class: "form-control",
+                          placeholder: "ex: PHTK, FL, RDNP" %>
+                  </div>
+                </div>
               </div>
-              <div class="col-md-6">
-                <%= f.label :party_acronym, "Akwonim Pati (opsyonèl)", class: "form-label fw-semibold" %>
-                <%= f.text_field :party_acronym, class: "form-control", placeholder: "ex: PHTK, FL" %>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#previous">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#next">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </section>
+
+          <%# ══════════ STEP 3 — REZIDANS ══════════ %>
+          <section data-wizard-target="step" data-step="3" class="wizard-step d-none" style="display:none">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-home-line me-2 pp-text-brand"></i>Rezidans Legal
+                </h5>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <%= f.label :residence_department, "Depatman rezidans *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.select :residence_department,
+                          [["Ouest", "Ouest"], ["Sud-Est", "Sud-Est"], ["Nord", "Nord"],
+                           ["Nord-Est", "Nord-Est"], ["Artibonite", "Artibonite"],
+                           ["Centre", "Centre"], ["Sud", "Sud"], ["Grande-Anse", "Grande-Anse"],
+                           ["Nord-Ouest", "Nord-Ouest"], ["Nippes", "Nippes"]],
+                          { prompt: "Chwazi depatman" },
+                          { class: "form-select", required: true } %>
+                  </div>
+                  <div class="col-md-6">
+                    <%= f.label :residence_commune, "Komin rezidans *", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :residence_commune, class: "form-control",
+                          placeholder: "ex: Pétion-Ville, Delmas", required: true %>
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <%= f.label :residence_address, "Adrès konplè", class: "form-label fw-semibold pp-text-sm" %>
+                  <%= f.text_area :residence_address, class: "form-control", rows: 2,
+                        placeholder: "Ri, nimewo kay, seksyon kominal" %>
+                </div>
+
+                <div class="row g-3 mt-1">
+                  <div class="col-md-6">
+                    <%= f.label :department_code, "Kòd depatman (administratif)", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :department_code, class: "form-control pp-font-mono",
+                          placeholder: "OU, SE, NO..." %>
+                  </div>
+                  <div class="col-md-6">
+                    <%= f.label :commune_id, "ID komin (CEP reference)", class: "form-label fw-semibold pp-text-sm" %>
+                    <%= f.text_field :commune_id, class: "form-control pp-font-mono",
+                          placeholder: "Opsyonèl" %>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="mb-3">
-              <%= f.label :bonid, "Nimewo BonID (opsyonèl)", class: "form-label fw-semibold" %>
-              <%= f.text_field :bonid, class: "form-control pp-font-mono", placeholder: "BonID kandida a" %>
-              <small class="form-text text-muted">Si kandida a gen yon BonID, antre l pou lye kont li.</small>
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#previous">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#next">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </section>
+
+          <%# ══════════ STEP 4 — FRÈ & PLATFÒM ══════════ %>
+          <section data-wizard-target="step" data-step="4" class="wizard-step d-none" style="display:none">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-bank-card-line me-2 pp-text-brand"></i>Frè Enskripsyon
+                </h5>
+
+                <div class="form-check mb-2">
+                  <%= f.check_box :fee_reduced, class: "form-check-input" %>
+                  <%= f.label :fee_reduced, "Aplike pou rediksyon frè (kandida fanm / jèn)",
+                        class: "form-check-label pp-text-sm" %>
+                </div>
+
+                <div class="mb-3">
+                  <%= f.label :fee_reduction_reason, "Rezon rediksyon (si aplike)", class: "form-label fw-semibold pp-text-sm" %>
+                  <%= f.select :fee_reduction_reason,
+                        [["Kandida fanm (Atik 17.1 Konstitisyon)", "woman"],
+                         ["Kandida jèn (35 ane oswa mwens)", "youth"],
+                         ["Lòt", "other"]],
+                        { prompt: "— Okenn —", include_blank: true },
+                        class: "form-select" %>
+                </div>
+
+                <hr class="my-4">
+
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-megaphone-line me-2 pp-text-brand"></i>Platfòm Politik
+                </h5>
+
+                <div>
+                  <%= f.label :platform_statement, "Deklarasyon platfòm", class: "form-label fw-semibold pp-text-sm" %>
+                  <%= f.text_area :platform_statement, class: "form-control", rows: 6,
+                        placeholder: "Dekri pwogram kandida a: priyorite, pwojè kle, vizyon pou peyi a..." %>
+                  <small class="form-text text-muted">
+                    Platfòm sa ap parèt sou paj piblik kandida a.
+                  </small>
+                </div>
+              </div>
             </div>
 
-            <div class="mb-3">
-              <%= f.label :platform_statement, "Platfòm / Deklarasyon", class: "form-label fw-semibold" %>
-              <%= f.text_area :platform_statement, class: "form-control", rows: 5,
-                  placeholder: "Deskripsyon platfòm kandida a..." %>
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#previous">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#next">
+                Kontinye <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </section>
+
+          <%# ══════════ STEP 5 — DOKIMAN (Atik 181) ══════════ %>
+          <section data-wizard-target="step" data-step="5" class="wizard-step d-none" style="display:none">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-folders-line me-2 pp-text-brand"></i>Lis Dokiman (Atik 181)
+                </h5>
+                <p class="text-muted pp-text-xs mb-3">
+                  Tcheke bwat pou chak dokiman ki deja soumèt fizikman nan dosye a.
+                  CEP ap verifye dokiman yo avan apwobasyon.
+                </p>
+
+                <% doc_list = [
+                  { field: :doc_cin_oni,                ref: 1,  label: "CIN oswa Sètifika ONI" },
+                  { field: :doc_birth_certificate,      ref: 2,  label: "Ak nesans / Ekstrè achiv" },
+                  { field: :doc_casier_judiciaire,      ref: 3,  label: "Ekstrè kazye jidisyè (DCPJ)" },
+                  { field: :doc_dgi_receipt,            ref: 4,  label: "Kitans DGI (frè enskripsyon peye)" },
+                  { field: :doc_residence_attestation,  ref: 5,  label: "Atestasyon rezidans" },
+                  { field: :doc_passport_photos,        ref: 6,  label: "4 foto idantite resan (papye + elektwonik)" },
+                  { field: :doc_profession_proof,       ref: 7,  label: "Atestasyon pwofesyon / aktivite" },
+                  { field: :doc_property_proof,         ref: 8,  label: "Atestasyon pwopriyete imobilye (prezidan/senatè)" },
+                  { field: :doc_immigration_cert,       ref: 9,  label: "Sètifika imigrasyon (si aplike)" },
+                  { field: :doc_discharge,              ref: 10, label: "Dechaj (si ansyen fonksyonè leta)" },
+                  { field: :doc_party_mandate,          ref: 11, label: "Atestasyon pati politik (pati/gwoupman)" },
+                  { field: :doc_support_petition,       ref: 12, label: "Petisyon 2% elektè (endepandan)" }
+                ] %>
+
+                <div class="list-group">
+                  <% doc_list.each do |doc| %>
+                    <label class="list-group-item d-flex align-items-start gap-2">
+                      <%= f.check_box doc[:field], class: "form-check-input mt-1" %>
+                      <div>
+                        <div class="pp-text-sm">
+                          <span class="text-muted me-2">#<%= doc[:ref] %></span>
+                          <strong><%= doc[:label] %></strong>
+                        </div>
+                      </div>
+                    </label>
+                  <% end %>
+                </div>
+              </div>
             </div>
 
-            <div class="text-end">
-              <%= f.submit "Soumèt Enskripsyon", class: "btn pp-btn-brand px-5" %>
+            <div class="d-flex justify-content-between">
+              <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#previous">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+              <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#next">
+                Revize <i class="ri-arrow-right-line ms-1"></i>
+              </button>
+            </div>
+          </section>
+
+          <%# ══════════ STEP 6 — REVIZE & SOUMÈT ══════════ %>
+          <section data-wizard-target="step" data-step="6" class="wizard-step d-none" style="display:none">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3 pp-text-sm">
+                  <i class="ri-checkbox-circle-line me-2 pp-text-brand"></i>Revize Dosye a
+                </h5>
+                <p class="text-muted pp-text-xs mb-3">
+                  Verifye tout enfòmasyon yo anvan soumèt. Apre w soumèt, dosye a ap pase nan
+                  revizyon CEP. Modifikasyon yo ap bezwen otorizasyon CEP.
+                </p>
+
+                <div class="alert alert-light border">
+                  <div class="pp-text-xs text-muted mb-1">Idantite</div>
+                  <div id="review-identity" class="pp-text-sm">—</div>
+                  <button type="button" class="btn btn-link btn-sm p-0 pp-text-xs"
+                          data-action="wizard#goToStep" data-step="1">
+                    <i class="ri-edit-line me-1"></i>Modifye
+                  </button>
+                </div>
+
+                <div class="alert alert-light border">
+                  <div class="pp-text-xs text-muted mb-1">Kandidati</div>
+                  <div id="review-candidacy" class="pp-text-sm">—</div>
+                  <button type="button" class="btn btn-link btn-sm p-0 pp-text-xs"
+                          data-action="wizard#goToStep" data-step="2">
+                    <i class="ri-edit-line me-1"></i>Modifye
+                  </button>
+                </div>
+
+                <div class="alert alert-light border">
+                  <div class="pp-text-xs text-muted mb-1">Rezidans</div>
+                  <div id="review-residence" class="pp-text-sm">—</div>
+                  <button type="button" class="btn btn-link btn-sm p-0 pp-text-xs"
+                          data-action="wizard#goToStep" data-step="3">
+                    <i class="ri-edit-line me-1"></i>Modifye
+                  </button>
+                </div>
+
+                <div class="alert alert-light border">
+                  <div class="pp-text-xs text-muted mb-1">Frè & Platfòm</div>
+                  <div id="review-platform" class="pp-text-sm">—</div>
+                  <button type="button" class="btn btn-link btn-sm p-0 pp-text-xs"
+                          data-action="wizard#goToStep" data-step="4">
+                    <i class="ri-edit-line me-1"></i>Modifye
+                  </button>
+                </div>
+
+                <div class="alert alert-light border mb-0">
+                  <div class="pp-text-xs text-muted mb-1">Dokiman</div>
+                  <div id="review-docs" class="pp-text-sm">—</div>
+                  <button type="button" class="btn btn-link btn-sm p-0 pp-text-xs"
+                          data-action="wizard#goToStep" data-step="5">
+                    <i class="ri-edit-line me-1"></i>Modifye
+                  </button>
+                </div>
+              </div>
             </div>
 
-          <% end %>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                      style="font-size: 0.85rem;"
+                      data-action="wizard#previous">
+                <i class="ri-arrow-left-line me-1"></i> Retounen
+              </button>
+
+              <%= f.submit "Soumèt Dosye nan CEP",
+                    class: "btn btn-success fw-semibold px-4 py-2",
+                    style: "font-size: 0.85rem;",
+                    data: { disable_with: "Soumèt..." } %>
+            </div>
+          </section>
+
+        <% end %>
+
+        <div class="mt-4 text-center small text-muted">
+          <i class="ri-lock-2-fill text-success me-2"></i>
+          Dosye chifre · Konfòm Dekrè Elektoral 2 Mas 2015
         </div>
       </div>
 
     </div>
   </div>
 </div>
+
+<%# Review-step summary — reads form values on step change and fills the review blocks. %>
+<script>
+  (function () {
+    function textOf(name) {
+      var el = document.querySelector('[name="election_candidate[' + name + ']"]');
+      if (!el) return "";
+      if (el.tagName === "SELECT") {
+        return el.options[el.selectedIndex]?.text || "";
+      }
+      return el.value || "";
+    }
+    function checked(name) {
+      var el = document.querySelector('[name="election_candidate[' + name + ']"]');
+      return el && el.checked;
+    }
+    function countDocs() {
+      var fields = ["doc_cin_oni","doc_birth_certificate","doc_casier_judiciaire",
+        "doc_dgi_receipt","doc_residence_attestation","doc_passport_photos",
+        "doc_profession_proof","doc_property_proof","doc_immigration_cert",
+        "doc_discharge","doc_party_mandate","doc_support_petition"];
+      return fields.filter(checked).length;
+    }
+    function fillReview() {
+      var id = document.getElementById("review-identity");
+      if (id) id.textContent = [textOf("full_name"), textOf("cin_number"), textOf("date_of_birth"), textOf("sex")].filter(Boolean).join(" · ") || "—";
+
+      var cand = document.getElementById("review-candidacy");
+      if (cand) cand.textContent = [textOf("position"), textOf("candidacy_type"), textOf("party_name") || textOf("party_acronym")].filter(Boolean).join(" · ") || "—";
+
+      var res = document.getElementById("review-residence");
+      if (res) res.textContent = [textOf("residence_department"), textOf("residence_commune"), textOf("residence_address")].filter(Boolean).join(" · ") || "—";
+
+      var plat = document.getElementById("review-platform");
+      if (plat) {
+        var stmt = textOf("platform_statement");
+        var snippet = stmt.length > 140 ? stmt.slice(0, 140) + "…" : stmt;
+        plat.textContent = (checked("fee_reduced") ? "Frè redui · " : "") + (snippet || "Pa gen platfòm");
+      }
+
+      var docs = document.getElementById("review-docs");
+      if (docs) docs.textContent = countDocs() + " / 12 dokiman tcheke";
+    }
+    document.addEventListener("wizard:stepChanged", function (e) {
+      if (e.detail && e.detail.step === 6) fillReview();
+    });
+  })();
+</script>
+
+<%# Reset wizard to step 1 on server-side validation errors. %>
+<% if @candidate.errors.any? %>
+  <script>
+    sessionStorage.removeItem("wizard-step:" + window.location.pathname);
+  </script>
+<% end %>

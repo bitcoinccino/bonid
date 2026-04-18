@@ -199,6 +199,18 @@
                       <td><%= center.formatted_address %></td>
                     </tr>
                   <% end %>
+                  <% if center.contact_phone.present? %>
+                    <tr>
+                      <td class="text-muted">Telefòn Sant</td>
+                      <td>
+                        <%= link_to center.contact_phone, "tel:#{center.contact_phone}",
+                                    class: "fw-semibold text-decoration-none" %>
+                        <% if center.contact_hours.present? %>
+                          <div class="small text-muted"><%= center.contact_hours %></div>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
                 <% else %>
                   <tr>
                     <td class="text-muted">Biwo Vòt</td>
@@ -289,8 +301,7 @@
           citizen_name      = current_citizen.full_name.presence || current_citizen.first_name.presence || "Sitwayen"
           commune_name      = addr&.commune&.name.presence
           dept_full         = addr&.department&.name.presence
-          dept_abbr         = dept_full&.to_s&.split(/[\s\-]+/)&.map { |w| w[0]&.upcase }&.join&.presence
-          context_loc       = [commune_name, dept_abbr].compact.join(", ").presence
+          context_loc       = [commune_name, dept_full].compact.join(", ").presence
           online_ok         = @election.allows_online_voting
           digital_enroll_ok = @election.respond_to?(:allows_digital_enrollment) && @election.allows_digital_enrollment
         %>
