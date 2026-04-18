@@ -69,11 +69,30 @@ module Election
       Prawn::Document.new(page_size: "A4", margin: [40, 40, 50, 40]) do |pdf|
         render_header(pdf)
         render_citizen_block(pdf)
+        render_attestation_line(pdf)
         render_reference_block(pdf)
         render_polling_block(pdf)
         render_qr_block(pdf)
         render_footer(pdf)
       end.render
+    end
+
+    # Full-sentence attestation rendered under the citizen block. The pill is
+    # for glance reading; this line is what the citizen (and any scrutineer)
+    # reads to understand exactly what the signature claims.
+    def render_attestation_line(pdf)
+      signed = @record.bonvote_signature.present?
+      text   = if signed
+                 "BonVote bay resi sa a dapre pwotokòl CEP la."
+               else
+                 "Resi sa a poko siyen. L ap siyen lè enskripsyon w konplete."
+               end
+
+      pdf.fill_color TEXT_MUTED
+      pdf.font "Helvetica", style: :italic, size: 9
+      pdf.text text
+      pdf.fill_color TEXT_DARK
+      pdf.move_down 10
     end
 
     # ── Header ──────────────────────────────────────────────────────
@@ -87,9 +106,36 @@ module Election
       pdf.text @election&.title.to_s
       pdf.move_down 6
 
+      render_signature_badge(pdf)
+
       pdf.stroke_color BORDER_LIGHT
       pdf.stroke_horizontal_rule
       pdf.move_down 14
+    end
+
+    # Signed-state indicator. Present = green "Siyen pa BonVote · Pwotokòl CEP"
+    # pill; absent = amber "Pa siyen" pill. Poll workers can read this at a
+    # glance without scanning the QR. The pill claims only what the signature
+    # actually proves: BonVote issued this receipt, following CEP's protocol.
+    def render_signature_badge(pdf)
+      signed = @record.bonvote_signature.present?
+      label  = signed ? "Siyen pa BonVote · Pwotokòl CEP" : "Pa siyen"
+      bg     = signed ? "1F7A3B" : "B45309"  # green / amber
+      fg     = "FFFFFF"
+      width  = 200
+
+      # Right-aligned pill
+      pdf.float do
+        pdf.fill_color bg
+        pdf.fill_rectangle [pdf.bounds.width - width, pdf.cursor], width, 16
+        pdf.fill_color fg
+        pdf.font "Helvetica", style: :bold, size: 8
+        pdf.text_box label,
+                     at: [pdf.bounds.width - width, pdf.cursor - 3],
+                     width: width, height: 16, align: :center, valign: :center
+      end
+      pdf.fill_color TEXT_DARK
+      pdf.move_down 4
     end
 
     # ── Citizen identity ────────────────────────────────────────────

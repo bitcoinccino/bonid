@@ -1,0 +1,40 @@
+BonVote — Resi Enskripsyon
+<%= @election&.title %>
+========================================
+
+Bonjou <%= @user.full_name.presence || @user.email %>,
+
+Enskripsyon w pou vote konplete. Men referans ou:
+
+    <%= @record.voter_reference %>
+
+<% if @record.polling_station.present? -%>
+Biwo Vòt: BV #<%= @record.polling_station.bv_number %>
+Sant:     <%= @record.polling_station.polling_center&.name %>
+<% if @record.polling_station.polling_center&.formatted_address.present? -%>
+Adrès:    <%= @record.polling_station.polling_center.formatted_address %>
+<% end -%>
+<% if @record.polling_station.polling_center&.contact_phone.present? -%>
+Telefòn:  <%= @record.polling_station.polling_center.contact_phone %><% if @record.polling_station.polling_center.contact_hours.present? %> (<%= @record.polling_station.polling_center.contact_hours %>)<% end %>
+<% end -%>
+<% else -%>
+Biwo vòt ap atribye byento.
+<% end -%>
+
+<% if @record.bonvote_signature.present? -%>
+[Siyen pa BonVote · Pwotokòl CEP]
+BonVote bay resi sa a dapre pwotokòl CEP la. Resi PDF la tache nan imèl sa a
+— ou ka enprime l oswa sere l nan telefòn ou.
+<% else -%>
+[Pa siyen]
+Resi sa a poko siyen. L ap siyen lè enskripsyon w konplete.
+<% end -%>
+
+Pote resi a (enprime oswa sou telefòn) jou eleksyon an, ansanm ak yon pyès
+idantite ofisyèl (CIN oswa paspò).
+
+Pa pataje referans sa a. Li valab sèlman pou ou menm.
+
+----
+BonVote suiv pwotokòl CEP la. Imèl sa a se yon kopi BonID.
+Si ou pa t enskri, reponn imèl sa a.

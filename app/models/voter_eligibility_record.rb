@@ -212,6 +212,9 @@ class VoterEligibilityRecord < ApplicationRecord
 
     record.save!
     assign_polling_station!(record)
+    record.stamp_bonvote_signature!
+    record.deliver_receipt_sms!
+    record.deliver_receipt_email!
 
     record
   end
@@ -250,6 +253,9 @@ class VoterEligibilityRecord < ApplicationRecord
 
     record.save!
     assign_polling_station!(record)
+    record.stamp_bonvote_signature!
+    record.deliver_receipt_sms!
+    record.deliver_receipt_email!
 
     record
   end
@@ -356,10 +362,11 @@ class VoterEligibilityRecord < ApplicationRecord
   #
   # This is a BonID-INTERNAL credential that links a citizen to their CEP
   # enrollment (paper or digital). It is NOT a CEP-issued receipt — the
-  # authoritative artifact remains the CEP paper slip or (future) a
-  # CEP-signed digital attestation stored in `cep_signature`. The `BVT-`
-  # prefix (Biwo Vòt Tikèt) deliberately avoids impersonating state
-  # authority; it reads as BonID's own reference, not a government ID.
+  # authoritative artifact remains the CEP paper slip or a BonVote-signed
+  # digital attestation stored in `bonvote_signature` (BonVote follows
+  # CEP's protocol; it does not sign on CEP's behalf). The `BVT-` prefix
+  # (Biwo Vòt Tikèt) deliberately avoids impersonating state authority;
+  # it reads as BonID's own reference, not a government ID.
   #
   # Threat model:
   #   - Must NOT be enumerable (a neighbor shouldn't be able to guess mine).
@@ -390,8 +397,8 @@ class VoterEligibilityRecord < ApplicationRecord
   # Compact payload embedded in the receipt QR code. Poll workers scan this
   # at the polling station to verify registration offline — the QR carries
   # enough to look up + confirm without a network round-trip, and the
-  # optional `cep_signature` (when populated by CepSigningService) lets a
-  # CEP-issued tablet verify authenticity cryptographically.
+  # optional `bonvote_signature` (when populated by BonvoteSigningService)
+  # lets a verification tablet confirm authenticity cryptographically.
   #
   # Intentionally short so the QR stays dense on cheap thermal prints.
   def receipt_qr_payload
@@ -402,8 +409,90 @@ class VoterEligibilityRecord < ApplicationRecord
       e:   bonvote_election_id,
       bv:  polling_station&.bv_number,
       c:   polling_station&.polling_center&.name,
-      s:   cep_signature.presence   # nil until CepSigningService ships
+      s:   bonvote_signature.presence
     }.compact
+  end
+
+  # Fire-and-forget email receipt. Sends the citizen a PDF attachment of
+  # their voter registration receipt so they can print at a copy shop, save
+  # it outside BonID, or forward to a family member. Silent no-op when no
+  # email is on file.
+  def deliver_receipt_email!
+    return if user&.email.blank?
+
+    ::Election::VoterReceiptMailer.registration_confirmation(id).deliver_later
+  end
+
+  # Fire-and-forget SMS receipt. The citizen gets their voter_reference
+  # and assigned BV (when known) so the credential survives losing the
+  # app / clearing the browser — usable on election day even without
+  # smartphone access. Silent no-op when no phone is on file; the job
+  # itself normalizes Haitian local numbers to E.164.
+  def deliver_receipt_sms!
+    phone = user&.phone
+    return if phone.blank?
+
+    bv = polling_station&.bv_number
+    center = polling_station&.polling_center&.name
+    bv_line = bv ? " BV ##{bv}#{center ? " — #{center}" : ''}." : ""
+    body = "BonVote: Ou enskri pou eleksyon an. Referans ou: " \
+           "#{voter_reference}.#{bv_line} Pa pataje."
+
+    SendSmsJob.perform_later(phone, body, context: "voter_receipt")
+  end
+
+  # Signs the receipt payload with the election's Ed25519 key and stamps
+  # the result on the record. Safe to call multiple times — idempotent on
+  # the payload (canonical JSON + stable voter_reference), so re-stamping
+  # after a BV reassignment simply refreshes the signature.
+  #
+  # The signing authority is BonVote. BonVote follows CEP's protocol; the
+  # signature attests "BonVote issued this receipt according to CEP's
+  # protocol" — not "CEP issued this receipt."
+  #
+  # If signing keys aren't configured for this election yet, we log and
+  # skip — the receipt still renders, just without the cryptographic
+  # attestation that lets a tablet verify it offline.
+  def stamp_bonvote_signature!
+    # Reload so we're checking persisted state, not whatever the caller had
+    # in memory after a chain of assign_attributes / callbacks / class-level
+    # updates. Without this, `eligible?` can read a stale in-memory status
+    # and silently skip signing on successful enrollments.
+    reload if persisted?
+
+    unless bonvote_election
+      Rails.logger.warn "[stamp_bonvote_signature!] skipped: no bonvote_election on record ##{id}"
+      return
+    end
+    unless eligible?
+      Rails.logger.warn "[stamp_bonvote_signature!] skipped: status=#{status.inspect} (not 'eligible') on record ##{id}"
+      return
+    end
+
+    # Strip the signature field itself before signing so the payload is
+    # stable regardless of any prior attestation (idempotency + re-stamp
+    # support after BV moves).
+    payload = receipt_qr_payload.except(:s)
+    sig = ::Election::BonvoteSigningService.sign(election: bonvote_election, payload: payload)
+
+    update_columns(
+      bonvote_signature: sig,
+      bonvote_signed_at: Time.current,
+      receipt_generated_at: receipt_generated_at || Time.current
+    )
+    sig
+  rescue ::Election::BonvoteSigningService::NotConfiguredError => e
+    Rails.logger.info(
+      "[VoterEligibilityRecord] BonVote signing skipped for record ##{id} " \
+      "election=#{bonvote_election_id} reason=#{e.message}"
+    )
+    nil
+  rescue ::Election::BonvoteSigningService::InvalidKeyError => e
+    Rails.logger.error(
+      "[VoterEligibilityRecord] BonVote signing key invalid for record ##{id} " \
+      "election=#{bonvote_election_id} error=#{e.message}"
+    )
+    nil
   end
 
   private

@@ -5,11 +5,17 @@ require "base64"
 require "json"
 
 module Election
-  # Produces an Ed25519 signature over a receipt payload so CEP-issued
-  # verification tablets can confirm authenticity offline.
+  # Produces an Ed25519 signature over a receipt payload so verification
+  # tablets can confirm authenticity offline.
+  #
+  # The signing authority is BonVote (not CEP). BonVote follows CEP's
+  # protocol; the signature attests "BonVote issued this receipt according
+  # to CEP's protocol." If and when CEP formally delegates signing authority
+  # or co-signs, that becomes a second, independent attestation — this one
+  # stays scoped to what it actually proves.
   #
   # The private key is loaded from encrypted credentials:
-  #   Rails.application.credentials.dig(:election, :cep_signing_keys, election_id)
+  #   Rails.application.credentials.dig(:election, :bonvote_signing_keys, election_id)
   # stored as a base64-encoded 32-byte Ed25519 seed.
   #
   # Phase 1 behavior:
@@ -20,7 +26,7 @@ module Election
   #
   # Verification is symmetric: a tablet app computes the same payload,
   # applies the public key, and accepts only matching signatures.
-  class CepSigningService
+  class BonvoteSigningService
     class NotConfiguredError < StandardError; end
     class InvalidKeyError    < StandardError; end
 
@@ -40,14 +46,17 @@ module Election
 
     def sign(payload)
       key = load_private_key
-      sig = key.sign(OpenSSL::Digest.new("SHA512"), canonical_json(payload))
+      # Ed25519 hashes internally (SHA-512 + domain separation per RFC 8032);
+      # passing an explicit digest raises "Explicit digest not allowed". We
+      # pass nil so OpenSSL uses the Ed25519 native algorithm.
+      sig = key.sign(nil, canonical_json(payload))
       Base64.urlsafe_encode64(sig, padding: false)
     end
 
     def verify(payload, signature_b64)
       pub = load_public_key
       raw = Base64.urlsafe_decode64(signature_b64)
-      pub.verify(OpenSSL::Digest.new("SHA512"), raw, canonical_json(payload))
+      pub.verify(nil, raw, canonical_json(payload))
     rescue ArgumentError, OpenSSL::PKey::PKeyError
       false
     end
@@ -69,9 +78,9 @@ module Election
 
     def load_private_key
       seed_b64 = Rails.application.credentials.dig(
-        :election, :cep_signing_keys, @election.id.to_s, :private
+        :election, :bonvote_signing_keys, @election.id.to_s.to_sym, :private
       )
-      raise NotConfiguredError, "CEP signing key not set for election #{@election.id}" if seed_b64.blank?
+      raise NotConfiguredError, "BonVote signing key not set for election #{@election.id}" if seed_b64.blank?
 
       seed = Base64.decode64(seed_b64)
       raise InvalidKeyError, "Ed25519 seed must be 32 bytes" unless seed.bytesize == 32
@@ -81,9 +90,9 @@ module Election
 
     def load_public_key
       pub_b64 = Rails.application.credentials.dig(
-        :election, :cep_signing_keys, @election.id.to_s, :public
+        :election, :bonvote_signing_keys, @election.id.to_s.to_sym, :public
       )
-      raise NotConfiguredError, "CEP public key not set for election #{@election.id}" if pub_b64.blank?
+      raise NotConfiguredError, "BonVote public key not set for election #{@election.id}" if pub_b64.blank?
 
       raw = Base64.decode64(pub_b64)
       OpenSSL::PKey.new_raw_public_key("ED25519", raw)

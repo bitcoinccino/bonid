@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1A202C; background: #F7FAFC; margin: 0; padding: 24px; }
+      .wrap { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 8px; border: 1px solid #E2E8F0; overflow: hidden; }
+      .hdr { background: #00209F; color: #fff; padding: 20px 24px; }
+      .hdr h1 { margin: 0; font-size: 20px; font-weight: 700; }
+      .hdr .sub { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+      .body { padding: 24px; }
+      .ref { font-family: "Courier New", monospace; font-size: 20px; font-weight: 700; color: #00209F; background: #F7FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 12px; text-align: center; margin: 16px 0; }
+      .bv { background: #F7FAFC; border-left: 4px solid #00209F; padding: 12px 16px; margin: 16px 0; font-size: 14px; }
+      .muted { color: #718096; font-size: 13px; }
+      .pill { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; color: #fff; }
+      .pill.signed { background: #1F7A3B; }
+      .pill.unsigned { background: #B45309; }
+      .foot { border-top: 1px solid #E2E8F0; padding: 16px 24px; font-size: 11px; color: #718096; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hdr">
+        <h1>BonVote — Resi Enskripsyon</h1>
+        <div class="sub"><%= @election&.title %></div>
+      </div>
+      <div class="body">
+        <p>Bonjou <strong><%= @user.full_name.presence || @user.email %></strong>,</p>
+
+        <p>Enskripsyon w pou vote konplete. Men referans ou:</p>
+
+        <div class="ref"><%= @record.voter_reference %></div>
+
+        <% if @record.polling_station.present? %>
+          <div class="bv">
+            <strong>Biwo Vòt:</strong> BV #<%= @record.polling_station.bv_number %><br>
+            <strong>Sant:</strong> <%= @record.polling_station.polling_center&.name %><br>
+            <% if @record.polling_station.polling_center&.formatted_address.present? %>
+              <span class="muted"><%= @record.polling_station.polling_center.formatted_address %></span><br>
+            <% end %>
+            <% if @record.polling_station.polling_center&.contact_phone.present? %>
+              <strong>Telefòn:</strong>
+              <a href="tel:<%= @record.polling_station.polling_center.contact_phone %>" style="color:#0d6efd;text-decoration:none;">
+                <%= @record.polling_station.polling_center.contact_phone %>
+              </a>
+              <% if @record.polling_station.polling_center.contact_hours.present? %>
+                <span class="muted">— <%= @record.polling_station.polling_center.contact_hours %></span>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="muted"><em>Biwo vòt ap atribye byento.</em></p>
+        <% end %>
+
+        <p>
+          <% if @record.bonvote_signature.present? %>
+            <span class="pill signed">Siyen pa BonVote · Pwotokòl CEP</span>
+          <% else %>
+            <span class="pill unsigned">Pa siyen</span>
+          <% end %>
+        </p>
+
+        <p class="muted">
+          <% if @record.bonvote_signature.present? %>
+            BonVote bay resi sa a dapre pwotokòl CEP la. Resi PDF la tache nan imèl sa a —
+            ou ka enprime l oswa sere l nan telefòn ou.
+          <% else %>
+            Resi sa a poko siyen. L ap siyen lè enskripsyon w konplete.
+          <% end %>
+        </p>
+
+        <p>Pote resi a (enprime oswa sou telefòn) jou eleksyon an, ansanm ak yon pyès idantite ofisyèl (CIN oswa paspò).</p>
+
+        <p class="muted"><strong>Pa pataje referans sa a.</strong> Li valab sèlman pou ou menm.</p>
+      </div>
+      <div class="foot">
+        BonVote suiv pwotokòl CEP la. Imèl sa a se yon kopi BonID. Si ou pa t enskri, reponn imèl sa a.
+      </div>
+    </div>
+  </body>
+</html>

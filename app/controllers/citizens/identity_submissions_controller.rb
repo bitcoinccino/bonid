@@ -97,6 +97,11 @@ module Citizens
           detect_reusable_biometrics!(last)
           detect_reusable_signature!(last)
         end
+
+        # Fallback: if no persisted carry-forward is available, check the session
+        # for a Rekognition-verified blob from a prior 422-failed attempt so the
+        # citizen doesn't get billed twice for the same liveness check.
+        detect_reusable_biometrics_from_session! unless @skip_liveness
       end
     end
 
@@ -252,13 +257,22 @@ module Citizens
                       notice: "✅ Verification submitted successfully. A confirmation email has been sent to your inbox."
         else
           flash.now[:alert] = @identity_submission.errors.full_messages.to_sentence
+          # Preserve liveness so the retry doesn't re-bill Amazon Rekognition.
+          detect_reusable_biometrics_from_session!
           render :new, status: :unprocessable_entity
           raise ActiveRecord::Rollback
         end
       end
     rescue => e
+      submission_errors = @identity_submission&.errors&.full_messages.to_a
+      user_errors       = current_citizen&.errors&.full_messages.to_a
       Rails.logger.error "❌ [IdentitySubmission#create] Failed: #{e.class} - #{e.message}"
-      flash.now[:alert] = "⚠️ Something went wrong. Please recheck your signature or uploaded files."
+      Rails.logger.error "   submission errors: #{submission_errors.inspect}" if submission_errors.any?
+      Rails.logger.error "   user errors:       #{user_errors.inspect}" if user_errors.any?
+      flash.now[:alert] = (submission_errors + user_errors).to_sentence.presence ||
+                          "⚠️ Something went wrong. Please recheck your signature or uploaded files."
+      # Preserve liveness so the retry doesn't re-bill Amazon Rekognition.
+      detect_reusable_biometrics_from_session!
       render :new, status: :unprocessable_entity
     end
 
@@ -733,6 +747,31 @@ end
       Rails.logger.info "[SmartResubmission] User ##{current_citizen.id}: biometrics reusable from submission ##{previous_submission.id}"
     end
 
+    # Fallback carry-forward: when the first create attempt failed validation
+    # (422) before any submission was persisted, the user still passed an AWS
+    # Rekognition Face Liveness session (~$0.025). The blob + metadata remain
+    # valid in session — reuse them on the re-rendered form so the user isn't
+    # billed a second time by Amazon.
+    def detect_reusable_biometrics_from_session!
+      blob_signed_id = session[:liveness_blob_signed_id]
+      return if blob_signed_id.blank?
+
+      # Ensure the blob is still resolvable; drop stale session data otherwise.
+      begin
+        ActiveStorage::Blob.find_signed!(blob_signed_id)
+      rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
+        session.delete(:liveness_blob_signed_id)
+        session.delete(:liveness_metadata)
+        return
+      end
+
+      @skip_liveness = true
+      @previous_selfie_signed_id = blob_signed_id
+      @previous_liveness_metadata = session[:liveness_metadata]
+      @liveness_reused_from_session = true
+      Rails.logger.info "[SmartResubmission] User ##{current_citizen.id}: biometrics reusable from session (no prior persisted submission) — avoids double Rekognition billing"
+    end
+
     # Carries forward liveness metadata + selfie from a previous submission.
     # Re-validates that the selfie blob actually belongs to the current user's
     # previous submission (prevents parameter tampering).
@@ -741,21 +780,53 @@ end
         .where("metadata->'liveness' IS NOT NULL")
         .order(created_at: :desc).first
 
-      return unless previous_sub&.biometrics_reusable?
-      return unless previous_sub.selfie.blob.signed_id == params[:previous_selfie_signed_id]
+      if previous_sub&.biometrics_reusable? &&
+         previous_sub.selfie.blob.signed_id == params[:previous_selfie_signed_id]
+        # Path A: carry forward from a persisted rejected submission
+        carried_liveness = previous_sub.metadata["liveness"].merge(
+          "reused_from_submission_id" => previous_sub.id,
+          "reused_from_submission_uuid" => previous_sub.uuid,
+          "reused_at" => Time.current.iso8601
+        )
 
-      # Carry forward liveness metadata with audit trail
-      carried_liveness = previous_sub.metadata["liveness"].merge(
-        "reused_from_submission_id" => previous_sub.id,
-        "reused_from_submission_uuid" => previous_sub.uuid,
+        new_submission.metadata = (new_submission.metadata || {}).merge(
+          "liveness" => carried_liveness
+        )
+        # Re-attach the proven selfie blob so the new submission owns its own reference.
+        new_submission.selfie.attach(previous_sub.selfie.blob) unless new_submission.selfie.attached?
+
+        Rails.logger.info "[SmartResubmission] User ##{current_citizen.id}: carried forward biometrics from submission ##{previous_sub.id} to new submission"
+        return
+      end
+
+      # Path B: no persisted prior submission, but the current session still holds
+      # a valid Rekognition-verified blob from an earlier 422-failed attempt.
+      # Reuse it to avoid billing Amazon twice for the same face.
+      session_blob_id = session[:liveness_blob_signed_id]
+      return if session_blob_id.blank?
+      return unless session_blob_id == params[:previous_selfie_signed_id]
+
+      blob = begin
+        ActiveStorage::Blob.find_signed!(session_blob_id)
+      rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
+        session.delete(:liveness_blob_signed_id)
+        session.delete(:liveness_metadata)
+        nil
+      end
+      return unless blob
+
+      new_submission.selfie.attach(blob) unless new_submission.selfie.attached?
+
+      session_liveness = session[:liveness_metadata].presence || {}
+      carried_liveness = session_liveness.merge(
+        "reused_from_session" => true,
         "reused_at" => Time.current.iso8601
       )
-
       new_submission.metadata = (new_submission.metadata || {}).merge(
         "liveness" => carried_liveness
       )
 
-      Rails.logger.info "[SmartResubmission] User ##{current_citizen.id}: carried forward biometrics from submission ##{previous_sub.id} to new submission"
+      Rails.logger.info "[SmartResubmission] User ##{current_citizen.id}: carried forward biometrics from session blob (no prior persisted submission)"
     end
 
     # Sets @skip_signature and @previous_signature_signed_id if the previous
