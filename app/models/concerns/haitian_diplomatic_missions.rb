@@ -9,14 +9,134 @@ module HaitianDiplomaticMissions
   extend ActiveSupport::Concern
 
   # ── UNITED STATES ──────────────────────────────────────────────
+  # Postal addresses + contact verified against ≥2 independent sources
+  # (consulate official sites where reachable, haiti.org consular listing,
+  # embassies.info, embassypages.com, IOM migrantinfo.iom.int, Wikipedia
+  # Embassy of Haiti article). Fields left nil have a `# unverified — …`
+  # comment explaining why. Coordinates uniformly nil pending a separate
+  # geocoding pass; the source aggregators don't carry decimal-precision
+  # lat/lng. Top-level `region:` is the GEOGRAPHIC region used for
+  # grouping; postal state code lives under `address[:region]`.
   US_MISSIONS = [
-    { id: "HT-EMB-WAS", name: "Washington, D.C.", type: "embassy", country: "US", region: "north_america" },
-    { id: "HT-CON-ATL", name: "Atlanta, GA", type: "consulate_general", country: "US", region: "north_america" },
-    { id: "HT-CON-BOS", name: "Boston, MA", type: "consulate_general", country: "US", region: "north_america" },
-    { id: "HT-CON-CHI", name: "Chicago, IL", type: "consulate_general", country: "US", region: "north_america" },
-    { id: "HT-CON-MIA", name: "Miami, FL", type: "consulate_general", country: "US", region: "north_america" },
-    { id: "HT-CON-NYC", name: "New York, NY", type: "consulate_general", country: "US", region: "north_america" },
-    { id: "HT-CON-ORL", name: "Orlando, FL", type: "consulate_general", country: "US", region: "north_america" }
+    {
+      id: "HT-EMB-WAS", name: "Washington, D.C.", type: "embassy",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "2311 Massachusetts Ave NW",
+        street_line2: nil,
+        locality: "Washington",
+        region: "DC",
+        postal_code: "20008",
+        latitude: nil,  # unverified — no decimal-precision source
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 202-332-4090",
+        email: nil  # unverified — only single aggregator source for amb.washington@diplomatie.ht
+      }
+    },
+    {
+      id: "HT-CON-ATL", name: "Atlanta, GA", type: "consulate_general",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "2911 Piedmont Rd NE",
+        street_line2: nil,  # unverified — sources conflict ("Suite F" vs "Suite A"); confirm before populating
+        locality: "Atlanta",
+        region: "GA",
+        postal_code: "30305",
+        latitude: nil,
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 404-228-5373",
+        email: "cg.atlanta@diplomatie.ht"
+      }
+    },
+    {
+      id: "HT-CON-BOS", name: "Boston, MA", type: "consulate_general",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "333 Washington St",
+        street_line2: "Suite 851",
+        locality: "Boston",
+        region: "MA",
+        postal_code: "02108",
+        latitude: nil,
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 617-266-3660",  # primary switchboard; 857-449-0332 also appears as additional line
+        email: "cg.boston@diplomatie.ht"
+      }
+    },
+    {
+      id: "HT-CON-CHI", name: "Chicago, IL", type: "consulate_general",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "11 East Adams St",
+        street_line2: "Suite 1500",
+        locality: "Chicago",
+        region: "IL",
+        postal_code: "60603",
+        latitude: nil,
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 872-710-4141",
+        email: "cg.chicago@diplomatie.ht"
+      }
+    },
+    {
+      id: "HT-CON-MIA", name: "Miami, FL", type: "consulate_general",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "259 SW 13th St",
+        street_line2: "Suite 3",
+        locality: "Miami",
+        region: "FL",
+        postal_code: "33130",
+        latitude: nil,
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 305-859-2003",
+        email: "cg.miami@diplomatie.ht"
+      }
+    },
+    {
+      id: "HT-CON-NYC", name: "New York, NY", type: "consulate_general",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "815 Second Ave",
+        street_line2: "6th Floor",
+        locality: "New York",
+        region: "NY",
+        postal_code: "10017",
+        latitude: nil,
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 212-697-9767",
+        email: "cg.newyork@diplomatie.ht"
+      }
+    },
+    {
+      id: "HT-CON-ORL", name: "Orlando, FL", type: "consulate_general",
+      country: "US", region: "north_america",
+      address: {
+        street_line1: "1616 E Colonial Dr",
+        street_line2: nil,  # not_found — no suite listed in any public source
+        locality: "Orlando",
+        region: "FL",
+        postal_code: "32803",
+        latitude: nil,
+        longitude: nil
+      },
+      contact: {
+        phone: "+1 407-897-1262",  # primary; (407) 897-3232 / (689) 258-7993 listed as alternates in some sources
+        email: "cons.orlando@diplomatie.ht"
+      }
+    }
   ].freeze
 
   # ── DOMINICAN REPUBLIC ─────────────────────────────────────────
@@ -102,6 +222,35 @@ module HaitianDiplomaticMissions
     def voting_countries
       ALL_MISSIONS.map { |m| m[:country] }.uniq.sort
     end
+
+    # Returns the static address hash for a mission ID, or {} if the
+    # mission has no address data populated yet (older entries that
+    # haven't been verified against primary sources). Use to seed a
+    # ElectionMissionParticipation row's structured-address columns.
+    def structured_address(mission_id)
+      m = ALL_MISSIONS.find { |x| x[:id] == mission_id }
+      m && m[:address] ? m[:address] : {}
+    end
+
+    # Returns the static contact hash (phone/email) for a mission ID.
+    # Same nil-safe semantics as structured_address.
+    def default_contact(mission_id)
+      m = ALL_MISSIONS.find { |x| x[:id] == mission_id }
+      m && m[:contact] ? m[:contact] : {}
+    end
+  end
+
+  # Module-level accessors so rake tasks / one-off scripts can call
+  # HaitianDiplomaticMissions.structured_address(...) without including
+  # the concern. They delegate to the class_methods versions above.
+  def self.structured_address(mission_id)
+    m = ALL_MISSIONS.find { |x| x[:id] == mission_id }
+    m && m[:address] ? m[:address] : {}
+  end
+
+  def self.default_contact(mission_id)
+    m = ALL_MISSIONS.find { |x| x[:id] == mission_id }
+    m && m[:contact] ? m[:contact] : {}
   end
 
   # Priority country codes for dropdowns — ordered by diaspora population size.
