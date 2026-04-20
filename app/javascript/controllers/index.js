@@ -28,6 +28,12 @@ const registerControllers = () => {
   register("local-contact", () => import("./local_contact_controller"))
 
 
+  // ───────── Operating hours editor (BED/BEK) ─────────
+  register("hours-day", () => import("./hours_day_controller"))
+
+  // ───────── Postal-address copy (diplomatic missions) ─────────
+  register("copy-address", () => import("./copy_address_controller"))
+
   // ───────── Address ─────────
   register("address", () => import("./address_controller"))
   register("birth-address", () => import("./birth_address_controller"))
@@ -73,6 +79,8 @@ register("certificate-toggle", () =>
   register("partner-sidebar", () => import("./partner_sidebar_controller"))
   register("partner-metrics", () => import("./partner_metrics_controller"))
   register("partner-scanner", () => import("./partner_scanner_controller"))
+  register("scan-modal", () => import("./scan_modal_controller"))
+  register("lookup-modal", () => import("./lookup_modal_controller"))
   register("api-keys", () => import("./api_keys_controller"))
   register("bank-selector", () => import("./bank_selector_controller"))
   register("banking-charts", () => import("./banking_charts_controller"))

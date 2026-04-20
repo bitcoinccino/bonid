@@ -1,0 +1,41 @@
+<%# One open/close slot inside a weekday row of the operating-hours editor.
+    Locals:
+      field_prefix — form-name prefix for the parent record's operating_hours,
+                     e.g. "electoral_office[operating_hours]" or
+                     "election_mission_participation[operating_hours]"
+      day          — e.g. "mon"
+      index        — Integer or "__INDEX__" sentinel for the Stimulus template clone
+      slot         — Hash with "open"/"close" string keys
+
+    Names render as `<field_prefix>[<day>][<index>][open]` so Rails parses them
+    into an index-keyed hash; the controller's sanitize_operating_hours then
+    collapses the index hash into a clean Array of slots. %>
+<div class="row g-2 align-items-end mt-2" data-hours-day-target="slot">
+  <div class="col-md-5">
+    <label class="form-label small text-muted mb-1 fw-semibold">
+      <i class="ri-login-circle-line me-1"></i>Lè Ouvèti
+    </label>
+    <%= time_field_tag "#{field_prefix}[#{day}][#{index}][open]",
+                       slot["open"],
+                       class: "form-control",
+                       step: 300,
+                       aria: { label: "Lè ouvèti — #{HasOperatingHours::DAY_LABELS[day]}" } %>
+  </div>
+  <div class="col-md-5">
+    <label class="form-label small text-muted mb-1 fw-semibold">
+      <i class="ri-logout-circle-line me-1"></i>Lè Fèmti
+    </label>
+    <%= time_field_tag "#{field_prefix}[#{day}][#{index}][close]",
+                       slot["close"],
+                       class: "form-control",
+                       step: 300,
+                       aria: { label: "Lè fèmti — #{HasOperatingHours::DAY_LABELS[day]}" } %>
+  </div>
+  <div class="col-md-2">
+    <button type="button" class="btn btn-outline-danger w-100"
+            data-action="click->hours-day#removeSlot"
+            aria-label="Retire orè sa">
+      <i class="ri-delete-bin-line me-1"></i>Retire
+    </button>
+  </div>
+</div>

@@ -1,0 +1,64 @@
+<%# GBP-style operating-hours editor — drop-in for any model that includes
+    HasOperatingHours.
+
+    Locals:
+      record       — instance responding to slots_for(day) (any HasOperatingHours model)
+      field_prefix — form-name prefix for the nested params, e.g.
+                     "electoral_office[operating_hours]" or
+                     "election_mission_participation[operating_hours]"
+      title        — optional section header (default: "Lè Ouvèti / Fèmti pa Jou")
+      id_prefix    — optional unique prefix for input ids when multiple
+                     editors live on the same page (default: derived) %>
+<% title       ||= "Lè Ouvèti / Fèmti pa Jou" %>
+<% id_prefix   ||= field_prefix.parameterize.tr("_", "-") %>
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <h6 class="text-uppercase small fw-semibold text-muted mb-0">
+    <i class="ri-time-line me-1"></i><%= title %>
+  </h6>
+</div>
+<p class="small text-muted mb-3">
+  Aktive switch la pou yon jou ki louvri, apre tape <strong>Lè Ouvèti</strong>
+  (kilè biwo a louvri) ak <strong>Lè Fèmti</strong> (kilè biwo a fèmen).
+  Klike "Ajoute orè" si gen yon poz midi oswa de peryòd separe nan menm jou a.
+</p>
+
+<div class="mb-4">
+  <% HasOperatingHours::DAYS.each do |day| %>
+    <% slots = record.slots_for(day) %>
+    <% is_open = slots.any? %>
+    <div class="border rounded-3 p-3 mb-2" data-controller="hours-day">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" role="switch"
+                 id="<%= id_prefix %>_<%= day %>_toggle"
+                 <%= "checked" if is_open %>
+                 data-action="change->hours-day#toggle"
+                 data-hours-day-target="toggle">
+          <label class="form-check-label fw-semibold" for="<%= id_prefix %>_<%= day %>_toggle">
+            <%= HasOperatingHours::DAY_LABELS[day] %>
+          </label>
+        </div>
+        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
+                data-action="click->hours-day#addSlot"
+                data-hours-day-target="addBtn">
+          <i class="ri-add-line"></i> Ajoute orè
+        </button>
+      </div>
+
+      <div class="mt-2" data-hours-day-target="slots">
+        <% slots.each_with_index do |slot, i| %>
+          <%= render "partner_portal/shared/hours_slot_row",
+                     field_prefix: field_prefix, day: day, index: i, slot: slot %>
+        <% end %>
+      </div>
+
+      <%# Cloned by hours-day#addSlot. <template> contents are inert until cloned. %>
+      <template data-hours-day-target="template">
+        <%= render "partner_portal/shared/hours_slot_row",
+                   field_prefix: field_prefix, day: day, index: "__INDEX__",
+                   slot: { "open" => "", "close" => "" } %>
+      </template>
+    </div>
+  <% end %>
+</div>
