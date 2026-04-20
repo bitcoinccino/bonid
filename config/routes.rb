@@ -911,6 +911,17 @@ end
   # ===========================================================================
   get "/election/verify",   to: "election/audit#verify",    as: :election_audit_verify
   get "/election/snapshot",  to: "election/audit#snapshot",  as: :election_audit_snapshot
+
+  # Citizen-facing receipt verifier — paste payload OR scan a receipt QR
+  # (the QR encodes this URL with a `?d=` payload param). No auth: anyone
+  # can verify any receipt; that's the whole point of public-key signing.
+  get  "/election/verify-receipt", to: "election/verify_receipt#show",   as: :election_verify_receipt
+  post "/election/verify-receipt", to: "election/verify_receipt#verify", as: :election_verify_receipt_check
+
+  # Canonical receipt payload spec — versioned. Verifiers (third parties,
+  # press, watchdogs) read this to know how to reconstruct the canonical
+  # JSON for signature verification.
+  get  "/spec/receipt-v1", to: "election/receipt_spec#show", as: :receipt_v1_spec
   get "/election/results",      to: "election/public#results",      as: :election_public_results
   get "/election/celebration",  to: "election/public#celebration",  as: :election_public_celebration
   get "/election/candidates",   to: "election/public#candidates",   as: :election_public_candidates

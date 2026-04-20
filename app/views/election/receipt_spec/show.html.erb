@@ -1,0 +1,185 @@
+<%# app/views/election/receipt_spec/show.html.erb
+    Canonical receipt payload spec — versioned at /spec/receipt-v1.
+    Third-party verifiers (CEP tablets, journalists, NGOs) consume this
+    page to build interoperable Ed25519 verification tooling. %>
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BonVote Receipt v1 — Verification Spec</title>
+  <meta name="description" content="Canonical signing-payload specification for BonVote voter receipts.">
+  <%= render "election/shared/bonvote_theme", sparkle_count: 4 %>
+  <style>
+    .spec-shell { max-width: 880px; margin: 0 auto; padding: 2rem 1rem; color: rgba(255,255,255,0.85); }
+    .spec-shell h1 { color: #fff; font-weight: 800; margin-bottom: 0.25rem; }
+    .spec-shell h2 { color: var(--ht-gold, #EDB95E); font-weight: 700; font-size: 1.15rem; margin-top: 2rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .spec-shell h3 { color: rgba(255,255,255,0.95); font-weight: 700; font-size: 0.95rem; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+    .spec-shell p  { font-size: 0.9rem; line-height: 1.65; color: #B8C2D1; }
+    .spec-shell code, .spec-shell pre {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.92);
+    }
+    .spec-shell pre {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      line-height: 1.55;
+    }
+    .spec-shell code {
+      background: rgba(0,0,0,0.35);
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.25rem;
+    }
+    .spec-shell pre code { background: transparent; padding: 0; }
+    .spec-shell table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.75rem 0 1rem; }
+    .spec-shell th, .spec-shell td { padding: 0.55rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; vertical-align: top; }
+    .spec-shell th { color: var(--ht-gold, #EDB95E); font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; }
+    .spec-shell ul { padding-left: 1.25rem; }
+    .spec-shell li { margin-bottom: 0.35rem; font-size: 0.9rem; color: #B8C2D1; }
+    .spec-shell a { color: var(--ht-gold, #EDB95E); text-decoration: none; }
+    .spec-shell a:hover { text-decoration: underline; }
+    .spec-meta { font-size: 0.78rem; color: #64748B; margin-bottom: 2rem; }
+    .spec-warn {
+      background: rgba(220,53,69,0.08);
+      border-left: 3px solid #DC3545;
+      padding: 0.75rem 1rem;
+      border-radius: 0.4rem;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.85);
+    }
+  </style>
+</head>
+<body>
+  <div class="spec-shell">
+    <h1>BonVote Receipt — Verification Spec v1</h1>
+    <div class="spec-meta">
+      Version <code>v1</code> &middot; Algorithm <code>Ed25519</code> &middot;
+      Stable contract &middot; <a href="<%= election_verify_receipt_path %>">Open verifier</a>
+    </div>
+
+    <p>
+      A BonVote voter receipt carries a compact JSON payload and an Ed25519
+      signature produced by BonID. Anyone — citizen, observer, journalist —
+      can reconstruct the canonical signing input from the payload alone
+      and verify the signature against the election's public key. This
+      page is the canonical description of that procedure.
+    </p>
+
+    <h2>1. Payload shape</h2>
+    <p>The QR code on a receipt encodes a verify URL of the form:</p>
+    <pre><code>https://bonid.ht/election/verify-receipt?d=&lt;base64url(payload_json)&gt;</code></pre>
+    <p>where <code>payload_json</code> is the UTF-8 JSON object below.</p>
+
+    <table>
+      <thead>
+        <tr><th>Field</th><th>Type</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>v</code></td>   <td>integer</td><td>Payload version (always <code>1</code> for this spec).</td></tr>
+        <tr><td><code>ref</code></td> <td>string</td> <td>Voter reference. Format <code>BVT-YYYY-XXXX-YYYY</code> (BonID-issued, not a CEP credential).</td></tr>
+        <tr><td><code>bon</code></td> <td>string</td> <td>Truncated BonID (first 12 chars) — enough to disambiguate without leaking the full identifier.</td></tr>
+        <tr><td><code>e</code></td>   <td>integer</td><td>BonVote election ID. Used to look up the right public key.</td></tr>
+        <tr><td><code>bv</code></td>  <td>integer</td><td>Assigned Biwo Vòt number (optional — absent before assignment).</td></tr>
+        <tr><td><code>c</code></td>   <td>string</td> <td>Polling-center display name (optional).</td></tr>
+        <tr><td><code>kid</code></td> <td>string</td> <td>Key identifier. Format <code>bonvote-election-&lt;id&gt;-&lt;YYYY-MM&gt;</code>. Tells the verifier which key (current or archived) to use.</td></tr>
+        <tr><td><code>s</code></td>   <td>string</td> <td>Base64url Ed25519 signature (no padding) over the canonical JSON of the payload <strong>excluding the <code>s</code> field itself</strong>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. Canonical signing payload</h2>
+    <p>
+      To verify, strip the <code>s</code> field and serialize the remaining
+      object using these rules:
+    </p>
+    <ul>
+      <li>Object keys sorted lexicographically (string compare).</li>
+      <li>No whitespace (no spaces, no newlines).</li>
+      <li>UTF-8 encoding.</li>
+      <li>Standard JSON value escaping (the same encoding any JSON library produces).</li>
+      <li>Arrays preserve insertion order; nested objects sorted recursively.</li>
+    </ul>
+    <p>This is the byte string that was signed.</p>
+
+    <h3>Example</h3>
+    <pre><code>{
+  "v":   1,
+  "ref": "BVT-2026-3SYB-RMKP",
+  "bon": "DL-1988-M-OU",
+  "e":   3,
+  "bv":  1,
+  "c":   "Lekòl Nasyonal Kenscoff",
+  "kid": "bonvote-election-3-2026-04",
+  "s":   "uySu8y90PHgB8b9NiN_WgluXLKBMmhzZ-PFw8bE5..."
+}</code></pre>
+
+    <p>Canonical signing input (after stripping <code>s</code>, sorting, no whitespace):</p>
+    <pre><code>{"bon":"DL-1988-M-OU","bv":1,"c":"Lekòl Nasyonal Kenscoff","e":3,"kid":"bonvote-election-3-2026-04","ref":"BVT-2026-3SYB-RMKP","v":1}</code></pre>
+
+    <h2>3. Public key lookup</h2>
+    <p>Fetch the election's key bundle from:</p>
+    <pre><code>GET /api/v1/elections/&lt;e&gt;/bonvote_public_key</code></pre>
+    <p>The response includes the current key plus every archived key:</p>
+    <pre><code>{
+  "algorithm": "Ed25519",
+  "encoding":  "base64",
+  "issuer":    "bonvote.ht",
+  "election":  { "id": 3, "title": "...", "round": 1, "status": "open" },
+  "current":   { "key_id": "bonvote-election-3-2026-04", "public_key_b64": "...", "key_fingerprint": "..." },
+  "archived":  [ { "key_id": "...", "public_key_b64": "...", "key_fingerprint": "..." } ]
+}</code></pre>
+
+    <p>
+      Match the receipt's <code>kid</code> against <code>current.key_id</code>
+      first, then against each entry in <code>archived</code>. If no match
+      is found the receipt cannot be verified — a <code>kid</code>-less
+      receipt (legacy) falls back to the current key.
+    </p>
+
+    <h2>4. Signature verification</h2>
+    <p>
+      Decode <code>s</code> with base64url (RFC 4648 §5, no padding). Decode
+      <code>public_key_b64</code> with standard base64. Run Ed25519 verify
+      per <a href="https://datatracker.ietf.org/doc/html/rfc8032">RFC 8032</a>:
+    </p>
+    <pre><code>ed25519_verify(public_key, canonical_signing_input, signature) -> true | false</code></pre>
+
+    <p>A returned <code>true</code> means BonID issued this receipt under the named key. <code>false</code> means the receipt was tampered, the signature is forged, or the wrong key was tried.</p>
+
+    <h2>5. Reference verifier</h2>
+    <p>
+      The hosted verifier at <a href="<%= election_verify_receipt_path %>"><%= election_verify_receipt_path %></a>
+      implements exactly this procedure. Source is in
+      <code>app/services/election/bonvote_signing_service.rb</code> and
+      <code>app/controllers/election/verify_receipt_controller.rb</code>.
+    </p>
+
+    <h2>6. Key rotation</h2>
+    <p>
+      When BonID rotates a signing key, the old <code>{key_id, public_key_b64}</code>
+      pair is appended to the election's archived key list. Receipts signed
+      under the old key continue to verify forever — the <code>kid</code>
+      on the receipt picks the correct historical key.
+    </p>
+
+    <div class="spec-warn">
+      <strong>Note.</strong> The signature attests that BonID issued this
+      receipt according to BonVote's protocol — not that the citizen voted,
+      not that CEP recognized the registration, not that the BV assignment
+      is final. Authority over voter rolls remains with CEP per the
+      December 1, 2025 decree.
+    </div>
+
+    <h2>7. Spec versioning</h2>
+    <p>
+      This URL — <code>/spec/receipt-v1</code> — is permanent. A payload
+      format change becomes <code>/spec/receipt-v2</code>; v1 stays
+      canonically described here for any historical receipt issued under
+      <code>"v": 1</code>.
+    </p>
+  </div>
+</body>
+</html>
