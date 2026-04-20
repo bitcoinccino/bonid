@@ -1,0 +1,36 @@
+<%# One open/close slot inside a weekday row of the operating-hours editor.
+    Locals: day (e.g. "mon"), index (Integer or "__INDEX__" sentinel for the
+    Stimulus template clone), slot (Hash with "open"/"close" string keys).
+
+    Names are `electoral_office[operating_hours][mon][0][open]` etc. so Rails
+    parses them into an index-keyed hash; ElectoralOffice#normalize_operating_hours
+    then collapses that hash into a clean Array of slots. %>
+<div class="row g-2 align-items-end mt-2" data-hours-day-target="slot">
+  <div class="col-md-5">
+    <label class="form-label small text-muted mb-1 fw-semibold">
+      <i class="ri-login-circle-line me-1"></i>Lè Ouvèti
+    </label>
+    <%= time_field_tag "electoral_office[operating_hours][#{day}][#{index}][open]",
+                       slot["open"],
+                       class: "form-control",
+                       step: 300,
+                       aria: { label: "Lè ouvèti — #{ElectoralOffice::DAY_LABELS[day]}" } %>
+  </div>
+  <div class="col-md-5">
+    <label class="form-label small text-muted mb-1 fw-semibold">
+      <i class="ri-logout-circle-line me-1"></i>Lè Fèmti
+    </label>
+    <%= time_field_tag "electoral_office[operating_hours][#{day}][#{index}][close]",
+                       slot["close"],
+                       class: "form-control",
+                       step: 300,
+                       aria: { label: "Lè fèmti — #{ElectoralOffice::DAY_LABELS[day]}" } %>
+  </div>
+  <div class="col-md-2">
+    <button type="button" class="btn btn-outline-danger w-100"
+            data-action="click->hours-day#removeSlot"
+            aria-label="Retire orè sa">
+      <i class="ri-delete-bin-line me-1"></i>Retire
+    </button>
+  </div>
+</div>

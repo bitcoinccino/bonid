@@ -7,9 +7,8 @@
 # for those filings (ElectionDispute) but no staff-side surface to work them.
 # This controller is that surface.
 #
-# Access bridges CepAdminGate — cep_dispute_officer staff members (the
-# tier that adjudicates under the Décret) reach it via the email-matched
-# User → ElectionStaffAssignment path already in the gate.
+# Access is gated by CepAdminGate — only AdminUser-level :super_admin or
+# :cep_admin Rolify roles can adjudicate disputes here.
 module Election
   module Admin
     class DisputesController < ::Admin::BaseController

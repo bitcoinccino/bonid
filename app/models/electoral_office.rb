@@ -21,6 +21,8 @@
 # Addresses reuse the polymorphic `Address` model, which already handles
 # the Haitian geographic hierarchy, postal codes, and geocoding.
 class ElectoralOffice < ApplicationRecord
+  include HasOperatingHours
+
   OFFICE_TYPES = %w[bed bek].freeze
   STATUSES     = %w[planned open closed].freeze
 
@@ -41,6 +43,13 @@ class ElectoralOffice < ApplicationRecord
   validates :status,      presence: true, inclusion: { in: STATUSES }
 
   validate :geographic_scope_for_office_type
+
+  # Single source of truth: the Address carries the geographic picker the
+  # admin actually fills in. We mirror it onto the office's own scope FKs
+  # so the existing scopes (`for_department`, `for_commune`) and the
+  # `display_label` keep working without making admins enter the same
+  # department/commune twice.
+  before_validation :sync_scope_from_address
 
   # ── Scopes ───────────────────────────────────────────────────────
   scope :open,      -> { where(status: "open") }
@@ -73,6 +82,13 @@ class ElectoralOffice < ApplicationRecord
     department || commune&.arrondissement&.department
   end
 
+  # Override of HasOperatingHours#display_hours — falls back to the legacy
+  # `hours_note` free-text column when no structured slots are set, so any
+  # pre-migration row still renders something on the locator.
+  def display_hours
+    super.presence || hours_note.to_s
+  end
+
   private
 
   # BEDs must be scoped to a department; BEKs must be scoped to a commune.
@@ -86,6 +102,27 @@ class ElectoralOffice < ApplicationRecord
       errors.add(:department_id, "required for a BED") if department_id.blank?
     when "bek"
       errors.add(:commune_id, "required for a BEK") if commune_id.blank?
+    end
+  end
+
+  # BED → adopts address.department_id. BEK → adopts address.commune_id
+  # AND its parent department (commune → arrondissement → department) so the
+  # for_department scope still finds it. Skipped if address is missing or the
+  # admin hasn't picked the relevant tier yet — geographic_scope_for_office_type
+  # will surface the missing-field error.
+  def sync_scope_from_address
+    return if address.blank?
+
+    case office_type
+    when "bed"
+      self.department_id = address.department_id if address.department_id.present?
+      self.commune_id    = nil
+    when "bek"
+      if address.commune_id.present?
+        self.commune_id    = address.commune_id
+        self.department_id = address.commune&.arrondissement&.department_id ||
+                             address.department_id
+      end
     end
   end
 end

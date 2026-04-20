@@ -1,40 +1,46 @@
-<%# Admin — Electoral Offices (BED / BEK) index %>
+<%# Partner Portal — Electoral Offices (BED / BEK) index. CEP-only. %>
 
 <div class="container-fluid py-4">
   <div class="d-flex align-items-center justify-content-between mb-4">
     <div>
-      <h4 class="mb-1"><i class="ri-building-line me-2"></i>Biwo Elektoral</h4>
-      <p class="text-muted mb-0 small">
-        Sipèvizyon sèlman — BED ak BEK CEP yo jere nan pòtay patnè CEP.
+      <h4 class="pp-page-title">
+        <i class="ri-government-line me-2 pp-text-brand"></i>Biwo Elektoral
+      </h4>
+      <p class="pp-page-subtitle">
+        BED ak BEK CEP — kote sitwayen ka ale pou enskripsyon ak èd
       </p>
     </div>
-    <span class="badge bg-light text-muted border">
-      <i class="ri-eye-line me-1"></i>Lekti sèlman
-    </span>
+    <% if current_portal_user&.has_role?(:partner_admin) %>
+      <%= link_to new_partner_portal_electoral_office_path, class: "btn pp-btn-brand" do %>
+        <i class="ri-add-line me-1"></i>Nouvo Biwo
+      <% end %>
+    <% end %>
   </div>
 
-  <%# Stats %>
+  <%# === STATS === %>
   <div class="row g-3 mb-4">
     <% [
-      ["Total",   @counts[:total],   "text-primary"],
-      ["BED",     @counts[:bed],     "text-info"],
-      ["BEK",     @counts[:bek],     "text-success"],
-      ["Louvri",  @counts[:open],    "text-success"],
+      ["Total",    @counts[:total],   "text-primary"],
+      ["BED",      @counts[:bed],     "text-info"],
+      ["BEK",      @counts[:bek],     "text-success"],
+      ["Louvri",   @counts[:open],    "text-success"],
       ["Planifye", @counts[:planned], "text-warning"]
     ].each do |label, count, color| %>
-      <div class="col-md">
-        <div class="card border-0 shadow-sm">
+      <div class="col">
+        <div class="pp-card card border-0">
           <div class="card-body text-center py-3">
             <div class="fs-4 fw-bold <%= color %>"><%= count %></div>
-            <div class="small text-muted text-uppercase" style="letter-spacing: 0.05em;"><%= label %></div>
+            <div class="small text-muted text-uppercase" style="letter-spacing:.05em;">
+              <%= label %>
+            </div>
           </div>
         </div>
       </div>
     <% end %>
   </div>
 
-  <%# Filters %>
-  <%= form_with url: admin_electoral_offices_path, method: :get, local: true,
+  <%# === FILTERS === %>
+  <%= form_with url: partner_portal_electoral_offices_path, method: :get, local: true,
                 class: "row g-2 mb-3" do |f| %>
     <div class="col-md-4">
       <%= text_field_tag :q, params[:q], placeholder: "Chache pa non…", class: "form-control" %>
@@ -42,16 +48,14 @@
     <div class="col-md-2">
       <%= select_tag :office_type,
             options_for_select(
-              [["Tout tip", ""]] +
-                ElectoralOffice::OFFICE_TYPES.map { |t| [t.upcase, t] },
+              [["Tout tip", ""]] + ElectoralOffice::OFFICE_TYPES.map { |t| [t.upcase, t] },
               @office_type_filter),
             class: "form-select" %>
     </div>
     <div class="col-md-2">
       <%= select_tag :status,
             options_for_select(
-              [["Tout estati", ""]] +
-                ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
+              [["Tout estati", ""]] + ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
               @status_filter),
             class: "form-select" %>
     </div>
@@ -60,7 +64,8 @@
     </div>
   <% end %>
 
-  <div class="card border-0 shadow-sm">
+  <%# === TABLE === %>
+  <div class="pp-card card">
     <div class="table-responsive">
       <table class="table table-hover mb-0">
         <thead class="table-light">
@@ -71,6 +76,9 @@
             <th>Estati</th>
             <th>Telefòn</th>
             <th>Orè</th>
+            <% if current_portal_user&.has_role?(:partner_admin) %>
+              <th class="text-end">Aksyon</th>
+            <% end %>
           </tr>
         </thead>
         <tbody>
@@ -87,7 +95,7 @@
                 <td>
                   <span class="badge <%=
                     case o.status
-                    when 'open' then 'bg-success-subtle text-success'
+                    when 'open'   then 'bg-success-subtle text-success'
                     when 'closed' then 'bg-danger-subtle text-danger'
                     else 'bg-warning-subtle text-warning' end %>">
                     <%= o.status.titleize %>
@@ -95,13 +103,27 @@
                 </td>
                 <td class="small"><%= o.phone.presence || "—" %></td>
                 <td class="small"><%= o.display_hours.presence || "—" %></td>
+                <% if current_portal_user&.has_role?(:partner_admin) %>
+                  <td class="text-end">
+                    <%= link_to "Modifye", edit_partner_portal_electoral_office_path(o),
+                                class: "btn btn-sm btn-outline-secondary" %>
+                    <%= button_to "Efase", partner_portal_electoral_office_path(o),
+                                  method: :delete,
+                                  form: { data: { turbo_confirm: "Efase biwo sa?" } },
+                                  class: "btn btn-sm btn-outline-danger" %>
+                  </td>
+                <% end %>
               </tr>
             <% end %>
           <% else %>
             <tr>
-              <td colspan="6" class="text-center text-muted py-5">
+              <td colspan="<%= current_portal_user&.has_role?(:partner_admin) ? 7 : 6 %>"
+                  class="text-center text-muted py-5">
                 <i class="ri-inbox-line d-block mb-2" style="font-size: 2rem;"></i>
-                Pa gen biwo elektoral anrejistre nan sistèm nan.
+                Pa gen biwo elektoral.
+                <% if current_portal_user&.has_role?(:partner_admin) %>
+                  Klike "Nouvo Biwo" pou ajoute youn.
+                <% end %>
               </td>
             </tr>
           <% end %>

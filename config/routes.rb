@@ -226,9 +226,11 @@ end
     end
 
     # Electoral Offices (BED / BEK) — CEP's physical field offices.
-    # CRUD managed by CEP administrators through the Command Center;
-    # controller lives under Election::Admin:: to mirror ElectionsController.
-    resources :electoral_offices, controller: "/election/admin/electoral_offices"
+    # AdminUser-side surface is READ-ONLY oversight (see partner-portal
+    # `electoral_offices` for CRUD owned by CEP partner_admins).
+    resources :electoral_offices,
+              controller: "/election/admin/electoral_offices",
+              only: %i[index]
 
     # Election Admin (CEP Dashboard)
     # Controller: Election::Admin::ElectionsController
@@ -794,6 +796,12 @@ end
     # Voter Registry / Lis Elektoral (CEP)
     get  "voter_registry", to: "voter_registry#index", as: :voter_registry
     post "voter_registry/build", to: "voter_registry#build", as: :voter_registry_build
+
+    # Electoral Offices (BED / BEK) — CEP's permanent field offices.
+    # Distinct from Polling Centers (Sant Vòt). Managed by CEP partner_admins
+    # so they can register their own offices without bouncing into the
+    # AdminUser-gated /admin/electoral_offices command-center surface.
+    resources :electoral_offices, except: [:show]
 
     # Polling Centers (Sant Vòt) — CEP + Consulate roster + CSV import
     # Custom collection routes (import / template) are declared INSIDE the

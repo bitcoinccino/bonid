@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-# CRUD for CEP's electoral offices (BED + BEK) — scoped to CEP
-# administrators under the Command Center. Each row is a physical CEP
-# building; the citizen-side locator reads from the same table.
+# Read-only oversight of CEP's BED/BEK roster from the Command Center.
 #
-# Addresses use the polymorphic `Address` model already wired into Partners
-# and Institutions (see `has_one :address, as: :addressable` in
-# ElectoralOffice). The form submits `address_attributes` as nested params;
-# ActiveRecord handles the cascade (department → arrondissement → commune →
-# section) via the existing Address callbacks.
+# Per the AdminUser-vs-CEP boundary (saved in memory), AdminUsers monitor
+# activity and security; CEP partner-portal users own all election ops
+# including BED/BEK CRUD. This controller used to mirror the partner-portal
+# CRUD; that surface was deleted because it duplicated work CEP owns and
+# created auth-boundary collisions for partner users who clicked through.
+#
+# Citizens read from the same `ElectoralOffice` table via the public
+# locator; partner-portal admins own writes.
 module Election
   module Admin
     class ElectoralOfficesController < ::Admin::BaseController
       include Election::Admin::CepAdminGate
-      before_action :set_office, only: %i[show edit update destroy]
 
       # GET /admin/electoral_offices
       def index
@@ -33,69 +33,6 @@ module Election
           open:    ElectoralOffice.open.count,
           planned: ElectoralOffice.planned.count
         }
-      end
-
-      # GET /admin/electoral_offices/new
-      def new
-        @office = ElectoralOffice.new(status: "planned", priority: 0)
-        @office.build_address(country: "Haiti")
-      end
-
-      # POST /admin/electoral_offices
-      def create
-        @office = ElectoralOffice.new(office_params)
-        if @office.save
-          redirect_to admin_electoral_offices_path,
-                      notice: "Biwo elektoral kreye: #{@office.display_label}"
-        else
-          @office.build_address(country: "Haiti") unless @office.address
-          render :new, status: :unprocessable_entity
-        end
-      end
-
-      # GET /admin/electoral_offices/:id/edit
-      def edit
-        @office.build_address(country: "Haiti") unless @office.address
-      end
-
-      # PATCH /admin/electoral_offices/:id
-      def update
-        if @office.update(office_params)
-          redirect_to admin_electoral_offices_path,
-                      notice: "Biwo elektoral mete ajou: #{@office.display_label}"
-        else
-          render :edit, status: :unprocessable_entity
-        end
-      end
-
-      # DELETE /admin/electoral_offices/:id
-      def destroy
-        if @office.voter_eligibility_records.any?
-          redirect_to admin_electoral_offices_path,
-                      alert: "Pa ka efase — biwo sa gen enskripsyon elektè ki lye avè l."
-        else
-          @office.destroy
-          redirect_to admin_electoral_offices_path,
-                      notice: "Biwo elektoral efase."
-        end
-      end
-
-      private
-
-      def set_office
-        @office = ElectoralOffice.includes(:address).find(params[:id])
-      end
-
-      def office_params
-        params.require(:electoral_office).permit(
-          :name, :office_type, :status, :phone, :hours_note, :priority, :notes,
-          :department_id, :commune_id,
-          address_attributes: %i[
-            id street_address locality
-            department_id arrondissement_id commune_id communal_section_id
-            country postal_code latitude longitude
-          ]
-        )
       end
     end
   end

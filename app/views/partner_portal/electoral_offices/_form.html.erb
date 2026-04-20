@@ -1,0 +1,160 @@
+<%# Shared form — new + edit for ElectoralOffice. Same fields and nested
+    Address as the AdminUser-side form; just routed under partner_portal. %>
+
+<%= form_with model: @office,
+              url: @office.persisted? ? partner_portal_electoral_office_path(@office) : partner_portal_electoral_offices_path,
+              method: @office.persisted? ? :patch : :post,
+              local: true do |f| %>
+
+  <% if @office.errors.any? %>
+    <div class="alert alert-danger">
+      <strong><%= pluralize(@office.errors.count, "erè") %>:</strong>
+      <ul class="mb-0 small">
+        <% @office.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
+    <i class="ri-information-line me-1"></i>Enfòmasyon Biwo
+  </h6>
+
+  <%# Geographic scope (department for BED, commune for BEK) is derived
+      from the Address section below — see ElectoralOffice#sync_scope_from_address.
+      Keeping a single picker prevents drift between "office scope" and
+      "office location", which are always the same thing for BED/BEK. %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-6">
+      <%= f.label :name, "Non Biwo", class: "form-label" %>
+      <%= f.text_field :name, class: "form-control", required: true,
+                       placeholder: "Ex: BED Ouest, BEK Pétion-Ville" %>
+    </div>
+
+    <div class="col-md-3">
+      <%= f.label :office_type, "Tip", class: "form-label" %>
+      <%= f.select :office_type,
+                   ElectoralOffice::OFFICE_TYPES.map { |t| [t.upcase, t] },
+                   { include_blank: "— Chwazi —" },
+                   class: "form-select", required: true %>
+    </div>
+
+    <div class="col-md-3">
+      <%= f.label :status, "Estati", class: "form-label" %>
+      <%= f.select :status,
+                   ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
+                   {}, class: "form-select" %>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :phone, "Telefòn", class: "form-label" %>
+      <%= f.telephone_field :phone, class: "form-control", placeholder: "+509 …" %>
+    </div>
+
+    <div class="col-12">
+      <%= f.label :notes, "Nòt", class: "form-label" %>
+      <%= f.text_area :notes, rows: 2, class: "form-control" %>
+    </div>
+  </div>
+
+  <%# === ORÈ DOPERASYON === Reusable shared editor (also used by diplomatic
+      missions form). Driven by the `hours-day` Stimulus controller. %>
+  <hr class="my-4">
+  <%= render "partner_portal/shared/hours_editor",
+             record: @office,
+             field_prefix: "electoral_office[operating_hours]",
+             id_prefix: "office-hours" %>
+
+  <hr class="my-4">
+  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
+    <i class="ri-map-pin-line me-1"></i>Adrès
+  </h6>
+
+  <%= f.fields_for :address do |a| %>
+    <div class="row g-3 mb-4">
+      <div class="col-md-8">
+        <%= a.label :street_address, "Adrès / Ri", class: "form-label" %>
+        <%= a.text_field :street_address, class: "form-control",
+                         placeholder: "Ex: Rue Capois, Bicentenaire" %>
+      </div>
+      <div class="col-md-4">
+        <%= a.label :locality, "Lokalite", class: "form-label" %>
+        <%= a.text_field :locality, class: "form-control" %>
+      </div>
+    </div>
+
+    <%# 4-level Haitian geographic cascade — Depatman → Arondisman → Komin →
+        Seksyon Komunal. Same `address` Stimulus controller used by
+        polling_centers/_form. Children disabled until parent picked;
+        prefilled values flow through `data-selected`; postal code auto-fills
+        when communal section is chosen. %>
+    <div class="row g-3 mb-4" data-controller="address">
+      <div class="col-md-6">
+        <%= a.label :department_id, "Depatman", class: "form-label" %>
+        <%= a.select :department_id,
+                     @departments.map { |d| [d.name, d.id] },
+                     { prompt: "— Chwazi Depatman —" },
+                     class: "form-select",
+                     data: {
+                       action: "change->address#loadArrondissements",
+                       address_target: "department",
+                       selected: a.object&.department_id,
+                       slug_map: @departments.index_by(&:id).transform_values(&:slug).to_json
+                     } %>
+      </div>
+      <div class="col-md-6">
+        <%= a.label :arrondissement_id, "Arondisman", class: "form-label" %>
+        <%= a.select :arrondissement_id, [],
+                     { prompt: "— Chwazi Arondisman —" },
+                     class: "form-select",
+                     disabled: a.object&.department_id.blank?,
+                     data: {
+                       action: "change->address#loadCommunes",
+                       address_target: "arrondissement",
+                       selected: a.object&.arrondissement_id
+                     } %>
+      </div>
+      <div class="col-md-6">
+        <%= a.label :commune_id, "Komin", class: "form-label" %>
+        <%= a.select :commune_id, [],
+                     { prompt: "— Chwazi Komin —" },
+                     class: "form-select",
+                     disabled: a.object&.arrondissement_id.blank?,
+                     data: {
+                       action: "change->address#loadCommunalSections",
+                       address_target: "commune",
+                       selected: a.object&.commune_id
+                     } %>
+      </div>
+      <div class="col-md-6">
+        <%= a.label :communal_section_id, "Seksyon Komunal", class: "form-label" %>
+        <%= a.select :communal_section_id, [],
+                     { prompt: "— Chwazi Seksyon —" },
+                     class: "form-select",
+                     disabled: a.object&.commune_id.blank?,
+                     data: {
+                       action: "change->address#loadPostalCode",
+                       address_target: "section",
+                       selected: a.object&.communal_section_id
+                     } %>
+      </div>
+
+      <div class="col-md-4">
+        <%= a.label :postal_code, "Kòd Postal", class: "form-label" %>
+        <%= a.text_field :postal_code, class: "form-control",
+                         placeholder: "HT6110",
+                         data: { address_target: "postalCode" } %>
+      </div>
+      <div class="col-md-4">
+        <%= a.label :country, "Peyi", class: "form-label" %>
+        <%= a.text_field :country, class: "form-control",
+                         value: (a.object&.country || "Haiti") %>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="d-flex justify-content-end gap-2">
+    <%= link_to "Anile", partner_portal_electoral_offices_path, class: "btn btn-link" %>
+    <%= f.submit(@office.new_record? ? "Kreye Biwo" : "Anrejistre Chanjman",
+                 class: "btn pp-btn-brand px-4") %>
+  </div>
+<% end %>
