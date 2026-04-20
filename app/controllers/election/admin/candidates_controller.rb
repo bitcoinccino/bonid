@@ -15,7 +15,7 @@ module Election
       include Election::Admin::CepAdminGate
 
       before_action :set_election
-      before_action :set_candidate, only: %i[show start_review approve reject]
+      before_action :set_candidate, only: %i[show start_review publish_preliminary approve reject endorsements upload_endorsements]
 
       # GET /admin/election/:election_id/candidates
       def index
@@ -69,11 +69,61 @@ module Election
         end
       end
 
+      # POST /admin/election/:election_id/candidates/:id/publish_preliminary
+      # Article 192: CEP posts candidate to the liste préliminaire and opens
+      # the 48-hour contestation window.
+      def publish_preliminary
+        # Article 181.15 gate — independent candidates need 2% first. Check
+        # here to return a message specific to the petition threshold rather
+        # than a generic "can't publish" error.
+        if @candidate.independent? && !@candidate.petition_satisfied?
+          redirect_to admin_election_election_candidate_path(@election.id, @candidate),
+                      alert: "Kandida endepandan bezwen #{@candidate.petition_threshold} endòsman " \
+                             "(2% — Atik 181.15). Li gen sèlman #{@candidate.endorsement_count}."
+          return
+        end
+
+        if @candidate.publish_to_preliminary!(admin: current_admin_user)
+          redirect_to admin_election_election_candidates_path(@election.id),
+                      notice: "#{@candidate.full_name} sou lis preliminè — fenèt kontestasyon 48h louvri."
+        else
+          redirect_to admin_election_election_candidate_path(@election.id, @candidate),
+                      alert: "Pa ka pibliye sou lis preliminè nan estati sa a."
+        end
+      end
+
       # POST /admin/election/:election_id/candidates/:id/approve
+      # Article 195: final-list promotion. Requires:
+      #   1. Candidate is on the preliminary list
+      #   2. The 48-hour contestation window has elapsed
+      #   3. No upheld objections remain
       def approve
+        unless @candidate.registration_status == "preliminary_listed"
+          redirect_to admin_election_election_candidate_path(@election.id, @candidate),
+                      alert: "Kandida dwe sou lis preliminè anvan pibliye sou lis definitif."
+          return
+        end
+
+        if @candidate.contestation_window_open?
+          closes_at = I18n.l(@candidate.contestation_window_closes_at, format: :short)
+          redirect_to admin_election_election_candidate_path(@election.id, @candidate),
+                      alert: "Fenèt kontestasyon 48h ap fèmen #{closes_at}. Tann anvan w pibliye lis definitif."
+          return
+        end
+
+        pending_disputes = ElectionDispute.where(
+          election_candidate_id: @candidate.id,
+          status: %w[filed under_review hearing_scheduled]
+        ).count
+        if pending_disputes.positive?
+          redirect_to admin_election_election_candidate_path(@election.id, @candidate),
+                      alert: "Gen #{pending_disputes} kontestasyon ki poko deside. Dispoze yo anvan."
+          return
+        end
+
         if @candidate.approve!(admin: current_admin_user)
           redirect_to admin_election_election_candidates_path(@election.id),
-                      notice: "#{@candidate.full_name} apwouve — sou bilten vòt la."
+                      notice: "#{@candidate.full_name} apwouve — sou lis definitif la."
         else
           redirect_to admin_election_election_candidate_path(@election.id, @candidate),
                       alert: "Apwobasyon echwe. Verifye estati enskripsyon an."
@@ -96,6 +146,55 @@ module Election
           redirect_to admin_election_election_candidate_path(@election.id, @candidate),
                       alert: "Rejeksyon echwe. Verifye estati enskripsyon an."
         end
+      end
+
+      # GET /admin/election/:election_id/candidates/:id/endorsements
+      # Article 181.15 — roster of all endorsements for this independent
+      # candidate. Admins use this to audit paper uploads.
+      def endorsements
+        @endorsements = ElectionCandidateEndorsement
+                          .where(election_candidate_id: @candidate.id)
+                          .order(created_at: :desc)
+                          .page(params[:page]).per(50)
+        @digital_count = ElectionCandidateEndorsement
+                           .where(election_candidate_id: @candidate.id, source: "digital").count
+        @csv_count = ElectionCandidateEndorsement
+                       .where(election_candidate_id: @candidate.id, source: "csv").count
+        @verified_count = @candidate.endorsement_count
+      end
+
+      # POST /admin/election/:election_id/candidates/:id/upload_endorsements
+      # Article 181.15 — bulk import paper-petition signatures collected in
+      # rural areas. CSV is parsed by Election::EndorsementCsvImporter which
+      # looks up each CIN against the voter roll; rows matched against a
+      # VoterEligibilityRecord are auto-verified and count toward the 2%.
+      def upload_endorsements
+        unless @candidate.independent?
+          redirect_to admin_election_election_candidate_path(@election.id, @candidate),
+                      alert: "Sèlman kandida endepandan yo bezwen petisyon sipò."
+          return
+        end
+
+        file = params[:csv_file]
+        if file.blank?
+          redirect_to admin_election_election_candidate_endorsements_path(@election.id, @candidate),
+                      alert: "Chwazi yon fichye CSV."
+          return
+        end
+
+        result = Election::EndorsementCsvImporter.new(
+          candidate: @candidate,
+          csv_io: file.tempfile,
+          admin: current_admin_user
+        ).call
+
+        msg = "Enpòte: #{result.imported} " \
+              "(verifye kont wòl: #{result.verified}, pa verifye: #{result.unverified}, " \
+              "doublon: #{result.duplicates})."
+        msg += " Erè: #{result.errors.size}." if result.errors.any?
+
+        redirect_to admin_election_election_candidate_endorsements_path(@election.id, @candidate),
+                    notice: msg
       end
 
       private

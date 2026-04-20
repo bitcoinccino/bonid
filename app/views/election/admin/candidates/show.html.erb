@@ -48,7 +48,16 @@
             <dt class="col-sm-4 text-muted">Pwofesyon</dt>
             <dd class="col-sm-8"><%= @candidate.profession.presence || "—" %></dd>
             <dt class="col-sm-4 text-muted">Tip kandidati</dt>
-            <dd class="col-sm-8"><%= @candidate.candidacy_type&.titleize || "—" %></dd>
+            <dd class="col-sm-8">
+              <%= @candidate.candidacy_type&.titleize || "—" %>
+              <% if @candidate.independent? %>
+                <%= link_to admin_election_election_candidate_endorsements_path(@election.id, @candidate),
+                            class: "badge bg-#{@candidate.petition_satisfied? ? 'success' : 'warning'}-subtle " \
+                                   "text-#{@candidate.petition_satisfied? ? 'success' : 'warning'} ms-1" do %>
+                  Petisyon <%= @candidate.endorsement_count %>/<%= @candidate.petition_threshold %>
+                <% end %>
+              <% end %>
+            </dd>
             <dt class="col-sm-4 text-muted">Frè enskripsyon</dt>
             <dd class="col-sm-8">
               <%= @candidate.fee_label %>
@@ -120,17 +129,60 @@
           <% end %>
 
           <% if @candidate.registration_status.in?(%w[submitted under_review]) %>
+            <%# Article 192: pre-final-list step. Must go through preliminary
+                list + 48h contestation window before final approval. %>
             <button type="button"
-                    class="btn btn-success btn-sm"
+                    class="btn btn-primary btn-sm"
                     data-bs-toggle="modal"
-                    data-bs-target="#approveCandidateModal">
-              <i class="ri-check-line me-1"></i> Apwouve
+                    data-bs-target="#publishPreliminaryModal">
+              <i class="ri-list-check-2 me-1"></i> Pibliye sou lis preliminè
             </button>
             <button type="button"
                     class="btn btn-outline-danger btn-sm"
                     data-bs-toggle="modal"
                     data-bs-target="#rejectCandidateModal">
               <i class="ri-close-line me-1"></i> Rejte
+            </button>
+          <% elsif @candidate.registration_status == "preliminary_listed" %>
+            <% pending_challenges = ElectionDispute.where(
+                 election_candidate_id: @candidate.id,
+                 status: %w[filed under_review hearing_scheduled]
+               ).count %>
+
+            <% if @candidate.contestation_window_open? %>
+              <div class="alert alert-info small mb-0">
+                <i class="ri-time-line me-1"></i>
+                Fenèt kontestasyon 48h ap fèmen
+                <strong><%= l(@candidate.contestation_window_closes_at, format: :short) %></strong>.
+                Pa ka pibliye sou lis definitif anvan sa.
+              </div>
+            <% else %>
+              <div class="alert alert-light small mb-0">
+                <i class="ri-check-double-line me-1"></i>
+                Fenèt kontestasyon fèmen <%= time_ago_in_words(@candidate.contestation_window_closes_at) %> pase.
+              </div>
+            <% end %>
+
+            <% if pending_challenges.positive? %>
+              <div class="alert alert-warning small mb-0">
+                <i class="ri-scales-3-line me-1"></i>
+                <strong><%= pending_challenges %></strong>
+                kontestasyon poko deside. Dispoze yo anvan apwobasyon final.
+              </div>
+            <% end %>
+
+            <button type="button"
+                    class="btn btn-success btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#approveCandidateModal"
+                    <%= 'disabled' if @candidate.contestation_window_open? || pending_challenges.positive? %>>
+              <i class="ri-check-line me-1"></i> Pibliye sou lis definitif (Apwouve)
+            </button>
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#rejectCandidateModal">
+              <i class="ri-close-line me-1"></i> Retire sou lis
             </button>
           <% elsif @candidate.registration_status == "approved" %>
             <div class="alert alert-success small mb-0">
@@ -180,8 +232,47 @@
   </div>
 </div>
 
-<%# ── Approve modal ── %>
+<%# ── Publish-preliminary modal (Article 192) ── %>
 <% if @candidate.registration_status.in?(%w[submitted under_review]) %>
+  <div class="modal fade" id="publishPreliminaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <%= form_with url: admin_publish_preliminary_election_election_candidate_path(@election.id, @candidate),
+                      method: :post, local: true do |f| %>
+          <div class="modal-header bg-primary-subtle">
+            <h5 class="modal-title fw-bold">
+              <i class="ri-list-check-2 me-1"></i>
+              Pibliye sou lis preliminè
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-2">
+              <%= @candidate.full_name %> ap parèt sou <strong>lis preliminè</strong> la.
+              Fenèt kontestasyon 48 èdtan ap louvri (Atik 192 Dekrè Elektoral la).
+              Nenpòt elektè ka konteste kandidati a pandan peryòd sa a.
+            </p>
+            <% unless @candidate.documents_complete? %>
+              <div class="alert alert-warning small mb-0">
+                <i class="ri-alert-line me-1"></i>
+                Atansyon: dokiman yo pa konplè
+                (<%= @candidate.documents_submitted_count %>/<%= @candidate.documents_total_count %>).
+              </div>
+            <% end %>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Anile</button>
+            <%= f.submit "Pibliye kounye a", class: "btn btn-primary",
+                          data: { turbo_confirm: "Konfime pibliyasyon sou lis preliminè?" } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Approve modal (Article 195 — final list promotion) ── %>
+<% if @candidate.registration_status == "preliminary_listed" && !@candidate.contestation_window_open? %>
   <div class="modal fade" id="approveCandidateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -236,14 +327,16 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Anile</button>
             <%= f.submit "Apwouve kounye a", class: "btn btn-success",
-                          data: { turbo_confirm: "Konfime apwobasyon?" } %>
+                          data: { turbo_confirm: "Konfime apwobasyon sou lis definitif?" } %>
           </div>
         <% end %>
       </div>
     </div>
   </div>
+<% end %>
 
-  <%# ── Reject modal ── %>
+<%# ── Reject modal (available at submitted / under_review / preliminary_listed) ── %>
+<% if @candidate.registration_status.in?(%w[submitted under_review preliminary_listed]) %>
   <div class="modal fade" id="rejectCandidateModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">

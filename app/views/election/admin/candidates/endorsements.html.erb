@@ -1,0 +1,161 @@
+<%# app/views/election/admin/candidates/endorsements.html.erb %>
+<%# Article 181.15 — endorsement roster + CSV upload for a single
+    independent candidate. %>
+
+<div class="container-fluid py-4">
+
+  <%# ── Header ── %>
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-quill-pen-line me-2 pp-text-brand"></i>
+        Petisyon Sipò — <%= @candidate.full_name %>
+      </h4>
+      <p class="pp-page-subtitle">
+        Atik 181.15 — 2% elektè sikonskripsyon an dwe endose kandida endepandan
+      </p>
+    </div>
+    <%= link_to admin_election_election_candidate_path(@election.id, @candidate),
+                class: "btn btn-sm btn-outline-secondary" do %>
+      <i class="ri-arrow-left-line me-1"></i> Retounen kandida
+    <% end %>
+  </div>
+
+  <%# ── Progress summary ── %>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Total endòsman</div>
+        <div class="fw-bold pp-text-2xl pp-text-brand"><%= @endorsements.total_count rescue @endorsements.size %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Verifye (konte)</div>
+        <div class="fw-bold pp-text-2xl pp-text-success"><%= @verified_count %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Dijital</div>
+        <div class="fw-bold pp-text-2xl pp-text-primary"><%= @digital_count %></div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="pp-card card p-3">
+        <div class="pp-stat-label">Papye (CSV)</div>
+        <div class="fw-bold pp-text-2xl pp-text-warning"><%= @csv_count %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pp-card card mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="pp-text-sm fw-semibold">Pwogre pou 2% (Atik 181.15)</span>
+        <span class="pp-text-sm fw-bold">
+          <%= @verified_count %> / <%= @candidate.petition_threshold %>
+          (sou <%= @candidate.petition_denominator %> elektè enskri)
+        </span>
+      </div>
+      <div class="progress" style="height: 10px;">
+        <div class="progress-bar <%= @candidate.petition_satisfied? ? 'bg-success' : 'bg-warning' %>"
+             style="width: <%= @candidate.petition_progress_percentage %>%"></div>
+      </div>
+      <% if @candidate.petition_satisfied? %>
+        <div class="alert alert-success small mt-3 mb-0">
+          <i class="ri-shield-check-line me-1"></i>
+          Sèy 2% satisfè. Kandida sa a ka pibliye sou lis preliminè.
+        </div>
+      <% else %>
+        <div class="alert alert-warning small mt-3 mb-0">
+          <i class="ri-alert-line me-1"></i>
+          Manke
+          <strong><%= @candidate.petition_threshold - @verified_count %></strong>
+          endòsman ankò anvan CEP ka pibliye kandida a.
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── CSV upload ── %>
+  <div class="pp-card card mb-4">
+    <div class="card-header">
+      <h6 class="mb-0 fw-semibold pp-text-sm">
+        <i class="ri-upload-cloud-2-line me-1"></i>
+        Enpòte petisyon papye (CSV)
+      </h6>
+    </div>
+    <div class="card-body p-4">
+      <p class="pp-text-sm text-muted mb-3">
+        Pou zòn riral kote siyati ranmase sou papye: upload yon fichye CSV ak kolòn
+        <code>cin_number</code>, <code>full_name</code>, <code>signature_image_url</code>,
+        <code>notes</code>. Chak CIN ap verifye kont wòl elektè a — sa ki matche yo ap
+        konte pou 2% la.
+      </p>
+      <%= form_with url: admin_upload_election_election_candidate_endorsements_path(@election.id, @candidate),
+                    method: :post, local: true, multipart: true do |f| %>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <%= file_field_tag :csv_file, accept: ".csv,text/csv", required: true,
+                             class: "form-control form-control-sm", style: "max-width: 400px;" %>
+          <%= f.submit "Enpòte", class: "btn btn-sm btn-primary",
+                        data: { turbo_confirm: "Konfime enpòte fichye CSV a?" } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Endorsement roster ── %>
+  <div class="pp-card card">
+    <div class="card-header">
+      <h6 class="mb-0 fw-semibold pp-text-sm">Lis endòsman</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0 align-middle pp-text-sm">
+        <thead class="table-light">
+          <tr>
+            <th class="pp-text-xs">Sous</th>
+            <th class="pp-text-xs">BonID</th>
+            <th class="pp-text-xs">CIN</th>
+            <th class="pp-text-xs">Verifye</th>
+            <th class="pp-text-xs">Dat</th>
+            <th class="pp-text-xs">Nòt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @endorsements.each do |e| %>
+            <tr>
+              <td>
+                <% if e.source == "digital" %>
+                  <span class="badge bg-primary-subtle text-primary">Dijital</span>
+                <% else %>
+                  <span class="badge bg-warning-subtle text-warning">Papye</span>
+                <% end %>
+              </td>
+              <td><code><%= e.bonid.presence || "—" %></code></td>
+              <td><code><%= e.cin_number.presence || "—" %></code></td>
+              <td>
+                <% if e.voter_roll_verified %>
+                  <i class="ri-check-line pp-text-success"></i>
+                <% else %>
+                  <i class="ri-close-line text-muted"></i>
+                <% end %>
+              </td>
+              <td class="pp-text-xs pp-text-secondary">
+                <%= e.endorsed_at&.strftime("%d %b %Y") %>
+              </td>
+              <td class="pp-text-xs"><%= e.notes.presence || "—" %></td>
+            </tr>
+          <% end %>
+          <% if @endorsements.empty? %>
+            <tr><td colspan="6" class="text-center text-muted py-4">Pa gen endòsman ankò.</td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if @endorsements.respond_to?(:total_pages) && @endorsements.total_pages > 1 %>
+    <div class="mt-3"><%= paginate @endorsements if respond_to?(:paginate) %></div>
+  <% end %>
+</div>

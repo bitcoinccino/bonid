@@ -252,9 +252,13 @@ end
     # Submission happens in the partner portal; CEP approval happens here.
     get  "election/:election_id/candidates",                  to: "/election/admin/candidates#index",        as: :election_election_candidates
     get  "election/:election_id/candidates/:id",              to: "/election/admin/candidates#show",         as: :election_election_candidate
-    post "election/:election_id/candidates/:id/start_review", to: "/election/admin/candidates#start_review", as: :start_review_election_election_candidate
-    post "election/:election_id/candidates/:id/approve",      to: "/election/admin/candidates#approve",      as: :approve_election_election_candidate
-    post "election/:election_id/candidates/:id/reject",       to: "/election/admin/candidates#reject",       as: :reject_election_election_candidate
+    post "election/:election_id/candidates/:id/start_review",        to: "/election/admin/candidates#start_review",        as: :start_review_election_election_candidate
+    post "election/:election_id/candidates/:id/publish_preliminary", to: "/election/admin/candidates#publish_preliminary", as: :publish_preliminary_election_election_candidate
+    post "election/:election_id/candidates/:id/approve",             to: "/election/admin/candidates#approve",             as: :approve_election_election_candidate
+    post "election/:election_id/candidates/:id/reject",              to: "/election/admin/candidates#reject",             as: :reject_election_election_candidate
+    # Article 181.15 petition audit + CSV upload (independents only)
+    get  "election/:election_id/candidates/:id/endorsements",        to: "/election/admin/candidates#endorsements",        as: :election_election_candidate_endorsements
+    post "election/:election_id/candidates/:id/endorsements/upload", to: "/election/admin/candidates#upload_endorsements", as: :upload_election_election_candidate_endorsements
 
     # Electoral disputes (Gap 9) — BCEN (Bureau du Contentieux Electoral
     # National). Filings come from the partner portal or citizen side; this
