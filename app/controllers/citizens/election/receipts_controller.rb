@@ -64,7 +64,13 @@ module Citizens
                       @record.receipt_generated_at.blank? ||
                       @record.updated_at > @record.receipt_generated_at
 
-        return Election::VoterReceiptPdfService.call(@record) if needs_regen
+        if needs_regen
+          return Election::VoterReceiptPdfService.call(
+            @record,
+            host:     request.host_with_port,
+            protocol: request.protocol.sub("://", "")
+          )
+        end
 
         @record.receipt_pdf.download
       end

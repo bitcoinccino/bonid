@@ -61,10 +61,11 @@ class VoterEligibilityRecord < ApplicationRecord
   VOTED_CHANNELS = %w[in_person online consulate_in_person].freeze
 
   # Origin of the enrollment record.
-  # - digital: citizen self-registered online via BonID (default / primary)
-  # - clerk:   CEP staff registered a walk-in at a BED/BEK or consulate
-  # - hybrid:  citizen pre-checked online, clerk confirmed (Phase 2)
-  SOURCES = %w[digital clerk hybrid].freeze
+  # - digital: citizen self-registered online via BonID (primary path)
+  # - clerk:   a clerk at a BonID-equipped desk registered the citizen in
+  #            BonID on their behalf (walk-in at a consulate, BED/BEK with
+  #            BonID terminals, partner office, etc.)
+  SOURCES = %w[digital clerk].freeze
 
   # Raised by register_digital_voter! when the active election has not
   # enabled the self-service digital enrollment flow. Controllers rescue
@@ -360,13 +361,10 @@ class VoterEligibilityRecord < ApplicationRecord
 
   # Human-readable voter reference — e.g. BVT-2026-K9F2-HQXR.
   #
-  # This is a BonID-INTERNAL credential that links a citizen to their CEP
-  # enrollment (paper or digital). It is NOT a CEP-issued receipt — the
-  # authoritative artifact remains the CEP paper slip or a BonVote-signed
-  # digital attestation stored in `bonvote_signature` (BonVote follows
-  # CEP's protocol; it does not sign on CEP's behalf). The `BVT-` prefix
-  # (Biwo Vòt Tikèt) deliberately avoids impersonating state authority;
-  # it reads as BonID's own reference, not a government ID.
+  # This is the BonID-issued credential that confirms the citizen is
+  # registered to vote. The authoritative artifact is the BonVote-signed
+  # attestation stored in `bonvote_signature`. The `BVT-` prefix
+  # (Biwo Vòt Tikèt) reads as BonID's own reference, not a government ID.
   #
   # Threat model:
   #   - Must NOT be enumerable (a neighbor shouldn't be able to guess mine).
@@ -394,23 +392,81 @@ class VoterEligibilityRecord < ApplicationRecord
     "BVT-#{year}-#{token[0, 4]}-#{token[4, 4]}"
   end
 
+  # Look up a record by its derived voter_reference. Because the reference
+  # is an HMAC of (user_id, election_id, record_id) — not a stored column —
+  # we can't index a direct WHERE. Instead, parse the year out of the ref,
+  # narrow candidates to elections from that year, and recompute references
+  # to find the match. Cheap at current scale; revisit with a denormalized
+  # indexed column when we approach production voter counts.
+  def self.find_by_voter_reference(ref)
+    return nil if ref.blank?
+
+    normalized = ref.to_s.upcase.gsub(/\s+/, "")
+    m = normalized.match(/\ABVT-(\d{4})-([0-9A-Z]{4})-([0-9A-Z]{4})\z/)
+    return nil unless m
+
+    year   = m[1].to_i
+    target = "BVT-#{year}-#{m[2]}-#{m[3]}"
+
+    election_ids = BonvoteElection
+                     .where("EXTRACT(YEAR FROM election_date) = ? OR EXTRACT(YEAR FROM created_at) = ?", year, year)
+                     .pluck(:id)
+    return nil if election_ids.empty?
+
+    where(bonvote_election_id: election_ids).find_each do |rec|
+      return rec if rec.voter_reference == target
+    end
+    nil
+  end
+
   # Compact payload embedded in the receipt QR code. Poll workers scan this
   # at the polling station to verify registration offline — the QR carries
   # enough to look up + confirm without a network round-trip, and the
   # optional `bonvote_signature` (when populated by BonvoteSigningService)
   # lets a verification tablet confirm authenticity cryptographically.
   #
+  # `kid` (key identifier) lets a verifier pick the right public key when a
+  # rotation has happened: archived keys live in the BonvoteKeyRegistry and
+  # are looked up by exactly this kid. Without kid in the payload, an old
+  # receipt becomes unverifiable the moment a key rotates.
+  #
   # Intentionally short so the QR stays dense on cheap thermal prints.
   def receipt_qr_payload
     {
       v:   1,                       # payload version
       ref: voter_reference,
-      bon: bonid.to_s[0, 12],       # truncated BonID — enough for lookup
+      bon: bonid_short,             # last 6 chars — unique without leaking DOB/sex/dept
       e:   bonvote_election_id,
       bv:  polling_station&.bv_number,
       c:   polling_station&.polling_center&.name,
+      kid: bonvote_election && ::Election::BonvoteKeyRegistry.current(bonvote_election)&.key_id,
       s:   bonvote_signature.presence
     }.compact
+  end
+
+  # Last 6 alphanumeric characters of the BonID — enough to disambiguate at
+  # a polling station, with zero demographic leakage. The BonID prefix
+  # encodes year-of-birth, sex, and department code; surfacing it on a
+  # public receipt would broadcast PII to anyone who scans the QR.
+  def bonid_short
+    bonid.to_s.tr("-", "").last(6)
+  end
+
+  # URL embedded in the receipt QR. Scanning the QR with a phone camera
+  # opens the BonID verifier directly with the payload pre-filled — no
+  # manual paste step. The verify page decodes `?d=`, recomputes the
+  # canonical signing payload, fetches the election's public key from the
+  # registry, and shows pass/fail.
+  def receipt_qr_url(host: nil, protocol: nil)
+    payload = receipt_qr_payload.to_json
+    encoded = Base64.urlsafe_encode64(payload, padding: false)
+    base    = host.presence ||
+              Rails.application.routes.default_url_options[:host].presence ||
+              "bonid.ht"
+    scheme  = protocol.presence ||
+              Rails.application.routes.default_url_options[:protocol].presence ||
+              (Rails.env.production? ? "https" : "http")
+    "#{scheme}://#{base}/election/verify-receipt?d=#{encoded}"
   end
 
   # Fire-and-forget email receipt. Sends the citizen a PDF attachment of
@@ -583,7 +639,7 @@ class VoterEligibilityRecord < ApplicationRecord
     # Prefer a record already keyed to this user; otherwise link back to
     # an analog (user_id IS NULL) record for the same CIN. Only creates
     # a new row if neither exists — prevents duplicate voter identities
-    # when a citizen who was paper-registered later obtains BonID.
+    # when a citizen who was clerk-registered later obtains BonID.
     def find_or_link_back_record_for_user(election, user)
       record = find_by(bonvote_election: election, user: user)
 

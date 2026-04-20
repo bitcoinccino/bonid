@@ -31,14 +31,22 @@ module Election
     BORDER_LIGHT = "E2E8F0"
     BG_LIGHT     = "F7FAFC"
 
-    def self.call(record, attach: true)
-      new(record).call(attach: attach)
+    # CEP is registered as an approved Partner (slug: "cep") with its
+    # official logo uploaded as an ActiveStorage attachment. We resolve
+    # it once per render and reuse — no static file path, no manual sync
+    # when CEP updates the asset in the partner-portal.
+    CEP_PARTNER_SLUG = "cep"
+
+    def self.call(record, attach: true, host: nil, protocol: nil)
+      new(record, host: host, protocol: protocol).call(attach: attach)
     end
 
-    def initialize(record)
+    def initialize(record, host: nil, protocol: nil)
       @record   = record
       @election = record.bonvote_election
       @user     = record.user
+      @host     = host
+      @protocol = protocol
     end
 
     # Returns the PDF bytes. When `attach: true` (default), also persists
@@ -97,6 +105,9 @@ module Election
 
     # ── Header ──────────────────────────────────────────────────────
     def render_header(pdf)
+      header_top = pdf.cursor
+
+      # Title (left).
       pdf.fill_color HAITI_BLUE
       pdf.font "Helvetica", style: :bold, size: 18
       pdf.text "BonID — Resi Enskripsyon Elektè"
@@ -104,13 +115,67 @@ module Election
       pdf.fill_color TEXT_MUTED
       pdf.font "Helvetica", size: 9
       pdf.text @election&.title.to_s
-      pdf.move_down 6
 
+      # CEP partner logo (right). Floats over the title row so the layout
+      # below stays untouched. Framed as "AN KOLABORASYON AK" so the
+      # receipt's issuer remains BonID and CEP is shown as the verified
+      # partner authority — never as the issuer.
+      render_cep_partner_mark(pdf, top_y: header_top)
+
+      pdf.move_down 6
       render_signature_badge(pdf)
 
       pdf.stroke_color BORDER_LIGHT
       pdf.stroke_horizontal_rule
       pdf.move_down 14
+    end
+
+    # Right-aligned CEP partner mark. Uses the real PNG logo when present
+    # at CEP_LOGO_PATH; otherwise renders a typographic placeholder so the
+    # partnership is communicated even before the official asset lands.
+    def render_cep_partner_mark(pdf, top_y:)
+      mark_w = 130
+      mark_x = pdf.bounds.width - mark_w
+
+      pdf.float do
+        # Tiny eyebrow label above the mark.
+        pdf.bounding_box([mark_x, top_y], width: mark_w, height: 10) do
+          pdf.fill_color TEXT_MUTED
+          pdf.font "Helvetica", size: 6.5
+          pdf.text "AN KOLABORASYON AK", align: :right, character_spacing: 1.2
+        end
+
+        logo_bytes = cep_logo_bytes
+        if logo_bytes.present?
+          # Real partner-uploaded logo, right-aligned, fit to mark height.
+          # Wrapped in a tempfile because Prawn's image reader needs a
+          # path or IO that supports rewind from the start.
+          Tempfile.open(["cep_logo_", logo_extension]) do |tmp|
+            tmp.binmode
+            tmp.write(logo_bytes)
+            tmp.rewind
+            pdf.image tmp.path,
+                      at: [mark_x, top_y - 12],
+                      width: mark_w,
+                      fit: [mark_w, 36]
+          end
+        else
+          # Typographic placeholder used only when the partner record or
+          # its logo is missing. Should never hit in production once the
+          # partner-portal upload is in place.
+          pdf.bounding_box([mark_x, top_y - 12], width: mark_w, height: 32) do
+            pdf.fill_color HAITI_BLUE
+            pdf.font "Helvetica", style: :bold, size: 16
+            pdf.text "CEP", align: :right
+            pdf.fill_color TEXT_MUTED
+            pdf.font "Helvetica", size: 7
+            pdf.text "Konsèy Elektoral Pwovizwa", align: :right
+            pdf.text "Patnè Verifye", align: :right
+          end
+        end
+      end
+
+      pdf.fill_color TEXT_DARK
     end
 
     # Signed-state indicator. Present = green "Siyen pa BonVote · Pwotokòl CEP"
@@ -150,8 +215,24 @@ module Election
 
       pdf.fill_color TEXT_MUTED
       pdf.font "Helvetica", size: 9
-      pdf.text "BonID: #{@record.bonid.presence || '—'}"
-      pdf.text "CIN:   #{@record.cin_number.presence || '—'}"
+      # BonID is masked to last 6 chars (matches `bonid_short` used in
+      # the QR payload). The full BonID encodes DOB year, sex, dept,
+      # and the last 4 of CIN — printing it on a paper a stranger could
+      # find leaks all of those. Last 6 is enough for the citizen to
+      # recognize their own ID and for CEP/tribunal cross-reference;
+      # the full BonID stays in the database.
+      #
+      # CIN intentionally omitted for the same reason — and because the
+      # masked BonID already reflects the last 4 of CIN.
+      pdf.text "BonID: #{masked_bonid}"
+
+      # Registration timestamp — same datum the citizen sees on the
+      # Eleksyon Mwen header. Important for tribunal disputes and for
+      # the citizen to know when the receipt became valid.
+      if @record.registered_at.present?
+        pdf.text "Enskri: #{I18n.l(@record.registered_at, format: '%d %B %Y, %H:%M')}"
+      end
+
       pdf.move_down 12
     end
 
@@ -175,6 +256,10 @@ module Election
     end
 
     # ── Polling station ─────────────────────────────────────────────
+    # Mirrors the Eleksyon Mwen "Biwo Vòt" card: BV# + center name, then
+    # the canonical Haitian multi-line address, then phone, then voting
+    # hours scoped to election day. Same data, same labels — print parity
+    # with the digital view so the citizen recognizes one as the other.
     def render_polling_block(pdf)
       pdf.fill_color TEXT_DARK
       pdf.font "Helvetica", style: :bold, size: 11
@@ -184,14 +269,47 @@ module Election
       if @record.polling_station.present?
         station = @record.polling_station
         center  = station.polling_center
+
         pdf.fill_color TEXT_DARK
         pdf.font "Helvetica", size: 10
         pdf.text "BV ##{station.bv_number} — #{center&.name}"
 
-        if center&.formatted_address.present?
+        # Address — prefer the multi-line Haitian format
+        # (formatted_haiti_display), fall back to single-line.
+        address_lines = if center&.respond_to?(:formatted_haiti_display) && center.formatted_haiti_display.present?
+                          center.formatted_haiti_display.split("\n")
+                        elsif center&.formatted_address.present?
+                          [center.formatted_address]
+                        else
+                          []
+                        end
+
+        unless address_lines.empty?
+          pdf.move_down 2
           pdf.fill_color TEXT_MUTED
           pdf.font "Helvetica", size: 9
-          pdf.text center.formatted_address
+          address_lines.each { |line| pdf.text line }
+        end
+
+        # Phone — tappable on the digital view; printed for paper.
+        if center&.contact_phone.present?
+          pdf.move_down 2
+          pdf.fill_color TEXT_MUTED
+          pdf.font "Helvetica", size: 9
+          pdf.text "Telefòn: #{center.contact_phone}"
+        end
+
+        # Voting hours — strip any redundant "Jou eleksyon" prefix from
+        # the stored value (the label below already says it), then add
+        # the scope sub-line for clarity.
+        if center&.contact_hours.present?
+          hours = center.contact_hours.to_s.sub(/\A\s*Jou\s+eleksyon(?:\s+an)?\s*[:\-–—]?\s*/i, "").strip
+          hours = center.contact_hours if hours.blank?
+
+          pdf.move_down 2
+          pdf.fill_color TEXT_MUTED
+          pdf.font "Helvetica", size: 9
+          pdf.text "Orè vòt: #{hours}  (jou eleksyon sèlman)"
         end
       else
         pdf.fill_color TEXT_MUTED
@@ -203,8 +321,7 @@ module Election
 
     # ── QR block (right-aligned) ────────────────────────────────────
     def render_qr_block(pdf)
-      payload_json = @record.receipt_qr_payload.to_json
-      qr = RQRCode::QRCode.new(payload_json, level: :m)
+      qr  = RQRCode::QRCode.new(@record.receipt_qr_url(host: @host, protocol: @protocol), level: :m)
       png = qr.as_png(size: 220, border_modules: 2)
 
       y = pdf.cursor
@@ -227,6 +344,43 @@ module Election
       end
 
       pdf.move_down 8
+    end
+
+    # ── Identity-display helpers ────────────────────────────────────
+    # Masks the BonID to the last 6 chars (dashes stripped). Matches
+    # the same scheme used in `VoterEligibilityRecord#bonid_short` so
+    # the printed receipt and the QR payload reference the same suffix.
+    # Format: "•••• •••• 697C56".
+    def masked_bonid
+      raw = @record.bonid.to_s
+      return "—" if raw.blank?
+
+      tail = raw.tr("-", "").last(6)
+      "•••• •••• #{tail}"
+    end
+
+    # ── Partner-logo helpers ────────────────────────────────────────
+    # Resolves the CEP partner record (cached per render). Returns nil if
+    # the partner row is missing or its logo isn't attached — the header
+    # falls back to the typographic placeholder in that case.
+    def cep_partner
+      return @cep_partner if defined?(@cep_partner)
+      @cep_partner = Partner.find_by(slug: CEP_PARTNER_SLUG)
+    end
+
+    def cep_logo_bytes
+      return @cep_logo_bytes if defined?(@cep_logo_bytes)
+      @cep_logo_bytes = if cep_partner&.logo&.attached?
+                          cep_partner.logo.download
+                        end
+    rescue => e
+      Rails.logger.warn("[VoterReceiptPdfService] CEP logo fetch failed: #{e.message}")
+      @cep_logo_bytes = nil
+    end
+
+    def logo_extension
+      ext = cep_partner&.logo&.filename&.extension.to_s
+      ext.present? ? ".#{ext}" : ".png"
     end
 
     # ── Footer ──────────────────────────────────────────────────────
