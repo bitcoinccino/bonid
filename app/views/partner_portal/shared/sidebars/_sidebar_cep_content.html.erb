@@ -31,39 +31,6 @@
       <% end %>
     </li>
 
-    <%# Sèvis (Service Builder) %>
-    <li class="nav-item">
-      <%= link_to partner_portal_services_path,
-                  class: "nav-link #{'active' if request.path.include?('services')}" do %>
-        <i class="ri-service-line"></i>
-        <span>Sèvis</span>
-      <% end %>
-    </li>
-
-    <li class="nav-item">
-      <%= link_to partner_portal_scans_path,
-                  class: "nav-link #{'active' if request.path.include?('scans')}" do %>
-        <i class="ri-qr-scan-2-line"></i>
-        <span>Scan BonID</span>
-      <% end %>
-    </li>
-
-    <li class="nav-item">
-      <%= link_to partner_portal_voter_eligibility_path,
-                  class: "nav-link #{'active' if request.path.include?('voter_eligibility')}" do %>
-        <i class="ri-user-search-line"></i>
-        <span>Chèche Votè</span>
-      <% end %>
-    </li>
-
-    <li class="nav-item">
-      <%= link_to partner_portal_verifications_path,
-                  class: "nav-link #{'active' if request.path.include?('verifications')}" do %>
-        <i class="ri-shield-check-line"></i>
-        <span>Verifikasyon</span>
-      <% end %>
-    </li>
-
     <li class="nav-item">
       <%= link_to partner_portal_team_index_path,
                   class: "nav-link #{'active' if request.path.include?('team')}" do %>
@@ -159,6 +126,21 @@
       <% end %>
     </li>
 
+    <%# Electoral Offices (BED / BEK) — CEP's permanent field offices.
+        Distinct from Sant Vòt (election-day venues): BED/BEK are year-round
+        and where citizens go for registration help, dispute filing, etc. %>
+    <li class="nav-item">
+      <%= link_to partner_portal_electoral_offices_path,
+                  class: "nav-link #{'active' if request.path.include?('electoral_offices')}" do %>
+        <i class="ri-building-line"></i>
+        <span>Biwo Elektoral</span>
+        <% bek_count = ElectoralOffice.count rescue 0 %>
+        <% if bek_count > 0 %>
+          <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.6rem;"><%= bek_count %></span>
+        <% end %>
+      <% end %>
+    </li>
+
     <%# Polling Centers (Sant Vòt) — venues + BVs %>
     <li class="nav-item">
       <%= link_to partner_portal_polling_centers_path,
@@ -168,6 +150,22 @@
         <% center_count = cep_election ? PollingCenter.where(bonvote_election: cep_election).count : 0 %>
         <% if center_count > 0 %>
           <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.6rem;"><%= number_with_delimiter(center_count) %></span>
+        <% end %>
+      <% end %>
+    </li>
+
+    <%# Diplomatic Missions (Misyon Diplomatik) — per-election diaspora
+        embassies/consulates. Static mission registry lives in the
+        HaitianDiplomaticMissions concern; what's editable here is the
+        per-election ElectionMissionParticipation row layered on top. %>
+    <li class="nav-item">
+      <%= link_to partner_portal_diplomatic_missions_path,
+                  class: "nav-link #{'active' if request.path.include?('diplomatic_missions')}" do %>
+        <i class="ri-global-line"></i>
+        <span>Misyon Diplomatik</span>
+        <% mission_active = cep_election ? ElectionMissionParticipation.for_election(cep_election.id).active.count : 0 %>
+        <% if mission_active > 0 %>
+          <span class="badge bg-primary rounded-pill ms-auto" style="font-size: 0.6rem;"><%= mission_active %></span>
         <% end %>
       <% end %>
     </li>

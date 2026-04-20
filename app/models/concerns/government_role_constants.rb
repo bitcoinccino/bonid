@@ -68,22 +68,8 @@ module GovernmentRoleConstants
       { key: "bank_supervisor", label: "Sipèvizè Bank",    description: "Sipèvize operasyon kesye ak ajan, make anomali" }
     ],
     "cep" => [
-      # ── Administrasyon CEP ──
-      { key: "cep_council_member",  label: "Manm Konsèy CEP",       description: "Manm nan konsèy 9 moun ki pran desizyon wo nivo", requirement: "verified_bonid + presidential_appointment", tier: :strategic },
-      { key: "partner_admin",       label: "Administratè",           description: "Jere sistèm elektoral, kle API, envite ekip", requirement: "verified_bonid + employee_id", tier: :strategic },
-
-      # ── Fòmasyon & Sipèvizyon ──
-      { key: "cep_trainer",         label: "Formatè Elektoral",      description: "Fòme sipèvizè ak anplwaye biwo vòt, distribye materyèl", requirement: "verified_bonid + trainer_certification", tier: :supervisor },
-      { key: "cep_supervisor",      label: "Sipèvizè Elektoral",     description: "Sipèvize sant vòt ak estrikti BED/BEC", requirement: "verified_bonid + cep_badge", tier: :supervisor },
-
-      # ── Operasyon Teren ──
-      { key: "partner_agent",       label: "Ajan Enskripsyon",       description: "Enskri elektè, verifye idantite nan BEC", requirement: "verified_bonid + cep_badge", tier: :field },
-      { key: "cep_station_staff",   label: "Anplwaye Biwo Vòt",      description: "Jere biwo vòt, verifye idantite elektè, konte bilten", requirement: "verified_bonid + station_assignment", tier: :field },
-
-      # ── Obsèvasyon & Kontestasyon ──
-      { key: "cep_mandataire",      label: "Mandatè Pati Politik",   description: "Reprezantan pati politik ki obsève vòt ak kontaj", requirement: "verified_bonid + party_accreditation", tier: :observer },
-      { key: "cep_observer",        label: "Obsèvatè Elektoral",     description: "Obsèvatè nasyonal oswa entènasyonal (OEA/ONU)", requirement: "verified_bonid + observer_accreditation", tier: :observer },
-      { key: "cep_dispute_officer", label: "Ofisye BCEN",            description: "Rezoud kontestasyon elektoral nan Biwo Kontestasyon", requirement: "verified_bonid + legal_certification", tier: :strategic }
+      { key: "partner_admin", label: "Administratè",     description: "Jere sistèm elektoral, kle API, envite ekip", requirement: "verified_bonid + employee_id", tier: :strategic },
+      { key: "partner_agent", label: "Ajan Enskripsyon", description: "Enskri elektè, verifye idantite nan BEC",      requirement: "verified_bonid + cep_badge",   tier: :field }
     ]
   }.freeze
 
