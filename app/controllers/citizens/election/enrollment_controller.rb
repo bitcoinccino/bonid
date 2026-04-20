@@ -48,7 +48,11 @@ module Citizens
           # citizen lands on the :registered state. Silent failure here is
           # fine — the ReceiptController regenerates on demand.
           begin
-            Election::VoterReceiptPdfService.call(@record)
+            Election::VoterReceiptPdfService.call(
+              @record,
+              host:     request.host_with_port,
+              protocol: request.protocol.sub("://", "")
+            )
           rescue StandardError => e
             Rails.logger.warn "[Enrollment] Receipt PDF generation failed: #{e.class}: #{e.message}"
           end
@@ -62,7 +66,7 @@ module Citizens
         end
       rescue VoterEligibilityRecord::DigitalEnrollmentNotAllowedError => e
         redirect_to citizens_election_offices_path,
-                    alert: "#{e.message} Ale nan yon BED oswa BEK pou enskri."
+                    alert: "#{e.message} Ale nan yon biwo BonID pou enskri an pèsòn."
       rescue ActiveRecord::RecordInvalid => e
         redirect_to citizens_election_enrollment_path,
                     alert: "Erè pandan enskripsyon: #{e.message}"

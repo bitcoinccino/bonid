@@ -21,6 +21,7 @@ module Citizens
     class VoteController < BaseController
       before_action :require_verified_bonid!
       before_action :require_active_election!, only: [:begin, :ballot, :cast]
+      before_action :require_online_voting_enabled!, only: [:begin, :ballot, :cast]
       before_action :enable_immersive_form, only: [:ballot, :cast, :receipt]
 
       # ── Step 0: Oath of Voting Integrity ───────────────────────
@@ -405,12 +406,50 @@ module Citizens
 
         @election = BonvoteElection.find_by(id: @receipt["election_id"])
         @verify_url = "#{request.base_url}/election/verify?hash=#{@receipt['ballot_hash']}"
+
+        # Surface the oath signature on the receipt — turns the invisible
+        # legal artifact into visible UX trust without prompting any new
+        # signing moment.
+        @oath = if @election
+                  VoterOathAcknowledgement.find_by(
+                    user: current_citizen,
+                    bonvote_election: @election,
+                    oath_version: VoterOathAcknowledgement::CURRENT_VERSION
+                  )
+                end
       end
 
       private
 
       def enable_immersive_form
         @immersive_form = true
+      end
+
+      # ── Online-voting gate ─────────────────────────────────────
+      # Refuses the begin/ballot/cast surface when either
+      #   (a) the election itself has `allows_online_voting = false`
+      #       (paper-only election — CEP policy decision), or
+      #   (b) the citizen's VoterEligibilityRecord explicitly opted
+      #       `preferred_channel = "in_person"` at enrollment.
+      # In both cases we send them back to Eleksyon Mwen so they can
+      # either update their preference or go to their assigned BV.
+      def require_online_voting_enabled!
+        election = active_election
+        return unless election
+
+        unless election.allows_online_voting?
+          redirect_to citizens_election_enrollment_path,
+                      alert: "Eleksyon sa a se vote an pèsòn sèlman. Ale nan biwo vòt ou a."
+          return
+        end
+
+        voter_record = VoterEligibilityRecord.check_eligibility(
+          election: election, bonid: current_citizen.bonid
+        )
+        return unless voter_record&.preferred_channel == "in_person"
+
+        redirect_to citizens_election_enrollment_path,
+                    alert: "Ou te chwazi vote an pèsòn. Ale nan biwo vòt ou a oswa chanje preferans ou."
       end
 
       # ── Oath ───────────────────────────────────────────────────

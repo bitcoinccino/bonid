@@ -1571,6 +1571,120 @@ $el-gold:        #EDB95E;
   to { transform: rotate(360deg); }
 }
 
+/* ── Paper-receipt upsell + confirmed states (registered card) ──
+   Surfaces the paper-receipt uploader to citizens who DO have a digital/
+   clerk record but haven't uploaded their CEP slip yet. Once uploaded,
+   collapses to a quiet green confirmation strip. */
+.paper-receipt-upsell {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1.1rem;
+  background: linear-gradient(90deg, #FFF7ED, #FEF3C7);
+  border: 1px solid #FDE68A;
+  border-radius: 0.85rem;
+
+  &__icon {
+    flex-shrink: 0;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 999px;
+    background: #FEF3C7;
+    color: #B45309;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+
+  &__body { flex: 1 1 auto; min-width: 0; }
+
+  &__title {
+    font-weight: 700;
+    color: #78350F;
+    font-size: 0.92rem;
+  }
+
+  &__desc {
+    font-size: 0.78rem;
+    color: #92400E;
+    line-height: 1.35;
+  }
+
+  &__btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    background: #00209F;
+    color: #fff;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: background 0.15s ease;
+
+    &:hover { background: #001570; color: #fff; }
+    i { font-size: 1rem; }
+  }
+
+  @media (max-width: 575.98px) {
+    flex-wrap: wrap;
+    &__btn { width: 100%; justify-content: center; }
+  }
+}
+
+.paper-receipt-confirmed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 0.75rem;
+  color: #166534;
+  font-size: 0.85rem;
+
+  i { color: #16A34A; font-size: 1.1rem; flex-shrink: 0; }
+  strong { color: #14532D; font-weight: 700; }
+}
+
+/* ── Paper-receipt companion CTA (under "in-person only" card) ──
+   Quiet ghost link that lets a citizen who already went to a BED/BEK
+   upload their receipt without competing with the primary "find an
+   office" CTA above it. */
+.enroll-paper-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed #E2E8F0;
+  font-size: 0.8rem;
+  color: #475569;
+
+  &__lead { font-weight: 500; }
+
+  &__link {
+    display: inline-flex;
+    align-items: center;
+    color: #00209F;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.15s ease;
+
+    &:hover {
+      border-bottom-color: #00209F;
+    }
+
+    i { font-size: 1rem; }
+  }
+}
+
 /* ── Success reveal overlay (one-shot after POST) ──────── */
 body.enroll-success-active { overflow: hidden; }
 
@@ -1649,4 +1763,441 @@ body.enroll-success-active { overflow: hidden; }
 @keyframes enroll-fade-up {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+// =============================================================================
+// Eleksyon Mwen — registered state redesign
+// Modular cards, stronger typographic hierarchy, generous whitespace.
+// Palette: navy (#00209F), soft blue (#EFF6FF / #DBEAFE), gold (#EDB95E / #F59E0B).
+// =============================================================================
+
+// ── 1. Unified Status Header ─────────────────────────────────────────
+.voter-status-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border: 1px solid #BFDBFE;
+  border-radius: 1rem;
+
+  &__icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    color: #16A34A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    box-shadow: 0 1px 3px rgba(0, 32, 159, 0.08);
+  }
+
+  &__body { flex: 1; min-width: 0; }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.2rem;
+  }
+
+  &__title {
+    margin: 0;
+    color: #0F172A;
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background: #FEF3C7;
+    color: #B45309;
+    border: 1px solid #FCD34D;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: help;
+
+    i { font-size: 0.85rem; }
+  }
+
+  &__sub {
+    margin: 0;
+    color: #475569;
+    font-size: 0.82rem;
+  }
+}
+
+// ── 2. High-Visibility Identification Card ──────────────────────────
+.voter-id-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 32, 159, 0.06);
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  &__label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748B;
+    font-weight: 700;
+  }
+
+  &__verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    background: #DCFCE7;
+    color: #15803D;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+
+    i { font-size: 0.85rem; }
+  }
+
+  &__value-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__value {
+    flex: 1;
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #00209F;
+    letter-spacing: -0.01em;
+    word-break: break-all;
+  }
+
+  &__copy {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #E2E8F0;
+    background: #F8FAFC;
+    color: #475569;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-size: 1rem;
+
+    &:hover { background: #EFF6FF; color: #00209F; border-color: #BFDBFE; }
+    &.is-copied { background: #DCFCE7; color: #15803D; border-color: #86EFAC; }
+    &.is-copied::before { content: "\f00c"; }
+  }
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #F1F5F9;
+    font-size: 0.78rem;
+    color: #64748B;
+
+    i { margin-right: 3px; }
+  }
+
+  &__channel {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.72rem;
+
+    &--online    { background: #DBEAFE; color: #1D4ED8; }
+    &--inperson  { background: #F1F5F9; color: #475569; }
+  }
+}
+
+// ── 3. Two-Column Information Grid ──────────────────────────────────
+.voter-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.voter-info-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.875rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    color: #00209F;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  &__head-icon { font-size: 1rem; color: #00209F; }
+
+  &__body {
+    padding: 0.85rem 1rem;
+    flex: 1;
+  }
+}
+
+.voter-info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+
+  & + .voter-info-row { border-top: 1px solid #F1F5F9; }
+
+  &__key {
+    color: #64748B;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  &__val {
+    color: #1E293B;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  &__sub {
+    font-size: 0.72rem;
+    color: #94A3B8;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  &__link {
+    color: #00209F;
+    text-decoration: none;
+    font-weight: 700;
+
+    &:hover { color: #0033CC; text-decoration: underline; }
+  }
+}
+
+.voter-info-bv {
+  text-align: center;
+  padding: 0.5rem 0 0.85rem;
+  border-bottom: 1px solid #F1F5F9;
+  margin-bottom: 0.5rem;
+
+  &__num {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #00209F;
+    letter-spacing: -0.01em;
+  }
+
+  &__center {
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+}
+
+.voter-info-pending {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.5rem 0.25rem;
+  color: #B45309;
+
+  i { font-size: 1.25rem; flex-shrink: 0; margin-top: 1px; }
+
+  &__title { font-weight: 700; font-size: 0.88rem; }
+  &__desc  { font-size: 0.78rem; color: #92400E; margin-top: 2px; }
+}
+
+.voter-info-warn {
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  background: #FEF3C7;
+  color: #92400E;
+  border-radius: 0.4rem;
+  font-size: 0.75rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-start;
+
+  i { flex-shrink: 0; margin-top: 2px; }
+}
+
+// ── 5. Security & Verification card ─────────────────────────────────
+.voter-verify-card {
+  background: #fff;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.875rem;
+  overflow: hidden;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1rem;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    color: #00209F;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    i { font-size: 1rem; color: #16A34A; }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: row;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    align-items: center;
+
+    @media (max-width: 576px) {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+
+  &__qr {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    background: #fff;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.5rem;
+
+    img {
+      display: block;
+      width: 130px;
+      height: 130px;
+    }
+  }
+
+  &__copy { flex: 1; min-width: 0; }
+
+  &__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 0.35rem;
+  }
+
+  &__desc {
+    font-size: 0.82rem;
+    color: #64748B;
+    margin: 0 0 0.75rem;
+    line-height: 1.55;
+  }
+
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.45rem 0.95rem;
+    background: #fff;
+    color: #16A34A;
+    border: 1.5px solid #86EFAC;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+
+    &:hover {
+      background: #DCFCE7;
+      color: #15803D;
+      border-color: #16A34A;
+    }
+  }
+}
+
+// ── 4. Interactive Action Bar ───────────────────────────────────────
+.voter-action-bar {
+  display: flex;
+  gap: 0.75rem;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+
+  &__btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.65rem;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    border: 1.5px solid transparent;
+
+    i { font-size: 1.1rem; }
+
+    &--primary {
+      background: #00209F;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0, 32, 159, 0.18);
+
+      &:hover {
+        background: #001A80;
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0, 32, 159, 0.25);
+      }
+    }
+
+    &--ghost {
+      background: transparent;
+      color: #00209F;
+      border-color: #BFDBFE;
+
+      &:hover {
+        background: #EFF6FF;
+        color: #00209F;
+        border-color: #00209F;
+      }
+    }
+  }
 }

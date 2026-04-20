@@ -80,6 +80,19 @@
                 <%= @receipt["receipt_id"].to_s[0..7].upcase %>
               </span>
             </div>
+
+            <%# Oath chain — shows the citizen the legal artifact that
+                preceded this ballot. Quiet line, not a CTA. %>
+            <% if @oath&.accepted_at.present? %>
+              <div class="receipt-oath-line">
+                <i class="ri-quill-pen-line"></i>
+                <span>
+                  Ou te siyen sèman vòt la
+                  <strong><%= l(@oath.accepted_at, format: "%d %b %Y, %H:%M") %></strong>
+                  <% if @election&.title.present? %>pou <strong><%= @election.title %></strong><% end %>.
+                </span>
+              </div>
+            <% end %>
           </div>
         </div>
       </div>
@@ -194,6 +207,32 @@
         }
         @media (prefers-reduced-motion: reduce) {
           .receipt-copy-btn { animation: none; }
+        }
+
+        /* Oath chain — quiet, footnote-tone confirmation that the
+           sworn-oath legal artifact exists for this ballot. */
+        .receipt-oath-line {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.45rem;
+          margin-top: 0.85rem;
+          padding-top: 0.75rem;
+          border-top: 1px dashed #E2E8F0;
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 0.74rem;
+          line-height: 1.4;
+          color: #475569;
+        }
+        .receipt-oath-line i {
+          color: #00209F;
+          font-size: 0.95rem;
+          line-height: 1.2;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+        .receipt-oath-line strong {
+          color: #1E293B;
+          font-weight: 600;
         }
 
         /* Toast */

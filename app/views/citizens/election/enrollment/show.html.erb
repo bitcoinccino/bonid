@@ -21,9 +21,12 @@
   <div class="row justify-content-center">
     <div class="col-lg-9">
 
-      <%# Site-wide CEP postponement banner — remove partial once CEP
-          announces the new registration dates. %>
-      <%= render "citizens/election/enrollment/postponement_banner" %>
+      <%# Site-wide CEP postponement banner — embedded into the unified
+          status header for the :registered state, so render standalone
+          only on other states. Remove partial once CEP announces dates. %>
+      <% unless @state == :registered %>
+        <%= render "citizens/election/enrollment/postponement_banner" %>
+      <% end %>
 
       <% case @state
          when :no_election %>
@@ -104,158 +107,248 @@
           </script>
         <% end %>
 
-        <div class="card election-card mb-3">
-          <div class="card-body p-4">
-            <div class="d-flex align-items-center mb-3">
-              <div class="election-icon-circle ms-0 me-3 mb-0" style="background: #DCFCE7; width: 48px; height: 48px;">
-                <i class="ri-checkbox-circle-fill" style="color: #16A34A; font-size: 1.2rem;"></i>
-              </div>
-              <div>
-                <h5 class="fw-bold mb-0">Ou anrejistre pou vote</h5>
-                <p class="text-muted mb-0 small">
-                  <% if @record.registered_by_partner_id.present? %>
-                    Anrejistre pa <%= @record.registered_by_partner&.name.presence || "CEP/Konsila" %>
-                  <% else %>
-                    Anrejistre anliy
-                  <% end %>
-                </p>
-              </div>
-            </div>
-
-            <%# Voter reference badge — bank-style presentation %>
-            <div class="p-3 mb-3"
-                 style="background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 0.75rem;">
-              <div class="text-muted small text-uppercase" style="letter-spacing: 0.05em;">
-                Nimewo Votè
-              </div>
-              <div class="fw-bold" style="font-family: 'SF Mono', Menlo, monospace; font-size: 1rem; color: #0F172A;">
-                <%= @record.voter_reference %>
-              </div>
-              <% if @record.registered_at.present? %>
-                <div class="small text-muted mt-1">
-                  <i class="ri-calendar-line me-1"></i>
-                  Enskri <%= l(@record.registered_at, format: :long) %>
-                </div>
+        <%# ── 1. Unified Status Header ─────────────────────────────────
+            Soft-blue background bundles the success state + CEP context
+            into one glanceable area. Postponement is a small orange
+            pill instead of a competing standalone banner. %>
+        <div class="voter-status-header mb-4">
+          <div class="voter-status-header__icon">
+            <i class="ri-checkbox-circle-fill"></i>
+          </div>
+          <div class="voter-status-header__body">
+            <div class="voter-status-header__title-row">
+              <h5 class="voter-status-header__title">Ou anrejistre pou vote</h5>
+              <% unless cookies[:cep_postponement_banner_dismissed] == "1" %>
+                <span class="voter-status-header__badge"
+                      title="Daprè kominike CEP 8 avril 2026">
+                  <i class="ri-megaphone-line"></i>
+                  Enskripsyon CEP ranpòte
+                </span>
               <% end %>
             </div>
-
-            <table class="table table-sm mb-0" style="font-size: 0.9rem;">
-              <tbody>
-                <tr>
-                  <td class="text-muted" style="width: 40%;">Depatman</td>
-                  <td class="fw-semibold">
-                    <%= geo[:department] %>
-                    <% if @record.diaspora? %>
-                      <span class="badge bg-info-subtle text-info ms-1">Dyaspora</span>
-                    <% end %>
-                  </td>
-                </tr>
-                <% if geo[:arrondissement].present? %>
-                  <tr>
-                    <td class="text-muted">Arondisman</td>
-                    <td class="fw-semibold"><%= geo[:arrondissement] %></td>
-                  </tr>
-                <% end %>
-                <% if geo[:commune].present? %>
-                  <tr>
-                    <td class="text-muted">Komin</td>
-                    <td class="fw-semibold"><%= geo[:commune] %></td>
-                  </tr>
-                <% end %>
-                <% if geo[:section].present? %>
-                  <tr>
-                    <td class="text-muted">Seksyon Komunal</td>
-                    <td class="fw-semibold"><%= geo[:section] %></td>
-                  </tr>
-                <% end %>
-                <% if @record.constituency_name.present? && @record.constituency_name != @record.department_code %>
-                  <tr>
-                    <td class="text-muted">Sikonskripsyon</td>
-                    <td class="fw-semibold"><%= @record.constituency_name %></td>
-                  </tr>
-                <% end %>
-
-                <% if @record.polling_station.present? %>
-                  <% station = @record.polling_station %>
-                  <% center  = station.polling_center %>
-                  <tr>
-                    <td colspan="2"
-                        class="pt-3 pb-2 text-uppercase small fw-semibold"
-                        style="letter-spacing: 0.06em; color: #475569; background: #F8FAFC; border-top: 1px solid #E2E8F0;">
-                      <i class="ri-map-pin-2-line me-1" style="color: #64748B;"></i>Biwo Vòt
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="text-muted">Nimewo BV</td>
-                    <td class="fw-semibold">BV #<%= station.bv_number %></td>
-                  </tr>
-                  <tr>
-                    <td class="text-muted">Sant Vòt</td>
-                    <td class="fw-semibold"><%= center.name %></td>
-                  </tr>
-                  <% if center.formatted_address.present? %>
-                    <tr>
-                      <td class="text-muted">Adrès Sant</td>
-                      <td><%= center.formatted_address %></td>
-                    </tr>
-                  <% end %>
-                  <% if center.contact_phone.present? %>
-                    <tr>
-                      <td class="text-muted">Telefòn Sant</td>
-                      <td>
-                        <%= link_to center.contact_phone, "tel:#{center.contact_phone}",
-                                    class: "fw-semibold text-decoration-none" %>
-                        <% if center.contact_hours.present? %>
-                          <div class="small text-muted"><%= center.contact_hours %></div>
-                        <% end %>
-                      </td>
-                    </tr>
-                  <% end %>
-                <% else %>
-                  <tr>
-                    <td class="text-muted">Biwo Vòt</td>
-                    <td class="text-warning">
-                      <i class="ri-time-line me-1"></i>Pa ko atribye
-                      <div class="small text-muted">CEP ap atribye biwo vòt ou byento.</div>
-                    </td>
-                  </tr>
-                <% end %>
-
-                <tr>
-                  <td class="text-muted">Kanal prefere</td>
-                  <td>
-                    <% if @record.preferred_channel == "online" %>
-                      <span class="badge bg-primary-subtle text-primary">Anliy</span>
-                    <% else %>
-                      <span class="badge bg-secondary-subtle text-secondary">An pèsòn</span>
-                    <% end %>
-                    <% if @record.preferred_channel == "online" && !@election.allows_online_voting %>
-                      <div class="small text-warning mt-1">
-                        <i class="ri-alert-line me-1"></i>
-                        Vòt anliy pa disponib pou eleksyon sa a. W ap bezwen ale an pèsòn.
-                      </div>
-                    <% end %>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <p class="voter-status-header__sub">
+              <% if @record.registered_by_partner_id.present? %>
+                Anrejistre pa <%= @record.registered_by_partner&.name.presence || "CEP/Konsila" %>
+              <% else %>
+                Anrejistre anliy
+              <% end %>
+              <% if @record.registered_at.present? %>
+                — <%= l(@record.registered_at, format: "%d %B %Y, %H:%M") %>
+              <% end %>
+            </p>
           </div>
         </div>
 
-        <%# Receipt actions — download or print the BonID-generated PDF with
-            QR code. Citizen brings this to their BV on election day; the
-            poll worker scans the QR to verify. %>
-        <div class="d-flex gap-2 mb-3 flex-wrap">
+        <%# ── 2. High-Visibility Identification Card ───────────────────
+            The voter reference is the most important data point — gets
+            its own white floating card with bold navy display + copy +
+            verified badge. %>
+        <div class="voter-id-card mb-4">
+          <div class="voter-id-card__header">
+            <span class="voter-id-card__label">Nimewo Votè</span>
+            <span class="voter-id-card__verified">
+              <i class="ri-verified-badge-fill"></i>Verifye
+            </span>
+          </div>
+          <div class="voter-id-card__value-row">
+            <div class="voter-id-card__value"><%= @record.voter_reference %></div>
+            <button type="button"
+                    class="voter-id-card__copy"
+                    data-copy="<%= @record.voter_reference %>"
+                    aria-label="Kopye nimewo a">
+              <i class="ri-file-copy-line"></i>
+            </button>
+          </div>
+          <div class="voter-id-card__meta">
+            <span><i class="ri-calendar-line"></i> <%= l(@record.registered_at, format: "%d %B %Y, %H:%M") if @record.registered_at %></span>
+            <% if @record.preferred_channel == "online" %>
+              <span class="voter-id-card__channel voter-id-card__channel--online">
+                <i class="ri-smartphone-line"></i> Anliy
+              </span>
+            <% else %>
+              <span class="voter-id-card__channel voter-id-card__channel--inperson">
+                <i class="ri-archive-drawer-line"></i> An pèsòn
+              </span>
+            <% end %>
+          </div>
+        </div>
+
+        <%# ── 3. Two-Column Information Grid ───────────────────────────
+            Location card + Voting Center card side-by-side on desktop,
+            stacked on mobile. Easier to scan than one long table. %>
+        <div class="voter-info-grid mb-4">
+
+          <%# ── Location card ── %>
+          <div class="voter-info-card">
+            <div class="voter-info-card__head">
+              <i class="ri-map-pin-2-line voter-info-card__head-icon"></i>
+              <span>Lokasyon</span>
+              <% if @record.diaspora? %>
+                <span class="badge bg-info-subtle text-info ms-auto">Dyaspora</span>
+              <% end %>
+            </div>
+            <div class="voter-info-card__body">
+              <div class="voter-info-row">
+                <span class="voter-info-row__key">Depatman</span>
+                <span class="voter-info-row__val"><%= geo[:department] %></span>
+              </div>
+              <% if geo[:arrondissement].present? %>
+                <div class="voter-info-row">
+                  <span class="voter-info-row__key">Arondisman</span>
+                  <span class="voter-info-row__val"><%= geo[:arrondissement] %></span>
+                </div>
+              <% end %>
+              <% if geo[:commune].present? %>
+                <div class="voter-info-row">
+                  <span class="voter-info-row__key">Komin</span>
+                  <span class="voter-info-row__val"><%= geo[:commune] %></span>
+                </div>
+              <% end %>
+              <% if geo[:section].present? %>
+                <div class="voter-info-row">
+                  <span class="voter-info-row__key">Seksyon Komunal</span>
+                  <span class="voter-info-row__val"><%= geo[:section] %></span>
+                </div>
+              <% end %>
+              <% if @record.constituency_name.present? && @record.constituency_name != @record.department_code %>
+                <div class="voter-info-row">
+                  <span class="voter-info-row__key">Sikonskripsyon</span>
+                  <span class="voter-info-row__val"><%= @record.constituency_name %></span>
+                </div>
+              <% end %>
+            </div>
+          </div>
+
+          <%# ── Voting Center card ── %>
+          <div class="voter-info-card">
+            <div class="voter-info-card__head">
+              <i class="ri-government-line voter-info-card__head-icon"></i>
+              <span>Biwo Vòt</span>
+            </div>
+            <div class="voter-info-card__body">
+              <% if @record.polling_station.present? %>
+                <% station = @record.polling_station %>
+                <% center  = station.polling_center %>
+                <div class="voter-info-bv">
+                  <div class="voter-info-bv__num">BV #<%= station.bv_number %></div>
+                  <div class="voter-info-bv__center"><%= center.name %></div>
+                </div>
+                <% if center.formatted_haiti_display.present? %>
+                  <div class="voter-info-row">
+                    <span class="voter-info-row__key">
+                      <i class="ri-map-pin-line me-1"></i>Adrès
+                    </span>
+                    <span class="voter-info-row__val">
+                      <%= simple_format(center.formatted_haiti_display, {}, wrapper_tag: "span") %>
+                    </span>
+                  </div>
+                <% end %>
+                <% if center.contact_phone.present? %>
+                  <div class="voter-info-row">
+                    <span class="voter-info-row__key">
+                      <i class="ri-phone-line me-1"></i>Telefòn
+                    </span>
+                    <span class="voter-info-row__val">
+                      <%= link_to center.contact_phone, "tel:#{center.contact_phone}",
+                                  class: "voter-info-row__link" %>
+                    </span>
+                  </div>
+                <% end %>
+                <% if center.contact_hours.present? %>
+                  <% hours_value = center.contact_hours.sub(/\A\s*Jou\s+eleksyon(?:\s+an)?\s*[:\-–—]?\s*/i, "").strip %>
+                  <div class="voter-info-row">
+                    <span class="voter-info-row__key">
+                      <i class="ri-time-line me-1"></i>Orè vòt
+                    </span>
+                    <span class="voter-info-row__val">
+                      <%= hours_value.presence || center.contact_hours %>
+                      <div class="voter-info-row__sub">Jou eleksyon sèlman</div>
+                    </span>
+                  </div>
+                <% end %>
+                <% if @record.preferred_channel == "online" && !@election.allows_online_voting %>
+                  <div class="voter-info-warn">
+                    <i class="ri-alert-line"></i>
+                    Vòt anliy pa disponib — w ap bezwen ale an pèsòn.
+                  </div>
+                <% end %>
+              <% else %>
+                <div class="voter-info-pending">
+                  <i class="ri-time-line"></i>
+                  <div>
+                    <div class="voter-info-pending__title">Pa ko atribye</div>
+                    <div class="voter-info-pending__desc">CEP ap atribye biwo vòt ou byento.</div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# ── 5. Security & Verification card ──────────────────────────
+            Dedicated container with light border so the QR feels official,
+            not like an afterthought. Encodes the verify-receipt URL. %>
+        <% verify_url = @record.receipt_qr_url(host: request.host_with_port, protocol: request.protocol.sub("://", "")) %>
+        <% qr_svg_b64 = QrCodeGenerator.generate_base64_svg(url: verify_url) %>
+        <div class="voter-verify-card mb-4">
+          <div class="voter-verify-card__head">
+            <i class="ri-shield-check-line"></i>
+            <span>Sekirite ak Verifikasyon</span>
+          </div>
+          <div class="voter-verify-card__body">
+            <div class="voter-verify-card__qr">
+              <img src="data:image/svg+xml;base64,<%= qr_svg_b64 %>"
+                   alt="Kòd QR Verifikasyon">
+            </div>
+            <div class="voter-verify-card__copy">
+              <div class="voter-verify-card__title">Resi sa a verifyab</div>
+              <p class="voter-verify-card__desc">
+                Eskane kòd la ak nenpòt telefòn pou konfime resi sa a otantik.
+                Nenpòt moun ka verifye li — fanmi w, jounalis, oswa obsèvatè.
+              </p>
+              <%= link_to election_verify_receipt_path(d: Base64.urlsafe_encode64(@record.receipt_qr_payload.to_json, padding: false)),
+                          class: "voter-verify-card__btn",
+                          target: "_blank", rel: "noopener" do %>
+                <i class="ri-external-link-line"></i> Tcheke kounye a
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%# ── 4. Interactive Action Bar ────────────────────────────────
+            Filled navy primary (Download) + outlined ghost (Print) so the
+            user knows which action is primary at a glance. %>
+        <div class="voter-action-bar mb-3">
           <%= link_to citizens_election_receipt_download_path(format: :pdf),
-                      class: "btn btn-outline-primary flex-fill" do %>
-            <i class="ri-download-2-line me-1"></i>Telechaje Resi
+                      class: "voter-action-bar__btn voter-action-bar__btn--primary" do %>
+            <i class="ri-download-2-line"></i>
+            <span>Telechaje Resi</span>
           <% end %>
           <%= link_to citizens_election_receipt_print_path(format: :pdf),
-                      class: "btn btn-outline-secondary flex-fill",
+                      class: "voter-action-bar__btn voter-action-bar__btn--ghost",
                       target: "_blank", rel: "noopener" do %>
-            <i class="ri-printer-line me-1"></i>Enprime Resi
+            <i class="ri-printer-line"></i>
+            <span>Enprime Resi</span>
           <% end %>
         </div>
+
+        <%# Lightweight copy-to-clipboard for the voter reference. %>
+        <script>
+          (function() {
+            document.querySelectorAll('.voter-id-card__copy').forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                const val = btn.getAttribute('data-copy');
+                if (!val) return;
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(val).then(function() {
+                    btn.classList.add('is-copied');
+                    setTimeout(function(){ btn.classList.remove('is-copied'); }, 1500);
+                  });
+                }
+              });
+            });
+          })();
+        </script>
 
         <%# Voting-day CTA — honors the citizen's declared channel preference.
             Someone who enrolled as in-person must go to their assigned BV;
@@ -307,20 +400,19 @@
         %>
 
         <% unless digital_enroll_ok %>
-          <%# Self-service is off — CEP-authorized channel only. Point
-              the citizen at the locator instead of a broken CTA. %>
+          <%# Admin temporarily paused self-service for this election.
+              Send citizens to the BonID in-person locator instead. %>
           <div class="card election-card mb-3">
             <div class="card-body p-4 text-center">
               <div class="election-icon-circle" style="background: #DBEAFE;">
                 <i class="ri-map-pin-line" style="color: #1D4ED8;"></i>
               </div>
-              <h5 class="fw-bold mb-2">Enskripsyon an pèsòn sèlman</h5>
+              <h5 class="fw-bold mb-2">Enskripsyon anliy pa disponib pou moman an</h5>
               <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                Pou moman an, enskripsyon elektoral la fèt sèlman an pèsòn nan biwo CEP yo.
-                BonID ap pre-veri idantite w pou w gen yon enskripsyon pi rapid.
+                Pou eleksyon sa a, ale nan yon biwo BonID pou yo enskri w an pèsòn.
               </p>
-              <%= link_to citizens_election_offices_path, class: "election-btn-primary" do %>
-                <i class="ri-map-pin-line me-1"></i>Jwenn BED / BEK mwen
+              <%= link_to citizens_election_offices_path, class: "election-btn-primary mb-2" do %>
+                <i class="ri-map-pin-line me-1"></i>Jwenn biwo ki pi pre m
               <% end %>
             </div>
           </div>
