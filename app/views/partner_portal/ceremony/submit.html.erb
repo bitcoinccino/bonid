@@ -1,0 +1,218 @@
+<%# Partner Portal — Ceremony-day shard submission (CEP council member).
+    Dual-path: paste X25519 private key (envelope) OR paste QR JSON.
+    Server resolves cleartext, NEVER displays it back, forwards to
+    MultiSigService.add_signature. %>
+
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h4 class="pp-page-title">
+            <i class="ri-key-2-line me-2 pp-text-brand"></i>
+            Soumèt Shard ou — <%= @election.title %>
+          </h4>
+          <p class="pp-page-subtitle">
+            Chak manm konsèy CEP soumèt shard yo isit la jou seremoni an.
+            Sistèm bezwen <strong><%= ::Election::MultiSigService::QUORUM_REQUIRED %> sou
+            <%= ::Election::MultiSigService::TOTAL_SIGNATORIES %></strong> manm.
+          </p>
+        </div>
+        <%= link_to partner_portal_election_ceremony_path(@election),
+                    class: "btn btn-outline-secondary" do %>
+          <i class="ri-arrow-left-line"></i> Retounen
+        <% end %>
+      </div>
+
+      <%# ── Quorum progress ─────────────────────────────────── %>
+      <div class="card mb-4">
+        <div class="card-body text-center">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+               style="width: 96px; height: 96px; border: 4px solid <%= @sig_status[:met] ? '#198754' : '#ffc107' %>;">
+            <div>
+              <div class="fw-bold" style="font-size: 1.6rem; color: <%= @sig_status[:met] ? '#198754' : '#ffc107' %>;">
+                <%= @sig_status[:total] %>/<%= @sig_status[:required] %>
+              </div>
+              <div class="small text-muted text-uppercase">Siyati</div>
+            </div>
+          </div>
+          <% if @sig_status[:met] %>
+            <p class="mb-0 fw-semibold text-success">
+              <i class="ri-check-double-line"></i> Kowòm deja atenn — rezilta yo dechifre.
+            </p>
+          <% else %>
+            <p class="mb-0 text-muted">
+              Rete <strong><%= @sig_status[:remaining] %></strong> siyati pou kowòm.
+            </p>
+          <% end %>
+        </div>
+      </div>
+
+      <% unless @sig_status[:met] %>
+        <%# ── Submission form ─────────────────────────────────── %>
+        <%= form_with url: partner_portal_submit_election_ceremony_path(@election),
+                      method: :post, local: true, class: "card" do |f| %>
+          <div class="card-header bg-light">
+            <strong>Verifikasyon manm konsèy</strong>
+          </div>
+          <div class="card-body">
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Wòl ou nan konsèy CEP</label>
+                <select name="role" required class="form-select">
+                  <option value="">— Chwazi wòl ou —</option>
+                  <% @available_roles.each do |role| %>
+                    <option value="<%= role %>"><%= ::Election::MultiSigService.role_label(role) %></option>
+                  <% end %>
+                </select>
+                <% if @available_roles.empty? %>
+                  <div class="form-text text-success">Tout siyatè yo deja siyen.</div>
+                <% end %>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">BonID ou</label>
+                <input type="text" name="bonid" required class="form-control font-monospace"
+                       placeholder="DV-1989-M-SE-P8697XDS">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label fw-semibold">Non konplè</label>
+                <input type="text" name="name" required class="form-control"
+                       placeholder="Non konsa li parèt sou pyès idantite ou">
+              </div>
+            </div>
+
+            <hr class="my-4">
+
+            <%# ── Two-tab input switcher ──────────────────────── %>
+            <ul class="nav nav-tabs mb-3" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-envelope"
+                        type="button" role="tab">
+                  <i class="ri-mail-lock-line"></i> Anvlòp (kle prive)
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-qr"
+                        type="button" role="tab">
+                  <i class="ri-qr-code-line"></i> QR Backup
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content">
+              <%# Tab A — envelope (X25519 private key) %>
+              <div class="tab-pane fade show active" id="tab-envelope" role="tabpanel">
+                <p class="small text-muted mb-2">
+                  Kole kle prive a soti nan anvlòp papye ou (chèn karaktè base64
+                  ki kòmanse ak <code>MC4CAQ...</code>).
+                </p>
+                <textarea name="private_key_b64" rows="3"
+                          class="form-control font-monospace small"
+                          placeholder="MC4CAQAwBQYDK2VuBCIEIB..."
+                          data-mode-input="envelope"></textarea>
+                <div class="form-text">
+                  Sèvè a ap dechifre shard la lokalman e voye yon "match check" ak
+                  hash la avan li aksepte siyati a.
+                </div>
+              </div>
+
+              <%# Tab B — QR JSON %>
+              <div class="tab-pane fade" id="tab-qr" role="tabpanel">
+                <p class="small text-muted mb-2">
+                  Si w pa ka tape kle prive a, eskan QR backup la (ak yon aplikasyon
+                  eskanè), epi kole done JSON yo isit la.
+                </p>
+                <textarea name="qr_json" rows="6"
+                          class="form-control font-monospace small"
+                          placeholder='{"v":1,"iss":"bonvote.ht","typ":"ShardBackup",...}'
+                          data-mode-input="qr"></textarea>
+                <div class="form-text">
+                  Sèvè a ap verifye siyati Ed25519 la avan li aksepte payload la.
+                </div>
+              </div>
+            </div>
+
+            <%# Hidden field — set by JS based on which tab is active.
+                Default to "envelope" since that tab opens active. %>
+            <input type="hidden" name="mode" id="ceremony-mode-input" value="envelope">
+
+            <hr class="my-4">
+
+            <%# Liveness — re-uses existing pattern. Operator confirms
+                this council member passed liveness right before they sit
+                down. In a future iteration this becomes a modal. %>
+            <div class="alert alert-warning d-flex align-items-start mb-0">
+              <i class="ri-fingerprint-line fs-4 me-2"></i>
+              <div class="flex-grow-1">
+                <strong>Verifikasyon byometrik (liveness)</strong>
+                <p class="mb-2 small">
+                  Anvan ou klike "Soumèt", konsèy facilitatè a dwe verifye ou
+                  pase tès liveness la. Antre ID sesyon liveness ou nan ti box
+                  anba a (oswa make checkbox la si w nan mòd "operator-confirmed").
+                </p>
+                <input type="text" name="liveness_session_id" class="form-control form-control-sm mb-2"
+                       placeholder="Liveness session ID (UUID)">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="liveness_verified"
+                         value="1" id="lv-confirm">
+                  <label class="form-check-label small" for="lv-confirm">
+                    Operator konfime liveness pase manyèlman
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer text-end">
+            <button class="btn btn-primary btn-lg" type="submit">
+              <i class="ri-shield-keyhole-line"></i> Soumèt Siyati
+            </button>
+          </div>
+        <% end %>
+
+        <script>
+          // Keep the hidden `mode` field in sync with the active tab so
+          // the controller knows which input column to read.
+          document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (btn) {
+            btn.addEventListener('shown.bs.tab', function (e) {
+              var target = e.target.getAttribute('data-bs-target');
+              var modeInput = document.getElementById('ceremony-mode-input');
+              if (modeInput) {
+                modeInput.value = target === '#tab-qr' ? 'qr' : 'envelope';
+              }
+            });
+          });
+        </script>
+      <% end %>
+
+      <%# ── Already signed list ───────────────────────────── %>
+      <% if @sig_status[:signatories].any? %>
+        <div class="card mt-4">
+          <div class="card-header"><strong>Siyatè ki deja siyen</strong></div>
+          <ul class="list-group list-group-flush">
+            <% @sig_status[:signatories].each do |s| %>
+              <li class="list-group-item d-flex align-items-center">
+                <i class="ri-check-line text-success me-2 fs-5"></i>
+                <div class="flex-grow-1">
+                  <div class="fw-semibold"><%= s[:role_label] || ::Election::MultiSigService.role_label(s[:role]) %></div>
+                  <div class="small text-muted">
+                    <%= s[:name] %> &middot;
+                    <%= Time.parse(s[:signed_at]).strftime("%H:%M:%S") rescue s[:signed_at] %>
+                  </div>
+                </div>
+                <% if s[:liveness_verified] %>
+                  <span class="badge bg-success-subtle text-success">
+                    <i class="ri-user-smile-line"></i> Liveness OK
+                  </span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

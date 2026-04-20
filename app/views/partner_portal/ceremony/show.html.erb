@@ -25,9 +25,20 @@
 
   <% if @generated %>
     <div class="card border-success mb-4">
-      <div class="card-header bg-success text-white d-flex align-items-center">
-        <i class="ri-check-double-line me-2"></i>
-        <strong>Kle dechifraj la deja jenere</strong>
+      <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
+        <div>
+          <i class="ri-check-double-line me-2"></i>
+          <strong>Kle dechifraj la deja jenere</strong>
+        </div>
+        <%= link_to partner_portal_election_ceremony_submit_path(@election),
+                    class: "btn btn-light btn-sm" do %>
+          <i class="ri-key-2-line"></i> Soumèt yon shard
+          <% if @sig_status %>
+            <span class="badge bg-warning text-dark ms-1">
+              <%= @sig_status[:total] %>/<%= @sig_status[:required] %>
+            </span>
+          <% end %>
+        <% end %>
       </div>
       <div class="card-body">
         <dl class="row mb-0">
@@ -43,6 +54,18 @@
 
           <dt class="col-sm-3">Kantite kle (shards)</dt>
           <dd class="col-sm-9"><%= @shards.size %> / 9</dd>
+
+          <% if @sig_status %>
+            <dt class="col-sm-3">Pwogwè kowòm</dt>
+            <dd class="col-sm-9">
+              <%= @sig_status[:total] %> / <%= @sig_status[:required] %>
+              <% if @sig_status[:met] %>
+                <span class="badge bg-success ms-2">Atenn</span>
+              <% else %>
+                <span class="text-muted">— rete <%= @sig_status[:remaining] %></span>
+              <% end %>
+            </dd>
+          <% end %>
         </dl>
       </div>
     </div>
