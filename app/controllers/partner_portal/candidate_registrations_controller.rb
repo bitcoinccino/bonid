@@ -177,7 +177,7 @@ module PartnerPortal
         :party_registration_id, :candidacy_type, :date_of_birth, :place_of_birth,
         :sex, :marital_status, :profession, :nationality,
         :residence_department, :residence_commune, :residence_address,
-        :fee_reduced, :fee_reduction_reason,
+        :education_level, :fee_reduced, :fee_reduction_reason,
         :doc_birth_certificate, :doc_cin_oni, :doc_casier_judiciaire,
         :doc_dgi_receipt, :doc_property_proof, :doc_residence_attestation,
         :doc_immigration_cert, :doc_discharge, :doc_passport_photos,

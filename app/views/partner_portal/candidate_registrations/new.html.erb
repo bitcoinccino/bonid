@@ -361,19 +361,24 @@
                   <i class="ri-bank-card-line me-2 pp-text-brand"></i>Frè Enskripsyon
                 </h5>
 
-                <div class="form-check mb-2">
-                  <%= f.check_box :fee_reduced, class: "form-check-input" %>
-                  <%= f.label :fee_reduced, "Aplike pou rediksyon frè (kandida fanm / jèn)",
-                        class: "form-check-label pp-text-sm" %>
+                <%# Atik 185 Décret Électoral:
+                    – Fanm: egzante pa gen frè ("Les candidates ne paient pas de frais d'inscription")
+                    – Mastè: rediksyon 30%
+                    – Doktora: rediksyon 50%
+                    Egzanpsyon fanm an se otomatik dapre chan "Sèks" nan Etap 1. %>
+                <div class="alert alert-info small mb-3" role="note">
+                  <i class="ri-information-line me-1"></i>
+                  <strong>Atik 185:</strong> Kandida fanm yo pa peye frè enskripsyon.
+                  Kandida ak Mastè jwenn rediksyon 30%, ak Doktora rediksyon 50%.
                 </div>
 
                 <div class="mb-3">
-                  <%= f.label :fee_reduction_reason, "Rezon rediksyon (si aplike)", class: "form-label fw-semibold pp-text-sm" %>
-                  <%= f.select :fee_reduction_reason,
-                        [["Kandida fanm (Atik 17.1 Konstitisyon)", "woman"],
-                         ["Kandida jèn (35 ane oswa mwens)", "youth"],
-                         ["Lòt", "other"]],
-                        { prompt: "— Okenn —", include_blank: true },
+                  <%= f.label :education_level, "Nivo etid (pou rediksyon frè)",
+                        class: "form-label fw-semibold pp-text-sm" %>
+                  <%= f.select :education_level,
+                        [["Mastè (rediksyon 30%)", "masters"],
+                         ["Doktora (rediksyon 50%)", "doctorate"]],
+                        { prompt: "— Pa aplike —", include_blank: true },
                         class: "form-select" %>
                 </div>
 
@@ -586,7 +591,11 @@
       if (plat) {
         var stmt = textOf("platform_statement");
         var snippet = stmt.length > 140 ? stmt.slice(0, 140) + "…" : stmt;
-        plat.textContent = (checked("fee_reduced") ? "Frè redui · " : "") + (snippet || "Pa gen platfòm");
+        var feeTag = "";
+        if (textOf("sex") === "F") { feeTag = "Egzante (fanm) · "; }
+        else if (textOf("education_level") === "doctorate") { feeTag = "Frè -50% (doktora) · "; }
+        else if (textOf("education_level") === "masters")   { feeTag = "Frè -30% (mastè) · "; }
+        plat.textContent = feeTag + (snippet || "Pa gen platfòm");
       }
 
       var docs = document.getElementById("review-docs");
