@@ -1,0 +1,142 @@
+<%# Partner Portal — CEP Decryption Ceremony (status + generate). CEP-only.
+    Shows whether the 5-of-9 Shamir shards have been generated for this
+    election. If not, exposes the one-shot generation button. If yes,
+    surfaces fingerprint, generation date, and per-shard distribution
+    state. The printable distribution page is render-only on POST and
+    cannot be re-fetched. %>
+
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-shield-keyhole-line me-2 pp-text-brand"></i>
+        Seremoni Dechifraj — <%= @election.title %>
+      </h4>
+      <p class="pp-page-subtitle">
+        Jenerasyon 9 kle Shamir 5-of-9 pou konsèy CEP la. Chak manm
+        resevwa yon anvlòp en papye yon sèl fwa.
+      </p>
+    </div>
+    <%= link_to partner_portal_election_tablo_path(@election),
+                class: "btn btn-outline-secondary" do %>
+      <i class="ri-arrow-left-line"></i> Retounen nan tablo eleksyon an
+    <% end %>
+  </div>
+
+  <% if @generated %>
+    <div class="card border-success mb-4">
+      <div class="card-header bg-success text-white d-flex align-items-center">
+        <i class="ri-check-double-line me-2"></i>
+        <strong>Kle dechifraj la deja jenere</strong>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">Anprent kle mèt la</dt>
+          <dd class="col-sm-9 font-monospace">
+            <%= @election.decryption_key_fingerprint.to_s[0, 32] %>…
+          </dd>
+
+          <dt class="col-sm-3">Dat jenerasyon</dt>
+          <dd class="col-sm-9">
+            <%= l(@election.decryption_key_generated_at, format: :long) if @election.decryption_key_generated_at %>
+          </dd>
+
+          <dt class="col-sm-3">Kantite kle (shards)</dt>
+          <dd class="col-sm-9"><%= @shards.size %> / 9</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header"><strong>Distribisyon shard yo</strong></div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Wòl CEP</th>
+              <th>BonID asiyen</th>
+              <th>Distribiye</th>
+              <th>Itilize</th>
+              <th>Vèsyon anvlòp</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @shards.each do |s| %>
+              <tr>
+                <td><strong><%= s.role_label %></strong></td>
+                <td>
+                  <% if s.bonid.present? %>
+                    <span class="font-monospace"><%= s.bonid %></span>
+                  <% else %>
+                    <span class="text-muted">— pa asiyen —</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if s.distributed_at %>
+                    <span class="badge bg-success">Wi</span>
+                    <small class="text-muted ms-1"><%= l(s.distributed_at, format: :short) %></small>
+                  <% else %>
+                    <span class="badge bg-warning text-dark">Pa ko</span>
+                  <% end %>
+                </td>
+                <td>
+                  <% if s.used_at %>
+                    <span class="badge bg-primary">Itilize</span>
+                  <% else %>
+                    <span class="badge bg-light text-dark">—</span>
+                  <% end %>
+                </td>
+                <td><code><%= s.envelope_version %></code></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="alert alert-warning d-flex align-items-start">
+      <i class="ri-error-warning-line fs-4 me-2"></i>
+      <div>
+        <strong>Atansyon —</strong> Si w jenere ankò, tout anvlòp papye ki
+        deja distribiye yo p ap valab ankò. Se yon mezi pou
+        ka ijans sèlman.
+        <%= form_with url: partner_portal_generate_election_ceremony_path(@election),
+                      method: :post, class: "mt-3",
+                      data: { turbo_confirm: "Ou sèten? Tout anvlòp papye yo p ap valab ankò." } do %>
+          <%= hidden_field_tag :force, "true" %>
+          <button class="btn btn-outline-danger" type="submit">
+            <i class="ri-refresh-line"></i> Re-jenere kle yo (efase tout)
+          </button>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="card border-warning mb-4">
+      <div class="card-header bg-warning"><strong>Pa ko gen kle dechifraj</strong></div>
+      <div class="card-body">
+        <p>
+          Lè w klike sou bouton anba a, sistèm nan ap:
+        </p>
+        <ol>
+          <li>Jenere yon kle mèt 256-bit alazà</li>
+          <li>Divize li an <strong>9 shards</strong> (5-of-9 Shamir)</li>
+          <li>Eskele chak shard nan yon anvlòp X25519 + AES-256-GCM</li>
+          <li>Enprime yon paj distribisyon yon sèl fwa ak kle prive ak QR backup</li>
+        </ol>
+        <p class="mb-0 text-danger">
+          <i class="ri-alarm-warning-line"></i>
+          Kle prive yo ap parèt yon sèl fwa nan paj la. Apre ou kite paj
+          la, yo p ap janm ka rekipere ankò.
+        </p>
+      </div>
+      <div class="card-footer text-end">
+        <%= form_with url: partner_portal_generate_election_ceremony_path(@election),
+                      method: :post, class: "d-inline" do %>
+          <button class="btn btn-primary btn-lg" type="submit">
+            <i class="ri-key-2-line"></i> Jenere kle yo kounye a
+          </button>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

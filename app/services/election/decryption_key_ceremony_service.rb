@@ -43,6 +43,23 @@ module Election
       new(election).regenerate!
     end
 
+    # Sealed-envelope variant — preferred entrypoint for the production
+    # ceremony flow. Returns BOTH the persisted shard rows AND a
+    # one-time `printable` bundle the controller must render
+    # immediately and never persist:
+    #
+    #   { rows: [ElectionKeyShard, ...], printable: [
+    #       { role:, role_label:, recipient_private_key_b64:, qr_payload: },
+    #       ...
+    #     ] }
+    #
+    # The recipient private keys exist ONLY in this return value — they
+    # are never written to disk, the database, or logs. Caller is
+    # responsible for the print+seal step.
+    def self.generate_with_envelopes!(election)
+      new(election).generate_with_envelopes!
+    end
+
     def initialize(election)
       @election = election
     end
@@ -55,6 +72,14 @@ module Election
       _generate_and_persist!
     end
 
+    def generate_with_envelopes!
+      if election.election_key_shards.exists?
+        raise AlreadyGeneratedError,
+              "Eleksyon #{election.id} gen tan gen kle dechifraj — itilize regenerate!"
+      end
+      _generate_with_envelopes!
+    end
+
     def regenerate!
       ElectionKeyShard.transaction do
         election.election_key_shards.destroy_all
@@ -62,7 +87,85 @@ module Election
       end
     end
 
+    # Destroys existing shards and re-runs the sealed-envelope flow.
+    # Same one-time printable bundle is returned. Use sparingly — every
+    # regeneration invalidates every printed envelope already issued.
+    def regenerate_with_envelopes!
+      ElectionKeyShard.transaction do
+        election.election_key_shards.destroy_all
+        _generate_with_envelopes!
+      end
+    end
+
     private
+
+    def _generate_with_envelopes!
+      master = SecureRandom.hex(MASTER_KEY_BYTES)
+      shares = SecretSharing.split(master, THRESHOLD, TOTAL_SHARDS)
+
+      raise GenerationError, "Shamir split misyon: #{shares.size} pou #{TOTAL_SHARDS}" unless shares.size == TOTAL_SHARDS
+
+      master_fingerprint = OpenSSL::Digest::SHA256.hexdigest(master)
+      printable_bundle   = []
+
+      created = ElectionKeyShard.transaction do
+        rows = ElectionKeyShard::ROLES.zip(shares).map do |role, share|
+          # 1. Per-shard X25519 keypair. The PRIVATE half is destined
+          #    for the printed envelope and never persisted server-side.
+          keypair = ShardEnvelope.generate_recipient_keypair
+
+          # 2. Seal the cleartext share into the wire format using the
+          #    fresh public key. Wire embeds eph_pub + nonce + ct||tag.
+          wire = ShardEnvelope.seal(share, keypair[:public_key_b64])
+
+          # 3. Sign the QR-backup payload (cleartext share, integrity
+          #    only). The QR is paper-only; never email/upload it.
+          qr_payload = ShardQrSigner.sign(
+            election_id: election.id,
+            shard_role:  role,
+            shard_value: share
+          )
+
+          row = ElectionKeyShard.create!(
+            election:                election,
+            role:                    role,
+            shard_value_encrypted:   wire,
+            shard_hash:              OpenSSL::Digest::SHA256.hexdigest(share),
+            envelope_version:        ShardEnvelope::VERSION,
+            recipient_public_key_b64: keypair[:public_key_b64],
+            threshold:               THRESHOLD,
+            total_shards:            TOTAL_SHARDS
+          )
+
+          printable_bundle << {
+            role:                      role,
+            role_label:                ElectionSignature.role_label(role),
+            recipient_private_key_b64: keypair[:private_key_b64],
+            qr_payload:                qr_payload,
+            shard_id:                  row.id
+          }
+
+          row
+        end
+
+        election.update!(
+          decryption_key_fingerprint:  master_fingerprint,
+          decryption_key_generated_at: Time.current
+        )
+
+        rows
+      end
+
+      Rails.logger.info(
+        "[DecryptionKeyCeremony] Sealed #{created.size} shards for election=#{election.id} " \
+        "fingerprint=#{master_fingerprint[0..15]}…"
+      )
+
+      { rows: created, printable: printable_bundle }
+    ensure
+      master = nil
+      shares = nil
+    end
 
     def _generate_and_persist!
       master = SecureRandom.hex(MASTER_KEY_BYTES) # 64-char ASCII-safe hex

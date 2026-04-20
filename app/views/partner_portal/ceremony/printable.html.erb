@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="utf-8">
+  <title>Distribisyon Kle Seremoni — <%= @election.title %></title>
+  <%= csrf_meta_tags %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <style>
+    @page { size: A4 portrait; margin: 12mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111; }
+    .envelope-card {
+      page-break-inside: avoid;
+      page-break-after: always;
+      border: 2px dashed #333;
+      border-radius: 8px;
+      padding: 18mm 14mm;
+      margin-bottom: 8mm;
+      background: #fff;
+    }
+    .envelope-card:last-child { page-break-after: auto; }
+    .envelope-header { border-bottom: 1px solid #888; padding-bottom: 6mm; margin-bottom: 6mm; }
+    .key-block {
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 10pt;
+      line-height: 1.5;
+      word-break: break-all;
+      background: #f5f5f5;
+      border-left: 4px solid #c0392b;
+      padding: 8mm;
+      margin: 4mm 0;
+    }
+    .qr-box {
+      text-align: center;
+      padding: 4mm;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+    .warning {
+      color: #c0392b;
+      font-weight: bold;
+      font-size: 10pt;
+    }
+    .meta { font-size: 9pt; color: #555; }
+    .no-print { background: #fffbe6; border: 1px solid #f0c36d; padding: 12px; margin: 16px 0; }
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body>
+
+<div class="no-print">
+  <h3>⚠️ PAJ SA YO PARÈT YON SÈL FWA</h3>
+  <p>
+    Lè w fèmen onglè sa a oubyen rafrechi paj la, kle prive yo p ap janm
+    rekipere ankò. <strong>Enprime kounye a</strong> (Cmd/Ctrl+P), siyen
+    chak anvlòp, e remèt yo manm konsèy yo an pèsòn.
+  </p>
+  <button class="btn btn-primary" onclick="window.print()">🖨️ Enprime kounye a</button>
+  <a class="btn btn-outline-secondary ms-2"
+     href="<%= partner_portal_election_ceremony_path(@election) %>"
+     onclick="return confirm('Sèten? Kle prive yo ap pèdi nèt.');">
+    Kite paj la
+  </a>
+</div>
+
+<div class="envelope-card">
+  <div class="envelope-header">
+    <h2 style="margin:0;">Seremoni Dechifraj CEP</h2>
+    <p class="meta" style="margin:2mm 0 0;">
+      Eleksyon: <strong><%= @election.title %></strong> &middot;
+      ID: <code><%= @election.id %></code> &middot;
+      Jenere: <%= l(Time.current, format: :long) %>
+    </p>
+    <p class="meta" style="margin:2mm 0 0;">
+      Anprent kle mèt la (SHA-256, 16 premye karaktè):
+      <code><%= @election.decryption_key_fingerprint.to_s[0, 16] %>…</code>
+    </p>
+  </div>
+
+  <h3>Sa ki nan distribisyon sa a</h3>
+  <ul>
+    <li><strong>9 anvlòp</strong> — youn pou chak manm konsèy CEP</li>
+    <li>Chak anvlòp gen yon <strong>kle prive X25519</strong> ak yon <strong>QR backup</strong></li>
+    <li>Sistèm la bezwen <strong>5 sou 9</strong> manm prezan ak kle yo pou rekonstwi rezilta yo</li>
+  </ul>
+
+  <p class="warning">
+    Pa janm pataje yon kle prive sou imèl, SMS, oswa foto. Yo dwe rete sou papye
+    nan yon kès an asye sou wòl chak manm konsèy la.
+  </p>
+</div>
+
+<% @printable.each_with_index do |envelope, idx| %>
+  <div class="envelope-card">
+    <div class="envelope-header">
+      <h2 style="margin:0;">
+        Anvlòp #<%= idx + 1 %> — <%= envelope[:role_label] %>
+      </h2>
+      <p class="meta" style="margin:2mm 0 0;">
+        Wòl teknik: <code><%= envelope[:role] %></code> &middot;
+        Shard ID: <code>#<%= envelope[:shard_id] %></code>
+      </p>
+    </div>
+
+    <h4>1️⃣ Kle prive X25519 (DAR PA EXPOZE)</h4>
+    <div class="key-block">
+      <%= envelope[:recipient_private_key_b64] %>
+    </div>
+    <p class="meta">
+      Sa a se kle a tape sou jou seremoni an pou dechifre shard ou.
+      Si w pèdi li, ou ka itilize QR backup la pi ba a.
+    </p>
+
+    <h4 style="margin-top:8mm;">2️⃣ QR Backup (siyen pa platfòm la)</h4>
+    <div class="qr-box">
+      <%
+        qr_json = envelope[:qr_payload].to_json
+        qr      = RQRCode::QRCode.new(qr_json, level: :m)
+        svg     = qr.as_svg(module_size: 4, standalone: true,
+                            use_path: true, viewbox: true)
+      %>
+      <%= svg.html_safe %>
+      <p class="meta" style="margin-top:3mm;">
+        Siyen Ed25519 — issuer <code>bonvote.ht</code> — typ <code>ShardBackup</code>
+      </p>
+    </div>
+    <p class="meta">
+      QR sa a gen valè cleartext shard la, siyen pa platfòm la.
+      Sou jou seremoni an, scanne li si w pa ka tape kle prive a.
+      <strong>Pa janm voye QR sa a sou imèl oswa entènèt.</strong>
+    </p>
+
+    <p class="warning" style="margin-top:6mm;">
+      ✂️ Koupe paj sa a, pliye li nan dyaspora ak <strong>siyen non w</strong>
+      anba a, lèfini mete li nan kès sekirite ou.
+    </p>
+
+    <p style="margin-top:10mm; border-top:1px solid #888; padding-top:6mm;">
+      Resevwa pa: ____________________________________
+      &nbsp;&nbsp;&nbsp;
+      Dat: ______________
+    </p>
+  </div>
+<% end %>
+
+</body>
+</html>

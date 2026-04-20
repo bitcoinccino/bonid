@@ -51,4 +51,21 @@ class ElectionKeyShard < ApplicationRecord
   def mark_used!(signature: nil)
     update!(used_at: Time.current, used_in_signature: signature)
   end
+
+  # Open the sealed envelope using the council member's printed
+  # X25519 private key. Returns the cleartext Shamir share.
+  #
+  # Raises Election::ShardEnvelope::DecryptError on auth-tag failure
+  # (wrong key, tampered DB, tampered envelope) and InvalidWireError
+  # on structural problems with the stored wire format. We re-verify
+  # against `shard_hash` so a swapped DB row can't slip a different
+  # share through.
+  def decrypt_with(recipient_private_key_b64)
+    cleartext = Election::ShardEnvelope.open(shard_value_encrypted, recipient_private_key_b64)
+    if !matches?(cleartext)
+      raise Election::ShardEnvelope::DecryptError,
+            "shard hash mismatch — refusing to return decrypted value"
+    end
+    cleartext
+  end
 end

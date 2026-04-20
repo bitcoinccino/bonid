@@ -802,6 +802,12 @@ end
     get "election/:id/multi_sig", to: "election_dashboard#multi_sig", as: :election_multi_sig
     get "election/:id/results",   to: "election_dashboard#results",   as: :election_results
 
+    # CEP Decryption Ceremony — generation + one-time printable
+    # distribution. The actual quorum/multi-sig/reconstruct surface
+    # lives at the dashboard above; this is the key-genesis step.
+    get  "election/:election_id/ceremony",          to: "ceremony#show",     as: :election_ceremony
+    post "election/:election_id/ceremony/generate", to: "ceremony#generate", as: :generate_election_ceremony
+
     # Voter Eligibility Lookup (CEP)
     get  "voter_eligibility", to: "voter_eligibility#index", as: :voter_eligibility
     post "voter_eligibility/lookup", to: "voter_eligibility#lookup", as: :voter_eligibility_lookup

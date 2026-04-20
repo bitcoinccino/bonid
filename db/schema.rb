@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_19_020000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_19_024000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -718,6 +718,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_020000) do
     t.bigint "used_in_signature_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "envelope_version", default: "v1"
+    t.text "recipient_public_key_b64"
     t.index ["election_id", "bonid"], name: "idx_key_shards_election_bonid", unique: true, where: "(bonid IS NOT NULL)"
     t.index ["election_id", "role"], name: "idx_key_shards_election_role", unique: true
     t.index ["election_id"], name: "index_election_key_shards_on_election_id"
