@@ -59,19 +59,45 @@ class PollingCenter < ApplicationRecord
     polling_stations.sum(:capacity)
   end
 
-  # Human-friendly single-line address for voter cards / UI.
-  #
-  # Falls back to the Haitian admin hierarchy (department / commune / section)
-  # when the free-text columns are blank — so a polling center seeded with
-  # only FKs still renders a useful address instead of just "HT".
+  # Official Haitian postal display — mirrors Address#formatted_haiti_display
+  # exactly so a polling center renders the same way as a citizen's home
+  # address. Order:
+  #   1. Communal Section
+  #   2. Street
+  #   3. POSTAL_CODE, COMMUNE (uppercase)
+  #   4. HAITI  (or country for diaspora centers)
+  def formatted_haiti_display
+    return formatted_diaspora_display if diaspora?
+
+    lines = []
+    lines << communal_section.name if communal_section&.name.present?
+    lines << address_line_1        if address_line_1.present?
+
+    if postal_code.present? && commune&.name.present?
+      lines << "#{postal_code.upcase}, #{commune.name.upcase}"
+    elsif commune&.name.present?
+      lines << commune.name.upcase
+    end
+
+    lines << "HAITI"
+    lines.join("\n")
+  end
+
+  # Single-line variant — joined with commas. Use this where stacking isn't
+  # possible (CSV exports, plain-text receipts, SMS).
   def formatted_address
+    formatted_haiti_display.split("\n").join(", ")
+  end
+
+  private
+
+  # Diaspora venues use city + country instead of commune + HAITI.
+  def formatted_diaspora_display
     [
       address_line_1,
-      address_line_2.presence || communal_section&.name,
-      city.presence           || commune&.name,
-      state_province.presence || department&.name,
-      postal_code,
-      country_code
-    ].compact_blank.join(", ")
+      address_line_2,
+      [city.presence, state_province.presence].compact_blank.join(", ").presence,
+      [postal_code, country_code].compact_blank.join(" ").presence
+    ].compact_blank.join("\n")
   end
 end
