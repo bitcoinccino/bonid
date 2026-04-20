@@ -23,7 +23,7 @@ module PartnerPortal
   # DiplomaticMissionsController#ensure_cep_sector!.
   class CeremonyController < PartnerPortal::BaseController
     before_action :ensure_cep_sector!
-    before_action :require_partner_admin!, only: %i[generate]
+    before_action :require_partner_admin!, only: %i[generate assign_bonid]
     before_action :set_election
 
     # GET /partner_portal/election/:election_id/ceremony
@@ -59,13 +59,20 @@ module PartnerPortal
       mode     = params[:mode].to_s   # "envelope" | "qr"
       liveness_session_id = params[:liveness_session_id].to_s.strip
 
+      # BonID-to-role binding. Until partner_admin has explicitly bound
+      # this council seat to a specific BonID via #assign_bonid, no
+      # submission is accepted. This prevents anyone holding a stolen
+      # envelope from impersonating the assigned council member.
+      shard_row = enforce_bonid_role_binding!(role: role, bonid: bonid)
+
       # Server-side liveness verification. The form-level "operator
       # confirmed" checkbox is gone — the only acceptable proof is a
       # genuine FaceLivenessService session that AWS Rekognition says
       # PASSED above the strict (non-gray-zone) confidence threshold.
       verify_liveness!(liveness_session_id, bonid: bonid)
 
-      cleartext = resolve_cleartext_shard!(role: role, mode: mode,
+      cleartext = resolve_cleartext_shard!(shard_row: shard_row,
+                                           role: role, mode: mode,
                                            private_key: params[:private_key_b64].to_s,
                                            qr_json:     params[:qr_json].to_s)
 
@@ -135,10 +142,98 @@ module PartnerPortal
                   alert: "Jenerasyon kle echwe: #{e.message}"
     end
 
+    # PATCH /partner_portal/election/:election_id/ceremony/shards/:role/bonid
+    #
+    # partner_admin only. Binds (or rebinds) a CEP council role to a
+    # specific BonID. A submission for that role will then be rejected
+    # unless its `bonid` field matches exactly. We refuse to rebind a
+    # shard that has already been used in a successful signature, so the
+    # ceremony record can't be retroactively rewritten.
+    def assign_bonid
+      role  = params[:role].to_s
+      bonid = params[:bonid].to_s.strip.upcase
+
+      shard_row = @election.election_key_shards.find_by(role: role)
+      if shard_row.nil?
+        redirect_to(partner_portal_election_ceremony_path(@election),
+                    alert: "Wòl pa egziste pou eleksyon sa.") and return
+      end
+
+      if shard_row.used_at.present?
+        redirect_to(partner_portal_election_ceremony_path(@election),
+                    alert: "Shard sa a deja itilize — pa ka chanje BonID asiyen an.") and return
+      end
+
+      if bonid.blank?
+        # Allow un-assignment (clearing) only if not yet used.
+        previous = shard_row.bonid
+        shard_row.update!(bonid: nil)
+        audit!("decryption_shard.bonid_cleared", role: role, previous_bonid: previous)
+        redirect_to(partner_portal_election_ceremony_path(@election),
+                    notice: "BonID retire pou wòl #{role}.") and return
+      end
+
+      unless bonid.match?(BONID_FORMAT)
+        redirect_to(partner_portal_election_ceremony_path(@election),
+                    alert: "Fòma BonID a pa valid.") and return
+      end
+
+      previous = shard_row.bonid
+      shard_row.update!(bonid: bonid)
+      audit!("decryption_shard.bonid_assigned",
+             role: role, bonid: bonid, previous_bonid: previous)
+      redirect_to partner_portal_election_ceremony_path(@election),
+                  notice: "BonID #{bonid} asiyen pou wòl #{role}."
+    rescue ActiveRecord::RecordInvalid => e
+      # Most likely the (election_id, bonid) uniqueness index — the same
+      # BonID can't hold two roles in the same ceremony.
+      redirect_to partner_portal_election_ceremony_path(@election),
+                  alert: "Asiyasyon refize: #{e.record.errors.full_messages.to_sentence}"
+    end
+
     private
+
+    # Loose check — keeps the typo-class errors from looking like a
+    # cryptographic mismatch. Real BonID format lives in the model.
+    BONID_FORMAT = /\A[A-Z]{2}-\d{4}-[MF]-[A-Z]{2}-[A-Z0-9]{8}\z/
 
     class InvalidSubmissionError < StandardError; end
     class LivenessRequiredError < InvalidSubmissionError; end
+    class BonidMismatchError    < InvalidSubmissionError; end
+    class RoleUnassignedError   < InvalidSubmissionError; end
+
+    # Reject the submission unless partner_admin has bound this role to a
+    # specific BonID, AND the submitter's claimed BonID matches that
+    # binding exactly. Returns the bound shard row on success so callers
+    # don't re-query. Audits both rejection paths.
+    def enforce_bonid_role_binding!(role:, bonid:)
+      raise InvalidSubmissionError, "Wòl obligatwa." if role.blank?
+      raise InvalidSubmissionError, "BonID obligatwa." if bonid.blank?
+
+      shard_row = @election.election_key_shards.find_by(role: role)
+      if shard_row.nil?
+        raise InvalidSubmissionError, "Pa gen shard pou wòl sa."
+      end
+
+      claimed = bonid.upcase
+      if shard_row.bonid.blank?
+        audit!("decryption_shard.role_unassigned",
+               role: role, claimed_bonid: claimed)
+        raise RoleUnassignedError,
+              "Wòl sa a poko gen yon BonID asiyen. Kontakte administratè CEP la."
+      end
+
+      unless ActiveSupport::SecurityUtils.secure_compare(
+        shard_row.bonid.to_s.upcase, claimed
+      )
+        audit!("decryption_shard.bonid_mismatch",
+               role: role, claimed_bonid: claimed, expected_present: true)
+        raise BonidMismatchError,
+              "BonID ou pa matche ak BonID ki asiyen pou wòl sa."
+      end
+
+      shard_row
+    end
 
     # Reject the submission unless AWS Rekognition Face Liveness says
     # this `liveness_session_id` is a genuine, passed, non-gray-zone
@@ -178,7 +273,9 @@ module PartnerPortal
     # Resolve the cleartext Shamir share from one of the two paths.
     # NEVER returns the value to the caller's view — only forwards into
     # MultiSigService. Raises on any structural / auth / role mismatch.
-    def resolve_cleartext_shard!(role:, mode:, private_key:, qr_json:)
+    # `shard_row` MUST already be the BonID-bound row from
+    # #enforce_bonid_role_binding! — we do not look it up again here.
+    def resolve_cleartext_shard!(shard_row:, role:, mode:, private_key:, qr_json:)
       raise InvalidSubmissionError, "Wòl obligatwa." if role.blank?
 
       case mode
@@ -186,8 +283,6 @@ module PartnerPortal
         if private_key.blank?
           raise InvalidSubmissionError, "Kle prive obligatwa pou opsyon anvlòp la."
         end
-        shard_row = @election.election_key_shards.find_by(role: role)
-        raise InvalidSubmissionError, "Pa gen shard pou wòl sa." if shard_row.nil?
         shard_row.decrypt_with(private_key.strip)
 
       when "qr"

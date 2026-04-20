@@ -805,10 +805,11 @@ end
     # CEP Decryption Ceremony — generation + one-time printable
     # distribution. The actual quorum/multi-sig/reconstruct surface
     # lives at the dashboard above; this is the key-genesis step.
-    get  "election/:election_id/ceremony",          to: "ceremony#show",            as: :election_ceremony
-    post "election/:election_id/ceremony/generate", to: "ceremony#generate",        as: :generate_election_ceremony
-    get  "election/:election_id/ceremony/submit",   to: "ceremony#submit",          as: :election_ceremony_submit
-    post "election/:election_id/ceremony/submit",   to: "ceremony#submit_signature", as: :submit_election_ceremony
+    get   "election/:election_id/ceremony",                    to: "ceremony#show",            as: :election_ceremony
+    post  "election/:election_id/ceremony/generate",           to: "ceremony#generate",        as: :generate_election_ceremony
+    get   "election/:election_id/ceremony/submit",             to: "ceremony#submit",          as: :election_ceremony_submit
+    post  "election/:election_id/ceremony/submit",             to: "ceremony#submit_signature", as: :submit_election_ceremony
+    patch "election/:election_id/ceremony/shards/:role/bonid", to: "ceremony#assign_bonid",    as: :assign_bonid_election_ceremony
 
     # Voter Eligibility Lookup (CEP)
     get  "voter_eligibility", to: "voter_eligibility#index", as: :voter_eligibility

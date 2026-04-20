@@ -72,12 +72,19 @@
 
     <div class="card mb-4">
       <div class="card-header"><strong>Distribisyon shard yo</strong></div>
+      <div class="card-body small text-muted pb-0">
+        <i class="ri-information-line"></i>
+        Asiyen yon <strong>BonID</strong> ak chak wòl konsèy CEP avan
+        seremoni an. Soumisyon shard yo ap rejte si BonID ki tape sou
+        fòma a pa matche egzakteman ak sa ki asiyen isit la.
+        Yon shard ki deja itilize pa ka chanje BonID asiyen an.
+      </div>
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
               <th>Wòl CEP</th>
-              <th>BonID asiyen</th>
+              <th style="min-width: 280px;">BonID asiyen</th>
               <th>Distribiye</th>
               <th>Itilize</th>
               <th>Vèsyon anvlòp</th>
@@ -88,10 +95,25 @@
               <tr>
                 <td><strong><%= s.role_label %></strong></td>
                 <td>
-                  <% if s.bonid.present? %>
+                  <% if s.used_at.present? %>
                     <span class="font-monospace"><%= s.bonid %></span>
+                    <span class="badge bg-secondary ms-1" title="Pa ka chanje — shard la deja itilize">
+                      <i class="ri-lock-line"></i> Fèmen
+                    </span>
                   <% else %>
-                    <span class="text-muted">— pa asiyen —</span>
+                    <%= form_with url: partner_portal_assign_bonid_election_ceremony_path(election_id: @election.id, role: s.role),
+                                  method: :patch, local: true, class: "d-flex gap-2" do %>
+                      <input type="text" name="bonid"
+                             value="<%= s.bonid %>"
+                             class="form-control form-control-sm font-monospace"
+                             placeholder="DV-1989-M-SE-P8697XDS"
+                             pattern="[A-Za-z]{2}-\d{4}-[MmFf]-[A-Za-z]{2}-[A-Za-z0-9]{8}"
+                             title="Fòma BonID: XX-NNNN-X-XX-XXXXXXXX">
+                      <button class="btn btn-sm btn-outline-primary" type="submit"
+                              data-turbo-confirm="<%= 'Konfime: chanje BonID ki asiyen pou wòl sa a?' if s.bonid.present? %>">
+                        <i class="ri-save-line"></i>
+                      </button>
+                    <% end %>
                   <% end %>
                 </td>
                 <td>
