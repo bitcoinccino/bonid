@@ -36,8 +36,8 @@ module Election
       new(election: election).sign(payload)
     end
 
-    def self.verify(election:, payload:, signature_b64:)
-      new(election: election).verify(payload, signature_b64)
+    def self.verify(election:, payload:, signature_b64:, key_id: nil)
+      new(election: election).verify(payload, signature_b64, key_id: key_id)
     end
 
     def initialize(election:)
@@ -53,8 +53,18 @@ module Election
       Base64.urlsafe_encode64(sig, padding: false)
     end
 
-    def verify(payload, signature_b64)
-      pub = load_public_key
+    # Verifies a signature against the election's public key.
+    #
+    # When `key_id` is provided (modern receipts), looks the key up via
+    # BonvoteKeyRegistry — covers current AND archived keys, so receipts
+    # signed under a previous key still verify after rotation.
+    #
+    # When `key_id` is nil (legacy receipts predating kid), falls back to
+    # the current key. Verification simply fails if the key has rotated.
+    def verify(payload, signature_b64, key_id: nil)
+      pub = lookup_public_key(key_id)
+      return false unless pub
+
       raw = Base64.urlsafe_decode64(signature_b64)
       pub.verify(nil, raw, canonical_json(payload))
     rescue ArgumentError, OpenSSL::PKey::PKeyError
@@ -96,6 +106,22 @@ module Election
 
       raw = Base64.decode64(pub_b64)
       OpenSSL::PKey.new_raw_public_key("ED25519", raw)
+    end
+
+    # Picks the public key to verify against. With a kid we honour it
+    # (covers archived keys); without one we fall back to the current key
+    # for backwards compatibility with pre-kid receipts.
+    def lookup_public_key(key_id)
+      key = if key_id.present?
+              ::Election::BonvoteKeyRegistry.find_by_key_id(@election, key_id)
+            else
+              ::Election::BonvoteKeyRegistry.current(@election)
+            end
+      return nil unless key&.public_key_b64.present?
+
+      OpenSSL::PKey.new_raw_public_key("ED25519", Base64.decode64(key.public_key_b64))
+    rescue OpenSSL::PKey::PKeyError
+      nil
     end
   end
 end

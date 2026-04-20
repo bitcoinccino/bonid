@@ -69,6 +69,60 @@ module Api
           fetched_at: Time.current.iso8601
         }
       end
+
+      # GET /api/v1/elections/:id/bonvote_public_key
+      #
+      # Returns the BonVote signing key(s) for a specific election. The
+      # response carries the current key plus every archived key so an
+      # offline verifier can reconstruct the trust chain for any historical
+      # receipt — `kid` on the receipt → matching key in this response.
+      #
+      # No authentication required: this IS the public key bundle. Cache
+      # for 1 hour rather than 24h because key rotation should propagate
+      # quickly enough to halt forged receipts after a private-key leak.
+      def bonvote_election
+        election = BonvoteElection.find_by(id: params[:id])
+        return render(json: { error: "Election not found" }, status: :not_found) if election.nil?
+
+        ::Election::BonvoteKeyRegistry.sync!(election) # mirror credentials → DB if needed
+        keys = ::Election::BonvoteKeyRegistry.all(election)
+
+        if keys.empty?
+          return render json: {
+            error: "BonVote public key not configured for election #{election.id}"
+          }, status: :service_unavailable
+        end
+
+        current = keys.first
+        archived = keys.drop(1)
+
+        response.set_header("Cache-Control", "public, max-age=3600") # 1h
+        response.set_header("X-Key-Algorithm", "Ed25519")
+        response.set_header("X-Issuer", "bonvote.ht")
+
+        render json: {
+          algorithm:    "Ed25519",
+          encoding:     "base64",
+          issuer:       "bonvote.ht",
+          usage:        "BonVote voter-receipt signature verification",
+          election: {
+            id:    election.id,
+            title: election.title,
+            round: election.round,
+            status: election.status
+          },
+          current: current.to_h.merge(
+            key_fingerprint: Digest::SHA256.hexdigest(Base64.decode64(current.public_key_b64))
+          ),
+          archived: archived.map { |k|
+            k.to_h.merge(
+              key_fingerprint: Digest::SHA256.hexdigest(Base64.decode64(k.public_key_b64))
+            )
+          },
+          payload_spec: "https://#{request.host}/spec/receipt-v1",
+          fetched_at:   Time.current.iso8601
+        }
+      end
     end
   end
 end

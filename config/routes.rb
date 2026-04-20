@@ -1053,6 +1053,15 @@ end
       # GET /api/v1/public_keys/bongouv
       get "public_keys/bongouv", to: "public_keys#bongouv", as: :bongouv_public_key
 
+      # Ed25519 public key(s) for a specific BonVote election. Returns the
+      # current key + every archived key (key_id → public_key_b64) so an
+      # offline verifier (CEP tablet, third-party auditor, citizen tool)
+      # can verify any historical receipt for that election.
+      # GET /api/v1/elections/:id/bonvote_public_key
+      get "elections/:id/bonvote_public_key",
+          to: "public_keys#bonvote_election",
+          as: :bonvote_election_public_key
+
       # Officer misconduct summary — for verified partners (embassies, consulates, law firms)
       # GET /api/v1/officers/:badge_id/complaints/summary
       # Requires: X-Partner-Api-Key + Bearer token with officer:complaints scope
