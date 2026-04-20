@@ -816,6 +816,13 @@ end
     # AdminUser-gated /admin/electoral_offices command-center surface.
     resources :electoral_offices, except: [:show]
 
+    # Diplomatic Missions (Konsila / Anbasad) — per-election activation
+    # surface for diaspora registration / voting. The mission registry itself
+    # is static (HaitianDiplomaticMissions concern); these CRUD actions only
+    # touch ElectionMissionParticipation rows scoped to the active CEP
+    # election. Sister surface to :electoral_offices.
+    resources :diplomatic_missions, except: [:show]
+
     # Polling Centers (Sant Vòt) — CEP + Consulate roster + CSV import
     # Custom collection routes (import / template) are declared INSIDE the
     # resources block so they take precedence over the implicit `:show` route

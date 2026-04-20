@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -214,12 +214,13 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
     t.datetime "opened_at"
     t.datetime "closed_at"
     t.datetime "certified_at"
-    t.string "cep_public_key"
+    t.string "bonvote_public_key"
     t.jsonb "metadata", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "allows_online_voting", default: false, null: false
-    t.boolean "allows_digital_enrollment", default: false, null: false
+    t.boolean "allows_digital_enrollment", default: true, null: false
+    t.string "bonvote_key_id"
     t.index ["election_type", "round"], name: "index_bonvote_elections_on_election_type_and_round"
     t.index ["parent_election_id"], name: "index_bonvote_elections_on_parent_election_id"
     t.index ["status"], name: "index_bonvote_elections_on_status"
@@ -546,6 +547,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
     t.index ["parent_body_id"], name: "index_election_bodies_on_parent_body_id"
   end
 
+  create_table "election_candidate_endorsements", force: :cascade do |t|
+    t.bigint "election_candidate_id", null: false
+    t.bigint "election_id", null: false
+    t.string "bonid"
+    t.string "cin_number"
+    t.string "source", default: "digital", null: false
+    t.boolean "voter_roll_verified", default: false, null: false
+    t.bigint "uploaded_by_id"
+    t.string "signature_image_url"
+    t.text "notes"
+    t.datetime "endorsed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_candidate_id", "bonid"], name: "idx_endorsement_unique_per_bonid", unique: true, where: "(bonid IS NOT NULL)"
+    t.index ["election_candidate_id", "cin_number"], name: "idx_endorsement_unique_per_cin", unique: true, where: "((cin_number IS NOT NULL) AND (bonid IS NULL))"
+    t.index ["election_candidate_id"], name: "index_election_candidate_endorsements_on_election_candidate_id"
+    t.index ["election_id"], name: "index_election_candidate_endorsements_on_election_id"
+    t.index ["uploaded_by_id"], name: "index_election_candidate_endorsements_on_uploaded_by_id"
+  end
+
   create_table "election_candidates", force: :cascade do |t|
     t.bigint "election_id", null: false
     t.bigint "election_constituency_id", null: false
@@ -607,6 +628,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
     t.string "fee_reduction_reason"
     t.string "recepisse_number"
     t.datetime "recepisse_issued_at"
+    t.string "education_level"
+    t.datetime "preliminary_listed_at"
+    t.datetime "final_listed_at"
     t.index ["candidacy_type"], name: "index_election_candidates_on_candidacy_type"
     t.index ["election_constituency_id"], name: "index_election_candidates_on_election_constituency_id"
     t.index ["election_id", "bonid"], name: "idx_candidate_election_bonid"
@@ -614,6 +638,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
     t.index ["election_id", "position"], name: "index_election_candidates_on_election_id_and_position"
     t.index ["election_id"], name: "index_election_candidates_on_election_id"
     t.index ["party_registration_id"], name: "index_election_candidates_on_party_registration_id"
+    t.index ["preliminary_listed_at"], name: "idx_candidates_preliminary_listed", where: "(preliminary_listed_at IS NOT NULL)"
     t.index ["recepisse_number"], name: "index_election_candidates_on_recepisse_number", unique: true, where: "(recepisse_number IS NOT NULL)"
     t.index ["registration_status"], name: "index_election_candidates_on_registration_status"
     t.index ["user_id"], name: "index_election_candidates_on_user_id"
@@ -665,13 +690,38 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
     t.datetime "appeal_deadline"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "election_candidate_id"
     t.index ["constituency_id"], name: "index_election_disputes_on_constituency_id"
     t.index ["department_code"], name: "index_election_disputes_on_department_code"
     t.index ["election_body_id"], name: "index_election_disputes_on_election_body_id"
+    t.index ["election_candidate_id"], name: "index_election_disputes_on_election_candidate_id"
     t.index ["election_id", "dispute_type"], name: "index_election_disputes_on_election_id_and_dispute_type"
     t.index ["election_id", "reference_code"], name: "idx_disputes_reference", unique: true
     t.index ["election_id", "status"], name: "index_election_disputes_on_election_id_and_status"
     t.index ["election_id"], name: "index_election_disputes_on_election_id"
+  end
+
+  create_table "election_mission_participations", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "diplomatic_mission_id", null: false
+    t.string "status", default: "inactive", null: false
+    t.jsonb "operating_hours", default: {}, null: false
+    t.string "contact_phone"
+    t.string "contact_email"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.string "street_line1"
+    t.string "street_line2"
+    t.string "locality"
+    t.string "region"
+    t.string "postal_code"
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.index ["election_id", "diplomatic_mission_id"], name: "idx_emp_election_mission_unique", unique: true
+    t.index ["election_id"], name: "index_election_mission_participations_on_election_id"
+    t.index ["operating_hours"], name: "index_election_mission_participations_on_operating_hours", using: :gin
+    t.index ["status"], name: "index_election_mission_participations_on_status"
   end
 
   create_table "election_party_registrations", force: :cascade do |t|
@@ -802,10 +852,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "operating_hours", default: {}, null: false
     t.index ["commune_id"], name: "index_electoral_offices_on_commune_id"
     t.index ["department_id"], name: "index_electoral_offices_on_department_id"
     t.index ["office_type", "department_id", "commune_id"], name: "idx_electoral_offices_type_scope"
     t.index ["office_type"], name: "index_electoral_offices_on_office_type"
+    t.index ["operating_hours"], name: "index_electoral_offices_on_operating_hours", using: :gin
     t.index ["status"], name: "index_electoral_offices_on_status"
   end
 
@@ -2405,6 +2457,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
   add_foreign_key "election_ballots", "bonvote_elections", column: "election_id"
   add_foreign_key "election_bodies", "bonvote_elections", column: "election_id"
   add_foreign_key "election_bodies", "election_bodies", column: "parent_body_id"
+  add_foreign_key "election_candidate_endorsements", "admin_users", column: "uploaded_by_id"
+  add_foreign_key "election_candidate_endorsements", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_candidate_endorsements", "election_candidates"
   add_foreign_key "election_candidates", "admin_users", column: "approved_by_id"
   add_foreign_key "election_candidates", "admin_users", column: "rejected_by_id"
   add_foreign_key "election_candidates", "bonvote_elections", column: "election_id"
@@ -2414,7 +2469,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_17_220000) do
   add_foreign_key "election_constituencies", "bonvote_elections", column: "election_id"
   add_foreign_key "election_disputes", "bonvote_elections", column: "election_id"
   add_foreign_key "election_disputes", "election_bodies"
+  add_foreign_key "election_disputes", "election_candidates"
   add_foreign_key "election_disputes", "election_constituencies", column: "constituency_id"
+  add_foreign_key "election_mission_participations", "bonvote_elections", column: "election_id", on_delete: :cascade
   add_foreign_key "election_party_registrations", "admin_users", column: "reviewed_by_admin_user_id"
   add_foreign_key "election_party_registrations", "bonvote_elections", column: "election_id"
   add_foreign_key "election_party_registrations", "users"
