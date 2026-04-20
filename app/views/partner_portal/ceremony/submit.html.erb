@@ -140,26 +140,27 @@
 
             <hr class="my-4">
 
-            <%# Liveness — re-uses existing pattern. Operator confirms
-                this council member passed liveness right before they sit
-                down. In a future iteration this becomes a modal. %>
+            <%# Liveness — server-verified against AWS Rekognition.
+                The session_id MUST come from a real liveness flow that
+                returned `passed=true` above the strict (non-gray-zone)
+                threshold. There is no operator-bypass checkbox; the
+                server discards any client claim of liveness. %>
             <div class="alert alert-warning d-flex align-items-start mb-0">
               <i class="ri-fingerprint-line fs-4 me-2"></i>
               <div class="flex-grow-1">
                 <strong>Verifikasyon byometrik (liveness)</strong>
                 <p class="mb-2 small">
-                  Anvan ou klike "Soumèt", konsèy facilitatè a dwe verifye ou
-                  pase tès liveness la. Antre ID sesyon liveness ou nan ti box
-                  anba a (oswa make checkbox la si w nan mòd "operator-confirmed").
+                  Anvan w klike "Soumèt", ou dwe konplete tès liveness la
+                  ak kamera ou. Lè li fini, kole ID sesyon ki retounen an
+                  isit la — sèvè a ap rekonfime ak AWS Rekognition.
                 </p>
-                <input type="text" name="liveness_session_id" class="form-control form-control-sm mb-2"
-                       placeholder="Liveness session ID (UUID)">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" name="liveness_verified"
-                         value="1" id="lv-confirm">
-                  <label class="form-check-label small" for="lv-confirm">
-                    Operator konfime liveness pase manyèlman
-                  </label>
+                <label class="form-label small fw-semibold mb-1">ID sesyon liveness</label>
+                <input type="text" name="liveness_session_id" required
+                       class="form-control form-control-sm font-monospace"
+                       placeholder="ex: 12345678-90ab-cdef-1234-567890abcdef">
+                <div class="form-text small text-muted mt-1">
+                  Sèvè a ap rejte siyati a si sesyon an pa egziste, pa ko
+                  pase, oswa nan zòn gri (kòd konfyans &lt; 75%).
                 </div>
               </div>
             </div>

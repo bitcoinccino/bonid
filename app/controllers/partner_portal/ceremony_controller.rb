@@ -57,7 +57,13 @@ module PartnerPortal
       bonid    = params[:bonid].to_s.strip
       name     = params[:name].to_s.strip
       mode     = params[:mode].to_s   # "envelope" | "qr"
-      liveness_session_id = params[:liveness_session_id].to_s
+      liveness_session_id = params[:liveness_session_id].to_s.strip
+
+      # Server-side liveness verification. The form-level "operator
+      # confirmed" checkbox is gone — the only acceptable proof is a
+      # genuine FaceLivenessService session that AWS Rekognition says
+      # PASSED above the strict (non-gray-zone) confidence threshold.
+      verify_liveness!(liveness_session_id, bonid: bonid)
 
       cleartext = resolve_cleartext_shard!(role: role, mode: mode,
                                            private_key: params[:private_key_b64].to_s,
@@ -68,7 +74,7 @@ module PartnerPortal
         role:                role,
         name:                name,
         liveness_session_id: liveness_session_id,
-        liveness_verified:   liveness_session_id.present? || ActiveModel::Type::Boolean.new.cast(params[:liveness_verified]),
+        liveness_verified:   true,          # server-decided after verify_liveness!
         key_shard:           cleartext
       })
 
@@ -132,6 +138,42 @@ module PartnerPortal
     private
 
     class InvalidSubmissionError < StandardError; end
+    class LivenessRequiredError < InvalidSubmissionError; end
+
+    # Reject the submission unless AWS Rekognition Face Liveness says
+    # this `liveness_session_id` is a genuine, passed, non-gray-zone
+    # session. Audit either outcome before returning.
+    #
+    # In test/dev where Rekognition isn't wired, set
+    # ENV["CEREMONY_BYPASS_LIVENESS"]="1" — DO NOT do this in
+    # production. The bypass logs a loud warning every call.
+    def verify_liveness!(session_id, bonid:)
+      if session_id.blank?
+        raise LivenessRequiredError, "ID sesyon liveness obligatwa anvan ou ka soumèt yon shard."
+      end
+
+      if ENV["CEREMONY_BYPASS_LIVENESS"] == "1"
+        Rails.logger.warn("[Ceremony] LIVENESS BYPASS active for session=#{session_id} bonid=#{bonid} — DEV ONLY")
+        audit!("decryption_shard.liveness_bypassed", session_id: session_id, bonid: bonid)
+        return
+      end
+
+      result = ::FaceLivenessService.get_results(session_id)
+
+      passed = result[:success] && result[:passed] && !result[:needs_review]
+      unless passed
+        audit!("decryption_shard.liveness_failed",
+               session_id: session_id, bonid: bonid,
+               status: result[:status], confidence: result[:confidence],
+               error: result[:error], needs_review: result[:needs_review])
+        raise LivenessRequiredError,
+              "Verifikasyon liveness echwe (status=#{result[:status] || 'inconnue'} " \
+              "confidence=#{result[:confidence] || 0})."
+      end
+
+      audit!("decryption_shard.liveness_passed",
+             session_id: session_id, bonid: bonid, confidence: result[:confidence])
+    end
 
     # Resolve the cleartext Shamir share from one of the two paths.
     # NEVER returns the value to the caller's view — only forwards into
