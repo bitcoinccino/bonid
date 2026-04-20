@@ -34,10 +34,21 @@ module Election
     QUORUM_REQUIRED = 5
     TOTAL_SIGNATORIES = 9
 
+    # Per-shard cleartext cache. Each council member's submission yields
+    # one cleartext Shamir share that we MUST hold in memory between
+    # submissions so the quorum-time reconstruction has the actual share
+    # strings (the ElectionKeyShard.shard_value_encrypted column holds
+    # the X25519 wire format on the production envelope path — feeding
+    # that to SecretSharing.reconstruct will fail). Per-role keys avoid
+    # any read-modify-write race between concurrent submissions.
+    SHARD_CACHE_KEY_FMT = "ceremony:%s:shard:%s"
+    SHARD_CACHE_TTL     = 30.minutes
+
     class QuorumNotMetError < StandardError; end
     class DuplicateSignatureError < StandardError; end
     class ElectionStillOpenError < StandardError; end
     class InvalidSignatoryError < StandardError; end
+    class ShardCacheEmptyError < StandardError; end
 
     # Authorized signatory roles — 9 CEP members
     SIGNATORY_ROLES = %w[
@@ -96,6 +107,12 @@ module Election
         shard_row.mark_used!(signature: signature)
       end
 
+      # Persist the cleartext shard for the duration of the ceremony
+      # window. We MUST do this AFTER the transaction commits — caching
+      # for a signature that didn't actually persist would leave a
+      # zombie share in memory.
+      cache_cleartext_shard(election_id, signatory[:role], signatory[:key_shard])
+
       signatures = load_signatures(election_id)
       broadcast_signature_update(election_id, signatures)
 
@@ -112,16 +129,24 @@ module Election
       }
 
       # Auto-trigger decryption when quorum is met. Pull the cleartext
-      # shard values from ElectionKeyShard (the rows we marked used
-      # above) — these are what Shamir.reconstruct needs.
+      # shards from the per-role cache populated during each submit —
+      # the DB column holds the X25519 wire (envelope path) and is
+      # useless for Shamir reconstruction. If the cache evicted entries
+      # mid-ceremony (TTL expired), we fail loudly so the council
+      # restarts rather than silently reconstructing nothing.
       if result[:quorum_met]
-        cleartext_shards = ElectionKeyShard
-                             .where(election_id: election_id)
-                             .where.not(used_at: nil)
-                             .order(:used_at)
-                             .limit(QUORUM_REQUIRED)
-                             .pluck(:shard_value_encrypted)
-        trigger_final_tally(election_id, cleartext_shards)
+        cleartext_shards = read_cached_cleartext_shards(election_id)
+        if cleartext_shards.size < QUORUM_REQUIRED
+          Rails.logger.error(
+            "[MultiSig] Cache miss on #{cleartext_shards.size}/#{QUORUM_REQUIRED} " \
+            "cleartext shards for election #{election_id} — likely TTL expiry"
+          )
+          broadcast_decryption_failed(election_id,
+                                     "shard yo nan kach la ekspire — repete seremoni an")
+          raise ShardCacheEmptyError,
+                "Pa gen ase shard nan kach la pou rekonstwi (gen #{cleartext_shards.size}/#{QUORUM_REQUIRED})."
+        end
+        trigger_final_tally(election_id, cleartext_shards.first(QUORUM_REQUIRED))
       end
 
       result
@@ -155,6 +180,7 @@ module Election
     # Reset all signatures (emergency use only — requires all 5 signatories to agree)
     def self.reset!(election_id)
       Rails.logger.warn("[MultiSig] RESET triggered for election #{election_id}")
+      clear_cached_cleartext_shards(election_id)
       save_signatures(election_id, [])
     end
 
@@ -234,7 +260,46 @@ module Election
 
       broadcast_decryption_complete(election_id)
     ensure
+      # Zero-trust: regardless of success / failure / Shamir exception,
+      # the cleartext shards have done their job. Drop them from cache
+      # before the master variable goes out of scope.
       reconstructed = nil
+      clear_cached_cleartext_shards(election_id)
+    end
+
+    # ── Cleartext-shard cache (Bug A bridge) ─────────────────────────
+    #
+    # Council members submit cleartext shares one at a time. We need
+    # all 5 in scope simultaneously at quorum to call
+    # SecretSharing.reconstruct, but we MUST NOT persist the cleartext
+    # to the database (that would defeat the envelope architecture).
+    # Rails.cache (whatever the deploy configures — MemoryStore in
+    # test, Redis/Memcached in prod) bridges the gap with a 30-min TTL
+    # window. Per-role keys avoid any read-modify-write race.
+    def self.cache_cleartext_shard(election_id, role, cleartext)
+      return if cleartext.blank?
+      Rails.cache.write(
+        format(SHARD_CACHE_KEY_FMT, election_id, role),
+        cleartext,
+        expires_in: SHARD_CACHE_TTL
+      )
+    rescue => e
+      Rails.logger.error("[MultiSig] Cache write failed for shard #{role}/#{election_id}: #{e.message}")
+      raise
+    end
+
+    def self.read_cached_cleartext_shards(election_id)
+      SIGNATORY_ROLES.filter_map do |role|
+        Rails.cache.read(format(SHARD_CACHE_KEY_FMT, election_id, role))
+      end
+    end
+
+    def self.clear_cached_cleartext_shards(election_id)
+      SIGNATORY_ROLES.each do |role|
+        Rails.cache.delete(format(SHARD_CACHE_KEY_FMT, election_id, role))
+      end
+    rescue => e
+      Rails.logger.warn("[MultiSig] Cache cleanup failed for election #{election_id}: #{e.message}")
     end
 
     def self.broadcast_decryption_failed(election_id, reason)
