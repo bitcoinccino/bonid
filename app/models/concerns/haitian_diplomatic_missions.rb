@@ -32,7 +32,7 @@ module HaitianDiplomaticMissions
       },
       contact: {
         phone: "+1 202-332-4090",
-        email: nil  # unverified — only single aggregator source for amb.washington@diplomatie.ht
+        email: "amb.washington@diplomatie.ht"  # confirmed by founder-provided directory
       }
     },
     {
@@ -40,7 +40,7 @@ module HaitianDiplomaticMissions
       country: "US", region: "north_america",
       address: {
         street_line1: "2911 Piedmont Rd NE",
-        street_line2: nil,  # unverified — sources conflict ("Suite F" vs "Suite A"); confirm before populating
+        street_line2: "Suite F",  # confirmed by founder-provided directory (resolves earlier F vs A conflict)
         locality: "Atlanta",
         region: "GA",
         postal_code: "30305",
@@ -65,7 +65,7 @@ module HaitianDiplomaticMissions
         longitude: nil
       },
       contact: {
-        phone: "+1 617-266-3660",  # primary switchboard; 857-449-0332 also appears as additional line
+        phone: "+1 857-449-0332",  # confirmed by founder-provided directory (617-266-3660 also appears as alt line)
         email: "cg.boston@diplomatie.ht"
       }
     },
@@ -83,7 +83,7 @@ module HaitianDiplomaticMissions
       },
       contact: {
         phone: "+1 872-710-4141",
-        email: "cg.chicago@diplomatie.ht"
+        email: "info@haitianconsulatechicago.com"  # founder-provided; cg.chicago@diplomatie.ht is the alt diplomatie.ht alias
       }
     },
     {
@@ -107,8 +107,13 @@ module HaitianDiplomaticMissions
       id: "HT-CON-NYC", name: "New York, NY", type: "consulate_general",
       country: "US", region: "north_america",
       address: {
-        street_line1: "815 Second Ave",
-        street_line2: "6th Floor",
+        # Founder-provided directory: 555 5th Ave, 3rd Floor, NY 10017.
+        # Earlier WebFetch verification found 815 Second Ave, 6th Floor on
+        # cghaitiny.org and several aggregators — likely the prior address.
+        # Going with founder's value as authoritative; revert if 555 5th Ave
+        # turns out to be incorrect.
+        street_line1: "555 5th Ave",
+        street_line2: "3rd Floor",
         locality: "New York",
         region: "NY",
         postal_code: "10017",
@@ -140,50 +145,341 @@ module HaitianDiplomaticMissions
   ].freeze
 
   # ── DOMINICAN REPUBLIC ─────────────────────────────────────────
+  # Addresses + phones from founder-provided directory. Postal codes and
+  # emails not in the source — left nil. DR addresses commonly omit postal
+  # codes in practice; the formatter handles a missing postal cleanly.
   DR_MISSIONS = [
-    { id: "HT-EMB-SDQ", name: "Santo Domingo", type: "embassy", country: "DO", region: "caribbean" },
-    { id: "HT-CON-BAR", name: "Barahona", type: "consulate_general", country: "DO", region: "caribbean" },
-    { id: "HT-CON-DAJ", name: "Dajabón", type: "consulate_general", country: "DO", region: "caribbean" },
-    { id: "HT-CON-HIG", name: "Higüey", type: "consulate_general", country: "DO", region: "caribbean" },
-    { id: "HT-CON-STI", name: "Santiago de los Caballeros", type: "consulate_general", country: "DO", region: "caribbean" }
+    {
+      id: "HT-EMB-SDQ", name: "Santo Domingo", type: "embassy",
+      country: "DO", region: "caribbean",
+      address: {
+        street_line1: "Ave. Juan Sánchez Ramírez 33",
+        street_line2: "Gazcue",
+        locality: "Santo Domingo",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 809-686-7115", email: nil }
+    },
+    {
+      id: "HT-CON-BAR", name: "Barahona", type: "consulate_general",
+      country: "DO", region: "caribbean",
+      address: {
+        street_line1: "Calle Carlos Nassis No. 8",
+        street_line2: nil,
+        locality: "Barahona",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 809-524-7353", email: nil }
+    },
+    {
+      id: "HT-CON-DAJ", name: "Dajabón", type: "consulate_general",
+      country: "DO", region: "caribbean",
+      address: {
+        street_line1: "Calle Beller",
+        street_line2: nil,
+        locality: "Dajabón",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 809-579-8287", email: nil }
+    },
+    {
+      id: "HT-CON-HIG", name: "Higüey", type: "consulate_general",
+      country: "DO", region: "caribbean",
+      address: {
+        street_line1: "C/ Gaston F. Deligne No. 50",
+        street_line2: nil,
+        locality: "Higüey",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 809-746-0781", email: nil }
+    },
+    {
+      id: "HT-CON-STI", name: "Santiago de los Caballeros", type: "consulate_general",
+      country: "DO", region: "caribbean",
+      address: {
+        street_line1: "Ave. Estrella Sadhalá #6",
+        street_line2: nil,
+        locality: "Santiago de los Caballeros",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 809-504-0651", email: nil }
+    }
   ].freeze
 
   # ── OTHER AMERICAS ─────────────────────────────────────────────
+  # 7 of 13 populated from founder-provided directory (Ottawa, Montréal,
+  # Buenos Aires, Brasília, Mexico City, Panama City, Nassau). 6 still
+  # nil — Santiago de Chile, Bogotá, La Havane, Quito, Paramaribo,
+  # Caracas — pending future verification batch.
   AMERICAS_MISSIONS = [
-    { id: "HT-EMB-BUE", name: "Buenos Aires", type: "embassy", country: "AR", region: "south_america" },
-    { id: "HT-EMB-NAS", name: "Nassau", type: "embassy", country: "BS", region: "caribbean" },
-    { id: "HT-EMB-BSB", name: "Brasília", type: "embassy", country: "BR", region: "south_america" },
-    { id: "HT-EMB-OTT", name: "Ottawa", type: "embassy", country: "CA", region: "north_america" },
-    { id: "HT-CON-MTL", name: "Montréal, QC", type: "consulate_general", country: "CA", region: "north_america" },
+    {
+      id: "HT-EMB-BUE", name: "Buenos Aires", type: "embassy",
+      country: "AR", region: "south_america",
+      address: {
+        street_line1: "Av. Figueroa Alcorta 3297",
+        street_line2: nil,
+        locality: "Buenos Aires",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+54 11 4802-5979", email: nil }
+    },
+    {
+      id: "HT-EMB-NAS", name: "Nassau", type: "embassy",
+      country: "BS", region: "caribbean",
+      address: {
+        street_line1: "Sears Hill Rd",
+        street_line2: nil,
+        locality: "Nassau",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 242-326-0325", email: nil }
+    },
+    {
+      id: "HT-EMB-BSB", name: "Brasília", type: "embassy",
+      country: "BR", region: "south_america",
+      address: {
+        street_line1: "SHIS QL 10 Conjunto 8 Casa 1",
+        street_line2: nil,
+        locality: "Brasília",
+        region: "DF",
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+55 61 3248-6860", email: nil }
+    },
+    {
+      id: "HT-EMB-OTT", name: "Ottawa", type: "embassy",
+      country: "CA", region: "north_america",
+      address: {
+        street_line1: "85 Albert St",
+        street_line2: "Suite 1110",
+        locality: "Ottawa",
+        region: "ON",
+        postal_code: "K1P 6A4",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 613-238-1628", email: nil }
+    },
+    {
+      id: "HT-CON-MTL", name: "Montréal, QC", type: "consulate_general",
+      country: "CA", region: "north_america",
+      address: {
+        street_line1: "300 Rue Léo Pariseau",
+        street_line2: "Suite 1100",
+        locality: "Montréal",
+        region: "QC",
+        postal_code: "H2X 4C1",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 514-499-1919", email: nil }
+    },
     { id: "HT-EMB-SCL", name: "Santiago de Chile", type: "embassy", country: "CL", region: "south_america" },
     { id: "HT-EMB-BOG", name: "Bogotá", type: "embassy", country: "CO", region: "south_america" },
     { id: "HT-EMB-HAV", name: "La Havane", type: "embassy", country: "CU", region: "caribbean" },
     { id: "HT-EMB-UIO", name: "Quito", type: "embassy", country: "EC", region: "south_america" },
-    { id: "HT-EMB-MEX", name: "Mexico City", type: "embassy", country: "MX", region: "north_america" },
-    { id: "HT-EMB-PTY", name: "Panama City", type: "embassy", country: "PA", region: "central_america" },
+    {
+      id: "HT-EMB-MEX", name: "Mexico City", type: "embassy",
+      country: "MX", region: "north_america",
+      address: {
+        street_line1: "Sierra Vertientes 840",
+        street_line2: "Lomas de Chapultepec",
+        locality: "Ciudad de México",
+        region: "CDMX",
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+52 55 5557-2065", email: nil }
+    },
+    {
+      id: "HT-EMB-PTY", name: "Panama City", type: "embassy",
+      country: "PA", region: "central_america",
+      address: {
+        street_line1: "Edif. World Trade Center",
+        street_line2: "Calle 53 Este",
+        locality: "Ciudad de Panamá",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+507 269-3443", email: nil }
+    },
     { id: "HT-CON-PBM", name: "Paramaribo", type: "consulate_general", country: "SR", region: "south_america" },
     { id: "HT-EMB-CCS", name: "Caracas", type: "embassy", country: "VE", region: "south_america" }
   ].freeze
 
   # ── EUROPE & OTHER ─────────────────────────────────────────────
+  # 11 of 17 populated from founder-provided directory. Still nil:
+  # Paris consulate (HT-CON-PAR — separate from embassy), Cayenne (GF),
+  # Pointe-à-Pitre (GP), Willemstad (CW), Turks & Caicos (TC), Doha (QA).
   EUROPE_OTHER_MISSIONS = [
-    { id: "HT-EMB-BRU", name: "Bruxelles", type: "embassy", country: "BE", region: "europe" },
-    { id: "HT-EMB-PAR", name: "Paris", type: "embassy", country: "FR", region: "europe" },
+    {
+      id: "HT-EMB-BRU", name: "Bruxelles", type: "embassy",
+      country: "BE", region: "europe",
+      address: {
+        street_line1: "Chaussée de Charleroi 139",
+        street_line2: nil,
+        locality: "Bruxelles",
+        region: nil,
+        postal_code: "1060",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+32 2 649 73 81", email: nil }
+    },
+    {
+      id: "HT-EMB-PAR", name: "Paris", type: "embassy",
+      country: "FR", region: "europe",
+      address: {
+        street_line1: "10 Rue Théodule Ribot",
+        street_line2: nil,
+        locality: "Paris",
+        region: nil,
+        postal_code: "75017",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+33 1 47 63 47 78", email: nil }
+    },
     { id: "HT-CON-PAR", name: "Paris (Consulat)", type: "consulate_general", country: "FR", region: "europe" },
     { id: "HT-CON-CAY", name: "Cayenne, Guyane", type: "consulate_general", country: "GF", region: "south_america" },
     { id: "HT-CON-PTP", name: "Pointe-à-Pitre, Guadeloupe", type: "consulate", country: "GP", region: "caribbean" },
-    { id: "HT-EMB-BER", name: "Berlin", type: "embassy", country: "DE", region: "europe" },
-    { id: "HT-EMB-ROM", name: "Rome (Saint-Siège)", type: "embassy", country: "VA", region: "europe" },
-    { id: "HT-EMB-ROM2", name: "Rome (Italie)", type: "embassy", country: "IT", region: "europe" },
+    {
+      id: "HT-EMB-BER", name: "Berlin", type: "embassy",
+      country: "DE", region: "europe",
+      address: {
+        street_line1: "Uhlandstraße 14",
+        street_line2: nil,
+        locality: "Berlin",
+        region: nil,
+        postal_code: "10623",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+49 30 88 55 41 34", email: nil }
+    },
+    {
+      id: "HT-EMB-ROM", name: "Rome (Saint-Siège)", type: "embassy",
+      country: "VA", region: "europe",
+      address: {
+        # Note: postal code 00136 is the Italian (Rome) postcode where the
+        # mission is physically located. Vatican City's own postcode is
+        # 00120 — not used here because the mission isn't inside the city
+        # walls. Phone matches the Italy mission's switchboard per
+        # founder-provided directory; flagged in case it's a duplicate.
+        street_line1: "Via dell'Erta Canina 3",
+        street_line2: nil,
+        locality: "Roma",
+        region: nil,
+        postal_code: "00136",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+39 06 44 25 41 06", email: nil }
+    },
+    {
+      id: "HT-EMB-ROM2", name: "Rome (Italie)", type: "embassy",
+      country: "IT", region: "europe",
+      address: {
+        street_line1: "Via Di Villa Patrizi 7",
+        street_line2: nil,
+        locality: "Roma",
+        region: "RM",
+        postal_code: "00161",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+39 06 44 25 41 06", email: nil }
+    },
     { id: "HT-CON-WIL", name: "Willemstad, Curaçao", type: "consulate_general", country: "CW", region: "caribbean" },
-    { id: "HT-CON-ORA", name: "Oranjestad, Aruba", type: "consulate_general", country: "AW", region: "caribbean" },
-    { id: "HT-EMB-MAD", name: "Madrid", type: "embassy", country: "ES", region: "europe" },
-    { id: "HT-EMB-LON", name: "London", type: "embassy", country: "GB", region: "europe" },
+    {
+      id: "HT-CON-ORA", name: "Oranjestad, Aruba", type: "consulate_general",
+      country: "AW", region: "caribbean",
+      address: {
+        street_line1: "#1 Bilderdijkstraat",  # founder paste had "Bilderdilkstraat" — corrected obvious typo (Dutch street name)
+        street_line2: nil,
+        locality: "Oranjestad",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+297 585-9211", email: nil }
+    },
+    {
+      id: "HT-EMB-MAD", name: "Madrid", type: "embassy",
+      country: "ES", region: "europe",
+      address: {
+        street_line1: "Calle de Felipe IV 4",
+        street_line2: nil,
+        locality: "Madrid",
+        region: nil,
+        postal_code: "28014",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+34 91 575 26 24", email: nil }
+    },
+    {
+      id: "HT-EMB-LON", name: "London", type: "embassy",
+      country: "GB", region: "europe",
+      address: {
+        street_line1: "15 Elvaston Place",
+        street_line2: nil,
+        locality: "London",
+        region: nil,
+        postal_code: "SW7 5QF",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+44 20 3771 1427", email: nil }
+    },
     { id: "HT-CON-TCI", name: "Providenciales, Turks & Caicos", type: "consulate_general", country: "TC", region: "caribbean" },
-    { id: "HT-EMB-TYO", name: "Tokyo", type: "embassy", country: "JP", region: "asia" },
+    {
+      id: "HT-EMB-TYO", name: "Tokyo", type: "embassy",
+      country: "JP", region: "asia",
+      address: {
+        street_line1: "4-12-24 Nishi-Azabu",
+        street_line2: nil,
+        locality: "Tokyo",
+        region: "Minato-ku",
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+81 3 3486 7096", email: nil }
+    },
     { id: "HT-EMB-DOH", name: "Doha", type: "embassy", country: "QA", region: "middle_east" },
-    { id: "HT-EMB-TPE", name: "Taipei", type: "embassy", country: "TW", region: "asia" },
-    { id: "HT-EMB-HAN", name: "Hanoi", type: "embassy", country: "VN", region: "asia" }
+    {
+      id: "HT-EMB-TPE", name: "Taipei", type: "embassy",
+      country: "TW", region: "asia",
+      address: {
+        street_line1: "No. 9-1, Lane 62, Tianmu West Rd",
+        street_line2: nil,
+        locality: "Taipei",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+886 2 2876 6718", email: nil }
+    },
+    {
+      id: "HT-EMB-HAN", name: "Hanoi", type: "embassy",
+      country: "VN", region: "asia",
+      address: {
+        street_line1: "44B Ly Thuong Kiet",
+        street_line2: "Hoan Kiem",
+        locality: "Hanoi",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+84 24 7107 8888", email: nil }
+    }
   ].freeze
 
   # ── ALL MISSIONS ───────────────────────────────────────────────
