@@ -68,22 +68,35 @@ module Election
         raise DuplicateSignatureError, "#{signatory[:name]} deja siyen. Chak moun ka siyen yon sèl fwa."
       end
 
-      # Persist the signature
-      ElectionSignature.create!(
-        election_id: election_id,
-        bonid: signatory[:bonid],
-        role: signatory[:role],
-        signatory_name: signatory[:name],
-        liveness_session_id: signatory[:liveness_session_id],
-        liveness_verified: signatory[:liveness_verified] || false,
-        signed_at: Time.current,
-        key_shard_hash: OpenSSL::Digest::SHA256.hexdigest(signatory[:key_shard])
-      )
+      # Tamper-evidence: the submitted cleartext shard MUST match a
+      # pre-registered ElectionKeyShard row for this election. If no
+      # row matches the hash, the shard is forged or corrupted and we
+      # reject before any signature is recorded.
+      submitted_hash = OpenSSL::Digest::SHA256.hexdigest(signatory[:key_shard])
+      shard_row = ElectionKeyShard.where(election_id: election_id, shard_hash: submitted_hash).first
+      if shard_row.nil?
+        raise InvalidSignatoryError, "Kle shard la pa otantik pou eleksyon sa."
+      end
+      if shard_row.used_at.present?
+        raise InvalidSignatoryError, "Kle shard sa a deja itilize."
+      end
 
-      # Reload from DB
+      signature = nil
+      ActiveRecord::Base.transaction do
+        signature = ElectionSignature.create!(
+          election_id: election_id,
+          bonid: signatory[:bonid],
+          role: signatory[:role],
+          signatory_name: signatory[:name],
+          liveness_session_id: signatory[:liveness_session_id],
+          liveness_verified: signatory[:liveness_verified] || false,
+          signed_at: Time.current,
+          key_shard_hash: submitted_hash
+        )
+        shard_row.mark_used!(signature: signature)
+      end
+
       signatures = load_signatures(election_id)
-
-      # Broadcast update to all connected admins
       broadcast_signature_update(election_id, signatures)
 
       Rails.logger.info(
@@ -98,10 +111,17 @@ module Election
         signatories: signatures.map { |s| { role: s[:role], name: s[:name], signed_at: s[:signed_at] } }
       }
 
-      # Auto-trigger decryption when quorum is met
+      # Auto-trigger decryption when quorum is met. Pull the cleartext
+      # shard values from ElectionKeyShard (the rows we marked used
+      # above) — these are what Shamir.reconstruct needs.
       if result[:quorum_met]
-        key_shards = signatures.first(QUORUM_REQUIRED).map { |s| s[:key_shard_hash] }
-        trigger_final_tally(election_id, key_shards)
+        cleartext_shards = ElectionKeyShard
+                             .where(election_id: election_id)
+                             .where.not(used_at: nil)
+                             .order(:used_at)
+                             .limit(QUORUM_REQUIRED)
+                             .pluck(:shard_value_encrypted)
+        trigger_final_tally(election_id, cleartext_shards)
       end
 
       result
@@ -176,20 +196,59 @@ module Election
     def self.trigger_final_tally(election_id, key_shards)
       Rails.logger.info("[MultiSig] QUORUM MET — triggering final tally for #{election_id}")
 
-      # 1. Close the election to new ballots
       election = ::BonvoteElection.find_by(id: election_id)
       election&.close! if election&.open?
 
-      # 2. Reconstruct master key from shards (Shamir's Secret Sharing)
-      # In production: master_key = ShamirSecretSharing.combine(key_shards)
-      # For now: the master key is derived from the quorum of shard hashes
-      master_key_material = key_shards.sort.join("||")
-      reconstructed_key_hash = OpenSSL::Digest::SHA256.hexdigest(master_key_material)
+      # Real Shamir reconstruct. `key_shards` here are the cleartext
+      # share strings collected from the 5+ council members. We verify
+      # the recovered master against the fingerprint stamped at
+      # generation time (BonvoteElection#decryption_key_fingerprint) —
+      # if it doesn't match, at least one shard is wrong/forged and we
+      # MUST NOT touch any encrypted ballot ciphertext.
+      reconstructed = nil
+      reconstructed_fingerprint = nil
+      begin
+        require "secret_sharing"
+        reconstructed = SecretSharing.reconstruct(key_shards.first(QUORUM_REQUIRED))
+        reconstructed_fingerprint = OpenSSL::Digest::SHA256.hexdigest(reconstructed)
+      rescue => e
+        Rails.logger.error("[MultiSig] Shamir reconstruct failed for #{election_id}: #{e.class}: #{e.message}")
+        return broadcast_decryption_failed(election_id, "rekonstriksyon kle a echwe")
+      end
 
-      Rails.logger.info("[MultiSig] Master key reconstructed (hash: #{reconstructed_key_hash[0..15]}...)")
+      expected = election&.decryption_key_fingerprint
+      if expected.blank?
+        Rails.logger.warn("[MultiSig] No fingerprint on election #{election_id} — cannot verify reconstructed key")
+      elsif !ActiveSupport::SecurityUtils.secure_compare(expected, reconstructed_fingerprint)
+        Rails.logger.error(
+          "[MultiSig] FINGERPRINT MISMATCH for election #{election_id}: " \
+          "expected=#{expected[0..15]}… got=#{reconstructed_fingerprint[0..15]}…"
+        )
+        return broadcast_decryption_failed(election_id, "kle rekonstwi a pa matche fingerprint la")
+      end
 
-      # 3. Broadcast to all connected admins that results are ready
+      Rails.logger.info(
+        "[MultiSig] Master key reconstructed and verified " \
+        "(fingerprint=#{reconstructed_fingerprint[0..15]}…) for election=#{election_id}"
+      )
+
       broadcast_decryption_complete(election_id)
+    ensure
+      reconstructed = nil
+    end
+
+    def self.broadcast_decryption_failed(election_id, reason)
+      ActionCable.server.broadcast(
+        "election_tally_#{election_id}",
+        {
+          type: "decryption_failed",
+          election_id: election_id,
+          reason: reason,
+          failed_at: Time.current.iso8601
+        }
+      )
+    rescue => e
+      Rails.logger.warn("[MultiSig] Failure broadcast failed: #{e.message}")
     end
 
     def self.broadcast_signature_update(election_id, signatures)

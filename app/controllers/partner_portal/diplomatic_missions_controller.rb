@@ -87,6 +87,7 @@ module PartnerPortal
     def create
       @participation = ElectionMissionParticipation.new(participation_params.merge(election: @election))
       if @participation.save
+        audit!("mission_participation.created", @participation)
         redirect_to partner_portal_diplomatic_missions_path,
                     notice: "Misyon konfigire: #{@participation.display_label}"
       else
@@ -100,6 +101,8 @@ module PartnerPortal
     # PATCH /partner_portal/diplomatic_missions/:id
     def update
       if @participation.update(participation_params)
+        audit!("mission_participation.updated", @participation,
+               changed: @participation.previous_changes.except("updated_at").keys)
         redirect_to partner_portal_diplomatic_missions_path,
                     notice: "Misyon mete ajou: #{@participation.display_label}"
       else
@@ -110,6 +113,7 @@ module PartnerPortal
     # DELETE /partner_portal/diplomatic_missions/:id
     def destroy
       label = @participation.display_label
+      audit!("mission_participation.destroyed", @participation)
       @participation.destroy
       redirect_to partner_portal_diplomatic_missions_path,
                   notice: "Konfigirasyon retire pou: #{label}"
@@ -117,8 +121,45 @@ module PartnerPortal
 
     private
 
+    # Defense-in-depth lookup. The participation row is now keyed by an
+    # opaque UUID slug (~122 bits of entropy) instead of the sequential
+    # integer id, so /diplomatic_missions/:n/edit cannot be enumerated by
+    # guessing. Misses 404 to the index AND get audit-logged so we can
+    # spot scanning attempts. Scoped to the active election so cross-
+    # election URL tampering also misses.
     def set_participation
-      @participation = ElectionMissionParticipation.find(params[:id])
+      scope = @election ? ElectionMissionParticipation.for_election(@election.id)
+                        : ElectionMissionParticipation.all
+      @participation = scope.find_by!(slug: params[:id])
+    rescue ActiveRecord::RecordNotFound
+      Rails.logger.warn(
+        "🚨 Mission participation IDOR attempt: partner_id=#{@current_partner&.id} " \
+        "actor=#{current_portal_user&.id} requested_id=#{params[:id].inspect}"
+      )
+      audit!("mission_participation.access_denied", nil, requested_id: params[:id])
+      redirect_to partner_portal_diplomatic_missions_path,
+                  alert: "Konfigirasyon misyon sa pa egziste."
+    end
+
+    # Mirrors PollingCentersController#audit!: PartnerAuditLog only stores
+    # an AdminUser actor, so we encode the PartnerAdmin id + email + IP
+    # into metadata so traceability never depends on a future schema add.
+    def audit!(event, participation, extra = {})
+      payload = {
+        partner_admin_id: current_portal_user&.id,
+        partner_admin_email: current_portal_user&.email,
+        ip: request.remote_ip,
+        user_agent: request.user_agent,
+        election_id: @election&.id
+      }
+      if participation
+        payload[:participation_id]      = participation.id
+        payload[:diplomatic_mission_id] = participation.diplomatic_mission_id
+      end
+      payload.merge!(extra)
+      PartnerAuditLog.log!(@current_partner, current_portal_user, event, payload)
+    rescue => e
+      Rails.logger.error("PartnerAuditLog write failed: #{e.class}: #{e.message}")
     end
 
     def load_active_election

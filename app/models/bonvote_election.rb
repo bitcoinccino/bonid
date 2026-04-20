@@ -17,6 +17,7 @@ class BonvoteElection < ApplicationRecord
   has_many :election_candidates,       foreign_key: :election_id, dependent: :destroy
   has_many :election_ballots,          foreign_key: :election_id, dependent: :restrict_with_error
   has_many :election_signatures,       foreign_key: :election_id, dependent: :destroy
+  has_many :election_key_shards,       foreign_key: :election_id, dependent: :destroy
   has_many :election_bodies,           foreign_key: :election_id, dependent: :destroy
   has_many :election_accreditations,   foreign_key: :election_id, dependent: :destroy
   has_many :election_disputes,         foreign_key: :election_id, dependent: :destroy
@@ -142,5 +143,23 @@ class BonvoteElection < ApplicationRecord
 
   def votes_by_department
     election_ballots.group(:department_code).count
+  end
+
+  # ── Decryption ceremony key (CEP 5-of-9) ───────────────────────────
+  # Generates the master tally-decryption key, splits it into 9 Shamir
+  # shards, and persists one row per CEP council role. Idempotent — a
+  # second call raises AlreadyGeneratedError. Use `regenerate!` to
+  # rotate. Council members are assigned to specific shards in a
+  # subsequent step (see project_cep_decryption_ceremony_shards.md).
+  def generate_decryption_key!
+    Election::DecryptionKeyCeremonyService.generate!(self)
+  end
+
+  def regenerate_decryption_key!
+    Election::DecryptionKeyCeremonyService.regenerate!(self)
+  end
+
+  def decryption_key_generated?
+    decryption_key_fingerprint.present? && election_key_shards.exists?
   end
 end

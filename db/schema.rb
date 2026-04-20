@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_19_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -221,6 +221,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
     t.boolean "allows_online_voting", default: false, null: false
     t.boolean "allows_digital_enrollment", default: true, null: false
     t.string "bonvote_key_id"
+    t.string "decryption_key_fingerprint"
+    t.datetime "decryption_key_generated_at"
     t.index ["election_type", "round"], name: "index_bonvote_elections_on_election_type_and_round"
     t.index ["parent_election_id"], name: "index_bonvote_elections_on_parent_election_id"
     t.index ["status"], name: "index_bonvote_elections_on_status"
@@ -701,6 +703,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
     t.index ["election_id"], name: "index_election_disputes_on_election_id"
   end
 
+  create_table "election_key_shards", force: :cascade do |t|
+    t.bigint "election_id", null: false
+    t.string "role", null: false
+    t.string "bonid"
+    t.text "shard_value_encrypted", null: false
+    t.string "shard_hash", null: false
+    t.integer "threshold", default: 5, null: false
+    t.integer "total_shards", default: 9, null: false
+    t.string "distribution_method"
+    t.string "distributed_to"
+    t.datetime "distributed_at"
+    t.datetime "used_at"
+    t.bigint "used_in_signature_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["election_id", "bonid"], name: "idx_key_shards_election_bonid", unique: true, where: "(bonid IS NOT NULL)"
+    t.index ["election_id", "role"], name: "idx_key_shards_election_role", unique: true
+    t.index ["election_id"], name: "index_election_key_shards_on_election_id"
+    t.index ["shard_hash"], name: "index_election_key_shards_on_shard_hash"
+    t.index ["used_in_signature_id"], name: "index_election_key_shards_on_used_in_signature_id"
+  end
+
   create_table "election_mission_participations", force: :cascade do |t|
     t.bigint "election_id", null: false
     t.string "diplomatic_mission_id", null: false
@@ -718,9 +742,11 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
     t.string "postal_code"
     t.decimal "latitude", precision: 10, scale: 6
     t.decimal "longitude", precision: 10, scale: 6
+    t.string "slug", null: false
     t.index ["election_id", "diplomatic_mission_id"], name: "idx_emp_election_mission_unique", unique: true
     t.index ["election_id"], name: "index_election_mission_participations_on_election_id"
     t.index ["operating_hours"], name: "index_election_mission_participations_on_operating_hours", using: :gin
+    t.index ["slug"], name: "index_election_mission_participations_on_slug", unique: true
     t.index ["status"], name: "index_election_mission_participations_on_status"
   end
 
@@ -1762,6 +1788,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
     t.datetime "updated_at", null: false
     t.string "contact_phone"
     t.string "contact_hours"
+    t.string "venue_type"
+    t.integer "expected_capacity"
+    t.jsonb "operating_hours", default: {}, null: false
+    t.bigint "partner_id", null: false
+    t.bigint "created_by_partner_admin_id"
+    t.string "slug", null: false
     t.index ["arrondissement_id"], name: "index_polling_centers_on_arrondissement_id"
     t.index ["bonvote_election_id", "communal_section_id"], name: "idx_polling_centers_election_section"
     t.index ["bonvote_election_id", "diplomatic_mission_id"], name: "idx_polling_centers_election_mission"
@@ -1769,9 +1801,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
     t.index ["center_type"], name: "index_polling_centers_on_center_type"
     t.index ["communal_section_id"], name: "index_polling_centers_on_communal_section_id"
     t.index ["commune_id"], name: "index_polling_centers_on_commune_id"
+    t.index ["created_by_partner_admin_id"], name: "index_polling_centers_on_created_by_partner_admin_id"
     t.index ["department_id"], name: "index_polling_centers_on_department_id"
     t.index ["diplomatic_mission_id"], name: "index_polling_centers_on_diplomatic_mission_id"
+    t.index ["operating_hours"], name: "index_polling_centers_on_operating_hours", using: :gin
+    t.index ["partner_id"], name: "index_polling_centers_on_partner_id"
+    t.index ["slug"], name: "index_polling_centers_on_slug", unique: true
     t.index ["status"], name: "index_polling_centers_on_status"
+    t.index ["venue_type"], name: "index_polling_centers_on_venue_type"
   end
 
   create_table "polling_stations", force: :cascade do |t|
@@ -1783,8 +1820,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "slug", null: false
     t.index ["polling_center_id", "bv_number"], name: "idx_polling_stations_center_bv_unique", unique: true
     t.index ["polling_center_id"], name: "index_polling_stations_on_polling_center_id"
+    t.index ["slug"], name: "index_polling_stations_on_slug", unique: true
     t.index ["status"], name: "index_polling_stations_on_status"
   end
 
@@ -2471,6 +2510,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
   add_foreign_key "election_disputes", "election_bodies"
   add_foreign_key "election_disputes", "election_candidates"
   add_foreign_key "election_disputes", "election_constituencies", column: "constituency_id"
+  add_foreign_key "election_key_shards", "bonvote_elections", column: "election_id"
+  add_foreign_key "election_key_shards", "election_signatures", column: "used_in_signature_id"
   add_foreign_key "election_mission_participations", "bonvote_elections", column: "election_id", on_delete: :cascade
   add_foreign_key "election_party_registrations", "admin_users", column: "reviewed_by_admin_user_id"
   add_foreign_key "election_party_registrations", "bonvote_elections", column: "election_id"
@@ -2555,6 +2596,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_010000) do
   add_foreign_key "polling_centers", "communal_sections"
   add_foreign_key "polling_centers", "communes"
   add_foreign_key "polling_centers", "departments"
+  add_foreign_key "polling_centers", "partners"
+  add_foreign_key "polling_centers", "users", column: "created_by_partner_admin_id"
   add_foreign_key "polling_stations", "polling_centers", on_delete: :cascade
   add_foreign_key "qr_scan_logs", "identity_submissions"
   add_foreign_key "qr_scan_logs", "officers"

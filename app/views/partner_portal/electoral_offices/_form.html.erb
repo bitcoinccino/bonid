@@ -1,10 +1,29 @@
-<%# Shared form — new + edit for ElectoralOffice. Same fields and nested
-    Address as the AdminUser-side form; just routed under partner_portal. %>
+<%# Biwo Elektoral — multi-step wizard.
+    Step 1: Tip Biwo (BED Departmental | BEK Komunal) — radio cards.
+    Step 2: Lokasyon — Haitian admin cascade. BED stops at depatman;
+            BEK requires komin (toggled via electoral-office-type controller).
+    Step 3: Detay Biwo — name (auto-suggested), phone, status, notes.
+    Step 4: Lè Ouvèti — shared HasOperatingHours editor.
+    Step 5: Revize — read-only summary + submit.
+
+    On `edit`, Step 1 is auto-skipped via skip_steps_value: [1] since the
+    office_type is already locked. %>
+
+<%
+  edit_mode    = @office.persisted?
+  skip_steps   = edit_mode ? [1] : []
+  current_step = edit_mode ? 2 : 1
+%>
 
 <%= form_with model: @office,
-              url: @office.persisted? ? partner_portal_electoral_office_path(@office) : partner_portal_electoral_offices_path,
-              method: @office.persisted? ? :patch : :post,
-              local: true do |f| %>
+              url: edit_mode ? partner_portal_electoral_office_path(@office) : partner_portal_electoral_offices_path,
+              method: edit_mode ? :patch : :post,
+              local: true,
+              data: {
+                controller: "wizard electoral-office-type",
+                wizard_current_step_value: current_step,
+                wizard_skip_steps_value: skip_steps.to_json
+              } do |f| %>
 
   <% if @office.errors.any? %>
     <div class="alert alert-danger">
@@ -15,146 +34,322 @@
     </div>
   <% end %>
 
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-information-line me-1"></i>Enfòmasyon Biwo
-  </h6>
-
-  <%# Geographic scope (department for BED, commune for BEK) is derived
-      from the Address section below — see ElectoralOffice#sync_scope_from_address.
-      Keeping a single picker prevents drift between "office scope" and
-      "office location", which are always the same thing for BED/BEK. %>
-  <div class="row g-3 mb-4">
-    <div class="col-md-6">
-      <%= f.label :name, "Non Biwo", class: "form-label" %>
-      <%= f.text_field :name, class: "form-control", required: true,
-                       placeholder: "Ex: BED Ouest, BEK Pétion-Ville" %>
+  <%# ── Step indicators + progress bar ─────────────────────────── %>
+  <div class="mb-4">
+    <%
+      wizard_steps = [
+        { num: 1, label: "Tip Biwo",     icon: "ri-government-line" },
+        { num: 2, label: "Lokasyon",     icon: "ri-map-pin-2-line" },
+        { num: 3, label: "Detay Biwo",   icon: "ri-information-line" },
+        { num: 4, label: "Lè Ouvèti",    icon: "ri-time-line" },
+        { num: 5, label: "Revize",       icon: "ri-check-double-line" }
+      ]
+    %>
+    <div class="d-flex align-items-center mb-2">
+      <% wizard_steps.each_with_index do |step, i| %>
+        <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
+          <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if step[:num] == current_step %> <%= 'completed' if skip_steps.include?(step[:num]) %>"
+               style="width: 36px; height: 36px; border: 2px solid #CBD5E1; background: #fff; font-weight: 600; font-size: 0.85rem;">
+            <i class="<%= step[:icon] %>"></i>
+          </div>
+          <div class="small mt-1 text-muted" style="font-size: 0.72rem;"><%= step[:label] %></div>
+        </div>
+        <% unless i == wizard_steps.length - 1 %>
+          <div style="flex: 0 0 24px; height: 2px; background: #E2E8F0; margin: 0 -8px; margin-top: -16px;"></div>
+        <% end %>
+      <% end %>
     </div>
-
-    <div class="col-md-3">
-      <%= f.label :office_type, "Tip", class: "form-label" %>
-      <%= f.select :office_type,
-                   ElectoralOffice::OFFICE_TYPES.map { |t| [t.upcase, t] },
-                   { include_blank: "— Chwazi —" },
-                   class: "form-select", required: true %>
-    </div>
-
-    <div class="col-md-3">
-      <%= f.label :status, "Estati", class: "form-label" %>
-      <%= f.select :status,
-                   ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
-                   {}, class: "form-select" %>
-    </div>
-
-    <div class="col-md-4">
-      <%= f.label :phone, "Telefòn", class: "form-label" %>
-      <%= f.telephone_field :phone, class: "form-control", placeholder: "+509 …" %>
-    </div>
-
-    <div class="col-12">
-      <%= f.label :notes, "Nòt", class: "form-label" %>
-      <%= f.text_area :notes, rows: 2, class: "form-control" %>
+    <div class="progress" style="height: 4px;">
+      <div data-wizard-target="progressBar" class="progress-bar"
+           style="width: <%= ((current_step - 1) / 4.0 * 100).to_i %>%; background: #00209F;"></div>
     </div>
   </div>
 
-  <%# === ORÈ DOPERASYON === Reusable shared editor (also used by diplomatic
-      missions form). Driven by the `hours-day` Stimulus controller. %>
-  <hr class="my-4">
-  <%= render "partner_portal/shared/hours_editor",
-             record: @office,
-             field_prefix: "electoral_office[operating_hours]",
-             id_prefix: "office-hours" %>
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 1 — Tip Biwo
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="1"
+           class="wizard-step <%= 'active' unless edit_mode %> <%= 'd-none' if edit_mode %>"
+           style="<%= 'display:none' if edit_mode %>">
+    <h5 class="fw-semibold mb-3">Ki kalite Biwo Elektoral w'ap kreye?</h5>
+    <p class="text-muted small mb-4">
+      <strong>BED</strong> kouvri yon depatman antye (10 BED nan tout peyi a).
+      <strong>BEK</strong> kouvri yon komin sèlman (yon BEK pou chak komin).
+    </p>
 
-  <hr class="my-4">
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-map-pin-line me-1"></i>Adrès
-  </h6>
+    <div class="row g-3">
+      <% [
+        { value: "bed", icon: "ri-government-fill", title: "BED — Departmental",
+          subtitle: "Bureau Électoral Départemental — yon biwo pou chak nan 10 depatman yo." },
+        { value: "bek", icon: "ri-building-2-line", title: "BEK — Komunal",
+          subtitle: "Bureau Électoral Communal — yon biwo pou chak komin." }
+      ].each do |opt| %>
+        <div class="col-md-6">
+          <label class="card pp-card h-100 border-2"
+                 style="cursor: pointer; transition: all .15s;">
+            <%= f.radio_button :office_type, opt[:value],
+                  class: "form-check-input visually-hidden",
+                  required: !edit_mode,
+                  data: {
+                    electoral_office_type_target: "typeRadio",
+                    action: "change->electoral-office-type#typeChange"
+                  } %>
+            <div class="card-body text-center p-4">
+              <i class="<%= opt[:icon] %>" style="font-size: 2.4rem; color: #00209F;"></i>
+              <h6 class="fw-semibold mt-2 mb-1"><%= opt[:title] %></h6>
+              <p class="text-muted small mb-0"><%= opt[:subtitle] %></p>
+            </div>
+          </label>
+        </div>
+      <% end %>
+    </div>
 
-  <%= f.fields_for :address do |a| %>
-    <div class="row g-3 mb-4">
-      <div class="col-md-8">
-        <%= a.label :street_address, "Adrès / Ri", class: "form-label" %>
-        <%= a.text_field :street_address, class: "form-control",
-                         placeholder: "Ex: Rue Capois, Bicentenaire" %>
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <%= link_to "Anile", partner_portal_electoral_offices_path, class: "btn btn-link" %>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 2 — Lokasyon
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="2"
+           class="wizard-step <%= 'active' if edit_mode %> <%= 'd-none' unless edit_mode %>"
+           style="<%= 'display:none' unless edit_mode %>">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-map-pin-2-line text-primary me-2"></i>Lokasyon Biwo a
+    </h5>
+    <p class="text-muted small mb-2">
+      Chwazi sikonskripsyon administrative depatman → arondisman → komin →
+      seksyon komunal. Kòd postal la pral ranpli otomatikman lè ou chwazi
+      seksyon an.
+    </p>
+    <p class="small text-info mb-4" data-electoral-office-type-target="scopeHint">
+      <i class="ri-information-line me-1"></i>
+      Chwazi tip biwo a anvan w kontinye.
+    </p>
+
+    <%= f.fields_for :address do |a| %>
+      <div class="row g-3" data-controller="address">
+        <div class="col-md-6">
+          <%= a.label :department_id, "Depatman", class: "form-label fw-semibold pp-text-sm" %>
+          <%= a.select :department_id,
+                       @departments.map { |d| [d.name, d.id] },
+                       { prompt: "— Chwazi Depatman —" },
+                       class: "form-select",
+                       data: {
+                         action: "change->address#loadArrondissements change->electoral-office-type#departmentChanged",
+                         address_target: "department",
+                         selected: a.object&.department_id,
+                         slug_map_value: @departments.index_by(&:id).transform_values(&:slug).to_json,
+                         electoral_office_type_target: "departmentSelect"
+                       } %>
+        </div>
+        <div class="col-md-6">
+          <%= a.label :arrondissement_id, "Arondisman", class: "form-label fw-semibold pp-text-sm" %>
+          <%= a.select :arrondissement_id, [],
+                       { prompt: "— Chwazi Arondisman —" },
+                       class: "form-select",
+                       disabled: a.object&.department_id.blank?,
+                       data: {
+                         action: "change->address#loadCommunes",
+                         address_target: "arrondissement",
+                         selected: a.object&.arrondissement_id
+                       } %>
+        </div>
+        <div class="col-md-6">
+          <%= a.label :commune_id, "Komin", class: "form-label fw-semibold pp-text-sm" %>
+          <%= a.select :commune_id, [],
+                       { prompt: "— Chwazi Komin —" },
+                       class: "form-select",
+                       disabled: a.object&.arrondissement_id.blank?,
+                       data: {
+                         action: "change->address#loadCommunalSections change->electoral-office-type#communeChanged",
+                         address_target: "commune",
+                         selected: a.object&.commune_id,
+                         electoral_office_type_target: "communeSelect"
+                       } %>
+        </div>
+        <div class="col-md-6">
+          <%= a.label :communal_section_id, "Seksyon Komunal", class: "form-label fw-semibold pp-text-sm" %>
+          <%= a.select :communal_section_id, [],
+                       { prompt: "— Chwazi Seksyon —" },
+                       class: "form-select",
+                       disabled: a.object&.commune_id.blank?,
+                       data: {
+                         action: "change->address#loadPostalCode",
+                         address_target: "section",
+                         selected: a.object&.communal_section_id
+                       } %>
+          <div class="form-text small">Opsyonèl pou BED · obligatwa pou BEK ki bezwen adrès detaye</div>
+        </div>
+
+        <div class="col-md-8">
+          <%= a.label :street_address, "Adrès / Ri", class: "form-label fw-semibold pp-text-sm" %>
+          <%= a.text_field :street_address, class: "form-control",
+                            placeholder: "Egz: Rue Capois, Bicentenaire" %>
+        </div>
+        <div class="col-md-4">
+          <%= a.label :postal_code, "Kòd Postal", class: "form-label fw-semibold pp-text-sm" %>
+          <%= a.text_field :postal_code, class: "form-control",
+                            placeholder: "HT6110", readonly: true,
+                            data: { address_target: "postalCode" } %>
+          <div class="form-text small">Otomatik depi seksyon komunal la</div>
+        </div>
+
+        <%= a.hidden_field :country, value: (a.object&.country.presence || "Haiti") %>
       </div>
-      <div class="col-md-4">
-        <%= a.label :locality, "Lokalite", class: "form-label" %>
-        <%= a.text_field :locality, class: "form-control" %>
+    <% end %>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous"
+              <%= 'style=visibility:hidden' if edit_mode %>>
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 3 — Detay Biwo
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="3"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-information-line text-primary me-2"></i>Detay Biwo a
+    </h5>
+    <p class="text-muted small mb-4">
+      Non biwo a ranpli otomatikman dapre tip + sikonskripsyon
+      (egz: "BED Ouest", "BEK Pétion-Ville"). Modifye si w bezwen.
+    </p>
+
+    <div class="row g-3">
+      <div class="col-md-12">
+        <%= f.label :name, "Non Biwo", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :name, class: "form-control", required: true,
+              placeholder: "Egz: BED Ouest, BEK Pétion-Ville",
+              data: { electoral_office_type_target: "nameInput" } %>
+      </div>
+
+      <div class="col-md-12">
+        <%= render "partner_portal/shared/phone_with_country",
+                   f: f,
+                   field: :phone,
+                   label: "Telefòn",
+                   default_country: "HT",
+                   placeholder_digits: "2812 1234" %>
+      </div>
+
+      <div class="col-md-12">
+        <%= f.label :notes, "Nòt", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_area :notes, class: "form-control", rows: 2,
+              placeholder: "Nenpòt enfòmasyon enpòtan sou biwo a…" %>
+      </div>
+
+      <%# Avanse — status default "planned" usually fine. %>
+      <div class="col-md-12">
+        <details class="small">
+          <summary class="text-muted">Opsyon avanse (estati)</summary>
+          <div class="row g-2 mt-2">
+            <div class="col-md-6">
+              <%= f.label :status, "Estati", class: "form-label small" %>
+              <%= f.select :status,
+                           ElectoralOffice::STATUSES.map { |s| [s.titleize, s] },
+                           {}, class: "form-select form-select-sm" %>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
 
-    <%# 4-level Haitian geographic cascade — Depatman → Arondisman → Komin →
-        Seksyon Komunal. Same `address` Stimulus controller used by
-        polling_centers/_form. Children disabled until parent picked;
-        prefilled values flow through `data-selected`; postal code auto-fills
-        when communal section is chosen. %>
-    <div class="row g-3 mb-4" data-controller="address">
-      <div class="col-md-6">
-        <%= a.label :department_id, "Depatman", class: "form-label" %>
-        <%= a.select :department_id,
-                     @departments.map { |d| [d.name, d.id] },
-                     { prompt: "— Chwazi Depatman —" },
-                     class: "form-select",
-                     data: {
-                       action: "change->address#loadArrondissements",
-                       address_target: "department",
-                       selected: a.object&.department_id,
-                       slug_map: @departments.index_by(&:id).transform_values(&:slug).to_json
-                     } %>
-      </div>
-      <div class="col-md-6">
-        <%= a.label :arrondissement_id, "Arondisman", class: "form-label" %>
-        <%= a.select :arrondissement_id, [],
-                     { prompt: "— Chwazi Arondisman —" },
-                     class: "form-select",
-                     disabled: a.object&.department_id.blank?,
-                     data: {
-                       action: "change->address#loadCommunes",
-                       address_target: "arrondissement",
-                       selected: a.object&.arrondissement_id
-                     } %>
-      </div>
-      <div class="col-md-6">
-        <%= a.label :commune_id, "Komin", class: "form-label" %>
-        <%= a.select :commune_id, [],
-                     { prompt: "— Chwazi Komin —" },
-                     class: "form-select",
-                     disabled: a.object&.arrondissement_id.blank?,
-                     data: {
-                       action: "change->address#loadCommunalSections",
-                       address_target: "commune",
-                       selected: a.object&.commune_id
-                     } %>
-      </div>
-      <div class="col-md-6">
-        <%= a.label :communal_section_id, "Seksyon Komunal", class: "form-label" %>
-        <%= a.select :communal_section_id, [],
-                     { prompt: "— Chwazi Seksyon —" },
-                     class: "form-select",
-                     disabled: a.object&.commune_id.blank?,
-                     data: {
-                       action: "change->address#loadPostalCode",
-                       address_target: "section",
-                       selected: a.object&.communal_section_id
-                     } %>
-      </div>
-
-      <div class="col-md-4">
-        <%= a.label :postal_code, "Kòd Postal", class: "form-label" %>
-        <%= a.text_field :postal_code, class: "form-control",
-                         placeholder: "HT6110",
-                         data: { address_target: "postalCode" } %>
-      </div>
-      <div class="col-md-4">
-        <%= a.label :country, "Peyi", class: "form-label" %>
-        <%= a.text_field :country, class: "form-control",
-                         value: (a.object&.country || "Haiti") %>
-      </div>
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
     </div>
-  <% end %>
+  </section>
 
-  <div class="d-flex justify-content-end gap-2">
-    <%= link_to "Anile", partner_portal_electoral_offices_path, class: "btn btn-link" %>
-    <%= f.submit(@office.new_record? ? "Kreye Biwo" : "Anrejistre Chanjman",
-                 class: "btn pp-btn-brand px-4") %>
-  </div>
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 4 — Lè Ouvèti
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="4"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-time-line text-primary me-2"></i>Lè Biwo a Louvri
+    </h5>
+    <p class="text-muted small mb-4">
+      Pou yon BED/BEK, sa se lè regilye yo (egz: Lendi-Vandredi 08:00-16:00).
+      Aktive switch pou jou ki louvri yo, apre tape lè ouvèti ak fèmti.
+    </p>
+
+    <%= render "partner_portal/shared/hours_editor",
+               record: @office,
+               field_prefix: "electoral_office[operating_hours]",
+               id_prefix: "office-hours" %>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Revize <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 5 — Revize ak Soumèt
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="5"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-check-double-line text-primary me-2"></i>Revize ak Soumèt
+    </h5>
+    <p class="text-muted small mb-4">
+      Verifye enfòmasyon yo anba a. Klike "Tounen" pou modifye nenpòt
+      etap, oswa "<%= edit_mode ? 'Anrejistre Chanjman' : 'Kreye Biwo' %>".
+    </p>
+
+    <div data-electoral-office-type-target="reviewSummary"
+         class="bg-white border rounded p-3 mb-3"></div>
+
+    <div class="d-flex justify-content-between gap-2">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <%= f.submit (edit_mode ? "Anrejistre Chanjman" : "Kreye Biwo"),
+                   class: "btn pp-btn-brand px-4" %>
+    </div>
+  </section>
+
 <% end %>
+
+<%# Card-radio + step-indicator visual feedback. Same scoping pattern
+    as the polling-center wizard. %>
+<style>
+  .wizard-step .card.pp-card { border-color: #E2E8F0; }
+  .wizard-step .card.pp-card:has(input[type="radio"]:checked) {
+    border-color: #00209F !important;
+    box-shadow: 0 0 0 3px rgba(0, 32, 159, 0.1);
+  }
+  .wizard-step .card.pp-card:hover {
+    border-color: #94A3B8;
+  }
+  .step-circle.active {
+    border-color: #00209F !important;
+    background: #00209F !important;
+    color: #fff !important;
+  }
+  .step-circle.completed {
+    border-color: #16A34A !important;
+    background: #16A34A !important;
+    color: #fff !important;
+  }
+</style>

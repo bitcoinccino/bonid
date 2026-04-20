@@ -32,6 +32,7 @@ gem "image_processing", "~> 1.2"
 gem "activestorage-validator"
 gem "openssl"
 gem "ed25519", "~> 1.4"      # Ed25519 signatures for BonID QR offline verification
+gem "secret_sharing", "~> 0.0" # Shamir 5-of-9 split for the CEP tally-decryption ceremony
 
 # === JSON Schema & Data Validation ===
 gem "json_schemer"           # Partner schema validation

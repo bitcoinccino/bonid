@@ -19,6 +19,7 @@ module PartnerPortal
       @election = active_election
       @centers  = if @election
                     @election.polling_centers
+                             .manageable_by_partner(current_partner)
                              .includes(:polling_stations, :communal_section, :commune)
                              .order(:center_type, :priority, :name)
                   else
@@ -47,11 +48,16 @@ module PartnerPortal
       end
 
       @center = election.polling_centers.new(center_params)
+      # Server-set ownership — never trust the client form. partner_id and
+      # created_by are stripped from strong params and assigned here.
+      @center.partner = current_partner
+      @center.created_by_partner_admin = current_portal_user
       # Drafts → "planned" so CEP can review before opening; opens → "open"
       # so newly added centers immediately accept voter assignments.
       @center.status ||= (election.status == "open" ? "open" : "planned")
 
       if @center.save
+        audit!("polling_center.created", @center)
         redirect_to partner_portal_polling_center_path(@center),
                     notice: "Sant Vòt kreye. Ajoute BV yo kounye a."
       else
@@ -64,6 +70,7 @@ module PartnerPortal
 
     def update
       if @center.update(center_params)
+        audit!("polling_center.updated", @center, changed: @center.previous_changes.except("updated_at").keys)
         redirect_to partner_portal_polling_center_path(@center), notice: "Sant Vòt mete a jou."
       else
         flash.now[:alert] = @center.errors.full_messages.to_sentence
@@ -80,6 +87,7 @@ module PartnerPortal
                     alert: "Pa ka efase: gen votè deja atribye nan sant sa." and return
       end
 
+      audit!("polling_center.destroyed", @center)
       @center.destroy
       redirect_to partner_portal_polling_centers_path, notice: "Sant Vòt efase."
     end
@@ -145,8 +153,51 @@ module PartnerPortal
 
     private
 
+    # Defense-in-depth scoping. A partner_admin must satisfy BOTH:
+    #   1. the center belongs to the active election
+    #   2. the center is "manageable" by their partner — CEP sees all,
+    #      every other partner sees only what their org created.
+    # URL-tampering on /:id where the id is foreign now 404s instead of
+    # rendering an editable form against a record they don't own.
     def load_center
-      @center = PollingCenter.find(params[:id])
+      election = active_election
+      unless election
+        redirect_to partner_portal_polling_centers_path,
+                    alert: "Pa gen eleksyon aktif." and return
+      end
+
+      # Lookup by opaque slug — the route param is now a UUID, never a
+      # sequential integer, so URL enumeration is computationally
+      # infeasible (~122 bits of entropy).
+      @center = election.polling_centers
+                        .manageable_by_partner(current_partner)
+                        .find_by!(slug: params[:id])
+    rescue ActiveRecord::RecordNotFound
+      Rails.logger.warn(
+        "🚨 Polling center IDOR attempt: partner_id=#{current_partner&.id} " \
+        "actor=#{current_portal_user&.id} requested_id=#{params[:id].inspect}"
+      )
+      audit!("polling_center.access_denied", nil, requested_id: params[:id])
+      redirect_to partner_portal_polling_centers_path,
+                  alert: "Sant Vòt sa pa nan òganizasyon w."
+    end
+
+    # Audit every state change AND every blocked attempt. PartnerAuditLog
+    # only stores admin_user (AdminUser); we encode the PartnerAdmin id
+    # into metadata so traceability never depends on a future schema add.
+    def audit!(event, center, extra = {})
+      payload = {
+        partner_admin_id: current_portal_user&.id,
+        partner_admin_email: current_portal_user&.email,
+        ip: request.remote_ip,
+        user_agent: request.user_agent
+      }
+      payload[:center_id]   = center&.id   if center
+      payload[:center_name] = center&.name if center
+      payload.merge!(extra)
+      PartnerAuditLog.log!(current_partner, current_portal_user, event, payload)
+    rescue => e
+      Rails.logger.error("PartnerAuditLog write failed: #{e.class}: #{e.message}")
     end
 
     # Required by the shared `address` Stimulus cascade — the controller reads
@@ -157,10 +208,11 @@ module PartnerPortal
 
     def center_params
       params.require(:polling_center).permit(
-        :name, :center_type, :status, :priority,
+        :name, :center_type, :venue_type, :expected_capacity, :status, :priority,
         :country_code, :address_line_1, :address_line_2, :city, :state_province, :postal_code,
         :department_id, :arrondissement_id, :commune_id, :communal_section_id,
-        :diplomatic_mission_id, :contact_phone, :contact_hours, :notes
+        :diplomatic_mission_id, :contact_phone, :contact_hours, :notes,
+        operating_hours: {}
       )
     end
 

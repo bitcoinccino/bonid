@@ -105,8 +105,8 @@
                 <% p = @participations_by_id[m[:id]] %>
                 <tr>
                   <td class="fw-semibold">
-                    <span class="me-1" aria-hidden="true" style="font-size:1.1em;"><%= country_flag(m[:country]) %></span>
-                    <%= m[:name] %>
+                    <%= country_flag_img(m[:country], size: 24) %>
+                    <span class="ms-1"><%= m[:name] %></span>
                     <div class="small text-muted font-monospace"><%= m[:id] %></div>
                   </td>
                   <td>
@@ -130,12 +130,13 @@
                   </td>
                   <td class="small" style="max-width: 280px;">
                     <% if p && p.full_address.present? %>
-                      <div data-controller="copy-address" class="d-flex align-items-start gap-2">
-                        <pre class="mb-0 small flex-grow-1"
-                             style="white-space: pre-wrap; font-family: inherit;"
+                      <div data-controller="copy-address" class="d-inline-flex align-items-start gap-1">
+                        <pre class="mb-0 small"
+                             style="white-space: pre-wrap; font-family: inherit; display: inline-block;"
                              data-copy-address-target="source"><%= p.full_address %></pre>
                         <button type="button"
-                                class="btn btn-sm btn-outline-secondary"
+                                class="btn btn-sm btn-link p-0 text-muted"
+                                style="line-height: 1;"
                                 data-action="click->copy-address#copy"
                                 data-copy-address-target="button"
                                 title="Kopye adrès la">
@@ -143,19 +144,33 @@
                         </button>
                       </div>
                       <div class="text-muted small mt-1">
-                        <%= country_flag(m[:country]) %> <%= m[:country] %> · UPU S42
+                        <%= country_flag_img(m[:country], size: 16) %> <%= m[:country] %> · UPU S42
                       </div>
                     <% else %>
                       <span class="text-muted">Pa gen adrès</span>
-                      <div class="text-muted small"><%= country_flag(m[:country]) %> <%= m[:country] %></div>
+                      <div class="text-muted small"><%= country_flag_img(m[:country], size: 16) %> <%= m[:country] %></div>
                     <% end %>
                   </td>
                   <td class="small">
-                    <% if p %>
-                      <%= p.contact_phone.presence || "—" %>
-                      <% if p.contact_email.present? %>
-                        <div class="text-muted"><%= p.contact_email %></div>
-                      <% end %>
+                    <% if p && (p.contact_phone.present? || p.contact_email.present?) %>
+                      <div class="d-flex align-items-center gap-3 fs-5">
+                        <% if p.contact_phone.present? %>
+                          <%= link_to "tel:#{p.contact_phone}",
+                                      class: "text-decoration-none text-body",
+                                      title: p.contact_phone,
+                                      "aria-label": "Rele #{p.contact_phone}" do %>
+                            <i class="ri-phone-line"></i>
+                          <% end %>
+                        <% end %>
+                        <% if p.contact_email.present? %>
+                          <%= mail_to p.contact_email, nil,
+                                      class: "text-decoration-none text-body",
+                                      title: p.contact_email,
+                                      "aria-label": "Imèl #{p.contact_email}" do %>
+                            <i class="ri-mail-line"></i>
+                          <% end %>
+                        <% end %>
+                      </div>
                     <% else %>
                       —
                     <% end %>

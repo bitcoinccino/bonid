@@ -1,0 +1,123 @@
+<%# Country-aware phone input for partner-portal forms.
+    The country picker is a Bootstrap dropdown (not a native <select>) so
+    we can render REAL flag images instead of the regional-indicator
+    emoji glyph (which falls back to ASCII letters on systems without
+    flag-emoji support like Windows).
+
+    A hidden <select> sits next to the dropdown as the source-of-truth,
+    so the existing phone-country controller / sibling controllers
+    (e.g. polling-center-type#countryChange → setCountry) work unchanged.
+
+    Locals (required):
+      f                  – form builder
+      field              – Symbol, the digits attribute (e.g. :contact_phone)
+
+    Locals (optional):
+      label              – String label override (default "Telefòn")
+      default_country    – ISO2 string (default "HT")
+      placeholder_digits – String placeholder for the digits input
+                            (default "3xxx xxxx")
+      required           – Boolean (default false)
+%>
+
+<%
+  field              ||= :contact_phone
+  label              ||= "Telefòn"
+  default_country    ||= "HT"
+  placeholder_digits ||= "3xxx xxxx"
+  required             = local_assigns.fetch(:required, false)
+  picker_id            = "phone-country-#{f.object_name.parameterize}-#{field}"
+  current_iso2         = default_country.to_s.upcase
+  current_dial         = phone_dial_code(current_iso2)
+  flag_lc              = current_iso2.downcase
+%>
+
+<div class="mb-2"
+     data-controller="phone-country country-flag-dropdown"
+     data-phone-country-default-country-value="<%= current_iso2 %>">
+  <%= f.label field, label, class: "form-label fw-semibold pp-text-sm" %>
+
+  <div class="input-group">
+    <%# ── Bootstrap dropdown with REAL flag images ─────────────── %>
+    <button type="button"
+            class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1"
+            data-bs-toggle="dropdown"
+            data-bs-auto-close="outside"
+            aria-expanded="false"
+            data-country-flag-dropdown-target="trigger">
+      <img data-country-flag-dropdown-target="triggerFlag"
+           src="https://flagcdn.com/20x15/<%= flag_lc %>.png"
+           srcset="https://flagcdn.com/40x30/<%= flag_lc %>.png 2x"
+           width="20" height="15" alt="<%= current_iso2 %>"
+           style="border-radius: 2px;">
+      <span data-country-flag-dropdown-target="triggerCode" class="font-monospace small">
+        <%= current_dial ? "+#{current_dial}" : "+—" %>
+      </span>
+    </button>
+
+    <ul class="dropdown-menu p-0"
+        style="max-height: 320px; overflow-y: auto; min-width: 18rem;">
+      <li class="px-2 py-2 sticky-top bg-white border-bottom">
+        <input type="text"
+               class="form-control form-control-sm"
+               placeholder="Chache peyi…"
+               data-country-flag-dropdown-target="search"
+               data-action="input->country-flag-dropdown#filter">
+      </li>
+      <% phone_country_picker_options(current_iso2).each do |_label_text, iso2, html_opts| %>
+        <% iso2_lc = iso2.downcase %>
+        <li>
+          <button type="button"
+                  class="dropdown-item d-flex align-items-center gap-2 py-2"
+                  data-iso2="<%= iso2 %>"
+                  data-dial-code="<%= html_opts['data-dial-code'] %>"
+                  data-country-name="<%= html_opts['data-country-name'] %>"
+                  data-country-flag-dropdown-target="item"
+                  data-action="country-flag-dropdown#select">
+            <img src="https://flagcdn.com/20x15/<%= iso2_lc %>.png"
+                 srcset="https://flagcdn.com/40x30/<%= iso2_lc %>.png 2x"
+                 width="20" height="15" alt="<%= iso2 %>"
+                 loading="lazy"
+                 style="border-radius: 2px; flex-shrink: 0;">
+            <span class="flex-grow-1 text-truncate"><%= html_opts['data-country-name'] %></span>
+            <span class="text-muted small font-monospace">+<%= html_opts['data-dial-code'] %></span>
+          </button>
+        </li>
+      <% end %>
+    </ul>
+
+    <%# Hidden source-of-truth — phone-country-controller still owns it. %>
+    <select id="<%= picker_id %>"
+            class="d-none"
+            data-phone-country-target="country"
+            data-country-flag-dropdown-target="hiddenSelect"
+            data-action="change->phone-country#countryChanged"
+            tabindex="-1"
+            aria-hidden="true">
+      <% phone_country_picker_options(current_iso2).each do |_label_text, iso2, html_opts| %>
+        <option value="<%= iso2 %>"
+                data-dial-code="<%= html_opts['data-dial-code'] %>"
+                <%= "selected" if iso2 == current_iso2 %>>
+          <%= html_opts['data-country-name'] %>
+        </option>
+      <% end %>
+    </select>
+
+    <%# Visible +NNN prefix, kept in sync by phone-country controller. %>
+    <span class="input-group-text"
+          data-phone-country-target="prefix">
+      <%= current_dial ? "+#{current_dial}" : "+—" %>
+    </span>
+
+    <%# National digits — submitted as the model attribute. %>
+    <%= f.telephone_field field,
+                          class: "form-control",
+                          placeholder: placeholder_digits,
+                          required: required,
+                          data: { "phone-country-target" => "digits" } %>
+  </div>
+
+  <div class="form-text small">
+    Chwazi peyi a — prefiks la (+<%= current_dial || "—" %>) ap mete poukont li.
+  </div>
+</div>

@@ -1,18 +1,41 @@
-<%# Shared form — new + edit for ElectionMissionParticipation. The mission
-    itself is static (from HaitianDiplomaticMissions concern) and identified
-    by `diplomatic_mission_id`; on `new` it's pinned via a hidden field, on
-    `edit` it's read-only. %>
+<%# Misyon Diplomatik — multi-step wizard for ElectionMissionParticipation.
+    Mission identity is locked-in (preselected from the index "Konfigire"
+    button → ?mission_id=HT-CON-MIA → hidden field). The wizard guides
+    the partner-admin through:
+
+      Step 1: Misyon — read-only confirmation card.
+      Step 2: Estati & Kontak — status, phone, email, notes.
+      Step 3: Adrès Postal — UPU S42 fields with country-aware
+              placeholders + live preview if persisted.
+      Step 4: Lè Ouvèti — shared HasOperatingHours editor.
+      Step 5: Revize — summary + submit.
+
+    Edit mode auto-skips Step 1 since the mission is already pinned. %>
 
 <%
-  mission = @participation.mission || {}
-  region_label = HaitianDiplomaticMissions::REGIONS[mission[:region]] || mission[:region].to_s.titleize
-  type_label   = HaitianDiplomaticMissions::MISSION_TYPES[mission[:type]] || mission[:type].to_s.titleize
+  mission       = @participation.mission || {}
+  region_label  = HaitianDiplomaticMissions::REGIONS[mission[:region]] || mission[:region].to_s.titleize
+  type_label    = HaitianDiplomaticMissions::MISSION_TYPES[mission[:type]] || mission[:type].to_s.titleize
+  country_flag_glyph = country_flag(mission[:country])
+  edit_mode     = @participation.persisted?
+  skip_steps    = edit_mode ? [1] : []
+  current_step  = edit_mode ? 2 : 1
 %>
 
 <%= form_with model: @participation,
-              url: @participation.persisted? ? partner_portal_diplomatic_mission_path(@participation) : partner_portal_diplomatic_missions_path,
-              method: @participation.persisted? ? :patch : :post,
-              local: true do |f| %>
+              url: edit_mode ? partner_portal_diplomatic_mission_path(@participation) : partner_portal_diplomatic_missions_path,
+              method: edit_mode ? :patch : :post,
+              local: true,
+              data: {
+                controller: "wizard mission-participation",
+                wizard_current_step_value: current_step,
+                wizard_skip_steps_value: skip_steps.to_json,
+                mission_participation_mission_name_value: mission[:name].to_s,
+                mission_participation_mission_id_value: @participation.diplomatic_mission_id.to_s,
+                mission_participation_mission_type_value: type_label,
+                mission_participation_mission_region_value: region_label,
+                mission_participation_mission_country_value: mission[:country].to_s
+              } do |f| %>
 
   <% if @participation.errors.any? %>
     <div class="alert alert-danger">
@@ -23,141 +46,292 @@
     </div>
   <% end %>
 
-  <%# Mission identity (read-only, derived from static concern). %>
-  <div class="pp-card card mb-4 border-0 bg-light">
-    <div class="card-body">
-      <div class="row g-2">
-        <div class="col-md-6">
-          <div class="small text-muted text-uppercase fw-semibold">Misyon</div>
-          <div class="fw-bold"><%= mission[:name] %></div>
-          <div class="small text-muted font-monospace"><%= @participation.diplomatic_mission_id %></div>
-        </div>
-        <div class="col-md-3">
-          <div class="small text-muted text-uppercase fw-semibold">Tip</div>
-          <div><%= type_label %></div>
-        </div>
-        <div class="col-md-3">
-          <div class="small text-muted text-uppercase fw-semibold">Rejyon / Peyi</div>
-          <div><%= region_label %> · <%= mission[:country] %></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <%# Mission ID is always pinned via hidden field — preselected from
+      the index "Konfigire" link, never editable through the wizard. %>
   <%= f.hidden_field :diplomatic_mission_id %>
 
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-information-line me-1"></i>Konfigirasyon Eleksyon
-  </h6>
-
-  <div class="row g-3 mb-4">
-    <div class="col-md-4">
-      <%= f.label :status, "Estati", class: "form-label" %>
-      <%= f.select :status,
-                   ElectionMissionParticipation::STATUSES.map { |s|
-                     [ElectionMissionParticipation::STATUS_LABELS[s], s]
-                   },
-                   {}, class: "form-select", required: true %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :contact_phone, "Telefòn lokal", class: "form-label" %>
-      <%= f.telephone_field :contact_phone, class: "form-control",
-                            placeholder: "+1 305 …" %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :contact_email, "Imel kontak", class: "form-label" %>
-      <%= f.email_field :contact_email, class: "form-control",
-                        placeholder: "konsila@…" %>
-    </div>
-    <div class="col-12">
-      <%= f.label :notes, "Nòt entèn (admin sèlman)", class: "form-label" %>
-      <%= f.text_area :notes, rows: 2, class: "form-control" %>
-    </div>
-  </div>
-
-  <hr class="my-4">
-
-  <%# === ADRÈS POSTAL === Structured fields rendered per host country's
-      UPU S42 format by PostalAddressFormatter at display time. Required
-      once the mission goes live (registration_open / voting_open). %>
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-map-pin-line me-1"></i>Adrès Postal Konsila a
-    <% if @participation.address_required? %>
-      <span class="badge bg-danger-subtle text-danger ms-2">Obligatwa</span>
-    <% else %>
-      <span class="badge bg-light text-muted ms-2">Opsyonèl pou kounye a</span>
-    <% end %>
-  </h6>
-  <p class="small text-muted mb-3">
-    Adrès kote misyon an opere fizikman pou eleksyon sa. Yo pral pran fòmat
-    otomatikman daprè règ postal peyi a (UPU S42) lè yo afiche pou sitwayen
-    dyaspora a oswa enprime sou resi vòt yo.
-  </p>
-
-  <div class="row g-3 mb-4">
-    <div class="col-md-8">
-      <%= f.label :street_line1, "Adrès / Ri (liy 1)", class: "form-label" %>
-      <%= f.text_field :street_line1, class: "form-control",
-                       placeholder: address_placeholder(mission[:country], :street) %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :street_line2, "Adrès (liy 2)", class: "form-label" %>
-      <%= f.text_field :street_line2, class: "form-control",
-                       placeholder: "Suite, apt, etc." %>
-    </div>
-
-    <div class="col-md-5">
-      <%= f.label :locality, "Vil / Lokalite", class: "form-label" %>
-      <%= f.text_field :locality, class: "form-control",
-                       placeholder: address_placeholder(mission[:country], :locality) %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :region, "Eta / Pwovens / Depatman", class: "form-label" %>
-      <%= f.text_field :region, class: "form-control",
-                       placeholder: address_placeholder(mission[:country], :region) %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :postal_code, "Kòd Postal", class: "form-label" %>
-      <%= f.text_field :postal_code, class: "form-control",
-                       placeholder: address_placeholder(mission[:country], :postal) %>
-    </div>
-
-    <div class="col-md-3">
-      <%= f.label :latitude, "Latitid (opsyonèl)", class: "form-label" %>
-      <%= f.number_field :latitude, step: "any", class: "form-control",
-                         placeholder: "25.7617" %>
-    </div>
-    <div class="col-md-3">
-      <%= f.label :longitude, "Lonjitid (opsyonèl)", class: "form-label" %>
-      <%= f.number_field :longitude, step: "any", class: "form-control",
-                         placeholder: "-80.1918" %>
-    </div>
-  </div>
-
-  <%# Live preview of how the address will render via the formatter — only
-      visible after the record has been saved at least once with data. %>
-  <% if @participation.persisted? && @participation.full_address.present? %>
-    <div class="alert alert-light border d-flex justify-content-between align-items-start mb-4">
-      <div>
-        <div class="small text-muted text-uppercase fw-semibold mb-1">
-          Aperçu fòmat UPU S42 (<%= mission[:country] %>)
+  <%# ── Step indicators + progress bar ─────────────────────────── %>
+  <div class="mb-4">
+    <%
+      wizard_steps = [
+        { num: 1, label: "Misyon",        icon: "ri-global-line" },
+        { num: 2, label: "Estati & Kontak", icon: "ri-customer-service-line" },
+        { num: 3, label: "Adrès Postal",  icon: "ri-map-pin-line" },
+        { num: 4, label: "Lè Ouvèti",     icon: "ri-time-line" },
+        { num: 5, label: "Revize",        icon: "ri-check-double-line" }
+      ]
+    %>
+    <div class="d-flex align-items-center mb-2">
+      <% wizard_steps.each_with_index do |step, i| %>
+        <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
+          <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if step[:num] == current_step %> <%= 'completed' if skip_steps.include?(step[:num]) %>"
+               style="width: 36px; height: 36px; border: 2px solid #CBD5E1; background: #fff; font-weight: 600; font-size: 0.85rem;">
+            <i class="<%= step[:icon] %>"></i>
+          </div>
+          <div class="small mt-1 text-muted" style="font-size: 0.72rem;"><%= step[:label] %></div>
         </div>
-        <pre class="mb-0 small" style="white-space: pre-wrap; font-family: inherit;"><%= @participation.full_address %></pre>
+        <% unless i == wizard_steps.length - 1 %>
+          <div style="flex: 0 0 24px; height: 2px; background: #E2E8F0; margin: 0 -8px; margin-top: -16px;"></div>
+        <% end %>
+      <% end %>
+    </div>
+    <div class="progress" style="height: 4px;">
+      <div data-wizard-target="progressBar" class="progress-bar"
+           style="width: <%= ((current_step - 1) / 4.0 * 100).to_i %>%; background: #00209F;"></div>
+    </div>
+  </div>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 1 — Misyon (read-only confirmation)
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="1"
+           class="wizard-step <%= 'active' unless edit_mode %> <%= 'd-none' if edit_mode %>"
+           style="<%= 'display:none' if edit_mode %>">
+    <h5 class="fw-semibold mb-3">Konfime Misyon Diplomatik la</h5>
+    <p class="text-muted small mb-4">
+      W'ap konfigire misyon sa pou eleksyon aktif la. Si ou bezwen yon
+      lòt misyon, klike "Anile" epi chwazi yon lòt nan lis la.
+    </p>
+
+    <div class="card pp-card border-2 mb-4" style="border-color: #00209F;">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-start gap-3">
+          <span aria-hidden="true" style="font-size: 2.5rem;">
+            <%= country_flag_glyph %>
+          </span>
+          <div class="flex-grow-1">
+            <h5 class="mb-1 fw-bold"><%= mission[:name] %></h5>
+            <div class="text-muted small font-monospace mb-2"><%= @participation.diplomatic_mission_id %></div>
+            <div class="d-flex flex-wrap gap-3 small">
+              <span><i class="ri-building-line me-1 text-muted"></i><%= type_label %></span>
+              <span><i class="ri-map-2-line me-1 text-muted"></i><%= region_label %></span>
+              <span><i class="ri-flag-line me-1 text-muted"></i><%= mission[:country] %></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  <% end %>
 
-  <hr class="my-4">
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <%= link_to "Anile", partner_portal_diplomatic_missions_path, class: "btn btn-link" %>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
 
-  <%# === ORÈ DOPERASYON === Reusable shared editor; same as ElectoralOffice. %>
-  <%= render "partner_portal/shared/hours_editor",
-             record: @participation,
-             field_prefix: "election_mission_participation[operating_hours]",
-             id_prefix: "mission-#{@participation.diplomatic_mission_id.to_s.parameterize}" %>
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 2 — Estati & Kontak
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="2"
+           class="wizard-step <%= 'active' if edit_mode %> <%= 'd-none' unless edit_mode %>"
+           style="<%= 'display:none' unless edit_mode %>">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-customer-service-line text-primary me-2"></i>Estati ak Kontak
+    </h5>
+    <p class="text-muted small mb-4">
+      Estati a kontwole si misyon an aksepte enskripsyon, vòt, oswa
+      pa aksepte anyen kounye a. Kontak yo pral parèt sou paj sitwayen
+      dyaspora a ki ap chache yon biwo vòt.
+    </p>
 
-  <div class="d-flex justify-content-end gap-2">
-    <%= link_to "Anile", partner_portal_diplomatic_missions_path, class: "btn btn-link" %>
-    <%= f.submit(@participation.new_record? ? "Konfigire Misyon" : "Anrejistre Chanjman",
-                 class: "btn pp-btn-brand px-4") %>
-  </div>
+    <div class="row g-3">
+      <div class="col-md-12">
+        <%= f.label :status, "Estati Misyon", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.select :status,
+                     ElectionMissionParticipation::STATUSES.map { |s|
+                       [ElectionMissionParticipation::STATUS_LABELS[s], s]
+                     },
+                     {}, class: "form-select", required: true %>
+      </div>
+      <div class="col-md-6">
+        <%= render "partner_portal/shared/phone_with_country",
+                   f: f,
+                   field: :contact_phone,
+                   label: "Telefòn lokal",
+                   default_country: mission[:country].to_s.upcase.presence || "HT",
+                   placeholder_digits: "305 555 0123" %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :contact_email, "Imel kontak", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.email_field :contact_email, class: "form-control",
+                          placeholder: "konsila@…" %>
+      </div>
+      <div class="col-md-12">
+        <%= f.label :notes, "Nòt entèn (admin sèlman)", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_area :notes, rows: 2, class: "form-control" %>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous"
+              <%= 'style=visibility:hidden' if edit_mode %>>
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 3 — Adrès Postal
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="3"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-map-pin-line text-primary me-2"></i>Adrès Postal Konsila a
+      <% if @participation.address_required? %>
+        <span class="badge bg-danger-subtle text-danger ms-2">Obligatwa</span>
+      <% else %>
+        <span class="badge bg-light text-muted ms-2">Opsyonèl pou kounye a</span>
+      <% end %>
+    </h5>
+    <p class="text-muted small mb-4">
+      Adrès kote misyon an opere fizikman pou eleksyon sa. Yo pral pran
+      fòmat otomatikman daprè règ postal peyi a (UPU S42) lè yo afiche
+      pou sitwayen dyaspora a oswa enprime sou resi vòt yo.
+    </p>
+
+    <div class="row g-3">
+      <div class="col-md-8">
+        <%= f.label :street_line1, "Adrès / Ri (liy 1)", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :street_line1, class: "form-control",
+                         placeholder: address_placeholder(mission[:country], :street) %>
+      </div>
+      <div class="col-md-4">
+        <%= f.label :street_line2, "Adrès (liy 2)", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :street_line2, class: "form-control",
+                         placeholder: "Suite, apt, etc." %>
+      </div>
+
+      <div class="col-md-5">
+        <%= f.label :locality, "Vil / Lokalite", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :locality, class: "form-control",
+                         placeholder: address_placeholder(mission[:country], :locality) %>
+      </div>
+      <div class="col-md-4">
+        <%= f.label :region, "Eta / Pwovens / Depatman", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :region, class: "form-control",
+                         placeholder: address_placeholder(mission[:country], :region) %>
+      </div>
+      <div class="col-md-3">
+        <%= f.label :postal_code, "Kòd Postal", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :postal_code, class: "form-control",
+                         placeholder: address_placeholder(mission[:country], :postal) %>
+      </div>
+
+      <div class="col-md-12">
+        <details class="small">
+          <summary class="text-muted">Opsyon avanse (kowòdone GPS)</summary>
+          <div class="row g-2 mt-2">
+            <div class="col-md-6">
+              <%= f.label :latitude, "Latitid", class: "form-label small" %>
+              <%= f.number_field :latitude, step: "any", class: "form-control form-control-sm",
+                                 placeholder: "25.7617" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :longitude, "Lonjitid", class: "form-label small" %>
+              <%= f.number_field :longitude, step: "any", class: "form-control form-control-sm",
+                                 placeholder: "-80.1918" %>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <%# Live preview of how the address will render via PostalAddressFormatter
+        — only visible after the record has been saved at least once. %>
+    <% if @participation.persisted? && @participation.full_address.present? %>
+      <div class="alert alert-light border d-flex justify-content-between align-items-start mt-3">
+        <div>
+          <div class="small text-muted text-uppercase fw-semibold mb-1">
+            Aperçu fòmat UPU S42 (<%= mission[:country] %>)
+          </div>
+          <pre class="mb-0 small" style="white-space: pre-wrap; font-family: inherit;"><%= @participation.full_address %></pre>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 4 — Lè Ouvèti
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="4"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-time-line text-primary me-2"></i>Lè Misyon an Louvri
+    </h5>
+    <p class="text-muted small mb-4">
+      Defini lè regilye misyon an ap aksepte enskripsyon ak vòt. Pifò
+      konsila louvri Lendi-Vandredi 09:00-16:00, men jou eleksyon an
+      yo souvan ouvèti pi long (egz: Dimanch 07:00-19:00).
+    </p>
+
+    <%= render "partner_portal/shared/hours_editor",
+               record: @participation,
+               field_prefix: "election_mission_participation[operating_hours]",
+               id_prefix: "mission-#{@participation.diplomatic_mission_id.to_s.parameterize}" %>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Revize <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 5 — Revize ak Soumèt
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="5"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-check-double-line text-primary me-2"></i>Revize ak Soumèt
+    </h5>
+    <p class="text-muted small mb-4">
+      Verifye konfigirasyon an anba a. Klike "Tounen" pou modifye nenpòt
+      etap, oswa "<%= edit_mode ? 'Anrejistre Chanjman' : 'Konfigire Misyon' %>".
+    </p>
+
+    <div data-mission-participation-target="reviewSummary"
+         class="bg-white border rounded p-3 mb-3"></div>
+
+    <div class="d-flex justify-content-between gap-2">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <%= f.submit (edit_mode ? "Anrejistre Chanjman" : "Konfigire Misyon"),
+                   class: "btn pp-btn-brand px-4" %>
+    </div>
+  </section>
+
 <% end %>
+
+<%# Step-indicator visual feedback. Shared with the polling-center
+    + electoral-office wizards. %>
+<style>
+  .wizard-step .card.pp-card { border-color: #E2E8F0; }
+  .wizard-step .card.pp-card:hover { border-color: #94A3B8; }
+  .step-circle.active {
+    border-color: #00209F !important;
+    background: #00209F !important;
+    color: #fff !important;
+  }
+  .step-circle.completed {
+    border-color: #16A34A !important;
+    background: #16A34A !important;
+    color: #fff !important;
+  }
+</style>

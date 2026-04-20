@@ -30,6 +30,18 @@ class ElectionMissionParticipation < ApplicationRecord
 
   belongs_to :election, class_name: "BonvoteElection"
 
+  # Opaque slug used in URLs so /diplomatic_missions/:n/edit can't be
+  # enumerated by guessing sequential ids. Generated server-side at
+  # create — never accepted from input. Mission ids themselves
+  # (HT-CON-MIA, HT-CON-ATL, …) are intentionally public; the
+  # participation record id is what we hide.
+  before_validation :assign_slug, on: :create
+  validates :slug, presence: true, uniqueness: true
+
+  def to_param
+    slug
+  end
+
   validates :diplomatic_mission_id, presence: true
   validates :diplomatic_mission_id,
             uniqueness: { scope: :election_id, message: "deja konfigire pou eleksyon sa" }
@@ -111,5 +123,13 @@ class ElectionMissionParticipation < ApplicationRecord
     return if diplomatic_mission_id.blank?
     return if ALL_MISSIONS.any? { |m| m[:id] == diplomatic_mission_id }
     errors.add(:diplomatic_mission_id, "pa egziste nan rejis misyon yo")
+  end
+
+  # Generated server-side at create — never accepted from input. Uses
+  # SecureRandom.uuid (122 bits of entropy) so URL enumeration is
+  # computationally infeasible.
+  def assign_slug
+    return if slug.present?
+    self.slug = SecureRandom.uuid
   end
 end

@@ -26,6 +26,8 @@ const registerControllers = () => {
   register("json-editor", () => import("./json_editor_controller"))
   register("json-sync", () => import("./json_sync_controller"))
   register("local-contact", () => import("./local_contact_controller"))
+  register("phone-country", () => import("./phone_country_controller"))
+  register("country-flag-dropdown", () => import("./country_flag_dropdown_controller"))
 
 
   // ───────── Operating hours editor (BED/BEK) ─────────
@@ -110,6 +112,9 @@ register("certificate-toggle", () =>
   // ───────── Wizard / Units ─────────
   register("multi-step-schema-form", () => import("./multi_step_schema_form_controller"))
   register("wizard", () => import("./wizard_controller"))
+  register("polling-center-type", () => import("./polling_center_type_controller"))
+  register("electoral-office-type", () => import("./electoral_office_type_controller"))
+  register("mission-participation", () => import("./mission_participation_controller"))
   register("submission-review", () => import("./submission_review_controller"))
   register("unit", () => import("./unit_controller"))
   register("sector", () => import("./sector_controller"))

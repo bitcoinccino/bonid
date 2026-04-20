@@ -1,9 +1,32 @@
-<%# Sant Vòt form — used by new + edit. Mirrors the CSV column set. %>
+<%# Sant Vòt — multi-step wizard.
+    Step 1: Tip Lokasyon (Domestik | Dyaspora) — radio cards.
+    Step 2: Lokasyon — single step that swaps panels based on Step 1
+            (Haitian admin cascade for domestic, mission picker + autofill
+             for diaspora).
+    Step 3: Detay Sant — name, venue type, expected capacity, contact.
+    Step 4: Revizyon — read-only summary + submit.
+
+    On `edit`, Step 1 is auto-skipped (skip_steps_value: [1]) since the
+    location type is already locked-in by the persisted record. %>
+
+<%
+  edit_mode    = @center.persisted?
+  skip_steps   = edit_mode ? [1] : []
+  current_step = edit_mode ? 2 : 1
+%>
 
 <%= form_with model: @center,
-              url: @center.persisted? ? partner_portal_polling_center_path(@center) : partner_portal_polling_centers_path,
-              method: @center.persisted? ? :patch : :post,
-              local: true do |f| %>
+              url: edit_mode ? partner_portal_polling_center_path(@center) : partner_portal_polling_centers_path,
+              method: edit_mode ? :patch : :post,
+              local: true,
+              data: {
+                controller: "wizard polling-center-type",
+                wizard_current_step_value: current_step,
+                wizard_skip_steps_value: skip_steps.to_json,
+                polling_center_type_missions_value: polling_center_wizard_missions_json.to_json,
+                polling_center_type_country_names_value: polling_center_wizard_country_names.to_json,
+                polling_center_type_country_flags_value: polling_center_wizard_country_flags.to_json
+              } do |f| %>
 
   <% if @center.errors.any? %>
     <div class="alert alert-danger">
@@ -14,166 +37,466 @@
     </div>
   <% end %>
 
-  <div class="row g-3">
-    <div class="col-md-8">
-      <%= f.label :name, "Non Sant Vòt", class: "form-label" %>
-      <%= f.text_field :name, class: "form-control", required: true,
-                       placeholder: "Lekòl Nasyonal Kenscoff" %>
+  <%# ── Step indicators + progress bar ─────────────────────────── %>
+  <div class="mb-4">
+    <%
+      wizard_steps = [
+        { num: 1, label: "Tip Lokasyon",  icon: "ri-flag-2-line" },
+        { num: 2, label: "Lokasyon",      icon: "ri-map-pin-2-line" },
+        { num: 3, label: "Detay Sant",    icon: "ri-building-line" },
+        { num: 4, label: "Lè Ouvèti",     icon: "ri-time-line" },
+        { num: 5, label: "Revize",        icon: "ri-check-double-line" }
+      ]
+    %>
+    <div class="d-flex align-items-center mb-2">
+      <% wizard_steps.each_with_index do |step, i| %>
+        <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
+          <div class="step-circle mx-auto d-flex align-items-center justify-content-center rounded-circle <%= 'active' if step[:num] == current_step %> <%= 'completed' if skip_steps.include?(step[:num]) %>"
+               style="width: 36px; height: 36px; border: 2px solid #CBD5E1; background: #fff; font-weight: 600; font-size: 0.85rem;">
+            <i class="<%= step[:icon] %>"></i>
+          </div>
+          <div class="small mt-1 text-muted" style="font-size: 0.72rem;"><%= step[:label] %></div>
+        </div>
+        <% unless i == wizard_steps.length - 1 %>
+          <div style="flex: 0 0 24px; height: 2px; background: #E2E8F0; margin: 0 -8px; margin-top: -16px;"></div>
+        <% end %>
+      <% end %>
     </div>
-    <div class="col-md-4">
-      <%= f.label :center_type, "Tip", class: "form-label" %>
-      <%= f.select :center_type,
-                   PollingCenter::CENTER_TYPES.map { |t| [t.capitalize, t] },
-                   {}, class: "form-select" %>
-    </div>
-
-    <div class="col-md-4">
-      <%= f.label :status, "Estati", class: "form-label" %>
-      <%= f.select :status,
-                   PollingCenter::STATUSES.map { |s| [s.capitalize, s] },
-                   {}, class: "form-select" %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :priority, "Priyorite", class: "form-label" %>
-      <%= f.number_field :priority, class: "form-control", min: 0,
-                          placeholder: "0 = pi wo" %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :country_code, "Kòd Peyi", class: "form-label" %>
-      <%= f.text_field :country_code, class: "form-control text-uppercase",
-                       maxlength: 2, placeholder: "HT" %>
-    </div>
-  </div>
-
-  <hr class="my-4">
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-map-pin-2-line me-1"></i>Adrès
-  </h6>
-
-  <div class="row g-3">
-    <div class="col-md-8">
-      <%= f.label :address_line_1, "Liy 1", class: "form-label" %>
-      <%= f.text_field :address_line_1, class: "form-control",
-                       placeholder: "Rue Principale" %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :postal_code, "Kòd Postal", class: "form-label" %>
-      <%= f.text_field :postal_code, class: "form-control", placeholder: "HT6120" %>
-    </div>
-    <div class="col-md-8">
-      <%= f.label :address_line_2, "Liy 2 / Seksyon", class: "form-label" %>
-      <%= f.text_field :address_line_2, class: "form-control",
-                       placeholder: "6e Section Kenscoff" %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :city, "Vil / Komin", class: "form-label" %>
-      <%= f.text_field :city, class: "form-control", placeholder: "Kenscoff" %>
-    </div>
-    <div class="col-md-4">
-      <%= f.label :state_province, "Depatman / State", class: "form-label" %>
-      <%= f.text_field :state_province, class: "form-control", placeholder: "Ouest" %>
+    <div class="progress" style="height: 4px;">
+      <div data-wizard-target="progressBar" class="progress-bar"
+           style="width: <%= ((current_step - 1) / 4.0 * 100).to_i %>%; background: #00209F;"></div>
     </div>
   </div>
 
-  <hr class="my-4">
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-government-line me-1"></i>Sikonskripsyon (Domestik)
-  </h6>
+  <%# Hidden country_code — controller manages this. Default HT for new
+      domestic; for diaspora it's set when a country is picked. %>
+  <%= f.hidden_field :country_code, value: (@center.country_code.presence || "HT"),
+                     data: { polling_center_type_target: "countryCodeInput" } %>
 
-  <%# Cascading dropdowns — same `address` Stimulus controller used elsewhere
-      in the app. 4-level cascade: Department → Arrondissement → Commune →
-      Communal Section. Prefilled values flow through `data-selected`. %>
-  <div class="row g-3" data-controller="address">
-    <div class="col-md-6">
-      <%= f.label :department_id, "Depatman", class: "form-label" %>
-      <%= f.select :department_id,
-                   @departments.map { |d| [d.name, d.id] },
-                   { prompt: "— Chwazi Depatman —" },
-                   class: "form-select",
-                   data: {
-                     action: "change->address#loadArrondissements",
-                     address_target: "department",
-                     selected: @center.department_id,
-                     slug_map: @departments.index_by(&:id).transform_values(&:slug).to_json
-                   } %>
-    </div>
-    <div class="col-md-6">
-      <%= f.label :arrondissement_id, "Arondisman", class: "form-label" %>
-      <%= f.select :arrondissement_id, [],
-                   { prompt: "— Chwazi Arondisman —" },
-                   class: "form-select",
-                   disabled: @center.department_id.blank?,
-                   data: {
-                     action: "change->address#loadCommunes",
-                     address_target: "arrondissement",
-                     selected: @center.arrondissement_id
-                   } %>
-    </div>
-    <div class="col-md-6">
-      <%= f.label :commune_id, "Komin", class: "form-label" %>
-      <%= f.select :commune_id, [],
-                   { prompt: "— Chwazi Komin —" },
-                   class: "form-select",
-                   disabled: @center.arrondissement_id.blank?,
-                   data: {
-                     action: "change->address#loadCommunalSections",
-                     address_target: "commune",
-                     selected: @center.commune_id
-                   } %>
-    </div>
-    <div class="col-md-6">
-      <%= f.label :communal_section_id, "Seksyon Komunal", class: "form-label" %>
-      <%= f.select :communal_section_id, [],
-                   { prompt: "— Chwazi Seksyon —" },
-                   class: "form-select",
-                   disabled: @center.commune_id.blank?,
-                   data: {
-                     action: "change->address#loadPostalCode",
-                     address_target: "section",
-                     selected: @center.communal_section_id
-                   } %>
-      <div class="form-text small">Obligatwa pou sant domestik.</div>
-    </div>
-  </div>
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 1 — Tip Lokasyon
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="1"
+           class="wizard-step <%= 'active' unless edit_mode %> <%= 'd-none' if edit_mode %>"
+           style="<%= 'display:none' if edit_mode %>">
+    <h5 class="fw-semibold mb-3">Ki kalite Sant Vòt w'ap kreye?</h5>
+    <p class="text-muted small mb-4">
+      Domestik = nan peyi Ayiti. Dyaspora = aletranje, anba siveyans yon
+      misyon diplomatik.
+    </p>
 
-  <hr class="my-4">
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-flight-takeoff-line me-1"></i>Misyon Diplomatik (Dyaspora sèlman)
-  </h6>
-  <div class="row g-3">
-    <div class="col-md-12">
-      <%= f.label :diplomatic_mission_id, "Kòd Misyon Diplomatik", class: "form-label" %>
-      <%= f.text_field :diplomatic_mission_id, class: "form-control text-uppercase",
-                       placeholder: "HT-CON-MIA" %>
-      <div class="form-text small">Obligatwa pou sant dyaspora (egz: HT-CON-MIA, HT-CON-PAR).</div>
+    <div class="row g-3">
+      <% [
+        { value: "domestic", icon: "ri-flag-2-line", title: "Domestik (Ayiti)",
+          subtitle: "Lekòl, legliz, oswa lòt sant nan peyi Ayiti." },
+        { value: "diaspora", icon: "ri-global-line", title: "Dyaspora (Aletranje)",
+          subtitle: "Sant nan yon konsila oswa anbasad Ayisyen." }
+      ].each do |opt| %>
+        <div class="col-md-6">
+          <label class="card pp-card h-100 border-2"
+                 style="cursor: pointer; transition: all .15s;">
+            <%= f.radio_button :center_type, opt[:value],
+                  class: "form-check-input visually-hidden",
+                  required: !edit_mode,
+                  data: {
+                    polling_center_type_target: "typeRadio",
+                    action: "change->polling-center-type#typeChange"
+                  } %>
+            <div class="card-body text-center p-4">
+              <i class="<%= opt[:icon] %>" style="font-size: 2.4rem; color: #00209F;"></i>
+              <h6 class="fw-semibold mt-2 mb-1"><%= opt[:title] %></h6>
+              <p class="text-muted small mb-0"><%= opt[:subtitle] %></p>
+            </div>
+          </label>
+        </div>
+      <% end %>
     </div>
-  </div>
 
-  <hr class="my-4">
-  <h6 class="text-uppercase small fw-semibold text-muted mb-3">
-    <i class="ri-phone-line me-1"></i>Kontak Sant
-  </h6>
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <%= link_to "Anile", partner_portal_polling_centers_path, class: "btn btn-link" %>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
 
-  <div class="row g-3">
-    <div class="col-md-6">
-      <%= f.label :contact_phone, "Telefòn", class: "form-label" %>
-      <%= f.telephone_field :contact_phone, class: "form-control",
-                            placeholder: "+509 2812 1234" %>
-    </div>
-    <div class="col-md-6">
-      <%= f.label :contact_hours, "Lè Kontak", class: "form-label" %>
-      <%= f.text_field :contact_hours, class: "form-control",
-                       placeholder: "Jou eleksyon: 6am - 4pm" %>
-    </div>
-    <div class="col-md-12">
-      <%= f.label :notes, "Nòt", class: "form-label" %>
-      <%= f.text_area :notes, class: "form-control", rows: 2 %>
-    </div>
-  </div>
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 2 — Lokasyon (conditional)
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="2"
+           class="wizard-step <%= 'active' if edit_mode %> <%= 'd-none' unless edit_mode %>"
+           style="<%= 'display:none' unless edit_mode %>">
 
-  <div class="d-flex justify-content-end gap-2 mt-4">
-    <%= link_to "Anile", partner_portal_polling_centers_path, class: "btn btn-link" %>
-    <%= f.submit (@center.persisted? ? "Mete a jou" : "Kreye Sant Vòt"),
-                 class: "btn pp-btn-brand px-4" %>
-  </div>
+    <%# ── DOMESTIC PANEL ───────────────────────────────────────── %>
+    <div data-polling-center-type-target="domesticPanel"
+         class="<%= 'd-none' unless @center.center_type == 'domestic' %>">
+      <h5 class="fw-semibold mb-3">
+        <i class="ri-flag-2-line text-primary me-2"></i>Lokasyon nan peyi Ayiti
+      </h5>
+      <p class="text-muted small mb-4">
+        Chwazi sikonskripsyon administrative depatman → arondisman →
+        komin → seksyon komunal. Kòd postal la pral ranpli otomatikman
+        lè ou chwazi seksyon an.
+      </p>
+
+      <div class="row g-3" data-controller="address">
+        <div class="col-md-12">
+          <%= f.label :address_line_1, "Adrès / Lari", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :address_line_1, class: "form-control",
+                            placeholder: "Egz: Rue Roy, Delmas 31",
+                            data: { polling_center_type_target: "domesticRequired" } %>
+        </div>
+
+        <div class="col-md-6">
+          <%= f.label :department_id, "Depatman", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.select :department_id,
+                       @departments.map { |d| [d.name, d.id] },
+                       { prompt: "— Chwazi Depatman —" },
+                       class: "form-select",
+                       data: {
+                         action: "change->address#loadArrondissements",
+                         address_target: "department",
+                         selected: @center.department_id,
+                         slug_map_value: @departments.index_by(&:id).transform_values(&:slug).to_json,
+                         prompt: "— Chwazi Depatman —",
+                         polling_center_type_target: "domesticRequired"
+                       } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :arrondissement_id, "Arondisman", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.select :arrondissement_id, [],
+                       { prompt: "— Chwazi Arondisman —" },
+                       class: "form-select",
+                       disabled: @center.department_id.blank?,
+                       data: {
+                         action: "change->address#loadCommunes",
+                         address_target: "arrondissement",
+                         selected: @center.arrondissement_id,
+                         prompt: "— Chwazi Arondisman —",
+                         polling_center_type_target: "domesticRequired"
+                       } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :commune_id, "Komin", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.select :commune_id, [],
+                       { prompt: "— Chwazi Komin —" },
+                       class: "form-select",
+                       disabled: @center.arrondissement_id.blank?,
+                       data: {
+                         action: "change->address#loadCommunalSections",
+                         address_target: "commune",
+                         selected: @center.commune_id,
+                         prompt: "— Chwazi Komin —",
+                         polling_center_type_target: "domesticRequired"
+                       } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :communal_section_id, "Seksyon Komunal", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.select :communal_section_id, [],
+                       { prompt: "— Chwazi Seksyon —" },
+                       class: "form-select",
+                       disabled: @center.commune_id.blank?,
+                       data: {
+                         action: "change->address#loadPostalCode",
+                         address_target: "section",
+                         selected: @center.communal_section_id,
+                         prompt: "— Chwazi Seksyon —",
+                         polling_center_type_target: "domesticRequired"
+                       } %>
+          <div class="form-text small">Kòd postal la pral parèt otomatikman.</div>
+        </div>
+
+        <div class="col-md-4">
+          <%= f.label :postal_code, "Kòd Postal", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :postal_code, class: "form-control",
+                            placeholder: "HT6110", readonly: true,
+                            data: { address_target: "postalCode" } %>
+          <div class="form-text small">Otomatik depi seksyon komunal la</div>
+        </div>
+      </div>
+
+      <%# Format dezirab final — montre pou rasire CEP a sou sa adrès la
+          pral parèt sou kat votè a. %>
+      <div class="alert alert-info small mt-3 mb-0" role="note">
+        <i class="ri-information-line me-1"></i>
+        <strong>Fòma postal Ayisyen:</strong> Seksyon Komunal · Lari ·
+        <em>POSTAL_CODE, KOMIN</em> · HAITI
+      </div>
+    </div>
+
+    <%# ── DIASPORA PANEL ──────────────────────────────────────── %>
+    <div data-polling-center-type-target="diasporaPanel"
+         class="<%= 'd-none' unless @center.center_type == 'diaspora' %>">
+      <h5 class="fw-semibold mb-3">
+        <i class="ri-global-line text-primary me-2"></i>Lokasyon Aletranje
+      </h5>
+      <p class="text-muted small mb-4">
+        Chwazi peyi a, apre sa misyon diplomatik ki sipèvize sant lan.
+        Adrès la pral pre-ranpli depi sistèm nan — ou ka modifye li
+        si sant la nan yon adrès tanporè.
+      </p>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <%= label_tag :diaspora_country, "Peyi", class: "form-label fw-semibold pp-text-sm" %>
+          <%= select_tag :diaspora_country,
+                options_for_select([["— Chwazi peyi —", ""]] + polling_center_wizard_country_options,
+                                   @center.country_code),
+                class: "form-select",
+                data: {
+                  polling_center_type_target: "countrySelect diasporaRequired",
+                  action: "change->polling-center-type#countryChange"
+                } %>
+        </div>
+        <div class="col-md-6">
+          <%= f.label :diplomatic_mission_id, "Misyon Diplomatik", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.select :diplomatic_mission_id, [],
+                { prompt: "— Chwazi misyon —" },
+                class: "form-select",
+                disabled: @center.diplomatic_mission_id.blank?,
+                data: {
+                  polling_center_type_target: "missionSelect diasporaRequired",
+                  action: "change->polling-center-type#missionChange"
+                } %>
+          <div class="form-text small">Lis la depan de peyi w chwazi a</div>
+        </div>
+      </div>
+
+      <%# Mission preview — populated by JS when a mission is picked %>
+      <div data-polling-center-type-target="missionPreview"></div>
+
+      <hr class="my-4">
+      <h6 class="text-uppercase small fw-semibold text-muted mb-3">
+        <i class="ri-map-pin-line me-1"></i>Adrès Sant lan
+      </h6>
+      <p class="text-muted small">
+        Adrès yo ranpli otomatikman depi misyon an. Si sant lan nan yon
+        lokal diferan, modifye sa ki nesesè yo.
+      </p>
+
+      <div class="row g-3">
+        <div class="col-md-12">
+          <%= f.label :address_line_1, "Adrès (Liy 1)", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :address_line_1, class: "form-control",
+                placeholder: "259 SW 13th St",
+                data: {
+                  polling_center_type_target: "autofillField",
+                  autofill_key: "street_line1"
+                } %>
+        </div>
+        <div class="col-md-12">
+          <%= f.label :address_line_2, "Liy 2 (Suite, etaj, etc.)", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :address_line_2, class: "form-control",
+                placeholder: "Suite 3",
+                data: {
+                  polling_center_type_target: "autofillField",
+                  autofill_key: "street_line2"
+                } %>
+        </div>
+        <div class="col-md-5">
+          <%= f.label :city, "Vil", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :city, class: "form-control",
+                placeholder: "Miami",
+                data: {
+                  polling_center_type_target: "autofillField",
+                  autofill_key: "locality"
+                } %>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :state_province, "Eta / Pwovens", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :state_province, class: "form-control",
+                placeholder: "FL",
+                data: {
+                  polling_center_type_target: "autofillField",
+                  autofill_key: "region"
+                } %>
+        </div>
+        <div class="col-md-3">
+          <%= f.label :postal_code, "Kòd Postal", class: "form-label fw-semibold pp-text-sm" %>
+          <%= f.text_field :postal_code, class: "form-control",
+                placeholder: "33130",
+                data: {
+                  polling_center_type_target: "autofillField",
+                  autofill_key: "postal_code"
+                } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous"
+              <%= 'style=visibility:hidden' if edit_mode %>>
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 3 — Detay Sant
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="3"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-building-line text-primary me-2"></i>Detay Sant lan
+    </h5>
+    <p class="text-muted small mb-4">
+      Bay sant lan yon non, kalite bilding, ak yon estimasyon kapasite
+      pou planifye konbyen BV w'ap bezwen.
+    </p>
+
+    <div class="row g-3">
+      <div class="col-md-12">
+        <%= f.label :name, "Non Sant Vòt", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_field :name, class: "form-control", required: true,
+              placeholder: "Egz: Lekòl Nasyonal Kenscoff" %>
+      </div>
+
+      <div class="col-md-6">
+        <%= f.label :venue_type, "Kalite Bilding", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.select :venue_type,
+              PollingCenter::VENUE_TYPES.map { |v| [PollingCenter::VENUE_TYPE_LABELS[v], v] },
+              { prompt: "— Chwazi kalite —" },
+              class: "form-select" %>
+      </div>
+      <div class="col-md-6">
+        <%= f.label :expected_capacity, "Kapasite Estime (votè)",
+              class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.number_field :expected_capacity, class: "form-control", min: 1,
+              placeholder: "1500" %>
+        <div class="form-text small">Estimasyon — kapasite reyèl la depan de BV w'ap ajoute apre.</div>
+      </div>
+
+      <div class="col-md-12">
+        <%= render "partner_portal/shared/phone_with_country",
+                   f: f,
+                   field: :contact_phone,
+                   label: "Telefòn Kontak",
+                   default_country: (@center.center_type == "diaspora" && @center.country_code.presence) || "HT",
+                   placeholder_digits: "2812 1234" %>
+      </div>
+
+      <div class="col-md-12">
+        <%= f.label :notes, "Nòt", class: "form-label fw-semibold pp-text-sm" %>
+        <%= f.text_area :notes, class: "form-control", rows: 2,
+              placeholder: "Nenpòt enfòmasyon enpòtan sou sant lan…" %>
+      </div>
+
+      <%# Avanse — status + priority defaults are usually fine. %>
+      <div class="col-md-12">
+        <details class="small">
+          <summary class="text-muted">Opsyon avanse (estati, priyorite)</summary>
+          <div class="row g-2 mt-2">
+            <div class="col-md-6">
+              <%= f.label :status, "Estati", class: "form-label small" %>
+              <%= f.select :status,
+                           PollingCenter::STATUSES.map { |s| [s.capitalize, s] },
+                           {}, class: "form-select form-select-sm" %>
+            </div>
+            <div class="col-md-6">
+              <%= f.label :priority, "Priyorite (0 = pi wo)", class: "form-label small" %>
+              <%= f.number_field :priority, class: "form-control form-control-sm",
+                                  min: 0, value: @center.priority || 0 %>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Kontinye <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 4 — Lè Ouvèti (election-day operating hours)
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="4"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-time-line text-primary me-2"></i>Lè Sant Vòt la Louvri
+    </h5>
+    <p class="text-muted small mb-4">
+      Defini ki jou ak ki lè sant lan louvri. Pou pifò Sant Vòt, sa se
+      <strong>jou eleksyon an sèlman</strong> (Dimanch 6am - 4pm tipikman).
+      Aktive switch jou a, apre tape lè ouvèti ak fèmti.
+    </p>
+
+    <%= render "partner_portal/shared/hours_editor",
+               record: @center,
+               field_prefix: "polling_center[operating_hours]",
+               title: "Lè Ouvèti (Jou Eleksyon)",
+               id_prefix: "polling-center-hours" %>
+
+    <div class="d-flex justify-content-between gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <button type="button" class="btn pp-btn-brand px-4" data-action="wizard#next">
+        Revize <i class="ri-arrow-right-line ms-1"></i>
+      </button>
+    </div>
+  </section>
+
+  <%# ═══════════════════════════════════════════════════════════════
+      STEP 5 — Revize ak Soumèt
+      ═══════════════════════════════════════════════════════════════ %>
+  <section data-wizard-target="step" data-step="5"
+           class="wizard-step d-none" style="display:none">
+    <h5 class="fw-semibold mb-3">
+      <i class="ri-check-double-line text-primary me-2"></i>Revize ak Soumèt
+    </h5>
+    <p class="text-muted small mb-4">
+      Verifye enfòmasyon yo anba a. Klike "Tounen" pou modifye nenpòt
+      etap, oswa "Kreye Sant Vòt" pou anrejistre.
+    </p>
+
+    <div data-polling-center-type-target="reviewSummary"
+         class="bg-white border rounded p-3 mb-3"></div>
+
+    <div class="alert alert-info small mb-4">
+      <i class="ri-information-line me-1"></i>
+      Apre kreyasyon, w'ap kapab ajoute Bureau de Vote (BV) yo nan paj
+      detay sant lan.
+    </div>
+
+    <div class="d-flex justify-content-between gap-2">
+      <button type="button" class="btn btn-outline-secondary" data-action="wizard#previous">
+        <i class="ri-arrow-left-line me-1"></i> Tounen
+      </button>
+      <%= f.submit (edit_mode ? "Mete a jou Sant Vòt" : "Kreye Sant Vòt"),
+                   class: "btn pp-btn-brand px-4" %>
+    </div>
+  </section>
+
 <% end %>
+
+<%# Card-radio visual feedback for Step 1. Scoped to this form so it
+    doesn't bleed into other pages. %>
+<style>
+  .wizard-step .card.pp-card { border-color: #E2E8F0; }
+  .wizard-step .card.pp-card:has(input[type="radio"]:checked) {
+    border-color: #00209F !important;
+    box-shadow: 0 0 0 3px rgba(0, 32, 159, 0.1);
+  }
+  .wizard-step .card.pp-card:hover {
+    border-color: #94A3B8;
+  }
+  .step-circle.active {
+    border-color: #00209F !important;
+    background: #00209F !important;
+    color: #fff !important;
+  }
+  .step-circle.completed {
+    border-color: #16A34A !important;
+    background: #16A34A !important;
+    color: #fff !important;
+  }
+</style>

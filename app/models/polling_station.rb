@@ -12,6 +12,16 @@ class PollingStation < ApplicationRecord
   belongs_to :polling_center
   has_many   :voter_eligibility_records, dependent: :restrict_with_error
 
+  # Opaque slug used in URLs so /polling_stations/:n/edit can't be
+  # enumerated by guessing sequential ids. Generated server-side at
+  # create — never accepted from input.
+  before_validation :assign_slug, on: :create
+  validates :slug, presence: true, uniqueness: true
+
+  def to_param
+    slug
+  end
+
   validates :bv_number, presence: true,
                         numericality: { greater_than: 0, only_integer: true },
                         uniqueness: { scope: :polling_center_id }
@@ -41,5 +51,12 @@ class PollingStation < ApplicationRecord
   # Deterministic label: "BV #14 — Lycée Saint-Louis de Gonzague"
   def display_label
     "BV ##{bv_number} — #{polling_center&.name}"
+  end
+
+  private
+
+  def assign_slug
+    return if slug.present?
+    self.slug = SecureRandom.uuid
   end
 end

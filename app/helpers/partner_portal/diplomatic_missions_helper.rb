@@ -94,5 +94,64 @@ module PartnerPortal
       return "" unless cc.match?(/\A[A-Z]{2}\z/)
       cc.each_char.map { |c| (c.ord + 0x1F1A5).chr(Encoding::UTF_8) }.join
     end
+
+    # Returns a real flag PNG <img> tag (sourced from flagcdn.com) — use
+    # this instead of `country_flag` wherever the page should show an
+    # actual flag *image* rather than rely on the OS rendering the
+    # regional-indicator emoji glyph (which falls back to "HT" letters
+    # on Windows / older Linux).
+    #
+    # Sizes are PNGs flagcdn natively serves; passing 20 yields a 20x15
+    # image with a 2x retina srcset for sharpness on HiDPI displays.
+    #
+    #   country_flag_img("HT")           # => <img src=".../20x15/ht.png" …>
+    #   country_flag_img("US", size: 32) # => <img src=".../32x24/us.png" …>
+    #   country_flag_img(nil)            # => "" (HTML-safe blank)
+    def country_flag_img(code, size: 20, circle: true)
+      return "".html_safe if code.blank?
+      cc = code.to_s.upcase
+      return "".html_safe unless cc.match?(/\A[A-Z]{2}\z/)
+      lc = cc.downcase
+
+      if circle
+        # Perfect circle that shows the WHOLE flag (no cropping). The
+        # wrapper is square (width == height); the flag PNG inside uses
+        # object-fit:contain on a white background so the full 4:3
+        # rectangle stays visible within the round badge — no nation's
+        # flag gets its emblem chopped off by a cover-crop. We pull the
+        # 4x source so the contained flag still renders sharp on HiDPI.
+        src_w = size * 2
+        src_h = (src_w * 0.75).round
+        content_tag(
+          :span,
+          image_tag(
+            "https://flagcdn.com/#{src_w}x#{src_h}/#{lc}.png",
+            srcset: "https://flagcdn.com/#{src_w * 2}x#{src_h * 2}/#{lc}.png 2x",
+            alt:    cc,
+            loading: "lazy",
+            style:  "width:100%; height:100%; object-fit:contain; display:block;"
+          ),
+          style: "display:inline-block; width:#{size}px; height:#{size}px; " \
+                 "min-width:#{size}px; min-height:#{size}px; " \
+                 "border-radius:50%; overflow:hidden; vertical-align:middle; " \
+                 "background:#fff; box-shadow: 0 0 0 1px rgba(0,0,0,.08); " \
+                 "aspect-ratio:1/1; flex-shrink:0;",
+          title: cc
+        )
+      else
+        h  = (size * 0.75).round
+        h2 = h * 2
+        s2 = size * 2
+        image_tag(
+          "https://flagcdn.com/#{size}x#{h}/#{lc}.png",
+          srcset: "https://flagcdn.com/#{s2}x#{h2}/#{lc}.png 2x",
+          width:  size,
+          height: h,
+          alt:    cc,
+          loading: "lazy",
+          style:  "border-radius: 2px; vertical-align: middle;"
+        )
+      end
+    end
   end
 end
