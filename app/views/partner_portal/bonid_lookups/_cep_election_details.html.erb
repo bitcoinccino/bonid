@@ -1,0 +1,342 @@
+<%# CEP-scoped scan result block — rendered only when the scanning partner is CEP.
+    Surfaces voter detail (polling station, voter reference, source, channel),
+    election roles (candidate / party officer / accreditation / disputes), and
+    CEP team membership with an invite CTA. %>
+
+<% election         = BonvoteElection.where(status: "active").order(created_at: :desc).first ||
+                      BonvoteElection.order(created_at: :desc).first %>
+<% candidates       = election ? ElectionCandidate.where(election: election, user: user).to_a : [] %>
+<% accreditation    = election ? ElectionAccreditation.find_by(election: election, user: user) : nil %>
+<% party_reg        = election ? ElectionPartyRegistration.where(election: election, user: user).first : nil %>
+<% is_party_officer = %w[party_president party_secretary party_treasurer].any? { |r| user.has_role?(r.to_sym) } %>
+<% dispute_count    = if election
+                        complainant_scope = ElectionDispute.where(election: election)
+                                              .where(filed_by_type: "citizen", filed_by_name: user.full_name)
+                        subject_scope     = candidates.any? ?
+                                              ElectionDispute.where(election: election, election_candidate_id: candidates.map(&:id)) :
+                                              ElectionDispute.none
+                        open_statuses     = %w[filed under_review hearing_scheduled]
+                        (complainant_scope.where(status: open_statuses).count +
+                         subject_scope.where(status: open_statuses).count)
+                      else
+                        0
+                      end %>
+
+<% on_team        = user.partner_id.present? && user.partner_id == partner&.id %>
+<% current_role   = if on_team
+                      GovernmentRoleConstants.valid_role_keys_for("cep").find { |r| user.has_role?(r.to_sym) }
+                    end %>
+<% has_any_team_role = on_team && current_role.present? %>
+
+<%# ── Voter Registration Detail (CEP-only fields) ── %>
+<% if voter_record.present? && voter_record.eligible? %>
+  <div class="cep-subcard">
+    <div class="cep-subcard-header">
+      <i class="ri-file-list-3-line"></i>Detay Enskripsyon Votè
+    </div>
+    <div class="cep-subcard-body">
+      <div class="cep-grid">
+        <div class="cep-grid-item">
+          <span class="cep-label">Biwo Vòt</span>
+          <span class="cep-value"><%= voter_record.polling_station&.display_label || "Poko asiyen" %></span>
+        </div>
+        <div class="cep-grid-item">
+          <span class="cep-label">Referans BonVote</span>
+          <span class="cep-value cep-value--mono"><%= voter_record.voter_reference %></span>
+        </div>
+        <div class="cep-grid-item">
+          <span class="cep-label">Sous Enskripsyon</span>
+          <span class="cep-value">
+            <% case voter_record.source
+               when "digital" %>
+              <i class="ri-global-line me-1"></i>Anliy (BonID)
+            <% when "clerk" %>
+              <i class="ri-user-3-line me-1"></i>An pèsòn (ajan)
+            <% else %>
+              —
+            <% end %>
+          </span>
+        </div>
+        <div class="cep-grid-item">
+          <span class="cep-label">Kanal Prefere</span>
+          <span class="cep-value"><%= voter_record.preferred_channel&.titleize || "—" %></span>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Election Roles ── %>
+<div class="cep-subcard">
+  <div class="cep-subcard-header">
+    <i class="ri-shield-user-line"></i>Wòl Elektoral
+    <% if election %>
+      <span class="cep-election-pill"><%= election.title || "Eleksyon aktyèl" %></span>
+    <% end %>
+  </div>
+  <div class="cep-subcard-body">
+    <% role_items_rendered = false %>
+
+    <% if candidates.any? %>
+      <% role_items_rendered = true %>
+      <% candidates.each do |cand| %>
+        <div class="cep-role-row">
+          <div class="cep-role-icon cep-role-icon--candidate"><i class="ri-user-star-line"></i></div>
+          <div class="cep-role-info">
+            <div class="cep-role-title">
+              Kandida — <%= cand.position&.titleize || "—" %>
+              <% if cand.party_registration&.party_name.present? %>
+                <span class="cep-role-subtle">• <%= cand.party_registration.party_name %></span>
+              <% end %>
+            </div>
+            <div class="cep-role-meta">
+              <span class="cep-status-pill cep-status-pill--<%= cand.registration_status_color rescue "neutral" %>">
+                <%= cand.registration_status_label rescue cand.registration_status&.titleize %>
+              </span>
+            </div>
+          </div>
+          <%= link_to partner_portal_candidate_registration_path(cand), class: "cep-role-link", data: { turbo: false } do %>
+            <i class="ri-arrow-right-s-line"></i>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+
+    <% if is_party_officer %>
+      <% role_items_rendered = true %>
+      <div class="cep-role-row">
+        <div class="cep-role-icon cep-role-icon--party"><i class="ri-flag-line"></i></div>
+        <div class="cep-role-info">
+          <div class="cep-role-title">
+            Ofisye Pati
+            <% officer_role = %w[party_president party_secretary party_treasurer].find { |r| user.has_role?(r.to_sym) } %>
+            <span class="cep-role-subtle">• <%= officer_role&.sub("party_", "")&.titleize %></span>
+          </div>
+          <% if party_reg %>
+            <div class="cep-role-meta">
+              <span class="cep-role-subtle"><%= party_reg.party_name %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if accreditation %>
+      <% role_items_rendered = true %>
+      <div class="cep-role-row">
+        <div class="cep-role-icon cep-role-icon--accreditation"><i class="ri-verified-badge-line"></i></div>
+        <div class="cep-role-info">
+          <div class="cep-role-title">
+            Akredite — <%= accreditation.accreditation_type&.titleize %>
+          </div>
+          <div class="cep-role-meta">
+            <span class="cep-value--mono"><%= accreditation.accreditation_code || "—" %></span>
+            <span class="cep-status-pill cep-status-pill--<%= accreditation.status == 'active' ? 'success' : 'neutral' %>">
+              <%= accreditation.status&.titleize %>
+            </span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if dispute_count.to_i > 0 %>
+      <% role_items_rendered = true %>
+      <div class="cep-role-row cep-role-row--warning">
+        <div class="cep-role-icon cep-role-icon--dispute"><i class="ri-alarm-warning-line"></i></div>
+        <div class="cep-role-info">
+          <div class="cep-role-title">
+            <%= dispute_count %> konfli ouvè
+          </div>
+          <div class="cep-role-meta cep-role-subtle">
+            Sa sitwayen an konekte ak dosye dispute aktif
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% unless role_items_rendered %>
+      <div class="cep-empty">
+        <i class="ri-information-line me-1"></i>Sitwayen an pa gen okenn wòl elektoral ankò.
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ── CEP Team Membership + Invite CTA ── %>
+<div class="cep-subcard">
+  <div class="cep-subcard-header">
+    <i class="ri-team-line"></i>Ekip CEP
+  </div>
+  <div class="cep-subcard-body">
+    <% if has_any_team_role %>
+      <div class="cep-role-row">
+        <div class="cep-role-icon cep-role-icon--team"><i class="ri-checkbox-circle-fill"></i></div>
+        <div class="cep-role-info">
+          <div class="cep-role-title">
+            Deja nan ekip la
+            <span class="cep-role-subtle">• <%= GovernmentRoleConstants.role_label("cep", current_role) %></span>
+          </div>
+          <div class="cep-role-meta cep-role-subtle">
+            <% if user.invitation_accepted_at.present? %>
+              Aksepte <%= user.invitation_accepted_at.strftime("%d/%m/%Y") %>
+            <% elsif user.invitation_sent_at.present? %>
+              Envitasyon poko aksepte — voye <%= user.invitation_sent_at.strftime("%d/%m/%Y") %>
+            <% end %>
+          </div>
+        </div>
+        <%= link_to partner_portal_team_index_path, class: "cep-role-link", data: { turbo: false } do %>
+          Jere <i class="ri-arrow-right-s-line"></i>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="cep-invite-prompt">
+        <div class="cep-invite-copy">
+          <strong><%= user.full_name %></strong> pa nan ekip CEP ou. Envite li pou l vin yon administratè oswa ajan.
+        </div>
+        <%= link_to new_partner_portal_team_path(bonid: user.bonid.to_s.delete("-").last(6)),
+                    class: "cep-invite-btn",
+                    data: { turbo: false } do %>
+          <i class="ri-user-add-line me-1"></i>Envite nan Ekip CEP
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+  /* ── CEP Sub-Cards (shared shell) ── */
+  .cep-subcard {
+    background: #FAFBFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 0 20px 16px;
+  }
+  .cep-subcard-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700; color: #1e3a5f;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-bottom: 1px solid #DBEAFE;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .cep-subcard-header i { font-size: 0.9rem; color: #00209F; }
+  .cep-election-pill {
+    margin-left: auto;
+    background: #DBEAFE; color: #1E40AF;
+    font-size: 0.62rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: none; letter-spacing: 0;
+  }
+  .cep-subcard-body { padding: 12px 14px; }
+
+  /* ── Grid (voter detail) ── */
+  .cep-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 18px;
+  }
+  .cep-grid-item { display: flex; flex-direction: column; gap: 2px; }
+  .cep-label {
+    font-size: 0.68rem; font-weight: 600; color: #64748B;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .cep-value {
+    font-size: 0.85rem; font-weight: 600; color: #0F172A;
+  }
+  .cep-value--mono {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 0.78rem; letter-spacing: 0.3px;
+    color: #00209F;
+  }
+
+  /* ── Role rows ── */
+  .cep-role-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 2px;
+  }
+  .cep-role-row + .cep-role-row {
+    border-top: 1px solid #F1F5F9;
+  }
+  .cep-role-row--warning {
+    background: #FFFBEB;
+    margin: 0 -14px; padding: 10px 14px;
+    border: 1px solid #FDE68A;
+    border-radius: 8px;
+  }
+  .cep-role-icon {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+  }
+  .cep-role-icon--candidate { background: #F5F3FF; color: #6D28D9; }
+  .cep-role-icon--party { background: #FEF3C7; color: #92400E; }
+  .cep-role-icon--accreditation { background: #D1FAE5; color: #065F46; }
+  .cep-role-icon--dispute { background: #FEE2E2; color: #991B1B; }
+  .cep-role-icon--team { background: #DBEAFE; color: #1E40AF; }
+  .cep-role-info { flex: 1; min-width: 0; }
+  .cep-role-title {
+    font-size: 0.88rem; font-weight: 700; color: #0F172A;
+    line-height: 1.3;
+  }
+  .cep-role-subtle { color: #64748B; font-weight: 500; }
+  .cep-role-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 3px;
+    font-size: 0.75rem;
+  }
+  .cep-role-link {
+    color: #00209F; font-weight: 600; font-size: 0.8rem;
+    text-decoration: none;
+    display: inline-flex; align-items: center;
+    flex-shrink: 0;
+  }
+  .cep-role-link:hover { color: #001A7A; text-decoration: underline; }
+
+  .cep-status-pill {
+    font-size: 0.62rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    display: inline-flex; align-items: center;
+  }
+  .cep-status-pill--success { background: #D1FAE5; color: #065F46; }
+  .cep-status-pill--warning { background: #FEF3C7; color: #92400E; }
+  .cep-status-pill--danger  { background: #FEE2E2; color: #991B1B; }
+  .cep-status-pill--neutral { background: #F1F5F9; color: #475569; }
+
+  .cep-empty {
+    font-size: 0.8rem; color: #94A3B8;
+    padding: 4px 0;
+  }
+
+  /* ── Invite Prompt ── */
+  .cep-invite-prompt {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .cep-invite-copy {
+    font-size: 0.85rem; color: #334155; line-height: 1.5;
+  }
+  .cep-invite-copy strong { color: #0F172A; }
+  .cep-invite-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    align-self: flex-start;
+    padding: 8px 16px;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.82rem;
+    color: #FFF;
+    background: #00209F;
+    border: none; border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.15s;
+  }
+  .cep-invite-btn:hover {
+    background: #001A7A; color: #FFF; text-decoration: none;
+  }
+
+  /* Mobile */
+  @media (max-width: 575.98px) {
+    .cep-grid { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,28 +1,31 @@
 <%# Partner BonID Verification Page — 2026 Redesign %>
+<% modal_mode = params[:modal].present? %>
 
-<div class="scan-page">
-  <%# ── Page Header ── %>
-  <div class="scan-header">
-    <div class="d-flex justify-content-between align-items-center">
-      <div>
+<turbo-frame id="bonid_scan_modal_frame">
+<div class="scan-page <%= 'scan-page--modal' if modal_mode %>">
+  <% unless modal_mode %>
+    <%# ── Page Header ── %>
+    <div class="scan-header">
+      <%= link_to partner_portal_dashboard_path, class: "scan-back-btn" do %>
+        <i class="ri-arrow-left-line me-1"></i>Dashboard
+      <% end %>
+      <div class="scan-header-title-block">
         <h4 class="scan-page-title">
           <i class="ri-shield-check-line me-2"></i>BonID Verification
         </h4>
         <p class="scan-page-subtitle">Scan QR code or enter the last 6 characters</p>
       </div>
-      <%= link_to partner_portal_dashboard_path, class: "scan-back-btn" do %>
-        <i class="ri-arrow-left-line me-1"></i>Dashboard
-      <% end %>
     </div>
-  </div>
+  <% end %>
 
-  <div class="scan-container container-fluid px-0"
+  <div class="scan-container"
        data-controller="partner-scanner"
-       data-partner-scanner-lookup-url-value="<%= partner_portal_bonid_lookups_path %>">
-    <div class="row g-3">
+       data-partner-scanner-lookup-url-value="<%= partner_portal_bonid_lookups_path %>"
+       data-partner-scanner-prefill-bonid-value="<%= params[:bonid].to_s.upcase %>">
+    <div class="row g-3 justify-content-center">
 
       <%# ── Main Scanner Area ── %>
-      <div class="col-12">
+      <div class="col-12 col-lg-11 col-xl-10">
         <div class="scan-card">
 
           <%# Centered Segmented Control (iOS-style) %>
@@ -182,15 +185,17 @@
             </div>
           </div>
 
-          <%# Cancel (text link, not a giant button) %>
-          <div class="scan-card-footer" data-partner-scanner-target="footer">
-            <button type="button"
-                    data-partner-scanner-target="cancelButton"
-                    data-action="click->partner-scanner#cancel"
-                    class="cancel-link">
-              <i class="ri-arrow-left-s-line me-1"></i>Back to Dashboard
-            </button>
-          </div>
+          <%# Cancel (text link, not a giant button) — hidden in modal mode (X button does it) %>
+          <% unless modal_mode %>
+            <div class="scan-card-footer" data-partner-scanner-target="footer">
+              <button type="button"
+                      data-partner-scanner-target="cancelButton"
+                      data-action="click->partner-scanner#cancel"
+                      class="cancel-link">
+                <i class="ri-arrow-left-s-line me-1"></i>Back to Dashboard
+              </button>
+            </div>
+          <% end %>
 
           <%# Rescan %>
           <div class="scan-card-footer d-none" data-partner-scanner-target="rescanWrapper">
@@ -207,6 +212,7 @@
     </div>
   </div>
 </div>
+</turbo-frame>
 
 <%# ── Styles ── %>
 <style>
@@ -214,9 +220,18 @@
   .scan-page {
     background: transparent;
   }
+  /* Modal-mode: drop outer container chrome since the modal provides it */
+  .scan-page--modal .scan-container { padding: 0; max-width: 100%; }
+  .scan-page--modal .scan-page .scan-card,
+  .scan-page--modal .scan-card { border: none; border-radius: 0; }
   .scan-header {
+    position: relative;
     padding: 16px 0;
+    max-width: 1080px;
+    margin: 0 auto;
+    text-align: center;
   }
+  .scan-header-title-block { display: inline-block; }
   .scan-page-title {
     font-family: 'Inter', 'Montserrat', sans-serif;
     font-size: 1.2rem; font-weight: 700; color: #0F172A;
@@ -227,6 +242,8 @@
     font-size: 0.78rem; color: #94A3B8; margin: 4px 0 0;
   }
   .scan-back-btn {
+    position: absolute;
+    top: 16px; right: 0;
     font-size: 0.82rem; font-weight: 500; color: #475569;
     background: #FFF; border: 1px solid #E2E8F0;
     border-radius: 10px; padding: 8px 16px;
@@ -235,7 +252,7 @@
     transition: all 0.15s;
   }
   .scan-back-btn:hover { border-color: #CBD5E1; color: #1E293B; }
-  .scan-container { padding: 0; }
+  .scan-container { padding: 0; max-width: 1080px; margin: 0 auto; }
 
   /* ── Scanner Card (borderless, shadow-only depth) ── */
   /* Override global .scan-card from _hero.scss (landing page animation) */

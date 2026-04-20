@@ -60,8 +60,18 @@ module PartnerPortal
     end
 
     # === INVITE FORM ===
+    # When linked from a verified BonID lookup card (?bonid=ABCDEF), skip the
+    # redundant lookup step and jump straight to the confirm/role-assignment view.
     def new
       @role_options = role_options
+      return unless params[:bonid].present?
+
+      @bonid = params[:bonid].to_s.strip
+      @person = TeamInvitationService.lookup(@bonid)
+      return if @person.nil? || !@person[:verified]
+
+      load_electoral_offices_for_cep
+      render :confirm
     end
 
     # === BONID LOOKUP (AJAX or form post) ===
@@ -83,18 +93,24 @@ module PartnerPortal
       end
 
       # Render the confirmation step with person details
+      load_electoral_offices_for_cep
       render :confirm
     end
 
     # === SEND INVITATION ===
     def create
+      if (reason = cep_invite_invalid_reason)
+        flash[:error] = reason
+        return redirect_to new_partner_portal_team_path(bonid: params[:bonid])
+      end
+
       result = TeamInvitationService.call(
         partner:     @partner,
         bonid:       params[:bonid],
         role:        params[:role],
         invited_by:  current_user,
         employee_id: params[:employee_id],
-        office_code: params[:office_code]
+        office_code: resolved_office_code
       )
 
       if result.success?
@@ -342,6 +358,59 @@ module PartnerPortal
       GovernmentRoleConstants::BANKING_SECTORS.include?(partner_sector_key)
     end
 
+    def cep_sector?
+      partner_sector_key == "cep"
+    end
+
+    # CEP v1 assignments map cleanly onto the org chart:
+    #   - partner_admin  = 1 of 9 CEP commissioners → CEP HQ (no biwo picker)
+    #   - partner_agent  = field enrollment officer → must pick a BEK
+    # BEDs are intentionally excluded — the BED-level institutional roles
+    # (regional coordinators/supervisors) were dropped in the v1 role trim,
+    # so no v1 invitee is ever assigned to a BED.
+    def load_electoral_offices_for_cep
+      return unless cep_sector?
+      @beks = ElectoralOffice.bek.where(status: %w[open planned]).ordered
+    end
+
+    # Force the biwo to match the role:
+    #   - partner_admin → always "CEP HQ — Port-au-Prince" (commissioner seat)
+    #   - partner_agent → posted BEK id resolved to display_label
+    # Other sectors pass their raw free-text office_code through unchanged.
+    def resolved_office_code
+      return params[:office_code].to_s.strip unless cep_sector?
+
+      case params[:role].to_s
+      when "partner_admin"
+        "CEP HQ — Port-au-Prince"
+      when "partner_agent"
+        raw = params[:office_code].to_s.strip
+        return nil if raw.blank?
+        bek = ElectoralOffice.bek.find_by(id: raw)
+        bek&.display_label
+      end
+    end
+
+    # Reject CEP invites whose role/biwo combo is structurally invalid before
+    # we hit the service. The service treats office_code as a free string, so
+    # this is the only place that enforces the org chart.
+    def cep_invite_invalid_reason
+      return nil unless cep_sector?
+      role = params[:role].to_s
+      raw  = params[:office_code].to_s.strip
+
+      case role
+      when "partner_admin"
+        nil # office_code is ignored for admins; nothing to validate
+      when "partner_agent"
+        return "Chwazi yon BEK pou Ajan Enskripsyon an." if raw.blank?
+        return "BEK chwazi a pa egziste." unless ElectoralOffice.bek.exists?(id: raw)
+        nil
+      else
+        "Wòl pa valid pou yon envitasyon CEP."
+      end
+    end
+
     ALL_PARTNER_ROLES = %i[
       partner_admin partner_agent partner_agent_surveyor partner_agent_notary partner_supervisor
       bank_agent bank_teller bank_supervisor
@@ -351,6 +420,6 @@ module PartnerPortal
       ALL_PARTNER_ROLES
     end
 
-    helper_method :onaca_sector?, :banking_sector?
+    helper_method :onaca_sector?, :banking_sector?, :cep_sector?
   end
 end

@@ -9,7 +9,8 @@ import * as Turbo from "@hotwired/turbo";
  */
 export default class extends Controller {
   static values = {
-    lookupUrl: { type: String, default: "/partner_portal/bonid_lookups" }
+    lookupUrl: { type: String, default: "/partner_portal/bonid_lookups" },
+    prefillBonid: { type: String, default: "" }
   };
 
   static targets = [
@@ -56,11 +57,12 @@ export default class extends Controller {
     this.switchCamera = this.debounce(this.switchCamera.bind(this), 300);
     this.bindTurboEvents();
 
-    // Check for ?bonid= param (from dashboard quick-entry redirect)
+    // Check for prefill BonID from (a) controller value (modal/turbo-frame path)
+    // or (b) ?bonid= URL param (legacy standalone-page redirect path).
     const urlParams = new URLSearchParams(window.location.search);
-    const prefillBonid = urlParams.get("bonid");
-    if (prefillBonid && prefillBonid.trim().length > 0) {
-      this.autoLookupFromParam(prefillBonid.trim().toUpperCase());
+    const prefillBonid = (this.prefillBonidValue || urlParams.get("bonid") || "").trim();
+    if (prefillBonid.length > 0) {
+      this.autoLookupFromParam(prefillBonid.toUpperCase());
     } else {
       this.initializeScanner();
     }
@@ -84,9 +86,14 @@ export default class extends Controller {
       this.bonidInputTarget.value = bonid;
     }
 
-    // Clean up URL (remove ?bonid= so refresh doesn't re-trigger)
-    const cleanUrl = window.location.pathname;
-    window.history.replaceState({}, "", cleanUrl);
+    // Clean up URL (remove ?bonid= so refresh doesn't re-trigger).
+    // Only when we got the BonID from the page URL — when the prefill came
+    // from a controller value (modal/turbo-frame), the parent page URL is
+    // not the scans page and we must not clobber its query string.
+    if (new URLSearchParams(window.location.search).get("bonid")) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
 
     // Auto-submit after a brief delay for visual feedback
     setTimeout(() => {
@@ -678,12 +685,10 @@ export default class extends Controller {
       return;
     }
 
-    if (digitOnlyRegex.test(bonid)) {
-      this.setOutput("Searching for citizen or tourist...", "info");
-    } else if (visitorSuffixRegex.test(bonid)) {
-      this.setOutput("Looking up tourist...", "info");
+    if (visitorSuffixRegex.test(bonid)) {
+      this.setOutput("Searching tourist...", "info");
     } else {
-      this.setOutput("Looking up ID…", "info");
+      this.setOutput("Searching BonID...", "info");
     }
 
     this.showSpinner();
@@ -718,10 +723,26 @@ export default class extends Controller {
       })
       .then(html => {
         if (html.includes("turbo-stream")) {
-          Turbo.renderStreamMessage(html);
-          this.clearOutput();
+          // Progressive status: found → (eligible if voter card present) → reveal
+          this.setOutput("BonID found and verified ✓", "success");
           this.playSound("beep-sound-success");
-          this.showResult();
+          // If the response contains a voter eligibility card, surface that
+          // as the next intermediate step before injecting the result.
+          const showsVoterEligibility =
+            /voter[-_]?eligible|voter-eligibility|eligibility-card|Eligibility|Eligib/i.test(html);
+          const finalize = () => {
+            Turbo.renderStreamMessage(html);
+            this.clearOutput();
+            this.showResult();
+          };
+          if (showsVoterEligibility) {
+            setTimeout(() => {
+              this.setOutput("BonID is eligible to vote ✓", "success");
+              setTimeout(finalize, 600);
+            }, 500);
+          } else {
+            setTimeout(finalize, 600);
+          }
         } else {
           throw new Error("Unexpected server response.");
         }

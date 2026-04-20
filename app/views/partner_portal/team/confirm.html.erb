@@ -1,65 +1,71 @@
 <div class="container-fluid py-4">
-  <div class="row justify-content-center">
-    <div class="col-lg-6">
-      <div class="mb-4">
-        <a href="<%= new_partner_portal_team_path %>" class="text-decoration-none pp-text-secondary pp-text-sm">
-          <i class="ri-arrow-left-line me-1"></i> Chèche yon lòt moun
-        </a>
-      </div>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h4 class="pp-page-title">
+        <i class="ri-user-add-line me-2 pp-text-brand"></i>Konfime Envitasyon
+      </h4>
+      <p class="pp-page-subtitle">Asiyen yon wòl epi voye envitasyon an</p>
+    </div>
+    <%= link_to new_partner_portal_team_path, class: "btn btn-link" do %>
+      <i class="ri-arrow-left-line me-1"></i> Chèche yon lòt moun
+    <% end %>
+  </div>
 
-      <div class="pp-card card">
-        <div class="card-header bg-primary px-4 py-3">
-          <h5 class="fw-bold text-white mb-0 pp-text-base">
-            <i class="ri-user-add-line me-2"></i> Konfime Envitasyon
-          </h5>
-        </div>
+  <div class="pp-card card">
+    <div class="card-body p-4">
 
-        <div class="card-body p-4">
-          <%# === PERSON PREVIEW CARD === %>
-          <div class="card border rounded-3 mb-4">
-            <div class="card-body d-flex align-items-center p-3">
-              <div class="me-3">
-                <% if @person[:photo_url] %>
-                  <img src="<%= @person[:photo_url] %>"
-                       alt="<%= @person[:full_name] %>"
-                       class="rounded-circle"
-                       style="width: 64px; height: 64px; object-fit: cover;">
-                <% else %>
-                  <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center"
-                       style="width: 64px; height: 64px;">
-                    <i class="ri-user-line ri-2x text-primary"></i>
-                  </div>
-                <% end %>
+      <%# === PERSON PREVIEW CARD === %>
+          <div class="d-flex align-items-center p-3 mb-4 border rounded-3 bg-light">
+            <div class="me-3 position-relative" style="width: 64px; height: 64px;">
+              <%# Icon-avatar fallback always rendered underneath; image (if any)
+                  paints over it. If the image 404s or its src is blank, onerror
+                  hides it and the fallback shows through. %>
+              <div class="rounded-circle bg-primary-subtle d-flex align-items-center justify-content-center position-absolute top-0 start-0"
+                   style="width: 64px; height: 64px;">
+                <i class="ri-user-line ri-2x text-primary"></i>
               </div>
-              <div>
-                <h5 class="fw-bold mb-1 pp-text-base"><%= @person[:full_name] %></h5>
-                <div class="pp-text-secondary pp-text-xs">
-                  <i class="ri-mail-line me-1"></i> <%= @person[:email] %>
-                </div>
-                <div class="mt-1">
-                  <code class="pp-text-brand"><%= @person[:bonid] %></code>
-                  <span class="badge bg-success-subtle text-success ms-2 pp-badge-sm">
-                    <i class="ri-checkbox-circle-line me-1"></i> Verifye
-                  </span>
-                </div>
+              <% if @person[:photo_url].present? %>
+                <img src="<%= @person[:photo_url] %>"
+                     alt=""
+                     class="rounded-circle position-absolute top-0 start-0"
+                     style="width: 64px; height: 64px; object-fit: cover;"
+                     onerror="this.style.display='none';"
+                     referrerpolicy="no-referrer">
+              <% end %>
+            </div>
+            <div>
+              <h5 class="fw-bold mb-1 pp-text-base"><%= @person[:full_name] %></h5>
+              <div class="pp-text-secondary pp-text-xs">
+                <i class="ri-mail-line me-1"></i> <%= @person[:email] %>
+              </div>
+              <div class="mt-1">
+                <code class="pp-text-brand"><%= @person[:bonid] %></code>
+                <span class="badge bg-success-subtle text-success ms-2 pp-badge-sm">
+                  <i class="ri-checkbox-circle-line me-1"></i> Verifye
+                </span>
               </div>
             </div>
           </div>
 
-          <%# === INVITATION FORM === %>
           <%= form_tag partner_portal_team_index_path, method: :post do %>
             <%= hidden_field_tag :bonid, @person[:bonid] %>
 
-            <%# === ROLE SELECTION === %>
-            <div class="mb-4">
-              <label class="form-label fw-semibold pp-text-sm">Chwazi Wòl</label>
+            <%# === ROLE SELECTION ===
+                CEP biwo field below is role-driven (see toggleBiwo): admins
+                land at CEP HQ, agents pick a BEK. The radio's onchange
+                dispatches the toggle so the biwo UI swaps in real time. %>
+            <h6 class="text-uppercase small fw-semibold text-muted mb-3">
+              <i class="ri-shield-user-line me-1"></i>Wòl
+            </h6>
+            <div class="mb-4" id="roleOptions">
               <% @role_options.each_with_index do |(label, value), i| %>
                 <div class="form-check mb-2 p-3 border rounded-3 <%= i == 1 ? 'border-primary bg-primary-subtle' : '' %>"
-                     onclick="this.querySelector('input').checked = true; document.querySelectorAll('.role-option').forEach(el => { el.classList.remove('border-primary', 'bg-primary-subtle'); }); this.classList.add('border-primary', 'bg-primary-subtle');"
+                     onclick="this.querySelector('input').checked = true; this.parentElement.querySelectorAll('.form-check').forEach(el => el.classList.remove('border-primary', 'bg-primary-subtle')); this.classList.add('border-primary', 'bg-primary-subtle'); if (window.toggleBiwo) window.toggleBiwo();"
                      style="cursor: pointer;">
                   <input class="form-check-input" type="radio" name="role"
                          id="role_<%= value %>" value="<%= value %>"
                          <%= "checked" if i == 1 %>
+                         onchange="if (window.toggleBiwo) window.toggleBiwo();"
                          required>
                   <label class="form-check-label w-100" for="role_<%= value %>" style="cursor: pointer;">
                     <strong><%= label.split(" — ").first %></strong>
@@ -71,22 +77,79 @@
               <% end %>
             </div>
 
-            <%# === EMPLOYEE ID (optional) === %>
-            <div class="mb-3">
-              <label for="employee_id" class="form-label fw-semibold pp-text-sm">ID Anplwaye <small class="text-muted fw-normal">(opsyonèl)</small></label>
-              <%= text_field_tag :employee_id, nil,
-                  class: "form-control",
-                  placeholder: "Ex: DGI-EMP-0042",
-                  style: "min-height: 44px;" %>
-            </div>
+            <hr class="my-4">
+            <h6 class="text-uppercase small fw-semibold text-muted mb-3">
+              <i class="ri-id-card-line me-1"></i>Detay Asiyman
+            </h6>
 
-            <%# === OFFICE CODE (optional) === %>
-            <div class="mb-4">
-              <label for="office_code" class="form-label fw-semibold pp-text-sm">Kòd Biwo <small class="text-muted fw-normal">(opsyonèl)</small></label>
-              <%= text_field_tag :office_code, nil,
-                  class: "form-control",
-                  placeholder: "Ex: Bureau Central PAP",
-                  style: "min-height: 44px;" %>
+            <div class="row g-3 mb-4">
+              <%# === EMPLOYEE ID (optional) === %>
+              <div class="col-md-6">
+                <%= label_tag :employee_id, "ID Anplwaye", class: "form-label fw-semibold pp-text-sm" %>
+                <small class="text-muted fw-normal d-block mb-1">(opsyonèl)</small>
+                <%= text_field_tag :employee_id, nil,
+                    class: "form-control",
+                    placeholder: "Ex: CEP-EMP-0042",
+                    style: "min-height: 44px;" %>
+              </div>
+
+              <%# === OFFICE / BIWO ===
+                  CEP: role-driven. Admin → locked "CEP HQ" (no input). Agent →
+                  BEK dropdown only. Other sectors keep the free-text field. %>
+              <div class="col-md-6">
+                <% if cep_sector? %>
+                  <%# Admin pane — locked HQ pill, no form input needed (controller
+                      forces office_code to "CEP HQ — Port-au-Prince" for admins). %>
+                  <div id="biwoAdminPane" style="display:none;">
+                    <label class="form-label fw-semibold pp-text-sm">Biwo Asiyman</label>
+                    <small class="text-muted fw-normal d-block mb-1">
+                      Konseye CEP yo chita nan HQ
+                    </small>
+                    <div class="form-control bg-light text-dark d-flex align-items-center"
+                         style="min-height: 44px;">
+                      <i class="ri-government-line me-2 pp-text-brand"></i>
+                      <strong>CEP HQ — Port-au-Prince</strong>
+                    </div>
+                  </div>
+
+                  <%# Agent pane — BEK-only dropdown. %>
+                  <div id="biwoAgentPane" style="display:none;">
+                    <%= label_tag :office_code, "BEK Asiyman", class: "form-label fw-semibold pp-text-sm" %>
+                    <small class="text-muted fw-normal d-block mb-1">
+                      Bureau Électoral Communal kote ajan an pral enskri elektè
+                    </small>
+                    <% beks = @beks || [] %>
+                    <% if beks.any? %>
+                      <%= select_tag :office_code,
+                            options_for_select(
+                              beks.map { |o| [o.display_label, o.id.to_s] },
+                              params[:office_code]
+                            ),
+                            include_blank: "— Chwazi yon BEK —",
+                            class: "form-select",
+                            style: "min-height: 44px;" %>
+                    <% else %>
+                      <div class="alert alert-warning border rounded-3 mb-0 py-2 px-3" role="alert">
+                        <div class="d-flex align-items-start">
+                          <i class="ri-error-warning-line me-2 mt-1"></i>
+                          <small>
+                            Pa gen okenn BEK ki anrejistre.
+                            <%= link_to "Anrejistre yon BEK", new_partner_portal_electoral_office_path, class: "fw-semibold" %>
+                            anvan w envite yon Ajan Enskripsyon.
+                          </small>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <%= label_tag :office_code, "Kòd Biwo", class: "form-label fw-semibold pp-text-sm" %>
+                  <small class="text-muted fw-normal d-block mb-1">(opsyonèl)</small>
+                  <%= text_field_tag :office_code, nil,
+                      class: "form-control",
+                      placeholder: "Ex: Bureau Central PAP",
+                      style: "min-height: 44px;" %>
+                <% end %>
+              </div>
             </div>
 
             <%# === SECURITY NOTICE === %>
@@ -101,17 +164,44 @@
             </div>
 
             <%# === SUBMIT === %>
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn pp-btn-brand btn-lg" style="min-height: 48px;">
+            <div class="d-flex justify-content-end gap-2">
+              <%= link_to "Anile", new_partner_portal_team_path, class: "btn btn-link" %>
+              <button type="submit" class="btn pp-btn-brand px-4" style="min-height: 44px;">
                 <i class="ri-send-plane-line me-1"></i> Voye Envitasyon
               </button>
-              <a href="<%= new_partner_portal_team_path %>" class="btn btn-outline-secondary">
-                Anile
-              </a>
             </div>
-          <% end %>
-        </div>
-      </div>
+      <% end %>
     </div>
   </div>
 </div>
+
+<% if cep_sector? %>
+  <%# Role-driven biwo toggle. Lives at page scope (not in a Stimulus
+      controller) because the role radios use inline onclick already and we
+      want one consistent pattern. Idempotent + safe to call repeatedly. %>
+  <script>
+    (function() {
+      window.toggleBiwo = function() {
+        var role = document.querySelector('input[name="role"]:checked');
+        var adminPane = document.getElementById('biwoAdminPane');
+        var agentPane = document.getElementById('biwoAgentPane');
+        if (!role || !adminPane || !agentPane) return;
+
+        var isAdmin = role.value === 'partner_admin';
+        adminPane.style.display = isAdmin ? '' : 'none';
+        agentPane.style.display = isAdmin ? 'none' : '';
+
+        // Disable inputs in the hidden pane so they don't submit stale values.
+        agentPane.querySelectorAll('select, input').forEach(function(el) {
+          el.disabled = isAdmin;
+        });
+      };
+      // Initial sync after DOM ready (covers default-checked role).
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.toggleBiwo);
+      } else {
+        window.toggleBiwo();
+      }
+    })();
+  </script>
+<% end %>

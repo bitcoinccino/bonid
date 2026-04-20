@@ -3,6 +3,7 @@
 
 <% display_name = user.full_name %>
 <% age_display = user.respond_to?(:age) ? user.age : nil %>
+<% is_cep = partner&.department_sector.to_s.downcase == "cep" || partner&.sector.to_s.downcase == "cep" %>
 
 <div class="verified-profile-card" data-result-type="valid">
 
@@ -126,8 +127,8 @@
       </div>
     </div>
 
-    <%# ── 3. Medical / Health Sub-Card ── %>
-    <% if user.health_profile&.blood_type.present? %>
+    <%# ── 3. Medical / Health Sub-Card ── (hidden for CEP) %>
+    <% if !is_cep && user.health_profile&.blood_type.present? %>
       <div class="health-subcard">
         <div class="health-subcard-header">
           <i class="ri-heart-pulse-line me-2"></i>Medical Information
@@ -256,7 +257,8 @@
       </div>
     <% end %>
 
-    <%# ── 6. Citizen Applications OR Start New Service ── %>
+    <%# ── 6. Citizen Applications OR Start New Service ── (hidden for CEP — CEP runs elections, not services) %>
+    <% unless is_cep %>
     <% citizen_apps = ServiceApplication.where(citizen: user, partner: partner)
                         .includes(:partner_schema)
                         .where.not(status: "draft")
@@ -409,6 +411,7 @@
         </div>
       <% end %>
     <% end %>
+    <% end %>
 
     <%# ── 8. Voter Eligibility Card (auto-checked) ── %>
     <% if local_assigns[:voter_record] && voter_record.present? %>
@@ -464,6 +467,12 @@
           </div>
         </div>
       </div>
+    <% end %>
+
+    <%# ── CEP Election Details (voter detail + roles + team) ── %>
+    <% if is_cep %>
+      <%= render partial: "partner_portal/bonid_lookups/cep_election_details",
+                 locals: { user: user, voter_record: local_assigns[:voter_record], partner: partner } %>
     <% end %>
 
     <%# ── 9. New Scan Button ── %>
