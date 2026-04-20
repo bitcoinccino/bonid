@@ -2,7 +2,7 @@ require "json"
 require "openssl"
 require "zip"
 
-class AppleWallet::PassGenerator
+class AppleWallet::BontourisPass::PassGenerator
   CERT_PATH = Rails.root.join("certs/apple/pass.p12")
 
   def initialize(visitor)
