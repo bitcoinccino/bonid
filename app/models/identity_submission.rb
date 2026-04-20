@@ -31,10 +31,10 @@ class IdentitySubmission < ApplicationRecord
   scope :revoked,  -> { where(status: :revoked) }
 
   ID_TYPES = {
-    cin:      "Carte Identite National or CIN",
-    passport: "Passport",
-    license:  "Driver's License",
-    voter_id: "Voter ID"
+    cin:            "Carte Identite National or CIN",
+    passport:       "Passport",
+    driver_license: "Driver's License",
+    voter_id:       "Voter ID"
   }.freeze
 
   # BonID validity mirrors real Haitian document validity periods.

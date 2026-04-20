@@ -36,7 +36,7 @@ RSpec.describe IdentitySubmission, type: :model do
 
   # ── Validations ──────────────────────────────────────────────
   describe "validations" do
-    it { is_expected.to validate_inclusion_of(:id_type).in_array(%w[cin passport license voter_id]) }
+    it { is_expected.to validate_inclusion_of(:id_type).in_array(%w[cin passport driver_license voter_id]) }
 
     it "validates submission_type is a valid value" do
       expect(IdentitySubmission.submission_types.keys).to contain_exactly("initial", "resubmission", "reissue", "visitor")
@@ -71,8 +71,8 @@ RSpec.describe IdentitySubmission, type: :model do
 
   # ── ID Types ─────────────────────────────────────────────────
   describe "ID_TYPES" do
-    it "supports CIN, passport, license, and voter_id" do
-      expect(IdentitySubmission::ID_TYPES.keys).to contain_exactly(:cin, :passport, :license, :voter_id)
+    it "supports CIN, passport, driver_license, and voter_id" do
+      expect(IdentitySubmission::ID_TYPES.keys).to contain_exactly(:cin, :passport, :driver_license, :voter_id)
     end
   end
 
