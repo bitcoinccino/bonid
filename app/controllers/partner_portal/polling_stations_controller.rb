@@ -11,7 +11,7 @@ module PartnerPortal
   # assigned and yanking the BV would break their receipt links.
   class PollingStationsController < PartnerPortal::BaseController
     before_action :load_center
-    before_action :load_station, only: [:edit, :update, :destroy]
+    before_action :load_station, only: [ :edit, :update, :destroy ]
 
     def new
       @station = @center.polling_stations.new(

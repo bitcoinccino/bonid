@@ -20,9 +20,9 @@ module Citizens
   module Election
     class VoteController < BaseController
       before_action :require_verified_bonid!
-      before_action :require_active_election!, only: [:begin, :ballot, :cast]
-      before_action :require_online_voting_enabled!, only: [:begin, :ballot, :cast]
-      before_action :enable_immersive_form, only: [:ballot, :cast, :receipt]
+      before_action :require_active_election!, only: [ :begin, :ballot, :cast ]
+      before_action :require_online_voting_enabled!, only: [ :begin, :ballot, :cast ]
+      before_action :enable_immersive_form, only: [ :ballot, :cast, :receipt ]
 
       # ── Step 0: Oath of Voting Integrity ───────────────────────
       # A sworn, per-session acknowledgment shown before anything else.
@@ -416,7 +416,7 @@ module Citizens
                     bonvote_election: @election,
                     oath_version: VoterOathAcknowledgement::CURRENT_VERSION
                   )
-                end
+        end
       end
 
       private
@@ -501,7 +501,7 @@ module Citizens
         return 0 unless payload && payload[:cached_at]
 
         remaining = RESUME_WINDOW.to_i - (Time.current.to_i - payload[:cached_at].to_i)
-        [remaining, 0].max
+        [ remaining, 0 ].max
       end
 
       # ── Scan cooldown ──────────────────────────────────────────
@@ -519,7 +519,7 @@ module Citizens
         return 0 unless started_at
 
         remaining = SCAN_COOLDOWN.to_i - (Time.current.to_i - started_at.to_i)
-        [remaining, 0].max
+        [ remaining, 0 ].max
       end
 
       def mark_scan_cooldown!

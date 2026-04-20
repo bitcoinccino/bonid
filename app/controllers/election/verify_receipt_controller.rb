@@ -41,11 +41,11 @@ module Election
 
       @result = if ref.present?
                   verify_by_reference(ref)
-                elsif raw.present?
+      elsif raw.present?
                   decode_and_verify_raw(raw)
-                else
+      else
                   { ok: false, error: "Antre nimewo votè w oswa peyad la." }
-                end
+      end
 
       render :show, layout: false
     end
@@ -84,7 +84,7 @@ module Election
       payload = JSON.parse(json)
       payload = payload.transform_keys(&:to_sym) if payload.is_a?(Hash)
     rescue JSON::ParserError
-      return { ok: false, error: "Peyad la pa JSON valid." }
+      { ok: false, error: "Peyad la pa JSON valid." }
     else
       verify_payload(payload)
     end

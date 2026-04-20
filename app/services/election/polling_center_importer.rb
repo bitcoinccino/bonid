@@ -126,9 +126,9 @@ module Election
       scope = @election.polling_centers.where(name: attrs[:name])
       scope = if attrs[:center_type] == "domestic"
                 scope.where(communal_section_id: attrs[:communal_section_id])
-              else
+      else
                 scope.where(diplomatic_mission_id: attrs[:diplomatic_mission_id])
-              end
+      end
 
       center = scope.first_or_initialize
       was_new = center.new_record?
@@ -184,9 +184,9 @@ module Election
         capacity = if bv == num_stations
                      remainder = total_capacity - (DEFAULT_STATION_CAPACITY * (num_stations - 1))
                      remainder.positive? ? remainder : DEFAULT_STATION_CAPACITY
-                   else
+        else
                      DEFAULT_STATION_CAPACITY
-                   end
+        end
 
         center.polling_stations.create!(
           bv_number: bv,

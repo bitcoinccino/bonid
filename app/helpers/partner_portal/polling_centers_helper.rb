@@ -88,7 +88,7 @@ module PartnerPortal
     def polling_center_wizard_country_options
       polling_center_wizard_country_names
         .sort_by { |_cc, name| name }
-        .map { |cc, name| ["#{country_flag(cc)} #{name}", cc] }
+        .map { |cc, name| [ "#{country_flag(cc)} #{name}", cc ] }
     end
   end
 end

@@ -56,10 +56,10 @@ class CreatePollingStationsHierarchy < ActiveRecord::Migration[8.0]
     add_index :polling_centers, :status
     add_index :polling_centers, :diplomatic_mission_id
     add_index :polling_centers,
-              [:bonvote_election_id, :communal_section_id],
+              [ :bonvote_election_id, :communal_section_id ],
               name: "idx_polling_centers_election_section"
     add_index :polling_centers,
-              [:bonvote_election_id, :diplomatic_mission_id],
+              [ :bonvote_election_id, :diplomatic_mission_id ],
               name: "idx_polling_centers_election_mission"
 
     # ── 2. PollingStation — the BV (Biwo Vòt) inside a center ────────
@@ -76,7 +76,7 @@ class CreatePollingStationsHierarchy < ActiveRecord::Migration[8.0]
     end
 
     add_index :polling_stations,
-              [:polling_center_id, :bv_number],
+              [ :polling_center_id, :bv_number ],
               unique: true,
               name: "idx_polling_stations_center_bv_unique"
     add_index :polling_stations, :status
@@ -100,7 +100,7 @@ class CreatePollingStationsHierarchy < ActiveRecord::Migration[8.0]
 
     # Support "export voter list by BV for printing day-of registers"
     add_index :voter_eligibility_records,
-              [:bonvote_election_id, :polling_station_id],
+              [ :bonvote_election_id, :polling_station_id ],
               name: "idx_voters_election_station"
   end
 end

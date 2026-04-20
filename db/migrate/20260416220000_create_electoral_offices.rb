@@ -51,7 +51,7 @@ class CreateElectoralOffices < ActiveRecord::Migration[8.0]
     #     (Soft guard only — CEP admins add both offices manually.)
     #   - Only one BEK per (commune).
     add_index :electoral_offices,
-              [:office_type, :department_id, :commune_id],
+              [ :office_type, :department_id, :commune_id ],
               name: "idx_electoral_offices_type_scope"
   end
 end

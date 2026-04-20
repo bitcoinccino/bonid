@@ -12,8 +12,8 @@ module PartnerPortal
   #   - Single-center CRUD (#new / #create / #show / #edit / #update / #destroy)
   #   - BV management lives on the nested PollingStationsController
   class PollingCentersController < PartnerPortal::BaseController
-    before_action :load_center,      only: [:show, :edit, :update, :destroy]
-    before_action :load_departments, only: [:new, :create, :edit, :update]
+    before_action :load_center,      only: [ :show, :edit, :update, :destroy ]
+    before_action :load_departments, only: [ :new, :create, :edit, :update ]
 
     def index
       @election = active_election
@@ -22,9 +22,9 @@ module PartnerPortal
                              .manageable_by_partner(current_partner)
                              .includes(:polling_stations, :communal_section, :commune)
                              .order(:center_type, :priority, :name)
-                  else
+      else
                     []
-                  end
+      end
 
       @stats = build_stats(@centers)
     end

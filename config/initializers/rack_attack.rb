@@ -146,7 +146,7 @@ Rack::Attack.throttled_responder = lambda do |request|
         "Retry-After"  => retry_after.to_s,
         "Cache-Control" => "no-store"
       },
-      [body]
+      [ body ]
     ]
   end
 end

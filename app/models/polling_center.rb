@@ -163,8 +163,8 @@ class PollingCenter < ApplicationRecord
     [
       address_line_1,
       address_line_2,
-      [city.presence, state_province.presence].compact_blank.join(", ").presence,
-      [postal_code, country_code].compact_blank.join(" ").presence
+      [ city.presence, state_province.presence ].compact_blank.join(", ").presence,
+      [ postal_code, country_code ].compact_blank.join(" ").presence
     ].compact_blank.join("\n")
   end
 end

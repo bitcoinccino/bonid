@@ -28,10 +28,10 @@ module PhoneCodesHelper
         iso2 = country.alpha2
         name = country.translations[I18n.locale.to_s] || country.iso_short_name
         flag = country_flag_emoji(iso2)
-        ["+#{country.country_code} #{flag}", iso2,
+        [ "+#{country.country_code} #{flag}", iso2,
          { "data-dial-code"    => country.country_code,
            "data-country-name" => name,
-           "title"             => "#{name} (+#{country.country_code})" }]
+           "title"             => "#{name} (+#{country.country_code})" } ]
       end
       .sort_by { |_label, _iso2, opts| opts["data-country-name"].to_s }
   end

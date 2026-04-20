@@ -39,8 +39,8 @@ module Election
 
     def call
       Prawn::Document.new(
-        page_size: [mm(BADGE_WIDTH_MM), mm(BADGE_HEIGHT_MM)],
-        margin: [mm(4), mm(4), mm(4), mm(4)]
+        page_size: [ mm(BADGE_WIDTH_MM), mm(BADGE_HEIGHT_MM) ],
+        margin: [ mm(4), mm(4), mm(4), mm(4) ]
       ) do |pdf|
         render_band(pdf)
         render_header(pdf)
@@ -64,7 +64,7 @@ module Election
       band_color = @acc.badge_color.sub("#", "")
       pdf.canvas do
         pdf.fill_color band_color
-        pdf.fill_rectangle [0, pdf.bounds.top], pdf.bounds.width, mm(10)
+        pdf.fill_rectangle [ 0, pdf.bounds.top ], pdf.bounds.width, mm(10)
         pdf.fill_color TEXT_DARK
       end
     end
@@ -95,7 +95,7 @@ module Election
         begin
           pdf.image(
             fetch_photo_io(@acc.photo_url),
-            at: [x_center, pdf.cursor],
+            at: [ x_center, pdf.cursor ],
             width: slot_w, height: slot_h, position: :center
           )
         rescue StandardError => e
@@ -112,9 +112,9 @@ module Election
     def render_photo_placeholder(pdf, x, w, h)
       pdf.stroke_color BORDER_LIGHT
       pdf.fill_color BG_LIGHT
-      pdf.fill_and_stroke_rectangle [x, pdf.cursor], w, h
+      pdf.fill_and_stroke_rectangle [ x, pdf.cursor ], w, h
       pdf.fill_color TEXT_MUTED
-      pdf.bounding_box([x, pdf.cursor - (h / 2.0) + mm(2)], width: w, height: mm(4)) do
+      pdf.bounding_box([ x, pdf.cursor - (h / 2.0) + mm(2) ], width: w, height: mm(4)) do
         pdf.text "FOTO", size: 8, align: :center, style: :bold
       end
       pdf.fill_color TEXT_DARK
@@ -133,17 +133,17 @@ module Election
 
     def render_meta(pdf)
       rows = []
-      rows << ["Kòd",          @acc.accreditation_code.to_s]
-      rows << ["CIN",          mask(@acc.cin_number)]           if @acc.cin_number.present?
-      rows << ["BonID",        mask_bonid(@acc.bonid)]          if @acc.bonid.present?
-      rows << ["Depatman",     @acc.department_code.to_s]       if @acc.department_code.present?
-      rows << ["Biwo Vòt",     @acc.assigned_station_code.to_s] if @acc.assigned_station_code.present?
-      rows << ["Valid pou",    election_label]
-      rows << ["Emèt",         @acc.issued_at&.strftime("%d/%m/%Y") || "—"]
+      rows << [ "Kòd",          @acc.accreditation_code.to_s ]
+      rows << [ "CIN",          mask(@acc.cin_number) ]           if @acc.cin_number.present?
+      rows << [ "BonID",        mask_bonid(@acc.bonid) ]          if @acc.bonid.present?
+      rows << [ "Depatman",     @acc.department_code.to_s ]       if @acc.department_code.present?
+      rows << [ "Biwo Vòt",     @acc.assigned_station_code.to_s ] if @acc.assigned_station_code.present?
+      rows << [ "Valid pou",    election_label ]
+      rows << [ "Emèt",         @acc.issued_at&.strftime("%d/%m/%Y") || "—" ]
 
       pdf.table(rows,
-                cell_style: { size: 7, borders: [:bottom], border_color: BORDER_LIGHT,
-                              padding: [mm(1), mm(1)] },
+                cell_style: { size: 7, borders: [ :bottom ], border_color: BORDER_LIGHT,
+                              padding: [ mm(1), mm(1) ] },
                 width: pdf.bounds.width) do |t|
         t.column(0).style(text_color: TEXT_MUTED, font_style: :bold)
         t.column(1).style(text_color: TEXT_DARK)
@@ -158,7 +158,7 @@ module Election
       png = qr.as_png(size: 180, border_modules: 1).to_s
       qr_size = mm(22)
       x_center = (pdf.bounds.width - qr_size) / 2.0
-      pdf.image StringIO.new(png), at: [x_center, pdf.cursor], width: qr_size, height: qr_size
+      pdf.image StringIO.new(png), at: [ x_center, pdf.cursor ], width: qr_size, height: qr_size
       pdf.move_down qr_size + mm(1)
     end
 
@@ -184,7 +184,7 @@ module Election
     def election_label
       return "—" unless @election
 
-      [@election.title, @election.election_date&.strftime("%Y")].compact.join(" ")
+      [ @election.title, @election.election_date&.strftime("%Y") ].compact.join(" ")
     end
 
     def mask(value)

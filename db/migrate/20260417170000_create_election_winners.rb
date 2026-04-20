@@ -44,7 +44,7 @@ class CreateElectionWinners < ActiveRecord::Migration[8.0]
 
     # One seat can only be held by one winner per election per round.
     add_index :election_winners,
-              [:election_id, :seat_label, :round],
+              [ :election_id, :seat_label, :round ],
               unique: true,
               name: "idx_election_winners_seat_unique"
   end

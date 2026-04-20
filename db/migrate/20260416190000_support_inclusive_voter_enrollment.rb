@@ -28,7 +28,7 @@ class SupportInclusiveVoterEnrollment < ActiveRecord::Migration[8.0]
     # are allowed through).
     add_index :voter_eligibility_records, :cin_number
     add_index :voter_eligibility_records,
-              [:bonvote_election_id, :cin_number],
+              [ :bonvote_election_id, :cin_number ],
               unique: true,
               where: "cin_number IS NOT NULL",
               name: "idx_voter_election_cin_unique"

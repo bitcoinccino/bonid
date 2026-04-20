@@ -114,9 +114,9 @@ module Election
     def lookup_public_key(key_id)
       key = if key_id.present?
               ::Election::BonvoteKeyRegistry.find_by_key_id(@election, key_id)
-            else
+      else
               ::Election::BonvoteKeyRegistry.current(@election)
-            end
+      end
       return nil unless key&.public_key_b64.present?
 
       OpenSSL::PKey.new_raw_public_key("ED25519", Base64.decode64(key.public_key_b64))

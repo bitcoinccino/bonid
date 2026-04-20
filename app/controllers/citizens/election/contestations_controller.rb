@@ -24,7 +24,7 @@ module Citizens
       # GET /citizens/election/candidates/:election_candidate_id/contest/new
       def new
         return redirect_to_candidates_with_alert("Kandida a pa sou lis preliminè la.") unless preliminary?
-        return redirect_to_candidates_with_alert("Fenèt kontestasyon 48h fèmen.") unless window_open?
+        redirect_to_candidates_with_alert("Fenèt kontestasyon 48h fèmen.") unless window_open?
       end
 
       # POST /citizens/election/candidates/:election_candidate_id/contest

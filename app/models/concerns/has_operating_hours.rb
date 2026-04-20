@@ -46,7 +46,7 @@ module HasOperatingHours
 
     list =
       if raw.is_a?(Hash) && (raw.key?("open") || raw.key?(:open))
-        [raw]
+        [ raw ]
       else
         Array(raw)
       end
@@ -70,7 +70,7 @@ module HasOperatingHours
     rows = DAYS.map do |d|
       slots = slots_for(d)
       txt = slots.empty? ? "Fèmen" : slots.map { |s| "#{s['open']}-#{s['close']}" }.join(", ")
-      [DAY_LABELS_SHORT[d], txt]
+      [ DAY_LABELS_SHORT[d], txt ]
     end
 
     runs = rows.slice_when { |a, b| a[1] != b[1] }.map do |run|
@@ -97,7 +97,7 @@ module HasOperatingHours
 
       candidates =
         if raw.is_a?(Hash) && (raw.key?("open") || raw.key?(:open))
-          [raw]
+          [ raw ]
         elsif raw.is_a?(Hash)
           raw.values
         else

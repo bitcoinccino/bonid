@@ -67,7 +67,7 @@ module Election
       return 0 if candidates.empty?
 
       total = constituency_total_votes(constituency)
-      seats = [constituency.seats.to_i, 1].max
+      seats = [ constituency.seats.to_i, 1 ].max
 
       case constituency.position
       when "president"

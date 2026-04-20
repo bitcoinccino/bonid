@@ -70,7 +70,7 @@ module Election
     end
 
     def all
-      [current, *archived_keys].compact
+      [ current, *archived_keys ].compact
     end
 
     def find_by_key_id(key_id)

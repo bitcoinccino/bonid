@@ -74,7 +74,7 @@ module Election
     private
 
     def build_pdf
-      Prawn::Document.new(page_size: "A4", margin: [40, 40, 50, 40]) do |pdf|
+      Prawn::Document.new(page_size: "A4", margin: [ 40, 40, 50, 40 ]) do |pdf|
         render_header(pdf)
         render_citizen_block(pdf)
         render_attestation_line(pdf)
@@ -92,9 +92,9 @@ module Election
       signed = @record.bonvote_signature.present?
       text   = if signed
                  "BonVote bay resi sa a dapre pwotokòl CEP la."
-               else
+      else
                  "Resi sa a poko siyen. L ap siyen lè enskripsyon w konplete."
-               end
+      end
 
       pdf.fill_color TEXT_MUTED
       pdf.font "Helvetica", style: :italic, size: 9
@@ -139,7 +139,7 @@ module Election
 
       pdf.float do
         # Tiny eyebrow label above the mark.
-        pdf.bounding_box([mark_x, top_y], width: mark_w, height: 10) do
+        pdf.bounding_box([ mark_x, top_y ], width: mark_w, height: 10) do
           pdf.fill_color TEXT_MUTED
           pdf.font "Helvetica", size: 6.5
           pdf.text "AN KOLABORASYON AK", align: :right, character_spacing: 1.2
@@ -150,20 +150,20 @@ module Election
           # Real partner-uploaded logo, right-aligned, fit to mark height.
           # Wrapped in a tempfile because Prawn's image reader needs a
           # path or IO that supports rewind from the start.
-          Tempfile.open(["cep_logo_", logo_extension]) do |tmp|
+          Tempfile.open([ "cep_logo_", logo_extension ]) do |tmp|
             tmp.binmode
             tmp.write(logo_bytes)
             tmp.rewind
             pdf.image tmp.path,
-                      at: [mark_x, top_y - 12],
+                      at: [ mark_x, top_y - 12 ],
                       width: mark_w,
-                      fit: [mark_w, 36]
+                      fit: [ mark_w, 36 ]
           end
         else
           # Typographic placeholder used only when the partner record or
           # its logo is missing. Should never hit in production once the
           # partner-portal upload is in place.
-          pdf.bounding_box([mark_x, top_y - 12], width: mark_w, height: 32) do
+          pdf.bounding_box([ mark_x, top_y - 12 ], width: mark_w, height: 32) do
             pdf.fill_color HAITI_BLUE
             pdf.font "Helvetica", style: :bold, size: 16
             pdf.text "CEP", align: :right
@@ -192,11 +192,11 @@ module Election
       # Right-aligned pill
       pdf.float do
         pdf.fill_color bg
-        pdf.fill_rectangle [pdf.bounds.width - width, pdf.cursor], width, 16
+        pdf.fill_rectangle [ pdf.bounds.width - width, pdf.cursor ], width, 16
         pdf.fill_color fg
         pdf.font "Helvetica", style: :bold, size: 8
         pdf.text_box label,
-                     at: [pdf.bounds.width - width, pdf.cursor - 3],
+                     at: [ pdf.bounds.width - width, pdf.cursor - 3 ],
                      width: width, height: 16, align: :center, valign: :center
       end
       pdf.fill_color TEXT_DARK
@@ -239,11 +239,11 @@ module Election
     # ── BVT reference badge ─────────────────────────────────────────
     def render_reference_block(pdf)
       pdf.fill_color BG_LIGHT
-      pdf.fill_rectangle [0, pdf.cursor], pdf.bounds.width, 54
+      pdf.fill_rectangle [ 0, pdf.cursor ], pdf.bounds.width, 54
       pdf.stroke_color BORDER_LIGHT
-      pdf.stroke_rectangle [0, pdf.cursor], pdf.bounds.width, 54
+      pdf.stroke_rectangle [ 0, pdf.cursor ], pdf.bounds.width, 54
 
-      pdf.bounding_box([12, pdf.cursor - 8], width: pdf.bounds.width - 24, height: 40) do
+      pdf.bounding_box([ 12, pdf.cursor - 8 ], width: pdf.bounds.width - 24, height: 40) do
         pdf.fill_color TEXT_MUTED
         pdf.font "Helvetica", size: 8
         pdf.text "NIMEWO VOTÈ BONID"
@@ -278,11 +278,11 @@ module Election
         # (formatted_haiti_display), fall back to single-line.
         address_lines = if center&.respond_to?(:formatted_haiti_display) && center.formatted_haiti_display.present?
                           center.formatted_haiti_display.split("\n")
-                        elsif center&.formatted_address.present?
-                          [center.formatted_address]
-                        else
+        elsif center&.formatted_address.present?
+                          [ center.formatted_address ]
+        else
                           []
-                        end
+        end
 
         unless address_lines.empty?
           pdf.move_down 2
@@ -326,10 +326,10 @@ module Election
 
       y = pdf.cursor
       pdf.image StringIO.new(png.to_s),
-                at: [pdf.bounds.width - 140, y],
+                at: [ pdf.bounds.width - 140, y ],
                 width: 140
 
-      pdf.bounding_box([0, y], width: pdf.bounds.width - 160, height: 140) do
+      pdf.bounding_box([ 0, y ], width: pdf.bounds.width - 160, height: 140) do
         pdf.fill_color TEXT_DARK
         pdf.font "Helvetica", style: :bold, size: 11
         pdf.text "Kòd QR Verifikasyon"
@@ -372,7 +372,7 @@ module Election
       return @cep_logo_bytes if defined?(@cep_logo_bytes)
       @cep_logo_bytes = if cep_partner&.logo&.attached?
                           cep_partner.logo.download
-                        end
+      end
     rescue => e
       Rails.logger.warn("[VoterReceiptPdfService] CEP logo fetch failed: #{e.message}")
       @cep_logo_bytes = nil

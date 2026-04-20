@@ -35,9 +35,9 @@ module Citizens
         # all open offices so the citizen still sees something actionable.
         @fallback_offices = if @bek_offices.empty? && @bed_offices.empty?
                               ElectoralOffice.open.ordered.limit(10).to_a
-                            else
+        else
                               []
-                            end
+        end
       end
     end
   end

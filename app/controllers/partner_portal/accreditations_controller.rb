@@ -13,8 +13,8 @@ module PartnerPortal
   # and a color band keyed to the accreditation type.
   class AccreditationsController < PartnerPortal::BaseController
     before_action :set_election
-    before_action :require_election!, except: [:index]
-    before_action :set_accreditation, only: [:show, :badge, :revoke]
+    before_action :require_election!, except: [ :index ]
+    before_action :set_accreditation, only: [ :show, :badge, :revoke ]
 
     def index
       if @election

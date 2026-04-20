@@ -61,14 +61,14 @@ class CitizenActivityEvent
   # ------------------------------------------------------------
   def details
     rows = case @kind
-           when :scan        then scan_detail_rows
-           when :consent     then consent_detail_rows
-           when :transaction then transaction_detail_rows
-           when :application then application_detail_rows
-           when :session     then session_detail_rows
-           when :oath        then oath_detail_rows
-           else                   []
-           end
+    when :scan        then scan_detail_rows
+    when :consent     then consent_detail_rows
+    when :transaction then transaction_detail_rows
+    when :application then application_detail_rows
+    when :session     then session_detail_rows
+    when :oath        then oath_detail_rows
+    else                   []
+    end
     rows.reject { |(_, v)| v.blank? }
   end
 
@@ -90,59 +90,59 @@ class CitizenActivityEvent
     log = @source_record
     qr  = log.qr_scan
     [
-      ["Patnè",      log.organization.presence || log.partner&.name],
-      ["Sektè",      log.partner&.sector&.humanize],
-      ["Metòd",      qr&.manual ? "Manyèl (kòd tape)" : "QR (eskan)"],
-      ["Komin",      qr&.city.presence || log.city.presence],
-      ["Depatman",   qr&.department&.name.presence || log.region.presence],
-      ["Peyi",       log.country.presence],
-      ["Dat egzak",  format_full_time(log.scanned_at || log.created_at)]
+      [ "Patnè",      log.organization.presence || log.partner&.name ],
+      [ "Sektè",      log.partner&.sector&.humanize ],
+      [ "Metòd",      qr&.manual ? "Manyèl (kòd tape)" : "QR (eskan)" ],
+      [ "Komin",      qr&.city.presence || log.city.presence ],
+      [ "Depatman",   qr&.department&.name.presence || log.region.presence ],
+      [ "Peyi",       log.country.presence ],
+      [ "Dat egzak",  format_full_time(log.scanned_at || log.created_at) ]
     ]
   end
 
   def consent_detail_rows
     cg = @source_record
     [
-      ["Patnè",        cg.partner&.name],
-      ["Statè",        cg.status&.humanize],
-      ["Aksè mande",   Array(cg.requested_scopes).compact.join(", ").presence],
-      ["Aksè bay",     Array(cg.granted_scopes).compact.join(", ").presence],
-      ["Kreye",        format_full_time(cg.created_at)],
-      ["Bay",          format_full_time(cg.granted_at)],
-      ["Revoke",       format_full_time(cg.revoked_at)],
-      ["Ekspire",      format_full_time(cg.expires_at)],
-      ["Dènye aksè",   format_full_time(cg.last_accessed_at)],
-      ["Kantite aksè", cg.access_count.to_i.positive? ? cg.access_count.to_s : nil]
+      [ "Patnè",        cg.partner&.name ],
+      [ "Statè",        cg.status&.humanize ],
+      [ "Aksè mande",   Array(cg.requested_scopes).compact.join(", ").presence ],
+      [ "Aksè bay",     Array(cg.granted_scopes).compact.join(", ").presence ],
+      [ "Kreye",        format_full_time(cg.created_at) ],
+      [ "Bay",          format_full_time(cg.granted_at) ],
+      [ "Revoke",       format_full_time(cg.revoked_at) ],
+      [ "Ekspire",      format_full_time(cg.expires_at) ],
+      [ "Dènye aksè",   format_full_time(cg.last_accessed_at) ],
+      [ "Kantite aksè", cg.access_count.to_i.positive? ? cg.access_count.to_s : nil ]
     ]
   end
 
   def transaction_detail_rows
     tc = @source_record
     [
-      ["Patnè",        tc.partner&.name],
-      ["Statè",        tc.status&.humanize],
-      ["Montan",       self.class.format_amount(tc)],
-      ["Kalite",       tc.transaction_type&.humanize],
-      ["Deskripsyon",  tc.description.presence],
-      ["Referans",     tc.reference_id.presence],
-      ["Kreye",        format_full_time(tc.created_at)],
-      ["Desizyon",     format_full_time(tc.decided_at)],
-      ["Ekspire",      format_full_time(tc.expires_at)]
+      [ "Patnè",        tc.partner&.name ],
+      [ "Statè",        tc.status&.humanize ],
+      [ "Montan",       self.class.format_amount(tc) ],
+      [ "Kalite",       tc.transaction_type&.humanize ],
+      [ "Deskripsyon",  tc.description.presence ],
+      [ "Referans",     tc.reference_id.presence ],
+      [ "Kreye",        format_full_time(tc.created_at) ],
+      [ "Desizyon",     format_full_time(tc.decided_at) ],
+      [ "Ekspire",      format_full_time(tc.expires_at) ]
     ]
   end
 
   def application_detail_rows
     sa = @source_record
     [
-      ["Patnè",          sa.partner&.name],
-      ["Fòm",            sa.partner_schema&.name],
-      ["Statè",          sa.status&.humanize],
-      ["Kòd verifikasyon", sa.verification_code.presence],
-      ["Peye",           sa.paid ? "Wi" : "Non"],
-      ["Soumèt",         format_full_time(sa.submitted_at)],
-      ["Revize",         format_full_time(sa.reviewed_at)],
-      ["Dènye mizajou",  format_full_time(sa.updated_at)],
-      ["Rezon refi",     sa.rejection_reason.presence]
+      [ "Patnè",          sa.partner&.name ],
+      [ "Fòm",            sa.partner_schema&.name ],
+      [ "Statè",          sa.status&.humanize ],
+      [ "Kòd verifikasyon", sa.verification_code.presence ],
+      [ "Peye",           sa.paid ? "Wi" : "Non" ],
+      [ "Soumèt",         format_full_time(sa.submitted_at) ],
+      [ "Revize",         format_full_time(sa.reviewed_at) ],
+      [ "Dènye mizajou",  format_full_time(sa.updated_at) ],
+      [ "Rezon refi",     sa.rejection_reason.presence ]
     ]
   end
 
@@ -150,25 +150,25 @@ class CitizenActivityEvent
     cs = @source_record
     ua = cs.user_agent.to_s
     [
-      ["Aparèy",    cs.device_type.to_s.capitalize.presence],
-      ["Navigatè",  ua.present? ? ua.truncate(90) : nil],
-      ["Adrès IP",  cs.ip_address.presence],
-      ["Vil",       cs.city.presence],
-      ["Peyi",      cs.country.presence],
-      ["Sous",      humanized_login_source(cs.login_source)],
-      ["Dat egzak", format_full_time(cs.created_at)]
+      [ "Aparèy",    cs.device_type.to_s.capitalize.presence ],
+      [ "Navigatè",  ua.present? ? ua.truncate(90) : nil ],
+      [ "Adrès IP",  cs.ip_address.presence ],
+      [ "Vil",       cs.city.presence ],
+      [ "Peyi",      cs.country.presence ],
+      [ "Sous",      humanized_login_source(cs.login_source) ],
+      [ "Dat egzak", format_full_time(cs.created_at) ]
     ]
   end
 
   def oath_detail_rows
     oak = @source_record
     [
-      ["Eleksyon",   oak.bonvote_election&.title.presence || "Eleksyon ##{oak.bonvote_election_id}"],
-      ["Vèsyon sèman", oak.oath_version],
-      ["Siyen",      format_full_time(oak.accepted_at)],
-      ["Adrès IP",   oak.ip_address.presence],
-      ["Anprent",    oak.digest&.first(24)],
-      ["KYC BonID",  oak.identity_submission_id ? "Siyati BonID ##{oak.identity_submission_id}" : nil]
+      [ "Eleksyon",   oak.bonvote_election&.title.presence || "Eleksyon ##{oak.bonvote_election_id}" ],
+      [ "Vèsyon sèman", oak.oath_version ],
+      [ "Siyen",      format_full_time(oak.accepted_at) ],
+      [ "Adrès IP",   oak.ip_address.presence ],
+      [ "Anprent",    oak.digest&.first(24) ],
+      [ "KYC BonID",  oak.identity_submission_id ? "Siyati BonID ##{oak.identity_submission_id}" : nil ]
     ]
   end
 
@@ -248,7 +248,7 @@ class CitizenActivityEvent
     method     = qr_scan&.manual ? "manyèl" : "QR"
     commune    = qr_scan&.city.presence || log.city.presence
     department = qr_scan&.department&.name.presence
-    location   = [commune, department].compact.join(", ").presence
+    location   = [ commune, department ].compact.join(", ").presence
 
     title = "#{org} eskane (#{method}) BonID ou"
     title += " nan #{location}" if location
@@ -271,16 +271,16 @@ class CitizenActivityEvent
     scopes       = Array(cg.granted_scopes.presence || cg.requested_scopes)
 
     title = case cg.status
-            when "approved" then "Ou bay #{partner_name} aksè a done ou yo"
-            when "revoked"  then "Ou revoke aksè pou #{partner_name}"
-            when "pending"  then "#{partner_name} mande aksè a done ou yo"
-            when "expired"  then "Aksè #{partner_name} ekspire"
-            else                 "Mizajou konsantman pou #{partner_name}"
-            end
+    when "approved" then "Ou bay #{partner_name} aksè a done ou yo"
+    when "revoked"  then "Ou revoke aksè pou #{partner_name}"
+    when "pending"  then "#{partner_name} mande aksè a done ou yo"
+    when "expired"  then "Aksè #{partner_name} ekspire"
+    else                 "Mizajou konsantman pou #{partner_name}"
+    end
 
     subtitle = if scopes.any?
                  "Aksè: #{scopes.first(3).join(', ')}#{scopes.size > 3 ? '…' : ''}"
-               end
+    end
 
     theme = cg.status_theme
     new(
@@ -302,34 +302,34 @@ class CitizenActivityEvent
     type_label   = tc.transaction_type&.humanize&.downcase
 
     title = case tc.status
-            when "approved"
+    when "approved"
               if amount_str
                 "Ou apwouve yon tranzaksyon pou #{amount_str} ak #{partner_name}"
               else
                 "Ou apwouve yon #{type_label || 'tranzaksyon'} ak #{partner_name}"
               end
-            when "denied"
+    when "denied"
               if amount_str
                 "Ou refize yon tranzaksyon pou #{amount_str} ak #{partner_name}"
               else
                 "Ou refize yon tranzaksyon ak #{partner_name}"
               end
-            when "pending"
+    when "pending"
               if amount_str
                 "#{partner_name} mande yon tranzaksyon pou #{amount_str}"
               else
                 "#{partner_name} mande yon #{type_label || 'tranzaksyon'}"
               end
-            when "expired"
+    when "expired"
               "Yon demand tranzaksyon ak #{partner_name} ekspire"
-            else
+    else
               "Mizajou tranzaksyon ak #{partner_name}"
-            end
+    end
 
     # Subtitle: only add type if the title is amount-based (avoid redundancy)
     subtitle = if amount_str && type_label
                  type_label.capitalize
-               end
+    end
 
     new(
       kind:          :transaction,
@@ -349,23 +349,23 @@ class CitizenActivityEvent
     form_name    = sa.partner_schema&.name.presence
 
     title = case sa.status
-            when "draft"
+    when "draft"
               form_name ? "Ou gen yon bouyon pou #{form_name}" : "Ou gen yon bouyon aplikasyon"
-            when "submitted"
+    when "submitted"
               "Ou soumèt yon aplikasyon bay #{partner_name}"
-            when "under_review"
+    when "under_review"
               "Aplikasyon ou ap revize pa #{partner_name}"
-            when "approved"
+    when "approved"
               "#{partner_name} apwouve aplikasyon ou"
-            when "rejected"
+    when "rejected"
               "#{partner_name} rejte aplikasyon ou"
-            when "cancelled"
+    when "cancelled"
               "Ou anile yon aplikasyon ak #{partner_name}"
-            else
+    else
               "Mizajou aplikasyon ak #{partner_name}"
-            end
+    end
 
-    subtitle = [form_name, sa.verification_code].compact.uniq.reject { |s| title.include?(s.to_s) }.join(" · ").presence
+    subtitle = [ form_name, sa.verification_code ].compact.uniq.reject { |s| title.include?(s.to_s) }.join(" · ").presence
 
     new(
       kind:          :application,
@@ -386,7 +386,7 @@ class CitizenActivityEvent
   def self.from_session(cs, new_device: nil)
     new_device = cs.new_device? if new_device.nil?
     device     = cs.device_type
-    location   = [cs.city.presence, cs.country.presence].compact.join(", ").presence
+    location   = [ cs.city.presence, cs.country.presence ].compact.join(", ").presence
     source     = humanize_login_source(cs.login_source)
 
     title = new_device ? "Nouvo aparèy konekte sou BonID ou" : "Ou konekte sou BonID ou"

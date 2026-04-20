@@ -26,7 +26,7 @@ module Citizens
         format.pdf do
           render pdf: "BonID-Aktivite-#{Time.current.strftime('%Y%m%d')}",
                  template: "citizens/activity/index",
-                 formats: [:html],
+                 formats: [ :html ],
                  layout:   false,
                  locals:   { export_mode: true },
                  page_size: "A4",
@@ -71,7 +71,7 @@ module Citizens
       from = parse_date(params[:from]) || DEFAULT_WINDOW_DAYS.days.ago.to_date
       to   = parse_date(params[:to])   || Date.current
       from, to = to, from if from > to
-      [from, to]
+      [ from, to ]
     end
 
     def parse_date(raw)

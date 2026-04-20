@@ -22,7 +22,7 @@ class AddPaperReceiptFieldsToVoterEligibilityRecords < ActiveRecord::Migration[8
     end
 
     add_index :voter_eligibility_records,
-              [:bonvote_election_id, :paper_receipt_number],
+              [ :bonvote_election_id, :paper_receipt_number ],
               where: "paper_receipt_number IS NOT NULL",
               name: "idx_voter_records_on_election_and_paper_receipt"
   end

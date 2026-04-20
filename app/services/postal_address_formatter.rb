@@ -90,17 +90,17 @@ class PostalAddressFormatter
   FORMAT_RULES = {
     # ── United States: street / "City, ST ZIP" / COUNTRY ──────────────
     "US" => ->(r) {
-      city_line = [r.locality, [r.region, r.postal_code].compact_blank.join(" ")]
+      city_line = [ r.locality, [ r.region, r.postal_code ].compact_blank.join(" ") ]
                     .compact_blank.join(", ")
-      [r.street_line1, r.street_line2, city_line, COUNTRY_NAMES["US"]]
+      [ r.street_line1, r.street_line2, city_line, COUNTRY_NAMES["US"] ]
     },
 
     # ── Canada: street / "City ON  A1A 1A1" / COUNTRY ─────────────────
     # Two spaces between province and postal code per Canada Post standard.
     "CA" => ->(r) {
-      city_line = [r.locality, r.region, r.postal_code].compact_blank.join(" ").squeeze(" ")
+      city_line = [ r.locality, r.region, r.postal_code ].compact_blank.join(" ").squeeze(" ")
       city_line = city_line.sub(/(#{Regexp.escape(r.region.to_s)}) (#{Regexp.escape(r.postal_code.to_s)})/, '\1  \2') if r.region.present? && r.postal_code.present?
-      [r.street_line1, r.street_line2, city_line, COUNTRY_NAMES["CA"]]
+      [ r.street_line1, r.street_line2, city_line, COUNTRY_NAMES["CA"] ]
     },
 
     # ── France & overseas depts: street / "ZIP CITY" / COUNTRY ────────
@@ -126,12 +126,12 @@ class PostalAddressFormatter
 
     # ── Brazil: street / locality - region / postal / COUNTRY ─────────
     "BR" => ->(r) {
-      locality_region = [r.locality, r.region].compact_blank.join(" - ")
-      [r.street_line1, r.street_line2, locality_region, r.postal_code, COUNTRY_NAMES["BR"]]
+      locality_region = [ r.locality, r.region ].compact_blank.join(" - ")
+      [ r.street_line1, r.street_line2, locality_region, r.postal_code, COUNTRY_NAMES["BR"] ]
     },
 
     # ── Suriname: street / locality / COUNTRY (no postal in use) ──────
-    "SR" => ->(r) { [r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["SR"]] },
+    "SR" => ->(r) { [ r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["SR"] ] },
 
     # ── Belgium / Germany: street / "ZIP CITY" / COUNTRY ──────────────
     "BE" => ->(r) { _zip_then_city(r, "BE") },
@@ -139,75 +139,75 @@ class PostalAddressFormatter
 
     # ── Vatican / UK: street / city / postal / COUNTRY ────────────────
     "VA" => ->(r) {
-      [r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["VA"]]
+      [ r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["VA"] ]
     },
     # UK: street / locality / region(county) / postcode / COUNTRY
     "GB" => ->(r) {
-      [r.street_line1, r.street_line2, r.locality, r.region, r.postal_code, COUNTRY_NAMES["GB"]]
+      [ r.street_line1, r.street_line2, r.locality, r.region, r.postal_code, COUNTRY_NAMES["GB"] ]
     },
 
     # ── Curaçao / Aruba / Turks & Caicos: street / city / COUNTRY ─────
-    "CW" => ->(r) { [r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["CW"]] },
-    "AW" => ->(r) { [r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["AW"]] },
-    "TC" => ->(r) { [r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["TC"]] },
+    "CW" => ->(r) { [ r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["CW"] ] },
+    "AW" => ->(r) { [ r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["AW"] ] },
+    "TC" => ->(r) { [ r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["TC"] ] },
 
     # ── Japan: postal / region / locality / street / COUNTRY ──────────
     # Japan Post addresses are largest-to-smallest in Japanese, but the
     # international form goes smallest-to-largest. We render the int'l form.
     "JP" => ->(r) {
-      [r.street_line1, r.street_line2, r.locality, r.region, r.postal_code, COUNTRY_NAMES["JP"]]
+      [ r.street_line1, r.street_line2, r.locality, r.region, r.postal_code, COUNTRY_NAMES["JP"] ]
     },
 
     # ── Qatar: street / area / city / COUNTRY (no postal codes in QA) ─
-    "QA" => ->(r) { [r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["QA"]] },
+    "QA" => ->(r) { [ r.street_line1, r.street_line2, r.locality, COUNTRY_NAMES["QA"] ] },
 
     # ── Taiwan / Vietnam: street / locality / postal / COUNTRY ────────
-    "TW" => ->(r) { [r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["TW"]] },
-    "VN" => ->(r) { [r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["VN"]] },
+    "TW" => ->(r) { [ r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["TW"] ] },
+    "VN" => ->(r) { [ r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["VN"] ] },
 
     # ── South Africa: street / suburb / city / postal / COUNTRY ───────
     # SAPO recommends each element on its own line; postal code last
     # before the country line.
-    "ZA" => ->(r) { [r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["ZA"]] },
+    "ZA" => ->(r) { [ r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["ZA"] ] },
 
     # ── China: street / locality / postal / COUNTRY ───────────────────
     # International form (smallest-to-largest). Domestic Chinese form
     # would be reverse, but outgoing/incoming international mail uses
     # the order above per UPU S42.
-    "CN" => ->(r) { [r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["CN"]] }
+    "CN" => ->(r) { [ r.street_line1, r.street_line2, r.locality, r.postal_code, COUNTRY_NAMES["CN"] ] }
   }.freeze
 
   # Generic fallback when we don't have an explicit rule for the country.
   GENERIC_FORMAT = ->(r) {
-    city_line = [r.locality, r.region, r.postal_code].compact_blank.join(" ")
+    city_line = [ r.locality, r.region, r.postal_code ].compact_blank.join(" ")
     country = COUNTRY_NAMES[r.respond_to?(:mission_country) ? r.mission_country : nil] || r.try(:mission_country).to_s
-    [r.street_line1, r.street_line2, city_line, country]
+    [ r.street_line1, r.street_line2, city_line, country ]
   }
 
   # ── Shared format helpers ──────────────────────────────────────────
   def self._fr_format(r, country_code)
-    city_line = [r.postal_code, r.locality.to_s.upcase].compact_blank.join(" ")
-    [r.street_line1, r.street_line2, city_line, COUNTRY_NAMES[country_code]]
+    city_line = [ r.postal_code, r.locality.to_s.upcase ].compact_blank.join(" ")
+    [ r.street_line1, r.street_line2, city_line, COUNTRY_NAMES[country_code] ]
   end
 
   def self._city_comma_postal(r, country_code)
     city_line = if r.postal_code.present? && r.locality.present?
                   "#{r.locality}, #{r.postal_code}"
-                else
-                  [r.locality, r.postal_code].compact_blank.join(" ")
-                end
-    [r.street_line1, r.street_line2, city_line, COUNTRY_NAMES[country_code]]
+    else
+                  [ r.locality, r.postal_code ].compact_blank.join(" ")
+    end
+    [ r.street_line1, r.street_line2, city_line, COUNTRY_NAMES[country_code] ]
   end
 
   def self._zip_then_city(r, country_code)
-    city_line = [r.postal_code, r.locality].compact_blank.join(" ")
-    [r.street_line1, r.street_line2, city_line, COUNTRY_NAMES[country_code]]
+    city_line = [ r.postal_code, r.locality ].compact_blank.join(" ")
+    [ r.street_line1, r.street_line2, city_line, COUNTRY_NAMES[country_code] ]
   end
 
   # Italy: "ZIP CITY (PROV)" — province in two-letter code in parens
   def self._italy_format(r)
-    city_line = [r.postal_code, r.locality].compact_blank.join(" ")
+    city_line = [ r.postal_code, r.locality ].compact_blank.join(" ")
     city_line = "#{city_line} (#{r.region})" if r.region.present?
-    [r.street_line1, r.street_line2, city_line, COUNTRY_NAMES["IT"]]
+    [ r.street_line1, r.street_line2, city_line, COUNTRY_NAMES["IT"] ]
   end
 end

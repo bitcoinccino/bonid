@@ -30,7 +30,7 @@ class CreateVoterOathAcknowledgements < ActiveRecord::Migration[8.0]
     end
 
     add_index :voter_oath_acknowledgements,
-              [:user_id, :bonvote_election_id, :oath_version],
+              [ :user_id, :bonvote_election_id, :oath_version ],
               unique: true,
               name: "idx_voter_oath_uniq_per_election"
     add_index :voter_oath_acknowledgements, :accepted_at

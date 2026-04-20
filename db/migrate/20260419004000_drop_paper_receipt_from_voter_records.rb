@@ -21,7 +21,7 @@ class DropPaperReceiptFromVoterRecords < ActiveRecord::Migration[8.0]
     SQL
 
     if index_exists?(:voter_eligibility_records,
-                     [:bonvote_election_id, :paper_receipt_number],
+                     [ :bonvote_election_id, :paper_receipt_number ],
                      name: "idx_voter_records_on_election_and_paper_receipt")
       remove_index :voter_eligibility_records,
                    name: "idx_voter_records_on_election_and_paper_receipt"
@@ -38,7 +38,7 @@ class DropPaperReceiptFromVoterRecords < ActiveRecord::Migration[8.0]
     add_column :voter_eligibility_records, :paper_receipt_verified_at, :datetime
 
     add_index :voter_eligibility_records,
-              [:bonvote_election_id, :paper_receipt_number],
+              [ :bonvote_election_id, :paper_receipt_number ],
               where: "paper_receipt_number IS NOT NULL",
               name: "idx_voter_records_on_election_and_paper_receipt"
   end

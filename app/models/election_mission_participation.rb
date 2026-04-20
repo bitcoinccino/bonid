@@ -92,7 +92,7 @@ class ElectionMissionParticipation < ApplicationRecord
 
   # Human label combining type + city — "Konsila Jeneral, Miami, FL".
   def display_label
-    [mission_type_label, mission_name].compact_blank.join(" — ")
+    [ mission_type_label, mission_name ].compact_blank.join(" — ")
   end
 
   def status_label

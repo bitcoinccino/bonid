@@ -31,7 +31,7 @@ class VoterOathAcknowledgement < ApplicationRecord
   validates :accepted_at,  presence: true
   validates :oath_version, presence: true
   validates :digest,       presence: true, uniqueness: true
-  validates :user_id, uniqueness: { scope: [:bonvote_election_id, :oath_version] }
+  validates :user_id, uniqueness: { scope: [ :bonvote_election_id, :oath_version ] }
 
   before_validation :ensure_accepted_at, on: :create
   before_validation :compute_digest,     on: :create
@@ -81,6 +81,6 @@ class VoterOathAcknowledgement < ApplicationRecord
   end
 
   def digest_payload
-    [user_id, bonvote_election_id, accepted_at.to_i, oath_version].join(":")
+    [ user_id, bonvote_election_id, accepted_at.to_i, oath_version ].join(":")
   end
 end

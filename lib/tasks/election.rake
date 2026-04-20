@@ -196,7 +196,7 @@ namespace :election do
   end
 
   desc "Generate an Ed25519 signing keypair for BonVote-signed voter receipts. Emits YAML ready to paste into `rails credentials:edit`."
-  task :generate_signing_keys, [:election_id] => :environment do |_, args|
+  task :generate_signing_keys, [ :election_id ] => :environment do |_, args|
     require "openssl"
     require "base64"
 

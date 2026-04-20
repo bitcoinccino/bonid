@@ -822,14 +822,14 @@ end
     # Distinct from Polling Centers (Sant Vòt). Managed by CEP partner_admins
     # so they can register their own offices without bouncing into the
     # AdminUser-gated /admin/electoral_offices command-center surface.
-    resources :electoral_offices, except: [:show]
+    resources :electoral_offices, except: [ :show ]
 
     # Diplomatic Missions (Konsila / Anbasad) — per-election activation
     # surface for diaspora registration / voting. The mission registry itself
     # is static (HaitianDiplomaticMissions concern); these CRUD actions only
     # touch ElectionMissionParticipation rows scoped to the active CEP
     # election. Sister surface to :electoral_offices.
-    resources :diplomatic_missions, except: [:show]
+    resources :diplomatic_missions, except: [ :show ]
 
     # Polling Centers (Sant Vòt) — CEP + Consulate roster + CSV import
     # Custom collection routes (import / template) are declared INSIDE the
@@ -843,7 +843,7 @@ end
       end
       # Nested BV (Biwo Vòt) management — single-station create/edit/delete
       # under a parent Sant Vòt. Index lives on the center's #show.
-      resources :polling_stations, only: [:new, :create, :edit, :update, :destroy], as: :stations
+      resources :polling_stations, only: [ :new, :create, :edit, :update, :destroy ], as: :stations
     end
 
     # Party Registration (Article 143).

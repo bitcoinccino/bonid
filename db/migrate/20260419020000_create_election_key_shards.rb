@@ -45,9 +45,9 @@ class CreateElectionKeyShards < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :election_key_shards, [:election_id, :role],  unique: true,
+    add_index :election_key_shards, [ :election_id, :role ],  unique: true,
               name: "idx_key_shards_election_role"
-    add_index :election_key_shards, [:election_id, :bonid], unique: true,
+    add_index :election_key_shards, [ :election_id, :bonid ], unique: true,
               where: "bonid IS NOT NULL",
               name: "idx_key_shards_election_bonid"
     add_index :election_key_shards, :shard_hash
