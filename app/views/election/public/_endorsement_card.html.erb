@@ -1,0 +1,66 @@
+<%# Article 181.15 — independent candidate endorsement card.
+    Shown only for candidates currently collecting their 2% petition. %>
+<% threshold = candidate.petition_threshold %>
+<% count     = candidate.endorsement_count %>
+<% progress  = candidate.petition_progress_percentage %>
+<% already_endorsed = current_citizen&.bonid.present? &&
+     ElectionCandidateEndorsement.exists?(election_candidate_id: candidate.id, bonid: current_citizen.bonid) %>
+
+<div class="candidate-card h-100">
+  <div class="d-flex gap-3 align-items-center">
+    <% photo = candidate.candidate_photo_url %>
+    <% if photo.present? %>
+      <img src="<%= photo %>" alt="<%= candidate.full_name %>" class="candidate-photo">
+    <% else %>
+      <div class="candidate-photo-placeholder">
+        <i class="ri-user-line"></i>
+      </div>
+    <% end %>
+    <div class="flex-grow-1" style="min-width: 0;">
+      <div class="fw-bold text-truncate" style="font-size: 1rem;">
+        <%= candidate.full_name %>
+      </div>
+      <div class="small" style="opacity: 0.7;">
+        <em>Endepandan</em> — <%= candidate.position.titleize %>
+      </div>
+      <% if candidate.residence_department.present? %>
+        <div class="small" style="opacity: 0.6;">
+          <%= candidate.residence_department %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="mt-3 pt-3" style="border-top: 1px solid rgba(255,255,255,0.08);">
+    <div class="d-flex justify-content-between align-items-center small mb-1">
+      <span style="opacity: 0.7;">Sipò 2% (Atik 181.15)</span>
+      <span class="fw-bold"><%= count %> / <%= threshold %></span>
+    </div>
+    <div class="progress" style="height: 6px; background: rgba(255,255,255,0.08);">
+      <div class="progress-bar <%= progress >= 100 ? 'bg-success' : 'bg-warning' %>"
+           style="width: <%= progress %>%"></div>
+    </div>
+
+    <div class="mt-3">
+      <% if current_citizen.nil? %>
+        <%= link_to "Konekte pou endose",
+                    new_citizen_session_path,
+                    class: "btn btn-sm btn-outline-warning w-100" %>
+      <% elsif already_endorsed %>
+        <%= button_to citizens_election_unendorse_candidate_path(election_candidate_id: candidate.id),
+                      method: :delete,
+                      class: "btn btn-sm btn-outline-secondary w-100",
+                      data: { turbo_confirm: "Retire endòsman w pou #{candidate.full_name}?" } do %>
+          <i class="ri-check-line"></i> Ou endose — klike pou retire
+        <% end %>
+      <% else %>
+        <%= button_to citizens_election_endorse_candidate_path(election_candidate_id: candidate.id),
+                      method: :post,
+                      class: "btn btn-sm btn-warning w-100 fw-semibold",
+                      data: { turbo_confirm: "Konfime endòsman w pou #{candidate.full_name}?" } do %>
+          <i class="ri-quill-pen-line me-1"></i> Endòse kandidati sa
+        <% end %>
+      <% end %>
+    </div>
+  </div>
+</div>

@@ -19,6 +19,9 @@ class ElectionDispute < ApplicationRecord
   belongs_to :election, class_name: "BonvoteElection"
   belongs_to :constituency, class_name: "ElectionConstituency", optional: true
   belongs_to :election_body, optional: true
+  # Set when the dispute challenges a specific candidate on the liste
+  # préliminaire (Article 192 contestation de candidature).
+  belongs_to :election_candidate, optional: true
 
   validates :dispute_type, presence: true, inclusion: { in: DISPUTE_TYPES }
   validates :reference_code, presence: true, uniqueness: { scope: :election_id }

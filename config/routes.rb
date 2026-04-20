@@ -581,6 +581,15 @@ end
 
       # Results
       get  "rezilta",          to: "results#index",     as: :results
+
+      # Article 192: 48-hour contestation window on preliminary candidate list.
+      # Any verified citizen can file a challenge from the public roster.
+      get  "kandida/:election_candidate_id/konteste",  to: "contestations#new",    as: :contest_candidate_new
+      post "kandida/:election_candidate_id/konteste",  to: "contestations#create", as: :contest_candidate
+
+      # Article 181.15: 2% digital endorsement of independent candidates.
+      post   "kandida/:election_candidate_id/endose",  to: "endorsements#create",  as: :endorse_candidate
+      delete "kandida/:election_candidate_id/endose",  to: "endorsements#destroy", as: :unendorse_candidate
     end
 
     # Private Services (legacy — kept for backward compat)

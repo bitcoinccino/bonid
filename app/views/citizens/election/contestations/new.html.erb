@@ -1,0 +1,81 @@
+<%# app/views/citizens/election/contestations/new.html.erb %>
+<%# Article 192 — 48-hour contestation window form for a preliminary candidate. %>
+
+<div class="container py-4" style="max-width: 720px;">
+
+  <%= link_to "← Retounen lis kandida yo", election_public_candidates_path(election_id: @candidate.election_id),
+              class: "pp-text-sm text-muted text-decoration-none mb-3 d-inline-block" %>
+
+  <div class="pp-card card">
+    <div class="card-header bg-warning-subtle">
+      <h5 class="mb-0 fw-bold">
+        <i class="ri-scales-3-line me-2"></i>
+        Konteste kandidati sa
+      </h5>
+    </div>
+    <div class="card-body p-4">
+
+      <div class="alert alert-info small mb-3">
+        <strong>Atik 192 Dekrè Elektoral la:</strong>
+        Ou gen 48 èdtan apati piblikasyon lis preliminè a pou w depoze yon kontestasyon.
+        <% if @candidate.contestation_window_closes_at %>
+          Fenèt sa a ap fèmen
+          <strong><%= l(@candidate.contestation_window_closes_at, format: :long) %></strong>.
+        <% end %>
+      </div>
+
+      <dl class="row pp-text-sm mb-3">
+        <dt class="col-sm-4 text-muted">Kandida</dt>
+        <dd class="col-sm-8 fw-semibold"><%= @candidate.full_name %></dd>
+        <dt class="col-sm-4 text-muted">Pòs</dt>
+        <dd class="col-sm-8"><%= @candidate.position.titleize %></dd>
+        <% if @candidate.party_name.present? %>
+          <dt class="col-sm-4 text-muted">Pati</dt>
+          <dd class="col-sm-8"><%= @candidate.party_name %></dd>
+        <% end %>
+        <dt class="col-sm-4 text-muted">Estati</dt>
+        <dd class="col-sm-8">
+          <span class="badge bg-primary-subtle text-primary">Sou lis preliminè</span>
+        </dd>
+      </dl>
+
+      <%= form_with url: citizens_election_contest_candidate_path(election_candidate_id: @candidate.id),
+                    method: :post, local: true do |f| %>
+        <div class="mb-3">
+          <%= label_tag "contestation[subject]", "Tit kontestasyon (kout)",
+                        class: "form-label fw-semibold pp-text-sm" %>
+          <%= text_field_tag "contestation[subject]", nil,
+                             class: "form-control", required: true, maxlength: 200,
+                             placeholder: "Egzanp: Kandida a pa ranpli kondisyon rezidans yo" %>
+        </div>
+
+        <div class="mb-3">
+          <%= label_tag "contestation[details]", "Detay ak prèv",
+                        class: "form-label fw-semibold pp-text-sm" %>
+          <%= text_area_tag "contestation[details]", nil,
+                            class: "form-control", rows: 6, required: true,
+                            placeholder: "Eksplike poukisa kandidati sa a pa ta dwe sou lis definitif la. Site atik dekrè a oswa prèv ki disponib." %>
+          <div class="form-text pp-text-xs">
+            BCEN (Biwo Kontansye Elektoral Nasyonal) ap revize kontestasyon w la.
+            Fo depozisyon ka lakòz sanksyon jiridik.
+          </div>
+        </div>
+
+        <div class="alert alert-light small mb-3">
+          <i class="ri-user-line me-1"></i>
+          Ou ap depoze kontestasyon sa a kòm
+          <strong><%= current_citizen.full_name %></strong>
+          (BonID <code><%= current_citizen.bonid %></code>).
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <%= link_to "Anile", election_public_candidates_path(election_id: @candidate.election_id),
+                      class: "btn btn-outline-secondary" %>
+          <%= f.submit "Depoze kontestasyon", class: "btn btn-warning fw-semibold",
+                        data: { turbo_confirm: "Konfime depo kontestasyon sa a? Ou pap ka retire li." } %>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>

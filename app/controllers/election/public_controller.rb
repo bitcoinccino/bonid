@@ -63,16 +63,30 @@ module Election
       @election = BonvoteElection.find_by(id: @election_id)
 
       if @election
-        approved = ElectionCandidate.where(election: @election).approved.includes(:election_constituency, :user)
-        @presidents = approved.presidents.order(:full_name).to_a
-        @senators_by_department = approved.senators.order(:full_name).group_by { |c| c.residence_department.presence || c.department_code.presence || "—" }
-        @deputies_by_commune = approved.deputies.order(:full_name).group_by { |c| c.residence_commune.presence || c.commune_id&.to_s || "—" }
-        @total_approved = approved.count
+        # Article 192-195: the public roster includes both the liste préliminaire
+        # (48h contestation window open) and the liste définitive. View uses
+        # registration_status to render the contest CTA on preliminary rows.
+        on_ballot = ElectionCandidate.where(election: @election).on_ballot.includes(:election_constituency, :user)
+        @presidents = on_ballot.presidents.order(:full_name).to_a
+        @senators_by_department = on_ballot.senators.order(:full_name).group_by { |c| c.residence_department.presence || c.department_code.presence || "—" }
+        @deputies_by_commune = on_ballot.deputies.order(:full_name).group_by { |c| c.residence_commune.presence || c.commune_id&.to_s || "—" }
+        @total_approved = on_ballot.where(registration_status: "approved").count
+        @total_preliminary = on_ballot.where(registration_status: "preliminary_listed").count
+
+        # Article 181.15 — independents still collecting their 2% support
+        # petition are surfaced here so citizens can endorse them directly.
+        @seeking_endorsements = ElectionCandidate
+                                  .where(election: @election, candidacy_type: "independent")
+                                  .where(registration_status: %w[submitted under_review])
+                                  .order(:full_name)
+                                  .to_a
       else
         @presidents = []
         @senators_by_department = {}
         @deputies_by_commune = {}
         @total_approved = 0
+        @total_preliminary = 0
+        @seeking_endorsements = []
       end
 
       # Certified results don't change, but the candidate list updates as
