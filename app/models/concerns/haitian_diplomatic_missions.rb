@@ -287,10 +287,58 @@ module HaitianDiplomaticMissions
       },
       contact: { phone: "+1 514-499-1919", email: nil }
     },
-    { id: "HT-EMB-SCL", name: "Santiago de Chile", type: "embassy", country: "CL", region: "south_america" },
-    { id: "HT-EMB-BOG", name: "Bogotá", type: "embassy", country: "CO", region: "south_america" },
-    { id: "HT-EMB-HAV", name: "La Havane", type: "embassy", country: "CU", region: "caribbean" },
-    { id: "HT-EMB-UIO", name: "Quito", type: "embassy", country: "EC", region: "south_america" },
+    {
+      id: "HT-EMB-SCL", name: "Santiago de Chile", type: "embassy",
+      country: "CL", region: "south_america",
+      address: {
+        street_line1: "Luz 2889",
+        street_line2: "Of. 81",
+        locality: "Las Condes",
+        region: nil,
+        postal_code: "7550033",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+56 2 2231 6794", email: nil }
+    },
+    {
+      id: "HT-EMB-BOG", name: "Bogotá", type: "embassy",
+      country: "CO", region: "south_america",
+      address: {
+        street_line1: "Cra. 12 # 70A - 36",
+        street_line2: "Barrio Quinta Camacho",
+        locality: "Bogotá",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+57 1 520 7729", email: nil }
+    },
+    {
+      id: "HT-EMB-HAV", name: "La Havane", type: "embassy",
+      country: "CU", region: "caribbean",
+      address: {
+        street_line1: "Calle 7ma. No. 4402",
+        street_line2: "esq. a 44, Miramar",
+        locality: "La Habana",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+53 7 204 5421", email: nil }
+    },
+    {
+      id: "HT-EMB-UIO", name: "Quito", type: "embassy",
+      country: "EC", region: "south_america",
+      address: {
+        street_line1: "Calle El Batán N34-67 y Eloy Alfaro",
+        street_line2: nil,
+        locality: "Quito",
+        region: nil,
+        postal_code: "170135",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+593 2 226 6777", email: nil }
+    },
     {
       id: "HT-EMB-MEX", name: "Mexico City", type: "embassy",
       country: "MX", region: "north_america",
@@ -317,14 +365,40 @@ module HaitianDiplomaticMissions
       },
       contact: { phone: "+507 269-3443", email: nil }
     },
-    { id: "HT-CON-PBM", name: "Paramaribo", type: "consulate_general", country: "SR", region: "south_america" },
-    { id: "HT-EMB-CCS", name: "Caracas", type: "embassy", country: "VE", region: "south_america" }
+    {
+      id: "HT-CON-PBM", name: "Paramaribo", type: "consulate_general",
+      country: "SR", region: "south_america",
+      address: {
+        street_line1: "Mr. F.H.R. Lim A Po Straat 21",
+        street_line2: nil,
+        locality: "Paramaribo",
+        region: nil,
+        postal_code: nil,            # Suriname has no postal-code system
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+597 729 2000", email: nil }
+    },
+    {
+      id: "HT-EMB-CCS", name: "Caracas", type: "embassy",
+      country: "VE", region: "south_america",
+      address: {
+        street_line1: "Quinta San Rafael",
+        street_line2: "Avenida Transversal 8",
+        locality: "Caracas",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+58 212 262 1194", email: nil }
+    }
   ].freeze
 
   # ── EUROPE & OTHER ─────────────────────────────────────────────
-  # 11 of 17 populated from founder-provided directory. Still nil:
-  # Paris consulate (HT-CON-PAR — separate from embassy), Cayenne (GF),
-  # Pointe-à-Pitre (GP), Willemstad (CW), Turks & Caicos (TC), Doha (QA).
+  # All 19 entries populated from founder-provided directory (final batch
+  # added Paris consulate, Cayenne, Pointe-à-Pitre, Willemstad,
+  # Turks & Caicos, Doha, plus 2 new entries: Pretoria (ZA) and
+  # Beijing (CN) — these last two were not in the original 42-mission
+  # list; they bring the total to 44 missions.
   EUROPE_OTHER_MISSIONS = [
     {
       id: "HT-EMB-BRU", name: "Bruxelles", type: "embassy",
@@ -352,9 +426,45 @@ module HaitianDiplomaticMissions
       },
       contact: { phone: "+33 1 47 63 47 78", email: nil }
     },
-    { id: "HT-CON-PAR", name: "Paris (Consulat)", type: "consulate_general", country: "FR", region: "europe" },
-    { id: "HT-CON-CAY", name: "Cayenne, Guyane", type: "consulate_general", country: "GF", region: "south_america" },
-    { id: "HT-CON-PTP", name: "Pointe-à-Pitre, Guadeloupe", type: "consulate", country: "GP", region: "caribbean" },
+    {
+      id: "HT-CON-PAR", name: "Paris (Consulat)", type: "consulate_general",
+      country: "FR", region: "europe",
+      address: {
+        street_line1: "35 Avenue de Villiers",
+        street_line2: nil,
+        locality: "Paris",
+        region: nil,
+        postal_code: "75017",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+33 1 42 12 70 50", email: nil }
+    },
+    {
+      id: "HT-CON-CAY", name: "Cayenne, Guyane", type: "consulate_general",
+      country: "GF", region: "south_america",
+      address: {
+        street_line1: "12 Avenue Léopold Héder",
+        street_line2: nil,
+        locality: "Cayenne",
+        region: nil,
+        postal_code: "97300",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+594 594 31 18 58", email: nil }
+    },
+    {
+      id: "HT-CON-PTP", name: "Pointe-à-Pitre, Guadeloupe", type: "consulate",
+      country: "GP", region: "caribbean",
+      address: {
+        street_line1: "12 Rue Schoelcher",
+        street_line2: nil,
+        locality: "Pointe-à-Pitre",
+        region: nil,
+        postal_code: "97110",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+590 590 89 35 80", email: nil }
+    },
     {
       id: "HT-EMB-BER", name: "Berlin", type: "embassy",
       country: "DE", region: "europe",
@@ -399,7 +509,19 @@ module HaitianDiplomaticMissions
       },
       contact: { phone: "+39 06 44 25 41 06", email: nil }
     },
-    { id: "HT-CON-WIL", name: "Willemstad, Curaçao", type: "consulate_general", country: "CW", region: "caribbean" },
+    {
+      id: "HT-CON-WIL", name: "Willemstad, Curaçao", type: "consulate_general",
+      country: "CW", region: "caribbean",
+      address: {
+        street_line1: "Grebbelinweg 18",
+        street_line2: nil,
+        locality: "Willemstad",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+599 9 461 3434", email: nil }
+    },
     {
       id: "HT-CON-ORA", name: "Oranjestad, Aruba", type: "consulate_general",
       country: "AW", region: "caribbean",
@@ -439,7 +561,19 @@ module HaitianDiplomaticMissions
       },
       contact: { phone: "+44 20 3771 1427", email: nil }
     },
-    { id: "HT-CON-TCI", name: "Providenciales, Turks & Caicos", type: "consulate_general", country: "TC", region: "caribbean" },
+    {
+      id: "HT-CON-TCI", name: "Providenciales, Turks & Caicos", type: "consulate_general",
+      country: "TC", region: "caribbean",
+      address: {
+        street_line1: "1229 Leeward Highway",
+        street_line2: nil,
+        locality: "Providenciales",
+        region: nil,
+        postal_code: nil,
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+1 649 649 4331", email: nil }
+    },
     {
       id: "HT-EMB-TYO", name: "Tokyo", type: "embassy",
       country: "JP", region: "asia",
@@ -453,7 +587,19 @@ module HaitianDiplomaticMissions
       },
       contact: { phone: "+81 3 3486 7096", email: nil }
     },
-    { id: "HT-EMB-DOH", name: "Doha", type: "embassy", country: "QA", region: "middle_east" },
+    {
+      id: "HT-EMB-DOH", name: "Doha", type: "embassy",
+      country: "QA", region: "middle_east",
+      address: {
+        street_line1: "Villa 10, Saha 31, Zone 66",
+        street_line2: "Jasmine Court",
+        locality: "Doha",
+        region: nil,
+        postal_code: nil,            # Qatar has no postal-code system
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+974 3133 2215", email: nil }
+    },
     {
       id: "HT-EMB-TPE", name: "Taipei", type: "embassy",
       country: "TW", region: "asia",
@@ -479,6 +625,37 @@ module HaitianDiplomaticMissions
         latitude: nil, longitude: nil
       },
       contact: { phone: "+84 24 7107 8888", email: nil }
+    },
+    # ── New entries (not in original 42-mission set) ────────────────
+    {
+      id: "HT-EMB-PRE", name: "Pretoria", type: "embassy",
+      country: "ZA", region: "africa",
+      address: {
+        street_line1: "246 Carina Street",
+        street_line2: "Waterkloof Ridge",
+        locality: "Pretoria",
+        region: nil,
+        postal_code: "0181",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+27 12 342 0192", email: nil }
+    },
+    {
+      id: "HT-EMB-PEK", name: "Beijing", type: "embassy",
+      country: "CN", region: "asia",
+      address: {
+        # Founder paste: "1, Xin Dong Lu, 3-1-72 Ta Yuan Diplomatic
+        # Compound, Chaoyang District, 100600". Rendered in international
+        # form (smallest-to-largest); building/compound on line1, street
+        # on line2.
+        street_line1: "3-1-72 Ta Yuan Diplomatic Compound",
+        street_line2: "1 Xin Dong Lu, Chaoyang District",
+        locality: "Beijing",
+        region: nil,
+        postal_code: "100600",
+        latitude: nil, longitude: nil
+      },
+      contact: { phone: "+86 10 6532 4043", email: nil }
     }
   ].freeze
 
@@ -496,7 +673,8 @@ module HaitianDiplomaticMissions
     "central_america" => "Amerik Santral",
     "europe"        => "Ewòp",
     "asia"          => "Azi",
-    "middle_east"   => "Mwayen Oryan"
+    "middle_east"   => "Mwayen Oryan",
+    "africa"        => "Afrik"
   }.freeze
 
   # Mission types
@@ -554,6 +732,6 @@ module HaitianDiplomaticMissions
   PRIORITY_COUNTRY_CODES = %w[
     HT US DO CA FR BR BS CL MX CU JM
     GP MQ GF TT PA CO EC VE AR SR
-    BE DE ES GB IT JP QA TW
+    BE DE ES GB IT JP QA TW VN ZA CN
   ].freeze
 end
