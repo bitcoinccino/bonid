@@ -84,7 +84,7 @@ module IdentitySubmissionsHelper
   def status_badge(submission, size: :normal)
     info = submission_status_display(submission)
     badge_size = size == :large ? "px-4 py-2 fs-6" : "px-3 py-1"
-    
+
     content_tag :span, class: "badge #{info[:badge_class]} #{badge_size} fw-semibold d-inline-flex align-items-center gap-2" do
       content_tag(:i, nil, class: info[:icon]) + " #{info[:text]}"
     end
@@ -94,15 +94,15 @@ module IdentitySubmissionsHelper
   def status_card(submission)
     info = submission_status_display(submission)
     alert_class = "alert alert-#{alert_color_for_status(submission.status)} border rounded-4"
-    
+
     content_tag :div, class: alert_class do
       content_tag(:div, class: "d-flex align-items-start") do
         icon_html = content_tag(:i, nil, class: "#{info[:icon]} fs-3 me-3 mt-1")
-        
+
         details_html = content_tag(:div, class: "flex-grow-1") do
           title = content_tag(:h6, info[:text], class: "fw-bold mb-2")
           description = content_tag(:p, info[:full_description], class: "mb-2")
-          
+
           timeline_html = if info[:timeline]
             content_tag(:p, class: "mb-2 small text-muted") do
               content_tag(:i, nil, class: "ri-calendar-line me-1") + " #{info[:timeline]}"
@@ -110,7 +110,7 @@ module IdentitySubmissionsHelper
           else
             ""
           end
-          
+
           reason_html = if info[:reason]
             content_tag(:div, class: "alert alert-light border mt-2 mb-2") do
               content_tag(:strong, "Reason: ") + info[:reason]
@@ -118,10 +118,10 @@ module IdentitySubmissionsHelper
           else
             ""
           end
-          
+
           action_html = if info[:action]
             content_tag(:div, class: "mt-3") do
-              link_to info[:action][:url], 
+              link_to info[:action][:url],
                       class: "btn #{info[:action][:class]} rounded-pill px-4 fw-semibold" do
                 content_tag(:i, nil, class: "ri-arrow-right-line me-2") + info[:action][:text]
               end
@@ -129,10 +129,10 @@ module IdentitySubmissionsHelper
           else
             ""
           end
-          
+
           title + description + timeline_html + reason_html + action_html
         end
-        
+
         icon_html + details_html
       end
     end
@@ -154,7 +154,7 @@ module IdentitySubmissionsHelper
   # Check if user profile is complete
   def profile_complete?(user)
     return true if user.identity_submissions.approved.exists?
-    
+
     # Basic completeness check
     user.first_name.present? &&
     user.last_name.present? &&
