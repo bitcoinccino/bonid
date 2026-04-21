@@ -21,7 +21,8 @@ class PartnerPortal::TeamInvitationsController < ApplicationController
 
   # PUT /team/invitation/accept
   def update
-    if @user.encrypted_password.blank? || params[:user][:password].present?
+    submitted_password = params.dig(:user, :password)
+    if @user.encrypted_password.blank? || submitted_password.present?
       unless @user.update(password_params)
         flash[:error] = @user.errors.full_messages.join(", ")
         return render :show
@@ -33,16 +34,16 @@ class PartnerPortal::TeamInvitationsController < ApplicationController
     # Sign them in
     sign_in(:user, @user)
 
-    # Audit
-    PartnerAuditLog.create!(
-      partner:    @user.partner,
-      admin_user: @user,
-      event:      "team_invitation_accepted",
-      details: {
-        email: @user.email,
-        name:  @user.full_name,
-        ip:    request.remote_ip
-      }
+    # Audit — route through log! so plain-User invitees (unified BonID
+    # invite path → rolify, no STI promotion) don't trip the admin_user
+    # AssociationTypeMismatch. The factory guards is_a?(AdminUser).
+    PartnerAuditLog.log!(
+      @user.partner,
+      @user,
+      "team_invitation_accepted",
+      email: @user.email,
+      name:  @user.full_name,
+      ip:    request.remote_ip
     )
 
     flash[:success] = "Byenveni nan ekip #{@user.partner&.name}!"

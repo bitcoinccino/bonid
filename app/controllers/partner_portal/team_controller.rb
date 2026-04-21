@@ -315,7 +315,14 @@ module PartnerPortal
 
     def role_options
       sector = (@partner.department_sector || @partner.sector).to_s.downcase
-      GovernmentRoleConstants.role_options_for(sector)
+      options = GovernmentRoleConstants.role_options_for(sector)
+
+      # CEP v1: admin invites agents only. The admin seat is seeded;
+      # we never hand out another admin via the invite flow. Hide
+      # partner_admin from the CEP role picker. See 2026-04-20
+      # scope reframe (verify + register voters only).
+      options = options.reject { |(_, key)| key == "partner_admin" } if sector == "cep"
+      options
     end
 
     # ============================================================
@@ -401,7 +408,9 @@ module PartnerPortal
 
       case role
       when "partner_admin"
-        nil # office_code is ignored for admins; nothing to validate
+        # Admin seat is seeded, not invited. Block at the controller so a
+        # crafted form post can't grant admin via the invite endpoint.
+        "Envitasyon admin pa disponib. Ou ka sèlman envite Ajan Enskripsyon."
       when "partner_agent"
         return "Chwazi yon BEK pou Ajan Enskripsyon an." if raw.blank?
         return "BEK chwazi a pa egziste." unless ElectoralOffice.bek.exists?(id: raw)
