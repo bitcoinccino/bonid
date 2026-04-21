@@ -1,17 +1,19 @@
 # frozen_string_literal: true
 
-# Returns the citizen-sidebar election links in an order keyed to the
-# election's current lifecycle state. Also annotates the "Vote" link with
-# a live countdown badge so every login reinforces the election date.
+# Returns the citizen-sidebar election links for BonVote v1.
 #
-# Usage from a view (or helper):
+# Scope per 2026-04-20 reframe (project_election_v1_scope memory):
+# v1 is verify + register voters only. Vote-casting, receipt verification,
+# and results are all paused behind FEATURE_BONVOTE_TALLY. Those links
+# used to live here; they're now omitted entirely until the tally stack
+# is unshelved.
 #
-#   presenter = CitizenElectionSidebarPresenter.for_today
-#   presenter.links.each { |link| render link }
+# Remaining links:
+#   - "Eleksyon Mwen" → enrollment state page (the core action)
+#   - "Kalandriye"    → read-only registration deadline calendar
 #
-# Each link is a struct with: path, icon, label, badge (or nil),
-# badge_class (or nil), active_match (a string fragment used to set
-# `active` class on the nav-link).
+# Usage from a view:
+#   CitizenElectionSidebarPresenter.for_today.links.each { |link| render link }
 class CitizenElectionSidebarPresenter
   include Rails.application.routes.url_helpers
 
@@ -32,70 +34,25 @@ class CitizenElectionSidebarPresenter
     @election = election
   end
 
+  # v1 surface: just the two registration-lifecycle links. Order is
+  # stable across election statuses because there's nothing to reorder
+  # — enrollment is always the primary action in v1.
   def links
-    case @election&.status
-    when "open"      then links_open
-    when "closed"    then links_closed
-    when "certified" then links_certified
-    else                  links_upcoming # draft, cancelled, or nil
-    end
+    [
+      enrollment_link(badge: enrollment_badge, badge_class: "sidebar-badge--amber"),
+      calendar_link
+    ]
   end
 
   private
 
   attr_reader :election
 
-  # Before the polls open: the only real action is enroll + watch the
-  # calendar. "Vote" sits last with a days-until badge.
-  def links_upcoming
-    [
-      enrollment_link,
-      calendar_link,
-      vote_link(badge: countdown_badge, badge_class: "sidebar-badge--amber"),
-      verify_link,
-      results_link
-    ]
-  end
-
-  # Polls are open: the only action that matters is Vote.
-  def links_open
-    [
-      vote_link(badge: "LOUVRI", badge_class: "sidebar-badge--live"),
-      enrollment_link,
-      calendar_link,
-      verify_link,
-      results_link
-    ]
-  end
-
-  # Polls closed, awaiting certification: citizens want to verify their vote.
-  def links_closed
-    [
-      verify_link(badge: "Fèmen", badge_class: "sidebar-badge--muted"),
-      results_link,
-      calendar_link,
-      enrollment_link,
-      vote_link
-    ]
-  end
-
-  # Certified: results are official. Surface them first.
-  def links_certified
-    [
-      results_link(badge: "Sètifye", badge_class: "sidebar-badge--success"),
-      verify_link,
-      calendar_link,
-      enrollment_link,
-      vote_link
-    ]
-  end
-
-  # ── Link builders ────────────────────────────────────────
   def enrollment_link(**overrides)
     Link.new(
       path: citizens_election_enrollment_path,
       icon: "ri-user-voice-line",
-      label: "Eleksyon Mwen",
+      label: "Anrejistre",
       active_match: "election/enskri",
       badge: nil, badge_class: nil
     ).tap { |l| overrides.each { |k, v| l[k] = v } }
@@ -111,39 +68,9 @@ class CitizenElectionSidebarPresenter
     ).tap { |l| overrides.each { |k, v| l[k] = v } }
   end
 
-  def vote_link(badge: nil, badge_class: nil)
-    Link.new(
-      path: citizens_election_vote_path,
-      icon: "ri-checkbox-circle-line",
-      label: "Vote",
-      active_match: "election/vote",
-      badge: badge, badge_class: badge_class
-    )
-  end
-
-  def verify_link(badge: nil, badge_class: nil)
-    Link.new(
-      path: citizens_election_verify_path,
-      icon: "ri-shield-check-line",
-      label: "Verifye Vòt Mwen",
-      active_match: "election/verifye",
-      badge: badge, badge_class: badge_class
-    )
-  end
-
-  def results_link(badge: nil, badge_class: nil)
-    Link.new(
-      path: citizens_election_results_path,
-      icon: "ri-bar-chart-box-line",
-      label: "Rezilta",
-      active_match: "election/rezilta",
-      badge: badge, badge_class: badge_class
-    )
-  end
-
-  # "Nan 136 jou", "Demen", "Jodi a" — recomputed on every render so the
-  # sidebar ticks down naturally across sessions.
-  def countdown_badge
+  # Countdown to the election date, shown on the enrollment link so every
+  # login reinforces the registration deadline. "Jodi a" / "Demen" / "nan N jou".
+  def enrollment_badge
     return nil unless election&.election_date
 
     days = (election.election_date - Date.current).to_i
@@ -151,7 +78,6 @@ class CitizenElectionSidebarPresenter
     when ..-1 then nil
     when 0    then "Jodi a"
     when 1    then "Demen"
-    when 2..6 then "nan #{days} jou"
     else           "nan #{days} jou"
     end
   end

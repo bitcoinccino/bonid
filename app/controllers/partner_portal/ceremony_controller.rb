@@ -22,6 +22,7 @@ module PartnerPortal
   # Authorization: CEP sector + partner_admin role. Mirrors
   # DiplomaticMissionsController#ensure_cep_sector!.
   class CeremonyController < PartnerPortal::BaseController
+    before_action :enforce_bonvote_tally_flag!
     before_action :ensure_cep_sector!
     before_action :require_partner_admin!, only: %i[generate assign_bonid]
     before_action :set_election
@@ -192,6 +193,15 @@ module PartnerPortal
     end
 
     private
+
+    # Ballot-tally stack is shelved behind FEATURE_BONVOTE_TALLY.
+    # See project_bonid_cep_sovereignty_line memory (2026-04-20).
+    def enforce_bonvote_tally_flag!
+      return if Features.bonvote_tally?
+
+      redirect_to partner_portal_dashboard_path,
+                  alert: "Fonksyonalite sa a poze — BonID ap fè verifikasyon sèlman pou CEP kounye a."
+    end
 
     # Loose check — keeps the typo-class errors from looking like a
     # cryptographic mismatch. Real BonID format lives in the model.

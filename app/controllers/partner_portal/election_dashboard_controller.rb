@@ -2,6 +2,7 @@
 
 module PartnerPortal
   class ElectionDashboardController < BaseController
+    before_action :enforce_bonvote_tally_flag!
     before_action :set_election
 
     # GET /partner_portal/election/:id/tablo
@@ -38,6 +39,15 @@ module PartnerPortal
     end
 
     private
+
+    # Ballot-tally stack is shelved behind FEATURE_BONVOTE_TALLY.
+    # See project_bonid_cep_sovereignty_line memory (2026-04-20).
+    def enforce_bonvote_tally_flag!
+      return if Features.bonvote_tally?
+
+      redirect_to partner_portal_dashboard_path,
+                  alert: "Fonksyonalite sa a poze — BonID ap fè verifikasyon sèlman pou CEP kounye a."
+    end
 
     def set_election
       @election_id = params[:id]

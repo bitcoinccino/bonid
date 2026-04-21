@@ -19,6 +19,10 @@
 module Citizens
   module Election
     class VoteController < BaseController
+      # Vote-casting is paused for BonVote v1 (2026-04-20 scope: register
+      # voters only, no ballot casting). Every action redirects to the
+      # enrollment page until FEATURE_BONVOTE_TALLY is flipped on.
+      before_action :enforce_bonvote_tally_flag!
       before_action :require_verified_bonid!
       before_action :require_active_election!, only: [ :begin, :ballot, :cast ]
       before_action :require_online_voting_enabled!, only: [ :begin, :ballot, :cast ]
@@ -420,6 +424,16 @@ module Citizens
       end
 
       private
+
+      # Paused for v1 — no citizen vote-casting. Only register-to-vote ships.
+      # When `FEATURE_BONVOTE_TALLY=true` is flipped, this becomes a no-op
+      # and the wizard becomes live again without any other change.
+      def enforce_bonvote_tally_flag!
+        return if ENV["FEATURE_BONVOTE_TALLY"].to_s.downcase == "true"
+
+        redirect_to citizens_election_enrollment_path,
+                    alert: "Vòt an liy poze pou kounye a. BonVote ap ede w anrejistre sèlman nan faz sa a."
+      end
 
       def enable_immersive_form
         @immersive_form = true
