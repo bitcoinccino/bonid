@@ -525,6 +525,15 @@ class VoterEligibilityRecord < ApplicationRecord
       return
     end
 
+    # Mirror the credential key into the election row BEFORE computing the
+    # payload. `receipt_qr_payload` reads `BonvoteKeyRegistry.current`,
+    # which only returns a Key (and therefore a `kid:` field) once
+    # `bonvote_public_key` has been synced from credentials. Without this
+    # call the first signature would be over a payload WITHOUT `kid`,
+    # while later verifications — run after `sync!` populates the column —
+    # would rebuild the payload WITH `kid` and fail the signature check.
+    ::Election::BonvoteKeyRegistry.sync!(bonvote_election)
+
     # Strip the signature field itself before signing so the payload is
     # stable regardless of any prior attestation (idempotency + re-stamp
     # support after BV moves).

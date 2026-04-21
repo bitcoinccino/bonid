@@ -66,6 +66,12 @@ module Election
         return { ok: false, error: "Resi sa a poko siyen." }
       end
 
+      # Sync the key registry BEFORE rebuilding the payload so `kid:` is
+      # present iff it was present at sign time. Without this, a receipt
+      # signed before the first registry sync would have an unsigned
+      # payload shape, and rebuilding here (post-sync) would add `kid:`
+      # and break the signature check.
+      ::Election::BonvoteKeyRegistry.sync!(record.bonvote_election)
       payload = record.receipt_qr_payload
       verify_payload(payload)
     end
