@@ -1,0 +1,699 @@
+<%# Partner BonID Verification Page — 2026 Redesign %>
+<% modal_mode = params[:modal].present? %>
+
+<turbo-frame id="bonid_scan_modal_frame">
+<div class="scan-page <%= 'scan-page--modal' if modal_mode %>">
+  <% unless modal_mode %>
+    <%# ── Page Header ── %>
+    <div class="scan-header">
+      <%= link_to ajan_tablo_path, class: "scan-back-btn" do %>
+        <i class="ri-arrow-left-line me-1"></i>Tablo
+      <% end %>
+      <div class="scan-header-title-block">
+        <h4 class="scan-page-title">
+          <i class="ri-shield-check-line me-2"></i>Verifye Sitwayen
+        </h4>
+        <p class="scan-page-subtitle">Eskane kòd QR oswa antre 6 dènye karaktè a</p>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="scan-container"
+       data-controller="partner-scanner"
+       data-partner-scanner-lookup-url-value="<%= ajan_bonid_lookups_path %>"
+       data-partner-scanner-prefill-bonid-value="<%= params[:bonid].to_s.upcase %>">
+    <div class="row g-3 justify-content-center">
+
+      <%# ── Main Scanner Area ── %>
+      <div class="col-12 col-lg-11 col-xl-10">
+        <div class="scan-card">
+
+          <%# Centered Segmented Control (iOS-style) %>
+          <div class="segmented-control-wrapper" data-partner-scanner-target="toggleHeader">
+            <div class="segmented-control">
+              <button type="button" id="scanToggleBtn"
+                      class="seg-btn active"
+                      data-action="click->partner-scanner#showScannerSection">
+                <i class="ri-qr-scan-2-line me-2"></i>Scan QR
+              </button>
+              <button type="button" id="manualToggleBtn"
+                      class="seg-btn"
+                      data-action="click->partner-scanner#showManualSection">
+                <i class="ri-keyboard-line me-2"></i>Manual Entry
+              </button>
+            </div>
+          </div>
+
+          <%# ── Scanner Section ── %>
+          <div id="scannerSection" data-partner-scanner-target="scannerSection">
+            <%# Full-width Camera Feed with smart overlay %>
+            <div class="camera-container">
+              <div id="qr-reader" data-partner-scanner-target="reader" class="camera-feed"></div>
+
+              <%# Scanning window overlay (dimmed bg, bright center) %>
+              <div class="scan-overlay">
+                <div class="scan-window">
+                  <div class="scan-corner scan-corner-tl"></div>
+                  <div class="scan-corner scan-corner-tr"></div>
+                  <div class="scan-corner scan-corner-bl"></div>
+                  <div class="scan-corner scan-corner-br"></div>
+                </div>
+              </div>
+
+              <%# Real-time guidance text (changes via JS) %>
+              <div class="scan-guidance" data-partner-scanner-target="scanGuidance">
+                <i class="ri-focus-3-line me-1"></i>
+                <span data-partner-scanner-target="guidanceText">Position QR code within the frame</span>
+              </div>
+            </div>
+
+            <%# Camera Controls (compact) %>
+            <div class="camera-controls">
+              <select class="camera-select"
+                      data-partner-scanner-target="deviceSelector"
+                      data-action="change->partner-scanner#switchCamera">
+                <option value="" disabled selected>Select camera</option>
+              </select>
+
+              <div class="torch-toggle d-none">
+                <div class="form-check form-switch d-inline-flex align-items-center mb-0">
+                  <input class="form-check-input" type="checkbox" id="torchToggle"
+                         data-action="change->partner-scanner#toggleTorch">
+                  <label class="form-check-label ms-2" for="torchToggle">
+                    <i class="ri-flashlight-line"></i>
+                  </label>
+                </div>
+              </div>
+
+              <label class="upload-btn">
+                <i class="ri-image-add-line me-1"></i>Upload
+                <input type="file" accept="image/*" class="d-none"
+                       data-partner-scanner-target="imageInput"
+                       data-action="change->partner-scanner#scanImage">
+              </label>
+            </div>
+
+            <%# Status bar %>
+            <div data-partner-scanner-target="output" class="scan-status-bar d-none text-center">
+            </div>
+
+            <%# Toast: "Trouble scanning?" (shown after 5s of failures via JS) %>
+            <div class="scan-toast d-none" data-partner-scanner-target="scanToast">
+              <i class="ri-information-line me-2"></i>
+              <span>Trouble scanning?</span>
+              <button type="button" class="toast-action"
+                      data-action="click->partner-scanner#showManualSection">
+                Try Manual Entry
+              </button>
+            </div>
+          </div>
+
+          <%# ── Manual Entry Section ── %>
+          <div id="manualSection" data-partner-scanner-target="manualSection" class="d-none">
+            <div class="manual-hero">
+              <h5 class="manual-headline">Enter Manually</h5>
+              <p class="manual-desc">Enter the last 6 characters of the citizen's BonID</p>
+
+              <%# 6-Box Segmented PIN Input %>
+              <div class="pin-group" data-partner-scanner-target="pinGroup">
+                <input type="text" maxlength="1" inputmode="text" autocomplete="off"
+                       class="pin-box" data-partner-scanner-target="pinBox" data-index="0"
+                       data-action="input->partner-scanner#pinInput keydown->partner-scanner#pinKeydown paste->partner-scanner#pinPaste">
+                <input type="text" maxlength="1" inputmode="text" autocomplete="off"
+                       class="pin-box" data-partner-scanner-target="pinBox" data-index="1"
+                       data-action="input->partner-scanner#pinInput keydown->partner-scanner#pinKeydown paste->partner-scanner#pinPaste">
+                <input type="text" maxlength="1" inputmode="text" autocomplete="off"
+                       class="pin-box" data-partner-scanner-target="pinBox" data-index="2"
+                       data-action="input->partner-scanner#pinInput keydown->partner-scanner#pinKeydown paste->partner-scanner#pinPaste">
+                <div class="pin-separator"></div>
+                <input type="text" maxlength="1" inputmode="text" autocomplete="off"
+                       class="pin-box" data-partner-scanner-target="pinBox" data-index="3"
+                       data-action="input->partner-scanner#pinInput keydown->partner-scanner#pinKeydown paste->partner-scanner#pinPaste">
+                <input type="text" maxlength="1" inputmode="text" autocomplete="off"
+                       class="pin-box" data-partner-scanner-target="pinBox" data-index="4"
+                       data-action="input->partner-scanner#pinInput keydown->partner-scanner#pinKeydown paste->partner-scanner#pinPaste">
+                <input type="text" maxlength="1" inputmode="text" autocomplete="off"
+                       class="pin-box" data-partner-scanner-target="pinBox" data-index="5"
+                       data-action="input->partner-scanner#pinInput keydown->partner-scanner#pinKeydown paste->partner-scanner#pinPaste">
+              </div>
+
+              <%# Hidden input that holds the combined value (for submitForm) %>
+              <input type="hidden" data-partner-scanner-target="bonidInput">
+              <input type="hidden" data-partner-scanner-target="verificationTokenInput">
+              <input type="hidden" data-partner-scanner-target="signatureInput">
+
+              <%# Where-is-this tooltip %>
+              <div class="pin-locator">
+                <div class="pin-locator-card">
+                  <div class="pin-locator-id">
+                    <span class="id-prefix">DV-1989-M-SE-P8</span><span class="id-highlight">697XDS</span>
+                  </div>
+                  <div class="pin-locator-arrow">
+                    <i class="ri-arrow-up-line"></i> these 6 characters
+                  </div>
+                </div>
+              </div>
+
+              <button type="button"
+                      class="verify-btn"
+                      data-partner-scanner-target="submitButton"
+                      data-action="click->partner-scanner#submitForm">
+                <span data-partner-scanner-target="submitLabel">
+                  <i class="ri-search-line me-2"></i>Verify Identity
+                </span>
+                <span data-partner-scanner-target="submitSpinner" class="d-none">
+                  <span class="spinner-border spinner-border-sm me-2" role="status"></span>Searching...
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <%# Loading Spinner %>
+          <div data-partner-scanner-target="spinner" class="text-center d-none py-5">
+            <div class="spinner-border" role="status" style="color: #00209F; width: 2.5rem; height: 2.5rem;">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 mb-0" style="font-size: 0.85rem; color: #64748B; font-weight: 500;">Verifying identity...</p>
+          </div>
+
+          <%# ── Result Section ── %>
+          <div id="resultSection" data-partner-scanner-target="resultSection" class="d-none">
+            <div id="scan_result_frame" data-partner-scanner-target="resultFrame">
+              <div class="text-center text-muted small py-4">
+                Scan result will appear here.
+              </div>
+            </div>
+          </div>
+
+          <%# Cancel (text link, not a giant button) — hidden in modal mode (X button does it) %>
+          <% unless modal_mode %>
+            <div class="scan-card-footer" data-partner-scanner-target="footer">
+              <button type="button"
+                      data-partner-scanner-target="cancelButton"
+                      data-action="click->partner-scanner#cancel"
+                      class="cancel-link">
+                <i class="ri-arrow-left-s-line me-1"></i>Back to Dashboard
+              </button>
+            </div>
+          <% end %>
+
+          <%# Rescan %>
+          <div class="scan-card-footer d-none" data-partner-scanner-target="rescanWrapper">
+            <button type="button"
+                    data-action="click->partner-scanner#rescan"
+                    class="rescan-btn">
+              <i class="ri-refresh-line me-1"></i>Scan Again
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+</div>
+</turbo-frame>
+
+<%# ── Styles ── %>
+<style>
+  /* ── Page Layout ── */
+  .scan-page {
+    background: transparent;
+  }
+  /* Modal-mode: drop outer container chrome since the modal provides it */
+  .scan-page--modal .scan-container { padding: 0; max-width: 100%; }
+  .scan-page--modal .scan-page .scan-card,
+  .scan-page--modal .scan-card { border: none; border-radius: 0; }
+  .scan-header {
+    position: relative;
+    padding: 16px 0;
+    max-width: 1080px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .scan-header-title-block { display: inline-block; }
+  .scan-page-title {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 1.2rem; font-weight: 700; color: #0F172A;
+    margin: 0;
+  }
+  .scan-page-title i { color: #00209F; }
+  .scan-page-subtitle {
+    font-size: 0.78rem; color: #94A3B8; margin: 4px 0 0;
+  }
+  .scan-back-btn {
+    position: absolute;
+    top: 16px; right: 0;
+    font-size: 0.82rem; font-weight: 500; color: #475569;
+    background: #FFF; border: 1px solid #E2E8F0;
+    border-radius: 10px; padding: 8px 16px;
+    text-decoration: none;
+    box-shadow: none;
+    transition: all 0.15s;
+  }
+  .scan-back-btn:hover { border-color: #CBD5E1; color: #1E293B; }
+  .scan-container { padding: 0; max-width: 1080px; margin: 0 auto; }
+
+  /* ── Scanner Card (borderless, shadow-only depth) ── */
+  /* Override global .scan-card from _hero.scss (landing page animation) */
+  .scan-page .scan-card {
+    background: #FFFFFF;
+    border-radius: 20px;
+    box-shadow: none;
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
+    opacity: 1;
+    transform: none;
+    animation: none;
+    inset: auto;
+    backdrop-filter: none;
+    backface-visibility: visible;
+    -webkit-backface-visibility: visible;
+    transform-style: flat;
+    -webkit-transform-style: flat;
+  }
+
+  /* ── Segmented Control (wide, centered, iOS-style) ── */
+  .segmented-control-wrapper {
+    padding: 20px 24px 0;
+    display: flex; justify-content: center;
+  }
+  .segmented-control {
+    display: inline-flex;
+    background: #F1F5F9;
+    border-radius: 12px;
+    padding: 4px;
+    gap: 2px;
+    width: 100%;
+    max-width: 400px;
+  }
+  .seg-btn {
+    flex: 1;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.85rem; font-weight: 500;
+    padding: 10px 20px;
+    border: none; border-radius: 10px;
+    color: #64748B; background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px;
+  }
+  .seg-btn.active {
+    background: #FFFFFF;
+    color: #00209F;
+    font-weight: 600;
+    box-shadow: none;
+  }
+  .seg-btn:not(.active):hover {
+    color: #1E293B;
+    background: rgba(255,255,255,0.5);
+  }
+
+  /* ── Camera Container (full-width, no borders) ── */
+  .camera-container {
+    position: relative;
+    background: #0F172A;
+    min-height: 360px;
+    margin: 16px 0 0;
+  }
+  .camera-feed {
+    width: 100%; min-height: 360px;
+  }
+  /* Override html5-qrcode library inline styles */
+  .camera-feed video { width: 100% !important; height: auto !important; object-fit: cover !important; }
+  .camera-feed img { display: none !important; }
+  /* Hide library's built-in overlay + corner brackets — we use .scan-overlay */
+  #qr-shaded-region {
+    display: none !important;
+  }
+  /* Prevent library from rendering a duplicate cropped video */
+  .camera-feed > div {
+    position: relative !important;
+  }
+  .camera-feed video ~ video {
+    display: none !important;
+  }
+
+  /* ── Smart Scan Overlay (dimmed bg, bright window) ── */
+  .scan-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none; z-index: 5;
+  }
+  .scan-window {
+    width: 240px; height: 240px;
+    position: relative;
+    border-radius: 20px;
+    box-shadow: 0 0 0 4000px rgba(15,23,42,0.45);
+  }
+  /* Corner brackets */
+  .scan-corner {
+    position: absolute;
+    width: 28px; height: 28px;
+    border-color: #FFFFFF;
+    border-style: solid;
+    border-width: 0;
+  }
+  .scan-corner-tl { top: -2px; left: -2px; border-top-width: 3px; border-left-width: 3px; border-top-left-radius: 12px; }
+  .scan-corner-tr { top: -2px; right: -2px; border-top-width: 3px; border-right-width: 3px; border-top-right-radius: 12px; }
+  .scan-corner-bl { bottom: -2px; left: -2px; border-bottom-width: 3px; border-left-width: 3px; border-bottom-left-radius: 12px; }
+  .scan-corner-br { bottom: -2px; right: -2px; border-bottom-width: 3px; border-right-width: 3px; border-bottom-right-radius: 12px; }
+
+  /* ── Scan Guidance (floating text at bottom of camera) ── */
+  .scan-guidance {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    color: #FFF;
+    font-size: 0.78rem; font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 20px;
+    z-index: 10;
+    white-space: nowrap;
+    display: flex; align-items: center;
+    transition: opacity 0.3s;
+  }
+  .scan-guidance i { font-size: 0.9rem; }
+
+  /* ── Camera Controls (single row, compact) ── */
+  .camera-controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12px; padding: 12px 24px;
+  }
+  .camera-select {
+    font-size: 0.78rem; padding: 6px 12px;
+    border: 1px solid #E2E8F0; border-radius: 8px;
+    background: #FFF; color: #475569;
+    cursor: pointer;
+  }
+  .upload-btn {
+    font-size: 0.78rem; font-weight: 500;
+    color: #64748B; background: transparent;
+    border: 1px dashed #CBD5E1; border-radius: 8px;
+    padding: 6px 14px; cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center;
+  }
+  .upload-btn:hover { border-color: #94A3B8; background: #F8FAFC; }
+
+  /* ── Status Bar ── */
+  .scan-status-bar {
+    margin: 0 24px 12px;
+    padding: 10px 16px; border-radius: 10px;
+    font-size: 0.8rem; font-weight: 500;
+  }
+  .scan-status-bar.alert-info { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+  .scan-status-bar.alert-warning { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+  .scan-status-bar.alert-success { background: #F0FDF4; color: #15803D; border: 1px solid #BBF7D0; }
+  .scan-status-bar.alert-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+
+  /* ── Toast Notification ── */
+  .scan-toast {
+    margin: 0 24px 16px;
+    background: #1E293B;
+    color: #E2E8F0;
+    font-size: 0.8rem; font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 10px;
+    display: flex; align-items: center;
+    animation: slideUp 0.3s ease;
+  }
+  .scan-toast i { color: #60A5FA; font-size: 1rem; }
+  .toast-action {
+    margin-left: auto;
+    background: none; border: none;
+    color: #60A5FA; font-weight: 600;
+    font-size: 0.8rem; cursor: pointer;
+    white-space: nowrap; padding: 0;
+  }
+  .toast-action:hover { color: #93C5FD; text-decoration: underline; }
+  @keyframes slideUp {
+    from { transform: translateY(8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ── Manual Entry (vertically centered hero) ── */
+  .manual-hero {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 24px 32px;
+    min-height: 400px;
+    text-align: center;
+  }
+  .manual-headline {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 800; font-size: 1.15rem; color: #00209F;
+    margin: 0 0 6px;
+  }
+  .manual-desc {
+    font-size: 0.82rem; color: #64748B; margin: 0 0 28px;
+    max-width: 300px;
+  }
+
+  /* ── 6-Box PIN Input ── */
+  .pin-group {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .pin-box {
+    width: 48px; height: 56px;
+    text-align: center; text-transform: uppercase;
+    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+    font-size: 1.5rem; font-weight: 700;
+    color: #0F172A;
+    border: 2px solid #E2E8F0;
+    border-radius: 10px;
+    background: #F8FAFC;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    caret-color: #00209F;
+  }
+  .pin-box:focus {
+    border-color: #00209F;
+    box-shadow: 0 0 0 3px rgba(0,32,159,0.1);
+    background: #FFF;
+  }
+  .pin-box.filled {
+    border-color: #00209F;
+    background: #FFF;
+  }
+  .pin-separator {
+    width: 8px; height: 3px;
+    background: #CBD5E1; border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── Where-is-this locator ── */
+  .pin-locator {
+    margin-bottom: 28px;
+  }
+  .pin-locator-card {
+    display: inline-block;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 10px 16px;
+  }
+  .pin-locator-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem; font-weight: 500;
+    color: #94A3B8;
+  }
+  .id-prefix { color: #94A3B8; }
+  .id-highlight {
+    color: #00209F; font-weight: 700;
+    background: rgba(0,32,159,0.08);
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .pin-locator-arrow {
+    font-size: 0.68rem; color: #00209F; font-weight: 600;
+    margin-top: 4px;
+    display: flex; align-items: center; justify-content: flex-end; gap: 2px;
+  }
+
+  /* ── Verify Button ── */
+  .verify-btn {
+    max-width: 320px; width: 100%;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 700; font-size: 0.92rem;
+    padding: 14px;
+    border-radius: 12px; border: none;
+    background: #00209F;
+    color: #FFF;
+    box-shadow: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .verify-btn:hover {
+    box-shadow: none;
+    transform: translateY(-1px);
+  }
+  .verify-btn:disabled {
+    opacity: 0.5; cursor: not-allowed;
+    transform: none; box-shadow: none;
+  }
+
+  /* ── Card Footer Buttons ── */
+  .scan-card-footer {
+    padding: 12px 24px 16px;
+    background: #FAFBFC;
+  }
+  .cancel-link {
+    background: none; border: none;
+    font-size: 0.8rem; font-weight: 500;
+    color: #94A3B8; cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+    width: 100%;
+  }
+  .cancel-link:hover { color: #475569; }
+  .rescan-btn {
+    width: 100%;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 500; font-size: 0.85rem;
+    padding: 10px;
+    border-radius: 10px; border: 1px solid #00209F;
+    background: transparent; color: #00209F;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rescan-btn:hover { background: rgba(0,32,159,0.04); }
+
+  /* ── Result partials: remove their own card chrome inside scanner card ── */
+  #scan_result_frame .verified-profile-card,
+  #scan_result_frame .pending-verification-card {
+    box-shadow: none; border-radius: 0;
+  }
+
+  /* ── Sidebar: Wallet Widget ── */
+  .wallet-widget {
+    background: #FFF;
+    border-radius: 16px;
+    box-shadow: none;
+    border: 1px solid #E2E8F0;
+    margin-bottom: 16px;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  .wallet-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700;
+    color: #64748B; text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 14px 18px 0;
+    display: flex; align-items: center;
+  }
+  .wallet-header i { font-size: 0.85rem; color: #00209F; }
+  .wallet-body { padding: 12px 18px 14px; }
+  .wallet-row { display: flex; }
+  .wallet-divider {
+    height: 1px; background: #F1F5F9; margin: 8px 0;
+  }
+  .wallet-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+  }
+  .wallet-item-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .wallet-item--free .wallet-item-icon { background: #EFF6FF; color: #2563EB; }
+  .wallet-item--paid .wallet-item-icon { background: #FEF2F2; color: #DC2626; }
+  .wallet-item--balance .wallet-item-icon { background: #F0FDF4; color: #059669; }
+  .wallet-item-info { display: flex; flex-direction: column; }
+  .wallet-item-value {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 1.05rem; font-weight: 700; color: #0F172A;
+    line-height: 1.2;
+  }
+  .wallet-item-label {
+    font-size: 0.7rem; color: #94A3B8; font-weight: 500;
+  }
+
+  /* ── Sidebar: Tips Card ── */
+  .tips-card {
+    background: #FFF;
+    border-radius: 16px;
+    box-shadow: none;
+    border: 1px solid #E2E8F0;
+    overflow: hidden;
+  }
+  .tips-header {
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-size: 0.72rem; font-weight: 700;
+    color: #64748B; text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 16px 18px 8px;
+    display: flex; align-items: center;
+  }
+  .tips-header i { font-size: 0.9rem; color: #F59E0B; }
+  .tips-list {
+    padding: 4px 18px 16px;
+    display: flex; flex-direction: column;
+    gap: 0;
+  }
+  .tip-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0;
+    font-size: 0.78rem; color: #475569; line-height: 1.5;
+  }
+  .tip-item + .tip-item { border-top: 1px solid #F8FAFC; }
+  .tip-item strong { color: #1E293B; }
+  .tip-icon {
+    font-size: 1rem; flex-shrink: 0; margin-top: 2px;
+  }
+  .tip-icon--blue { color: #2563EB; }
+  .tip-icon--green { color: #059669; }
+  .tip-icon--amber { color: #D97706; }
+  .tip-icon--purple { color: #7C3AED; }
+  .tip-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem; font-weight: 600;
+    background: #F1F5F9; color: #1E40AF;
+    padding: 1px 6px; border-radius: 4px;
+    margin-left: 4px;
+  }
+
+  /* ── Sidebar collapse on success ── */
+  .tips-hidden {
+    opacity: 0; max-height: 0; overflow: hidden;
+    transition: opacity 0.3s ease, max-height 0.4s ease;
+    pointer-events: none;
+  }
+  [data-partner-scanner-target="tipsSidebar"] {
+    transition: opacity 0.3s ease, max-height 0.4s ease;
+    max-height: 2000px; opacity: 1;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 991.98px) {
+    .scan-header { padding: 12px 16px; }
+    .scan-container { padding: 0 16px 16px; }
+    .tips-hidden { display: none !important; }
+  }
+  @media (max-width: 575.98px) {
+    .seg-btn { font-size: 0.8rem; padding: 10px 14px; }
+    .seg-btn i { display: none; }
+    .manual-input { font-size: 1.5rem; letter-spacing: 6px; }
+    .camera-container { min-height: 300px; }
+    .camera-feed { min-height: 300px; }
+    .scan-window { width: 200px; height: 200px; }
+  }
+</style>
+
+<audio id="beep-sound-success" preload="auto">
+  <source src="/sounds/beep-success.mp3" type="audio/mpeg">
+</audio>
+<audio id="beep-sound-error" preload="auto">
+  <source src="/sounds/beep-error.mp3" type="audio/mpeg">
+</audio>

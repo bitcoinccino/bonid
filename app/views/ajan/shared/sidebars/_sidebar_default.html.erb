@@ -1,0 +1,56 @@
+<%# app/views/ajan/shared/sidebars/_sidebar_default.html.erb %>
+<%# Fallback Ajan sidebar — mirrors partner_portal/shared/sidebars/_sidebar_default_content.html.erb.
+    Single .partner-sidebar div: desktop = position:fixed, mobile = transform slide-in (handled in SCSS). %>
+
+<%# Mobile backdrop %>
+<div class="partner-sidebar-backdrop d-lg-none"
+     data-action="click->partner-sidebar#close"
+     id="partnerSidebarBackdrop"
+     style="display:none"></div>
+
+<div class="partner-sidebar" id="partnerSidebar" data-controller="partner-sidebar">
+  <%# Mobile close button %>
+  <button type="button"
+          class="sidebar-close-btn d-lg-none"
+          data-action="click->partner-sidebar#close"
+          aria-label="Close sidebar">
+    <i class="ri-close-line"></i>
+  </button>
+
+  <ul class="nav flex-column sidebar-nav">
+    <li class="sidebar-section-label">Operasyon</li>
+
+    <li class="nav-item">
+      <%= link_to ajan_tablo_path,
+                  class: "nav-link #{'active' if current_page?(ajan_tablo_path)}" do %>
+        <i class="ri-dashboard-line"></i>
+        <span>Tablo</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to ajan_analytics_path,
+                  class: "nav-link #{'active' if current_page?(ajan_analytics_path)}" do %>
+        <i class="ri-bar-chart-box-line"></i>
+        <span>Analitik</span>
+      <% end %>
+    </li>
+
+    <li class="nav-item">
+      <%= link_to ajan_settings_path,
+                  class: "nav-link #{'active' if current_page?(ajan_settings_path)}" do %>
+        <i class="ri-settings-3-line"></i>
+        <span>Paramèt</span>
+      <% end %>
+    </li>
+  </ul>
+
+  <div class="sidebar-logout">
+    <%= button_to destroy_agent_session_path,
+                  method: :delete,
+                  class: "logout-btn" do %>
+      <i class="ri-logout-box-r-line"></i>
+      <span>Dekonekte</span>
+    <% end %>
+  </div>
+</div>

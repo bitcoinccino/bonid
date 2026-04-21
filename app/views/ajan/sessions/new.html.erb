@@ -1,0 +1,79 @@
+<%# app/views/ajan/sessions/new.html.erb %>
+<%# Sign-in page for the Agent Portal. Branded "Ajan / Agent" so it %>
+<%# reads correctly for every sector — not citizen, not admin. %>
+
+<% content_for(:title, "Pòtay Ajan — Konekte") %>
+
+<div class="d-flex align-items-center justify-content-center" style="min-height: 100vh; background: linear-gradient(135deg, #00209F 0%, #1a3bb5 100%);">
+  <div class="card shadow-lg border-0" style="max-width: 460px; width: 100%; border-radius: 1rem;">
+    <div class="card-body p-5">
+
+      <%# Brand %>
+      <div class="text-center mb-4">
+        <div class="bg-white rounded-circle d-inline-flex justify-content-center align-items-center shadow-sm mb-3"
+             style="width: 64px; height: 64px; border: 2px solid #00209F;">
+          <i class="ri-user-voice-line" style="color: #00209F; font-size: 2rem;"></i>
+        </div>
+        <h1 class="h4 fw-bold mb-1" style="color: #00209F;">Pòtay Ajan</h1>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">
+          Antre ak BonID email ou ak modpas ou.
+        </p>
+      </div>
+
+      <%# Flash %>
+      <% if flash[:alert].present? %>
+        <div class="alert alert-danger py-2" role="alert" style="font-size: 0.875rem;">
+          <%= flash[:alert] %>
+        </div>
+      <% end %>
+      <% if flash[:notice].present? %>
+        <div class="alert alert-success py-2" role="alert" style="font-size: 0.875rem;">
+          <%= flash[:notice] %>
+        </div>
+      <% end %>
+
+      <%= form_for(resource, as: resource_name, url: agent_session_path, html: { class: "mt-3" }) do |f| %>
+        <div class="mb-3">
+          <%= f.label :email, "Email", class: "form-label fw-semibold" %>
+          <%= f.email_field :email,
+                            autofocus: true,
+                            autocomplete: "email",
+                            class: "form-control form-control-lg",
+                            placeholder: "email@egzanp.ht" %>
+        </div>
+
+        <div class="mb-3">
+          <%= f.label :password, "Modpas", class: "form-label fw-semibold" %>
+          <%= f.password_field :password,
+                               autocomplete: "current-password",
+                               class: "form-control form-control-lg",
+                               placeholder: "••••••••" %>
+        </div>
+
+        <% if devise_mapping.rememberable? %>
+          <div class="form-check mb-3">
+            <%= f.check_box :remember_me, class: "form-check-input" %>
+            <%= f.label :remember_me, "Sonje m", class: "form-check-label text-muted", style: "font-size: 0.875rem;" %>
+          </div>
+        <% end %>
+
+        <div class="d-grid">
+          <%= f.submit "Konekte", class: "btn btn-primary btn-lg fw-semibold", style: "background: #00209F; border-color: #00209F;" %>
+        </div>
+      <% end %>
+
+      <%# Secondary links %>
+      <div class="text-center mt-4 pt-3 border-top">
+        <%= link_to "Bliye modpas ou?", new_agent_password_path, class: "text-decoration-none", style: "font-size: 0.875rem; color: #00209F;" %>
+      </div>
+
+      <div class="text-center mt-3">
+        <small class="text-muted" style="font-size: 0.8rem;">
+          Ou pa yon ajan?
+          <%= link_to "Konekte kòm sitwayen", new_citizen_session_path, class: "text-decoration-none", style: "color: #00209F;" %>
+        </small>
+      </div>
+
+    </div>
+  </div>
+</div>

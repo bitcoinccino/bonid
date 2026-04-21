@@ -1,0 +1,170 @@
+<%# app/views/ajan/sessions/verify_otp.html.erb %>
+<%# Agent Portal — 6-digit OTP code entry. %>
+
+<% content_for(:title, "Pòtay Ajan — Verifye Kòd") %>
+
+<div class="d-flex align-items-center justify-content-center"
+     style="min-height: 100vh; background: linear-gradient(135deg, #00209F 0%, #1a3bb5 100%);">
+  <div class="card shadow-lg border-0" style="max-width: 460px; width: 100%; border-radius: 1rem;">
+    <div class="card-body p-5">
+
+      <%# Brand %>
+      <div class="text-center mb-4">
+        <div class="bg-white rounded-circle d-inline-flex justify-content-center align-items-center shadow-sm mb-3"
+             style="width: 64px; height: 64px; border: 2px solid #00209F;">
+          <i class="ri-shield-keyhole-line" style="color: #00209F; font-size: 2rem;"></i>
+        </div>
+        <h1 class="h4 fw-bold mb-1" style="color: #00209F;">Verifye Kòd</h1>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">
+          Nou voye yon kòd 6 chif nan
+          <strong><%= params[:email] || local_assigns[:email] || "email ou" %></strong>.
+        </p>
+      </div>
+
+      <%# Flash %>
+      <% if flash[:alert].present? %>
+        <div class="alert alert-danger py-2" role="alert" style="font-size: 0.875rem;">
+          <%= flash[:alert] %>
+        </div>
+      <% end %>
+      <% if flash[:notice].present? %>
+        <div class="alert alert-success py-2" role="alert" style="font-size: 0.875rem;">
+          <%= flash[:notice] %>
+        </div>
+      <% end %>
+
+      <div id="otp-flash"></div>
+
+      <%= form_with url: ajan_verify_otp_path,
+                    method: :post,
+                    local: true,
+                    html: { data: { turbo: false }, id: "otp-form", class: "mt-3" } do |f| %>
+
+        <%= hidden_field_tag :email, params[:email] || local_assigns[:email] %>
+
+        <div class="mb-3">
+          <%= label_tag :otp, "Kòd Yon Fwa", class: "form-label fw-semibold" %>
+          <%= text_field_tag :otp, nil,
+                required: true,
+                autofocus: true,
+                maxlength: 6,
+                inputmode: "numeric",
+                pattern: "\\d{6}",
+                autocomplete: "one-time-code",
+                placeholder: "• • • • • •",
+                class: "form-control form-control-lg text-center fw-bold font-monospace",
+                style: "letter-spacing: 0.5em; font-size: 1.75rem;",
+                aria: { label: "Kòd verifikasyon 6 chif" },
+                id: "otp-input" %>
+
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <small class="text-muted">
+              <i class="ri-time-line me-1"></i>Ekspire nan
+              <span id="otp-timer" class="fw-semibold">10:00</span>
+            </small>
+          </div>
+        </div>
+
+        <div class="d-grid">
+          <%= submit_tag "Verifye & Kontinye",
+                class: "btn btn-primary btn-lg fw-semibold",
+                style: "background: #00209F; border-color: #00209F;",
+                id: "verify-button",
+                data: { disable_with: "Ap verifye…" } %>
+        </div>
+      <% end %>
+
+      <%# Resend %>
+      <div class="text-center mt-3">
+        <div id="resend-container">
+          <%= button_to "Voye kòd ankò",
+                ajan_resend_otp_path,
+                method: :post,
+                id: "resend-button",
+                class: "btn btn-link fw-semibold p-0 small",
+                style: "color: #00209F;",
+                data: { disable_with: "Ap voye…", turbo: false } %>
+        </div>
+        <p class="small text-muted d-none mt-1" id="resend-cooldown">
+          <i class="ri-time-line me-1"></i>Tann
+          <span id="cooldown-timer" class="fw-semibold">60</span>s anvan ou mande yon nouvo kòd
+        </p>
+      </div>
+
+      <%# Back %>
+      <div class="text-center mt-4 pt-3 border-top">
+        <%= link_to ajan_otp_sign_in_path,
+              class: "text-decoration-none",
+              style: "font-size: 0.875rem; color: #00209F;" do %>
+          <i class="ri-arrow-left-line me-1"></i>Eseye yon lòt email
+        <% end %>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    let expirySeconds = 600;
+    const timerEl   = document.getElementById('otp-timer');
+    const verifyBtn = document.getElementById('verify-button');
+    const otpInput  = document.getElementById('otp-input');
+
+    const expiryTimer = setInterval(() => {
+      expirySeconds--;
+      const m = Math.floor(expirySeconds / 60);
+      const s = expirySeconds % 60;
+      timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      if (expirySeconds <= 120) timerEl.classList.add('text-warning', 'fw-bold');
+
+      if (expirySeconds <= 0) {
+        clearInterval(expiryTimer);
+        timerEl.textContent = 'Ekspire';
+        timerEl.classList.replace('text-warning', 'text-danger');
+        verifyBtn.disabled = true;
+        verifyBtn.value = 'Kòd ekspire';
+        otpInput.disabled = true;
+
+        const div = document.createElement('div');
+        div.className = 'alert alert-danger mb-3';
+        div.innerHTML = '<i class="ri-error-warning-line me-2"></i><strong>Kòd la ekspire.</strong> Mande yon nouvo kòd.';
+        const flash = document.getElementById('otp-flash');
+        flash.innerHTML = '';
+        flash.appendChild(div);
+      }
+    }, 1000);
+
+    // Digits only + paste handling
+    otpInput?.addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+    otpInput?.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const nums = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').substring(0, 6);
+      otpInput.value = nums;
+    });
+
+    // Resend cooldown
+    const resendBtn       = document.getElementById('resend-button');
+    const resendContainer = document.getElementById('resend-container');
+    const cooldownMsg     = document.getElementById('resend-cooldown');
+    const cooldownTimer   = document.getElementById('cooldown-timer');
+
+    resendBtn?.addEventListener('click', () => {
+      let cd = 60;
+      resendContainer?.classList.add('d-none');
+      cooldownMsg?.classList.remove('d-none');
+
+      const interval = setInterval(() => {
+        cd--;
+        if (cooldownTimer) cooldownTimer.textContent = cd;
+        if (cd <= 0) {
+          clearInterval(interval);
+          resendContainer?.classList.remove('d-none');
+          cooldownMsg?.classList.add('d-none');
+        }
+      }, 1000);
+    });
+  });
+</script>

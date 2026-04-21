@@ -213,6 +213,59 @@ end
     },
     skip: [ :registrations ]
 
+  # Agents (partner_agent + bank_agent + bank_teller + partner_agent_surveyor
+  # + partner_agent_notary). Same User class as citizens/reviewers; separate
+  # scope gives agents their own branded login + dashboard without colliding
+  # with the citizen portal.
+  devise_for :agents,
+    class_name: "User",
+    path: "ajan",
+    path_names: { sign_in: "konekte", sign_out: "dekonekte", password: "modpas" },
+    controllers: {
+      sessions:  "ajan/sessions",
+      passwords: "ajan/passwords"
+    },
+    skip: [ :registrations ]
+
+  # Passwordless OTP sign-in for agents — mirrors the citizen flow
+  # (CitizenOtpService generates a 6-digit code; verify_otp signs the
+  # :agent scope in). Password auth is still available on the devise
+  # session routes above but the agent sign-in page redirects to OTP.
+  devise_scope :agent do
+    get  "ajan/konektekod", to: "ajan/sessions#otp_sign_in", as: :ajan_otp_sign_in
+    post "ajan/konektekod", to: "ajan/sessions#create_otp"
+    get  "ajan/verifyekod", to: "ajan/sessions#verify_otp",  as: :ajan_verify_otp
+    post "ajan/verifyekod", to: "ajan/sessions#verify_otp"
+    post "ajan/voyekod",    to: "ajan/sessions#resend_otp",  as: :ajan_resend_otp
+  end
+
+  namespace :ajan, path: "ajan" do
+    root to: "dashboard#show", as: :root
+    get "tablo", to: "dashboard#show", as: :tablo
+
+    # Agent oath — every ajan reads and signs before the dashboard unlocks.
+    # See Ajan::OathController + Ajan::ApplicationController#ensure_oath_accepted!
+    get  "serman", to: "oath#index",  as: :oath
+    post "serman", to: "oath#accept", as: :oath_accept
+
+    # BonID verification — manual + QR, mirrors partner_portal/bonid_lookups.
+    # Scan attribution goes to the agent's partner; voter eligibility is
+    # auto-checked when the partner is CEP (see controller).
+    resources :bonid_lookups, only: [ :create ] do
+      member { post :confirm }
+    end
+
+    # QR camera scan page — mirrors partner_portal/scans#index, scoped to ajan.
+    resources :scans, only: [ :index ]
+
+    # Analytics scoped to the agent's partner
+    get "analitik", to: "analytics#index", as: :analytics
+
+    # Agent account settings (change email)
+    get   "paramet", to: "settings#edit",   as: :settings
+    patch "paramet", to: "settings#update"
+  end
+
   # ===========================================================================
   # ADMIN
   # ===========================================================================

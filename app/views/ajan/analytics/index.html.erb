@@ -1,0 +1,125 @@
+<%# app/views/ajan/analytics/index.html.erb %>
+<% content_for(:title, "Pòtay Ajan — Analitik") %>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Analitik</h1>
+    <p class="text-muted mb-0"><%= current_partner.name %></p>
+  </div>
+</div>
+
+<%# ── Scan Stats ─────────────────────────────────────── %>
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Eskanaj Total</div>
+        <div class="fs-3 fw-bold"><%= number_with_delimiter(@stats[:total_scans]) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Eskanaj Jodi a</div>
+        <div class="fs-3 fw-bold"><%= number_with_delimiter(@stats[:scans_today]) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Eskanaj Mwen</div>
+        <div class="fs-3 fw-bold"><%= number_with_delimiter(@stats[:scans_mine]) %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase fw-semibold">Idantite Pa Matche</div>
+        <div class="fs-3 fw-bold text-danger"><%= number_with_delimiter(@stats[:mismatches]) %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── CEP-only Voter Stats ──────────────────────────────── %>
+<% if @voter_stats.present? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="fw-bold mb-3">
+        <i class="ri-user-voice-line me-2 text-primary"></i>Enskripsyon Votè
+      </h5>
+      <div class="text-muted small mb-3"><%= @voter_stats[:election_title] %></div>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <div class="text-muted small text-uppercase fw-semibold">Votè Enskri (Total Patnè)</div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@voter_stats[:partner_enrolled]) %></div>
+        </div>
+        <div class="col-sm-6">
+          <div class="text-muted small text-uppercase fw-semibold">Enskri Jodi a</div>
+          <div class="fs-4 fw-bold"><%= number_with_delimiter(@voter_stats[:today_enrolled]) %></div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Daily Scan Trend ────────────────────────────────── %>
+<% if @scans_by_day.any? %>
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="fw-bold mb-3">Eskanaj 14 Dènye Jou</h5>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="text-muted small text-uppercase">
+            <tr><th>Jou</th><th class="text-end">Eskanaj</th></tr>
+          </thead>
+          <tbody>
+            <% @scans_by_day.each do |day, count| %>
+              <tr>
+                <td><%= day.to_date.strftime("%d %b") %></td>
+                <td class="text-end fw-semibold"><%= number_with_delimiter(count) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Recent Scans ────────────────────────────────────── %>
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <h5 class="fw-bold mb-3">Dènye Eskanaj</h5>
+    <% if @recent_scans.any? %>
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead class="text-muted small text-uppercase">
+            <tr>
+              <th>Lè</th>
+              <th>BonID</th>
+              <th>Sitwayen</th>
+              <th>Mòd</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @recent_scans.each do |scan| %>
+              <% sub = scan.identity_submission %>
+              <tr>
+                <td><%= scan.created_at.strftime("%d %b %H:%M") %></td>
+                <td class="font-monospace small"><%= sub&.bonid %></td>
+                <td><%= sub&.user&.full_name %></td>
+                <td class="small text-muted"><%= scan.manual? ? "Manyèl" : "QR" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-muted mb-0">Poko gen eskanaj.</p>
+    <% end %>
+  </div>
+</div>

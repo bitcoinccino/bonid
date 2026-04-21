@@ -1,0 +1,89 @@
+<%# app/views/ajan/dashboard/_cep.html.erb %>
+<%# CEP Ajan Enskripsyon dashboard body. %>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(0,32,159,0.1);">
+            <i class="ri-user-add-line" style="color: #00209F; font-size: 1.5rem;"></i>
+          </div>
+          <div>
+            <div class="text-muted" style="font-size: 0.8rem;">Enskripsyon jounen an</div>
+            <div class="h4 fw-bold mb-0"><%= @today_enrollments_count || 0 %></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(46,125,50,0.1);">
+            <i class="ri-building-line" style="color: #2E7D32; font-size: 1.5rem;"></i>
+          </div>
+          <div>
+            <div class="text-muted" style="font-size: 0.8rem;">Biwo afekte</div>
+            <div class="h6 fw-bold mb-0">
+              <%= current_partner&.name.presence || "—" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(180,83,9,0.1);">
+            <i class="ri-shield-check-line" style="color: #B45309; font-size: 1.5rem;"></i>
+          </div>
+          <div>
+            <div class="text-muted" style="font-size: 0.8rem;">BonID estati</div>
+            <div class="h6 fw-bold mb-0 text-success">Verifye</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# Quick actions %>
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <h2 class="h6 fw-bold mb-3">Aksyon rapid</h2>
+    <div class="d-flex flex-wrap gap-2">
+      <%= link_to ajan_scan_path, class: "btn btn-outline-primary" do %>
+        <i class="ri-qr-scan-2-line me-1"></i> Eskane BonID
+      <% end %>
+      <%= link_to ajan_verify_path, class: "btn btn-outline-primary" do %>
+        <i class="ri-shield-check-line me-1"></i> Verifye Idantite
+      <% end %>
+      <%= link_to ajan_oath_path, class: "btn btn-outline-primary" do %>
+        <i class="ri-quill-pen-line me-1"></i> Sèman
+      <% end %>
+      <%= link_to ajan_enroll_voter_path, class: "btn btn-primary", style: "background: #00209F; border-color: #00209F;" do %>
+        <i class="ri-user-add-line me-1"></i> Anrejistre Votè
+      <% end %>
+      <%= link_to ajan_voter_lookup_path, class: "btn btn-outline-primary" do %>
+        <i class="ri-search-line me-1"></i> Chèche Votè
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# Recent enrollments placeholder %>
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+    <h2 class="h6 fw-bold mb-3">Dènye enskripsyon yo</h2>
+    <p class="text-muted mb-0" style="font-size: 0.9rem;">
+      Lis enskripsyon ou fè yo pral parèt isit la. Kòmanse ak
+      <%= link_to "Eskane BonID", ajan_scan_path, style: "color: #00209F;" %>.
+    </p>
+  </div>
+</div>

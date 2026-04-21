@@ -113,4 +113,14 @@ module GovernmentRoleConstants
   def self.role_options_for(sector)
     roles_for(sector).map { |r| [ "#{r[:label]} — #{r[:description]}", r[:key] ] }
   end
+
+  # Every agent-tier role key across all sectors. Used by the Ajan portal
+  # gate: "does this user hold any role that grants field-agent access?"
+  # Mirrors the 'admin' vs 'agent' split in each sector's role table.
+  AGENT_ROLE_KEYS = AGENCY_ROLES.values.flatten.map { |r| r[:key] }
+    .grep(/\A(partner_agent|bank_agent|bank_teller)/).uniq.freeze
+
+  def self.agent_role_keys
+    AGENT_ROLE_KEYS
+  end
 end

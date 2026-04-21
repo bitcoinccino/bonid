@@ -1,0 +1,25 @@
+<%# app/views/ajan/shared/_sidebar.html.erb %>
+<%# Sector-dispatch wrapper. Mirrors partner_portal/default.html.erb's %>
+<%# sidebar_key logic: map the partner's department_sector/sector to a %>
+<%# dedicated sidebar partial, fall back to the default if no mapping. %>
+<%# %>
+<%# To support a new sector, drop a file named _sidebar_<sector>.html.erb %>
+<%# into app/views/ajan/shared/sidebars/ — no controller change needed. %>
+
+<% sidebar_key = case current_sector
+     when "commercial_bank", "microfinance", "credit_union", "money_transfer",
+          "mobile_wallet", "payment_processor", "remittance", "fintech", "banking"
+       "banking"
+     when "embassy", "consulate", "international_org", "un_agency"
+       "embassy"
+     else
+       current_sector
+     end %>
+
+<% sidebar_partial = "ajan/shared/sidebars/sidebar_#{sidebar_key}" if sidebar_key.present? %>
+
+<% if sidebar_partial && lookup_context.exists?(sidebar_partial, [], true) %>
+  <%= render sidebar_partial %>
+<% else %>
+  <%= render "ajan/shared/sidebars/sidebar_default" %>
+<% end %>

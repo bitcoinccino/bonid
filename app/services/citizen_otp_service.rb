@@ -23,7 +23,13 @@ class CitizenOtpService
   end
 
   # === Generate & Send OTP ===
-  def generate!(fingerprint: nil, ip: nil, source: nil)
+  #
+  # mailer:        Mailer class to deliver the code (defaults to citizen-branded).
+  # mailer_action: Action on the mailer to call (defaults to :otp_login).
+  # Both are overridable so other portals (e.g., Agent Portal) can reuse the
+  # same OTP digest/session store but send a portal-appropriate email.
+  def generate!(fingerprint: nil, ip: nil, source: nil,
+                mailer: Citizens::CitizenMailer, mailer_action: :otp_login)
     enforce_cooldown!
 
     raw_otp = "%06d" % rand(0..999999)
@@ -46,7 +52,7 @@ class CitizenOtpService
     )
 
     # 📩 Send email if user has one
-    Citizens::CitizenMailer.with(user: @user, otp: raw_otp).otp_login.deliver_later if @user.email.present?
+    mailer.with(user: @user, otp: raw_otp).public_send(mailer_action).deliver_later if @user.email.present?
 
     raw_otp
   end

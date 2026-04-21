@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <title><%= content_for(:title).presence || "BonID — Pòtay Ajan" %></title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="turbo-cache-control" content="no-cache" />
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", type: "module", "data-turbo-track": "reload", defer: true %>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <%# Shared partner-admin chrome (CSS vars, .partner-navbar/.partner-sidebar
+      palette overrides, admin dropdown styles). Owned by the partner_portal
+      partial so ajan automatically picks up any future tweaks. %>
+  <%= render "partner_portal/shared/chrome_styles" %>
+</head>
+
+<% authenticated_chrome = !controller.devise_controller? && ajan_user.present? %>
+<body class="<%= authenticated_chrome ? 'partners-layout bg-light d-flex flex-column flex-lg-row min-vh-100 partner-default-layout' : 'ajan-preauth' %>"
+      data-controller="tooltip bootstrap global-loading">
+
+  <%= render "shared/global_loading" if lookup_context.template_exists?("shared/_global_loading", [], true) %>
+
+  <% if authenticated_chrome %>
+    <%= render "ajan/shared/sidebar" %>
+
+    <main class="flex-grow-1 position-relative">
+      <%= render "ajan/shared/navbar" %>
+
+      <div id="flash-messages">
+        <%= render "shared/flash" if lookup_context.template_exists?("shared/_flash", [], true) %>
+      </div>
+
+      <div class="p-4 partner-scroll-region">
+        <%= yield %>
+      </div>
+
+      <footer class="text-center py-3" style="font-size: 0.72rem; color: #94A3B8; border-top: 1px solid #F1F5F9;">
+        Powered by <strong style="color: #64748B;">BonGouv</strong>
+      </footer>
+    </main>
+  <% else %>
+    <%# Pre-auth surface (sign-in / OTP / password reset): full-screen views own their layout. %>
+    <%= yield %>
+  <% end %>
+
+  <%= yield :modals %>
+
+</body>
+</html>

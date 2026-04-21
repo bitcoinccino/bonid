@@ -1,0 +1,160 @@
+<%# app/views/ajan/dashboard/show.html.erb %>
+<% content_for(:title, "Pòtay Ajan — Tablo") %>
+
+<%# Shared scan-center CSS (.dgi-scan-*, .dgi-alerts, .dgi-metric-*) lives as a partial, not global SCSS. %>
+<%= render "partner_portal/dashboard/scan_center_styles" %>
+
+<%
+  today_scans    = current_partner.qr_scan_logs.where("created_at >= ?", Time.current.beginning_of_day).count rescue 0
+  mismatch_today = current_partner.partner_audit_logs.where(event: "identity_mismatch").where("created_at >= ?", Time.current.beginning_of_day).count rescue 0
+
+  is_cep = current_sector == "cep"
+  if is_cep
+    cep_election   = BonvoteElection.where(status: "active").order(created_at: :desc).first ||
+                     BonvoteElection.order(created_at: :desc).first
+    cep_voters     = cep_election ? VoterEligibilityRecord.where(bonvote_election: cep_election).eligible.count : 0
+    cep_candidates = cep_election ? ElectionCandidate.where(election: cep_election).pending_review.count : 0
+    cep_disputes   = cep_election ? ElectionDispute.where(election: cep_election).open.count : 0
+  end
+%>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+  <div>
+    <h1 class="h3 fw-bold mb-1">Byenveni, <%= current_agent.first_name.presence || current_agent.full_name %></h1>
+    <p class="text-muted mb-0">
+      <% if current_partner %>
+        <%= current_partner.name %>
+      <% end %>
+      <% if current_sector != "default" %>
+        · Sektè <%= current_sector.upcase %>
+      <% end %>
+    </p>
+  </div>
+</div>
+
+<%# ── ALERTS (agent-scope: info only, no partner_portal links) ── %>
+<% if mismatch_today > 0 %>
+  <div class="dgi-alerts">
+    <div class="dgi-alert-item dgi-alert-item--danger">
+      <div class="dgi-alert-icon"><i class="ri-alarm-warning-line"></i></div>
+      <div class="dgi-alert-body">
+        <strong><%= mismatch_today %> idantite pa matche</strong> jodi a
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── SCAN CENTER — mirrors partner_portal/dashboard/_scan_center.html.erb,
+     scoped to ajan_bonid_lookups_path + ajan_scans_path (QR camera). %>
+<div data-controller="lookup-modal"
+     data-lookup-modal-url-value="<%= ajan_bonid_lookups_path %>">
+  <div class="dgi-scan-center">
+    <div class="dgi-scan-card">
+      <div class="dgi-scan-visual">
+        <div class="dgi-scan-ring">
+          <div class="dgi-scan-ring-inner">
+            <i class="ri-qr-scan-2-line"></i>
+          </div>
+        </div>
+        <h2 class="dgi-scan-title">Verifye Sitwayen</h2>
+        <p class="dgi-scan-desc">Eskane kòd QR BonID oswa antre 6 dènye karaktè a</p>
+
+        <form class="dgi-scan-form"
+              data-action="submit->lookup-modal#submitManual">
+          <div class="dgi-scan-input-wrap">
+            <input type="text" name="bonid" class="dgi-scan-input"
+                   placeholder="Ex: 697XDS" maxlength="6" pattern="[A-Za-z0-9]{6}"
+                   autocomplete="off" autofocus>
+            <button type="submit" class="dgi-scan-submit">
+              <i class="ri-search-line"></i>
+            </button>
+          </div>
+        </form>
+
+        <div class="dgi-scan-divider"><span>oswa</span></div>
+
+        <%= link_to ajan_scans_path, class: "dgi-scan-qr-btn" do %>
+          <i class="ri-qr-scan-2-line me-2"></i>Eskane BonID
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Lookup modal — progressive status + result injection %>
+  <div class="modal fade" id="bonidLookupModal" tabindex="-1" aria-labelledby="bonidLookupModalLabel" aria-hidden="true"
+       data-bs-backdrop="static" data-bs-keyboard="false"
+       data-lookup-modal-target="modal">
+    <div class="modal-dialog modal-fullscreen" data-lookup-modal-target="dialog">
+      <div class="modal-content" data-lookup-modal-target="content"
+           style="background:linear-gradient(135deg,#0d132d 0%,#1a2340 50%,#0d132d 100%);border:0;">
+        <div class="modal-header d-none" data-lookup-modal-target="header"
+             style="background:#fff;border-bottom:1px solid #e5e7eb;">
+          <h5 class="modal-title" id="bonidLookupModalLabel" style="color:#0F172A;">
+            <i class="ri-shield-check-line me-2" style="color:#00209F;"></i>Verifikasyon BonID
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fèmen"></button>
+        </div>
+        <button type="button" class="btn-close btn-close-white"
+                data-bs-dismiss="modal" aria-label="Fèmen"
+                data-lookup-modal-target="floatingClose"
+                style="position:absolute;top:1rem;right:1.25rem;z-index:10;"></button>
+        <div class="modal-body p-0" style="display:flex;flex-direction:column;">
+          <div data-lookup-modal-target="status"
+               class="text-center"
+               style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:2rem;min-height:60vh;">
+            <div class="spinner-border mb-4" role="status"
+                 style="width:3.5rem;height:3.5rem;color:#fff;border-width:.35rem;"></div>
+            <div data-lookup-modal-target="statusText"
+                 style="font-family:var(--font-heading);font-weight:400;font-size:1.5rem;color:#fff;letter-spacing:.01em;">
+              Searching BonID...
+            </div>
+          </div>
+          <div id="scan_result_frame" data-lookup-modal-target="result"
+               class="d-none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# ── METRIC CARDS ── %>
+<div class="dgi-metrics">
+  <% if is_cep %>
+    <div class="dgi-metric-card">
+      <div class="dgi-metric-icon dgi-metric-icon--blue"><i class="ri-qr-scan-line"></i></div>
+      <div class="dgi-metric-data">
+        <span class="dgi-metric-num"><%= today_scans %></span>
+        <span class="dgi-metric-label">Eskanaj Jodi a</span>
+      </div>
+    </div>
+    <div class="dgi-metric-card">
+      <div class="dgi-metric-icon dgi-metric-icon--green"><i class="ri-user-voice-line"></i></div>
+      <div class="dgi-metric-data">
+        <span class="dgi-metric-num"><%= cep_voters %></span>
+        <span class="dgi-metric-label">Votè Enskri</span>
+      </div>
+    </div>
+    <div class="dgi-metric-card">
+      <div class="dgi-metric-icon dgi-metric-icon--amber"><i class="ri-user-star-line"></i></div>
+      <div class="dgi-metric-data">
+        <span class="dgi-metric-num"><%= cep_candidates %></span>
+        <span class="dgi-metric-label">Kandida Annatant</span>
+      </div>
+    </div>
+    <div class="dgi-metric-card">
+      <div class="dgi-metric-icon dgi-metric-icon--purple"><i class="ri-alarm-warning-line"></i></div>
+      <div class="dgi-metric-data">
+        <span class="dgi-metric-num"><%= cep_disputes %></span>
+        <span class="dgi-metric-label">Konfli Ouvè</span>
+      </div>
+    </div>
+  <% else %>
+    <div class="dgi-metric-card">
+      <div class="dgi-metric-icon dgi-metric-icon--blue"><i class="ri-qr-scan-line"></i></div>
+      <div class="dgi-metric-data">
+        <span class="dgi-metric-num"><%= today_scans %></span>
+        <span class="dgi-metric-label">Eskanaj Jodi a</span>
+      </div>
+    </div>
+  <% end %>
+</div>

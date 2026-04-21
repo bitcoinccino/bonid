@@ -1,0 +1,106 @@
+<%# app/views/ajan/shared/_navbar.html.erb %>
+<%# Agent Portal navbar — inherits CEP admin (.partner-navbar) chrome. %>
+<%# Brand reads partner name + AJAN badge so the operator knows whose %>
+<%# portal they're signed into. %>
+<nav class="navbar navbar-expand-lg partner-navbar fixed-top shadow-sm"
+     style="background: #0d132d; border: none;">
+  <div class="container-fluid px-3 justify-content-between align-items-center partner-navbar-inner">
+    <%# Brand + Mobile Toggle %>
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn d-lg-none text-white sidebar-toggle-btn"
+              type="button"
+              onclick="document.dispatchEvent(new CustomEvent('partner-sidebar:toggle'))"
+              aria-label="Toggle sidebar">
+        <i class="ri-menu-line ri-xl"></i>
+      </button>
+
+      <% if current_partner.present? %>
+        <div class="d-none d-lg-flex align-items-center gap-3">
+          <%
+            partner_logo_src = nil
+            if current_partner.logo.attached?
+              begin
+                # Variants require image_processing; fall back to raw blob URL
+                # (works for SVG + any format the browser can render directly).
+                partner_logo_src = url_for(current_partner.logo.variant(resize_to_limit: [ 80, 80 ]))
+              rescue StandardError
+                partner_logo_src = url_for(current_partner.logo)
+              end
+            end
+          %>
+          <% if partner_logo_src %>
+            <%= image_tag partner_logo_src,
+                  style: "width: 40px; height: 40px; object-fit: cover; border-radius: 50%; background: #fff;",
+                  alt: current_partner.name %>
+          <% else %>
+            <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700;">
+              <%= current_partner.name.to_s.strip.first(1).upcase %>
+            </div>
+          <% end %>
+          <% partner_name = current_partner.name.to_s.strip %>
+          <% abbr_match = partner_name.match(/\s*\(([A-Z]{2,})\)\s*/) %>
+          <div style="display: flex; flex-direction: column; line-height: 1.2;">
+            <span style="color: #fff; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              <%= abbr_match ? partner_name.sub(abbr_match[0], "").strip : partner_name %>
+            </span>
+            <span style="color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 600; letter-spacing: 0.05em;">
+              <%= abbr_match ? "#{abbr_match[1]} · AJAN" : "AJAN" %>
+            </span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Right side: greeting + dropdown %>
+    <div class="d-flex align-items-center gap-3">
+      <span class="d-none d-md-inline" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);">
+        Byenveni, <strong style="color: #fff;"><%= ajan_user&.first_name.presence || ajan_user&.full_name || "Ajan" %></strong>
+      </span>
+
+      <div class="dropdown partner-admin-dropdown">
+        <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+           href="#"
+           id="ajanDropdown"
+           role="button"
+           data-bs-toggle="dropdown"
+           aria-expanded="false">
+          <% has_agent_photo = ajan_user&.photo&.attached? rescue false %>
+          <% if has_agent_photo %>
+            <%= image_tag(
+              url_for(ajan_user.photo.variant(resize_to_limit: [36, 36])),
+              style: "width: 36px; height: 36px; object-fit: cover; border-radius: 50%;",
+              alt: ajan_user.full_name
+            ) %>
+          <% else %>
+            <div class="rounded-circle d-flex justify-content-center align-items-center"
+                 style="width: 36px; height: 36px; background: rgba(255,255,255,0.15); color: #fff; font-size: 14px; font-weight: 700;">
+              <%= (ajan_user&.first_name || ajan_user&.full_name || "A").to_s.strip.first(1).upcase %>
+            </div>
+          <% end %>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm partner-admin-menu" aria-labelledby="ajanDropdown">
+          <li class="px-3 py-2 border-bottom">
+            <div class="fw-semibold"><%= ajan_user&.full_name.presence || "Ajan" %></div>
+            <small class="text-muted"><%= current_partner&.name || "Ajan" %></small>
+            <% if ajan_user&.bonid.present? %>
+              <div class="mt-1" style="font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #64748B;">
+                <%= mask_bonid(ajan_user.bonid) %>
+              </div>
+            <% end %>
+          </li>
+          <li>
+            <%= link_to ajan_tablo_path, class: "dropdown-item" do %>
+              <i class="ri-dashboard-line me-2"></i> Tablo
+            <% end %>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <%= button_to destroy_agent_session_path, method: :delete, class: "dropdown-item text-danger" do %>
+              <i class="ri-logout-box-r-line me-2"></i> Dekonekte
+            <% end %>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>

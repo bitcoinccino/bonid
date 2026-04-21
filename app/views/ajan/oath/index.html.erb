@@ -1,0 +1,576 @@
+<%# Ajan Sèman — per-agent oath gate.
+    Uses the SAME shared accordion format as citizens/election/vote/oath.html.erb
+    and partner_portal/guidelines_acceptance so the review-and-acknowledge
+    UX is identical across every BonID surface that gates access behind a
+    signed oath. %>
+<% content_for(:title) { "Sèman Ajan — BonID" } %>
+
+<div class="ajan-oath-page">
+  <nav class="ajan-oath-topbar">
+    <div class="ajan-oath-topbar-inner">
+      <div class="ajan-oath-brand">
+        <div class="ajan-oath-monogram">B</div>
+        <span class="ajan-oath-brand-sep"></span>
+        <span class="ajan-oath-brand-text">Pòtay Ajan</span>
+      </div>
+      <div class="ajan-oath-user">
+        <% has_photo = @agent&.photo&.attached? rescue false %>
+        <% if has_photo %>
+          <%= image_tag url_for(@agent.photo), class: "ajan-oath-user-avatar" %>
+        <% else %>
+          <div class="ajan-oath-user-avatar ajan-oath-user-avatar--initial">
+            <%= (@agent&.first_name || @agent&.full_name || "A").to_s.first.upcase %>
+          </div>
+        <% end %>
+        <span class="ajan-oath-user-name d-none d-md-inline">
+          <%= @agent&.full_name || @agent&.email %>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="ballot-wrap ajan-oath-content px-0" style="padding-bottom: 0;">
+
+    <div class="ballot-head text-center">
+      <h1 class="ballot-title">
+        <i class="ri-quill-pen-line me-2"></i>Sèman Ajan BonID
+      </h1>
+      <p class="ballot-subtitle mb-0">
+        Anvan w ka itilize Pòtay Ajan an, li atansyon e siyen.
+      </p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-9">
+
+        <% if flash[:alert].present? %>
+          <div class="alert alert-danger rounded-3 mb-4 d-flex align-items-center">
+            <i class="ri-error-warning-line me-2" style="font-size:1.1rem;"></i>
+            <%= flash[:alert] %>
+          </div>
+        <% end %>
+
+        <% if @partner.present? %>
+          <div class="ajan-oath-context-card">
+            <div class="ajan-oath-context-left">
+              <% partner_logo_src = nil %>
+              <% if @partner.logo.attached? %>
+                <% begin
+                     partner_logo_src = url_for(@partner.logo.variant(resize_to_limit: [ 96, 96 ]))
+                   rescue StandardError
+                     partner_logo_src = url_for(@partner.logo)
+                   end %>
+              <% end %>
+              <% if partner_logo_src %>
+                <%= image_tag partner_logo_src, class: "ajan-oath-partner-logo" %>
+              <% else %>
+                <div class="ajan-oath-partner-logo-placeholder">
+                  <%= @partner.name.first(2).upcase %>
+                </div>
+              <% end %>
+              <div>
+                <strong class="ajan-oath-partner-name"><%= @partner.name %></strong>
+                <span class="ajan-oath-partner-meta">
+                  Sektè <%= (@partner.department_sector || @partner.sector).to_s.upcase.presence || "N/A" %>
+                  &middot;
+                  <%= @agent&.full_name || @agent&.email %>
+                </span>
+              </div>
+            </div>
+            <span class="ajan-oath-version-tag"><%= @version %></span>
+          </div>
+        <% end %>
+
+        <%# ── Oath cards (shared accordion format) ─────────────────
+            Same `.oath-gl-cards` pattern used by the citizen voter
+            oath and partner_portal guidelines acceptance. Opening a
+            card marks it "read" (green border + "Li" badge). %>
+        <div class="oath-gl-cards">
+          <% @oath_items.each do |item| %>
+            <% key    = item[:key] %>
+            <% anchor = "oath-gl-collapse-#{key.to_s.dasherize}" %>
+            <div class="oath-gl-card" data-oath-guideline="<%= key %>">
+              <button class="oath-gl-card-header" type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#<%= anchor %>"
+                      aria-expanded="false"
+                      aria-controls="<%= anchor %>">
+                <div class="oath-gl-card-header-left">
+                  <div class="oath-gl-card-icon" style="background: <%= item[:color] %>15; color: <%= item[:color] %>;">
+                    <i class="<%= item[:icon] %>"></i>
+                  </div>
+                  <div>
+                    <span class="oath-gl-card-title"><%= item[:title] %></span>
+                    <span class="oath-gl-card-summary"><%= item[:summary] %></span>
+                  </div>
+                </div>
+                <div class="oath-gl-card-chevron"><i class="ri-arrow-down-s-line"></i></div>
+              </button>
+              <div class="collapse" id="<%= anchor %>">
+                <div class="oath-gl-card-body">
+                  <% item[:items].each do |line| %>
+                    <div class="oath-gl-item">
+                      <i class="<%= line[:icon] %> oath-gl-item-check" style="color: <%= item[:color] %>;"></i>
+                      <span class="oath-gl-item-text"><%= line[:text].html_safe %></span>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+              <div class="oath-gl-read-indicator d-none" id="oath-gl-read-<%= key %>">
+                <i class="ri-check-line"></i> Li
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Expand all link %>
+        <div class="text-center mt-3 mb-4">
+          <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none" id="oathGlExpandAll">
+            <i class="ri-expand-up-down-line me-1"></i>
+            Louvri tout seksyon
+          </button>
+        </div>
+
+        <%# ── BonID Signature + Continue ─────────────────────
+            Same pattern as voter oath: show the agent's own BonID
+            signature image (from their approved KYC submission), their
+            full name, masked BonID, and QR. Source badge makes clear
+            the signature was pulled from BonID, not drawn here
+            (matches the signature-sourcing guideline). %>
+        <%= form_with url: ajan_oath_accept_path, method: :post, local: true do |f| %>
+          <div class="oath-signature">
+
+            <label class="form-check-label oath-signature__label" for="oath_accepted">
+              Mwen, <strong><%= @agent&.full_name || @agent&.email %></strong>, deklare
+              solanèlman ke mwen li epi mwen aksepte sèman Ajan BonID la.
+              Mwen angaje m pou m respekte li nan tout travay mwen kòm ajan
+              <strong><%= @partner&.name %></strong>.
+              <strong>Mwen siyen sèman sa a ak siyati BonID mwen an.</strong>
+            </label>
+
+            <div class="oath-bonid-card mt-3">
+              <div class="oath-bonid-card__source">
+                <i class="ri-verified-badge-fill"></i>
+                Siyati sa a soti nan <strong>BonID</strong> ou
+              </div>
+              <div class="d-flex align-items-end gap-3 flex-wrap">
+                <div class="oath-bonid-card__signature">
+                  <% if @bonid_submission&.signature&.attached? %>
+                    <%= image_tag @bonid_submission.signature.variant(resize_to_limit: [ 420, 160 ]),
+                                  class: "oath-bonid-card__signature-img",
+                                  alt: "Siyati #{@agent&.full_name}" %>
+                  <% else %>
+                    <div class="oath-bonid-card__script"><%= @agent&.full_name %></div>
+                  <% end %>
+                  <div class="mt-2">
+                    <span class="oath-bonid-card__name"><%= @agent&.full_name %></span>
+                    <br>
+                    <% if @agent&.bonid.present? %>
+                      <code class="oath-bonid-card__id"><%= mask_bonid(@agent.bonid) %></code>
+                    <% end %>
+                  </div>
+                </div>
+
+                <% if @bonid_submission&.respond_to?(:secure_qr_png_base64) && @bonid_submission&.secure_qr_png_base64.present? %>
+                  <div class="text-center">
+                    <img src="data:image/png;base64,<%= @bonid_submission.secure_qr_png_base64 %>"
+                         style="width: 72px; height: 72px;"
+                         alt="QR Verifikasyon">
+                    <br>
+                    <small class="oath-bonid-card__qr-label">Verifye</small>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="form-check mt-3">
+              <input type="checkbox" name="confirmed" value="1" id="oath_accepted"
+                     class="form-check-input" required
+                     onchange="document.getElementById('oath_submit').disabled = !this.checked;">
+              <label class="form-check-label oath-signature__confirm-label" for="oath_accepted">
+                Mwen konfime siyati BonID mwen an anwo a e mwen aksepte sèman an
+                <span class="text-danger">*</span>
+              </label>
+            </div>
+          </div>
+
+          <%# Only the submit lives inside this form — the logout button is
+              rendered as a sibling form below to avoid nested <form> elements,
+              which browsers silently unwrap and would break this submit. %>
+          <div class="ajan-oath-actions ajan-oath-actions--submit">
+            <button type="submit" id="oath_submit" class="ajan-oath-btn ajan-oath-btn--primary" disabled>
+              <i class="ri-quill-pen-line me-1"></i> Siyen ak kontinye
+            </button>
+          </div>
+        <% end %>
+
+        <div class="ajan-oath-actions ajan-oath-actions--logout">
+          <%= button_to destroy_agent_session_path, method: :delete, class: "ajan-oath-btn ajan-oath-btn--secondary", form: { style: "display:inline;" } do %>
+            <i class="ri-logout-box-r-line me-1"></i> Refize ak dekonekte
+          <% end %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* ── Page chrome (topbar + header) ───────────────────────── */
+  .ajan-oath-page {
+    min-height: 100vh;
+    background: #F8F9FA;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    color: #1C1C1C;
+  }
+  .ajan-oath-topbar {
+    background: #0d132d;
+    color: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .ajan-oath-topbar-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .ajan-oath-brand { display: flex; align-items: center; gap: 12px; }
+  .ajan-oath-monogram {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: #FFD700; color: #0d132d;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem;
+  }
+  .ajan-oath-brand-sep { width: 1px; height: 24px; background: rgba(255,255,255,0.2); }
+  .ajan-oath-brand-text { font-weight: 600; font-size: 0.95rem; letter-spacing: 0.01em; }
+  .ajan-oath-user { display: flex; align-items: center; gap: 10px; }
+  .ajan-oath-user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover;
+  }
+  .ajan-oath-user-avatar--initial {
+    background: rgba(255,255,255,0.15); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem;
+  }
+  .ajan-oath-user-name { font-size: 0.85rem; color: rgba(255,255,255,0.9); }
+
+  .ajan-oath-content { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  /* Ballot header (reuses the same look voter oath uses). */
+  .ballot-head { margin-bottom: 20px; }
+  .ballot-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800; font-size: 1.75rem; color: #0d132d;
+    margin: 0 0 8px;
+  }
+  .ballot-subtitle {
+    font-size: 0.92rem; color: #6C757D; max-width: 560px; margin: 0 auto; line-height: 1.5;
+  }
+
+  /* Partner context card — small strip above the oath cards. */
+  .ajan-oath-context-card {
+    background: #fff;
+    border: 1px solid rgba(0,32,159,0.12);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .ajan-oath-context-left { display: flex; align-items: center; gap: 12px; }
+  .ajan-oath-partner-logo, .ajan-oath-partner-logo-placeholder {
+    width: 44px; height: 44px; border-radius: 10px; object-fit: cover;
+    background: #fff; border: 1px solid rgba(0,32,159,0.15);
+  }
+  .ajan-oath-partner-logo-placeholder {
+    display: flex; align-items: center; justify-content: center;
+    color: #00209F; font-weight: 800; font-size: 0.95rem;
+  }
+  .ajan-oath-partner-name { display: block; font-weight: 700; color: #0d132d; font-size: 0.95rem; line-height: 1.2; }
+  .ajan-oath-partner-meta { display: block; font-size: 0.78rem; color: #6C757D; margin-top: 2px; }
+  .ajan-oath-version-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem; color: #00209F; font-weight: 700;
+    background: rgba(0,32,159,0.08);
+    padding: 4px 8px; border-radius: 6px;
+  }
+
+  /* ── Shared oath accordion (mirrors voter oath) ───────────── */
+  .oath-gl-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 0.5rem;
+  }
+  .oath-gl-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .oath-gl-card:hover { border-color: #c7d2fe; }
+  .oath-gl-card.oath-gl-card--read { border-color: #a7f3d0; }
+
+  .oath-gl-card-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+    gap: 12px;
+    transition: background 0.15s;
+  }
+  .oath-gl-card-header:hover { background: #f9fafb; }
+  .oath-gl-card-header[aria-expanded="true"] {
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .oath-gl-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+  }
+  .oath-gl-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+  }
+  .oath-gl-card-title {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.3;
+  }
+  .oath-gl-card-summary {
+    display: block;
+    font-size: 0.78rem;
+    color: #9ca3af;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .oath-gl-card-chevron {
+    color: #9ca3af;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    display: inline-flex;
+  }
+  .oath-gl-card-header[aria-expanded="true"] .oath-gl-card-chevron {
+    transform: rotate(180deg);
+  }
+
+  .oath-gl-card-body { padding: 4px 18px 16px; }
+  .oath-gl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid #f9fafb;
+  }
+  .oath-gl-item:last-child { border-bottom: none; }
+  .oath-gl-item-check {
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+    line-height: 1;
+  }
+  .oath-gl-item-text {
+    font-size: 0.86rem;
+    color: #374151;
+    line-height: 1.55;
+  }
+  .oath-gl-item-text strong {
+    color: #0F172A;
+    font-weight: 700;
+  }
+
+  .oath-gl-read-indicator {
+    position: absolute;
+    top: 14px;
+    right: 48px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Signature block — matches voter oath pattern. */
+  .oath-signature {
+    background: #F8F9FC;
+    border: 1px solid #E4E7EC;
+    border-radius: 0.875rem;
+    padding: 1rem 1.1rem;
+  }
+  .oath-signature__label {
+    font-size: 0.82rem;
+    color: #344054;
+    line-height: 1.55;
+    cursor: pointer;
+  }
+  .oath-signature .form-check-input {
+    margin-top: 0.25rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: #00209F;
+    cursor: pointer;
+  }
+  .oath-signature__confirm-label {
+    font-size: 0.82rem;
+    color: #344054;
+    line-height: 1.5;
+  }
+
+  /* BonID signature card — source badge makes sourcing explicit. */
+  .oath-bonid-card {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-radius: 0.75rem;
+    padding: 0.9rem 1rem 1rem;
+  }
+  .oath-bonid-card__source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #92400E;
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.65rem;
+  }
+  .oath-bonid-card__source i {
+    font-size: 0.9rem;
+    color: #B45309;
+  }
+  .oath-bonid-card__signature {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .oath-bonid-card__signature-img {
+    display: block;
+    max-width: 100%;
+    max-height: 130px;
+    height: auto;
+    width: auto;
+  }
+  .oath-bonid-card__script {
+    font-family: 'Homemade Apple', 'Dancing Script', cursive;
+    font-size: 2.4rem;
+    color: #0F172A;
+    line-height: 1.1;
+    display: inline-block;
+  }
+  .oath-bonid-card__name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0F172A;
+  }
+  .oath-bonid-card__id {
+    font-size: 0.8rem;
+    color: #64748B;
+    background: transparent;
+    padding: 0;
+    letter-spacing: 0.4px;
+  }
+  .oath-bonid-card__qr-label {
+    font-size: 0.7rem;
+    color: #64748B;
+  }
+
+  /* Actions. Submit sits inside the oath form; logout is a sibling form
+     below, rendered left-aligned so the two buttons stack cleanly even
+     though they live in different <form> elements. */
+  .ajan-oath-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .ajan-oath-actions--submit { justify-content: flex-end; }
+  .ajan-oath-actions--logout { justify-content: flex-start; margin-top: 10px; }
+  .ajan-oath-btn {
+    border: 0; border-radius: 10px;
+    font-family: 'Inter', 'Montserrat', sans-serif;
+    font-weight: 600; font-size: 0.9rem;
+    padding: 11px 18px; cursor: pointer;
+    display: inline-flex; align-items: center;
+    transition: all 0.15s;
+  }
+  .ajan-oath-btn--primary { background: #00209F; color: #fff; }
+  .ajan-oath-btn--primary:hover:not([disabled]) { background: #032B77; }
+  .ajan-oath-btn--primary[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+  }
+  .ajan-oath-btn--secondary { background: #fff; color: #6C757D; border: 1px solid #E2E8F0; }
+  .ajan-oath-btn--secondary:hover { background: #F8F9FA; color: #475569; }
+
+  @media (max-width: 575.98px) {
+    .ballot-title { font-size: 1.4rem; }
+    .ajan-oath-actions { flex-direction: column-reverse; align-items: stretch; }
+    .ajan-oath-btn { justify-content: center; }
+  }
+</style>
+
+<script>
+  // Mirror voter oath: opening a card marks it "read", and the
+  // "Louvri tout seksyon" button toggles every card at once.
+  (function() {
+    function init() {
+      var cards = document.querySelectorAll(".oath-gl-card");
+      if (!cards.length) return;
+      var collapses = document.querySelectorAll(".oath-gl-cards .collapse");
+      var expandAllBtn = document.getElementById("oathGlExpandAll");
+      var readSections = new Set();
+
+      collapses.forEach(function(el) {
+        if (el.dataset.oathBound === "1") return;
+        el.dataset.oathBound = "1";
+        el.addEventListener("shown.bs.collapse", function() {
+          var card = this.closest(".oath-gl-card");
+          if (!card) return;
+          var key = card.dataset.oathGuideline;
+          readSections.add(key);
+          var indicator = document.getElementById("oath-gl-read-" + key);
+          if (indicator) indicator.classList.remove("d-none");
+          card.classList.add("oath-gl-card--read");
+        });
+      });
+
+      if (expandAllBtn && expandAllBtn.dataset.oathBound !== "1") {
+        expandAllBtn.dataset.oathBound = "1";
+        expandAllBtn.addEventListener("click", function() {
+          var allOpen = readSections.size === cards.length;
+          collapses.forEach(function(c) {
+            var bsCollapse = bootstrap.Collapse.getOrCreateInstance(c, { toggle: false });
+            if (allOpen) { bsCollapse.hide(); } else { bsCollapse.show(); }
+          });
+          this.innerHTML = allOpen
+            ? '<i class="ri-expand-up-down-line me-1"></i> Louvri tout seksyon'
+            : '<i class="ri-contract-up-down-line me-1"></i> Fèmen tout seksyon';
+        });
+      }
+    }
+    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("turbo:load", init);
+  })();
+</script>

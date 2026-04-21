@@ -12,12 +12,24 @@
 
 Rails.logger.info "🧩 [Warden] Safe hooks initialized"
 
+# Warden hooks for scopes that use a non-ActiveRecord serializer (or mid-flight
+# deserialization) can yield `user` as a Hash rather than the model instance.
+# The :agent scope has hit this. These logging-only hooks must never crash
+# auth, so `.id` is guarded via a local lambda (no global method pollution).
+user_tag = ->(user) {
+  if user.respond_to?(:id)
+    "#{user.class.name}(##{user.id})"
+  else
+    "#{user.class.name}(#{user.inspect.to_s[0, 80]})"
+  end
+}
+
 # --- After user successfully set in session ---
 Warden::Manager.after_set_user except: :fetch do |user, auth, opts|
   next unless user.present?
 
   scope = opts[:scope] || "unknown"
-  Rails.logger.debug "✅ [Warden] after_set_user: #{user.class.name}(##{user.id}) [scope=#{scope}]"
+  Rails.logger.debug "✅ [Warden] after_set_user: #{user_tag.call(user)} [scope=#{scope}]"
 end
 
 # --- After authentication ---
@@ -25,7 +37,7 @@ Warden::Manager.after_authentication do |user, auth, opts|
   next unless user.present?
 
   scope = opts[:scope] || "unknown"
-  Rails.logger.debug "🔐 [Warden] after_authentication: #{user.class.name}(##{user.id}) [scope=#{scope}]"
+  Rails.logger.debug "🔐 [Warden] after_authentication: #{user_tag.call(user)} [scope=#{scope}]"
 end
 
 # --- Before logout ---
@@ -33,7 +45,7 @@ Warden::Manager.before_logout do |user, auth, opts|
   next unless user.present?
 
   scope = opts[:scope] || "unknown"
-  Rails.logger.debug "🚪 [Warden] before_logout: #{user.class.name}(##{user.id}) [scope=#{scope}]"
+  Rails.logger.debug "🚪 [Warden] before_logout: #{user_tag.call(user)} [scope=#{scope}]"
 end
 
 # --- After logout ---

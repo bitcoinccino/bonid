@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_19_024000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_20_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2200,9 +2200,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_024000) do
     t.string "suffix"
     t.string "ninu", limit: 10
     t.datetime "last_seen_at"
+    t.datetime "ajan_oath_accepted_at"
+    t.string "ajan_oath_version", limit: 16
     t.index ["active"], name: "index_users_on_active"
     t.index ["address_id"], name: "index_users_on_address_id"
     t.index ["agent_rank"], name: "index_users_on_agent_rank"
+    t.index ["ajan_oath_accepted_at"], name: "index_users_on_ajan_oath_accepted_at"
     t.index ["bonid"], name: "index_users_on_bonid_unique", unique: true, where: "(bonid IS NOT NULL)"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["dob"], name: "index_users_on_dob"
