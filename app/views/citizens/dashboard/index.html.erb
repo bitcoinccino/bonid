@@ -9,20 +9,24 @@
 <%= turbo_stream_from "citizen_#{current_citizen.id}_family" %>
 <%= turbo_stream_from "citizen_#{current_citizen.id}_consents" %>
 
+<% if @approved_submission.present? %>
+  <%# Dashboard Title — rendered OUTSIDE .citizen-dashboard so it can span the
+      layout's full width. .citizen-dashboard is capped at ~400px for the wallet
+      aesthetic, which caused the h1 + subtitle to stack awkwardly. %>
+  <div class="ballot-head text-center mb-4">
+    <h1 class="ballot-title">
+      <i class="ri-dashboard-line me-2"></i>My BonID Dashboard
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      View your verified identity card, manage your profile information, and access all BonID services from one place.
+    </p>
+  </div>
+<% end %>
+
 <section class="<%= dashboard_class %>" data-controller="wallet-stack">
   <% if @approved_submission.present? %>
     <%# ========== VERIFIED USER - WALLET VIEW ========== %>
     <% submission = @approved_submission %>
-
-    <%# Dashboard Title %>
-    <div class="mb-4">
-      <h3 class="citizen-page-title mb-1">
-        <i class="ri-dashboard-line me-2"></i>My BonID Dashboard
-      </h3>
-      <p class="text-muted mb-0" style="font-size: 0.78rem;">
-        View your verified identity card, manage your profile information, and access all BonID services from one place.
-      </p>
-    </div>
 
     <%# ========== ALERTS — Pending transactions + BonID status ========== %>
     <%= render "citizens/dashboard/pending_alerts" %>

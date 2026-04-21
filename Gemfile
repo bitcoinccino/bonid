@@ -54,7 +54,7 @@ gem "bootsnap", require: false
 gem "rack-attack"
 
 # === Authentication / Authorization ===
-gem "devise", github: "heartcombo/devise"
+gem "devise", "~> 4.9"
 gem "devise_invitable", github: "scambra/devise_invitable"
 gem "devise-two-factor"
 gem "pundit"

@@ -219,6 +219,7 @@
         <p>Eskane kòd QR sou yon resi BonVote ak telefòn ou pou wè si li otantik.</p>
       </div>
     <% else %>
+      <div id="vr-previous-result">
       <% if @result[:ok] %>
         <%# ── Citizen-first verdict ── %>
         <div class="vr-verdict vr-verdict-ok">
@@ -326,11 +327,12 @@
           <% end %>
         </div>
       </details>
+      </div>
     <% end %>
 
     <%# Citizen-friendly verify form — paste/type voter reference. The
         raw-JSON path is hidden in a sub-toggle for observers/auditors. %>
-    <details class="vr-paste" <%= "open" if @result.blank? %>>
+    <details class="vr-paste" id="vr-paste" <%= "open" if @result.blank? %>>
       <summary>
         <i class="ri-search-line me-1"></i>Verifye yon lòt resi
       </summary>
@@ -354,6 +356,28 @@
         </details>
       <% end %>
     </details>
+
+    <script>
+      (function () {
+        var paste = document.getElementById("vr-paste");
+        var prev  = document.getElementById("vr-previous-result");
+        if (!paste) return;
+
+        function hidePrevious() {
+          if (prev) prev.style.display = "none";
+        }
+
+        // Hide previous verdict as soon as user opens the "check another" form.
+        paste.addEventListener("toggle", function () {
+          if (paste.open) hidePrevious();
+        });
+
+        // Also hide on submit so the old verdict doesn't flash while the new
+        // one is loading.
+        var form = paste.querySelector("form");
+        if (form) form.addEventListener("submit", hidePrevious);
+      })();
+    </script>
 
     <div class="vr-footer">
       <a href="<%= receipt_v1_spec_path %>">Espesifikasyon teknik</a>
