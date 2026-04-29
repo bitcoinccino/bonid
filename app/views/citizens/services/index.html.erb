@@ -42,13 +42,18 @@
       <% end %>
     </select>
 
-    <button type="submit" class="sevis-filter-btn">Filtre</button>
-
     <% if @search.present? || @sector_filter.present? %>
       <a href="<%= citizens_services_path %>" class="sevis-clear-link">
         <i class="ri-close-line"></i> Efase
       </a>
     <% end %>
+
+    <%# Hidden submit so Enter in the search input still posts on browsers
+        that don't auto-submit on implicit form action. The visible "Filtre"
+        button was overflowing on narrow phones — sector auto-submits on
+        change and the search input auto-submits on Enter, so no button
+        is needed in the visual layout. %>
+    <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Submit</button>
   </div>
 </form>
 

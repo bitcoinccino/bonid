@@ -112,6 +112,7 @@ register("certificate-toggle", () =>
   // ───────── Wizard / Units ─────────
   register("multi-step-schema-form", () => import("./multi_step_schema_form_controller"))
   register("wizard", () => import("./wizard_controller"))
+  register("reveal", () => import("./reveal_controller"))
   register("polling-center-type", () => import("./polling_center_type_controller"))
   register("electoral-office-type", () => import("./electoral_office_type_controller"))
   register("mission-participation", () => import("./mission_participation_controller"))

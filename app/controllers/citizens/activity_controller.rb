@@ -13,6 +13,14 @@ module Citizens
     DEFAULT_WINDOW_DAYS = 30
 
     def index
+      # Stamp first so the topbar bell renders with the new `seen_at` and
+      # the badge clears on this same response. Update the in-memory record
+      # via update_columns (skips callbacks/touch) and `current_citizen`
+      # reflects the new value because update_columns mutates the loaded
+      # attributes — no reload needed.
+      current_citizen.update_columns(notifications_seen_at: Time.current)
+      Citizens::AlertBroadcastJob.perform_later(current_citizen.id)
+
       @tab      = TABS.include?(params[:tab]) ? params[:tab] : "all"
       @filter   = CATEGORIES.include?(params[:filter]) ? params[:filter] : "all"
       @from, @to = normalized_date_range
@@ -49,7 +57,7 @@ module Citizens
       allow = ->(cat) { @filter == "all" || @filter == cat.to_s }
 
       scans    = allow.call(:security)       ? within_window(scan_logs_scope, :scanned_at).count            : 0
-      grants   = allow.call(:administrative) ? within_window(consent_grants_scope, :created_at).count       : 0
+      grants   = allow.call(:administrative) ? consent_grant_events_in_window.size                          : 0
       txn      = allow.call(:financial)      ? within_window(transaction_consents_scope, :created_at).count : 0
       apps     = allow.call(:administrative) ? within_window(service_applications_scope, :updated_at).count : 0
       oaths    = allow.call(:administrative) ? within_window(oaths_scope, :accepted_at).count               : 0
@@ -83,6 +91,26 @@ module Citizens
 
     def within_window(scope, column)
       scope.where(column => @from.beginning_of_day..@to.end_of_day)
+    end
+
+    # Each ConsentGrant fans out into one event per audit_log entry. Window
+    # filtering uses the event timestamp, not the row's created_at, so a
+    # grant first created months ago that gets re-approved today still
+    # surfaces for today.
+    def consent_grant_events_in_window
+      @consent_grant_events_in_window ||= begin
+        grants = consent_grants_scope.includes(partner: { logo_attachment: :blob })
+        grants.flat_map { |g| CitizenActivityEvent.events_from_consent_grant(g) }
+              .select  { |e| event_in_window?(e) }
+              .sort_by { |e| e.timestamp || Time.at(0) }
+              .reverse
+      end
+    end
+
+    def event_in_window?(event)
+      ts = event.timestamp
+      return false if ts.blank?
+      ts >= @from.beginning_of_day && ts <= @to.end_of_day
     end
 
     def apply_category_filter(events, filter)
@@ -122,17 +150,14 @@ module Citizens
     end
 
     def load_consents
-      grants = within_window(consent_grants_scope, :created_at)
-                 .includes(partner: { logo_attachment: :blob })
-                 .order(created_at: :desc)
-                 .limit(100)
+      grant_events = consent_grant_events_in_window
       txn = within_window(transaction_consents_scope, :created_at)
               .includes(partner: { logo_attachment: :blob })
               .order(created_at: :desc)
               .limit(100)
 
-      merged = grants.map { |g| CitizenActivityEvent.from_consent_grant(g) } +
-               txn.map   { |t| CitizenActivityEvent.from_transaction_consent(t) }
+      merged = grant_events +
+               txn.map { |t| CitizenActivityEvent.from_transaction_consent(t) }
       merged.sort_by! { |e| e.timestamp || Time.at(0) }.reverse!
       Kaminari.paginate_array(merged).page(params[:page]).per(20)
     end
@@ -181,11 +206,9 @@ module Citizens
         .limit(TOP_N_PER_SOURCE_FOR_ALL_TAB)
         .each { |l| events << CitizenActivityEvent.from_qr_scan(l) }
 
-      within_window(consent_grants_scope, :created_at)
-        .includes(partner: { logo_attachment: :blob })
-        .order(created_at: :desc)
-        .limit(TOP_N_PER_SOURCE_FOR_ALL_TAB)
-        .each { |g| events << CitizenActivityEvent.from_consent_grant(g) }
+      consent_grant_events_in_window
+        .first(TOP_N_PER_SOURCE_FOR_ALL_TAB)
+        .each { |e| events << e }
 
       within_window(transaction_consents_scope, :created_at)
         .includes(partner: { logo_attachment: :blob })

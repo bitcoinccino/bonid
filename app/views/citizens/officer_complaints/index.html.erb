@@ -1,19 +1,25 @@
-<div class="px-0">
+<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head). %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Page Header (standard citizen pattern) ── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="citizen-page-title mb-1">
-        <i class="ri-file-shield-2-line me-2"></i>Mes Plaintes
-      </h3>
-      <p class="text-muted mb-0" style="font-size: 0.78rem;">
-        Suivi en temps réel de vos dossiers auprès de l'IGPNH
-      </p>
-    </div>
-    <%= link_to new_citizens_officer_complaint_path, class: "btn btn-primary btn-sm rounded-pill px-3 ms-3 flex-shrink-0" do %>
-      <i class="ri-add-line me-1"></i> Nouvelle Plainte
-    <% end %>
+  <%# ── Page Header (wizard style) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-file-shield-2-line me-2"></i>Mes Plaintes
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      Suivi en temps réel de vos dossiers auprès de l'IGPNH
+    </p>
   </div>
+
+  <%# --- "Add another" CTA — only shown when at least one complaint exists.
+        Empty state below has its own primary CTA. --- %>
+  <% unless @complaints.empty? %>
+    <div class="text-center mb-4">
+      <%= link_to new_citizens_officer_complaint_path, class: "btn btn-primary rounded-pill px-4 fw-semibold" do %>
+        <i class="ri-add-line me-1"></i> Nouvelle Plainte
+      <% end %>
+    </div>
+  <% end %>
 
   <%# --- Summary Overview Stats --- %>
   <% unless @complaints.empty? %>

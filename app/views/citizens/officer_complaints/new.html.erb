@@ -1,19 +1,13 @@
 <%# app/views/citizens/officer_complaints/new.html.erb %>
 <%# Complaint form — 5 pillars as wizard steps + Review step (Step 6) %>
 
-<div class="px-0">
+<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head).
+    Page title lives inside Step 1 only — wizard hides it past the first panel. %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Page Header ── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="citizen-page-title mb-1">
-        <i class="ri-shield-check-line me-2"></i>Déposer une Plainte
-      </h3>
-      <p class="text-muted mb-0" style="font-size: 0.78rem;">
-        Votre plainte sera transmise à l'IGPNH — Direction régionale compétente.
-      </p>
-    </div>
-    <%= link_to citizens_officer_complaints_path, class: "btn btn-outline-secondary btn-sm" do %>
+  <%# ── Back link — escape hatch back to the complaints list ── %>
+  <div class="ballot-back-bar">
+    <%= link_to citizens_officer_complaints_path, class: "ballot-back-link" do %>
       <i class="ri-arrow-left-line"></i>
     <% end %>
   </div>
@@ -67,12 +61,24 @@
     <%# STEP 1 — Complainant Information %>
     <%# ═══════════════════════════════════════════════════════ %>
     <div data-wizard-target="step">
-      <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <%# Page header lives inside step 1 only — wizard hides this section
+          on advance so "Déposer une Plainte" disappears past the first panel. %>
+      <div class="ballot-head text-center">
+        <h1 class="ballot-title">
+          <i class="ri-shield-check-line me-2"></i>Déposer une Plainte
+        </h1>
+        <p class="ballot-subtitle mb-0">
+          Votre plainte sera transmise à l'IGPNH, Direction régionale compétente.
+        </p>
+      </div>
+
+      <div class="ballot-section card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
-            <i class="ri-user-3-line me-2"></i>1. Enfòmasyon sou Plenyant lan
-            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Complainant Information</span>
-          </h6>
+
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">1. Enfòmasyon sou Plenyant lan</h2>
+            <p class="ballot-section-desc mb-0">Complainant Information</p>
+          </div>
           <%# Pre-filled from BonID — shown as read-only with a note %>
           <div class="alert rounded-3 mb-3 complaint-bonid-alert" style="font-size: 0.8rem;">
             <i class="ri-lock-line me-2" style="color: var(--primary);"></i>
@@ -136,13 +142,13 @@
     <%# STEP 2 — Incident Details %>
     <%# ═══════════════════════════════════════════════════════ %>
     <div data-wizard-target="step" class="d-none" style="display:none">
-      <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="ballot-section card border-0 shadow-sm mb-4">
         <%# address_controller handles 3-level cascade: dept → commune → section %>
         <div class="card-body p-4" data-controller="address">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
-            <i class="ri-map-pin-2-line me-2"></i>2. Detay sou Ensidan an
-            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Incident Details</span>
-          </h6>
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">2. Detay sou Ensidan an</h2>
+            <p class="ballot-section-desc mb-0">Incident Details</p>
+          </div>
 
           <%# Address loading states %>
           <div data-address-target="spinner" class="text-center mb-3 d-none">
@@ -337,12 +343,12 @@
     <%# STEP 3 — Officer Identification %>
     <%# ═══════════════════════════════════════════════════════ %>
     <div data-wizard-target="step" class="d-none" style="display:none">
-      <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="ballot-section card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
-            <i class="ri-user-search-line me-2"></i>3. Idantifikasyon Polisye a
-            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Officer Identification</span>
-          </h6>
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">3. Idantifikasyon Polisye a</h2>
+            <p class="ballot-section-desc mb-0">Officer Identification</p>
+          </div>
           <div class="alert rounded-3 mb-3" style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255,193,7,0.3); font-size: 0.78rem;">
             <i class="ri-information-line me-2" style="color: #856404;"></i>
             Remplissez au moins un des champs ci-dessous. Si vous ne connaissez pas le nom ni le numéro de badge,
@@ -413,12 +419,12 @@
     <%# STEP 4 — Nature of Allegations %>
     <%# ═══════════════════════════════════════════════════════ %>
     <div data-wizard-target="step" class="d-none" style="display:none">
-      <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="ballot-section card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
-            <i class="ri-scales-3-line me-2"></i>4. Kalite Plent lan
-            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Nature of Allegations</span>
-          </h6>
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">4. Kalite Plent lan</h2>
+            <p class="ballot-section-desc mb-0">Nature of Allegations</p>
+          </div>
           <div class="row g-3">
             <div class="col-md-6">
               <%= f.label :allegation_category, "Catégorie de faute", class: "form-label",
@@ -471,12 +477,12 @@
     <%# STEP 5 — Evidence & Narrative %>
     <%# ═══════════════════════════════════════════════════════ %>
     <div data-wizard-target="step" class="d-none" style="display:none">
-      <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="ballot-section card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
-            <i class="ri-file-text-line me-2"></i>5. Deklarasyon ak Prèv
-            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Statement & Evidence</span>
-          </h6>
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">5. Deklarasyon ak Prèv</h2>
+            <p class="ballot-section-desc mb-0">Statement &amp; Evidence</p>
+          </div>
           <%# Narrative %>
           <div class="mb-4">
             <%= f.label :narrative, "Deklarasyon Ofisyèl — Déclaration des faits", class: "form-label",
@@ -640,12 +646,12 @@
     <%# STEP 6 — Review & Submit %>
     <%# ═══════════════════════════════════════════════════════ %>
     <div data-wizard-target="step" class="d-none" style="display:none">
-      <div class="card border-0 shadow-sm rounded-4 mb-4 complaint-review-card">
+      <div class="ballot-section card border-0 shadow-sm mb-4 complaint-review-card">
         <div class="card-body p-4">
-          <h6 class="fw-bold mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.85rem; color: var(--primary);">
-            <i class="ri-checkbox-circle-line me-2"></i>Récapitulatif de votre Plainte
-            <span class="text-muted" style="font-size: 0.7rem; margin-left: 6px;">/ Review & Submit</span>
-          </h6>
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">Récapitulatif de votre Plainte</h2>
+            <p class="ballot-section-desc mb-0">Review &amp; Submit</p>
+          </div>
           <p style="font-size: 0.8rem; color: #475467; margin-bottom: 16px;">
             <i class="ri-information-line me-1"></i>
             Vérifiez toutes les informations avant de soumettre votre plainte.

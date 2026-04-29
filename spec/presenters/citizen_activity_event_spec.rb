@@ -46,6 +46,7 @@ RSpec.describe CitizenActivityEvent do
       status:            "approved",
       requested_scopes:  %w[identity address],
       granted_scopes:    %w[identity],
+      audit_log:         nil,
       created_at:        now - 2.days,
       granted_at:        now - 2.days,
       revoked_at:        nil,
@@ -53,7 +54,7 @@ RSpec.describe CitizenActivityEvent do
       last_accessed_at:  now - 1.hour,
       access_count:      3
     }.merge(overrides))
-    # `from_consent_grant` calls cg.status_theme — provide a minimal one.
+    # The fallback path calls cg.status_theme — provide a minimal one.
     def cg.status_theme; { css: "success" }; end
     cg
   end
@@ -117,7 +118,7 @@ RSpec.describe CitizenActivityEvent do
     end
 
     it "consent_grant → kind :consent, category :administrative" do
-      ev = described_class.from_consent_grant(consent_grant)
+      ev = described_class.events_from_consent_grant(consent_grant).first
       expect(ev.kind).to eq(:consent)
       expect(ev.category).to eq(:administrative)
     end
@@ -182,48 +183,97 @@ RSpec.describe CitizenActivityEvent do
   end
 
   # ------------------------------------------------------------
-  # from_consent_grant
+  # events_from_consent_grant
   # ------------------------------------------------------------
-  describe ".from_consent_grant" do
-    it "uses approved title + shield icon" do
-      ev = described_class.from_consent_grant(consent_grant)
-      expect(ev.icon).to eq("ri-shield-check-line")
-      expect(ev.title).to include("Zellus")
-      expect(ev.title).to start_with("Ou bay")
-    end
+  describe ".events_from_consent_grant" do
+    context "when audit_log is blank" do
+      it "falls back to a single state-derived event with approved title + shield icon" do
+        events = described_class.events_from_consent_grant(consent_grant)
+        expect(events.size).to eq(1)
+        ev = events.first
+        expect(ev.icon).to eq("ri-shield-check-line")
+        expect(ev.title).to include("Zellus")
+        expect(ev.title).to start_with("Ou bay")
+      end
 
-    it "switches title + icon per status" do
-      {
-        "revoked" => { icon: "ri-forbid-2-line",   phrase: "Ou revoke aksè" },
-        "pending" => { icon: "ri-time-line",       phrase: "mande aksè" },
-        "expired" => { icon: "ri-history-line",    phrase: "ekspire" }
-      }.each do |status, expected|
-        ev = described_class.from_consent_grant(consent_grant(status: status))
-        expect(ev.icon).to eq(expected[:icon]), "wrong icon for #{status}"
-        expect(ev.title).to include(expected[:phrase]), "wrong title for #{status}"
+      it "switches title + icon per status" do
+        {
+          "revoked" => { icon: "ri-forbid-2-line",   phrase: "Ou revoke aksè" },
+          "pending" => { icon: "ri-time-line",       phrase: "mande aksè" },
+          "expired" => { icon: "ri-history-line",    phrase: "ekspire" }
+        }.each do |status, expected|
+          ev = described_class.events_from_consent_grant(consent_grant(status: status)).first
+          expect(ev.icon).to eq(expected[:icon]), "wrong icon for #{status}"
+          expect(ev.title).to include(expected[:phrase]), "wrong title for #{status}"
+        end
+      end
+
+      it "shows granted scopes (truncated) in the subtitle" do
+        cg = consent_grant(granted_scopes: %w[identity address phone email])
+        ev = described_class.events_from_consent_grant(cg).first
+        expect(ev.subtitle).to start_with("Aksè:")
+        expect(ev.subtitle).to end_with("…") # > 3 scopes triggers the ellipsis
+      end
+
+      it "populates consent detail rows with scopes and timestamps" do
+        ev   = described_class.events_from_consent_grant(consent_grant).first
+        rows = ev.details.to_h
+        expect(rows["Patnè"]).to eq("Zellus")
+        expect(rows["Aksè mande"]).to eq("identity, address")
+        expect(rows["Aksè bay"]).to eq("identity")
+        expect(rows["Kantite aksè"]).to eq("3")
+        expect(rows.keys).to include("Premye konsantman", "Bay an dènye", "Ekspire", "Dènye aksè patnè")
+      end
+
+      it "drops blank rows (no 'Revoke an dènye' when it never happened)" do
+        ev = described_class.events_from_consent_grant(consent_grant).first
+        expect(ev.details.map(&:first)).not_to include("Revoke an dènye")
       end
     end
 
-    it "shows granted scopes (truncated) in the subtitle" do
-      cg = consent_grant(granted_scopes: %w[identity address phone email])
-      ev = described_class.from_consent_grant(cg)
-      expect(ev.subtitle).to start_with("Aksè:")
-      expect(ev.subtitle).to end_with("…") # > 3 scopes triggers the ellipsis
-    end
+    context "when audit_log has entries" do
+      let(:audit) {
+        {
+          "2026-04-15T10:43:06-04:00" => { "actor" => "system", "action" => "granted",
+                                            "status" => "approved",
+                                            "details" => { "scopes" => %w[openid profile email] } },
+          "2026-04-15T17:35:47-04:00" => { "actor" => "system", "action" => "revoked",
+                                            "status" => "revoked",
+                                            "details" => { "reason" => "Citizen revoked from dashboard" } },
+          "2026-04-28T17:56:25-04:00" => { "actor" => "system", "action" => "granted",
+                                            "status" => "approved",
+                                            "details" => { "scopes" => %w[openid profile email] } }
+        }
+      }
 
-    it "populates consent detail rows with scopes and timestamps" do
-      ev = described_class.from_consent_grant(consent_grant)
-      rows = ev.details.to_h
-      expect(rows["Patnè"]).to eq("Zellus")
-      expect(rows["Aksè mande"]).to eq("identity, address")
-      expect(rows["Aksè bay"]).to eq("identity")
-      expect(rows["Kantite aksè"]).to eq("3")
-      expect(rows.keys).to include("Kreye", "Bay", "Ekspire", "Dènye aksè")
-    end
+      it "fans out one event per audit entry, ordered ascending by timestamp" do
+        events = described_class.events_from_consent_grant(consent_grant(audit_log: audit))
+        expect(events.size).to eq(3)
+        expect(events.map(&:timestamp).map(&:to_s)).to eq(events.map(&:timestamp).sort.map(&:to_s))
+        expect(events.map(&:title)).to eq([
+          "Ou bay Zellus aksè a done ou yo",
+          "Ou revoke aksè pou Zellus",
+          "Ou bay Zellus aksè a done ou yo"
+        ])
+      end
 
-    it "drops blank rows (no 'Revoke' when it never happened)" do
-      ev = described_class.from_consent_grant(consent_grant)
-      expect(ev.details.map(&:first)).not_to include("Revoke")
+      it "collapses status_change rows that mirror an explicit grant/revoke at the same second" do
+        audit_with_dupe = audit.merge(
+          "2026-04-28T17:56:25-04:00" => { "action" => "granted",
+                                            "status" => "approved",
+                                            "details" => { "scopes" => %w[openid] }, "actor" => "system" }
+        )
+        # A separate status_change at the same second should be folded out:
+        audit_with_dupe[Time.iso8601("2026-04-28T17:56:25-04:00").iso8601] = audit_with_dupe.delete("2026-04-28T17:56:25-04:00")
+        events = described_class.events_from_consent_grant(consent_grant(audit_log: audit_with_dupe))
+        expect(events.map(&:title)).not_to include(a_string_including("→"))
+      end
+
+      it "skips soft_delete entries (admin-only)" do
+        a = audit.merge("2026-04-29T09:00:00-04:00" => { "action" => "soft_delete", "actor" => "admin" })
+        events = described_class.events_from_consent_grant(consent_grant(audit_log: a))
+        expect(events.size).to eq(3) # soft_delete dropped
+      end
     end
   end
 
@@ -355,10 +405,10 @@ RSpec.describe CitizenActivityEvent do
     it "drops rows whose value is nil or empty string" do
       cg = consent_grant(granted_at: nil, revoked_at: nil, expires_at: nil,
                          last_accessed_at: nil, access_count: 0)
-      ev  = described_class.from_consent_grant(cg)
+      ev  = described_class.events_from_consent_grant(cg).first
       labels = ev.details.map(&:first)
-      expect(labels).not_to include("Bay", "Revoke", "Ekspire", "Dènye aksè", "Kantite aksè")
-      expect(labels).to include("Patnè", "Statè", "Kreye")
+      expect(labels).not_to include("Bay an dènye", "Revoke an dènye", "Ekspire", "Dènye aksè patnè", "Kantite aksè")
+      expect(labels).to include("Patnè", "Statè aktyèl", "Premye konsantman")
     end
   end
 

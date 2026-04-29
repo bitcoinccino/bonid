@@ -32,7 +32,7 @@ class CitizenActivityEvent
   attr_reader :kind, :source_record, :timestamp
 
   def initialize(kind:, source_record:, timestamp:, icon:, title:, subtitle: nil,
-                 status: nil, status_color: nil, deep_link: nil)
+                 status: nil, status_color: nil, deep_link: nil, event_data: nil)
     @kind          = kind
     @source_record = source_record
     @timestamp     = timestamp
@@ -42,6 +42,7 @@ class CitizenActivityEvent
     @status        = status
     @status_color  = status_color
     @deep_link     = deep_link
+    @event_data    = event_data
   end
 
   def icon;        @icon;        end
@@ -101,18 +102,25 @@ class CitizenActivityEvent
   end
 
   def consent_detail_rows
-    cg = @source_record
+    cg       = @source_record
+    ev       = @event_data || {}
+    details  = ev[:details] || {}
+    ev_scope = Array(details["scopes"]).compact.join(", ").presence
+    ev_reas  = details["reason"].to_s.presence
     [
-      [ "Patnè",        cg.partner&.name ],
-      [ "Statè",        cg.status&.humanize ],
-      [ "Aksè mande",   Array(cg.requested_scopes).compact.join(", ").presence ],
-      [ "Aksè bay",     Array(cg.granted_scopes).compact.join(", ").presence ],
-      [ "Kreye",        format_full_time(cg.created_at) ],
-      [ "Bay",          format_full_time(cg.granted_at) ],
-      [ "Revoke",       format_full_time(cg.revoked_at) ],
-      [ "Ekspire",      format_full_time(cg.expires_at) ],
-      [ "Dènye aksè",   format_full_time(cg.last_accessed_at) ],
-      [ "Kantite aksè", cg.access_count.to_i.positive? ? cg.access_count.to_s : nil ]
+      [ "Patnè",            cg.partner&.name ],
+      [ "Aksyon",           ev[:action_label] ],
+      [ "Aksè bay nan moman an", ev_scope ],
+      [ "Rezon",            ev_reas ],
+      [ "Statè aktyèl",     cg.status&.humanize ],
+      [ "Aksè mande",       Array(cg.requested_scopes).compact.join(", ").presence ],
+      [ "Aksè bay",         Array(cg.granted_scopes).compact.join(", ").presence ],
+      [ "Premye konsantman", format_full_time(cg.created_at) ],
+      [ "Bay an dènye",      format_full_time(cg.granted_at) ],
+      [ "Revoke an dènye",   format_full_time(cg.revoked_at) ],
+      [ "Ekspire",          format_full_time(cg.expires_at) ],
+      [ "Dènye aksè patnè", format_full_time(cg.last_accessed_at) ],
+      [ "Kantite aksè",     cg.access_count.to_i.positive? ? cg.access_count.to_s : nil ]
     ]
   end
 
@@ -266,10 +274,85 @@ class CitizenActivityEvent
     )
   end
 
-  def self.from_consent_grant(cg)
+  # Returns one CitizenActivityEvent per entry in the ConsentGrant's audit_log
+  # (granted, revoked, expired, status_change, …) so the citizen feed reads as a
+  # full history. Falls back to a single derived event when audit_log is blank.
+  def self.events_from_consent_grant(cg)
     partner_name = cg.partner&.name.presence || "yon patnè"
-    scopes       = Array(cg.granted_scopes.presence || cg.requested_scopes)
+    audit        = cg.audit_log.is_a?(Hash) ? cg.audit_log : {}
 
+    return [ build_consent_event_from_state(cg, partner_name) ] if audit.blank?
+
+    entries = audit.filter_map { |ts_key, payload|
+      ts = parse_audit_timestamp(ts_key)
+      next nil if ts.nil?
+      [ ts, payload || {} ]
+    }.sort_by(&:first)
+
+    entries = collapse_status_change_dupes(entries)
+
+    events = entries.filter_map { |ts, payload| build_consent_event_from_audit(cg, partner_name, ts, payload) }
+    events.presence || [ build_consent_event_from_state(cg, partner_name) ]
+  end
+
+  def self.parse_audit_timestamp(key)
+    Time.iso8601(key.to_s)
+  rescue ArgumentError, TypeError
+    nil
+  end
+
+  # grant!/revoke! call update! (which fires after_update_commit → status_change)
+  # and then explicit append_audit!("granted"/"revoked") at the same wall-clock
+  # second. Drop the status_change rows when an explicit action exists at the
+  # same second so the feed doesn't double up.
+  def self.collapse_status_change_dupes(entries)
+    entries.group_by { |ts, _| ts.to_i }.flat_map { |_, group|
+      explicit = group.find { |_, p| %w[granted revoked].include?(p["action"].to_s) }
+      explicit ? [ explicit ] : group
+    }.sort_by(&:first)
+  end
+
+  def self.build_consent_event_from_audit(cg, partner_name, ts, payload)
+    action = payload["action"].to_s
+    return nil if action == "soft_delete" # admin-only action; not citizen-facing
+
+    details = payload["details"] || {}
+    status  = payload["status"].to_s.presence || cg.status.to_s
+
+    title, subtitle, action_label =
+      case action
+      when "granted"
+        scopes = Array(details["scopes"]).compact
+        sub    = scopes.any? ? "Aksè: #{scopes.first(3).join(', ')}#{scopes.size > 3 ? '…' : ''}" : nil
+        [ "Ou bay #{partner_name} aksè a done ou yo", sub, "Konsantman bay" ]
+      when "revoked"
+        reason = details["reason"].to_s
+        sub    = (reason.present? && reason != "Citizen revoked from dashboard" && reason != "Citizen denied consent") ? reason : nil
+        [ "Ou revoke aksè pou #{partner_name}", sub, "Konsantman revoke" ]
+      when "status_change"
+        from = details["from"].to_s
+        to   = details["to"].to_s
+        [ "Mizajou konsantman pou #{partner_name}: #{from} → #{to}", nil, "Chanjman statè" ]
+      else
+        [ "Mizajou konsantman pou #{partner_name}", nil, action.humanize.presence ]
+      end
+
+    new(
+      kind:          :consent,
+      source_record: cg,
+      timestamp:     ts,
+      icon:          consent_icon_for(status),
+      title:         title,
+      subtitle:      subtitle,
+      status:        nil,
+      status_color:  consent_color_for(status),
+      deep_link:     Rails.application.routes.url_helpers.citizens_consents_path,
+      event_data:    { action: action, action_label: action_label, status: status, details: details }
+    )
+  end
+
+  def self.build_consent_event_from_state(cg, partner_name)
+    scopes = Array(cg.granted_scopes.presence || cg.requested_scopes)
     title = case cg.status
     when "approved" then "Ou bay #{partner_name} aksè a done ou yo"
     when "revoked"  then "Ou revoke aksè pou #{partner_name}"
@@ -277,12 +360,8 @@ class CitizenActivityEvent
     when "expired"  then "Aksè #{partner_name} ekspire"
     else                 "Mizajou konsantman pou #{partner_name}"
     end
+    subtitle = scopes.any? ? "Aksè: #{scopes.first(3).join(', ')}#{scopes.size > 3 ? '…' : ''}" : nil
 
-    subtitle = if scopes.any?
-                 "Aksè: #{scopes.first(3).join(', ')}#{scopes.size > 3 ? '…' : ''}"
-    end
-
-    theme = cg.status_theme
     new(
       kind:          :consent,
       source_record: cg,
@@ -291,9 +370,19 @@ class CitizenActivityEvent
       title:         title,
       subtitle:      subtitle,
       status:        nil,
-      status_color:  theme[:css],
-      deep_link:     Rails.application.routes.url_helpers.citizens_consents_path
+      status_color:  cg.status_theme[:css],
+      deep_link:     Rails.application.routes.url_helpers.citizens_consents_path,
+      event_data:    nil
     )
+  end
+
+  def self.consent_color_for(status)
+    case status
+    when "approved" then "success"
+    when "pending"  then "warning"
+    when "revoked"  then "danger"
+    else                 "secondary"
+    end
   end
 
   def self.from_transaction_consent(tc)

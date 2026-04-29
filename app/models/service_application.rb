@@ -10,6 +10,15 @@ class ServiceApplication < ApplicationRecord
   belongs_to :partner_schema
   belongs_to :reviewed_by, class_name: "User", optional: true
 
+  # Real-time citizen bell — fires on create and on status flips so the
+  # citizen sees both fresh applications and reviewer decisions in real time.
+  after_create_commit :broadcast_alert_to_citizen
+  after_update_commit :broadcast_alert_to_citizen, if: :saved_change_to_status?
+
+  def broadcast_alert_to_citizen
+    Citizens::AlertBroadcastJob.perform_later(citizen_id) if citizen_id
+  end
+
   # File uploads from "file" type fields
   has_many_attached :documents
 

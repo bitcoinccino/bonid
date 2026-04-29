@@ -6,6 +6,15 @@ class TransactionConsent < ApplicationRecord
   belongs_to :citizen, class_name: "User"
   belongs_to :partner
 
+  # Real-time citizen bell — fires on create and on status flips so the
+  # citizen sees both new transaction requests and their resolution.
+  after_create_commit :broadcast_alert_to_citizen
+  after_update_commit :broadcast_alert_to_citizen, if: :saved_change_to_status?
+
+  def broadcast_alert_to_citizen
+    Citizens::AlertBroadcastJob.perform_later(citizen_id) if citizen_id
+  end
+
   # ============================================================
   # CONSTANTS
   # ============================================================

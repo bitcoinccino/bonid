@@ -73,13 +73,18 @@ export default class extends Controller {
 
       // Only overwrite if at least one field has a value
       if (fullName || sex || dob || phone) {
+        // Resolve each cell: form value first, then fall back to whatever the
+        // server already rendered (handles locked fields that the form can't
+        // round-trip — e.g. the verified-state DOB <input type="text"> has no
+        // name attribute, so its value never reaches the JS).
+        const t = this.reviewPersonalTarget
         this.reviewPersonalTarget.innerHTML = `
-          <div class="col-sm-6"><strong>Full Name:</strong> ${this._esc(fullName) || "—"}</div>
-          <div class="col-sm-6"><strong>Sex:</strong> ${this._esc(sex) || "—"}</div>
-          <div class="col-sm-6"><strong>Date of Birth:</strong> ${this._esc(dob) || "—"}</div>
-          <div class="col-sm-6"><strong>Nationality:</strong> ${this._esc(nationality) || "—"}</div>
-          <div class="col-sm-6"><strong>Phone:</strong> ${this._esc(phone) || "—"} ${this._carrier(phone)}</div>
-          <div class="col-sm-6"><strong>Marital Status:</strong> ${this._esc(marital) || "—"}</div>
+          <div class="col-sm-6"><strong>Full Name:</strong> ${this._resolve(t, "Full Name", fullName)}</div>
+          <div class="col-sm-6"><strong>Sex:</strong> ${this._resolve(t, "Sex", sex)}</div>
+          <div class="col-sm-6"><strong>Date of Birth:</strong> ${this._resolve(t, "Date of Birth", dob)}</div>
+          <div class="col-sm-6"><strong>Nationality:</strong> ${this._resolve(t, "Nationality", nationality)}</div>
+          <div class="col-sm-6"><strong>Phone:</strong> ${this._resolve(t, "Phone", phone)} ${this._carrier(phone)}</div>
+          <div class="col-sm-6"><strong>Marital Status:</strong> ${this._resolve(t, "Marital Status", marital)}</div>
         `
       }
     }
@@ -97,16 +102,17 @@ export default class extends Controller {
       const birthPlace   = [birthCommune, birthDept].filter(Boolean).join(", ")
 
       if (idType || idNumber) {
+        const t = this.reviewIdentificationTarget
         let html = `
-          <div class="col-sm-6"><strong>ID Type:</strong> ${this._esc(idType) || "—"}</div>
-          <div class="col-sm-6"><strong>ID Number:</strong> ${this._esc(idNumber) || "—"}</div>
+          <div class="col-sm-6"><strong>ID Type:</strong> ${this._resolve(t, "ID Type", idType)}</div>
+          <div class="col-sm-6"><strong>ID Number:</strong> ${this._resolve(t, "ID Number", idNumber)}</div>
         `
         if (ninu) html += `<div class="col-sm-6"><strong>NINU:</strong> ${this._esc(ninu)}</div>`
         html += `
-          <div class="col-sm-6"><strong>Place of Birth:</strong> ${this._esc(birthPlace) || "—"}</div>
-          <div class="col-sm-6"><strong>Issued:</strong> ${this._esc(issued) || "—"}</div>
-          <div class="col-sm-6"><strong>Expires:</strong> ${this._esc(expires) || "—"}</div>
-          <div class="col-sm-6"><strong>Issuer:</strong> ${this._esc(issuer) || "—"}</div>
+          <div class="col-sm-6"><strong>Place of Birth:</strong> ${this._resolve(t, "Place of Birth", birthPlace)}</div>
+          <div class="col-sm-6"><strong>Issued:</strong> ${this._resolve(t, "Issued", issued)}</div>
+          <div class="col-sm-6"><strong>Expires:</strong> ${this._resolve(t, "Expires", expires)}</div>
+          <div class="col-sm-6"><strong>Issuer:</strong> ${this._resolve(t, "Issuer", issuer)}</div>
         `
         this.reviewIdentificationTarget.innerHTML = html
       }
@@ -183,5 +189,37 @@ export default class extends Controller {
     const div = document.createElement("div")
     div.textContent = str
     return div.innerHTML
+  }
+
+  // For each <div class="col-sm-6"><strong>Label:</strong> Value</div> row
+  // already in `target`, return the text after the matching <strong> label.
+  // Used as a fallback when the form doesn't expose the value (locked fields).
+  _existingValue(target, label) {
+    if (!target) return ""
+    const cells = target.querySelectorAll(".col-sm-6")
+    for (const cell of cells) {
+      const strong = cell.querySelector("strong")
+      if (!strong) continue
+      const cellLabel = strong.textContent.trim().replace(/:$/, "")
+      if (cellLabel !== label) continue
+      // Sum up text content after the <strong>, trimming the em-dash placeholder.
+      let text = ""
+      let node = strong.nextSibling
+      while (node) {
+        text += node.textContent || ""
+        node = node.nextSibling
+      }
+      const trimmed = text.trim()
+      return trimmed === "—" ? "" : trimmed
+    }
+    return ""
+  }
+
+  // Choose form value if present, else fall back to whatever was already
+  // server-rendered for this label, else the em-dash placeholder.
+  _resolve(target, label, formValue) {
+    if (formValue) return this._esc(formValue)
+    const existing = this._existingValue(target, label)
+    return existing ? this._esc(existing) : "—"
   }
 }

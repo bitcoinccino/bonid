@@ -36,6 +36,13 @@ class VoterOathAcknowledgement < ApplicationRecord
   before_validation :ensure_accepted_at, on: :create
   before_validation :compute_digest,     on: :create
 
+  # Real-time citizen bell — newly signed voter oath surfaces in Aktivite.
+  after_create_commit :broadcast_alert_to_citizen
+
+  def broadcast_alert_to_citizen
+    Citizens::AlertBroadcastJob.perform_later(user_id) if user_id
+  end
+
   scope :for_election, ->(election) { where(bonvote_election: election) }
   scope :recent_first, -> { order(accepted_at: :desc) }
 

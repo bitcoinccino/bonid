@@ -512,6 +512,11 @@ end
     # ✅ Support Center Route
     get "support", to: "support#index", as: :support
 
+    # ✅ Citizen account settings — Security (change email + 2FA placeholder),
+    # Language preference (fr / ht), Notifications channel (email / phone).
+    get   "paramet", to: "settings#edit",   as: :settings
+    patch "paramet", to: "settings#update"
+
     # ✅ Unified Activity Feed (Aktivite) — consolidates scans, consents,
     # transaction consents, and service applications into one timeline.
     get "activity", to: "activity#index", as: :activity

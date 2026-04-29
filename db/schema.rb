@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_20_010000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_28_220000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2202,6 +2202,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_20_010000) do
     t.datetime "last_seen_at"
     t.datetime "ajan_oath_accepted_at"
     t.string "ajan_oath_version", limit: 16
+    t.datetime "notifications_seen_at"
+    t.string "preferred_locale", default: "ht"
+    t.string "notification_channel", default: "email"
     t.index ["active"], name: "index_users_on_active"
     t.index ["address_id"], name: "index_users_on_address_id"
     t.index ["agent_rank"], name: "index_users_on_agent_rank"

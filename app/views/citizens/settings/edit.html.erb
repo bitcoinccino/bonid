@@ -1,0 +1,174 @@
+<%# app/views/citizens/settings/edit.html.erb
+    Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head).
+    All three sections submit through a single form so the citizen can
+    change anything in one round-trip. %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
+
+  <%# ── Back link ── %>
+  <div class="ballot-back-bar">
+    <%= link_to citizens_dashboard_path, class: "ballot-back-link" do %>
+      <i class="ri-arrow-left-line"></i>
+    <% end %>
+  </div>
+
+  <%# ── Page Header (wizard style) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-settings-3-line me-2"></i>Paramèt
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      Jere sekirite, lang, ak notifikasyon BonID ou.
+    </p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <%= form_with model: @citizen, url: citizens_settings_path, method: :patch,
+                    html: { class: "needs-validation", novalidate: true,
+                            data: { turbo: false } } do |f| %>
+
+        <%# ── 1. SECURITY ─────────────────────────────────────── %>
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Sekirite</h2>
+              <p class="ballot-section-desc mb-0">
+                Imel ou ak metòd otantifikasyon doub.
+              </p>
+            </div>
+
+            <%# Change Email — current email shown masked; the editor reveals
+                on click so over-the-shoulder viewers don't see the full
+                address by default. %>
+            <div class="mb-3" data-controller="reveal">
+              <%= f.label :email, "Imel", class: "form-label" %>
+
+              <div class="d-flex align-items-center gap-2 mb-2"
+                   data-reveal-target="display">
+                <span class="form-control bg-light text-muted"
+                      style="font-family: 'Inter', sans-serif;">
+                  <i class="ri-mail-line me-1"></i><%= mask_email(@citizen.email) %>
+                </span>
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        style="font-size: 0.78rem; white-space: nowrap;"
+                        data-action="click->reveal#show">
+                  <i class="ri-edit-line me-1"></i>Modifye
+                </button>
+              </div>
+
+              <div class="d-none" data-reveal-target="hidden">
+                <%= f.email_field :email, value: @citizen.email,
+                      class: "form-control",
+                      autocomplete: "email" %>
+                <small class="text-muted">N ap sèvi avè l pou notifikasyon ak rekiperasyon kont.</small>
+              </div>
+            </div>
+
+            <%# 2FA — disabled / coming soon %>
+            <div class="enroll-helpful-tip mt-3">
+              <i class="ri-shield-keyhole-line"></i>
+              <div>
+                <strong>Otantifikasyon 2 faktè</strong>
+                <span class="badge rounded-pill ms-2"
+                      style="background: #FEF3C7; color: #92400E; font-size: 0.65rem; font-weight: 700;">
+                  K AP VINI
+                </span>
+                <div class="mt-1">
+                  Yon nivo sekirite anplis pou kont ou. Pral disponib byento.
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" disabled
+                        style="font-size: 0.78rem;">
+                  <i class="ri-lock-2-line me-1"></i> Aktive 2FA
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# ── 2. LANGUAGE ─────────────────────────────────────── %>
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Lang</h2>
+              <p class="ballot-section-desc mb-0">
+                Chwazi lang pou afichaj BonID.
+              </p>
+            </div>
+
+            <% locale_choices = [
+              { value: "ht", label: "Kreyòl Ayisyen", sub: "Lang prensipal BonID." },
+              { value: "fr", label: "Français",       sub: "Pou itilizatè ki pi alèz ak fransè." }
+            ] %>
+            <% locale_choices.each do |opt| %>
+              <label class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
+                     style="border: 1px solid #E5E7EB; cursor: pointer;
+                            <%= 'background: rgba(0, 32, 159, 0.04); border-color: rgba(0, 32, 159, 0.4);' if @citizen.preferred_locale.to_s == opt[:value] %>">
+                <%= f.radio_button :preferred_locale, opt[:value],
+                      checked: @citizen.preferred_locale.to_s == opt[:value],
+                      class: "form-check-input mt-1 flex-shrink-0" %>
+                <div>
+                  <div class="fw-semibold" style="font-size: 0.9rem;"><%= opt[:label] %></div>
+                  <small class="text-muted"><%= opt[:sub] %></small>
+                </div>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# ── 3. NOTIFICATIONS ────────────────────────────────── %>
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Notifikasyon</h2>
+              <p class="ballot-section-desc mb-0">
+                Kanal pou nou kontakte w lè gen aktivite enpòtan sou kont ou.
+              </p>
+            </div>
+
+            <% channel_choices = [
+              { value: "email", icon: "ri-mail-line",  label: "Pa imel",
+                sub: "Voye notifikasyon yo nan <strong>#{ERB::Util.h(mask_email(@citizen.email))}</strong>." },
+              { value: "phone", icon: "ri-smartphone-line", label: "Pa telefòn",
+                sub: @citizen.phone.present? ?
+                       "Voye notifikasyon yo pa SMS nan <strong>#{ERB::Util.h(mask_phone(@citizen.phone))}</strong>." :
+                       "Ajoute yon nimewo telefòn nan pwofil ou anvan w chwazi opsyon sa a." }
+            ] %>
+            <% channel_choices.each do |opt| %>
+              <% disabled = (opt[:value] == "phone" && @citizen.phone.blank?) %>
+              <label class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
+                     style="border: 1px solid #E5E7EB;
+                            <%= 'cursor: not-allowed; opacity: 0.55;' if disabled %>
+                            <%= 'cursor: pointer;' unless disabled %>
+                            <%= 'background: rgba(0, 32, 159, 0.04); border-color: rgba(0, 32, 159, 0.4);' if @citizen.notification_channel.to_s == opt[:value] && !disabled %>">
+                <%= f.radio_button :notification_channel, opt[:value],
+                      checked: @citizen.notification_channel.to_s == opt[:value],
+                      disabled: disabled,
+                      class: "form-check-input mt-1 flex-shrink-0" %>
+                <div>
+                  <div class="fw-semibold d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                    <i class="<%= opt[:icon] %>"></i>
+                    <%= opt[:label] %>
+                  </div>
+                  <small class="text-muted"><%= opt[:sub].html_safe %></small>
+                </div>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Submit %>
+        <div class="d-flex justify-content-end mb-4">
+          <%= f.submit "Sove paramèt yo",
+                class: "btn btn-primary fw-semibold px-4 py-2",
+                style: "font-size: 0.85rem;",
+                data: { disable_with: "Ap sove..." } %>
+        </div>
+
+      <% end %>
+    </div>
+  </div>
+</div>

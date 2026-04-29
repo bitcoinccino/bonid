@@ -1,19 +1,24 @@
 <%# app/views/citizens/name_change_requests/new.html.erb %>
 
-<div class="px-0">
-  <%# ── Page Header ── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="citizen-page-title mb-1">
-        <i class="ri-edit-line me-2"></i>Request a Name Change
-      </h3>
-      <p class="text-muted mb-0" style="font-size: 0.78rem;">
-        Submit a request to update your legal name with supporting documentation.
-      </p>
-    </div>
-    <%= link_to edit_citizens_profile_path, class: "btn btn-outline-secondary btn-sm" do %>
+<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head)
+    so the name-change flow reads as part of the same citizen wizard. %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
+
+  <%# ── Back link — escape hatch back to profile edit ── %>
+  <div class="ballot-back-bar">
+    <%= link_to edit_citizens_profile_path, class: "ballot-back-link" do %>
       <i class="ri-arrow-left-line"></i>
     <% end %>
+  </div>
+
+  <%# ── Page Header (wizard style) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      <i class="ri-edit-line me-2"></i>Request a Name Change
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      Submit a request to update your legal name with supporting documentation.
+    </p>
   </div>
 
   <div class="complaint-form-wrapper">
@@ -22,11 +27,17 @@
           html: { class: "profile-form", multipart: true, data: { turbo: false } } do |f| %>
 
       <%# Current Name (read-only) %>
-      <div class="card profile-card">
-        <div class="card-header">
-          <h5><i class="ri-user-line"></i>Current Name</h5>
-        </div>
-        <div class="card-body">
+      <div class="ballot-section card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">Current Name</h2>
+            <p class="ballot-section-desc mb-0">
+              These names come from your existing BonID profile and cannot be
+              edited here.
+            </p>
+          </div>
+
           <div class="row g-3">
             <div class="col-md-4">
               <label class="form-label text-muted small">First Name</label>
@@ -45,11 +56,16 @@
       </div>
 
       <%# New Name %>
-      <div class="card profile-card">
-        <div class="card-header">
-          <h5><i class="ri-pencil-line"></i>New Name</h5>
-        </div>
-        <div class="card-body">
+      <div class="ballot-section card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">New Name</h2>
+            <p class="ballot-section-desc mb-0">
+              Enter the legal name you would like on file going forward.
+            </p>
+          </div>
+
           <div class="row g-3">
             <div class="col-md-4">
               <%= f.input :new_first_name, required: true,
@@ -86,11 +102,17 @@
       </div>
 
       <%# Reason & Document %>
-      <div class="card profile-card" data-controller="name-change-reason">
-        <div class="card-header">
-          <h5><i class="ri-file-text-line"></i>Reason &amp; Supporting Document</h5>
-        </div>
-        <div class="card-body">
+      <div class="ballot-section card border-0 shadow-sm mb-4" data-controller="name-change-reason">
+        <div class="card-body p-4">
+
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">Reason &amp; Supporting Document</h2>
+            <p class="ballot-section-desc mb-0">
+              Select why you are changing your name and upload a document that
+              proves the change.
+            </p>
+          </div>
+
           <div class="row g-3">
             <div class="col-md-6">
               <%= f.input :reason, required: true,
@@ -132,11 +154,11 @@
         </div>
       </div>
 
-      <%# Privacy Notice %>
-      <div class="alert alert-info d-flex align-items-start mb-4">
-        <i class="ri-shield-check-line ri-lg me-3 mt-1"></i>
-        <div class="small">
-          <strong>Your request is encrypted and secure.</strong><br>
+      <%# Privacy Notice — highlighted using the wizard's tip-box idiom %>
+      <div class="enroll-helpful-tip mb-4">
+        <i class="ri-shield-check-line"></i>
+        <div>
+          <strong>Your request is encrypted and secure.</strong>
           Only authorized administrators can review name change requests.
           You will be notified by email once your request is reviewed.
         </div>

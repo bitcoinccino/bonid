@@ -11,6 +11,18 @@ class QrScanLog < ApplicationRecord
 
   before_validation :sync_identity_submission
 
+  # Real-time citizen bell — skip law-enforcement scans so PNH can't tip
+  # the citizen they're being checked, mirroring the Aktivite scope rule.
+  after_create_commit :broadcast_alert_to_citizen
+
+  def broadcast_alert_to_citizen
+    return if officer_id.present?
+    return if partner&.sector.in?(Citizens::AlertCounter::LAW_ENFORCEMENT_SECTORS)
+
+    citizen_id = identity_submission&.user_id
+    Citizens::AlertBroadcastJob.perform_later(citizen_id) if citizen_id
+  end
+
   # === Delegations for location (pulls from qr_scan)
   delegate :city, :region, :country, :organization, to: :qr_scan, allow_nil: true
 

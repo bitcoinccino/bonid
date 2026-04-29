@@ -27,6 +27,12 @@ class ConsentGrant < ApplicationRecord
   before_validation :generate_grant_token, on: :create
   before_save :expire_if_due
   after_update_commit :track_status_change, if: :saved_change_to_status?
+  after_create_commit  :broadcast_alert_to_citizen
+  after_update_commit  :broadcast_alert_to_citizen, if: :saved_change_to_status?
+
+  def broadcast_alert_to_citizen
+    Citizens::AlertBroadcastJob.perform_later(citizen_id) if citizen_id
+  end
 
   # ======================================================
   # 🔍 Scopes

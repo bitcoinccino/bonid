@@ -8,19 +8,15 @@ is_edit         = submission.persisted?
 <%= stylesheet_link_tag "liveness", media: "all" %>
 <%= javascript_include_tag "liveness", type: "module", defer: true %>
 
-<div class="px-0">
+<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head)
+    so verification reads as one continuous wizard with the rest of the
+    citizen flow. The page title lives inside Step 1 so it disappears once
+    the citizen advances past the first panel. %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Page Header ── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="citizen-page-title mb-1">
-        <i class="ri-shield-user-line me-2"></i>Verify Your Identity
-      </h3>
-      <p class="text-muted mb-0" style="font-size: 0.78rem;">
-        Upload your ID, complete a face check, sign, and review your submission.
-      </p>
-    </div>
-    <%= link_to citizens_identity_submissions_path, class: "btn btn-outline-secondary btn-sm" do %>
+  <%# ── Back link — escape hatch back to submissions list ── %>
+  <div class="ballot-back-bar">
+    <%= link_to citizens_identity_submissions_path, class: "ballot-back-link" do %>
       <i class="ri-arrow-left-line"></i>
     <% end %>
   </div>
@@ -64,26 +60,6 @@ is_edit         = submission.persisted?
         </div>
       </div>
 
-      <%# ── Step Titles (shown one at a time) ── %>
-      <p class="mb-3" style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);">
-        <span data-wizard-target="stepTitle">Step 1: Upload your ID type and a supporting document.</span>
-        <span data-wizard-target="stepTitle" class="d-none">
-          <% if @skip_liveness %>
-            Step 2: Face check verified ✓ (from previous submission)
-          <% else %>
-            Step 2: Complete a quick face liveness check.
-          <% end %>
-        </span>
-        <span data-wizard-target="stepTitle" class="d-none">
-          <% if @skip_signature %>
-            Step 3: Signature verified ✓ (from previous submission)
-          <% else %>
-            Step 3: Upload a scanned signature or draw one below.
-          <% end %>
-        </span>
-        <span data-wizard-target="stepTitle" class="d-none">Step 4: Review & confirm your submission.</span>
-      </p>
-
       <%# Step-specific alerts %>
       <div data-wizard-target="stepAlert" class="d-flex align-items-start mb-4 p-3 rounded-2" style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
         <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
@@ -115,8 +91,27 @@ is_edit         = submission.persisted?
 
       <%# ══════════ STEP 1 ══════════ %>
       <section data-wizard-target="step" data-step="1" class="wizard-step active">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <%# Page header lives inside step 1 only — wizard hides this section
+            on advance so "Verify Your Identity" disappears past the first panel. %>
+        <div class="ballot-head text-center">
+          <h1 class="ballot-title">
+            <i class="ri-shield-user-line me-2"></i>Verify Your Identity
+          </h1>
+          <p class="ballot-subtitle mb-0">
+            Upload your ID, complete a face check, sign, and review your submission.
+          </p>
+        </div>
+
+        <div class="ballot-section card border-0 shadow-sm mb-4">
           <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Government ID</h2>
+              <p class="ballot-section-desc mb-0">
+                Upload your CIN or passport, plus any supporting documents.
+              </p>
+            </div>
+
             <div data-controller="id-switcher">
               <%= render "citizens/identity_submissions/id_upload_section", f: f, submission: submission %>
             </div>
@@ -134,8 +129,21 @@ is_edit         = submission.persisted?
 
       <%# ══════════ STEP 2 ══════════ %>
       <section data-wizard-target="step" data-step="2" class="wizard-step d-none" style="display:none">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="ballot-section card border-0 shadow-sm mb-4">
           <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Face Verification</h2>
+              <p class="ballot-section-desc mb-0">
+                <% if @skip_liveness %>
+                  Your face check from a previous submission is still valid. No new
+                  liveness check is required.
+                <% else %>
+                  Confirm you are the person on the ID with a quick face check.
+                <% end %>
+              </p>
+            </div>
+
             <%= render "citizens/identity_submissions/additional_documents_section",
                   f: f, submission: submission %>
           </div>
@@ -157,8 +165,21 @@ is_edit         = submission.persisted?
 
       <%# ══════════ STEP 3 — Signature ══════════ %>
       <section data-wizard-target="step" data-step="3" class="wizard-step d-none" style="display:none">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="ballot-section card border-0 shadow-sm mb-4">
           <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Signature</h2>
+              <p class="ballot-section-desc mb-0">
+                <% if @skip_signature %>
+                  Your signature from a previous submission is still on file and
+                  will be carried forward.
+                <% else %>
+                  Upload a scanned signature or draw one below.
+                <% end %>
+              </p>
+            </div>
+
             <%= render "citizens/identity_submissions/signature_submit_section",
                   f: f, submission: submission %>
           </div>
@@ -180,7 +201,19 @@ is_edit         = submission.persisted?
 
       <%# ══════════ STEP 4 — Review & Confirm ══════════ %>
       <section data-wizard-target="step" data-step="4" class="wizard-step d-none" style="display:none">
-        <%= render "citizens/identity_submissions/review_section", submission: submission %>
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Review &amp; Confirm</h2>
+              <p class="ballot-section-desc mb-0">
+                Check everything below before submitting for verification.
+              </p>
+            </div>
+
+            <%= render "citizens/identity_submissions/review_section", submission: submission %>
+          </div>
+        </div>
 
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"

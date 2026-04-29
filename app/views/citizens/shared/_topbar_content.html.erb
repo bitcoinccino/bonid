@@ -1,6 +1,6 @@
 <%# Citizen Topbar — matches partner navbar style %>
 <nav id="citizen-topbar" class="navbar fixed-top px-3"
-     style="background: linear-gradient(135deg, var(--primary) 0%, #001570 100%); border-bottom: 4px solid #D21034;">
+     style="background: var(--primary); border-bottom: 4px solid #D21034;">
   <div class="container-fluid justify-content-between align-items-center">
 
     <%# Left: Mobile Sidebar Toggle only %>
@@ -134,6 +134,41 @@
         background: rgba(255, 255, 255, 0.18);
         color: #fff !important;
       }
+      /* Kill the default tap/focus border on the burger, bell, and profile
+         avatar — Bootstrap's btn :focus ring + Mobile Safari's gray tap
+         highlight both flash a square outline that doesn't fit the navy
+         topbar. .btn.show is what was leaking on the bell when its
+         dropdown opened (Bootstrap repaints the trigger's border-color).
+         Keyboard focus is preserved via :focus-visible. */
+      #citizen-topbar .btn,
+      #citizen-topbar .btn:hover,
+      #citizen-topbar .btn:focus,
+      #citizen-topbar .btn:active,
+      #citizen-topbar .btn.active,
+      #citizen-topbar .btn.show,
+      #citizen-topbar [data-bs-toggle],
+      #citizen-topbar [data-bs-toggle]:focus,
+      #citizen-topbar [data-bs-toggle]:active,
+      #citizen-topbar [data-bs-toggle][aria-expanded="true"],
+      #citizen-topbar a:focus,
+      #citizen-topbar a:active {
+        box-shadow: none !important;
+        outline: none !important;
+        border-color: transparent !important;
+      }
+      #citizen-topbar .btn,
+      #citizen-topbar [data-bs-toggle],
+      #citizen-topbar a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      #citizen-topbar .btn:focus-visible,
+      #citizen-topbar a:focus-visible {
+        outline: 2px solid rgba(255, 255, 255, 0.6) !important;
+        outline-offset: 2px;
+        box-shadow: none !important;
+        border-color: transparent !important;
+      }
+
       .citizen-topbar-badge {
         display: inline-flex;
         align-items: center;
@@ -177,23 +212,12 @@
           Byenveni, <strong style="color: #fff;"><%= current_citizen.first_name || "Sitwayen" %></strong>
         </span>
 
-        <%# Notifications %>
-        <%
-          total_alerts = Rails.cache.fetch("citizen_alerts_#{current_citizen.id}", expires_in: 30.seconds) do
-            n = current_citizen.notifications.unread.count rescue 0
-            t = current_citizen.transaction_consents.where(status: :pending).where("expires_at > ?", Time.current).count rescue 0
-            b = (current_citizen.identity_submissions.order(created_at: :desc).pick(:status) == "rejected") ? 1 : 0 rescue 0
-            n + t + b
-          end
-        %>
-        <%= link_to citizens_transaction_consents_path, class: "text-white position-relative text-decoration-none" do %>
-          <i class="ri-notification-3-line fs-4"></i>
-          <% if total_alerts.positive? %>
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
-              <%= total_alerts > 99 ? "99+" : total_alerts %>
-            </span>
-          <% end %>
-        <% end %>
+        <%# Notifications — bell counts events newer than the citizen's
+            `notifications_seen_at` across the same five sources Aktivite
+            surfaces. Live-updated via Turbo Streams; clicking goes to
+            Aktivite, which stamps `notifications_seen_at` and clears it. %>
+        <%= turbo_stream_from "citizen_alerts:#{current_citizen.id}" %>
+        <%= render "citizens/shared/alert_bell" %>
 
         <%# Profile Dropdown %>
         <div class="dropdown">
@@ -230,6 +254,11 @@
             <li>
               <%= link_to edit_citizens_profile_path, class: "dropdown-item" do %>
                 <i class="ri-user-line me-2"></i> Profile
+              <% end %>
+            </li>
+            <li>
+              <%= link_to citizens_settings_path, class: "dropdown-item" do %>
+                <i class="ri-settings-3-line me-2"></i> Paramèt
               <% end %>
             </li>
             <li><hr class="dropdown-divider"></li>

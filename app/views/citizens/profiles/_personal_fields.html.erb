@@ -1,17 +1,17 @@
-<%# Personal Information Section %>
+<%# Personal Information Section — chrome matches the Anrejistre wizard
+    (.ballot-section / .ballot-section-head). %>
 <% locked = @identity_verified %>
-<div class="card profile-card" data-controller="id-switcher">
-  <div class="card-header">
-    <h5><i class="ri-shield-check-line"></i>Personal Information</h5>
-  </div>
-  <div class="card-body">
-    <%# Info Banner %>
-    <div class="alert alert-info d-flex align-items-start">
-      <i class="ri-2x ri-shield-check-line me-3"></i>
-      <div>
-        <strong>Your identity is protected.</strong><br>
-        All personal data is <strong>encrypted at rest and in transit</strong>. Only approved Haitian institutions can verify you — never see your full file without consent.
-      </div>
+<div class="ballot-section card border-0 shadow-sm mb-4" data-controller="id-switcher">
+  <div class="card-body p-4">
+
+    <%# Wizard-style section head: bold title + subdued desc %>
+    <div class="ballot-section-head mb-4">
+      <h2 class="ballot-section-title">Personal Information</h2>
+      <p class="ballot-section-desc mb-0">
+        All personal data is <strong>encrypted at rest and in transit</strong>.
+        Only approved Haitian institutions can verify you. They never see your
+        full file without consent.
+      </p>
     </div>
 
     <% if locked %>
@@ -26,43 +26,17 @@
 
     <div class="row g-4">
       <%# Prefix — always editable (honorific, not on gov ID) %>
-      <div class="col-6 col-md-2">
+      <div class="col-6 col-md-6">
         <%= f.input :prefix,
           collection: User::PREFIXES,
           include_blank: "Prefix",
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
-        <small class="text-muted">Optional — e.g., Mr, Ms, Dr, Me</small>
-      </div>
-
-      <%# First Name (Required) — LOCKED when verified %>
-      <div class="col-12 col-md-5">
-        <%= f.input :first_name, required: true,
-          disabled: locked,
-          input_html: {
-            placeholder: "e.g. Marie",
-            class: "form-control #{'bg-light' if locked}",
-            autocomplete: "given-name"
-          },
-          label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked — verified identity" : "As it appears on your national ID card (CIN/NIF)" %></small>
-      </div>
-
-      <%# Middle Name (Optional) — LOCKED when verified %>
-      <div class="col-12 col-md-3">
-        <%= f.input :middle_name,
-          disabled: locked,
-          input_html: {
-            placeholder: "e.g. Claudette (optional)",
-            class: "form-control #{'bg-light' if locked}",
-            autocomplete: "additional-name"
-          },
-          label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked — verified identity" : "Leave blank if you have none" %></small>
+        <small class="text-muted">Optional. e.g., Mr, Ms, Dr, Me</small>
       </div>
 
       <%# Suffix — always editable (honorific, not on gov ID) %>
-      <div class="col-6 col-md-2">
+      <div class="col-6 col-md-6">
         <%= f.input :suffix,
           collection: User::SUFFIXES,
           include_blank: "Suffix",
@@ -71,8 +45,34 @@
         <small class="text-muted">e.g., Jr, Sr, II</small>
       </div>
 
+      <%# First Name (Required) — LOCKED when verified %>
+      <div class="col-12 col-md-4">
+        <%= f.input :first_name, required: true,
+          disabled: locked,
+          input_html: {
+            placeholder: "e.g. Marie",
+            class: "form-control #{'bg-light' if locked}",
+            autocomplete: "given-name"
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "As it appears on your national ID card (CIN/NIF)" %></small>
+      </div>
+
+      <%# Middle Name (Optional) — LOCKED when verified %>
+      <div class="col-12 col-md-4">
+        <%= f.input :middle_name,
+          disabled: locked,
+          input_html: {
+            placeholder: "e.g. Claudette (optional)",
+            class: "form-control #{'bg-light' if locked}",
+            autocomplete: "additional-name"
+          },
+          label_html: { class: "form-label" } %>
+        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "Leave blank if you have none" %></small>
+      </div>
+
       <%# Last Name (Required) — LOCKED when verified %>
-      <div class="col-md-6">
+      <div class="col-12 col-md-4">
         <%= f.input :last_name, required: true,
           disabled: locked,
           input_html: {
@@ -81,11 +81,11 @@
             autocomplete: "family-name"
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked — verified identity" : "Your family name / surname" %></small>
+        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "Your family name / surname" %></small>
       </div>
 
       <%# Sex — LOCKED when verified %>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <%= f.input :sex,
           collection: User.sexes.keys.map { |k| [k.titleize, k] },
           include_blank: "Select Sex",
@@ -101,7 +101,7 @@
       </div>
 
       <%# Nationality — LOCKED when verified %>
-      <div class="col-6 col-md-3">
+      <div class="col-6 col-md-4">
         <%= f.input :nationality,
           disabled: locked,
           input_html: {
@@ -110,17 +110,17 @@
             data: locked ? {} : { id_switcher_target: "nationality" }
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked — verified identity" : "Auto-filled from Sex selection" %></small>
+        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "Auto-filled from Sex selection" %></small>
       </div>
 
       <%# Date of Birth — LOCKED when verified %>
-      <div class="col-md-4">
+      <div class="col-12 col-md-4">
         <label class="form-label">Date of birth</label>
         <% if locked %>
           <input type="text" class="form-control bg-light"
                  value="<%= @citizen.dob&.strftime('%d / %m / %Y') %>"
                  disabled readonly />
-          <small class="text-muted">Locked — verified identity</small>
+          <small class="text-muted">Locked. Verified identity</small>
         <% else %>
           <input type="date"
                  name="user[dob]"
@@ -134,7 +134,7 @@
       </div>
 
       <%# Phone Number — always editable, Haiti +509 locked %>
-      <div class="col-md-4">
+      <div class="col-12 col-md-6">
         <label class="form-label">Phone</label>
         <%
           raw_phone = @citizen.phone.to_s
@@ -159,7 +159,7 @@
       </div>
 
       <%# Marital Status — always editable %>
-      <div class="col-md-4">
+      <div class="col-12 col-md-6">
         <%= f.input :marital_status,
           collection: User.marital_statuses.keys.map { |k| [k.titleize, k] },
           include_blank: "Select Status",
@@ -168,11 +168,13 @@
       </div>
     </div>
 
-    <%# Privacy Footer %>
-    <div class="privacy-footer">
-      <i class="ri-lock-2-fill text-success me-2"></i>
-      <strong>Encrypted • Audited • Haiti Government Compliant</strong><br>
-      Your data is never sold. Only verified institutions can confirm your identity.
+    <%# Privacy Notice — highlighted using the wizard's tip-box idiom %>
+    <div class="enroll-helpful-tip mt-4">
+      <i class="ri-lock-2-fill"></i>
+      <div>
+        <strong>Encrypted • Audited • Haiti Government Compliant.</strong>
+        Your data is never sold. Only verified institutions can confirm your identity.
+      </div>
     </div>
   </div>
 </div>

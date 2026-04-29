@@ -1,18 +1,13 @@
 <%# app/views/citizens/profiles/edit.html.erb %>
 
-<div class="px-0">
+<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head)
+    so verification reads as one continuous wizard with the rest of the
+    citizen flow. %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Page Header ── %>
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h3 class="citizen-page-title mb-1">
-        <i class="ri-user-settings-line me-2"></i>Get Verified
-      </h3>
-      <p class="text-muted mb-0" style="font-size: 0.78rem;">
-        Complete the sections below to create your official BonID profile.
-      </p>
-    </div>
-    <%= link_to citizens_identity_submissions_path, class: "btn btn-outline-secondary btn-sm" do %>
+  <%# ── Back link — escape hatch back to submissions list ── %>
+  <div class="ballot-back-bar">
+    <%= link_to citizens_identity_submissions_path, class: "ballot-back-link" do %>
       <i class="ri-arrow-left-line"></i>
     <% end %>
   </div>
@@ -58,6 +53,18 @@
 
     <%# ── STEP 1 — Profile Photo ── %>
     <div data-wizard-target="step">
+      <%# Page header lives inside step 1 only — the wizard hides this div
+          on subsequent steps so "Get Verified" + intro copy disappear once
+          the citizen moves past the first wizard panel. %>
+      <div class="ballot-head text-center">
+        <h1 class="ballot-title">
+          <i class="ri-user-settings-line me-2"></i>Get Verified
+        </h1>
+        <p class="ballot-subtitle mb-0">
+          Complete the sections below to create your official BonID profile.
+        </p>
+      </div>
+
       <%= render "citizens/profiles/profile_photo_fields", f: f %>
       <div class="d-flex justify-content-end">
         <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
