@@ -516,6 +516,17 @@ end
     # Language preference (fr / ht), Notifications channel (email / phone).
     get   "paramet", to: "settings#edit",   as: :settings
     patch "paramet", to: "settings#update"
+    # Drops the in-flight email-change request (cache eviction) so the
+    # citizen can correct a typo without waiting out the 15-min TTL.
+    delete "paramet/email_change", to: "settings#cancel_email_change",
+           as: :cancel_email_change
+
+    # ✅ One-question onboarding gate — "Where do you live?" Haiti / Abroad.
+    # Fires once on first sign-in (or until WaitlistSignup pre-fills the
+    # answer). Result lands on User#is_diaspora and pre-configures the
+    # profile wizard, dashboard checklist, and submission flow.
+    get  "byenveni", to: "onboarding#show",   as: :onboarding
+    post "byenveni", to: "onboarding#update"
 
     # ✅ Unified Activity Feed (Aktivite) — consolidates scans, consents,
     # transaction consents, and service applications into one timeline.

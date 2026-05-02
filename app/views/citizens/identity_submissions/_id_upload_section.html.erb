@@ -1,27 +1,57 @@
 <%# Step 1: ID Type, Upload & Supporting Document %>
 
-<%# ── Country of Residence (pre-filled from profile address) ── %>
-<% profile_country = current_citizen.address&.country&.upcase == "HAITI" ? "HT" : (current_citizen.address&.country || "HT") %>
-<% resolved_country = submission.country_of_residence.presence || profile_country %>
-<div class="mb-3">
-  <%= f.input :country_of_residence,
-        required: true,
-        label: "Ki peyi ou ap viv kounye a?",
-        collection: grouped_country_options.flat_map { |group, countries| countries.map { |name, code| [name, code] } }.sort_by(&:first).unshift(["Haiti", "HT"]),
-        selected: resolved_country,
-        input_html: {
-          id: "country_of_residence_select",
-          class: "form-select",
-          data: { action: "change->id-switcher#toggleDiaspora", "id-switcher-target": "countrySelect" }
-        } %>
-</div>
+<%# ── Country of Residence — captured during onboarding gate, no longer
+    asked here. Falls back to profile address country when the citizen
+    predates the gate. The hidden field still posts the canonical ISO
+    code so server-side params validation is unchanged. %>
+<%
+  inferred_diaspora = current_citizen.is_diaspora
+  if inferred_diaspora.nil?
+    profile_country = current_citizen.address&.country&.upcase == "HAITI" ? "HT" : (current_citizen.address&.country || "HT")
+    inferred_diaspora = profile_country.present? && profile_country != "HT"
+    resolved_country  = profile_country
+  else
+    resolved_country = inferred_diaspora ? (current_citizen.address&.country.presence || "OTHER") : "HT"
+  end
+  is_diaspora = inferred_diaspora
+%>
+<%= f.hidden_field :country_of_residence, value: resolved_country %>
 
-<%# ── Diaspora Document Section (hidden when Haiti is selected) ── %>
-<% is_diaspora = resolved_country.present? && resolved_country != "HT" %>
+<%# Pre-filled-from-profile summary — shown when the wizard is about to
+    auto-use the citizen's profile document data. Surfaces exactly what
+    will be submitted so the citizen can confirm before continuing,
+    instead of the wizard silently injecting values they can't see. %>
+<%
+  profile_has_doc_preview = current_citizen.id_number.present? &&
+                            current_citizen.id_type.present? &&
+                            current_citizen.id_issued_on.present? &&
+                            current_citizen.id_expires_on.present?
+%>
+<% if profile_has_doc_preview %>
+  <div class="d-flex align-items-start gap-2 mb-4 p-3 rounded-3"
+       style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.12); font-size: 0.82rem; line-height: 1.5;">
+    <i class="ri-shield-check-line flex-shrink-0 mt-1" style="color: var(--primary); font-size: 1.1rem;"></i>
+    <div class="flex-grow-1">
+      <strong style="color: var(--primary);">Done sou dokiman ou (depi nan pwofil)</strong>
+      <div class="mt-1 text-dark">
+        <%= (current_citizen.id_type.to_s == "cin" ? "CIN" : current_citizen.id_type.to_s.titleize) %>
+        <strong><%= current_citizen.id_number %></strong>,
+        emèt <strong><%= current_citizen.id_issued_on.strftime("%d/%m/%Y") %></strong>,
+        ekspire <strong><%= current_citizen.id_expires_on.strftime("%d/%m/%Y") %></strong>.
+      </div>
+      <%= link_to edit_citizens_profile_path,
+                  class: "small fw-semibold text-decoration-none mt-2 d-inline-block",
+                  style: "color: var(--primary);" do %>
+        <i class="ri-edit-line me-1"></i> Modifye nan pwofil
+      <% end %>
+    </div>
+  </div>
+<% end %>
+
 <div id="diaspora_fields"
      data-id-switcher-target="diasporaFields"
-     class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= ' display: none;' unless is_diaspora %>">
+     class="mb-4"
+     style="<%= 'display: none;' unless is_diaspora %>">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
       class="mb-3">
     <i class="ri-global-line me-1"></i> Dokiman Rezidans (Diaspora)
@@ -31,7 +61,7 @@
   </p>
 
   <div class="row g-3">
-    <div class="col-md-6">
+    <div class="col-12 col-md-6">
       <%= f.input :host_country_id_type,
             label: "Ki kalite dokiman ou genyen?",
             collection: [
@@ -44,76 +74,42 @@
               ["Lòt / Other", "other"]
             ],
             prompt: "Chwazi kalite dokiman",
-            input_html: { class: "form-select" },
-            label_html: { class: "form-label" } %>
+            input_html: { class: "form-select form-select-lg" },
+            label_html: { class: "form-label fw-semibold" } %>
     </div>
-    <div class="col-md-6">
+    <div class="col-12 col-md-6" data-controller="image-quality">
       <%= f.input :host_country_id,
             as: :file,
             label: "Telechaje dokiman an",
-            input_html: { accept: "image/*,application/pdf", class: "form-control" },
-            label_html: { class: "form-label" } %>
+            input_html: {
+              accept: "image/jpeg,image/png",
+              capture: "environment",
+              class: "form-control form-control-lg",
+              data: { "image-quality-target": "input" }
+            },
+            label_html: { class: "form-label fw-semibold" } %>
+      <div data-image-quality-target="status"></div>
+      <div data-image-quality-target="thumbnail"></div>
       <% if submission.persisted? && submission.host_country_id.attached? %>
-        <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
       <% end %>
     </div>
   </div>
-</div>
 
-<%# ── Diaspora Proof of Address (hidden when Haiti is selected) ── %>
-<div id="diaspora_proof_fields"
-     data-id-switcher-target="diasporaProofFields"
-     class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= ' display: none;' unless is_diaspora %>">
-  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
-      class="mb-3">
-    <i class="ri-home-4-line me-1"></i> Prèv Adrès (Peyi Rezidans)
-  </h6>
-  <p style="font-size: 0.78rem; color: #666; margin-bottom: 1rem; line-height: 1.5;">
-    Telechaje yon dokiman ki montre non ou ak adrès kote ou ap viv la (pa plis pase 3 mwa).
-  </p>
-
-  <div class="row g-3">
-    <div class="col-md-6">
-      <%= f.input :diaspora_proof_type,
-            label: "Ki kalite prèv adrès?",
-            collection: [
-              ["Utility Bill (Elektrik, Gaz, Dlo)", "utility_bill"],
-              ["Phone Bill (Fakti Telefòn)", "phone_bill"],
-              ["Bank Statement (Relve Bank)", "bank_statement"],
-              ["Rent Agreement / Lease (Kontra Lwaye)", "rent_agreement"],
-              ["Government Letter (Lèt Gouvènman)", "government_letter"],
-              ["Lòt / Other", "other"]
-            ],
-            prompt: "Chwazi kalite dokiman",
-            input_html: { class: "form-select" },
-            label_html: { class: "form-label" } %>
-    </div>
-    <div class="col-md-6">
-      <%= f.input :diaspora_proof_of_address,
-            as: :file,
-            label: "Telechaje prèv adrès ou",
-            input_html: { accept: "image/*,application/pdf", class: "form-control" },
-            label_html: { class: "form-label" } %>
-    </div>
+  <%# Scan tips — same Rekognition best practices for the host-country ID %>
+  <div class="mt-3">
+    <%= render "citizens/identity_submissions/scan_tips" %>
   </div>
 </div>
 
-<%# Diaspora toggle handled by id-switcher Stimulus controller %>
+<%# Diaspora proof-of-address now lives in Step 2 (Dokiman Sipò) so this
+    step stays focused on the primary government ID. %>
 
 <% prefilled_id_type = submission.id_type.presence || current_citizen.id_type.presence %>
 <% id_type_labels = { "cin" => "CIN", "passport" => "Passport", "license" => "Driver's License", "voter_id" => "Voter ID", "driver_license" => "Driver's License", "national_card" => "National Card", "nif" => "NIF" } %>
 <% if prefilled_id_type %>
-  <%# ID type already known from profile — pass as hidden, show subtle badge %>
+  <%# ID type already known from profile — carry it as a hidden field. %>
   <input type="hidden" name="identity_submission[id_type]" value="<%= prefilled_id_type %>">
-  <div class="d-flex align-items-center gap-2 mb-3 px-3 py-2 rounded-2"
-       style="background: rgba(0, 32, 159, 0.05); border: 1px solid rgba(0, 32, 159, 0.1);">
-    <i class="ri-shield-check-line" style="color: var(--primary);"></i>
-    <span style="font-size: 0.82rem; color: #344054;">
-      <strong><%= id_type_labels[prefilled_id_type] || prefilled_id_type.titleize %></strong>
-      — pre-filled from your profile
-    </span>
-  </div>
 <% else %>
   <div class="mb-3">
     <%= f.input :id_type,
@@ -123,44 +119,61 @@
           prompt: "Select ID Type",
           input_html: {
             id: "id_type_select",
-            class: "form-select",
+            class: "form-select form-select-lg",
             data: {
               action: "change->id-switcher#toggle",
               "id-switcher-target": "idType"
             }
-          } %>
+          },
+          label_html: { class: "form-label fw-semibold" } %>
   </div>
 <% end %>
 
 <%# CIN Uploads %>
 <div id="cin_fields"
      data-id-switcher-target="cinFields"
-     class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= ' display: none;' unless prefilled_id_type == 'cin' || prefilled_id_type.blank? %>">
-  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
-      class="mb-3">
-    <i class="ri-contacts-book-line me-1"></i> Upload Your CIN (Both Sides)
-  </h6>
+     class="mb-4"
+     style="<%= 'display: none;' unless prefilled_id_type == 'cin' || prefilled_id_type.blank? %>">
+  <%# Scan tips — Amazon Rekognition best practices %>
+  <%= render "citizens/identity_submissions/scan_tips" %>
 
   <div class="row g-3">
-    <div class="col-md-6">
+    <div class="col-12 col-md-6" data-controller="image-quality">
       <%= f.input :cin_front,
             as: :file,
             label: "CIN Front",
-            input_html: { accept: "image/*", class: "form-control" },
-            label_html: { class: "form-label" } %>
+            required: !submission.cin_front.attached?,
+            input_html: {
+              accept: "image/jpeg,image/png",
+              capture: "environment",
+              class: "form-control form-control-lg",
+              required: !submission.cin_front.attached?,
+              data: { "image-quality-target": "input" }
+            },
+            label_html: { class: "form-label fw-semibold" } %>
+      <div data-image-quality-target="status"></div>
+      <div data-image-quality-target="thumbnail"></div>
       <% if submission.persisted? && submission.cin_front.attached? %>
-        <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
       <% end %>
     </div>
-    <div class="col-md-6">
+    <div class="col-12 col-md-6" data-controller="image-quality">
       <%= f.input :cin_back,
             as: :file,
             label: "CIN Back",
-            input_html: { accept: "image/*", class: "form-control" },
-            label_html: { class: "form-label" } %>
+            required: !submission.cin_back.attached?,
+            input_html: {
+              accept: "image/jpeg,image/png",
+              capture: "environment",
+              class: "form-control form-control-lg",
+              required: !submission.cin_back.attached?,
+              data: { "image-quality-target": "input" }
+            },
+            label_html: { class: "form-label fw-semibold" } %>
+      <div data-image-quality-target="status"></div>
+      <div data-image-quality-target="thumbnail"></div>
       <% if submission.persisted? && submission.cin_back.attached? %>
-        <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
       <% end %>
     </div>
   </div>
@@ -171,32 +184,49 @@
 <%# Passport Upload %>
 <div id="passport_field"
      data-id-switcher-target="passportField"
-     class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);<%= prefilled_id_type == 'passport' ? '' : ' display: none;' %>">
-  <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
-      class="mb-3">
-    <i class="ri-passport-line me-1"></i> Upload Your Passport
-  </h6>
+     class="mb-4"
+     style="<%= 'display: none;' unless prefilled_id_type == 'passport' %>">
+  <%# Scan tips — Amazon Rekognition best practices %>
+  <%= render "citizens/identity_submissions/scan_tips" %>
 
-  <%= f.input :passport,
-        as: :file,
-        label: "Passport Photo Page",
-        input_html: { accept: "image/*", class: "form-control" },
-        label_html: { class: "form-label" } %>
-  <% if submission.persisted? && submission.passport.attached? %>
-    <small class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
-  <% end %>
+  <div data-controller="image-quality">
+    <%= f.input :passport,
+          as: :file,
+          label: "Passport Photo Page",
+          required: !submission.passport.attached?,
+          input_html: {
+            accept: "image/jpeg,image/png",
+            capture: "environment",
+            class: "form-control form-control-lg",
+            required: !submission.passport.attached?,
+            data: { "image-quality-target": "input" }
+          },
+          label_html: { class: "form-label fw-semibold" } %>
+    <div data-image-quality-target="status"></div>
+    <% if submission.persisted? && submission.passport.attached? %>
+      <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+    <% end %>
+  </div>
 
 
 </div>
 
-<%# ── Document Number & Dates — skip if profile already has this data ── %>
-<% profile_has_doc = current_citizen.id_number.present? && current_citizen.id_type.present? %>
+<%# ── Document Number & Dates ──
+    Skipped when the profile already holds the four document fields
+    (id_type, id_number, id_issued_on, id_expires_on). Format validity
+    is intentionally NOT checked here — citizens with legacy CINs see
+    the legacy-CIN banner on the dashboard instead, and the submission
+    validator rejects bad formats at submit time with a clear pointer
+    back to the profile. Otherwise we'd re-ask citizens for fields they
+    already filled out, which feels like the form forgot. %>
+<% profile_has_doc = current_citizen.id_number.present? &&
+                     current_citizen.id_type.present? &&
+                     current_citizen.id_issued_on.present? &&
+                     current_citizen.id_expires_on.present? %>
 <% unless profile_has_doc || submission.submission_type.to_s == "resubmission" %>
 <div id="document_details_fields"
      data-id-switcher-target="documentFields"
-     class="p-3 rounded-3 mb-3"
-     style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);">
+     class="mb-3">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
       class="mb-3">
     <i class="ri-file-text-line me-1"></i> Document Details
@@ -205,32 +235,32 @@
     <div class="col-12 col-md-4">
       <%= f.input :document_number,
             required: true,
-            label: "Document Number",
+            label: "NINU / Document Number",
             placeholder: "Ex: 1234567890",
             input_html: {
-              class: "form-control",
+              class: "form-control form-control-lg",
               id: "document_number_input",
               maxlength: 20,
               autocomplete: "off"
             },
-            hint: "Enter your CIN or Passport number",
-            label_html: { class: "form-label", id: "document_number_label" } %>
+            hint: "Enter your 10-digit NINU exactly as printed on your CIN.",
+            label_html: { class: "form-label fw-semibold", id: "document_number_label" } %>
     </div>
-    <div class="col-6 col-md-4">
+    <div class="col-12 col-md-4">
       <%= f.input :document_issue_date,
             as: :string,
             required: true,
             label: "Issue Date",
-            input_html: { class: "form-control", type: "date", max: Date.current.iso8601 },
-            label_html: { class: "form-label" } %>
+            input_html: { class: "form-control form-control-lg", type: "date", max: Date.current.iso8601 },
+            label_html: { class: "form-label fw-semibold" } %>
     </div>
-    <div class="col-6 col-md-4">
+    <div class="col-12 col-md-4">
       <%= f.input :document_expiry_date,
             as: :string,
             required: true,
             label: "Expiry Date",
-            input_html: { class: "form-control", type: "date", min: Date.current.iso8601 },
-            label_html: { class: "form-label" } %>
+            input_html: { class: "form-control form-control-lg", type: "date", min: Date.current.iso8601 },
+            label_html: { class: "form-label fw-semibold" } %>
     </div>
   </div>
 </div>
@@ -239,7 +269,6 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var idSelect = document.getElementById("id_type_select");
-    // Pre-filled id_type (resubmission) — read from hidden input
     var prefilledType = document.querySelector("input[type='hidden'][name='identity_submission[id_type]']");
     var idValue = idSelect ? idSelect.value : (prefilledType ? prefilledType.value : null);
 
@@ -250,9 +279,9 @@
       var val = idSelect ? idSelect.value : idValue;
 
       if (val === "cin") {
-        if (label) label.textContent = "CIN Number *";
-        if (input) { input.placeholder = "Ex: 1234567890"; input.inputMode = "numeric"; input.maxLength = 20; input.style.textTransform = ""; }
-        if (hint) hint.textContent = "10 digits (new NINU), 14 or 17 digits (old CIN)";
+        if (label) label.textContent = "NINU / CIN Number *";
+        if (input) { input.placeholder = "Ex: 1234567890"; input.inputMode = "numeric"; input.maxLength = 10; input.style.textTransform = ""; }
+        if (hint) hint.textContent = "10-digit NINU printed on your CIN.";
       } else if (val === "passport") {
         if (label) label.textContent = "Passport Number *";
         if (input) { input.placeholder = "Ex: AB123456"; input.inputMode = "text"; input.maxLength = 9; input.style.textTransform = "uppercase"; }
@@ -265,89 +294,7 @@
   });
 </script>
 
-<%# ── Supporting Document ── %>
-<div class="mb-3">
-  <%= f.input :additional_proof_type,
-        required: true,
-        as: :grouped_select,
-        label: "Select one document to validate your address or identity",
-        collection: [
-          ["Bòdwo / Bills", [["Digicel Bill", "Digicel Bill"], ["Natcom Bill", "Natcom Bill"], ["DINEPA Bill", "DINEPA Bill"], ["EDH Bill", "EDH Bill"], ["Internet Bill", "Internet Bill"]]],
-          ["Dokiman Sivil / Civil Documents", [["Birth Certificate", "Birth Certificate"], ["Baptismal Certificate", "Baptismal Certificate"], ["Marriage Certificate", "Marriage Certificate"]]],
-          ["Dokiman Ofisyèl / Official Documents", [["NIF / Matricule Fiscal", "NIF / Matricule Fiscal"], ["Driver's License", "Driver's License"], ["PNH Record", "PNH Record"]]],
-          ["Finansye / Financial", [["Bank Record", "Bank Record"], ["Western Union", "Western Union"], ["MoneyGram", "MoneyGram"], ["Sendwave", "Sendwave"], ["Unitransfer", "Unitransfer"]]],
-          ["Lòt / Other", [["Car Registration", "Car Registration"], ["Car Rental Receipt", "Car Rental Receipt"], ["Other", "Other"]]]
-        ],
-        group_method: :second,
-        group_label_method: :first,
-        prompt: "Select document type",
-        input_html: { class: "form-select", id: "additional_proof_type_select" },
-        label_html: { class: "form-label" } %>
-  <div class="small mt-2 mb-0 d-flex align-items-start p-2 rounded-2"
-       style="background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
-    <i class="ri-alert-line me-2 mt-1" style="color: #D97706;"></i>
-    <span>Ensure your document is original and authentic. All submissions are verified by reviewers and AI tools. Fake or altered documents will be flagged and rejected.</span>
-  </div>
-</div>
-
-<%# Birth Certificate authenticity warning %>
-<div id="birth-certificate-warning" class="alert alert-warning small rounded-3 mb-3 d-none d-flex align-items-start">
-  <i class="ri-error-warning-line me-2 mt-1"></i>
-  <div>
-    <strong>Extrait de Naissance:</strong> Please ensure you upload the authentic, blue-colored
-    Birth Certificate issued by the <strong>National Archives</strong> (Archives Nationales d'Haiti).
-    Local town hall (mairie) copies are not accepted.
-  </div>
-</div>
-
-<%# Marriage Certificate info %>
-<div id="marriage-certificate-warning" class="alert alert-info small rounded-3 mb-3 d-none d-flex align-items-start">
-  <i class="ri-hearts-line me-2 mt-1"></i>
-  <div>
-    <strong>Acte de Mariage:</strong> Upload your official marriage certificate issued by the
-    <strong>Officier d'État Civil</strong>. This is required for name change requests on CIN or Passport.
-  </div>
-</div>
-
-<%# NIF / Matricule Fiscal info %>
-<div id="nif-warning" class="alert alert-info small rounded-3 mb-3 d-none d-flex align-items-start">
-  <i class="ri-money-dollar-circle-line me-2 mt-1"></i>
-  <div>
-    <strong>NIF / Matricule Fiscal:</strong> Upload your NIF card or matricule fiscal document
-    issued by the <strong>DGI (Direction Générale des Impôts)</strong>. This proves you are
-    registered in the tax system — required for Passport applications.
-  </div>
-</div>
-
-<div class="mb-3">
-  <%= f.input :additional_proof,
-        as: :file,
-        required: true,
-        label: "Upload Document",
-        input_html: { accept: "image/*,application/pdf", class: "form-control" },
-        label_html: { class: "form-label" } %>
-</div>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    var sel = document.getElementById("additional_proof_type_select");
-    if (!sel) return;
-
-    var warnings = {
-      "Birth Certificate":      "birth-certificate-warning",
-      "Marriage Certificate":   "marriage-certificate-warning",
-      "NIF / Matricule Fiscal": "nif-warning"
-    };
-
-    sel.addEventListener("change", function () {
-      // Toggle all warnings
-      Object.keys(warnings).forEach(function (key) {
-        var el = document.getElementById(warnings[key]);
-        if (el) el.classList.toggle("d-none", sel.value !== key);
-      });
-    });
-  });
-</script>
+<%# Supporting document + warnings now live in Step 2 (Dokiman Sipò). %>
 
 <%# ── ID Photo Blob Cache (Layer 1 of 3-Layer Validation) ──
   Caches the ID photo as a DataURL in sessionStorage the MOMENT the user

@@ -149,8 +149,14 @@ module Citizens
       @suppress_submission_alert = true
 
       # Auto-fill document details from citizen profile when the form hides those fields
-      # (profile_has_doc = true means the document_details section was not rendered)
-      if @identity_submission.document_number.blank? && current_citizen.id_number.present?
+      # (profile_has_doc = true means the document_details section was not rendered).
+      # Skip when the legacy profile id_number doesn't match the ONI format the
+      # submission validator enforces — otherwise the citizen gets a 422 they
+      # can't fix from the form. The view branch (profile_has_doc) is in lockstep:
+      # if the profile value is invalid, the form re-renders the document_number
+      # field so the citizen can type a valid one.
+      if @identity_submission.document_number.blank? && current_citizen.id_number.present? &&
+         CinNumberValidator.valid?(current_citizen.id_number, current_citizen.id_type)
         @identity_submission.document_number = current_citizen.id_number
       end
       if @identity_submission.document_issue_date.blank? && current_citizen.id_issued_on.present?
@@ -194,6 +200,18 @@ module Citizens
           "match" => (ip_country.to_s.upcase == @identity_submission.country_of_residence.to_s.upcase)
         }
         @identity_submission.metadata = geo_meta
+      end
+
+      # Promote any fraud signal captured during face_compare to this
+      # submission's metadata so reviewers see it in the admin dashboard.
+      # The signal is consumed (deleted from session) once promoted so it
+      # doesn't taint a subsequent legitimate submission.
+      if (signal = session.delete(:bonid_fraud_signal)).present?
+        meta = (@identity_submission.metadata || {}).deep_dup
+        meta["fraud_signals"] = (meta["fraud_signals"] || []) + [ signal ]
+        meta["needs_priority_review"] = true if %w[possible_account_takeover duplicate_face_in_collection].include?(signal["signal"])
+        @identity_submission.metadata = meta
+        Rails.logger.warn "[IdentitySubmission#create] Fraud signal attached: user=#{current_citizen.id} signal=#{signal['signal']}"
       end
 
       ActiveRecord::Base.transaction do
@@ -688,6 +706,36 @@ end
       # Call AWS Rekognition compare_faces
       begin
         client = FaceMatchService.rekognition_client
+
+        # ── 1:N dedup check (before 1:1 compare) ──
+        # Search the face collection for this selfie across ALL verified users.
+        # If it matches a face indexed under a DIFFERENT user_id, this is the
+        # same person trying to register a second BonID — block before they
+        # can finish the wizard. Doing this here (not just in FaceMatchJob)
+        # closes the gap where the citizen sees "success" because their selfie
+        # matches the uploaded ID, then waits on a background job that may or
+        # may not run to actually reject them.
+        dedup_result = FaceCollectionService.search(selfie_bytes, current_citizen.id)
+        if dedup_result[:duplicate]
+          Rails.logger.warn "[FaceCompare][FRAUD] Inline 1:N hit — user=#{current_citizen.id} matches existing user=#{dedup_result[:matched_user_id]} (#{dedup_result[:similarity]}%)"
+          record_fraud_signal!(
+            "duplicate_face_in_collection",
+            { existing_submission_id: nil,
+              matched_user_id: dedup_result[:matched_user_id],
+              matched_face_id: dedup_result[:matched_face_id],
+              similarity: dedup_result[:similarity],
+              match: true },
+            0
+          )
+          render json: {
+            match: false,
+            blocked: true,
+            similarity: 0,
+            title: "Figi sa a gen yon BonID deja",
+            message: "Figi w deja anrejistre sou yon lòt kont BonID. Chak moun ka gen yon sèl BonID. Si w gen yon ansyen kont, konekte avè l. Si w panse sa se yon erè, kontakte sipò."
+          } and return
+        end
+
         response = client.compare_faces(
           source_image: { bytes: selfie_bytes },
           target_image: { bytes: id_photo_bytes },
@@ -704,24 +752,39 @@ end
           Rails.logger.info "[FaceCompare] Result: similarity=#{similarity}%, target_confidence=#{target_confidence}%, threshold=#{FaceMatchService::SIMILARITY_THRESHOLD}%"
 
           if similarity >= FaceMatchService::SIMILARITY_THRESHOLD
+            session.delete(:bonid_fraud_signal) # clear any prior signal on success
             render json: { match: true, similarity: similarity }
           else
             Rails.logger.warn "[FaceCompare] MISMATCH: #{similarity}% < #{FaceMatchService::SIMILARITY_THRESHOLD}% threshold"
-            render json: { match: false, similarity: similarity, message: "Your face does not match the ID photo (#{similarity}% similarity). Please upload a valid ID document with your photo." }
+            cross_ref = cross_reference_with_existing_bonid(selfie_bytes, client)
+            message, fraud_signal = build_mismatch_response(cross_ref)
+            record_fraud_signal!(fraud_signal, cross_ref, similarity)
+            render json: face_compare_block_response(message, fraud_signal, similarity)
           end
         elsif response.unmatched_faces.any?
           Rails.logger.warn "[FaceCompare] No match found, unmatched faces detected"
-          render json: { match: false, similarity: 0, message: "Your face does not match the face on the ID document." }
+          cross_ref = cross_reference_with_existing_bonid(selfie_bytes, client)
+          message, fraud_signal = build_mismatch_response(cross_ref)
+          record_fraud_signal!(fraud_signal, cross_ref, 0)
+          render json: face_compare_block_response(message, fraud_signal, 0)
         else
           Rails.logger.warn "[FaceCompare] No face detected on target document"
-          render json: { match: false, similarity: 0, message: "No human face detected on the ID document. Please upload a clear photo of your ID." }
+          render json: {
+            match: false,
+            similarity: 0,
+            message: "Pa gen yon figi vizib sou dokiman an. Si w te telechaje DO CIN, retounen nan Etap 1 epi telechaje DEVAN CIN nan ki gen foto ou."
+          }
         end
       rescue Aws::Rekognition::Errors::InvalidParameterException => e
         # ALL InvalidParameterException from compare_faces means the image
         # doesn't contain a valid/detectable human face (e.g., animal photo,
         # blank image, scenery, etc.). Always block — never fall back.
         Rails.logger.warn "[FaceCompare] InvalidParameterException (blocking): #{e.message}"
-        render json: { match: false, similarity: 0, message: "No valid face detected on the ID document. Please upload a clear photo of your ID with your face visible." }
+        render json: {
+          match: false,
+          similarity: 0,
+          message: "Foto sou dokiman an pa klè. Telechaje yon foto klè kote figi w vizib byen sou dokiman an."
+        }
       rescue StandardError => e
         Rails.logger.error "[FaceCompare] Error: #{e.class} - #{e.message}"
         render json: { error: "Face comparison temporarily unavailable." }, status: :service_unavailable
@@ -740,6 +803,16 @@ end
     def detect_reusable_biometrics!(previous_submission)
       return unless previous_submission&.biometrics_reusable?
 
+      # Re-check 1:N face dedup before granting carry-forward. Without this,
+      # the wizard skips liveness entirely (showing "Byometrik Deja Verifye")
+      # and the inline 1:N check in face_compare never runs — so a duplicate
+      # face from a banned/rejected attempt could sail through to the
+      # post-create job, blocking the citizen only after they hit submit.
+      if biometric_carry_forward_blocked?(previous_submission.selfie.blob)
+        Rails.logger.warn "[SmartResubmission] User ##{current_citizen.id}: carry-forward DENIED — face is duplicate; forcing fresh liveness."
+        return
+      end
+
       @skip_liveness = true
       @previous_selfie_signed_id = previous_submission.selfie.blob.signed_id
       @previous_liveness_metadata = previous_submission.metadata["liveness"]
@@ -757,11 +830,20 @@ end
       return if blob_signed_id.blank?
 
       # Ensure the blob is still resolvable; drop stale session data otherwise.
-      begin
+      blob = begin
         ActiveStorage::Blob.find_signed!(blob_signed_id)
       rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveRecord::RecordNotFound
         session.delete(:liveness_blob_signed_id)
         session.delete(:liveness_metadata)
+        return
+      end
+
+      # Same 1:N gate as detect_reusable_biometrics! — refuse carry-forward
+      # when the session blob's face already exists under another user.
+      if biometric_carry_forward_blocked?(blob)
+        session.delete(:liveness_blob_signed_id)
+        session.delete(:liveness_metadata)
+        Rails.logger.warn "[SmartResubmission] User ##{current_citizen.id}: session carry-forward DENIED — face is duplicate; cleared session blob."
         return
       end
 
@@ -770,6 +852,21 @@ end
       @previous_liveness_metadata = session[:liveness_metadata]
       @liveness_reused_from_session = true
       Rails.logger.info "[SmartResubmission] User ##{current_citizen.id}: biometrics reusable from session (no prior persisted submission) — avoids double Rekognition billing"
+    end
+
+    # Returns true if the carried-forward selfie's face already exists in the
+    # 1:N collection under a DIFFERENT user. Errors are treated as "not blocked"
+    # so transient AWS issues don't lock out legitimate retries — the inline
+    # face_compare check and FaceMatchJob are the safety nets.
+    def biometric_carry_forward_blocked?(selfie_blob)
+      bytes = download_blob_safely(selfie_blob)
+      return false if bytes.blank?
+
+      result = FaceCollectionService.search(bytes, current_citizen.id)
+      result.is_a?(Hash) && result[:duplicate] == true
+    rescue StandardError => e
+      Rails.logger.warn "[SmartResubmission] 1:N carry-forward check error for user ##{current_citizen.id}: #{e.class} - #{e.message}"
+      false
     end
 
     # Carries forward liveness metadata + selfie from a previous submission.
@@ -935,6 +1032,126 @@ end
       )
     rescue => e
       Rails.logger.error "⚠️ [attach_drawn_signature!] Failed: #{e.message}"
+    end
+
+    # ── Cross-reference fraud detection ──────────────────────────────
+    # When the primary selfie-vs-uploaded-ID compare fails, also compare
+    # the live selfie against any existing approved BonID selfie this
+    # citizen already has on file. The combined result lets us tell two
+    # distinct attacks apart:
+    #
+    #   • Selfie matches existing BonID, doesn't match new ID
+    #     → wrong_document_uploaded (same citizen, wrong/stolen doc)
+    #   • Selfie doesn't match existing BonID OR new ID
+    #     → possible_account_takeover (stranger using account credentials)
+    #
+    # We tag a structured signal in the session; create() promotes it to
+    # IdentitySubmission#metadata["fraud_signals"] when the submission is
+    # actually persisted, so reviewers see the lineage.
+    def cross_reference_with_existing_bonid(new_selfie_bytes, client)
+      approved = current_citizen.identity_submissions
+                                 .approved
+                                 .where.not(verified_at: nil)
+                                 .order(verified_at: :desc).first
+      return nil unless approved&.selfie&.attached?
+
+      existing_bytes = download_blob_safely(approved.selfie.blob)
+      return nil if existing_bytes.blank?
+
+      resp = client.compare_faces(
+        source_image: { bytes: new_selfie_bytes },
+        target_image: { bytes: existing_bytes },
+        similarity_threshold: 0
+      )
+
+      if resp.face_matches.any?
+        similarity = resp.face_matches.max_by(&:similarity).similarity.round(2)
+        {
+          existing_submission_id: approved.id,
+          similarity: similarity,
+          match: similarity >= FaceMatchService::SIMILARITY_THRESHOLD
+        }
+      else
+        { existing_submission_id: approved.id, similarity: 0.0, match: false }
+      end
+    rescue Aws::Rekognition::Errors::ServiceError, StandardError => e
+      Rails.logger.warn "[FaceCompare] Cross-reference check failed for user ##{current_citizen.id}: #{e.class} - #{e.message}"
+      nil
+    end
+
+    # Returns [user_facing_message, fraud_signal_or_nil].
+    # We name what was detected — generic "admin will review" wording leaves
+    # legitimate citizens confused. Reviewers still get the structured
+    # fraud_signal in submission metadata for follow-up.
+    def build_mismatch_response(cross_ref)
+      if cross_ref.nil?
+        # No existing approved BonID — first-time submission, generic message.
+        [
+          "Figi ou pa matche ak foto ki sou dokiman an. Asire ou telechaje DEVAN CIN ou (kote ki gen foto ou) — pa do a — epi pran selfi a nan bon limyè.",
+          nil
+        ]
+      elsif cross_ref[:match]
+        # Selfie matches the citizen's existing BonID but NOT the uploaded
+        # ID — same citizen, wrong document. Friendly UX.
+        [
+          "Sanble dokiman idantite ou telechaje pa montre figi ou. Tanpri retounen nan Etap 1 epi telechaje DEVAN PWÒP CIN ou la (kote ki gen foto ou).",
+          "wrong_document_uploaded"
+        ]
+      else
+        # Selfie matches NEITHER the new ID NOR the citizen's existing BonID.
+        # Tell them straight: the face on this account isn't theirs.
+        [
+          "Figi sa a pa matche ak BonID ki anrejistre sou kont sa a. Si se vrè ou menm, kontakte sipò pou yo ka mete idantite ou ajou — pa egzanp si aparans ou chanje anpil.",
+          "possible_account_takeover"
+        ]
+      end
+    end
+
+    # When face_compare blocks a submission, two situations need distinct UX:
+    #   - "real mismatch" (selfie doesn't match the uploaded ID, or wrong
+    #     document) — retrying with the right document might work, so keep
+    #     the Eseye ankò / Retounen Etap 1 buttons.
+    #   - "blocked" (account-takeover or duplicate-face-in-collection) — the
+    #     citizen can't fix this themselves. Drop the retry buttons and
+    #     direct them to support so they don't hammer the gate.
+    BLOCKING_FRAUD_SIGNALS = %w[possible_account_takeover duplicate_face_in_collection].freeze
+    BLOCKING_TITLES = {
+      "duplicate_face_in_collection" => "Figi sa a gen yon BonID deja",
+      "possible_account_takeover"    => "Figi sa a pa matche ak kont sa a"
+    }.freeze
+
+    def face_compare_block_response(message, fraud_signal, similarity)
+      if BLOCKING_FRAUD_SIGNALS.include?(fraud_signal.to_s)
+        {
+          match: false,
+          blocked: true,
+          similarity: similarity,
+          title: BLOCKING_TITLES.fetch(fraud_signal.to_s, "Verifikasyon poko ka konplete"),
+          message: message
+        }
+      else
+        { match: false, similarity: similarity, message: message }
+      end
+    end
+
+    def record_fraud_signal!(signal, cross_ref, primary_similarity)
+      return if signal.blank?
+
+      payload = {
+        "signal" => signal,
+        "detected_at" => Time.current.iso8601,
+        "primary_similarity" => primary_similarity,
+        "cross_reference" => cross_ref
+      }
+      session[:bonid_fraud_signal] = payload
+
+      Rails.logger.warn(
+        "[FaceCompare][FRAUD] user=#{current_citizen.id} signal=#{signal} " \
+        "primary_similarity=#{primary_similarity} " \
+        "existing_match=#{cross_ref&.dig(:match)} " \
+        "existing_similarity=#{cross_ref&.dig(:similarity)} " \
+        "existing_submission_id=#{cross_ref&.dig(:existing_submission_id)}"
+      )
     end
 
     # Downloads blob bytes with resilience against ghost files (blob in DB, file missing from disk).

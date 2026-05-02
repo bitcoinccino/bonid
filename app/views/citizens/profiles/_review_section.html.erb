@@ -23,7 +23,13 @@
       </button>
     </div>
     <div data-profile-review-target="reviewPhoto" class="mb-4 review-data text-center">
-      <% if @citizen.photo.attached? %>
+      <%# Guard against an unsaved photo on validation-failure re-renders.
+          When the controller hits a 422 and re-renders edit, the new
+          ActiveStorage::Blob from the just-attempted upload isn't
+          persisted yet, so url_for raises "Cannot get a signed_id for
+          a new record" and 500s. Falls back to the "Not uploaded" hint
+          so the citizen can re-attach if needed. %>
+      <% if @citizen.photo.attached? && @citizen.photo.blob&.persisted? %>
         <%= image_tag url_for(@citizen.photo), class: "review-photo-img d-block mx-auto mb-2" %>
         <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Photo uploaded</span>
       <% else %>

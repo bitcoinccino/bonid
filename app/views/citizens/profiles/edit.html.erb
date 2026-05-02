@@ -13,13 +13,20 @@
   </div>
 
   <div class="complaint-form-wrapper">
+
+    <%# Legacy-CIN migration banner — shown when the citizen's saved CIN
+        doesn't match the 10-digit NINU rule, so they know exactly which
+        field needs to change as they work through the wizard. %>
+    <%= render "citizens/dashboard/legacy_cin_alert" %>
+
   <%= simple_form_for @citizen, as: :user,
         url: citizens_profile_path, method: :patch,
         html: { class: "profile-form", data: {
           turbo: false,
-          controller: "wizard profile-review",
+          controller: "wizard profile-review wizard-persistence",
           wizard_current_step_value: "1",
-          action: "wizard:stepChanged->profile-review#onStepChanged"
+          wizard_persistence_key_value: "profile-edit",
+          action: "wizard:stepChanged->profile-review#onStepChanged submit->wizard-persistence#clear submit->wizard#clear"
         } } do |f| %>
 
     <%# ── Step Indicator ── %>

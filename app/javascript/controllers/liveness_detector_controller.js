@@ -116,11 +116,28 @@ export default class extends Controller {
     }
     this.unmountLiveness()
 
-    // Show "comparing" state while we check face match
+    // Show "comparing" state while we check face match — cycles through
+    // the actual server-side checks (face match → 1:N dedup) so the
+    // citizen sees the wizard is doing real work, not just spinning.
     this._showComparingState()
+    this._startCheckingMessages()
+
+    // Floor the perceived check duration. compare_faces + 1:N search often
+    // returns in <1s, which makes the staged messages flash by faster than
+    // anyone can read. Hold the comparing state for at least 4s so each
+    // staged message ("Konparezon figi...", "Tcheke inisyalite...", etc.)
+    // gets airtime regardless of server speed.
+    const MIN_CHECK_MS = 4000
+    const checkStartedAt = Date.now()
 
     // Run face comparison against the uploaded ID photo
     const matchResult = await this._compareFaceWithId(data.blob_signed_id)
+
+    const elapsed = Date.now() - checkStartedAt
+    if (elapsed < MIN_CHECK_MS) {
+      await new Promise((r) => setTimeout(r, MIN_CHECK_MS - elapsed))
+    }
+    this._stopCheckingMessages()
 
     if (matchResult.match) {
       // Face matched — allow progression
@@ -135,6 +152,13 @@ export default class extends Controller {
       // The user must retry. FaceMatchJob is a safety net, not a replacement.
       this.passedValue = false
       this._showErrorState()
+    } else if (matchResult.blocked) {
+      // Server flagged the submission as un-recoverable (duplicate face in
+      // collection or possible account takeover). Render a distinct state:
+      // no retry button, no "go back to Step 1" — those don't fix the
+      // underlying issue and will just hammer the gate.
+      this.passedValue = false
+      this._showBlockedState(matchResult.title, matchResult.message)
     } else {
       // Face does NOT match — block progression
       this.passedValue = false
@@ -166,6 +190,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this._stopCheckingMessages()
     this.unmountLiveness()
     if (this._observer) {
       this._observer.disconnect()
@@ -343,14 +368,50 @@ export default class extends Controller {
                     display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
           <i class="ri-loader-4-line spin" style="font-size:1.6rem; color:${iconColor};"></i>
         </div>
-        <p style="font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight:700; color:${titleColor}; margin-bottom:0.3rem;">
+        <p data-checking-title style="font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight:700; color:${titleColor}; margin-bottom:0.3rem; transition: opacity 0.25s ease;">
           Konparezon figi w ap fèt...
         </p>
-        <p style="font-size: clamp(0.78rem, 2.3vw, 0.85rem); color:${descColor}; margin-bottom:0; line-height:1.5;">
+        <p data-checking-desc style="font-size: clamp(0.78rem, 2.3vw, 0.85rem); color:${descColor}; margin-bottom:0; line-height:1.5; transition: opacity 0.25s ease;">
           N ap verifye figi ou matche ak foto idantite ou.
         </p>
       </div>
     `
+  }
+
+  // Cycle the comparing-state messages while face_compare is running.
+  // The server-side check has multiple phases (1:N dedup, 1:1 face match)
+  // — surfacing each one keeps the citizen oriented instead of staring
+  // at one static spinner for several seconds.
+  _startCheckingMessages() {
+    if (!this.hasStatusMessageTarget) return
+    const messages = [
+      { title: "Konparezon figi w ap fèt...",      desc: "N ap verifye figi ou matche ak foto idantite ou." },
+      { title: "Tcheke inisyalite figi a...",      desc: "N ap konfime figi sa a poko itilize sou yon lòt kont BonID." },
+      { title: "Verifye dokiman an...",            desc: "N ap konpare foto sou idantite ou ak figi ou pran an." },
+      { title: "Finalize verifikasyon an...",      desc: "Yon ti moman ankò..." }
+    ]
+    let i = 0
+    this._checkingTimer = setInterval(() => {
+      i = (i + 1) % messages.length
+      const titleEl = this.statusMessageTarget.querySelector("[data-checking-title]")
+      const descEl  = this.statusMessageTarget.querySelector("[data-checking-desc]")
+      if (!titleEl || !descEl) return
+      titleEl.style.opacity = "0"
+      descEl.style.opacity = "0"
+      setTimeout(() => {
+        titleEl.textContent = messages[i].title
+        descEl.textContent  = messages[i].desc
+        titleEl.style.opacity = "1"
+        descEl.style.opacity = "1"
+      }, 250)
+    }, 1100)
+  }
+
+  _stopCheckingMessages() {
+    if (this._checkingTimer) {
+      clearInterval(this._checkingTimer)
+      this._checkingTimer = null
+    }
   }
 
   _showSuccessState(similarity) {
@@ -429,6 +490,45 @@ export default class extends Controller {
       sessionStorage.removeItem("bonid_id_photo_name")
       sessionStorage.removeItem("bonid_id_photo_type")
     } catch (e) { /* ignore */ }
+  }
+
+  // Blocked state — server has flagged this submission as un-recoverable
+  // (face already on file under another user, or possible account takeover).
+  // No retry button: the citizen can't fix this themselves; reviewers will.
+  _showBlockedState(title, message) {
+    if (!this.hasStatusMessageTarget) return
+    const dark = this._isDarkMode()
+    const bg = dark ? "#0a0f1f" : "transparent"
+    const iconBg = dark ? "rgba(245,158,11,0.15)" : "#fef3c7"
+    const iconColor = dark ? "#fbbf24" : "#d97706"
+    const titleColor = dark ? "#fbbf24" : "#b45309"
+    const descColor = dark ? "#d0d4e0" : "#78350f"
+    const safeTitle = this._escapeHtml(title || "Verifikasyon poko ka konplete")
+    const safeMessage = this._escapeHtml(message || "Yon admin ap revize soumisyon ou.")
+    this.statusMessageTarget.innerHTML = `
+      <div style="text-align:center; padding: clamp(2rem, 6vw, 3rem) 1rem; font-family: 'Montserrat', sans-serif; background:${bg};">
+        <div style="width:60px; height:60px; border-radius:50%; background:${iconBg};
+                    display:flex; align-items:center; justify-content:center; margin:0 auto 1rem;">
+          <i class="ri-shield-keyhole-line" style="font-size:1.6rem; color:${iconColor};"></i>
+        </div>
+        <p style="font-size: clamp(0.95rem, 3vw, 1.1rem); font-weight:700; color:${titleColor}; margin-bottom:0.4rem;">
+          ${safeTitle}
+        </p>
+        <p style="font-size: clamp(0.78rem, 2.3vw, 0.85rem); color:${descColor}; margin-bottom:1.25rem; line-height:1.55; max-width: 26rem; margin-left:auto; margin-right:auto;">
+          ${safeMessage}
+        </p>
+        <div style="display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap;">
+          <a href="/citizens/dashboard" class="btn btn-sm rounded-pill px-4"
+             style="font-size: clamp(0.8rem, 2.5vw, 0.875rem); font-family: Montserrat, sans-serif; font-weight: 600; background: ${dark ? "rgba(255,255,255,0.10)" : "#fff"}; color: ${dark ? "#fff" : "#1f2937"}; border: 1px solid ${dark ? "rgba(255,255,255,0.18)" : "#d1d5db"}; text-decoration: none;">
+            <i class="ri-arrow-left-line me-1"></i> Retounen
+          </a>
+          <a href="mailto:support@bonid.ht" class="btn btn-sm rounded-pill px-4"
+             style="font-size: clamp(0.8rem, 2.5vw, 0.875rem); font-family: Montserrat, sans-serif; font-weight: 600; background: ${iconColor}; color: #fff; text-decoration: none;">
+            <i class="ri-customer-service-2-line me-1"></i> Kontakte Sipò
+          </a>
+        </div>
+      </div>
+    `
   }
 
   _showMismatchState(message) {

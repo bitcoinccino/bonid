@@ -227,7 +227,11 @@
              role="button"
              data-bs-toggle="dropdown"
              aria-expanded="false">
-            <% if current_citizen.photo.attached? %>
+            <%# Guard against an unsaved photo blob — when the profile form
+                hits a 422 and re-renders, the just-uploaded blob isn't
+                persisted yet, so url_for raises "Cannot get a signed_id
+                for a new record" and the entire layout 500s. %>
+            <% if current_citizen.photo.attached? && current_citizen.photo.blob&.persisted? %>
               <%= image_tag url_for(current_citizen.photo),
                     class: "rounded-circle shadow-sm",
                     style: "width: 36px; height: 36px; object-fit: cover; border: 2px solid rgba(255,255,255,0.3);",

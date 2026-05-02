@@ -39,30 +39,23 @@
               </p>
             </div>
 
-            <%# Change Email — current email shown masked; the editor reveals
-                on click so over-the-shoulder viewers don't see the full
-                address by default. %>
-            <div class="mb-3" data-controller="reveal">
-              <%= f.label :email, "Imel", class: "form-label" %>
-
-              <div class="d-flex align-items-center gap-2 mb-2"
-                   data-reveal-target="display">
+            <%# Change Email — masked display + Modifye button opens the
+                two-phase modal below (new email → code). The modal is the
+                ONLY place the email + code fields live, so this outer form
+                doesn't carry an email field at all. %>
+            <div class="mb-3">
+              <label class="form-label">Imel</label>
+              <div class="d-flex align-items-center gap-2">
                 <span class="form-control bg-light text-muted"
                       style="font-family: 'Inter', sans-serif;">
                   <i class="ri-mail-line me-1"></i><%= mask_email(@citizen.email) %>
                 </span>
                 <button type="button" class="btn btn-outline-secondary btn-sm"
                         style="font-size: 0.78rem; white-space: nowrap;"
-                        data-action="click->reveal#show">
+                        data-bs-toggle="modal"
+                        data-bs-target="#emailChangeModal">
                   <i class="ri-edit-line me-1"></i>Modifye
                 </button>
-              </div>
-
-              <div class="d-none" data-reveal-target="hidden">
-                <%= f.email_field :email, value: @citizen.email,
-                      class: "form-control",
-                      autocomplete: "email" %>
-                <small class="text-muted">N ap sèvi avè l pou notifikasyon ak rekiperasyon kont.</small>
               </div>
             </div>
 
@@ -131,14 +124,14 @@
 
             <% channel_choices = [
               { value: "email", icon: "ri-mail-line",  label: "Pa imel",
+                disabled: false,
                 sub: "Voye notifikasyon yo nan <strong>#{ERB::Util.h(mask_email(@citizen.email))}</strong>." },
               { value: "phone", icon: "ri-smartphone-line", label: "Pa telefòn",
-                sub: @citizen.phone.present? ?
-                       "Voye notifikasyon yo pa SMS nan <strong>#{ERB::Util.h(mask_phone(@citizen.phone))}</strong>." :
-                       "Ajoute yon nimewo telefòn nan pwofil ou anvan w chwazi opsyon sa a." }
+                disabled: true,
+                sub: "Notifikasyon SMS pral disponib byento." }
             ] %>
             <% channel_choices.each do |opt| %>
-              <% disabled = (opt[:value] == "phone" && @citizen.phone.blank?) %>
+              <% disabled = opt[:disabled] %>
               <label class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
                      style="border: 1px solid #E5E7EB;
                             <%= 'cursor: not-allowed; opacity: 0.55;' if disabled %>
@@ -152,6 +145,12 @@
                   <div class="fw-semibold d-flex align-items-center gap-2" style="font-size: 0.9rem;">
                     <i class="<%= opt[:icon] %>"></i>
                     <%= opt[:label] %>
+                    <% if disabled %>
+                      <span class="badge rounded-pill"
+                            style="background: #FEF3C7; color: #92400E; font-size: 0.6rem; font-weight: 700;">
+                        K AP VINI
+                      </span>
+                    <% end %>
                   </div>
                   <small class="text-muted"><%= opt[:sub].html_safe %></small>
                 </div>
@@ -168,6 +167,193 @@
                 data: { disable_with: "Ap sove..." } %>
         </div>
 
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%# ── Email-change modal (two phases) — segmented OTP, countdown, resend.
+    Phase 1: enter new email → Voye kòd. Server mails 6-digit code.
+    Phase 2: enter code (segmented boxes via otp-input controller) →
+             Konfime. Server verifies + swaps the account email.
+    Resend = re-submit Phase 1 with the same email (server overwrites cache).
+    Modifye imel = DELETE cancel_email_change → drops cache + reopens Phase 1. %>
+<style>
+  /* Modal-only OTP styles. Typography uses the project's canonical
+     classes: .ballot-section-title (heading), .ballot-section-desc (body),
+     .form-label (inputs), .text-muted (helpers), .enroll-helpful-tip
+     (info pill) — defined in citizens/pages/_election.scss. */
+  .otp-input-row { display: flex; gap: 0.5rem; justify-content: center; }
+  .otp-input-row input.otp-box {
+    width: 2.6rem; height: 3rem; padding: 0; text-align: center;
+    font-size: 1.35rem; font-weight: 700;
+    border: 1px solid #d1d5db; border-radius: 0.55rem;
+    background: #fff; color: #111827;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .otp-input-row input.otp-box:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 32, 159, 0.18);
+  }
+  .otp-input-row input.otp-box.is-invalid {
+    border-color: #dc3545; box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+  }
+  @keyframes otpShake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); } 40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
+  }
+  .otp-shake { animation: otpShake 0.36s ease-in-out; }
+</style>
+<div class="modal fade" id="emailChangeModal" tabindex="-1" aria-labelledby="emailChangeModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 0.75rem; border: none;">
+      <div class="modal-header" style="border-bottom: 1px solid #E5E7EB;">
+        <h5 class="modal-title fw-bold" id="emailChangeModalTitle"
+            style="font-family: 'Montserrat', sans-serif; color: #1E293B; font-size: 1.05rem;">
+          <i class="ri-mail-settings-line me-2" style="color: var(--primary);"></i>
+          <% if @email_change_pending %>Antre kòd verifikasyon<% else %>Chanje imel<% end %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fèmen"></button>
+      </div>
+
+      <% if @email_change_pending %>
+        <%# ── Phase 2 — code entry (segmented OTP) ── %>
+        <div data-controller="otp-input"
+             data-otp-input-length-value="6"
+             data-otp-input-expires-at-value="<%= @pending_expires_at.to_i %>"
+             data-otp-input-resend-after-seconds-value="60">
+          <%= form_with url: citizens_settings_path, method: :patch,
+                        html: { data: { turbo: false } } do %>
+            <div class="modal-body">
+              <p class="ballot-section-desc mb-2">
+                Nou voye yon kòd verifikasyon nan :
+              </p>
+              <%# Email "pill" with edit affordance docked at the right —
+                  separates the address from the prose so a typo is easy
+                  to spot, and gives the edit icon a real container so it
+                  doesn't float on the paragraph baseline. %>
+              <div class="d-flex align-items-center justify-content-between gap-2 mb-3 px-3 py-2 rounded-3"
+                   style="background: #F3F4F6; border: 1px solid #E5E7EB;">
+                <span style="color: #111827; font-weight: 600; font-size: 0.9rem; word-break: break-all; line-height: 1.3;">
+                  <%= @pending_new_email %>
+                </span>
+                <%# data-turbo: true re-enables Turbo for this link — the
+                    parent <form data-turbo="false"> would otherwise make
+                    the click a plain GET, ignoring data-turbo-method. %>
+                <%= link_to citizens_cancel_email_change_path,
+                      data: { turbo: true, turbo_method: :delete },
+                      class: "btn btn-sm py-1 px-2 flex-shrink-0",
+                      title: "Modifye imel",
+                      style: "color: var(--primary); line-height: 1; background: #fff; border: 1px solid #E5E7EB;" do %>
+                  <i class="ri-edit-line" style="font-size: 0.95rem;"></i>
+                <% end %>
+              </div>
+              <p class="ballot-section-desc mb-3 small">
+                Tcheke bwat resepsyon ou (ak espam).
+              </p>
+
+              <input type="hidden" name="user[email]" value="<%= @pending_new_email %>">
+
+              <label class="form-label fw-semibold mb-2">Kòd verifikasyon</label>
+              <div class="otp-input-row mb-2" data-otp-input-target="row">
+                <% 6.times do %>
+                  <input type="text" class="otp-box"
+                         inputmode="numeric" pattern="\d" maxlength="1"
+                         autocomplete="off"
+                         data-otp-input-target="box"
+                         data-action="input->otp-input#onInput keydown->otp-input#onKeydown paste->otp-input#onPaste">
+                <% end %>
+              </div>
+              <input type="hidden" name="user[email_change_code]"
+                     data-otp-input-target="hidden">
+
+              <div class="text-center mt-2">
+                <span class="badge rounded-pill text-bg-light"
+                      data-otp-input-target="timer"
+                      style="font-size: 0.75rem; font-weight: 500; padding: 0.4rem 0.75rem;">
+                  Kòd la ekspire nan 15:00
+                </span>
+              </div>
+
+              <div class="text-center mt-2">
+                <button type="submit" formnovalidate
+                        class="btn btn-link p-0 align-baseline"
+                        data-otp-input-target="resend"
+                        hidden
+                        style="font-size: 0.8rem; text-decoration: underline; color: var(--primary);">
+                  Pa resevwa kòd la? Voye l ankò
+                </button>
+              </div>
+            </div>
+
+            <div class="modal-footer" style="border-top: 1px solid #E5E7EB;">
+              <%# "Verifye pi ta" framing reads as postponement, not
+                  cancelation — keeps the citizen on the dashboard with
+                  the pending state intact, less off-ramping than "Anile". %>
+              <button type="button" class="btn btn-link btn-sm" data-bs-dismiss="modal"
+                      style="color: #6b7280; text-decoration: none;">
+                Verifye pi ta
+              </button>
+              <button type="submit" class="btn btn-primary btn-sm fw-semibold px-4">
+                <i class="ri-check-line me-1"></i> Konfime
+              </button>
+            </div>
+          <% end %>
+        </div>
+
+        <%# Auto-open the modal in Phase 2 so the citizen lands directly
+            in code-entry. Stimulus controller waits for window.bootstrap
+            (the inline-script approach raced with the deferred ESM bundle
+            and silently no-op'd, leaving the modal markup rendered inline
+            without backdrop) and re-parents the modal to <body> so the
+            fixed-position backdrop isn't clipped by the layout shell. %>
+        <div data-controller="auto-modal" data-auto-modal-target-id-value="emailChangeModal"></div>
+      <% else %>
+        <%# ── Phase 1 — request code ── %>
+        <%= form_with url: citizens_settings_path, method: :patch,
+                      html: { data: { turbo: false } } do %>
+          <div class="modal-body">
+            <p class="ballot-section-desc mb-3">
+              Antre nouvo imel ou. N ap voye yon kòd verifikasyon nan adrès sa a
+              pou konfime ke se pa w.
+            </p>
+
+            <label for="email_change_new_email" class="form-label fw-semibold">Nouvo imel</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light" style="border-right: 0;">
+                <i class="ri-mail-line" style="color: var(--primary);"></i>
+              </span>
+              <input type="email"
+                     id="email_change_new_email"
+                     name="user[email]"
+                     class="form-control"
+                     autocomplete="email"
+                     placeholder="ekzanp@imel.com"
+                     style="color: #000; font-weight: 500; border-left: 0;"
+                     required autofocus>
+            </div>
+            <small class="text-muted d-block mt-2">
+              Imel aktyèl: <strong><%= mask_email(@citizen.email) %></strong>.
+              Imel sa a p ap chanje toutotan ou pa konfime kòd la.
+            </small>
+          </div>
+          <div class="modal-footer" style="border-top: 1px solid #E5E7EB;">
+            <button type="button" class="btn btn-link btn-sm" data-bs-dismiss="modal"
+                    style="color: #6b7280; text-decoration: none;">
+              Anile
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm fw-semibold px-4">
+              <i class="ri-mail-send-line me-1"></i> Voye kòd
+            </button>
+          </div>
+        <% end %>
+
+        <%# Citizen just clicked Modifye-imel — reopen modal in Phase 1. %>
+        <% if flash[:reopen_email_modal] %>
+          <div data-controller="auto-modal" data-auto-modal-target-id-value="emailChangeModal"></div>
+        <% end %>
       <% end %>
     </div>
   </div>

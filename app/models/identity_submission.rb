@@ -30,11 +30,14 @@ class IdentitySubmission < ApplicationRecord
   scope :rejected, -> { where(status: :rejected) }
   scope :revoked,  -> { where(status: :revoked) }
 
+  # BonID accepts CIN (Carte Identité Nationale) and Passport only as the
+  # primary identity document. Driver's License / Voter ID were on the
+  # roadmap but never surfaced in the UI — keeping them in the allow-list
+  # would let a crafted POST bypass the citizen-facing constraint, so the
+  # constant matches what the wizard actually offers.
   ID_TYPES = {
-    cin:            "Carte Identite National or CIN",
-    passport:       "Passport",
-    driver_license: "Driver's License",
-    voter_id:       "Voter ID"
+    cin:      "Carte Identite National or CIN",
+    passport: "Passport"
   }.freeze
 
   # BonID validity mirrors real Haitian document validity periods.
@@ -152,6 +155,12 @@ class IdentitySubmission < ApplicationRecord
   # The selfie blob comes from the liveness check — without it, face matching
   # cannot run and the submission is unverifiable. Block creation entirely.
   validate :selfie_must_be_attached, on: :create, unless: :submission_type_visitor?
+
+  # ID document attachments — front-end marks these required, but the wizard's
+  # JS guard can be bypassed (devtools, edited DOM). The model is the gate
+  # of last resort. CIN requires BOTH sides; a single side leaves OCR/face
+  # match without enough surface to verify against.
+  validate :id_document_must_be_attached, on: :create, unless: :submission_type_visitor?
 
   # === DOCUMENT NUMBER & EXPIRY VALIDATIONS ==================================
   validates :document_number,
@@ -557,11 +566,21 @@ end
     errors.add(:selfie, "Ou dwe fè verifikasyon figi (liveness) anvan ou soumèt.")
   end
 
+  def id_document_must_be_attached
+    case id_type.to_s
+    when "cin"
+      errors.add(:cin_front, "Ou dwe telechaje DEVAN CIN ou.") unless cin_front.attached?
+      errors.add(:cin_back,  "Ou dwe telechaje DO CIN ou tou.") unless cin_back.attached?
+    when "passport"
+      errors.add(:passport, "Ou dwe telechaje paj foto paspò ou.") unless passport.attached?
+    end
+  end
+
   def validate_document_number_format
     unless CinNumberValidator.valid?(document_number, id_type)
       case id_type
       when "cin"
-        errors.add(:document_number, "Nimewo CIN pa valid. Dwe gen 10, 14, oswa 17 chif.")
+        errors.add(:document_number, "Nimewo CIN pa valid. NINU dwe gen 10 chif egzakteman.")
       when "passport"
         errors.add(:document_number, "Nimewo paspò pa valid. Dwe gen 6–9 karaktè.")
       end

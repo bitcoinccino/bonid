@@ -112,6 +112,12 @@ class User < ApplicationRecord
     validates :id_type,   presence: true, if: -> { id_number.present? }
   end
 
+  # Only enforce CIN format when the citizen is *changing* the value, so
+  # legacy rows (e.g. pre-2005 alphanumeric T1K2N86971 saved before this
+  # rule existed) don't block unrelated profile updates. New values must
+  # match the validator that the IdentitySubmission flow already enforces.
+  validate :id_number_format_when_changed
+
   validates :partner, presence: true, if: :partner_admin?
   validate  :branch_belongs_to_partner, if: -> { partner_branch.present? && partner.present? }
 
@@ -405,6 +411,17 @@ alias name full_name
     identity_submissions.approved.exists?
   end
 
+  # Returns true when the citizen's profile holds a CIN that doesn't match
+  # ONI's January 2026 NINU mandate (10 digits). Used to surface the
+  # migrate-to-NINU banner on the dashboard and the profile edit page —
+  # they can't submit through BonID until they request a NINU from ONI.
+  def legacy_cin?
+    return false unless id_type.to_s == "cin"
+    return false if id_number.blank?
+    return false unless defined?(CinNumberValidator)
+    !CinNumberValidator.valid?(id_number, id_type)
+  end
+
   # === Misc ===
   def password_required?
     !skip_password && super
@@ -414,6 +431,13 @@ alias name full_name
     identity_submissions.find_by(status: :approved)
   end
 
+  # Lenient "minimum viable profile" check — what the citizen can actually
+  # fill out from the profile wizard. Date fields (id_issued_on /
+  # id_expires_on) and CIN format are validated *at submission time*
+  # by the IdentitySubmission wizard, not here, because gating profile
+  # completion on fields the profile form doesn't surface as required
+  # creates a redirect loop (citizen saves the profile → controller
+  # redirects them back saying "incomplete" → no field to fix).
   def profile_complete?
     return false unless citizen?
     required = [
@@ -436,6 +460,25 @@ alias name full_name
 
   # === Default Roles ===
   private
+
+  # Reject new id_number values that don't match the official ONI format the
+  # IdentitySubmission flow expects (10-digit NINU for CIN; 6–9 alphanumeric
+  # for Passport). Skipped when the value is unchanged so legacy rows don't
+  # break other profile updates.
+  def id_number_format_when_changed
+    return unless id_number_changed?
+    return if id_number.blank?
+    return if id_type.blank?
+    return unless %w[cin passport].include?(id_type.to_s)
+
+    return if defined?(CinNumberValidator) && CinNumberValidator.valid?(id_number, id_type)
+
+    if id_type.to_s == "cin"
+      errors.add(:id_number, "Nimewo CIN pa valid. NINU dwe gen 10 chif egzakteman.")
+    else
+      errors.add(:id_number, "Nimewo paspò pa valid. Dwe gen 6 a 9 karaktè (lèt oswa chif).")
+    end
+  end
 
   def assign_default_citizen_role
     add_role(:citizen)

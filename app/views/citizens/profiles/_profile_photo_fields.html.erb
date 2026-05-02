@@ -27,8 +27,14 @@
                 form_handler_target: "fileInput"
               } %>
 
-        <%# Current / Previewed Photo %>
-        <% if f.object.photo.attached? %>
+        <%# Current / Previewed Photo
+            Guard the url_for() call against a freshly-uploaded but
+            unsaved attachment — happens on validation-failure re-renders
+            where the new ActiveStorage::Blob hasn't been persisted yet.
+            Without this guard, url_for() raises "Cannot get a signed_id
+            for a new record" and the entire profile form 500s. %>
+        <% photo_persisted = f.object.photo.attached? && f.object.photo.blob&.persisted? %>
+        <% if photo_persisted %>
           <%= image_tag url_for(f.object.photo),
                 class: "photo-preview profile-photo-img",
                 alt: "Profile photo preview",

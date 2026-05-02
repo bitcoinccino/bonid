@@ -16,46 +16,70 @@
 <div class="row justify-content-center">
   <div class="col-lg-9">
 
-<%# ── Verification Status ── %>
+<%# ── Verification CTA — replaces the thin warning banner. Reads as a
+    call to action ("unlock all services") rather than a warning, with a
+    visible primary button so the path forward is one tap away. ── %>
 <% unless @verified %>
-  <div class="sevis-alert sevis-alert--warning">
-    <i class="ri-error-warning-line"></i>
-    <span>
-      Ou bezwen verifye idantite ou pou w ka itilize sèvis yo.
-      <%= link_to "Verifye kounye a", new_citizens_identity_submission_path, class: "citizen-link-alert" %>
-    </span>
+  <div class="sevis-cta-unlock">
+    <div class="sevis-cta-icon">
+      <i class="ri-shield-check-line"></i>
+    </div>
+    <div class="sevis-cta-body">
+      <div class="sevis-cta-title">Debloke tout sèvis yo</div>
+      <div class="sevis-cta-sub">
+        Verifye idantite ou nan kèk minit pou w ka itilize tout patnè BonID.
+      </div>
+    </div>
+    <%= link_to new_citizens_identity_submission_path, class: "sevis-cta-btn" do %>
+      Verifye Kounye a <i class="ri-arrow-right-line ms-1"></i>
+    <% end %>
   </div>
 <% end %>
 
-<%# ── Search + Sector Filter ── %>
+<%# ── Search ── %>
 <form action="<%= citizens_services_path %>" method="get" class="sevis-search-bar" data-turbo="false">
+  <%# Carry the active sector through search submits so typing in the box
+      doesn't reset the citizen's pill choice. %>
+  <% if @sector_filter.present? %>
+    <input type="hidden" name="sector" value="<%= @sector_filter %>">
+  <% end %>
+
   <div class="sevis-search-row">
     <i class="ri-search-line sevis-search-icon"></i>
-    <input type="text" name="search" value="<%= @search %>" placeholder="Chèche yon patnè..." class="sevis-search-input">
+    <input type="text" name="search" value="<%= @search %>"
+           placeholder="Chèche yon patnè..." class="sevis-search-input">
   </div>
 
-  <div class="sevis-filter-row">
-    <select name="sector" onchange="this.form.submit()">
-      <option value="">Tout Sektè</option>
-      <% @sector_groups.each do |group| %>
-        <option value="<%= group %>" <%= "selected" if @sector_filter == group %>><%= group %></option>
-      <% end %>
-    </select>
-
-    <% if @search.present? || @sector_filter.present? %>
-      <a href="<%= citizens_services_path %>" class="sevis-clear-link">
-        <i class="ri-close-line"></i> Efase
-      </a>
-    <% end %>
-
-    <%# Hidden submit so Enter in the search input still posts on browsers
-        that don't auto-submit on implicit form action. The visible "Filtre"
-        button was overflowing on narrow phones — sector auto-submits on
-        change and the search input auto-submits on Enter, so no button
-        is needed in the visual layout. %>
-    <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Submit</button>
-  </div>
+  <%# Hidden submit so Enter in the search input posts on every browser. %>
+  <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Submit</button>
 </form>
+
+<%# ── Filter Pills — one-tap sector filter, replaces the native <select>. ── %>
+<div class="sevis-pills" role="tablist" aria-label="Filtre pa sektè">
+  <%= link_to citizens_services_path(search: @search.presence),
+              class: "sevis-pill #{'sevis-pill--active' if @sector_filter.blank?}",
+              role: "tab",
+              aria: { selected: @sector_filter.blank? } do %>
+    <i class="ri-apps-2-line me-1"></i> Tout
+  <% end %>
+  <% @sector_groups.each do |group| %>
+    <% selected = @sector_filter == group %>
+    <%= link_to citizens_services_path(sector: group, search: @search.presence),
+                class: "sevis-pill #{'sevis-pill--active' if selected}",
+                role: "tab",
+                aria: { selected: selected } do %>
+      <% if (icon = @sector_icons&.dig(group)).present? %><i class="<%= icon %> me-1"></i><% end %>
+      <%= group %>
+    <% end %>
+  <% end %>
+  <% if @search.present? || @sector_filter.present? %>
+    <%= link_to citizens_services_path,
+                class: "sevis-pill sevis-pill--clear",
+                title: "Efase tout filtre yo" do %>
+      <i class="ri-close-line"></i> Efase
+    <% end %>
+  <% end %>
+</div>
 
 <% if @search.present? || @sector_filter.present? %>
   <div class="sevis-results-count">
@@ -81,7 +105,8 @@
 
       <div class="sevis-grid">
         <% partners.each do |partner| %>
-          <%= link_to citizens_service_path(slug: partner.slug), class: "sevis-card" do %>
+          <%= link_to citizens_service_path(slug: partner.slug),
+                      class: "sevis-card #{'sevis-card--locked' unless @verified}" do %>
             <div class="sevis-card-logo-wrap">
               <% if partner.logo.attached? %>
                 <%= image_tag url_for(partner.logo), class: "sevis-card-logo", alt: partner.name %>
@@ -105,7 +130,13 @@
               </div>
             </div>
 
-            <i class="ri-arrow-right-s-line sevis-card-arrow"></i>
+            <% if @verified %>
+              <i class="ri-arrow-right-s-line sevis-card-arrow"></i>
+            <% else %>
+              <span class="sevis-card-lock" title="Verifikasyon obligatwa">
+                <i class="ri-lock-line"></i>
+              </span>
+            <% end %>
           <% end %>
         <% end %>
       </div>

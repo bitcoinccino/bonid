@@ -1,0 +1,58 @@
+<%# Legacy-CIN migration banner.
+    Shown to citizens whose profile holds a CIN that pre-dates the
+    ONI January 2026 NINU mandate (anything that isn't 10 digits).
+    Dismissible: a 7-day cookie hides it across page loads. Once the
+    citizen fixes their CIN (legacy_cin? returns false) the banner
+    stops rendering regardless of the cookie. %>
+<% return unless current_citizen.legacy_cin? %>
+<% return if cookies[:legacy_cin_alert_dismissed] == "1" %>
+
+<div id="legacy-cin-alert"
+     class="d-flex align-items-start gap-3 p-3 mb-4 rounded-3 position-relative"
+     style="background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+
+  <i class="ri-error-warning-line flex-shrink-0 mt-1"
+     style="font-size: 1.4rem; color: #D97706;"></i>
+
+  <div class="flex-grow-1" style="font-size: 0.85rem; line-height: 1.5;">
+    <strong>Mete ajou nimewo CIN ou</strong>
+    <div class="mt-1">
+      Depi janvye 2026, ONI mande
+      <strong>NINU 10 chif</strong> la pou aplikasyon paspò, sèvis
+      idantifikasyon, ak enskripsyon eleksyon. Nimewo CIN ou la pa nan
+      fòma sa a, kidonk BonID pa kapab konekte ou ak sèvis sa yo. Ale
+      nan biwo ONI pou w jwenn NINU ou, epi mete ajou pwofil ou.
+    </div>
+
+    <div class="mt-3 d-flex flex-wrap gap-2">
+      <%= link_to edit_citizens_profile_path,
+                  class: "btn btn-sm fw-semibold",
+                  style: "background: #92400E; color: #fff; font-size: 0.78rem;" do %>
+        <i class="ri-edit-line me-1"></i> Mete ajou Pwofil
+      <% end %>
+      <a href="https://oni.gouv.ht" target="_blank" rel="noopener"
+         class="btn btn-sm btn-outline-warning fw-semibold"
+         style="font-size: 0.78rem; border-color: #D97706; color: #92400E;">
+        <i class="ri-external-link-line me-1"></i> Vizite ONI
+      </a>
+    </div>
+  </div>
+
+  <%# Dismiss button — hides for 7 days via a cookie. Long enough that
+      the citizen isn't nagged hourly, short enough that they won't forget
+      forever. Cookie is path-/ + SameSite=Lax. %>
+  <button type="button"
+          aria-label="Fèmen"
+          title="Fèmen"
+          class="btn p-0 d-inline-flex align-items-center justify-content-center"
+          style="position: absolute; top: 8px; right: 8px;
+                 width: 28px; height: 28px; border-radius: 50%;
+                 color: #92400E; background: transparent; border: 0;"
+          onclick="
+            document.cookie = 'legacy_cin_alert_dismissed=1; path=/; max-age=604800; SameSite=Lax';
+            var el = document.getElementById('legacy-cin-alert');
+            if (el) el.remove();
+          ">
+    <i class="ri-close-line" style="font-size: 1.1rem;"></i>
+  </button>
+</div>

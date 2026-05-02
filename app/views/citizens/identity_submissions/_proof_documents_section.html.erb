@@ -1,0 +1,219 @@
+<%# Step 2: Proof Documents (Dokiman Sipò) — ADDRESS verification only.
+    Renders:
+      • diaspora proof of address (only when current_citizen.is_diaspora)
+      • additional address-proof document (every citizen)
+    Identity verification happens in Step 1 (CIN/Passport). Civil records,
+    standalone IDs, and vehicle docs were removed from the picker because
+    they don't establish residence. Transfer receipts (Western Union,
+    Unitransfer, etc.) stay because in Haiti they print the recipient's
+    name + current address. PDF is allowed (these are bills / receipts,
+    not identity photos). %>
+
+<% is_diaspora = current_citizen.is_diaspora %>
+
+<%# ── Diaspora Proof of Address (only when citizen lives abroad) ── %>
+<% if is_diaspora %>
+  <div class="mb-4">
+    <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
+        class="mb-2">
+      <i class="ri-home-4-line me-1"></i> Prèv Adrès (Peyi Rezidans)
+    </h6>
+    <p class="text-muted mb-3" style="font-size: 0.78rem; line-height: 1.45;">
+      Telechaje yon dokiman ki montre non ou ak adrès kote ou ap viv la
+      (pa plis pase 3 mwa).
+    </p>
+
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <%= f.input :diaspora_proof_type,
+              label: "Ki kalite prèv adrès?",
+              collection: [
+                ["Utility Bill (Elektrik, Gaz, Dlo)", "utility_bill"],
+                ["Phone Bill (Fakti Telefòn)", "phone_bill"],
+                ["Bank Statement (Relve Bank)", "bank_statement"],
+                ["Rent Agreement / Lease (Kontra Lwaye)", "rent_agreement"],
+                ["Government Letter (Lèt Gouvènman)", "government_letter"],
+                ["Lòt / Other", "other"]
+              ],
+              prompt: "Chwazi kalite dokiman",
+              input_html: { class: "form-select form-select-lg" },
+              label_html: { class: "form-label fw-semibold" } %>
+      </div>
+      <div class="col-12 col-md-6">
+        <%= f.input :diaspora_proof_of_address,
+              as: :file,
+              label: "Telechaje prèv adrès ou",
+              input_html: {
+                accept: "image/*,application/pdf",
+                capture: "environment",
+                class: "form-control form-control-lg"
+              },
+              label_html: { class: "form-label fw-semibold" } %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Supporting Document (everyone) ── %>
+<%# Address-proof picker — modal-backed instead of a native grouped
+    select. Only documents that show the citizen's name + a current
+    address are listed; civil records, standalone IDs, and vehicle
+    docs were removed because reviewers can't use them to verify
+    residence. Transfer receipts (Western Union, Unitransfer, etc.)
+    stay because in Haiti the recipient's address is printed on the
+    slip, and remittances are often a household's only address proof. %>
+<%
+  proof_options = [
+    { group: "Bòdwo / Recurring Bills (≤3 mwa)",
+      icon: "ri-file-list-3-line",
+      items: [
+        { value: "DINEPA Bill",   label: "DINEPA (Dlo)",        sub: "Bòdwo dlo",       icon: "ri-drop-line" },
+        { value: "EDH Bill",      label: "EDH (Elektrik)",      sub: "Bòdwo elektrik",   icon: "ri-flashlight-line" },
+        { value: "Digicel Bill",  label: "Digicel postpaid",     sub: "Fakti telefòn",    icon: "ri-smartphone-line" },
+        { value: "Natcom Bill",   label: "Natcom postpaid",      sub: "Fakti telefòn",    icon: "ri-smartphone-line" },
+        { value: "Internet Bill", label: "Fakti Entènèt",        sub: "ACN, Access, e.lt.", icon: "ri-wifi-line" }
+      ] },
+    { group: "Lojman / Housing",
+      icon: "ri-home-2-line",
+      items: [
+        { value: "Lease Agreement",      label: "Kontra Lokasyon",       sub: "Lease / rental, notarye",      icon: "ri-home-2-line" },
+        { value: "Property Tax Receipt", label: "Resi Taks Foncye (DGI)", sub: "DGI property tax",             icon: "ri-government-line" }
+      ] },
+    { group: "Finansye / Financial",
+      icon: "ri-bank-line",
+      items: [
+        { value: "Bank Statement", label: "Relve Bank", sub: "Bank statement (≤3 mwa)", icon: "ri-bank-line" }
+      ] },
+    { group: "Transfè / Remittance Receipts (≤3 mwa)",
+      icon: "ri-exchange-funds-line",
+      items: [
+        { value: "Western Union", label: "Western Union",            icon: "ri-exchange-funds-line" },
+        { value: "MoneyGram",     label: "MoneyGram",                 icon: "ri-exchange-funds-line" },
+        { value: "Unitransfer",   label: "Unitransfer",               icon: "ri-exchange-funds-line" },
+        { value: "Sendwave",      label: "Sendwave",                  icon: "ri-exchange-funds-line" },
+        { value: "CAM",           label: "CAM (Caribbean Air Mail)", icon: "ri-exchange-funds-line" }
+      ] },
+    { group: "Gouvènman / Government",
+      icon: "ri-mail-send-line",
+      items: [
+        { value: "Government Letter", label: "Lèt gouvènman", sub: "Voye nan adrès ou", icon: "ri-mail-send-line" }
+      ] },
+    { group: "Lòt / Other",
+      icon: "ri-file-line",
+      items: [
+        { value: "Other", label: "Lòt", sub: "Yon lòt dokiman ki montre adrès ou", icon: "ri-file-line" }
+      ] }
+  ]
+
+  current_value = submission.additional_proof_type.to_s
+  current_item  = proof_options.flat_map { |g| g[:items] }.find { |i| i[:value] == current_value }
+%>
+
+<div class="mb-3" data-controller="proof-picker">
+  <label class="form-label fw-semibold mb-2"
+         for="proofPickerTrigger">
+    Chwazi yon dokiman ki montre adrès ou
+  </label>
+
+  <%= f.hidden_field :additional_proof_type,
+        required: true,
+        data: { "proof-picker-target": "hidden" } %>
+
+  <%# Trigger — looks like a form control, opens the modal. %>
+  <button type="button"
+          id="proofPickerTrigger"
+          class="form-control form-control-lg d-flex align-items-center text-start"
+          data-bs-toggle="modal" data-bs-target="#proofPickerModal"
+          style="cursor: pointer; min-height: 56px;">
+    <i class="<%= current_item ? current_item[:icon] : 'ri-file-list-3-line' %> me-2"
+       style="color: <%= current_item ? 'var(--primary)' : '#9CA3AF' %>;"
+       data-proof-picker-target="icon"></i>
+    <span class="<%= current_item ? 'text-dark fw-semibold' : 'text-muted' %>"
+          data-proof-picker-target="display">
+      <%= current_item ? current_item[:label] : "Chwazi yon kalite dokiman…" %>
+    </span>
+    <i class="ri-arrow-down-s-line ms-auto text-muted"></i>
+  </button>
+
+  <div class="d-flex align-items-start mt-2 p-3 rounded-3"
+       style="background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E; font-size: 0.82rem; line-height: 1.5;">
+    <i class="ri-alert-line me-2 mt-1 flex-shrink-0" style="color: #D97706; font-size: 1rem;"></i>
+    <span>Dokiman an dwe orijinal, otantik, epi montre <strong>non ou</strong> ak <strong>adrès aktyèl ou</strong>. Bòdwo ak resi transfè dwe gen mwens pase 3 mwa. Dokiman fo oswa ki chanje yo pral rejte.</span>
+  </div>
+
+  <%# ── Modal (lives inside the controller scope so click→pick reaches it). ── %>
+  <div class="modal fade" id="proofPickerModal" tabindex="-1" aria-hidden="true" aria-labelledby="proofPickerModalLabel">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 1rem; border: 0;">
+        <div class="modal-header" style="border-bottom: 1px solid #E5E7EB;">
+          <h5 class="modal-title fw-bold" id="proofPickerModalLabel" style="font-size: 1rem;">
+            Chwazi yon dokiman
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fèmen"></button>
+        </div>
+        <div class="modal-body p-3" style="background: #F8FAFC;">
+
+          <% proof_options.each do |group| %>
+            <div class="mb-3">
+              <div class="d-flex align-items-center gap-2 mb-2 px-1">
+                <i class="<%= group[:icon] %>" style="color: var(--primary); font-size: 0.95rem;"></i>
+                <span class="fw-bold text-uppercase"
+                      style="font-size: 0.7rem; letter-spacing: 0.5px; color: #475569;">
+                  <%= group[:group] %>
+                </span>
+              </div>
+              <div class="d-grid gap-2">
+                <% group[:items].each do |opt| %>
+                  <% selected = opt[:value] == current_value %>
+                  <button type="button"
+                          class="btn text-start d-flex align-items-center gap-3 p-3"
+                          style="background: #fff;
+                                 border: 1px solid <%= selected ? 'var(--primary)' : '#E5E7EB' %>;
+                                 border-radius: 0.75rem;
+                                 <%= 'box-shadow: 0 0 0 3px rgba(0, 32, 159, 0.08);' if selected %>"
+                          data-action="click->proof-picker#pick"
+                          data-value="<%= opt[:value] %>"
+                          data-label="<%= opt[:label] %>"
+                          data-icon="<%= opt[:icon] %>">
+                    <span class="d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width: 40px; height: 40px; border-radius: 50%;
+                                 background: rgba(0, 32, 159, 0.08);">
+                      <i class="<%= opt[:icon] %>" style="color: var(--primary); font-size: 1.1rem;"></i>
+                    </span>
+                    <span class="flex-grow-1">
+                      <span class="d-block fw-semibold text-dark" style="font-size: 0.9rem; line-height: 1.2;">
+                        <%= opt[:label] %>
+                      </span>
+                      <% if opt[:sub] %>
+                        <span class="d-block text-muted" style="font-size: 0.74rem; margin-top: 2px;">
+                          <%= opt[:sub] %>
+                        </span>
+                      <% end %>
+                    </span>
+                    <% if selected %>
+                      <i class="ri-checkbox-circle-fill" style="color: var(--primary); font-size: 1.2rem;"></i>
+                    <% end %>
+                  </button>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mb-3">
+  <%= f.input :additional_proof,
+        as: :file,
+        required: true,
+        label: "Telechaje dokiman an",
+        input_html: {
+          accept: "image/*,application/pdf",
+          capture: "environment",
+          class: "form-control form-control-lg"
+        },
+        label_html: { class: "form-label fw-semibold" } %>
+</div>

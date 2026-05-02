@@ -24,21 +24,26 @@ is_edit         = submission.persisted?
   <div class="complaint-form-wrapper">
     <%= simple_form_for [:citizens, submission],
         html: { class: "needs-validation", novalidate: true, multipart: true,
-                data: { controller: "wizard submission-review form-handler",
+                data: { controller: "wizard submission-review form-handler wizard-persistence",
                         wizard_current_step_value: "1",
+                        wizard_persistence_key_value: "identity-submission",
                         wizard_skip_steps_value: [].tap { |s|
-                          s << 2 if @skip_liveness
-                          s << 3 if @skip_signature
+                          # Step indices reflect the 5-step wizard:
+                          #   1 = Documents, 2 = Dokiman Sipò, 3 = Face Check,
+                          #   4 = Signature, 5 = Review.
+                          s << 3 if @skip_liveness
+                          s << 4 if @skip_signature
                         }.to_json,
-                        action: "wizard:stepChanged->submission-review#onStepChanged" } } do |f| %>
+                        action: "wizard:stepChanged->submission-review#onStepChanged submit->wizard#beforeSubmit submit->wizard-persistence#clear submit->wizard#clear" } } do |f| %>
 
       <%# ── Step Indicator ── %>
       <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 600px; margin: 0 auto;">
           <% submission_steps = [
-            { icon: "ri-id-card-line", label: "Documents" },
-            { icon: "ri-camera-lens-line", label: "Face Check" },
-            { icon: "ri-quill-pen-line", label: "Signature" },
+            { icon: "ri-id-card-line",        label: "Documents" },
+            { icon: "ri-file-list-3-line",    label: "Dokiman Sipò" },
+            { icon: "ri-emotion-happy-line",  label: "Face Check" },
+            { icon: "ri-quill-pen-line",      label: "Signature" },
             { icon: "ri-checkbox-circle-line", label: "Review" }
           ] %>
           <% submission_steps.each_with_index do |step, i| %>
@@ -60,31 +65,11 @@ is_edit         = submission.persisted?
         </div>
       </div>
 
-      <%# Step-specific alerts %>
-      <div data-wizard-target="stepAlert" class="d-flex align-items-start mb-4 p-3 rounded-2" style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
-        <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
-        <div>
-          <strong>Important:</strong> Your CIN, passport, and supporting documents must match the
-          personal information in your profile — including your <strong>full name</strong> and
-          <strong>date of birth</strong>. Mismatched information will result in rejection.
-        </div>
-      </div>
-      <%# Step 2 alert placeholder (empty — React Get Ready screen provides its own guidance) %>
-      <div data-wizard-target="stepAlert" class="d-none"></div>
-      <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
-        <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem;"></i>
-        <div>
-          <strong>Important:</strong> Your signature must be consistent with the one on your ID.
-          Upload a scanned copy or draw it below.
-        </div>
-      </div>
-      <div data-wizard-target="stepAlert" class="alert alert-warning d-flex align-items-start mb-4 d-none" style="font-size: 0.82rem;">
-        <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem;"></i>
-        <div>
-          <strong>Important:</strong> Review all information carefully before submitting.
-          Incorrect or mismatched data will result in rejection.
-        </div>
-      </div>
+      <%# Step-specific alerts have moved INSIDE each step <section> below
+          (just above the .ballot-section card) so they sit next to the
+          actual upload action instead of at the top of the page. The
+          wizard's stepAlertTargets.forEach loop becomes harmless when
+          no targets are present at the form-level. %>
 
       <%# Preserve submission_type so create knows initial vs resubmission %>
       <%= f.hidden_field :submission_type, value: submission.submission_type %>
@@ -100,6 +85,17 @@ is_edit         = submission.persisted?
           <p class="ballot-subtitle mb-0">
             Upload your ID, complete a face check, sign, and review your submission.
           </p>
+        </div>
+
+        <%# Step 1 contextual warning — anchored just above the upload card. %>
+        <div class="d-flex align-items-start mb-3 p-3 rounded-3"
+             style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
+          <div>
+            <strong>Important:</strong> Your CIN, passport, and supporting documents must match the
+            personal information in your profile, including your <strong>full name</strong> and
+            <strong>date of birth</strong>. Mismatched information will result in rejection.
+          </div>
         </div>
 
         <div class="ballot-section card border-0 shadow-sm mb-4">
@@ -127,8 +123,56 @@ is_edit         = submission.persisted?
         </div>
       </section>
 
-      <%# ══════════ STEP 2 ══════════ %>
+      <%# ══════════ STEP 2 — Dokiman Sipò ══════════ %>
       <section data-wizard-target="step" data-step="2" class="wizard-step d-none" style="display:none">
+        <div class="d-flex align-items-start mb-3 p-3 rounded-3"
+             style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
+          <div>
+            <strong>Important:</strong> Upload an <strong>original, authentic</strong>
+            document. Photocopies of photocopies, expired bills, or altered documents
+            will be flagged and rejected.
+          </div>
+        </div>
+
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title">Dokiman Sipò</h2>
+              <p class="ballot-section-desc mb-0">
+                <% if current_citizen.is_diaspora %>
+                  Telechaje yon prèv adrès peyi rezidans ou ak yon dokiman
+                  ki montre adrès aktyèl ou (bòdwo, kontra lokasyon, resi
+                  transfè, oswa relve bank).
+                <% else %>
+                  Telechaje yon dokiman ki montre adrès aktyèl ou (bòdwo,
+                  kontra lokasyon, resi transfè, oswa relve bank).
+                <% end %>
+              </p>
+            </div>
+
+            <%= render "citizens/identity_submissions/proof_documents_section",
+                  f: f, submission: submission %>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#previous">
+            <i class="ri-arrow-left-line me-1"></i> Back
+          </button>
+          <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
+                  style="font-size: 0.85rem;"
+                  data-action="wizard#next">
+            Continue <i class="ri-arrow-right-line ms-1"></i>
+          </button>
+        </div>
+      </section>
+
+      <%# ══════════ STEP 3 — Face Check ══════════ %>
+      <section data-wizard-target="step" data-step="3" class="wizard-step d-none" style="display:none">
         <div class="ballot-section card border-0 shadow-sm mb-4">
           <div class="card-body p-4">
 
@@ -163,8 +207,17 @@ is_edit         = submission.persisted?
         </div>
       </section>
 
-      <%# ══════════ STEP 3 — Signature ══════════ %>
-      <section data-wizard-target="step" data-step="3" class="wizard-step d-none" style="display:none">
+      <%# ══════════ STEP 4 — Signature ══════════ %>
+      <section data-wizard-target="step" data-step="4" class="wizard-step d-none" style="display:none">
+        <div class="d-flex align-items-start mb-3 p-3 rounded-3"
+             style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
+          <div>
+            <strong>Important:</strong> Your signature must be consistent with the one on your ID.
+            Upload a scanned copy or draw it below.
+          </div>
+        </div>
+
         <div class="ballot-section card border-0 shadow-sm mb-4">
           <div class="card-body p-4">
 
@@ -199,8 +252,17 @@ is_edit         = submission.persisted?
         </div>
       </section>
 
-      <%# ══════════ STEP 4 — Review & Confirm ══════════ %>
-      <section data-wizard-target="step" data-step="4" class="wizard-step d-none" style="display:none">
+      <%# ══════════ STEP 5 — Review & Confirm ══════════ %>
+      <section data-wizard-target="step" data-step="5" class="wizard-step d-none" style="display:none">
+        <div class="d-flex align-items-start mb-3 p-3 rounded-3"
+             style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
+          <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
+          <div>
+            <strong>Important:</strong> Review all information carefully before submitting.
+            Incorrect or mismatched data will result in rejection.
+          </div>
+        </div>
+
         <div class="ballot-section card border-0 shadow-sm mb-4">
           <div class="card-body p-4">
 

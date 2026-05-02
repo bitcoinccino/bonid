@@ -23,9 +23,13 @@ namespace :face_collection do
     puts "Collection ready. Current face count: #{stats[:face_count]}"
   end
 
-  desc "Index all approved submissions into the face collection (bootstrap)"
+  desc "Index all approved submissions into the face collection (bootstrap). " \
+       "FORCE=1 re-indexes rows whose local metadata claims they're indexed " \
+       "but the AWS collection was deleted/recreated since then."
   task bootstrap: :environment do
     FaceCollectionService.ensure_collection!
+
+    force = ENV["FORCE"] == "1"
 
     submissions = IdentitySubmission
       .where(status: :approved)
@@ -38,13 +42,14 @@ namespace :face_collection do
     skipped = 0
     failed = 0
 
-    puts "Bootstrapping #{total} approved submissions into face collection..."
+    puts "Bootstrapping #{total} approved submissions into face collection#{force ? " (FORCE re-index)" : ""}..."
     puts "Collection: #{FaceCollectionService::COLLECTION_ID}"
     puts "-" * 60
 
     submissions.find_each(batch_size: 50) do |submission|
-      # Skip if already indexed
-      if submission.metadata&.dig("face_collection", "face_id").present?
+      # Skip if already indexed (unless FORCE=1, which assumes AWS state
+      # may have drifted from local metadata — e.g. collection rebuilt).
+      if !force && submission.metadata&.dig("face_collection", "face_id").present?
         skipped += 1
         next
       end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_28_220000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_29_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2205,6 +2205,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_28_220000) do
     t.datetime "notifications_seen_at"
     t.string "preferred_locale", default: "ht"
     t.string "notification_channel", default: "email"
+    t.boolean "is_diaspora"
     t.index ["active"], name: "index_users_on_active"
     t.index ["address_id"], name: "index_users_on_address_id"
     t.index ["agent_rank"], name: "index_users_on_agent_rank"
@@ -2216,6 +2217,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_28_220000) do
     t.index ["invitation_token"], name: "index_users_on_invitation_token", unique: true
     t.index ["invited_by_id"], name: "index_users_on_invited_by_id"
     t.index ["invited_by_type", "invited_by_id"], name: "index_users_on_invited_by"
+    t.index ["is_diaspora"], name: "index_users_on_is_diaspora"
     t.index ["ninu"], name: "index_users_on_ninu"
     t.index ["partner_branch_id"], name: "index_users_on_partner_branch_id"
     t.index ["partner_id"], name: "index_users_on_partner_id"

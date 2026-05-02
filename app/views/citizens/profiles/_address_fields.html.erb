@@ -30,16 +30,16 @@
     </div>
 
     <%= f.simple_fields_for :address do |a| %>
-      <%# Country selector — controls which fields appear below %>
-      <div class="row g-4 mb-3">
-        <div class="col-md-6">
-          <%= a.input :country, as: :select,
-            collection: ISO3166::Country.all.map { |c| [c.translations[I18n.locale.to_s] || c.common_name.presence || c.name, c.common_name.presence || c.name] }.sort_by(&:first).unshift(["Haiti", "Haiti"]).uniq { |c| c[1] },
-            selected: a.object.country || "Haiti",
-            prompt: "Chwazi Peyi",
-            input_html: { class: "form-select", id: "address_country" },
-            label_html: { class: "form-label" } %>
-        </div>
+      <%# Country selector — controls which fields appear below.
+          Full-width: it's the only field in this row, so a half-column
+          left awkward whitespace beside it on desktop. %>
+      <div class="mb-3">
+        <%= a.input :country, as: :select,
+          collection: ISO3166::Country.all.map { |c| [c.translations[I18n.locale.to_s] || c.common_name.presence || c.name, c.common_name.presence || c.name] }.sort_by(&:first).unshift(["Haiti", "Haiti"]).uniq { |c| c[1] },
+          selected: a.object.country || "Haiti",
+          prompt: "Chwazi Peyi",
+          input_html: { class: "form-select", id: "address_country" },
+          label_html: { class: "form-label" } %>
       </div>
 
       <%# Diaspora notice (hidden by default) %>

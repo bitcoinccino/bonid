@@ -1,0 +1,105 @@
+<%# app/views/citizens/onboarding/show.html.erb
+    Single-question gate. Two big tap-cards: Mwen Ayiti / Mwen aletranje.
+    Header chrome matches the Anrejistre wizard. %>
+<div class="ballot-wrap px-0" style="padding-bottom: 0;">
+
+  <%# ── Page Header (wizard style) ── %>
+  <div class="ballot-head text-center">
+    <h1 class="ballot-title">
+      Byenveni sou BonID
+    </h1>
+    <p class="ballot-subtitle mb-0">
+      Pou n ka prepare bon eksperyans pou ou, di nou kote ou ap viv kounye a.
+    </p>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+
+      <div class="ballot-section card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">Kote ou ap viv kounye a?</h2>
+            <p class="ballot-section-desc mb-0">
+              Repons sa a chwazi dokiman ki nesesè yo ak kote w ap soumèt
+              enfòmasyon ou yo. Ou ka chanje sa pita nan Paramèt.
+            </p>
+          </div>
+
+          <%= form_with url: citizens_onboarding_path, method: :post,
+                        html: { data: { turbo: false } } do |f| %>
+
+            <%# ── Haiti card ── %>
+            <label class="d-flex align-items-center gap-3 p-3 rounded-3 mb-3"
+                   style="border: 1px solid #E5E7EB; cursor: pointer;">
+              <%# Round Haiti flag chip — soft red tint behind the seal so
+                  the full emblem is visible (the asset is 1200×956 with
+                  transparency, so a `cover` crop would clip the edges of
+                  the coat of arms). Mirrors the globe chip's geometry on
+                  the abroad card for a consistent visual rhythm. %>
+              <span class="d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width: 40px; height: 40px; border-radius: 50%;
+                           background: rgba(210, 16, 52, 0.08);
+                           border: 1px solid #E5E7EB;">
+                <%= image_tag "haiti_flag.png",
+                              alt: "Drapo Ayiti",
+                              style: "width: 28px; height: 28px; object-fit: contain;" %>
+              </span>
+              <div class="flex-grow-1">
+                <div class="fw-semibold mb-1" style="font-size: 1rem;">
+                  Mwen ap viv Ayiti
+                </div>
+                <small class="text-muted">
+                  Ou pral telechaje CIN oswa Paspò ou, ak prèv adrès Ayiti
+                  (bòdwo elektrisite, kontra lokasyon, e.lt.).
+                </small>
+              </div>
+              <input type="radio" name="is_diaspora" value="false"
+                     class="form-check-input flex-shrink-0"
+                     id="is_diaspora_false" required>
+            </label>
+
+            <%# ── Abroad card ── %>
+            <label class="d-flex align-items-center gap-3 p-3 rounded-3 mb-4"
+                   style="border: 1px solid #E5E7EB; cursor: pointer;">
+              <%# Round globe chip — Remix Icon, matched in size to the flag
+                  so both cards have a consistent visual rhythm. %>
+              <span class="d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 32, 159, 0.08); border: 1px solid #E5E7EB; color: var(--primary);">
+                <i class="ri-global-line" style="font-size: 1.2rem;"></i>
+              </span>
+              <div class="flex-grow-1">
+                <div class="fw-semibold mb-1" style="font-size: 1rem;">
+                  Mwen ap viv aletranje
+                </div>
+                <small class="text-muted">
+                  Ou pral telechaje CIN oswa Paspò ou, plis yon ID peyi
+                  rezidans ou (Green Card, State ID, Cédula, e.lt.) ak yon
+                  prèv adrès aletranje.
+                </small>
+              </div>
+              <input type="radio" name="is_diaspora" value="true"
+                     class="form-check-input flex-shrink-0"
+                     id="is_diaspora_true" required>
+            </label>
+
+            <button type="submit" class="election-btn-primary w-100">
+              <i class="ri-arrow-right-line me-1"></i> Kontinye
+            </button>
+          <% end %>
+
+          <div class="enroll-helpful-tip mt-4">
+            <i class="ri-information-line"></i>
+            <div>
+              <strong>Poukisa nou mande sa?</strong>
+              Diaspora bezwen telechaje yon dokiman anplis (ID peyi rezidans ou).
+              Si ou ap viv Ayiti, w ap evite kesyon yo pa konsène ou.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

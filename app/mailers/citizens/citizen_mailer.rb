@@ -40,6 +40,21 @@ module Citizens
       )
     end
 
+    # Send a 6-digit code to a citizen's PROPOSED new email so they can
+    # confirm ownership before we swap their account email. Sent to the
+    # NEW address — the controller verifies the code on a follow-up POST.
+    def email_change_verification
+      @user      = params[:user]
+      @new_email = params[:new_email]
+      @code      = params[:code]
+      @email_product = "bonid"
+
+      mail(
+        to: @new_email,
+        subject: "BonID: Konfime nouvo imel ou"
+      )
+    end
+
     # Alert emergency contact about incident involving their contact
     def emergency_contact_incident_alert
       @contact = params[:contact]  # EmergencyContact record

@@ -1,4 +1,7 @@
-<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head). %>
+<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head).
+    Width is constrained to col-lg-9 + cards use the canonical
+    .ballot-section card border so the page lines up with
+    Paramèt, Profile, and the rest of the citizens portal. %>
 <div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
   <%# ── Page Header (wizard style) ── %>
@@ -10,6 +13,8 @@
       Suivi en temps réel de vos dossiers auprès de l'IGPNH
     </p>
   </div>
+
+  <div class="complaint-form-wrapper">
 
   <%# --- "Add another" CTA — only shown when at least one complaint exists.
         Empty state below has its own primary CTA. --- %>
@@ -25,13 +30,13 @@
   <% unless @complaints.empty? %>
     <div class="row g-3 mb-4">
       <div class="col-6 col-md-3">
-        <div class="p-3 bg-white border rounded-4 text-center">
+        <div class="ballot-section card border p-3 text-center">
           <div class="text-muted small fw-bold text-uppercase ls-1 mb-1">Total</div>
           <div class="h4 fw-bold mb-0 text-dark"><%= @complaints.count %></div>
         </div>
       </div>
       <div class="col-6 col-md-3">
-        <div class="p-3 bg-white border rounded-4 text-center border-warning-subtle">
+        <div class="ballot-section card border p-3 text-center">
           <div class="text-muted small fw-bold text-uppercase ls-1 mb-1">En Cours</div>
           <div class="h4 fw-bold mb-0 text-warning"><%= @complaints.count { |c| c.status_label.match?(/En cours/i) } %></div>
         </div>
@@ -41,21 +46,23 @@
 
   <%# --- Complaints Grid --- %>
   <% if @complaints.empty? %>
-    <div class="text-center py-5 px-4 rounded-4 complaint-empty-card">
-      <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+    <div class="ballot-section card border text-center py-5 px-4">
+      <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4 mx-auto" style="width: 80px; height: 80px;">
         <i class="ri-file-shield-line display-5 text-secondary opacity-50"></i>
       </div>
       <h4 class="fw-bold">Aucune plainte déposée</h4>
       <p class="text-muted mx-auto mb-4" style="max-width: 400px;">
         Votre historique est vide. Si vous avez été témoin d'un abus, commencez votre signalement ici.
       </p>
-      <%= link_to "Déposer une plainte", new_citizens_officer_complaint_path, class: "btn btn-outline-primary rounded-pill px-5 fw-bold" %>
+      <div>
+        <%= link_to "Déposer une plainte", new_citizens_officer_complaint_path, class: "btn btn-outline-primary rounded-pill px-5 fw-bold" %>
+      </div>
     </div>
   <% else %>
     <div class="row g-4">
       <% @complaints.each do |complaint| %>
         <div class="col-12 col-lg-6">
-          <div class="card complaint-modern-card border rounded-4 h-100 overflow-hidden">
+          <div class="ballot-section card border h-100 overflow-hidden position-relative">
             <%# Side Status Indicator %>
             <div class="status-sidebar bg-<%= complaint.status_color %>"></div>
 
@@ -138,4 +145,5 @@
     </div>
   <% end %>
 
+  </div><%# /complaint-form-wrapper %>
 </div>

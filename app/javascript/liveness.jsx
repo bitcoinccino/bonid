@@ -35,7 +35,7 @@ function friendlyError(raw) {
   if (lower.includes("confidence") || lower.includes("threshold"))
     return "Verifikasyon pa rive nan konfyans nesesè a. Eseye ak pi bon limyè epi pa bouje."
   if (lower.includes("constraint") || lower.includes("invalid session"))
-    return "Sesyon ekspire oswa entèwonpi. Tanpri eseye ankò."
+    return "Sesyon ou ekspire (limit 3 minit). Peze \"Eseye ankò\" pou kòmanse yon nouvo verifikasyon."
 
   // If it looks technical (contains error codes, stack traces, etc.), replace entirely
   if (raw.includes("{") || raw.includes("Error:") || raw.length > 120)
@@ -51,6 +51,22 @@ function isTimeoutOrNetworkError(raw) {
   return lower.includes("timeout") || lower.includes("timed out") ||
          lower.includes("network") || lower.includes("fetch") ||
          lower.includes("failed to fetch") || lower.includes("aborted")
+}
+
+// Detect camera permission denied — distinct from "camera not found"
+// (hardware) or "camera busy" (another app holds it). When this fires
+// the browser will not re-prompt without a manual settings change, so
+// "try again" doesn't help. We route the citizen to the manual-selfie
+// fallback instead of leaving them stuck on an error screen.
+function isCameraPermissionError(raw) {
+  if (!raw || typeof raw !== "string") return false
+  const lower = raw.toLowerCase()
+  return lower.includes("notallowederror") ||
+         lower.includes("permission denied") ||
+         lower.includes("permissiondenied") ||
+         lower.includes("permission_denied") ||
+         (lower.includes("camera") && (lower.includes("denied") || lower.includes("blocked") || lower.includes("not allowed"))) ||
+         (lower.includes("getusermedia") && lower.includes("denied"))
 }
 
 // BonID-themed Amplify theme for FaceLivenessDetector
@@ -189,21 +205,26 @@ function VerifyingScreen() {
 }
 
 // ── Success Screen ──
+// Bridge state shown after AWS Liveness passes but BEFORE face_compare
+// runs. Liveness only confirms "real human face in front of the camera"
+// — it does not compare to the ID photo. Claiming "matche ak dokiman"
+// here was misleading and contradicted the mismatch error that fires
+// 2 seconds later. Now reads as a continuation, not a final verdict.
 function SuccessScreen() {
   return (
     <div style={{ ...centeredStyle, background: "#0a0f1f" }}>
-      {iconCircle("rgba(25,135,84,0.15)", "ri-checkbox-circle-fill", "#34d399")}
+      {iconCircle("rgba(123,143,255,0.15)", "ri-loader-4-line spin", "#7b8fff")}
       <p style={{
         fontSize: "clamp(0.9rem, 3vw, 1rem)", fontWeight: 700,
-        color: "#34d399", marginBottom: "0.3rem"
+        color: "#ffffff", marginBottom: "0.3rem"
       }}>
-        Idantite ou verifye ak siksè!
+        Verifikasyon Figi Fini
       </p>
       <p style={{
         fontSize: "clamp(0.78rem, 2.3vw, 0.85rem)",
         color: "#d0d4e0", margin: 0
       }}>
-        Figi ou matche ak dokiman ou. Ou ka kontinye.
+        N ap konpare figi ou ak foto sou dokiman ou…
       </p>
     </div>
   )
@@ -246,7 +267,7 @@ function ErrorScreen({ message, onRetry }) {
 // Shown after 2 consecutive timeout/network failures.
 // Lets the citizen take a static selfie instead of the live video challenge.
 // Submission is flagged for mandatory admin review.
-function LowBandwidthScreen({ csrfToken, onComplete, onRetryNormal, manualSelfieUrl = "/citizens/identity_submissions/manual_selfie" }) {
+function LowBandwidthScreen({ csrfToken, onComplete, onRetryNormal, reason = null, manualSelfieUrl = "/citizens/identity_submissions/manual_selfie" }) {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState(null)
   const fileInputRef = useRef(null)
@@ -288,22 +309,36 @@ function LowBandwidthScreen({ csrfToken, onComplete, onRetryNormal, manualSelfie
     }
   }, [csrfToken, onComplete])
 
+  // Reason-aware intro copy: same manual-selfie destination, different
+  // explanation depending on what tripped us into the fallback. Keeps the
+  // citizen oriented instead of seeing a generic "Koneksyon fèb" header
+  // when their actual blocker was a denied camera permission.
+  const isCameraDenied = reason === "camera_denied"
+  const headerIconBg   = isCameraDenied ? "#fee2e2" : "#fff3e6"
+  const headerIconName = isCameraDenied ? "ri-camera-off-line" : "ri-wifi-off-line"
+  const headerIconColor = isCameraDenied ? "#dc2626" : "#e67e22"
+  const headerTitle = isCameraDenied
+    ? "Kamera bloke"
+    : "Koneksyon fèb"
+  const headerSub = isCameraDenied
+    ? "Nou pa kapab itilize kamera ou pou verifikasyon dirèk. Pran yon selfi klè olye — yon admin ap verifye li manyèlman."
+    : "Koneksyon ou twò dousman pou verifikasyon an dirèk. Pran yon selfi klè olye — yon admin ap verifye li manyèlman."
+
   return (
     <div style={centeredStyle}>
-      {iconCircle("#fff3e6", "ri-wifi-off-line", "#e67e22")}
+      {iconCircle(headerIconBg, headerIconName, headerIconColor)}
       <p style={{
         fontSize: "clamp(0.9rem, 3vw, 1rem)", fontWeight: 700,
         color: "#333", marginBottom: "0.3rem"
       }}>
-        Koneksyon fèb
+        {headerTitle}
       </p>
       <p style={{
         fontSize: "clamp(0.75rem, 2.2vw, 0.82rem)", color: "#888",
         lineHeight: 1.5, marginBottom: "1.25rem",
         padding: "0 0.5rem", maxWidth: "340px"
       }}>
-        Koneksyon ou twò dousman pou verifikasyon an dirèk.
-        Pran yon selfi klè olye &mdash; yon admin ap verifye li manyèlman.
+        {headerSub}
       </p>
 
       {uploadError && (
@@ -359,8 +394,61 @@ function LowBandwidthScreen({ csrfToken, onComplete, onRetryNormal, manualSelfie
   )
 }
 
+// Inject the GetReady fade-in keyframes once per page load. Inline so the
+// liveness bundle stays self-contained — no application.css coupling.
+const BONID_GET_READY_STYLES_ID = "bonid-get-ready-styles"
+function ensureGetReadyStyles() {
+  if (typeof document === "undefined") return
+  if (document.getElementById(BONID_GET_READY_STYLES_ID)) return
+  const style = document.createElement("style")
+  style.id = BONID_GET_READY_STYLES_ID
+  style.textContent = `
+    @keyframes bonidGetReadyIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  `
+  document.head.appendChild(style)
+}
+
 // ── "Get Ready" Pre-Check Screen ──
 function GetReadyScreen({ onReady, darkMode = false }) {
+  // "warming" phase shows just the icon + a single line for ~700ms before
+  // the full panel fades in. This gives the citizen a deliberate, calm
+  // hand-off into the prep panel instead of the panel snapping in fully
+  // populated the moment the AWS session finishes provisioning.
+  const [warming, setWarming] = useState(true)
+  useEffect(() => {
+    ensureGetReadyStyles()
+    const t = setTimeout(() => setWarming(false), 700)
+    return () => clearTimeout(t)
+  }, [])
+
+  if (warming) {
+    const wbg = darkMode ? "#0a0f1f" : "transparent"
+    const wIconBg = darkMode ? "rgba(255,255,255,0.08)" : "#e6eaf5"
+    const wIconColor = darkMode ? "#7b8fff" : "#00209F"
+    const wTextColor = darkMode ? "#ffffff" : "#1a1a2e"
+    return (
+      <div style={{
+        ...centeredStyle,
+        background: wbg,
+        minHeight: "min(580px, 90vh)",
+        animation: "bonidGetReadyIn 0.22s ease-out both"
+      }}>
+        {iconCircle(wIconBg, "ri-camera-line", wIconColor)}
+        <p style={{
+          fontSize: "clamp(0.85rem, 2.6vw, 0.92rem)",
+          color: wTextColor,
+          marginTop: "0.85rem",
+          marginBottom: 0,
+          fontWeight: 600
+        }}>
+          Ap prepare verifikasyon ou...
+        </p>
+      </div>
+    )
+  }
   const tips = [
     { icon: "ri-sun-line", title: "Limyè ekran 100%", desc: "Mete limyè ekran ou pi wo posib pou pi bon rezilta" },
     { icon: "ri-lightbulb-line", title: "Fè fas ak yon sous limyè", desc: "Chita devan yon fenèt oswa yon lanp — evite limyè dèyè ou" },
@@ -382,6 +470,15 @@ function GetReadyScreen({ onReady, darkMode = false }) {
       fontFamily: "'Montserrat', sans-serif",
       padding: "clamp(1.2rem, 5vw, 2rem) clamp(1rem, 4vw, 1.5rem)",
       background: bg,
+      // Reserve the eventual height up-front. The previous loading state has
+      // minHeight: 280px; without this, the parent reflows from 280 → ~600px
+      // when GetReadyScreen mounts and the citizen sees a visible jump.
+      minHeight: "min(580px, 90vh)",
+      // Fade in so the swap from the spinner feels intentional rather than
+      // a flash. Keyframes are inlined just below the component definition
+      // so this file stays self-contained.
+      animation: "bonidGetReadyIn 0.28s ease-out both",
+      willChange: "opacity, transform"
     }}>
       <div style={{ textAlign: "center", marginBottom: "clamp(1rem, 3vw, 1.5rem)" }}>
         {iconCircle(
@@ -557,6 +654,7 @@ function LivenessCheck({
   const [rateLimitResetTime, setRateLimitResetTime] = useState(0)
   const [timeoutCount, setTimeoutCount] = useState(0)
   const [lowBandwidthMode, setLowBandwidthMode] = useState(false)
+  const [lowBandwidthReason, setLowBandwidthReason] = useState(null) // "camera_denied" | "slow_connection" | null
   const successTimerRef = useRef(null)
   const sessionCreatingRef = useRef(false)
 
@@ -653,7 +751,11 @@ function LivenessCheck({
       setSuccess(true)
       // Include the AWS session ID so consent_liveness_controller can send it to liveness_decide
       const resultWithSession = { ...data, session_id: sessionId }
-      successTimerRef.current = setTimeout(() => onComplete(resultWithSession), 2000)
+      // Brief beat (350ms) so the citizen sees "Verifikasyon Figi Fini —
+      // n ap konpare…" before the Stimulus controller takes over with its
+      // own comparing state. Was 2000ms when the React success screen
+      // claimed the ID match was done — too long, and it lied.
+      successTimerRef.current = setTimeout(() => onComplete(resultWithSession), 350)
     } else {
       setVerifying(false)
       if (attemptTracker) {
@@ -737,6 +839,16 @@ function LivenessCheck({
 
     setVerifying(false)
 
+    // Camera permission denied — AWS Rekognition can't run at all and
+    // "try again" won't re-prompt. Skip directly to the manual-selfie
+    // fallback so the citizen has an actual recovery path.
+    if (isCameraPermissionError(rawMsg)) {
+      setError(null)
+      setLowBandwidthReason("camera_denied")
+      setLowBandwidthMode(true)
+      return
+    }
+
     // Track consecutive timeout/network errors for low-bandwidth fallback
     if (isTimeoutOrNetworkError(rawMsg)) {
       const newCount = timeoutCount + 1
@@ -744,6 +856,7 @@ function LivenessCheck({
       if (newCount >= 2) {
         // After 2 consecutive timeout failures, offer low-bandwidth mode
         setError(null)
+        setLowBandwidthReason("slow_connection")
         setLowBandwidthMode(true)
         return
       }
@@ -789,6 +902,7 @@ function LivenessCheck({
     <LowBandwidthScreen
       csrfToken={csrfToken}
       manualSelfieUrl={manualSelfieUrl}
+      reason={lowBandwidthReason}
       onComplete={(data) => {
         setLowBandwidthMode(false)
         setSuccess(true)
@@ -805,17 +919,23 @@ function LivenessCheck({
   if (verifying) return darkWrap(<VerifyingScreen />)
 
   if (loading) {
+    // Respect darkMode so the transition to GetReadyScreen (which honors
+    // darkMode) doesn't flash from dark navy → light bg in light mode.
+    const loadBg = darkMode ? "#0a0f1f" : "transparent"
+    const loadIconBg = darkMode ? "rgba(255,255,255,0.08)" : "#e6eaf5"
+    const loadIconColor = darkMode ? "#7b8fff" : "#00209F"
+    const loadTextColor = darkMode ? "#ffffff" : "#1a1a2e"
     return (
-      <div style={{ ...centeredStyle, background: "#0a0f1f" }}>
-        {iconCircle("rgba(255,255,255,0.08)", "ri-shield-check-line", "#7b8fff")}
+      <div style={{ ...centeredStyle, background: loadBg }}>
+        {iconCircle(loadIconBg, "ri-shield-check-line", loadIconColor)}
         <div className="spinner-border" role="status" style={{
           width: "1.35rem", height: "1.35rem", borderWidth: "2px",
-          color: "#7b8fff"
+          color: loadIconColor
         }}>
           <span className="visually-hidden">Ap chaje...</span>
         </div>
         <p style={{
-          fontSize: "clamp(0.82rem, 2.5vw, 0.88rem)", color: "#ffffff",
+          fontSize: "clamp(0.82rem, 2.5vw, 0.88rem)", color: loadTextColor,
           marginTop: "0.85rem", marginBottom: 0, fontWeight: 500
         }}>
           Preparasyon verifikasyon figi...

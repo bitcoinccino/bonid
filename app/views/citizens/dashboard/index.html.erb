@@ -24,6 +24,12 @@
 <% end %>
 
 <section class="<%= dashboard_class %>" data-controller="wallet-stack">
+
+  <%# Legacy-CIN migration banner — shown above ANY dashboard state when the
+      citizen's profile holds a non-NINU CIN. Until they update, BonID
+      submission can't accept their ID. %>
+  <%= render "citizens/dashboard/legacy_cin_alert" %>
+
   <% if @approved_submission.present? %>
     <%# ========== VERIFIED USER - WALLET VIEW ========== %>
     <% submission = @approved_submission %>
@@ -505,43 +511,40 @@
     </div>
 
   <% else %>
-    <%# ========== NO BONID YET — Single unified card ========== %>
-    <div class="get-started-container">
-      <div class="get-started-card">
+    <%# ========== NO BONID YET — Anrejistre wizard chrome ==========
+        Header chrome matches the Anrejistre wizard (.ballot-wrap /
+        .ballot-head / .ballot-section). %>
+    <div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-        <%# Hero section %>
-        <div class="gs-hero">
-          <div class="get-started-icon">
-            <i class="ri-shield-check-line"></i>
-          </div>
-          <h3>Jwenn BonID Ou</h3>
+      <%# ── Page Header (wizard style) ── %>
+      <div class="ballot-head text-center">
+        <h1 class="ballot-title">
+          <i class="ri-shield-check-line me-2"></i>Jwenn BonID Ou
+        </h1>
+        <p class="ballot-subtitle mb-0">
           <% if @is_diaspora %>
-            <p>Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti — menm depi aletranje.</p>
+            Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti, menm depi aletranje.
           <% else %>
-            <p>Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti.</p>
+            Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti.
           <% end %>
-          <% if current_citizen.profile_complete? %>
-            <%= link_to new_citizens_identity_submission_path,
-                        class: "gs-cta-btn" do %>
-              <i class="ri-send-plane-line me-1"></i> Get Started
-            <% end %>
-          <% else %>
-            <%= link_to edit_citizens_profile_path,
-                        class: "gs-cta-btn" do %>
-              <i class="ri-edit-line me-1"></i> Ranpli Pwofil Ou
-            <% end %>
-          <% end %>
-        </div>
+        </p>
+      </div>
 
-        <div class="gs-divider"></div>
+      <div class="row justify-content-center">
+        <div class="col-12 col-xl-11">
 
         <%# Two-column layout: What You'll Need + How It Works %>
-        <div class="gs-columns">
-          <%# What You'll Need — tailored for domestic vs diaspora %>
-          <div class="gs-section">
-            <h5 class="gs-section-title">
-              <i class="ri-file-list-3-line"></i> Sa Ou Bezwen
-            </h5>
+        <div class="row g-4 mb-4">
+
+          <%# ── Sa Ou Bezwen ── %>
+          <div class="col-md-6">
+          <div class="ballot-section card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title" style="font-size: 1.1rem;">Sa Ou Bezwen</h2>
+              <p class="ballot-section-desc mb-0">Dokiman pou ou ranmase anvan ou kòmanse.</p>
+            </div>
 
             <% if @is_diaspora %>
               <%# ── Diaspora checklist ── %>
@@ -595,13 +598,21 @@
                 </div>
               <% end %>
             <% end %>
+
+            </div>
+          </div>
           </div>
 
-          <%# How It Works %>
-          <div class="gs-section">
-            <h5 class="gs-section-title">
-              <i class="ri-route-line"></i> Kijan Li Fonksyone
-            </h5>
+          <%# ── Kijan Li Fonksyone ── %>
+          <div class="col-md-6">
+          <div class="ballot-section card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+
+            <div class="ballot-section-head mb-4">
+              <h2 class="ballot-section-title" style="font-size: 1.1rem;">Kijan Li Fonksyone</h2>
+              <p class="ballot-section-desc mb-0">Twa etap senp pou jwenn BonID ou.</p>
+            </div>
+
             <% [
               { step: "1", label: "Ranpli pwofil ou",           detail: "Antre enfòmasyon pèsonèl ou epi telechaje dokiman yo." },
               { step: "2", label: "Soumèt pou verifikasyon",    detail: "Yon revizè BonID verifye idantite ou." },
@@ -615,26 +626,29 @@
                 </div>
               </div>
             <% end %>
+
+            </div>
+          </div>
           </div>
         </div>
 
-        <div class="gs-divider"></div>
+        <%# ── Poukisa BonID? ── %>
+        <div class="ballot-section card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
 
-        <%# Why BonID? — 4-column on wide layout %>
-        <div class="gs-section">
-          <h5 class="gs-section-title">
-            <i class="ri-star-line"></i> Poukisa BonID?
-          </h5>
+          <div class="ballot-section-head mb-4">
+            <h2 class="ballot-section-title">Poukisa BonID?</h2>
+            <p class="ballot-section-desc mb-0">Avantaj kle pou idantite dijital ou.</p>
+          </div>
           <div class="gs-advantage-grid">
             <% advantages = [
-              { icon: "ri-qr-code-line",  title: "Pataj QR",          desc: "Pataje sèlman sa ki nesesè ak yon QR chifre, limite nan tan." },
-              { icon: "ri-eye-line",       title: "Kontwòl Total",    desc: "Wè ki lè ak ki kote yo eskane BonID ou." },
-              { icon: "ri-lock-2-line",    title: "Prive",            desc: "Done chifre, pa janm pataje san konsantman ou." }
+              { icon: "ri-government-line",   title: "Sèvis Gouvènman an Liy", desc: "Aksè ak sèvis piblik ak administrativ dirèkteman sou telefòn ou — san ou pa fè liy." },
+              { icon: "ri-shield-check-line", title: "Sove si Yo Atake Kay Ou", desc: "Menm si gang, dife oswa katastwòf detwi papye ou yo, idantite ou rete an sekirite nan BonID." },
+              { icon: "ri-eye-line",          title: "Kontwòl Total",          desc: "Wè ki lè ak ki kote yo eskane BonID ou." },
+              { icon: "ri-lock-2-line",       title: "Prive",                  desc: "Done chifre, pa janm pataje san konsantman ou." }
             ]
             if @is_diaspora
               advantages << { icon: "ri-global-line", title: "Vote Depi Aletranje", desc: "Vote nan eleksyon Ayiti dirèkteman sou telefòn ou." }
-            else
-              advantages << { icon: "ri-global-line", title: "Fonksyone Offline",   desc: "Fyab sou rezo ki lan, bati pou Ayiti." }
             end
             %>
             <% advantages.each do |adv| %>
@@ -645,10 +659,30 @@
               </div>
             <% end %>
           </div>
+
+          </div>
         </div>
 
-      </div>
-    </div>
+        <%# Primary CTA — anchored at the bottom so the citizen reads
+            "Sa Ou Bezwen / Kijan Li Fonksyone / Poukisa BonID" first,
+            then commits to starting. %>
+        <div class="text-center mb-4">
+          <% if current_citizen.profile_complete? %>
+            <%= link_to new_citizens_identity_submission_path,
+                        class: "election-btn-primary" do %>
+              <i class="ri-send-plane-line me-1"></i> Kòmanse
+            <% end %>
+          <% else %>
+            <%= link_to edit_citizens_profile_path,
+                        class: "election-btn-primary" do %>
+              <i class="ri-edit-line me-1"></i> Kòmanse
+            <% end %>
+          <% end %>
+        </div>
+
+        </div><%# /col-xl-11 %>
+      </div><%# /row justify-content-center %>
+    </div><%# /ballot-wrap %>
   <% end %>
 
   <%# QR Code Modal %>
