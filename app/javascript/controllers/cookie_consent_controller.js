@@ -7,10 +7,22 @@ export default class extends Controller {
   connect() {
     const consent = JSON.parse(localStorage.getItem("cookieConsent") || "{}");
 
-    // If consent was already saved → hide banner + load scripts
+    // If consent was already saved → remove the banner instantly (no
+    // slide-out animation) and load any approved scripts. Slide-out is
+    // only for the user-clicks-a-button case.
     if (consent.functional || consent.analytics || consent.marketing) {
-      this.hideBanner();
+      if (this.hasBannerTarget) this.bannerTarget.remove();
       this.loadScripts(consent);
+      return;
+    }
+
+    // First-time visit: reveal the banner now that Stimulus has had a
+    // chance to confirm no prior consent. The .is-revealed class is
+    // what triggers the fade-in transition defined in SCSS.
+    if (this.hasBannerTarget) {
+      requestAnimationFrame(() => {
+        this.bannerTarget.classList.add("is-revealed");
+      });
     }
   }
 
@@ -19,6 +31,17 @@ export default class extends Controller {
       functional: true,
       analytics: true,
       marketing: true,
+    };
+    localStorage.setItem("cookieConsent", JSON.stringify(consent));
+    this.hideBanner();
+    this.loadScripts(consent);
+  }
+
+  rejectNonEssential() {
+    const consent = {
+      functional: true,
+      analytics: false,
+      marketing: false,
     };
     localStorage.setItem("cookieConsent", JSON.stringify(consent));
     this.hideBanner();

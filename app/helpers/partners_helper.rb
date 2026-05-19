@@ -92,205 +92,106 @@ module PartnersHelper
   # Returns array of benefits for each sector - more descriptive and compelling
   # Returns the parent group name for a given sector value
   # e.g. "mobile_wallet" => "Fintech & Mobile Money", "pnh" => "Law Enforcement"
-  def sector_group_label(sector)
-    sector_key = sector.to_s.downcase
-    group = PartnerSectorConstants::SECTORS.find { |_g, values| values.include?(sector_key) }&.first
-    group || sector_key.tr("_", " ").split.map(&:capitalize).join(" ")
+  # Returns the human label for a single sector value in the current
+  # locale. Lookup chain:
+  #   1. i18n key main.partners.sectors.<slug>
+  #   2. PartnerSectorConstants::SECTOR_LABEL_OVERRIDES (English overrides)
+  #   3. Title-cased slug ("commercial_bank" -> "Commercial Bank")
+  def sector_label_translated(value)
+    slug = value.to_s.downcase
+    i18n_label = I18n.t("main.partners.sectors.#{slug}", default: nil)
+    return i18n_label if i18n_label.present?
+
+    PartnerSectorConstants.human_sector_label(slug)
   end
 
-  def partner_benefits(sector)
-    case sector.to_s.downcase
-    when "banking", "fintech", "commercial_bank", "microfinance", "credit_union", "money_transfer"
+  # Drop-in replacement for the inline grouping in partners.html.erb.
+  # Returns [[group_label, [[option_label, slug], ...]], ...] suitable
+  # for grouped_options_for_select. Both group and option labels are
+  # translated per current locale; falls back gracefully when keys are
+  # missing.
+  def translated_sector_filter_groups
+    PartnerSectorConstants::SECTORS.map do |group, sectors|
+      slug = group.parameterize(separator: "_")
+      group_label = I18n.t("main.partners.sector_groups.#{slug}", default: group)
       [
-        "Open bank accounts instantly with your verified BonID",
-        "Get faster approval for loans, credit cards & mortgages",
-        "Enjoy seamless KYC, no repeated document uploads",
-        "Access mobile banking & digital wallets securely",
-        "Reduce fraud risk with cryptographically signed identity",
-        "Verify wire transfers & large transactions in seconds",
-        "Reuse your BonID across every partner bank, sign in once"
-      ]
-    when "mobile_wallet", "payment_processor", "crypto_exchange", "remittance"
-      [
-        "Instant KYC for mobile money & crypto accounts",
-        "Secure digital wallet activation with verified ID",
-        "Compliant identity verification for transactions",
-        "Faster onboarding, no repeated document uploads",
-        "Lift transaction limits the moment your BonID is verified",
-        "Recover locked accounts without visiting a branch",
-        "Audit-ready logs for AML / FATF reporting"
-      ]
-    when "healthcare", "hospital", "public_health_campaigns", "clinic", "pharmacy", "lab", "medical_insurance"
-      [
-        "Skip paperwork, instant patient registration",
-        "Access your medical history across any partner hospital",
-        "Emergency services can verify your identity immediately",
-        "Secure prescription tracking & health records",
-        "Verified next-of-kin & emergency contacts on file",
-        "Stop duplicate patient records & billing errors",
-        "Authorize a relative to view your records with one tap"
-      ]
-    when "law_enforcement", "border_control", "pnh"
-      [
-        "Faster, transparent ID verification during stops",
-        "Digital proof of identity, no physical documents needed",
-        "Reduced wait times at checkpoints",
-        "Audit trail protects both citizens & officers",
-        "Tamper-proof badge cuts down on impersonation",
-        "Cross-check identity against missing-persons & wanted lists",
-        "Issue digital citations linked to a verified BonID"
-      ]
-    when "cep"
-      [
-        "Verified voter identity for elections",
-        "Secure, transparent electoral participation",
-        "Digital voter card linked to your BonID",
-        "Faster check-in at polling stations",
-        "Anti-double-vote enforcement at every polling center",
-        "Cryptographic vote receipt without breaking ballot secrecy",
-        "Diaspora-ready: vote-eligibility verified from anywhere"
-      ]
-    when "dgi"
-      [
-        "File taxes with verified identity, no paperwork",
-        "Instant NIF registration with your BonID",
-        "Track tax payments and fiscal receipts digitally",
-        "Secure access to your tax records",
-        "Auto-link your tax profile to bank & payroll partners",
-        "Eliminate identity-fraud refunds & ghost taxpayers",
-        "Pay & download stamped fiscal receipts on the spot"
-      ]
-    when "oni"
-      [
-        "Streamlined national ID card application",
-        "Digital identity verification for CIN requests",
-        "Track your ID application status online",
-        "Secure biometric enrollment",
-        "Cut down on duplicate or fraudulent CIN issuance",
-        "Replace lost cards with full biometric re-verification",
-        "Sync civil-registry events (birth, marriage, death) automatically"
-      ]
-    when "embassy", "consulate", "international_org", "embassy_services"
-      [
-        "Expedited visa & passport processing",
-        "One-click document submission for consular services",
-        "Verified identity for travel authorizations",
-        "Secure digital signature for official forms",
-        "Verify Haitian nationals from abroad without paper notarization",
-        "Accelerate emergency document replacement for travelers",
-        "Pre-clear appointments before walking into the consulate"
-      ]
-    when "government", "local_governance", "onaca", "archives_nationales", "mairie", "municipality",
-         "ministry", "customs", "immigration"
-      [
-        "Faster access to government services",
-        "One-click document submission for permits",
-        "Reduced bureaucracy with verified digital ID",
-        "Secure digital signature for official forms",
-        "End-to-end audit trail for every permit & request",
-        "Cross-agency identity reuse, no re-verifying at each office",
-        "Cut corruption risk with cryptographic, non-repudiable signatures"
-      ]
-    when "telecommunications", "mobile_carrier", "isp", "cable_provider"
-      [
-        "Instant SIM card registration & activation",
-        "Quick mobile money account setup",
-        "Simplified contract signing for phone plans",
-        "Secure account recovery without store visits",
-        "Comply with CONATEL SIM-registration rules in seconds",
-        "Stop SIM-swap fraud with biometric re-verification",
-        "Onboard new lines remotely, no kiosk visit needed"
-      ]
-    when "insurance"
-      [
-        "Faster claims processing with verified identity",
-        "Instant policy activation, no paperwork delays",
-        "Fraud protection for your policies",
-        "Easy beneficiary verification",
-        "Verify dependents and beneficiaries against the civil registry",
-        "Detect duplicate or ghost policies automatically",
-        "Sign claims digitally with legally binding signatures"
-      ]
-    when "education", "online_education"
-      [
-        "Streamlined student enrollment & registration",
-        "Verified diplomas & certificates",
-        "Secure exam identity verification",
-        "Easy transcript requests",
-        "Stop diploma forgery with cryptographically signed credentials",
-        "Verify scholarship eligibility against official records",
-        "Issue tamper-proof attendance & graduation records"
-      ]
-    when "retail", "market_commerce"
-      [
-        "Age verification for restricted purchases",
-        "Loyalty programs linked to your BonID",
-        "Secure in-store & online transactions",
-        "Easy returns with verified purchase history",
-        "Reduce chargeback fraud on high-value items",
-        "Frictionless wallet-pay at the point of sale",
-        "Verified merchants get a trust badge customers recognize"
-      ]
-    when "hospitality", "tourism"
-      [
-        "Express hotel check-in, noID scanning",
-        "Verified booking for tours & activities",
-        "Seamless car rentals with digital ID",
-        "VIP treatment at partner locations",
-        "Comply with tourism-board guest-registration rules automatically",
-        "One-tap age check for bars, casinos, and restricted venues",
-        "Trusted-traveler status across the partner network"
-      ]
-    when "real_estate"
-      [
-        "Faster tenant verification for rentals",
-        "Streamlined property purchase documentation",
-        "Digital signing for lease agreements",
-        "Verified identity for property viewings",
-        "Reduce title-fraud risk with verified seller identity",
-        "Cross-check buyers against AML / sanctions lists",
-        "Notarize lease and sale documents end-to-end online"
-      ]
-    when "ngos", "community_organizations", "social_services", "disaster_relief"
-      [
-        "Quick beneficiary registration",
-        "Transparent aid distribution tracking",
-        "Verified volunteer & staff identity",
-        "Secure donation & fund management",
-        "Eliminate duplicate beneficiaries across programs",
-        "Donor-grade audit trails for every disbursement",
-        "Re-verify recipients in the field, even offline"
-      ]
-    when "legal"
-      [
-        "Verified client identity for legal services",
-        "Digital document signing with legal validity",
-        "Streamlined notarization process",
-        "Secure case file management",
-        "Build court-admissible audit trails for every signature",
-        "Cross-check witnesses & deponents against civil records",
-        "Cut KYC review time from days to minutes"
-      ]
-    when "cryptocurrency"
-      [
-        "Compliant KYC for crypto exchanges",
-        "Secure wallet recovery options",
-        "Verified identity for large transactions",
-        "Meet regulatory requirements easily",
-        "Travel-rule attestations baked in for cross-border transfers",
-        "Block sanctioned wallets and addresses with confidence",
-        "Enable institutional-grade audit reporting"
-      ]
-    else
-      [
-        "Verified identity accepted across Haiti",
-        "Skip repetitive document uploads",
-        "Secure, tamper-proof digital ID",
-        "Access services faster with BonID",
-        "Reuse one BonID across every partner in the network",
-        "Audit-ready logs for compliance & disputes",
-        "Cryptographically signed, impossible to forge"
+        group_label,
+        sectors.map { |s| [sector_label_translated(s), s] }
       ]
     end
   end
+
+  def sector_group_label(sector)
+    sector_key = sector.to_s.downcase
+    group = PartnerSectorConstants::SECTORS.find { |_g, values| values.include?(sector_key) }&.first
+    return sector_key.tr("_", " ").split.map(&:capitalize).join(" ") if group.blank?
+
+    # Slugify the canonical English group key ("Fintech & Mobile Money"
+    # -> "fintech_mobile_money") and look it up. Fall back to the
+    # original English group name if no translation is registered.
+    slug = group.parameterize(separator: "_")
+    I18n.t("main.partners.sector_groups.#{slug}", default: group)
+  end
+
+  # Maps every supported sector value to the i18n key group that holds
+  # its benefit bullets. Update here when adding a new sector value.
+  PARTNER_BENEFIT_GROUPS = {
+    # banking
+    "banking" => "banking", "fintech" => "banking", "commercial_bank" => "banking",
+    "microfinance" => "banking", "credit_union" => "banking", "money_transfer" => "banking",
+    # mobile wallet & crypto
+    "mobile_wallet" => "mobile_wallet", "payment_processor" => "mobile_wallet",
+    "crypto_exchange" => "mobile_wallet", "remittance" => "mobile_wallet",
+    # healthcare
+    "healthcare" => "healthcare", "hospital" => "healthcare", "public_health_campaigns" => "healthcare",
+    "clinic" => "healthcare", "pharmacy" => "healthcare", "lab" => "healthcare",
+    "medical_insurance" => "healthcare",
+    # law enforcement
+    "law_enforcement" => "law_enforcement", "border_control" => "law_enforcement", "pnh" => "law_enforcement",
+    # cep
+    "cep" => "cep",
+    # dgi
+    "dgi" => "dgi",
+    # oni
+    "oni" => "oni",
+    # embassy / diplomatic
+    "embassy" => "embassy", "consulate" => "embassy", "international_org" => "embassy",
+    "embassy_services" => "embassy",
+    # government
+    "government" => "government", "local_governance" => "government", "onaca" => "government",
+    "archives_nationales" => "government", "mairie" => "government", "municipality" => "government",
+    "ministry" => "government", "customs" => "government", "immigration" => "government",
+    # telecoms
+    "telecommunications" => "telecommunications", "mobile_carrier" => "telecommunications",
+    "isp" => "telecommunications", "cable_provider" => "telecommunications",
+    # insurance
+    "insurance" => "insurance",
+    # education
+    "education" => "education", "online_education" => "education",
+    # retail
+    "retail" => "retail", "market_commerce" => "retail",
+    # hospitality
+    "hospitality" => "hospitality", "tourism" => "hospitality",
+    # real estate
+    "real_estate" => "real_estate",
+    # ngos
+    "ngos" => "ngos", "community_organizations" => "ngos", "social_services" => "ngos",
+    "disaster_relief" => "ngos",
+    # legal
+    "legal" => "legal",
+    # cryptocurrency
+    "cryptocurrency" => "cryptocurrency"
+  }.freeze
+
+  def partner_benefits(sector)
+    group = PARTNER_BENEFIT_GROUPS[sector.to_s.downcase] || "default"
+    bullets = I18n.t("main.partners.benefits.#{group}", default: nil)
+
+    # Fall back to the default group if the translation key is missing
+    # (e.g. a new sector added before its YAML entry).
+    bullets = I18n.t("main.partners.benefits.default", default: []) if bullets.blank?
+
+    Array(bullets)
+  end
+
 end

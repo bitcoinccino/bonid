@@ -15,6 +15,10 @@ class MainController < ApplicationController
     @waitlist_signup = WaitlistSignup.new
     @departments = Department.order(:name)
     @total_signups = WaitlistSignup.count
+    # Verified partners for the constellation "trusted by" grid.
+    # Capped at 8 so the grid fills cleanly (2 rows × 4 cols on lg);
+    # /partners is the full directory.
+    @verified_partners = Partner.where.not(verified_at: nil).order(:name).limit(8)
     render "landing/index"
   end
 

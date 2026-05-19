@@ -30,8 +30,14 @@
 .bonid-navbar {
   padding: 0.9rem 1rem !important;
 
-  /* ✅ Solid Haitian Blue */
-  background: #00209F !important;
+  /* Match the hero's gradient so the navbar bleeds seamlessly into the
+     hero panel below it. Same direction (135deg) and same stops as
+     .hero-section in home/_hero.scss. */
+  background: linear-gradient(
+    135deg,
+    var(--haitian-blue, #00209F) 0%,
+    var(--haiti-space, #001b7a) 75%
+  ) !important;
 
   border-bottom: none;
   font-family: "Inter", sans-serif;
@@ -208,6 +214,14 @@ a.navbar-brand.font-orbitron:hover,
     right: 0.75rem !important;
     top: auto !important;
     transform: none !important;
+
+    /* Cap height to the available viewport (minus the navbar + a small
+       margin) and allow internal vertical scrolling so the lower items
+       (Développeurs / API / getting-started links) stay reachable. */
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .bonid-navbar .dropdown-menu .dropdown-item,
@@ -280,6 +294,32 @@ a.navbar-brand.font-orbitron:hover,
 .bonid-navbar .dropdown-menu small,
 .bonid-navbar .dropdown-menu .text-muted {
   color: rgba(15, 23, 42, 0.62) !important;
+}
+
+/* ── Product dropdown badges ── */
+.bonid-navbar .dropdown-menu .navbar-badge-new,
+.dropdown-menu .navbar-badge-new {
+  background: var(--haitian-blue, #00209F) !important;
+  color: #ffffff !important;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.bonid-navbar .dropdown-menu .navbar-badge-soon,
+.dropdown-menu .navbar-badge-soon {
+  background: #F1F5F9 !important;       /* slate-100 */
+  color: #64748B !important;             /* slate-500 */
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  border: 1px solid #E2E8F0;             /* slate-200 */
 }
 
 .dropdown-item.disabled {

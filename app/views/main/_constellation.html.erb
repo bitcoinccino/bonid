@@ -1,75 +1,92 @@
 <!-- ======================================================
-     HERO — DATA CONSTELLATION (PURE CIRCLES)
-     - No swinging (no in/out radius wave)
-     - Center = "Verifyem" text
-     - Brand logo becomes one of the orbiting logos
+     SECTION 3 — ONE IDENTITY. EVERY INSTITUTION.
+     Hub (BonID) emits verified identity to partners (grid).
 ====================================================== -->
-<section class="hero-section-constellation text-white position-relative overflow-hidden">
-  <canvas id="constellationCanvas"></canvas>
+<section class="hero-section-constellation py-5 position-relative overflow-hidden">
 
-  <div class="container position-relative z-3 py-6">
-    <div class="row align-items-center">
+  <div class="container position-relative py-5">
 
-      <div class="col-lg-5">
-        <h2 class="display-5 fw-bold"><%= t("main.constellation.title") %></h2>
-        <p class="lead opacity-90"><%= t("main.constellation.subtitle") %></p>
-
-        <div class="mt-4">
-          <a href="#enskri" data-enskri="citizen"
-             class="btn btn-outline-light btn-lg fw-semibold rounded-pill px-5 py-3">
-            <%= t("main.constellation.cta", default: "Get Early Access") %>
-          </a>
-        </div>
-      </div>
-
-      <div class="col-lg-7">
-        <div class="data-nodes" data-orbit>
-
-          <!-- CENTER: Verifyem TEXT (no logo here) -->
-          <div class="center-hub verifyem-hub" data-role="hub">
-            <span class="verifyem-word">Verifyem</span>
-          </div>
-
-          <!-- ORBITING LOGOS -->
-          <div class="orbit-ring" data-orbit-ring="main">
-
-            <!-- ✅ Brand logo moved into orbit -->
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "bonid/logo.svg", alt: "Verifyem" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/unibank.svg", alt: "Unibank" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/sogebank.svg", alt: "Sogebank" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/digicel.svg", alt: "Digicel" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/faes.svg", alt: "FAES" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/pnh.svg", alt: "PNH" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/us_embassy.svg", alt: "US Embassy" %>
-            </div>
-
-            <div class="data-node partner-node" data-role="node">
-              <%= image_tag "partners/france_embassy.svg", alt: "France Embassy" %>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
+    <!-- Header -->
+    <div class="ballot-head text-center mb-5">
+      <h2 class="ballot-title">
+        <%= t("main.constellation.title", default: "One Identity. Every Institution.") %>
+      </h2>
+      <p class="ballot-subtitle col-lg-7 mx-auto mb-0">
+        <%= t("main.constellation.subtitle", default: "Banks, hospitals, embassies, police, and aid programs all verify through one trusted hub. No more forged papers. No more duplicate records. Just one scan.") %>
+      </p>
     </div>
+
+    <!-- Hub: BonID broadcasts verified identity -->
+    <div class="constellation-hub-wrap" aria-hidden="false">
+      <div class="constellation-hub">
+        <!-- Concentric pulse rings (CSS-animated outward) -->
+        <span class="constellation-pulse"></span>
+        <span class="constellation-pulse" style="animation-delay: 1.2s;"></span>
+        <span class="constellation-pulse" style="animation-delay: 2.4s;"></span>
+
+        <!-- The hub card itself -->
+        <div class="constellation-hub-card">
+          <%= image_tag "bonid/monogram.svg", alt: "BonID", class: "constellation-hub-logo" %>
+          <div class="constellation-hub-text">
+            <span class="constellation-hub-name">BonID</span>
+            <span class="constellation-hub-role">
+              <i class="ri-shield-check-fill"></i>
+              <%= t("main.constellation.hub_role", default: "Identity Issuer") %>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow indicator: explicit downward direction -->
+      <div class="constellation-flow-label">
+        <span class="constellation-flow-arrow" aria-hidden="true">
+          <span class="constellation-flow-arrow-line"></span>
+          <i class="ri-arrow-down-line"></i>
+        </span>
+        <span class="constellation-flow-text">
+          <%= t("main.constellation.flow_label", default: "Verified identity flows to") %>
+        </span>
+      </div>
+    </div>
+
+    <!-- Partner grid -->
+    <%
+      partners = [
+        { logo: "partners/unibank.svg",        name: "Unibank",         sector: "Banking",            icon: "ri-bank-line" },
+        { logo: "partners/sogebank.svg",       name: "Sogebank",        sector: "Banking",            icon: "ri-bank-line" },
+        { logo: "partners/digicel.svg",        name: "Digicel",         sector: "Telecom",            icon: "ri-signal-tower-line" },
+        { logo: "partners/faes.svg",           name: "FAES",            sector: "Aid & Development",  icon: "ri-hand-heart-line" },
+        { logo: "partners/pnh.svg",            name: "PNH",             sector: "Public Safety",      icon: "ri-shield-star-line" },
+        { logo: "partners/us_embassy.svg",     name: "US Embassy",      sector: "Diplomatic Mission", icon: "ri-government-line" },
+        { logo: "partners/france_embassy.svg", name: "France Embassy",  sector: "Diplomatic Mission", icon: "ri-government-line" }
+      ]
+    %>
+
+    <div class="row g-3 g-md-4 constellation-grid justify-content-center">
+      <% partners.each do |p| %>
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="constellation-tile h-100">
+            <div class="constellation-tile-logo">
+              <%= image_tag p[:logo], alt: p[:name] %>
+            </div>
+            <div class="constellation-tile-meta">
+              <span class="constellation-tile-name"><%= p[:name] %></span>
+              <span class="constellation-tile-sector">
+                <i class="<%= p[:icon] %>"></i>
+                <%= p[:sector] %>
+              </span>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- CTA -->
+    <div class="text-center mt-5">
+      <a href="#enskri" data-enskri="citizen" class="election-btn-primary constellation-cta">
+        <%= t("main.constellation.cta", default: "Get Early Access") %>
+      </a>
+    </div>
+
   </div>
 </section>

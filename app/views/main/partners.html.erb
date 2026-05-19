@@ -6,20 +6,20 @@
       <% if flash[:redirected_to_verified] %>
         <div class="alert alert-dismissible fade show alert-light text-center fw-semibold rounded-3 border-0 mx-auto mb-4" style="max-width: 650px; font-size: 0.85rem;">
           <i class="ri-information-line me-2"></i>
-          Please start your verification by selecting a verified partner below.
-          <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Close"></button>
+          <%= t("main.partners.redirected_notice") %>
+          <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="<%= t('main.partners.close') %>"></button>
         </div>
       <% end %>
 
       <h1 class="fw-bold text-white mb-2" style="font-family: 'Montserrat', sans-serif; font-size: 1.75rem;">
-        <i class="ri-verified-badge-line me-2"></i>Verified BonID Partners
+        <i class="ri-verified-badge-line me-2"></i><%= t("main.partners.title") %>
       </h1>
       <p class="text-white-50 mx-auto mb-3" style="max-width: 600px; font-size: 0.92rem; line-height: 1.6;">
-        BonID registrations begin through a verified partner. These trusted institutions confirm your identity and ensure your information is securely validated.
+        <%= t("main.partners.subtitle") %>
       </p>
       <% if @partners.any? %>
         <span class="badge rounded-pill bg-white text-primary px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-          <%= @partners.size %> <%= @partners.size == 1 ? "Partner" : "Partners" %> Available
+          <%= t("main.partners.available", count: @partners.size) %>
         </span>
       <% end %>
     </div>
@@ -32,19 +32,19 @@
         <div class="flex-grow-1">
           <div class="input-group">
             <span class="input-group-text bg-transparent border-0 pe-0"><i class="ri-search-line text-muted"></i></span>
-            <%= f.text_field :search, value: params[:search], placeholder: "Search by name...",
+            <%= f.text_field :search, value: params[:search], placeholder: t("main.partners.search_placeholder"),
                 class: "form-control border-0 shadow-none bg-transparent py-2" %>
           </div>
         </div>
 
         <div class="d-none d-md-block border-start ps-2" style="min-width: 160px;">
           <%= f.select :sector,
-            grouped_options_for_select(Partner::SECTORS.transform_values { |v| v.map { |s| [s.titleize, s] } }, params[:sector]),
-            { prompt: "All Sectors" },
+            grouped_options_for_select(translated_sector_filter_groups, params[:sector]),
+            { prompt: t("main.partners.all_sectors") },
             class: "form-select form-select-sm border-0 shadow-none bg-transparent", onchange: "this.form.submit()" %>
         </div>
 
-        <%= f.submit "Filter", class: "btn btn-primary btn-sm rounded-pill px-4 py-2 fw-bold" %>
+        <%= f.submit t("main.partners.filter"), class: "btn btn-primary btn-sm rounded-pill px-4 py-2 fw-bold" %>
       <% end %>
     </div>
   </div>
@@ -75,7 +75,7 @@
                   <h6 class="fw-bold mb-0" style="font-family: 'Montserrat', sans-serif; font-size: 0.95rem; color: #0F172A;">
                     <%= partner.name %>
                     <% if partner.verified_at.present? %>
-                      <i class="ri-verified-badge-fill text-primary ms-1" title="Verified Partner" data-bs-toggle="tooltip"></i>
+                      <i class="ri-verified-badge-fill text-primary ms-1" title="<%= t('main.partners.verified_tooltip') %>" data-bs-toggle="tooltip"></i>
                     <% end %>
                   </h6>
                   <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill mt-1" style="font-size: 0.7rem;">
@@ -99,11 +99,11 @@
               <div class="mt-auto">
                 <% if citizen_signed_in? %>
                   <%= link_to citizens_dashboard_path, class: "btn btn-primary rounded-pill fw-semibold w-100 py-2" do %>
-                    <i class="ri-dashboard-line me-1"></i> Go to Dashboard
+                    <i class="ri-dashboard-line me-1"></i> <%= t("main.partners.go_to_dashboard") %>
                   <% end %>
                 <% else %>
                   <%= link_to new_citizen_registration_path(partner: partner.slug), class: "btn btn-primary rounded-pill fw-semibold w-100 py-2" do %>
-                    <i class="ri-shield-check-line me-1"></i> Get Verified
+                    <i class="ri-shield-check-line me-1"></i> <%= t("main.partners.get_verified") %>
                   <% end %>
                 <% end %>
               </div>
@@ -119,9 +119,9 @@
         <div class="bg-white p-4 rounded-circle shadow-sm d-inline-block mb-3">
           <i class="ri-building-2-line display-4 text-secondary"></i>
         </div>
-        <h5 class="mt-3 fw-bold text-dark">No Partners Found</h5>
-        <p class="mb-3">Try adjusting your filters or search criteria.</p>
-        <%= link_to "Clear Filters", partners_path, class: "btn btn-outline-secondary btn-sm rounded-pill px-4" %>
+        <h5 class="mt-3 fw-bold text-dark"><%= t("main.partners.empty.title") %></h5>
+        <p class="mb-3"><%= t("main.partners.empty.body") %></p>
+        <%= link_to t("main.partners.empty.clear"), partners_path, class: "btn btn-outline-secondary btn-sm rounded-pill px-4" %>
       </div>
     <% end %>
   </section>

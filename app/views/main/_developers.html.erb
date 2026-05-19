@@ -1,108 +1,103 @@
 <!-- =============================== -->
-<!-- SECTION 4 — DEVELOPER API DOCS -->
+<!-- SECTION 4 — DEVELOPER API DOCS  -->
+<!-- (Light section, dark code pane) -->
 <!-- =============================== -->
 <section
   id="developers"
-  class="developer-section text-white py-5 position-relative bg-dev-blue overflow-hidden"
+  class="developer-section py-5 position-relative overflow-hidden"
 >
 
-  <!-- Decorative grid (full bleed) -->
-  <div class="dev-grid"></div>
-
-  <!-- Constrained content -->
   <div class="container position-relative py-5">
 
     <!-- Header -->
-    <div class="text-center mb-5">
-      <h2 class="display-5 fw-bold text-white mb-3">
+    <div class="ballot-head text-center mb-5">
+      <h2 class="ballot-title">
         <%= t("main.developers.title_html").html_safe %>
       </h2>
-
-      <p class="lead text-light opacity-75 col-lg-8 mx-auto">
+      <p class="ballot-subtitle col-lg-8 mx-auto mb-0">
         <%= t("main.developers.subtitle") %>
       </p>
     </div>
 
-    <div class="row g-5 align-items-stretch">
+    <div class="row g-4 align-items-stretch">
 
-      <!-- LEFT -->
-      <div class="col-lg-5">
-        <div class="dev-info-card p-4 p-lg-5 rounded-4 h-100">
-          <h4 class="fw-bold text-white mb-3">
-            <%= t("main.developers.card.title") %>
-          </h4>
+      <!-- LEFT — Feature list card -->
+      <div class="col-lg-5 d-flex">
+        <div class="ballot-section card border-0 shadow-sm dev-info-card w-100">
+          <div class="card-body p-4 p-lg-5 d-flex flex-column">
 
-          <ul class="list-unstyled text-light lh-lg mb-4" style="font-size: 14px;">
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-flashlight-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>Instant response under 200ms</span>
-            </li>
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-shield-keyhole-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>OAuth 2.0 + HMAC secured dual auth</span>
-            </li>
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-database-2-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>Full JSON identity + biometrics profile</span>
-            </li>
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-body-scan-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>AWS Rekognition liveness + face match scores</span>
-            </li>
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-bar-chart-box-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>Risk Score API with raw confidence for your thresholds</span>
-            </li>
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-rocket-2-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>Sandbox + production environments</span>
-            </li>
-            <li class="d-flex align-items-start gap-3 mb-2">
-              <i class="ri-code-s-slash-line" style="font-size: 22px; color: #7dd3fc; min-width: 24px;"></i>
-              <span>Works with Rails, Node, Go, Python, PHP</span>
-            </li>
-          </ul>
+            <h3 class="dev-info-title mb-4">
+              <%= t("main.developers.card.title") %>
+            </h3>
 
-          <%= link_to t("main.developers.card.cta"),
-            "/api-docs/index.html",
-            class: "btn btn-light btn-lg rounded-pill px-4 py-2 fw-bold shadow",
-            target: "_blank",
-            rel: "noopener" %>
+            <%
+              bullets = [
+                { icon: "ri-flashlight-line",      label: "Instant response under 200ms",                  detail: "Sub-second verification at scale" },
+                { icon: "ri-shield-keyhole-line",  label: "OAuth 2.0 + HMAC secured dual auth",            detail: "Defense in depth for sensitive scopes" },
+                { icon: "ri-database-2-line",      label: "Full JSON identity + biometrics profile",       detail: "Everything you need, structured" },
+                { icon: "ri-body-scan-line",       label: "AWS Rekognition liveness + face match scores",  detail: "Battle-tested vendor stack" },
+                { icon: "ri-bar-chart-box-line",   label: "Risk Score API with raw confidence",            detail: "You set the thresholds, not us" },
+                { icon: "ri-rocket-2-line",        label: "Sandbox + production environments",             detail: "Build safely, ship confidently" },
+                { icon: "ri-code-s-slash-line",    label: "Works with Rails, Node, Go, Python, PHP",       detail: "Plain HTTPS — bring your stack" }
+              ]
+            %>
+
+            <div class="mb-4">
+              <% bullets.each do |b| %>
+                <div class="gs-row">
+                  <div class="gs-row-icon"><i class="<%= b[:icon] %>"></i></div>
+                  <div class="gs-row-text">
+                    <span class="gs-row-label"><%= b[:label] %></span>
+                    <span class="gs-row-detail"><%= b[:detail] %></span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+
+            <div class="mt-auto">
+              <%= link_to t("main.developers.card.cta", default: "View API Docs"),
+                    "/api-docs/index.html",
+                    class: "election-btn-primary dev-info-cta",
+                    target: "_blank",
+                    rel: "noopener" %>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- RIGHT — Tabbed API Examples -->
-      <div class="col-lg-7">
-        <div class="dev-code-card rounded-4 position-relative h-100 d-flex flex-column">
+      <!-- RIGHT — Tabbed API code pane (intentionally dark) -->
+      <div class="col-lg-7 d-flex">
+        <div class="dev-code-card w-100 d-flex flex-column">
 
-          <%# API Tabs %>
-          <div class="d-flex flex-wrap gap-1 p-3 pb-0" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
-            <button class="dev-tab active" onclick="showApiTab('identity', this)" style="background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer;">
-              <i class="ri-user-search-line me-1" style="font-size: 20px;"></i> Identity
-            </button>
-            <button class="dev-tab" onclick="showApiTab('consent', this)" style="background: none; border: none; color: rgba(255,255,255,0.5); padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer;">
-              <i class="ri-shield-check-line me-1" style="font-size: 20px;"></i> Consent
-            </button>
-            <button class="dev-tab" onclick="showApiTab('crime', this)" style="background: none; border: none; color: rgba(255,255,255,0.5); padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer;">
-              <i class="ri-alarm-warning-line me-1" style="font-size: 20px;"></i> Crime
-            </button>
-            <button class="dev-tab" onclick="showApiTab('qr', this)" style="background: none; border: none; color: rgba(255,255,255,0.5); padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer;">
-              <i class="ri-qr-scan-2-line me-1" style="font-size: 20px;"></i> QR Scan
-            </button>
-            <button class="dev-tab" onclick="showApiTab('webhook', this)" style="background: none; border: none; color: rgba(255,255,255,0.5); padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer;">
-              <i class="ri-link me-1" style="font-size: 20px;"></i> Webhook
-            </button>
-            <button class="dev-tab" onclick="showApiTab('vote', this)" style="background: none; border: none; color: rgba(255,255,255,0.5); padding: 10px 16px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer;">
-              <i class="ri-checkbox-circle-line me-1" style="font-size: 20px;"></i> BonVote
-            </button>
+          <%# Tabs %>
+          <div class="dev-tabs">
+            <% tabs = [
+              { id: "identity", icon: "ri-user-search-line",     label: "Identity" },
+              { id: "consent",  icon: "ri-shield-check-line",    label: "Consent"  },
+              { id: "crime",    icon: "ri-alarm-warning-line",   label: "Crime"    },
+              { id: "qr",       icon: "ri-qr-scan-2-line",       label: "QR Scan"  },
+              { id: "webhook",  icon: "ri-link",                 label: "Webhook"  },
+              { id: "vote",     icon: "ri-checkbox-circle-line", label: "BonVote"  }
+            ] %>
+            <% tabs.each_with_index do |tab, i| %>
+              <button
+                type="button"
+                class="dev-tab <%= 'is-active' if i.zero? %>"
+                onclick="showApiTab('<%= tab[:id] %>', this)"
+              >
+                <i class="<%= tab[:icon] %>"></i>
+                <span><%= tab[:label] %></span>
+              </button>
+            <% end %>
           </div>
 
           <button
             type="button"
             class="copy-btn"
-            data-copy-target="#dev-code"
+            data-copy-target="#api-identity"
             aria-label="<%= t("main.developers.copy_aria") %>"
           >
+            <i class="ri-file-copy-line"></i>
             <%= t("main.developers.copy") %>
           </button>
 
@@ -279,31 +274,23 @@
 </section>
 
 <script>
-  // Tab switching
   function showApiTab(tab, btn) {
-    // Hide all code blocks
     ['identity', 'consent', 'crime', 'qr', 'webhook', 'vote'].forEach(function(t) {
       var el = document.getElementById('api-' + t);
       if (el) el.style.display = 'none';
     });
-    // Show selected
     var active = document.getElementById('api-' + tab);
     if (active) active.style.display = 'block';
 
-    // Update copy target
     var copyBtn = btn.closest('.dev-code-card').querySelector('.copy-btn');
     if (copyBtn) copyBtn.setAttribute('data-copy-target', '#api-' + tab);
 
-    // Update tab styles
-    btn.closest('.d-flex').querySelectorAll('.dev-tab').forEach(function(t) {
-      t.style.background = 'none';
-      t.style.color = 'rgba(255,255,255,0.5)';
+    btn.closest('.dev-tabs').querySelectorAll('.dev-tab').forEach(function(t) {
+      t.classList.remove('is-active');
     });
-    btn.style.background = 'rgba(255,255,255,0.1)';
-    btn.style.color = '#fff';
+    btn.classList.add('is-active');
   }
 
-  // Copy button
   document.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-copy-target]");
     if (!btn) return;
@@ -313,9 +300,10 @@
     const text = el.innerText || el.textContent || "";
     try {
       await navigator.clipboard.writeText(text);
-      const original = btn.textContent;
-      btn.textContent = "Copied";
-      setTimeout(() => (btn.textContent = original), 900);
+      const labelEl = btn.querySelector(":scope > :not(i)") || btn;
+      const original = labelEl.textContent;
+      labelEl.textContent = "Copied";
+      setTimeout(() => (labelEl.textContent = original), 900);
     } catch (err) {
       const ta = document.createElement("textarea");
       ta.value = text;

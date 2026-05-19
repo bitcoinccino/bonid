@@ -1,67 +1,170 @@
 /* ======================================================
-   SECTION 4 — DEVELOPER API
+   SECTION 4 — DEVELOPER API (light section, dark code pane)
 ====================================================== */
 
 .developer-section {
-    position: relative;
-    padding: 6rem 0;
-    overflow: hidden;
-    background:
-      radial-gradient(circle at 20% 20%, rgba(0,255,255,0.10), transparent 45%),
-      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.08), transparent 50%),
-      linear-gradient(180deg, var(--haiti-space), var(--haiti-deep));
-  }
-  
-  .developer-section > .container {
-    position: relative;
-    z-index: 2;
-  }
-  
-  .dev-info-card,
-  .dev-code-card {
-    background: rgba(255,255,255,0.08);
-    backdrop-filter: blur(14px);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 1.25rem;
-  }
+  position: relative;
+  background: var(--slate-50, #F8FAFC);
+  color: #1E293B;
+  overflow: hidden;
+}
 
-  .dev-code-card {
-    position: relative;
-    overflow: hidden;
-  }
+/* ── Section title: flag-red accent (matches matrix) ── */
+.developer-section .ballot-title {
+  position: relative;
+  padding-bottom: 0.6rem;
 
-  .dev-code-block {
-    padding: 24px 28px;
-    margin: 0;
-    font-family: 'Courier New', 'Fira Code', monospace;
-    font-size: 13px;
-    line-height: 1.7;
-    color: #cbd5e1;
-    background: transparent;
-    border: none;
-    overflow-x: auto;
-    white-space: pre;
+  /* The H2 contains an inline <span class="dev-highlight"> in some
+     locales — make sure both top-level text and the highlight render
+     in the section's heading color. */
+  .dev-highlight {
+    color: var(--haitian-blue, #00209F);
+    display: block;
   }
+}
+.developer-section .ballot-title::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin: 0.7rem auto 0;
+  border-radius: 2px;
+  background: var(--flag-red, #D21034);
+  opacity: 0.85;
+}
 
-  .copy-btn {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.7);
-    padding: 5px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    z-index: 10;
-    transition: all 0.15s;
+/* ────────────────────────────────────────────────────
+   LEFT — Feature list card (light, matches matrix)
+──────────────────────────────────────────────────── */
+.dev-info-card {
+  border-radius: 1rem;
+  background: #ffffff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
 
-    &:hover {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-    }
+.dev-info-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(0, 32, 159, 0.10) !important;
+}
+
+.dev-info-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #1E293B;
+  letter-spacing: -0.01em;
+}
+
+/* Constrain the inherited full-width .election-btn-primary so it
+   sits naturally as a CTA inside the card (not stretched edge-to-edge). */
+.dev-info-cta.election-btn-primary {
+  width: auto;
+  min-width: 200px;
+  padding: 0.85rem 1.75rem;
+  border-radius: 999px;
+  min-height: 0;
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-self: flex-start;
+}
+
+/* ────────────────────────────────────────────────────
+   RIGHT — Dark code card (terminal aesthetic on light page)
+──────────────────────────────────────────────────── */
+.dev-code-card {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #0F172A; /* slate-900 — terminal */
+  border: 1px solid #1E293B;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.20);
+}
+
+/* ── Tab bar ── */
+.dev-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 14px 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.dev-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+
+  i { font-size: 16px; line-height: 1; }
+}
+
+.dev-tab:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dev-tab.is-active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* ── Code blocks ── */
+.dev-code-block {
+  padding: 22px 26px 56px; /* extra bottom padding so the copy-btn doesn't overlap text */
+  margin: 0;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #cbd5e1;
+  background: transparent;
+  border: none;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* ── Copy button ── */
+.copy-btn {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.15s ease;
+
+  i { font-size: 13px; line-height: 1; }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
   }
-  
+}
+
+/* ── Responsive ── */
+@media (max-width: 575.98px) {
+  .developer-section { padding: 2.5rem 0 !important; }
+  .dev-tabs { padding: 10px 10px 0; }
+  .dev-tab  { padding: 7px 10px; font-size: 12px; }
+  .dev-code-block { padding: 18px 18px 52px; font-size: 12px; }
+}

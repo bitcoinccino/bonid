@@ -1,53 +1,57 @@
 <div data-controller="cookie-consent"
      data-cookie-consent-target="banner"
-     class="cookie-banner shadow-lg">
+     class="cookie-banner shadow-lg"
+     role="dialog"
+     aria-live="polite"
+     aria-label="<%= t('main.cookie_banner.aria_label', default: 'Cookie preferences') %>">
 
   <div class="cookie-content">
 
     <div class="cookie-left">
-      <h5 class="fw-semibold mb-2 text-white">
-        <i class="ri-shield-check-line me-1"></i> We Value Your Privacy
+      <h5 class="cookie-title mb-2">
+        <i class="ri-shield-check-line me-1"></i>
+        <%= t("main.cookie_banner.title", default: "We value your privacy") %>
       </h5>
 
-      <p class="small mb-2 text-white-85">
-        BonID uses cookies to keep the platform secure, remember your preferences, and improve your experience.
-        We never sell your data. You can customize your choices below.
+      <p class="cookie-body mb-3">
+        <%= t("main.cookie_banner.body", default: "BonID uses cookies to keep the platform secure, remember your preferences, and improve your experience. We never sell your data. You can customize your choices below.") %>
       </p>
 
       <!-- Preferences -->
       <div class="cookie-options mb-3">
-        <div class="form-check text-white-85">
+        <div class="form-check cookie-option">
           <input class="form-check-input" type="checkbox" checked disabled id="cookie-essential">
-          <label class="form-check-label small" for="cookie-essential">
-            <strong>Essential Cookies</strong> (required)
-            <span class="d-block" style="font-size: 11px; opacity: 0.7;">
-              Authentication, security, session management. BonID cannot function without these.
+          <label class="form-check-label" for="cookie-essential">
+            <strong><%= t("main.cookie_banner.essential.label", default: "Essential cookies") %></strong>
+            <span class="cookie-option-tag"><%= t("main.cookie_banner.required", default: "required") %></span>
+            <span class="cookie-option-desc">
+              <%= t("main.cookie_banner.essential.desc", default: "Authentication, security, session management. BonID cannot function without these.") %>
             </span>
           </label>
         </div>
 
-        <div class="form-check text-white-85 mt-2">
+        <div class="form-check cookie-option">
           <input data-cookie-consent-target="analytics"
                 class="form-check-input"
                 type="checkbox"
                 id="cookie-analytics">
-          <label class="form-check-label small" for="cookie-analytics">
-            <strong>Analytics Cookies</strong>
-            <span class="d-block" style="font-size: 11px; opacity: 0.7;">
-              Help us understand how users interact with BonID so we can improve the platform. No personal data is shared.
+          <label class="form-check-label" for="cookie-analytics">
+            <strong><%= t("main.cookie_banner.analytics.label", default: "Analytics cookies") %></strong>
+            <span class="cookie-option-desc">
+              <%= t("main.cookie_banner.analytics.desc", default: "Help us understand how users interact with BonID so we can improve the platform. No personal data is shared.") %>
             </span>
           </label>
         </div>
 
-        <div class="form-check text-white-85 mt-2">
+        <div class="form-check cookie-option">
           <input data-cookie-consent-target="marketing"
                 class="form-check-input"
                 type="checkbox"
                 id="cookie-marketing">
-          <label class="form-check-label small" for="cookie-marketing">
-            <strong>Marketing Cookies</strong>
-            <span class="d-block" style="font-size: 11px; opacity: 0.7;">
-              Used to deliver relevant updates about BonID launches and features. You can opt out at any time.
+          <label class="form-check-label" for="cookie-marketing">
+            <strong><%= t("main.cookie_banner.marketing.label", default: "Marketing cookies") %></strong>
+            <span class="cookie-option-desc">
+              <%= t("main.cookie_banner.marketing.desc", default: "Used to deliver relevant updates about BonID launches and features. You can opt out at any time.") %>
             </span>
           </label>
         </div>
@@ -55,15 +59,24 @@
     </div>
 
     <!-- Buttons -->
-    <div class="cookie-right d-flex gap-2 align-items-start">
-      <button class="btn btn-accept fw-semibold px-4 py-2"
+    <div class="cookie-actions">
+      <button class="cookie-btn cookie-btn-accept"
+              type="button"
               data-action="cookie-consent#acceptAll">
-        Accept All
+        <i class="ri-check-line"></i>
+        <%= t("main.cookie_banner.accept_all", default: "Accept all") %>
       </button>
 
-      <button class="btn btn-preferences fw-semibold px-4 py-2"
+      <button class="cookie-btn cookie-btn-save"
+              type="button"
               data-action="cookie-consent#savePreferences">
-        Save Preferences
+        <%= t("main.cookie_banner.save_preferences", default: "Save preferences") %>
+      </button>
+
+      <button class="cookie-btn cookie-btn-reject"
+              type="button"
+              data-action="cookie-consent#rejectNonEssential">
+        <%= t("main.cookie_banner.reject_non_essential", default: "Reject non-essential") %>
       </button>
     </div>
 

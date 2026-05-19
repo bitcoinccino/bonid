@@ -1,72 +1,132 @@
 /* ======================================================
-   SECTION 2 — MATRIX MESH
+   SECTION 2 — HOW IT WORKS  (light, citizen-style)
+   Converted from the dark "matrix mesh" treatment so the
+   below-the-fold content reads like the citizen portal:
+   white surface, soft cards, navy primary, flag-red accent.
 ====================================================== */
 
 .bonid-matrix-section {
-    position: relative;
-    min-height: 85vh;
-    padding: 6rem 0;
-    overflow: hidden;
-    background: linear-gradient(
-      180deg,
-      var(--haiti-space),
-      var(--haiti-deep)
-    );
+  position: relative;
+  /* Matches citizen --portal-body-bg so white cards sit visibly elevated */
+  background: var(--slate-50, #F8FAFC);
+  color: var(--slate-900, #0F172A);
+  overflow: hidden;
+}
+
+/* ── Step card (uses .ballot-section / Bootstrap card) ── */
+.matrix-step-card {
+  border-radius: 1rem;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.matrix-step-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(0, 32, 159, 0.10) !important;
+}
+
+/* ── Big feature icon (top of each step) ── */
+.matrix-step-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(0, 32, 159, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.matrix-step-icon i {
+  font-size: 2rem;
+  color: var(--haitian-blue, #00209F);
+  line-height: 1;
+}
+
+/* ── Step number badge ── */
+.matrix-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--haitian-blue, #00209F);
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 4px rgba(0, 32, 159, 0.08);
+}
+
+/* ── Title + description ── */
+.matrix-step-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #1E293B;
+  letter-spacing: -0.01em;
+}
+
+.matrix-step-desc {
+  font-size: 0.9rem;
+  color: #475569;
+  line-height: 1.55;
+
+  strong {
+    color: #1E293B;
+    font-weight: 600;
   }
-  
-  /* Matrix canvas (background layer) */
-  .mesh-canvas {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.45;
+}
+
+/* ── CTA below the cards ── */
+.matrix-cta-line {
+  font-size: 1.05rem;
+  color: #475569;
+
+  strong {
+    color: var(--haitian-blue, #00209F);
+    font-weight: 700;
   }
-  
-  /* Extra contrast layer for mesh visibility */
-  .matrix-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background: radial-gradient(
-      circle at center,
-      rgba(0, 255, 255, 0.06),
-      rgba(0, 0, 0, 0.45)
-    );
+}
+
+/* Constrain the inherited full-width .election-btn-primary so it
+   sits naturally inside the centered marketing layout. */
+.matrix-cta-btn.election-btn-primary {
+  width: auto;
+  min-width: 220px;
+  padding: 0.95rem 2.25rem;
+  border-radius: 999px;
+  min-height: 0;
+}
+
+/* Subtle flag-red accent under the matrix section title */
+.bonid-matrix-section .ballot-title {
+  position: relative;
+  padding-bottom: 0.6rem;
+}
+.bonid-matrix-section .ballot-title::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 3px;
+  margin: 0.7rem auto 0;
+  border-radius: 2px;
+  background: var(--flag-red, #D21034);
+  opacity: 0.85;
+}
+
+/* ── Responsive ── */
+@media (max-width: 991.98px) {
+  .matrix-step-icon {
+    width: 64px;
+    height: 64px;
   }
-  
-  /* Content above canvas + overlay */
-  .bonid-matrix-section > .container {
-    position: relative;
-    z-index: 2;
-  }
-  
-  /* Step cards */
-  .step-card-matrix {
-    position: relative;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 1.5rem;
-    padding: 2.5rem;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-  }
-  
-  .step-card-matrix:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 20px 50px rgba(255, 255, 255, 0.25);
-  }
-  
-  /* Large step number watermark */
-  .step-number-matrix {
-    position: absolute;
-    bottom: 16px;
-    right: 20px;
-    font-size: 5rem;
-    font-weight: 900;
-    color: rgba(255, 255, 255, 0.06);
-    pointer-events: none;
-  }
-  
+  .matrix-step-icon i { font-size: 1.7rem; }
+}
+
+@media (max-width: 575.98px) {
+  .bonid-matrix-section { padding: 2.5rem 0 !important; }
+  .matrix-step-card { border-radius: 0.85rem; }
+  .matrix-step-title { font-size: 1.05rem; }
+  .matrix-step-desc  { font-size: 0.85rem; }
+}
