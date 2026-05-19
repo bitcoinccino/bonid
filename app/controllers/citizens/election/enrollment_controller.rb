@@ -48,7 +48,12 @@ module Citizens
           # citizen lands on the :registered state. Silent failure here is
           # fine — the ReceiptController regenerates on demand.
           begin
-            Election::VoterReceiptPdfService.call(
+            # `::Election` — top-level constant. Without the leading `::`,
+            # Ruby resolves Election under the enclosing Citizens::Election
+            # namespace and raises NameError (which the rescue silently
+            # swallowed, so enrollment "succeeded" but no receipt PDF
+            # was ever pre-generated for the success page).
+            ::Election::VoterReceiptPdfService.call(
               @record,
               host:     request.host_with_port,
               protocol: request.protocol.sub("://", "")

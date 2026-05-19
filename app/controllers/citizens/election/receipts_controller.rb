@@ -65,7 +65,10 @@ module Citizens
                       @record.updated_at > @record.receipt_generated_at
 
         if needs_regen
-          return Election::VoterReceiptPdfService.call(
+          # ::Election forces top-level constant lookup — without the leading
+          # `::`, Ruby resolves Election relative to the enclosing namespace
+          # (Citizens::Election::Election::VoterReceiptPdfService → NameError).
+          return ::Election::VoterReceiptPdfService.call(
             @record,
             host:     request.host_with_port,
             protocol: request.protocol.sub("://", "")
