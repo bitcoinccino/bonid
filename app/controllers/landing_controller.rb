@@ -15,14 +15,15 @@ class LandingController < ApplicationController
   def signup
     @lang = params[:lang] == "fr" ? "fr" : "ht"
 
-    # Bot prevention: honeypot + timestamp
+    # Bot prevention: honeypot + timestamp. Silently no-op for the honeypot;
+    # surface a friendly message for the too-fast case — both in-place so the
+    # wizard modal stays open.
     if params[:website_url].present?
-      redirect_to enskri_path(lang: @lang) and return
+      return render_enskri_error(nil)
     end
     ts = params[:signup_ts].to_i
     if ts > 0 && (Time.current.to_i - ts) < 3
-      flash[:error] = t_landing("too_fast")
-      redirect_to enskri_path(lang: @lang) and return
+      return render_enskri_error(t_landing("too_fast"))
     end
 
     @waitlist_signup = WaitlistSignup.new(waitlist_params)
@@ -31,8 +32,7 @@ class LandingController < ApplicationController
     if params[:waitlist_signup][:invite_code_used].present?
       code = InviteCode.find_by(code: params[:waitlist_signup][:invite_code_used].upcase.strip)
       unless code&.valid_for_use?
-        flash[:error] = t_landing("invalid_invite_code")
-        redirect_to enskri_path(lang: @lang) and return
+        return render_enskri_error(t_landing("invalid_invite_code"))
       end
     end
 
@@ -61,10 +61,12 @@ class LandingController < ApplicationController
         redirect_to enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: @lang)
       end
     else
-      @departments = Department.order(:name)
-      @total_signups = WaitlistSignup.count
-      @launched_communes = Commune.where(launched: true).pluck(:name)
-      render :index, status: :unprocessable_entity
+      # Surface the validation error (e.g. duplicate email) in place on the
+      # wizard — modal stays open, the user's input is preserved.
+      render_enskri_error(
+        @waitlist_signup.errors.map(&:message).uniq.to_sentence.presence ||
+        t_landing("waitlist_error")
+      )
     end
   end
 
@@ -101,6 +103,17 @@ class LandingController < ApplicationController
 
   private
 
+  # Replaces the wizard's error banner in place via Turbo Stream, so the modal
+  # stays open and the form's input is preserved (no full-page reload). A nil
+  # message clears the banner.
+  def render_enskri_error(message)
+    render turbo_stream: turbo_stream.replace(
+      "enskri-error-banner",
+      partial: "landing/enskri_error",
+      locals: { message: message }
+    )
+  end
+
   def waitlist_params
     params.require(:waitlist_signup).permit(
       :first_name, :last_name, :email, :phone, :signup_type,
@@ -117,6 +130,7 @@ class LandingController < ApplicationController
         "account_ready" => "Ou ka kreye kont ou kounye a!",
         "partner_next" => "Ann konfigire òganizasyon ou — ranpli aplikasyon patnè a.",
         "waitlist_success" => "Mesi! Nou pral kontakte ou le nou lanse nan zon ou.",
+        "waitlist_error" => "Gen yon erè. Tanpri tcheke enfòmasyon ou yo epi eseye ankò.",
         "too_fast" => "Tanpri rete yon ti moman epi eseye anko."
       },
       "fr" => {
@@ -124,6 +138,7 @@ class LandingController < ApplicationController
         "account_ready" => "Vous pouvez creer votre compte maintenant!",
         "partner_next" => "Configurons votre organisation — completez votre demande de partenaire.",
         "waitlist_success" => "Merci! Nous vous contacterons lors du lancement dans votre zone.",
+        "waitlist_error" => "Une erreur s'est produite. Veuillez verifier vos informations et reessayer.",
         "too_fast" => "Veuillez patienter un moment et reessayer."
       }
     }

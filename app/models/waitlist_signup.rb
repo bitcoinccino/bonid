@@ -6,7 +6,7 @@ class WaitlistSignup < ApplicationRecord
   has_one :partner, dependent: :nullify
 
   validates :email, presence: true
-  validates :email, uniqueness: { case_sensitive: false, message: "deja enskri" }
+  validates :email, uniqueness: { case_sensitive: false, message: "Imèl sa enskri deja" }
   validates :signup_type, inclusion: { in: %w[citizen business] }
   validates :organization_name, presence: true, if: -> { signup_type == "business" }
   validates :sector, presence: true, if: -> { signup_type == "business" }

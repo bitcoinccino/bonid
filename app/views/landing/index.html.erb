@@ -62,11 +62,9 @@
         <% if flash[:success] %>
           <div class="alert alert-success"><i class="ri-check-line me-1"></i><%= flash[:success] %></div>
         <% end %>
-        <% if flash[:error] %>
-          <div class="alert alert-danger"><i class="ri-error-warning-line me-1"></i><%= flash[:error] %></div>
-        <% end %>
+        <%= render "landing/enskri_error", message: flash[:error] %>
 
-        <%= form_with model: @waitlist_signup, url: enskri_signup_path(lang: params[:lang]), local: true, id: "enskri-form" do |f| %>
+        <%= form_with model: @waitlist_signup, url: enskri_signup_path(lang: params[:lang]), id: "enskri-form" do |f| %>
           <%= f.hidden_field :signup_type, id: "modal_signup_type", value: "citizen" %>
 
           <%# Honeypot: hidden from humans, bots fill it %>
@@ -639,7 +637,7 @@
 
   /* ── Modal open triggers ── */
   document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.hash === '#enskri') {
+    if (window.location.hash === '#enskri' || document.querySelector('#enskriModal .alert-danger')) {
       var modal = new bootstrap.Modal(document.getElementById('enskriModal'));
       modal.show();
     }
