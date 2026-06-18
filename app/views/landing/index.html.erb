@@ -638,12 +638,17 @@
   /* ── Modal open triggers ── */
   document.addEventListener('DOMContentLoaded', function() {
     if (window.location.hash === '#enskri' || document.querySelector('#enskriModal .alert-danger')) {
-      var modal = new bootstrap.Modal(document.getElementById('enskriModal'));
-      modal.show();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
     }
 
     document.getElementById('enskriModal').addEventListener('hidden.bs.modal', function() {
       enskriGoTo(1);
+      // Safety net: remove any stray backdrop / body lock Bootstrap left behind,
+      // so the dimmed background can't linger after the modal closes.
+      document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
     });
 
     // Submit the wizard via fetch so validation errors render in place (modal
@@ -689,8 +694,7 @@
     var trigger = e.target.closest('[data-enskri]');
     if (trigger) {
       e.preventDefault();
-      var modal = new bootstrap.Modal(document.getElementById('enskriModal'));
-      modal.show();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
       var type = trigger.dataset.enskri;
       if (type === 'citizen' || type === 'business') modalSetType(type);
     }
