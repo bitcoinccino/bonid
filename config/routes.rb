@@ -467,6 +467,13 @@ end
         post :bulk_generate
       end
     end
+
+    resources :communes, only: [] do
+      member do
+        post :launch
+        post :unlaunch
+      end
+    end
   end
 
   # ===========================================================================

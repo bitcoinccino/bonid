@@ -2,6 +2,8 @@
 
 class WaitlistSignup < ApplicationRecord
   belongs_to :commune, optional: true
+  # Set when an "Organization" lead becomes a partner application.
+  has_one :partner, dependent: :nullify
 
   validates :email, presence: true
   validates :email, uniqueness: { case_sensitive: false, message: "deja enskri" }

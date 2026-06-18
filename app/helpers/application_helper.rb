@@ -1,4 +1,10 @@
 module ApplicationHelper
+  # Whether the paused BonTouris feature is enabled. Used to hide nav links
+  # to gated staff pages. Mirrors the controller guard (BontourisPausable).
+  def bontouris_enabled?
+    BontourisPausable.enabled?
+  end
+
   # === Role Helpers ===
   def current_role
     if admin_signed_in?

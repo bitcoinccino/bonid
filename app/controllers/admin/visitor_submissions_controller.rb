@@ -2,6 +2,9 @@
 
 module Admin
   class VisitorSubmissionsController < Admin::ApplicationController
+    include BontourisPausable # v1 launch: paused unless BONTOURIS_ENABLED=true
+    pause_bontouris_unless_enabled
+
     before_action :set_visitor_submission, only: [ :show, :approve, :reject, :resend_certificate ]
 
     def index

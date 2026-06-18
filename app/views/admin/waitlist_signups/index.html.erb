@@ -97,6 +97,47 @@
       </div>
     <% end %>
 
+    <!-- Launch Commune -->
+    <% if @selected_commune %>
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <h6 class="fw-bold mb-1">
+              <i class="ri-rocket-2-line me-1"></i> <%= @selected_commune.name %>
+              <% if @selected_commune.launched? %>
+                <span class="badge bg-success ms-1">Live<%= " · since #{@selected_commune.launched_at.to_date}" if @selected_commune.launched_at %></span>
+              <% else %>
+                <span class="badge bg-warning text-dark ms-1">Not launched</span>
+              <% end %>
+            </h6>
+            <p class="text-muted small mb-0">
+              <%= @selected_commune_waiting %> signup<%= "s" unless @selected_commune_waiting == 1 %> still waiting here.
+              <% unless @selected_commune.launched? %>
+                Launching opens BonID for everyone in this commune and emails the waiting signups.
+              <% end %>
+            </p>
+          </div>
+          <div>
+            <% if @selected_commune.launched? %>
+              <%= button_to unlaunch_admin_commune_path(@selected_commune),
+                    method: :post,
+                    class: "btn btn-outline-danger btn-sm",
+                    data: { turbo_confirm: "Unlaunch #{@selected_commune.name}? New signups there will have to wait again." } do %>
+                <i class="ri-pause-circle-line me-1"></i> Unlaunch
+              <% end %>
+            <% else %>
+              <%= button_to launch_admin_commune_path(@selected_commune),
+                    method: :post,
+                    class: "btn btn-success btn-sm",
+                    data: { turbo_confirm: "Launch #{@selected_commune.name} and notify #{@selected_commune_waiting} waiting signup#{'s' unless @selected_commune_waiting == 1}? This emails real users." } do %>
+                <i class="ri-rocket-2-line me-1"></i> Launch this commune
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
     <!-- Bulk Actions -->
     <%= form_with url: bulk_invite_admin_waitlist_signups_path, method: :post, id: "bulk-form" do %>
       <div class="d-flex justify-content-between align-items-center mb-2">
@@ -136,6 +177,13 @@
                   <strong><%= signup.email %></strong>
                   <% if signup.organization_name.present? %>
                     <br><small class="text-muted"><%= signup.organization_name %></small>
+                  <% end %>
+                  <% if signup.partner %>
+                    <br><small class="text-success">
+                      <i class="ri-links-line"></i>
+                      <%= link_to "Partner: #{signup.partner.name} (#{signup.partner.status})",
+                            admin_partner_path(signup.partner.uuid), class: "text-success" %>
+                    </small>
                   <% end %>
                 </td>
                 <td class="text-center">

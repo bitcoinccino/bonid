@@ -2,6 +2,9 @@
 
 module Admin
   class VisitorAnalyticsController < Admin::ApplicationController
+    include BontourisPausable # v1 launch: paused unless BONTOURIS_ENABLED=true
+    pause_bontouris_unless_enabled
+
     def index
       scope = VisitorSubmission.all
       scope = apply_date_filter(scope)

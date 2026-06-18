@@ -3,7 +3,7 @@
 module Admin
   class WaitlistSignupsController < BaseController
     def index
-      @signups = WaitlistSignup.includes(:commune).order(created_at: :desc)
+      @signups = WaitlistSignup.includes(:commune, :partner).order(created_at: :desc)
       @signups = @signups.where(signup_type: params[:type]) if params[:type].present?
       @signups = @signups.where(status: params[:status]) if params[:status].present?
       @signups = @signups.where(diaspora: true) if params[:diaspora] == "1"
@@ -33,6 +33,16 @@ module Admin
                   else
                     Commune.order(:name)
                   end
+      # When filtered to a single commune, expose it so the view can offer
+      # the "Launch commune" action.
+      if params[:commune_id].present?
+        @selected_commune = Commune.find_by(id: params[:commune_id])
+        if @selected_commune
+          @selected_commune_waiting =
+            WaitlistSignup.where(commune_id: @selected_commune.id, status: "waiting").count
+        end
+      end
+
       @signups = @signups.page(params[:page]).per(25)
     end
 
