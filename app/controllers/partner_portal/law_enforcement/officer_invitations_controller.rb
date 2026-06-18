@@ -29,22 +29,32 @@ module PartnerPortal
 
       # === BONID LOOKUP → CONFIRM PAGE ===
       def lookup
-        bonid_suffix = params[:bonid].to_s.strip.delete("-").upcase
-        @person = TeamInvitationService.lookup(bonid_suffix)
+        query = (params[:query].presence || params[:bonid]).to_s.strip
 
-        if @person.nil?
-          flash[:error] = "Pa gen moun ak BonID ki fini ak \"#{bonid_suffix}\". Verifye kòd la epi eseye ankò."
+        if query.blank?
+          flash[:error] = "Tanpri antre yon non, imèl, oswa BonID."
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end
 
-        unless @person[:verified]
-          flash[:error] = "#{@person[:full_name]} gen yon kont BonID men li poko verifye."
+        candidates = TeamInvitationService.search(query)
+
+        if candidates.empty?
+          flash[:error] = "Pa gen okenn moun ki koresponn ak \"#{query}\". Eseye ak yon non, imèl, oswa BonID."
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end
 
-        @ranks      = OfficerConstants::RANKS
-        @units      = OfficerConstants::UNIT_OPTIONS
-        render :confirm
+        # Exactly one verified match → go straight to the assignment page.
+        if candidates.size == 1 && candidates.first.identity_submissions.approved.exists?
+          @person = TeamInvitationService.profile(candidates.first)
+          @ranks  = OfficerConstants::RANKS
+          @units  = OfficerConstants::UNIT_OPTIONS
+          return render :confirm
+        end
+
+        # Otherwise show a picker (multiple matches, or the match isn't verified yet).
+        @query      = query
+        @candidates = candidates.map { |u| TeamInvitationService.profile(u) }.compact
+        render :results
       end
 
       # === SEND INVITATION ===
