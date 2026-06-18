@@ -89,6 +89,7 @@ Rails.application.configure do
   config.hosts << "localhost"
   config.hosts << local_ip
   config.hosts << /.*\.ngrok-free\.dev/
+  config.hosts << ".ngrok.dev"
   config.hosts << ".loca.lt"
 
   # =======================================================
