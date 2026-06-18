@@ -86,7 +86,7 @@ module PartnerPortal
         # ============================================================
         # GATE: Cannot invite yourself
         # ============================================================
-        if user.id == current_user.id
+        if current_partner_admin && user.id == current_partner_admin.id
           flash[:error] = "Ou pa ka envite tèt ou."
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end
