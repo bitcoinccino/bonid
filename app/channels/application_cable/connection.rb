@@ -11,7 +11,11 @@ module ApplicationCable
     private
 
     def find_verified_citizen
-      citizen = env["warden"].user(:citizen)
+      citizen = nil
+      # Devise :timeoutable can `throw :warden` when the session has expired.
+      # ActionCable runs outside Warden's catch block, so wrap it and treat an
+      # expired/invalid session as simply unauthenticated (reject the socket).
+      catch(:warden) { citizen = env["warden"].user(:citizen) }
       citizen || reject_unauthorized_connection
     end
   end
