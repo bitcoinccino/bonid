@@ -75,10 +75,14 @@ class LandingController < ApplicationController
 
   def confirmation
     @signup = WaitlistSignup.find_by(referral_code: params[:ref])
-    redirect_to enskri_path unless @signup
+    return redirect_to enskri_path unless @signup
+
     @lang = params[:lang] == "fr" ? "fr" : "ht"
     @share_url = "#{request.base_url}/enskri?ref=#{@signup.referral_code}"
     @commune_count = @signup.commune.display_signups if @signup.commune
+
+    # Standalone full-screen success page — render without the marketing chrome.
+    render layout: "blank"
   end
 
   # AJAX: return arrondissements for a department
