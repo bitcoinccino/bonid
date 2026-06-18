@@ -103,15 +103,12 @@ class LandingController < ApplicationController
 
   private
 
-  # Replaces the wizard's error banner in place via Turbo Stream, so the modal
-  # stays open and the form's input is preserved (no full-page reload). A nil
-  # message clears the banner.
+  # Redirects back to the signup page with the error in the flash. The wizard
+  # modal re-opens on load when an error banner is present (see index.html.erb).
+  # A nil message just returns to the page (used for the silent honeypot).
   def render_enskri_error(message)
-    render turbo_stream: turbo_stream.replace(
-      "enskri-error-banner",
-      partial: "landing/enskri_error",
-      locals: { message: message }
-    )
+    flash[:error] = message if message.present?
+    redirect_to enskri_path(lang: @lang)
   end
 
   def waitlist_params
