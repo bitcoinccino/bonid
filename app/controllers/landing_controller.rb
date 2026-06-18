@@ -43,12 +43,15 @@ class LandingController < ApplicationController
       # Organizations don't roll out by commune — hand them off to the partner
       # application pipeline (vetting/approval) instead of the geographic gate.
       if @waitlist_signup.signup_type == "business"
-        redirect_to new_partner_path(
-          org: @waitlist_signup.organization_name,
-          email: @waitlist_signup.email,
-          sector: @waitlist_signup.sector,
-          lead: @waitlist_signup.id
-        ), notice: t_landing("partner_next") and return
+        return enskri_redirect(
+          new_partner_path(
+            org: @waitlist_signup.organization_name,
+            email: @waitlist_signup.email,
+            sector: @waitlist_signup.sector,
+            lead: @waitlist_signup.id
+          ),
+          t_landing("partner_next")
+        )
       end
 
       # Individuals: confirmation email + geographic launch gate
@@ -56,9 +59,9 @@ class LandingController < ApplicationController
 
       # Check if commune is launched or has valid invite code
       if @waitlist_signup.commune&.launched? || code.present?
-        redirect_to new_user_registration_path, notice: t_landing("account_ready")
+        enskri_redirect(new_user_registration_path, t_landing("account_ready"))
       else
-        redirect_to enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: @lang)
+        enskri_redirect(enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: @lang))
       end
     else
       # Surface the validation error (e.g. duplicate email) in place on the
@@ -103,12 +106,28 @@ class LandingController < ApplicationController
 
   private
 
-  # Redirects back to the signup page with the error in the flash. The wizard
-  # modal re-opens on load when an error banner is present (see index.html.erb).
-  # A nil message just returns to the page (used for the silent honeypot).
+  # Error response for a failed signup. JSON for the wizard's in-place fetch
+  # (modal stays open, no reload); HTML redirect + flash as a no-JS fallback.
+  # A nil message clears the banner (used for the silent honeypot).
   def render_enskri_error(message)
-    flash[:error] = message if message.present?
-    redirect_to enskri_path(lang: @lang)
+    respond_to do |format|
+      format.json { render json: { ok: false, error: message } }
+      format.html do
+        flash[:error] = message if message.present?
+        redirect_to enskri_path(lang: @lang)
+      end
+    end
+  end
+
+  # Success response. JSON tells the wizard where to navigate; HTML redirects.
+  def enskri_redirect(url, notice = nil)
+    respond_to do |format|
+      format.json { render json: { ok: true, redirect: url } }
+      format.html do
+        flash[:notice] = notice if notice
+        redirect_to url
+      end
+    end
   end
 
   def waitlist_params
