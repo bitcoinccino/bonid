@@ -19,7 +19,8 @@
       </p>
     </div>
     <div class="d-flex gap-2 align-items-center">
-      <%# Emergency Alert Toggle %>
+      <%# Emergency Alert Toggle (paused for v1 unless IDPOL_EXTRAS_ENABLED) %>
+      <% if idpol_extras_enabled? %>
       <button class="btn btn-sm position-relative"
               style="<%= @partner.critical_incident_active? ? 'background: var(--law-red); color: #fff;' : 'border: 1px solid rgba(9,44,115,0.15); color: var(--mid-gray);' %> font-size: 0.75rem;"
               data-action="click->critical-alert#requestToggle"
@@ -27,6 +28,7 @@
               aria-label="Toggle critical incident mode">
         <i class="ri-alarm-warning-line<%= ' le-critical-icon-pulse' if @partner.critical_incident_active? %>"></i>
       </button>
+      <% end %>
       <%= link_to partner_portal_law_enforcement_incident_reports_path,
                   class: "btn btn-sm",
                   style: "background: var(--law-blue); color: #fff; font-size: 0.75rem;" do %>
@@ -40,7 +42,8 @@
     </div>
   </div>
 
-  <%# ── Global Search Bar ──────────────────────────────────── %>
+  <%# ── Global Search Bar (paused for v1 unless IDPOL_EXTRAS_ENABLED) ── %>
+  <% if idpol_extras_enabled? %>
   <div class="position-relative mb-4"
        data-controller="le-search"
        data-le-search-url-value="<%= partner_portal_law_enforcement_search_path %>">
@@ -60,6 +63,7 @@
          data-le-search-target="results">
     </div>
   </div>
+  <% end %>
 
   <%# ── Tactical KPI Cards (urgency-coded) ──────────────────── %>
   <div class="row g-3 mb-4">

@@ -4,6 +4,8 @@ module Officers
   class AnalyticsController < Officers::BaseController
     include BontourisPausable # v1 launch: paused unless BONTOURIS_ENABLED=true
     pause_bontouris_unless_enabled only: :incident_reports_bontouris
+    include IdpolExtrasPausable # v1 launch: analytics paused unless IDPOL_EXTRAS_ENABLED=true
+    pause_unless_idpol_extras
 
     before_action :authenticate_officer!
     before_action :set_date_range

@@ -1,4 +1,7 @@
 class Officers::TicketsController < ApplicationController
+  include IdpolExtrasPausable # v1 launch: paused unless IDPOL_EXTRAS_ENABLED=true
+  pause_unless_idpol_extras
+
   before_action :authenticate_officer!
 
     def new
