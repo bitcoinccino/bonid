@@ -652,6 +652,9 @@
     if (enskriForm) {
       enskriForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        // Stop the global-loading controller's native-submit handler from showing
+        // its overlay — we handle this submission with fetch and never navigate.
+        e.stopPropagation();
         var banner = document.getElementById('enskri-error-banner');
         fetch(enskriForm.action, {
           method: 'POST',
