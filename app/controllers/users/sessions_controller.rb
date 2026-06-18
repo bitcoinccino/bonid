@@ -24,7 +24,7 @@ module Users
         when new_admin_session_path         then "System Admin"
         when new_partner_admin_session_path then "Partner Admin"
         when new_reviewer_session_path      then "Reviewer"
-        when new_citizen_session_path, citizens_otp_sign_in_path then "Citizen"
+        when new_citizen_session_path, login_path then "Citizen"
         when new_officer_session_path       then "Officer"
         else "User"
         end
@@ -98,7 +98,7 @@ module Users
       end
 
       redirect_path = case role
-      when :citizen       then citizens_otp_sign_in_path
+      when :citizen       then login_path
       when :admin         then new_admin_user_session_path
       when :partner_admin then new_partner_admin_session_path
       when :officer       then new_officer_session_path
@@ -151,7 +151,7 @@ end
 #         when new_admin_session_path         then "System Admin"
 #         when new_partner_admin_session_path then "Partner Admin"
 #         when new_reviewer_session_path      then "Reviewer"
-#         when new_citizen_session_path, citizens_otp_sign_in_path then "Citizen"
+#         when new_citizen_session_path, login_path then "Citizen"
 #         when new_officer_session_path       then "Officer"
 #         else "User"
 #         end
@@ -224,7 +224,7 @@ end
 #       end
 
 #       redirect_path = case role
-#       when :citizen       then citizens_otp_sign_in_path
+#       when :citizen       then login_path
 #       when :admin         then new_admin_user_session_path
 #       when :partner_admin then new_partner_admin_session_path
 #       when :officer       then new_officer_session_path

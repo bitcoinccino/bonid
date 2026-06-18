@@ -19,11 +19,11 @@ module Citizens
     # Standard Login → Redirect to OTP (password login removed)
     # =========================================================
     def new
-      redirect_to citizens_otp_sign_in_path(from_partner: params[:from_partner])
+      redirect_to login_path(from_partner: params[:from_partner])
     end
 
     def create
-      redirect_to citizens_otp_sign_in_path(from_partner: params[:from_partner]),
+      redirect_to login_path(from_partner: params[:from_partner]),
                   notice: "Please use one-time code to sign in."
     end
 
@@ -46,7 +46,7 @@ module Citizens
       PartnerSessionService.new(session, params).store! rescue nil
 
       if raw_input.blank?
-        return redirect_to citizens_otp_sign_in_path(partner_slug: partner_slug),
+        return redirect_to login_path(partner_slug: partner_slug),
                            alert: "Please enter your email or BonID number."
       end
 
@@ -58,7 +58,7 @@ module Citizens
         end
 
       unless user
-        return redirect_to citizens_otp_sign_in_path(partner_slug: partner_slug),
+        return redirect_to login_path(partner_slug: partner_slug),
                            alert: "No account found with that email or BonID."
       end
 
@@ -80,7 +80,7 @@ module Citizens
       ), notice: "We sent a one-time code to your email."
     rescue => e
       Rails.logger.error("OTP generation failed: #{e.message}")
-      redirect_to citizens_otp_sign_in_path(partner_slug: partner_slug),
+      redirect_to login_path(partner_slug: partner_slug),
                   alert: "Could not send code. Please try again."
     end
 
@@ -90,7 +90,7 @@ module Citizens
       @partner = Partner.find_by(slug: partner_slug) if partner_slug.present?
 
       unless user
-        return redirect_to citizens_otp_sign_in_path,
+        return redirect_to login_path,
                            alert: "Session expired. Please start again."
       end
 
@@ -111,7 +111,7 @@ module Citizens
       partner_slug = params[:partner_slug] || params[:from_partner] || session[:pending_partner_slug]
 
       unless user
-        return redirect_to citizens_otp_sign_in_path,
+        return redirect_to login_path,
                            alert: "Session expired. Please start again."
       end
 
@@ -133,8 +133,8 @@ module Citizens
       set_flash_message!(:notice, :signed_out) if signed_out
 
       respond_to do |format|
-        format.html { redirect_to citizens_otp_sign_in_path }
-        format.turbo_stream { redirect_to citizens_otp_sign_in_path, status: :see_other }
+        format.html { redirect_to login_path }
+        format.turbo_stream { redirect_to login_path, status: :see_other }
       end
     end
 
@@ -156,7 +156,7 @@ module Citizens
     end
 
     def after_sign_out_path_for(_resource_or_scope)
-      citizens_otp_sign_in_path
+      login_path
     end
 
     # =========================================================
@@ -231,7 +231,7 @@ module Citizens
                   notice: params[:signup] == "true" ? "Welcome! Please complete your profile." : "Welcome back!"
     rescue => e
       Rails.logger.error("Citizen sign-in failed: #{e.message}")
-      redirect_to citizens_otp_sign_in_path,
+      redirect_to login_path,
                   alert: "Login failed. Please try again."
     end
 

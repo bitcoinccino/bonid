@@ -13,7 +13,7 @@ module NavbarHelper
             name: "BonID",
             description: t("main.navbar.bonid_desc"),
             icon: "ri-id-card-line",
-            path: citizens_otp_sign_in_path,
+            path: login_path,
             **new_badge
           }
         ]

@@ -14,7 +14,7 @@ module Citizens
                           "roles=#{current_citizen&.roles&.pluck(:name)&.join(',') || 'none'}, " \
                           "path=#{request.path}, session_keys=#{session.keys.join(',')}"
         sign_out(:citizen)
-        redirect_to citizens_otp_sign_in_path,
+        redirect_to login_path,
                     alert: "Log in as or sign up as a citizen."
       end
     end
