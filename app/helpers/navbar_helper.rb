@@ -15,13 +15,6 @@ module NavbarHelper
             icon: "ri-id-card-line",
             path: citizens_otp_sign_in_path,
             **new_badge
-          },
-          {
-            name: "BonTouris",
-            description: t("main.navbar.bontouris_desc"),
-            icon: "ri-suitcase-line",
-            path: get_started_public_visitors_path,
-            **new_badge
           }
         ]
       },
@@ -29,37 +22,18 @@ module NavbarHelper
         label_key: "main.navbar.government",
         items: [
           {
-            name: "BonVote",
-            description: t("main.navbar.bonvote_desc"),
-            icon: "ri-checkbox-circle-line",
-            path: "/election/verify",
-            **soon_badge
-          },
-          {
-            name: "BonTax",
-            description: t("main.navbar.bontax_desc"),
-            icon: "ri-money-dollar-circle-line",
-            path: "#",
-            **soon_badge
-          },
-          {
-            name: "BonTè",
-            description: t("main.navbar.bonte_desc"),
-            icon: "ri-map-pin-line",
-            path: "#",
-            **soon_badge
-          }
-        ]
-      },
-      {
-        label_key: "main.navbar.security",
-        items: [
-          {
             name: "IDPol",
             description: t("main.navbar.idpol_desc"),
             icon: "ri-shield-user-line",
             path: new_officer_session_path,
             **new_badge
+          },
+          {
+            name: "BonVote",
+            description: t("main.navbar.bonvote_desc"),
+            icon: "ri-checkbox-circle-line",
+            path: "/election/verify",
+            **soon_badge
           }
         ]
       },

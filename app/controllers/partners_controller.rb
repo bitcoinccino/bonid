@@ -6,7 +6,14 @@ class PartnersController < ApplicationController
   before_action :authenticate_admin!, only: %i[approve reject destroy edit update]
 
   def new
-    @partner = Partner.new
+    # Prefill from the landing "Organization" waitlist hand-off (org/email/sector).
+    @partner = Partner.new(
+      name: params[:org],
+      email: params[:email],
+      sector: params[:sector]
+    )
+    # Attribute this application to its originating waitlist lead, if valid.
+    @partner.waitlist_signup_id = params[:lead] if params[:lead].present? && WaitlistSignup.exists?(params[:lead])
     @partner.build_address
   end
 
@@ -77,6 +84,9 @@ class PartnersController < ApplicationController
 
       # ✅ FIX: allow the checkbox from the form
       :terms_accepted,
+
+      # Waitlist lead attribution (carried as a hidden field from the hand-off)
+      :waitlist_signup_id,
 
       address_attributes: [
         :id, :street_address, :locality, :postal_code,

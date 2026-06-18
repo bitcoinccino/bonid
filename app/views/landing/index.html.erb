@@ -12,6 +12,8 @@
      data-total-signups="<%= @total_signups || 0 %>"
      data-social-proof="<%= t('main.signup_form.social_proof') %>"
      data-social-proof-first="<%= t('main.signup_form.social_proof_first') %>"
+     data-social-proof-total="<%= t('main.signup_form.social_proof_total') %>"
+     data-social-proof-threshold="<%= Commune::SOCIAL_PROOF_THRESHOLD %>"
      data-error-email="<%= t('main.signup_form.error_email') %>"
      data-error-org="<%= t('main.signup_form.error_org') %>"
      data-error-sector="<%= t('main.signup_form.error_sector') %>"
@@ -522,16 +524,18 @@
     var selectedOpt = communeSel.options[communeSel.selectedIndex];
     var communeCount = selectedOpt ? parseInt(selectedOpt.dataset.signups) || 0 : 0;
     var communeName = selectedOpt && selectedOpt.value ? selectedOpt.textContent : '';
+    var threshold = parseInt(modalData.socialProofThreshold) || 0;
+    var total = parseInt(modalData.totalSignups) || 0;
 
-    if (communeCount > 0 && communeName) {
+    if (communeName && communeCount >= threshold) {
+      // Healthy local count — show the real number.
       text.textContent = modalData.socialProof.replace('COUNT', communeCount.toLocaleString()).replace('COMMUNE', communeName);
+    } else if (communeName) {
+      // Commune chosen but few signups — exclusivity framing, no fake number.
+      text.textContent = modalData.socialProofFirst.replace('COMMUNE', communeName);
     } else {
-      var total = parseInt(modalData.totalSignups) || 0;
-      if (total > 0) {
-        text.textContent = modalData.socialProof.replace('COUNT', total.toLocaleString()).replace('COMMUNE', '');
-      } else {
-        text.textContent = modalData.socialProofFirst;
-      }
+      // No commune (e.g. diaspora) — honest national total for scale.
+      text.textContent = modalData.socialProofTotal.replace('COUNT', total.toLocaleString());
     }
   }
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_29_000000) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_29_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -304,6 +304,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_000000) do
     t.string "postal_code"
     t.bigint "department_id", null: false
     t.boolean "launched", default: false, null: false
+    t.datetime "launched_at"
     t.index ["arrondissement_id"], name: "index_communes_on_arrondissement_id"
     t.index ["department_id"], name: "index_communes_on_department_id"
     t.index ["name"], name: "index_communes_on_name"
@@ -1633,6 +1634,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_000000) do
     t.datetime "guidelines_accepted_at"
     t.string "guidelines_version"
     t.bigint "guidelines_accepted_by_id"
+    t.bigint "waitlist_signup_id"
     t.index ["allowed_scopes"], name: "index_partners_on_allowed_scopes", using: :gin
     t.index ["allowed_transaction_types"], name: "index_partners_on_allowed_transaction_types", using: :gin
     t.index ["api_key_digest"], name: "index_partners_on_api_key_digest"
@@ -1648,6 +1650,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_000000) do
     t.index ["suspended_at"], name: "index_partners_on_suspended_at"
     t.index ["unit_type"], name: "index_partners_on_unit_type"
     t.index ["uuid"], name: "index_partners_on_uuid", unique: true
+    t.index ["waitlist_signup_id"], name: "index_partners_on_waitlist_signup_id"
   end
 
   create_table "permissions", force: :cascade do |t|
@@ -2592,6 +2595,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_000000) do
   add_foreign_key "partner_schemas", "admin_users", column: "approved_by_id"
   add_foreign_key "partner_schemas", "partners"
   add_foreign_key "partners", "partner_plans"
+  add_foreign_key "partners", "waitlist_signups", on_delete: :nullify
   add_foreign_key "permissions_roles", "permissions"
   add_foreign_key "permissions_roles", "roles"
   add_foreign_key "person_involvements", "addresses"

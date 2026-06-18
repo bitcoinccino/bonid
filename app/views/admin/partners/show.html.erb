@@ -9,6 +9,22 @@
     <%= render "admin/partners/header", partner: @partner %>
 
     <!-- ====================================================== -->
+    <!-- WAITLIST LEAD ORIGIN                                   -->
+    <!-- ====================================================== -->
+    <% if @partner.waitlist_signup %>
+      <div class="alert alert-info d-flex align-items-center gap-2 mt-3 mb-0" role="note">
+        <i class="ri-seedling-line"></i>
+        <span class="small">
+          Originated from a waitlist lead:
+          <strong><%= @partner.waitlist_signup.email %></strong>
+          (<%= @partner.waitlist_signup.signup_type.titleize %>, signed up
+          <%= @partner.waitlist_signup.created_at.strftime("%b %d, %Y") %>) &middot;
+          <%= link_to "View lead", admin_waitlist_signup_path(@partner.waitlist_signup), class: "alert-link" %>
+        </span>
+      </div>
+    <% end %>
+
+    <!-- ====================================================== -->
     <!-- TABS NAVIGATION                                        -->
     <!-- ====================================================== -->
     <%= render "admin/partners/tabs/tabs", partner: @partner %>

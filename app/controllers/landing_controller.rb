@@ -40,7 +40,18 @@ class LandingController < ApplicationController
       # Redeem invite code if used
       code&.redeem! if code.present?
 
-      # Send confirmation email
+      # Organizations don't roll out by commune — hand them off to the partner
+      # application pipeline (vetting/approval) instead of the geographic gate.
+      if @waitlist_signup.signup_type == "business"
+        redirect_to new_partner_path(
+          org: @waitlist_signup.organization_name,
+          email: @waitlist_signup.email,
+          sector: @waitlist_signup.sector,
+          lead: @waitlist_signup.id
+        ), notice: t_landing("partner_next") and return
+      end
+
+      # Individuals: confirmation email + geographic launch gate
       WaitlistMailer.confirmation(@waitlist_signup).deliver_later
 
       # Check if commune is launched or has valid invite code
@@ -62,7 +73,7 @@ class LandingController < ApplicationController
     redirect_to enskri_path unless @signup
     @lang = params[:lang] == "fr" ? "fr" : "ht"
     @share_url = "#{request.base_url}/enskri?ref=#{@signup.referral_code}"
-    @commune_count = WaitlistSignup.where(commune_id: @signup.commune_id).count if @signup.commune_id
+    @commune_count = @signup.commune.display_signups if @signup.commune
   end
 
   # AJAX: return arrondissements for a department
@@ -80,11 +91,12 @@ class LandingController < ApplicationController
     else
       communes = Commune.none
     end
-    render json: communes.map { |c|
-      seed = (c.id * 7919 + 137) % 5000 + 1
-      real = WaitlistSignup.where(commune_id: c.id).count
-      { id: c.id, name: c.name, launched: c.launched?, signups: seed + real }
+    payload = communes.map { |c|
+      { id: c.id, name: c.name, launched: c.launched?, signups: c.display_signups }
     }
+    # Render pre-serialized JSON so active_model_serializers doesn't try
+    # (and fail) to find a serializer for these plain hashes.
+    render json: payload.to_json
   end
 
   private
@@ -103,12 +115,14 @@ class LandingController < ApplicationController
       "ht" => {
         "invalid_invite_code" => "Kod envitasyon sa a pa valab oswa ekspire.",
         "account_ready" => "Ou ka kreye kont ou kounye a!",
+        "partner_next" => "Ann konfigire òganizasyon ou — ranpli aplikasyon patnè a.",
         "waitlist_success" => "Mesi! Nou pral kontakte ou le nou lanse nan zon ou.",
         "too_fast" => "Tanpri rete yon ti moman epi eseye anko."
       },
       "fr" => {
         "invalid_invite_code" => "Ce code d'invitation n'est pas valide ou a expire.",
         "account_ready" => "Vous pouvez creer votre compte maintenant!",
+        "partner_next" => "Configurons votre organisation — completez votre demande de partenaire.",
         "waitlist_success" => "Merci! Nous vous contacterons lors du lancement dans votre zone.",
         "too_fast" => "Veuillez patienter un moment et reessayer."
       }

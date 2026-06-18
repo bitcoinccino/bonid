@@ -13,6 +13,19 @@ class WaitlistMailer < VerifyemMailer
     )
   end
 
+  # Sent when an admin launches the signup's commune. No invite code needed —
+  # the launched gate lets them register directly.
+  def commune_launched(signup)
+    @signup = signup
+    @commune_name = signup.commune&.name || "Haiti"
+    @register_url = "https://bonid.ht/users/sign_up"
+
+    mail(
+      to: signup.email,
+      subject: "BonID disponib nan #{@commune_name}! | BonID is live in #{@commune_name}!"
+    )
+  end
+
   def invitation(signup, invite_code)
     @signup = signup
     @invite_code = invite_code

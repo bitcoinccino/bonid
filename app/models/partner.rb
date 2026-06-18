@@ -14,6 +14,8 @@ class Partner < ApplicationRecord
   # ASSOCIATIONS
   # ============================================================
   belongs_to :admin_user, optional: true
+  # Set when this partner originated from a landing "Organization" waitlist lead.
+  belongs_to :waitlist_signup, optional: true
   has_one_attached :logo
   has_one_attached :seal_image # Official partner seal/stamp for document signing
   has_one :address, as: :addressable, dependent: :destroy
@@ -124,6 +126,8 @@ class Partner < ApplicationRecord
   before_validation :set_default_transaction_types, on: :create
   before_validation :ensure_default_redirect_uri, if: -> { redirect_uris.present? }
   before_create :generate_api_key_pair, unless: -> { Rails.env.test? }
+  # When a partner is approved, mark its originating waitlist lead converted.
+  after_save :mark_waitlist_lead_converted, if: :saved_change_to_status?
   before_create :generate_email_verification_token
 
   # ============================================================
@@ -564,6 +568,15 @@ class Partner < ApplicationRecord
   end
 
   private
+
+  # Tie the lead lifecycle to the partner: once approved, the originating
+  # waitlist signup (if any) is marked converted. Idempotent.
+  def mark_waitlist_lead_converted
+    return unless approved_status?
+    return if waitlist_signup.nil? || waitlist_signup.status == "converted"
+
+    waitlist_signup.mark_converted!
+  end
 
   # ============================================================
   # SECTOR DERIVATION
