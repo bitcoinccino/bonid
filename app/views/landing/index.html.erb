@@ -645,6 +645,35 @@
     document.getElementById('enskriModal').addEventListener('hidden.bs.modal', function() {
       enskriGoTo(1);
     });
+
+    // Submit the wizard via fetch so validation errors render in place (modal
+    // stays open, no reload). Falls back to a native submit on any failure.
+    var enskriForm = document.getElementById('enskri-form');
+    if (enskriForm) {
+      enskriForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var banner = document.getElementById('enskri-error-banner');
+        fetch(enskriForm.action, {
+          method: 'POST',
+          body: new FormData(enskriForm),
+          headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.ok && data.redirect) {
+            window.location.href = data.redirect;
+          } else if (banner) {
+            banner.innerHTML = (data && data.error)
+              ? '<div class="alert alert-danger"><i class="ri-error-warning-line me-1"></i>' + data.error + '</div>'
+              : '';
+          }
+        })
+        .catch(function() {
+          // Network/parse failure → degrade to the reliable native submit.
+          HTMLFormElement.prototype.submit.call(enskriForm);
+        });
+      });
+    }
   });
 
   document.addEventListener('click', function(e) {
