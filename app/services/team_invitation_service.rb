@@ -156,9 +156,9 @@ class TeamInvitationService
     User.where("REPLACE(UPPER(bonid), '-', '') LIKE ?", "%#{cleaned}").first
   end
 
-  # Search by name, email, OR BonID — so admins don't need to know a BonID.
+  # Search by email OR BonID (unique identifiers — no fuzzy name matching).
   # Only returns CITIZENS with a verified BonID; excludes partner/system admins.
-  # Returns up to `limit` matching users.
+  # Returns up to `limit` matches.
   def self.search(query, limit: 12)
     q = query.to_s.strip
     return User.none if q.blank?
@@ -169,12 +169,8 @@ class TeamInvitationService
     User
       .where(id: IdentitySubmission.approved.select(:user_id)) # verified BonID only
       .where.not(id: admin_ids)                                # not a partner/system admin
-      .where(
-        "first_name ILIKE :q OR last_name ILIKE :q " \
-        "OR (COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')) ILIKE :q " \
-        "OR email ILIKE :q OR REPLACE(UPPER(bonid), '-', '') LIKE :suffix",
-        q: "%#{q}%", suffix: "%#{suffix}"
-      )
+      .where("email ILIKE :q OR REPLACE(UPPER(bonid), '-', '') LIKE :suffix",
+             q: "%#{q}%", suffix: "%#{suffix}")
       .limit(limit)
   end
 
