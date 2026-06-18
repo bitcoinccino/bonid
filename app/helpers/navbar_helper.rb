@@ -61,9 +61,8 @@ module NavbarHelper
       {
         title: t("main.navbar.create_bonid"),
         description: t("main.navbar.create_bonid_desc"),
-        icon: "ri-user-add-line",
-        path: home_anchor("enskri"),
-        data: { enskri: "citizen" }
+        icon: "ri-login-box-line",
+        path: login_path
       },
       {
         title: t("main.navbar.become_partner"),
