@@ -239,6 +239,32 @@ end
     post "ajan/voyekod",    to: "ajan/sessions#resend_otp",  as: :ajan_resend_otp
   end
 
+  # ============================================================
+  # Clean, branded login aliases (Phase 1 — non-breaking).
+  # Each points at the SAME controller as its canonical route; the
+  # originals (citizens_otp_sign_in, new_officer_session, ...) all stay
+  # valid. Declared here (before `resources :partners`) so /partners/login
+  # is not captured as /partners/:uuid.
+  # ============================================================
+  devise_scope :citizen do
+    get "/login", to: "citizens/sessions#otp_sign_in", as: :login
+  end
+  devise_scope :officer do
+    get "/idpol/pnh/login", to: "officers/sessions#new", as: :idpol_pnh_login
+  end
+  devise_scope :partner_admin do
+    get "/partners/login", to: "partner_portal/partner_admins/sessions#new", as: :partners_login
+  end
+  devise_scope :admin_user do
+    get "/admin/login", to: "admin/sessions#new", as: :admin_login
+  end
+  devise_scope :reviewer do
+    get "/reviewer/login", to: "reviewers/sessions#new", as: :reviewer_login
+  end
+  devise_scope :agent do
+    get "/ajan/login", to: "ajan/sessions#new", as: :ajan_login
+  end
+
   namespace :ajan, path: "ajan" do
     root to: "dashboard#show", as: :root
     get "tablo", to: "dashboard#show", as: :tablo
