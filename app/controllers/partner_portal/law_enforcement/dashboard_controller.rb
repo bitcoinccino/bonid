@@ -1,6 +1,9 @@
 module PartnerPortal
   module LawEnforcement
     class DashboardController < PartnerPortal::LawEnforcement::BaseController
+      include IdpolExtrasPausable # v1 launch: critical-alert toggle paused unless IDPOL_EXTRAS_ENABLED=true
+      pause_unless_idpol_extras only: :toggle_alert
+
       layout "partner_portal/law_enforcement"
 
       def index

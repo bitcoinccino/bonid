@@ -3,6 +3,9 @@
 module PartnerPortal
   module LawEnforcement
     class SearchController < PartnerPortal::LawEnforcement::BaseController
+      include IdpolExtrasPausable # v1 launch: paused unless IDPOL_EXTRAS_ENABLED=true
+      pause_unless_idpol_extras
+
       # GET /partner_portal/law_enforcement/search?q=...
       # Returns JSON results grouped by type: officers, reports, citizens
       def index

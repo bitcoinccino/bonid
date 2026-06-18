@@ -5,6 +5,12 @@ module ApplicationHelper
     BontourisPausable.enabled?
   end
 
+  # Whether the paused IDPol/law-enforcement Tier-3 extras are enabled
+  # (officer analytics, border entries, tickets, complaints, LE search/alert).
+  def idpol_extras_enabled?
+    IdpolExtrasPausable.enabled?
+  end
+
   # === Role Helpers ===
   def current_role
     if admin_signed_in?
