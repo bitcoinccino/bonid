@@ -667,7 +667,7 @@
             window.location.href = data.redirect;
           } else if (banner) {
             banner.innerHTML = (data && data.error)
-              ? '<div class="alert alert-danger"><i class="ri-error-warning-line me-1"></i>' + data.error + '</div>'
+              ? '<div class="alert alert-danger alert-dismissible fade show" role="alert"><i class="ri-error-warning-line me-1"></i>' + data.error + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
               : '';
           }
         })
@@ -675,6 +675,12 @@
           // Network/parse failure → degrade to the reliable native submit.
           HTMLFormElement.prototype.submit.call(enskriForm);
         });
+      });
+
+      // Clear the server error as soon as the user starts fixing the form.
+      enskriForm.addEventListener('input', function() {
+        var b = document.getElementById('enskri-error-banner');
+        if (b) b.innerHTML = '';
       });
     }
   });
