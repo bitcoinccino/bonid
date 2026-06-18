@@ -126,9 +126,11 @@ export default class extends Controller {
     if (this.showTimeout) clearTimeout(this.showTimeout)
     if (this.hideTimeout) clearTimeout(this.hideTimeout)
     if (this.errorTimeout) clearTimeout(this.errorTimeout)
+    if (this.failsafeTimeout) clearTimeout(this.failsafeTimeout)
     this.showTimeout = null
     this.hideTimeout = null
     this.errorTimeout = null
+    this.failsafeTimeout = null
     this.isLoading = false
     this.displayedAt = null
   }
@@ -140,6 +142,10 @@ export default class extends Controller {
   handleNativeSubmit(event) {
     const form = event.target
     if (!form || form.tagName !== "FORM") return
+
+    // A JS handler (fetch / preventDefault) is taking over this submission — no
+    // navigation will happen, so showing the overlay would leave it stuck. Skip.
+    if (event.defaultPrevented) return
 
     // Only handle forms with data-turbo="false"
     const isTurboDisabled =
@@ -156,6 +162,9 @@ export default class extends Controller {
   handleNativeLinkClick(event) {
     const link = event.target?.closest?.("a[href]")
     if (!link) return
+
+    // A JS handler already took over this click — no navigation, skip the overlay.
+    if (event.defaultPrevented) return
 
     // Only handle links/containers with data-turbo="false"
     const isTurboDisabled =
@@ -257,10 +266,20 @@ export default class extends Controller {
       this.overlayTarget.classList.add("bonid-loading-visible")
       this.overlayTarget.setAttribute("aria-hidden", "false")
       this.displayedAt = Date.now()
+
+      // Failsafe: never let the overlay stick. A real navigation unloads the page
+      // before this fires; if nothing navigates (e.g. a JS-handled submit that
+      // slipped through), force-hide it so the UI never gets stuck on "Loading…".
+      if (this.failsafeTimeout) clearTimeout(this.failsafeTimeout)
+      this.failsafeTimeout = setTimeout(() => this.forceHide(), 10000)
     }
   }
 
   hide() {
+    if (this.failsafeTimeout) {
+      clearTimeout(this.failsafeTimeout)
+      this.failsafeTimeout = null
+    }
     if (this.hasOverlayTarget) {
       this.overlayTarget.classList.remove("bonid-loading-visible")
       this.overlayTarget.setAttribute("aria-hidden", "true")
@@ -280,9 +299,11 @@ export default class extends Controller {
     if (this.showTimeout) clearTimeout(this.showTimeout)
     if (this.hideTimeout) clearTimeout(this.hideTimeout)
     if (this.errorTimeout) clearTimeout(this.errorTimeout)
+    if (this.failsafeTimeout) clearTimeout(this.failsafeTimeout)
     this.showTimeout = null
     this.hideTimeout = null
     this.errorTimeout = null
+    this.failsafeTimeout = null
     this.isLoading = false
 
     if (this.hasOverlayTarget) {
