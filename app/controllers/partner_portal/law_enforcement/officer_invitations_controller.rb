@@ -43,18 +43,26 @@ module PartnerPortal
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end
 
-        # Exactly one verified match → go straight to the assignment page.
-        if candidates.size == 1 && candidates.first.identity_submissions.approved.exists?
-          @person = TeamInvitationService.profile(candidates.first)
-          @ranks  = OfficerConstants::RANKS
-          @units  = OfficerConstants::UNIT_OPTIONS
-          return render :confirm
-        end
-
-        # Otherwise show a picker (multiple matches, or the match isn't verified yet).
+        # Always show who we found (even a single match) so the admin sees and
+        # confirms the right person before assigning rank/unit.
         @query      = query
         @candidates = candidates.map { |u| TeamInvitationService.profile(u) }.compact
         render :results
+      end
+
+      # === CHOSEN PERSON → ASSIGNMENT PAGE ===
+      def confirm
+        user = TeamInvitationService.find_by_suffix(params[:bonid].to_s.strip.delete("-"))
+
+        unless user && user.identity_submissions.approved.exists?
+          flash[:error] = "Moun sa a poko gen yon BonID verifye."
+          return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
+        end
+
+        @person = TeamInvitationService.profile(user)
+        @ranks  = OfficerConstants::RANKS
+        @units  = OfficerConstants::UNIT_OPTIONS
+        render :confirm
       end
 
       # === SEND INVITATION ===
