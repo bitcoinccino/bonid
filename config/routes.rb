@@ -261,9 +261,7 @@ end
   devise_scope :reviewer do
     get "/reviewer/login", to: "reviewers/sessions#new", as: :reviewer_login
   end
-  devise_scope :agent do
-    get "/ajan/login", to: "ajan/sessions#new", as: :ajan_login
-  end
+  # (No alias for agents — they already log in at the clean, Creole /ajan/konekte.)
 
   namespace :ajan, path: "ajan" do
     root to: "dashboard#show", as: :root
