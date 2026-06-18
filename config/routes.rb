@@ -1033,6 +1033,7 @@ end
       resources :officer_invitations, only: [ :new, :create ] do
         collection do
           post :lookup
+          post :confirm
           get  :bulk_new
           post :bulk_create
         end
