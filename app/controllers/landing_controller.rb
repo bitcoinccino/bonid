@@ -117,7 +117,9 @@ class LandingController < ApplicationController
     respond_to do |format|
       format.json { render json: { ok: false, error: message } }
       format.html do
-        flash[:error] = message if message.present?
+        # Dedicated key so the global flash toast doesn't ALSO show it — the
+        # wizard's own banner renders it (see landing/index + _enskri_error).
+        flash[:enskri_error] = message if message.present?
         redirect_to enskri_path(lang: @lang)
       end
     end
