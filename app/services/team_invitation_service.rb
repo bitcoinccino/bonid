@@ -157,18 +157,25 @@ class TeamInvitationService
   end
 
   # Search by name, email, OR BonID — so admins don't need to know a BonID.
+  # Only returns CITIZENS with a verified BonID; excludes partner/system admins.
   # Returns up to `limit` matching users.
   def self.search(query, limit: 12)
     q = query.to_s.strip
     return User.none if q.blank?
 
-    suffix = q.delete("-").upcase
-    User.where(
-      "first_name ILIKE :q OR last_name ILIKE :q " \
-      "OR (COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')) ILIKE :q " \
-      "OR email ILIKE :q OR REPLACE(UPPER(bonid), '-', '') LIKE :suffix",
-      q: "%#{q}%", suffix: "%#{suffix}"
-    ).limit(limit)
+    suffix    = q.delete("-").upcase
+    admin_ids = (User.with_role(:partner_admin).ids + User.with_role(:admin_user).ids).uniq
+
+    User
+      .where(id: IdentitySubmission.approved.select(:user_id)) # verified BonID only
+      .where.not(id: admin_ids)                                # not a partner/system admin
+      .where(
+        "first_name ILIKE :q OR last_name ILIKE :q " \
+        "OR (COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')) ILIKE :q " \
+        "OR email ILIKE :q OR REPLACE(UPPER(bonid), '-', '') LIKE :suffix",
+        q: "%#{q}%", suffix: "%#{suffix}"
+      )
+      .limit(limit)
   end
 
   # Profile hash used by the invite UI (photo, name, masked email, verified flag).
