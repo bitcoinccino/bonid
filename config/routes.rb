@@ -247,7 +247,8 @@ end
   # is not captured as /partners/:uuid.
   # ============================================================
   devise_scope :citizen do
-    get "/login", to: "citizens/sessions#otp_sign_in", as: :login
+    get "/login",  to: "citizens/sessions#otp_sign_in", as: :login
+    get "/signup", to: "citizens/registrations#new",    as: :signup
   end
   devise_scope :officer do
     get "/idpol/pnh/login", to: "officers/sessions#new", as: :idpol_pnh_login
