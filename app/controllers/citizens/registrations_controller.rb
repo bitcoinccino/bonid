@@ -28,10 +28,10 @@ module Citizens
           store_partner_context_for_otp(@partner)
 
           if existing_user.identity_submissions.status_approved.exists?
-            redirect_to citizens_otp_sign_in_path(from_partner: @partner.slug),
+            redirect_to login_path(from_partner: @partner.slug),
                         notice: "You have already verified. Sign in to continue to #{@partner.name}."
           else
-            redirect_to citizens_otp_sign_in_path(from_partner: @partner.slug),
+            redirect_to login_path(from_partner: @partner.slug),
                         notice: "You already have an account. Sign in to continue."
           end
           return

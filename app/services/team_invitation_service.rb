@@ -156,6 +156,38 @@ class TeamInvitationService
     User.where("REPLACE(UPPER(bonid), '-', '') LIKE ?", "%#{cleaned}").first
   end
 
+  # Search by email OR BonID (unique identifiers — no fuzzy name matching).
+  # Only returns CITIZENS with a verified BonID; excludes partner/system admins.
+  # Returns up to `limit` matches.
+  def self.search(query, limit: 12)
+    q = query.to_s.strip
+    return User.none if q.blank?
+
+    suffix    = q.delete("-").upcase
+    admin_ids = (User.with_role(:partner_admin).ids + User.with_role(:admin_user).ids).uniq
+
+    User
+      .where(id: IdentitySubmission.approved.select(:user_id)) # verified BonID only
+      .where.not(id: admin_ids)                                # not a partner/system admin
+      .where("email ILIKE :q OR REPLACE(UPPER(bonid), '-', '') LIKE :suffix",
+             q: "%#{q}%", suffix: "%#{suffix}")
+      .limit(limit)
+  end
+
+  # Profile hash used by the invite UI (photo, name, masked email, verified flag).
+  def self.profile(user)
+    return nil unless user
+    {
+      bonid:     user.bonid,
+      full_name: user.full_name,
+      email:     mask_email(user.email),
+      photo_url: (Rails.application.routes.url_helpers.url_for(user.photo) if user.photo.attached?),
+      verified:  user.identity_submissions.approved.exists?
+    }
+  rescue
+    nil
+  end
+
   def self.mask_email(email)
     return nil if email.blank?
     local, domain = email.split("@")

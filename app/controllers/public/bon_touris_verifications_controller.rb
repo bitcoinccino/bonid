@@ -6,6 +6,9 @@ require "json"
 
 module Public
   class BonTourisVerificationsController < ApplicationController
+    include BontourisPausable # v1 launch: paused unless BONTOURIS_ENABLED=true
+    pause_bontouris_unless_enabled
+
     skip_before_action :authenticate_any_role!, raise: false
     layout "public"
 

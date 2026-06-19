@@ -2,6 +2,9 @@
 
 module Public
   class VisitorsController < Visitors::VisitorBaseController
+    include BontourisPausable # v1 launch: paused unless BONTOURIS_ENABLED=true
+    pause_bontouris_unless_enabled
+
     skip_before_action :authenticate_citizen!, raise: false
     layout :resolve_layout
 

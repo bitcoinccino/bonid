@@ -90,7 +90,7 @@ class OauthController < ApplicationController
     end
 
     # Not logged in → go through OTP sign-in
-    redirect_to main_app.citizens_otp_sign_in_path(from_partner: @partner.slug)
+    redirect_to main_app.login_path(from_partner: @partner.slug)
   rescue SecurityError => e
     cleanup_pending_consent
     render_error(e.message)

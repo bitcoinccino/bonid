@@ -29,21 +29,39 @@ module PartnerPortal
 
       # === BONID LOOKUP → CONFIRM PAGE ===
       def lookup
-        bonid_suffix = params[:bonid].to_s.strip.delete("-").upcase
-        @person = TeamInvitationService.lookup(bonid_suffix)
+        query = (params[:query].presence || params[:bonid]).to_s.strip
 
-        if @person.nil?
-          flash[:error] = "Pa gen moun ak BonID ki fini ak \"#{bonid_suffix}\". Verifye kòd la epi eseye ankò."
+        if query.blank?
+          flash[:error] = "Tanpri antre yon non, imèl, oswa BonID."
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end
 
-        unless @person[:verified]
-          flash[:error] = "#{@person[:full_name]} gen yon kont BonID men li poko verifye."
+        candidates = TeamInvitationService.search(query)
+
+        if candidates.empty?
+          flash[:error] = "Pa gen okenn moun ki koresponn ak \"#{query}\". Eseye ak yon non, imèl, oswa BonID."
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end
 
-        @ranks      = OfficerConstants::RANKS
-        @units      = OfficerConstants::UNIT_OPTIONS
+        # Always show who we found (even a single match) so the admin sees and
+        # confirms the right person before assigning rank/unit.
+        @query      = query
+        @candidates = candidates.map { |u| TeamInvitationService.profile(u) }.compact
+        render :results
+      end
+
+      # === CHOSEN PERSON → ASSIGNMENT PAGE ===
+      def confirm
+        user = TeamInvitationService.find_by_suffix(params[:bonid].to_s.strip.delete("-"))
+
+        unless user && user.identity_submissions.approved.exists?
+          flash[:error] = "Moun sa a poko gen yon BonID verifye."
+          return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
+        end
+
+        @person = TeamInvitationService.profile(user)
+        @ranks  = OfficerConstants::RANKS
+        @units  = OfficerConstants::UNIT_OPTIONS
         render :confirm
       end
 
@@ -68,7 +86,7 @@ module PartnerPortal
         # ============================================================
         # GATE: Cannot invite yourself
         # ============================================================
-        if user.id == current_user.id
+        if current_partner_admin && user.id == current_partner_admin.id
           flash[:error] = "Ou pa ka envite tèt ou."
           return redirect_to new_partner_portal_law_enforcement_officer_invitation_path
         end

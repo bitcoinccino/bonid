@@ -45,7 +45,7 @@ class MainController < ApplicationController
     if partner_slug.blank?
       if Rails.application.config.allow_public_signup
         session[:bonid_partner_id] = nil
-        redirect_to new_citizen_registration_path, notice: "Starting public BonID registration."
+        redirect_to signup_path, notice: "Starting public BonID registration."
       else
         redirect_to partners_path, alert: "ℹ️ Please choose a verified partner to begin."
       end
@@ -69,7 +69,7 @@ class MainController < ApplicationController
     session[:bonid_partner_id] = partner.id
     Rails.logger.info "🔐 Partner session set: #{partner.name} (ID: #{partner.id})"
 
-    redirect_to new_citizen_registration_path(partner: partner.slug)
+    redirect_to signup_path(partner: partner.slug)
   end
 
   private

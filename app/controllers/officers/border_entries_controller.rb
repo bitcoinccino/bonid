@@ -2,6 +2,9 @@
 
 module Officers
   class BorderEntriesController < Officers::BaseController
+    include IdpolExtrasPausable # v1 launch: paused unless IDPOL_EXTRAS_ENABLED=true (tied to the BonTouris pause)
+    pause_unless_idpol_extras
+
     before_action :authenticate_officer!
     before_action :set_visitor, only: :create
 

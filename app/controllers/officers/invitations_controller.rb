@@ -41,8 +41,21 @@ module Officers
       password = officer_params[:password]
       password_confirmation = officer_params[:password_confirmation]
 
+      # Guard explicitly: Devise's :validatable skips the password presence
+      # check on an already-persisted User when the field is blank, so a blank
+      # submission would otherwise sail through without ever setting a password.
+      if password.blank?
+        flash.now[:alert] = "Tanpri chwazi yon modpas."
+        return render :edit, status: :unprocessable_entity
+      end
+
+      if password != password_confirmation
+        flash.now[:alert] = "Modpas yo pa menm."
+        return render :edit, status: :unprocessable_entity
+      end
+
       ActiveRecord::Base.transaction do
-        # Update user with password
+        # Update the underlying User identity with the chosen password
         @user.update!(
           password: password,
           password_confirmation: password_confirmation,
@@ -53,27 +66,33 @@ module Officers
         # Ensure officer role is set
         @user.add_role(:officer) unless @user.has_role?(:officer)
 
-        # Create Officer record if it doesn't exist (with placeholder data for required fields)
-        # User will complete these in onboarding
+        # The Officer record is normally pre-created at invite time (with real
+        # rank/unit/badge) carrying a random throwaway password. Acceptance MUST
+        # write the officer's chosen password onto that record — without this the
+        # officer can never sign in (they'd be stuck with the random password).
+        # Only fill placeholders when the Officer record is genuinely missing.
         officer = @user.officer || @user.build_officer
-        unless officer.persisted?
+        if officer.new_record?
           officer.assign_attributes(
-            email: @user.email,
-            password: password,
-            password_confirmation: password_confirmation,
+            email:      @user.email,
             first_name: @user.first_name || "Pending",
-            last_name: @user.last_name || "Setup",
+            last_name:  @user.last_name  || "Setup",
             partner_id: @user.partner_id,
-            badge_id: "PENDING-#{SecureRandom.hex(4).upcase}",
-            rank: "Agent",
-            unit_name: "UDMO",
-            unit_type: "Patrouille Urbaine",
-            status: :invited,
-            invitation_token: nil,
-            invitation_accepted_at: Time.current
+            badge_id:   "PENDING-#{SecureRandom.hex(4).upcase}",
+            rank:       "Agent",
+            unit_name:  "UDMO",
+            unit_type:  "Patrouille Urbaine",
+            status:     :invited
           )
-          officer.save!(validate: false) # Skip validations for now, user will complete in onboarding
         end
+
+        # Always set on accept — for both new and pre-created officers.
+        officer.email                  ||= @user.email
+        officer.password                 = password
+        officer.password_confirmation    = password_confirmation
+        officer.invitation_token         = nil
+        officer.invitation_accepted_at   = Time.current
+        officer.save!(validate: false) # profile completed in onboarding
 
         # Sign in as the Officer
         sign_in(:officer, officer)

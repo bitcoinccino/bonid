@@ -12,6 +12,8 @@
      data-total-signups="<%= @total_signups || 0 %>"
      data-social-proof="<%= t('main.signup_form.social_proof') %>"
      data-social-proof-first="<%= t('main.signup_form.social_proof_first') %>"
+     data-social-proof-total="<%= t('main.signup_form.social_proof_total') %>"
+     data-social-proof-threshold="<%= Commune::SOCIAL_PROOF_THRESHOLD %>"
      data-error-email="<%= t('main.signup_form.error_email') %>"
      data-error-org="<%= t('main.signup_form.error_org') %>"
      data-error-sector="<%= t('main.signup_form.error_sector') %>"
@@ -60,11 +62,9 @@
         <% if flash[:success] %>
           <div class="alert alert-success"><i class="ri-check-line me-1"></i><%= flash[:success] %></div>
         <% end %>
-        <% if flash[:error] %>
-          <div class="alert alert-danger"><i class="ri-error-warning-line me-1"></i><%= flash[:error] %></div>
-        <% end %>
+        <%= render "landing/enskri_error", message: flash[:enskri_error] %>
 
-        <%= form_with model: @waitlist_signup, url: enskri_signup_path(lang: params[:lang]), local: true, id: "enskri-form" do |f| %>
+        <%= form_with model: @waitlist_signup, url: enskri_signup_path(lang: params[:lang]), id: "enskri-form", data: { turbo: false } do |f| %>
           <%= f.hidden_field :signup_type, id: "modal_signup_type", value: "citizen" %>
 
           <%# Honeypot: hidden from humans, bots fill it %>
@@ -522,16 +522,18 @@
     var selectedOpt = communeSel.options[communeSel.selectedIndex];
     var communeCount = selectedOpt ? parseInt(selectedOpt.dataset.signups) || 0 : 0;
     var communeName = selectedOpt && selectedOpt.value ? selectedOpt.textContent : '';
+    var threshold = parseInt(modalData.socialProofThreshold) || 0;
+    var total = parseInt(modalData.totalSignups) || 0;
 
-    if (communeCount > 0 && communeName) {
+    if (communeName && communeCount >= threshold) {
+      // Healthy local count — show the real number.
       text.textContent = modalData.socialProof.replace('COUNT', communeCount.toLocaleString()).replace('COMMUNE', communeName);
+    } else if (communeName) {
+      // Commune chosen but few signups — exclusivity framing, no fake number.
+      text.textContent = modalData.socialProofFirst.replace('COMMUNE', communeName);
     } else {
-      var total = parseInt(modalData.totalSignups) || 0;
-      if (total > 0) {
-        text.textContent = modalData.socialProof.replace('COUNT', total.toLocaleString()).replace('COMMUNE', '');
-      } else {
-        text.textContent = modalData.socialProofFirst;
-      }
+      // No commune (e.g. diaspora) — honest national total for scale.
+      text.textContent = modalData.socialProofTotal.replace('COUNT', total.toLocaleString());
     }
   }
 
@@ -635,22 +637,64 @@
 
   /* ── Modal open triggers ── */
   document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.hash === '#enskri') {
-      var modal = new bootstrap.Modal(document.getElementById('enskriModal'));
-      modal.show();
+    if (window.location.hash === '#enskri' || document.querySelector('#enskriModal .alert-danger')) {
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
     }
 
     document.getElementById('enskriModal').addEventListener('hidden.bs.modal', function() {
       enskriGoTo(1);
+      // Safety net: remove any stray backdrop / body lock Bootstrap left behind,
+      // so the dimmed background can't linger after the modal closes.
+      document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
     });
+
+    // Submit the wizard via fetch so validation errors render in place (modal
+    // stays open, no reload). Falls back to a native submit on any failure.
+    var enskriForm = document.getElementById('enskri-form');
+    if (enskriForm) {
+      enskriForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Stop the global-loading controller's native-submit handler from showing
+        // its overlay — we handle this submission with fetch and never navigate.
+        e.stopPropagation();
+        var banner = document.getElementById('enskri-error-banner');
+        fetch(enskriForm.action, {
+          method: 'POST',
+          body: new FormData(enskriForm),
+          headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.ok && data.redirect) {
+            window.location.href = data.redirect;
+          } else if (banner) {
+            banner.innerHTML = (data && data.error)
+              ? '<div class="alert alert-danger alert-dismissible fade show" role="alert"><i class="ri-error-warning-line me-1"></i>' + data.error + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>'
+              : '';
+          }
+        })
+        .catch(function() {
+          // Network/parse failure → degrade to the reliable native submit.
+          HTMLFormElement.prototype.submit.call(enskriForm);
+        });
+      });
+
+      // Clear the server error as soon as the user starts fixing the form.
+      enskriForm.addEventListener('input', function() {
+        var b = document.getElementById('enskri-error-banner');
+        if (b) b.innerHTML = '';
+      });
+    }
   });
 
   document.addEventListener('click', function(e) {
     var trigger = e.target.closest('[data-enskri]');
     if (trigger) {
       e.preventDefault();
-      var modal = new bootstrap.Modal(document.getElementById('enskriModal'));
-      modal.show();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
       var type = trigger.dataset.enskri;
       if (type === 'citizen' || type === 'business') modalSetType(type);
     }
