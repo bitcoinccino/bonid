@@ -49,6 +49,6 @@ class Officers::PasswordsController < Devise::PasswordsController
   private
 
   def resource_params
-    params.require(:officer).permit(:reset_password_token, :password, :password_confirmation)
+    params.require(:officer).permit(:email, :reset_password_token, :password, :password_confirmation)
   end
 end
