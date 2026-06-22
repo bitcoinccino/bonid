@@ -168,17 +168,26 @@ Partner.all.each do |partner|
   PartnerBranch.find_or_create_by!(partner_id: partner.id, name: "#{partner.name} Main Branch")
 end
 
-# Seed OAuth Applications (idempotent)
+# Seed OAuth Applications — idempotent, one app per partner.
+# The previous version keyed find_or_create_by on a fresh random uid every run,
+# so re-seeding never matched and piled up duplicate apps with unrecoverable
+# secrets. Now we key on partner_id, and pin the zellus app to stable creds from
+# env (ZELLUS_OAUTH_CLIENT_ID / _SECRET) so it stays in sync with the Zellus
+# app's BONID_OAUTH_CLIENT_ID / _SECRET across re-seeds.
 Partner.all.each do |partner|
-  uid = SecureRandom.hex(10)
-  secret = SecureRandom.hex(20)
-  secret_digest = BCrypt::Password.create(secret)
+  app = OauthApplication.find_or_initialize_by(partner_id: partner.id)
 
-  OauthApplication.find_or_create_by!(partner_id: partner.id, uid: uid) do |app|
-    app.name = "#{partner.name} OAuth App"
-    app.secret_digest = secret_digest
-    app.redirect_uri = "https://example.com/oauth/callback"
+  if partner.slug == "zellus" && ENV["ZELLUS_OAUTH_CLIENT_ID"].present?
+    app.uid           = ENV["ZELLUS_OAUTH_CLIENT_ID"]
+    app.secret_digest = BCrypt::Password.create(ENV.fetch("ZELLUS_OAUTH_CLIENT_SECRET"))
+  elsif app.new_record?
+    app.uid           = SecureRandom.hex(10)
+    app.secret_digest = BCrypt::Password.create(SecureRandom.hex(20))
   end
+
+  app.name         ||= "#{partner.name} OAuth App"
+  app.redirect_uri ||= "https://example.com/oauth/callback"
+  app.save!
 end
 
 puts "✅ Demo partners, branches, and OAuth Apps seeded successfully!"
