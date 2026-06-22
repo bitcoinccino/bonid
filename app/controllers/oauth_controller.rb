@@ -558,6 +558,16 @@ class OauthController < ApplicationController
     session[:pending_consent] = pending_data
     session[:pending_partner_slug] = pending_data[:partner_slug]
 
+    # Durable single-key copies of the fields the OTP-login round-trip must not
+    # lose. The full :pending_consent hash can fall out of the session/cookie
+    # across the login redirects, in which case retrieve_pending_consent falls
+    # back to reconstruct_from_partner_slug — these let it rebuild the ORIGINAL
+    # redirect_uri / scopes / state instead of hardcoding the partner default
+    # (which previously sent partners to the wrong callback, e.g. localhost).
+    session[:pending_redirect_uri] = pending_data[:redirect_uri]
+    session[:pending_scopes]       = pending_data[:scopes]
+    session[:pending_state]        = pending_data[:state]
+
     cookies.encrypted[:pending_consent] = {
       value: pending_data.to_json,
       expires: 30.minutes.from_now,
@@ -598,9 +608,12 @@ class OauthController < ApplicationController
     pending_data = {
       partner_id: partner.id,
       partner_slug: partner.slug,
-      scopes: %w[openid profile email],
-      redirect_uri: partner.primary_redirect_uri.presence || root_url,
-      state: state,
+      # Recover the ORIGINAL request context (preserved at authorize) rather
+      # than hardcoding defaults — keeps the partner's redirect_uri, requested
+      # scopes, and state intact through the login round-trip.
+      scopes: Array(session[:pending_scopes]).compact.presence || %w[openid profile email],
+      redirect_uri: session[:pending_redirect_uri].presence || partner.primary_redirect_uri.presence || root_url,
+      state: session[:pending_state].presence || state,
       created_at: Time.current.to_i
     }
 
@@ -620,6 +633,9 @@ class OauthController < ApplicationController
   def cleanup_pending_consent
     session.delete(:pending_consent)
     session.delete(:pending_partner_slug)
+    session.delete(:pending_redirect_uri)
+    session.delete(:pending_scopes)
+    session.delete(:pending_state)
     cookies.encrypted[:pending_consent] = nil
   end
 
