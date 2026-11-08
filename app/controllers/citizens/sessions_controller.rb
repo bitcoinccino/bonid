@@ -230,6 +230,9 @@ module Citizens
       )
 
       session[:login_source] = login_source
+      # A login that started from a partner exists only to approve that
+      # partner; OauthController ends it once the citizen is handed back.
+      session[:partner_only_session] = partner_slug.present?
       session.delete(:pending_citizen_id)
 
       redirect_to after_sign_in_path_for(user),
