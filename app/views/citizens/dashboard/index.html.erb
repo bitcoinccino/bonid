@@ -533,139 +533,69 @@
       <div class="row justify-content-center">
         <div class="col-12 col-xl-11">
 
-        <%# Two-column layout: What You'll Need + How It Works %>
-        <div class="row g-4 mb-4">
+        <%# Three steps — each lists only what the citizen needs for that step. %>
+        <%
+          docs = [
+            { icon: "ri-id-card-line",   label: "CIN oswa Paspò", detail: "Devan ak dèyè" },
+            { icon: "ri-camera-line",    label: "Selfie klè",     detail: "Pou verifikasyon figi" }
+          ]
+          if @is_diaspora
+            docs << { icon: "ri-bank-card-line", label: "ID peyi rezidans ou",       detail: "Green Card, State ID, Driver's License, Cedula, oswa Residence Permit" }
+            docs << { icon: "ri-file-text-line", label: "Prèv adrès peyi rezidans", detail: "Bòdwo oswa bank statement (mwens pase 3 mwa)" }
+          else
+            docs << { icon: "ri-file-text-line", label: "Prèv adrès", detail: "Bòdwo elektrisite, kontra lokasyon, oswa lèt gouvènman" }
+          end
 
-          <%# ── Sa Ou Bezwen ── %>
-          <div class="col-md-6">
-          <div class="ballot-section card border-0 shadow-sm h-100">
-            <div class="card-body p-4">
-
-            <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title" style="font-size: 1.1rem;">Sa Ou Bezwen</h2>
-              <p class="ballot-section-desc mb-0">Dokiman pou ou ranmase anvan ou kòmanse.</p>
-            </div>
-
-            <% if @is_diaspora %>
-              <%# ── Diaspora checklist ── %>
-              <div style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.1);
-                          border-radius: 0.6rem; padding: 8px 12px; margin-bottom: 12px;">
-                <span style="font-size: 0.72rem; font-weight: 600; color: #00209F;">
-                  <i class="ri-global-line me-1"></i> Aplikasyon Dyaspora
-                </span>
-                <% if @residence_country && @residence_country != "HT" %>
-                  <span style="font-size: 0.68rem; color: #64748B; margin-left: 4px;">
-                    (<%= ISO3166::Country[@residence_country]&.translations&.dig("en") || @residence_country %>)
-                  </span>
-                <% end %>
-              </div>
-              <% [
-                { icon: "ri-mail-line",      label: "Adrès imel",               detail: "Pou verifikasyon kont ak koneksyon OTP" },
-                { icon: "ri-id-card-line",   label: "CIN oswa Paspò",           detail: "Devan ak dèyè kat idantite nasyonal ou oswa paspò" },
-                { icon: "ri-camera-line",    label: "Selfie klè",               detail: "Yon foto resan pou verifikasyon figi" },
-                { icon: "ri-bank-card-line", label: "ID peyi rezidans ou",       detail: "Green Card, State ID, Driver's License, Cedula, oswa Residence Permit" },
-                { icon: "ri-file-text-line", label: "Prèv adrès peyi rezidans", detail: "Bòdwo elektrisite, bòdwo telefòn, oswa bank statement (mwens pase 3 mwa)" }
-              ].each do |req| %>
-                <div class="gs-row">
-                  <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
-                  <div class="gs-row-text">
-                    <span class="gs-row-label"><%= req[:label] %></span>
-                    <span class="gs-row-detail"><%= req[:detail] %></span>
+          steps = [
+            (if current_citizen.profile_complete?
+               { num: "1", title: "Ranpli pwofil ou", desc: "Pwofil ou konplè.", items: [], done: true }
+             else
+               { num: "1", title: "Ranpli pwofil ou", desc: "Enfòmasyon pèsonèl ak adrès ou.", items: [] }
+             end),
+            { num: "2", title: "Telechaje dokiman ou", desc: "Pare dokiman sa yo:",           items: docs },
+            { num: "3", title: "Resevwa BonID ou",    desc: "Yon revizè BonID verifye idantite ou, epi ou resevwa ID dijital ou ak yon kòd QR sekirize.", items: [] }
+          ]
+        %>
+        <div class="row g-3 mb-4">
+          <% steps.each do |s| %>
+            <div class="col-md-4">
+              <div class="ballot-section card border-0 shadow-sm h-100">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <% if s[:done] %>
+                      <div class="gs-step-num" style="background:#10B981;color:#fff;" aria-label="Fini"><i class="ri-check-line"></i></div>
+                    <% else %>
+                      <div class="gs-step-num"><%= s[:num] %></div>
+                    <% end %>
+                    <h2 class="ballot-section-title mb-0" style="font-size: 1.05rem;"><%= s[:title] %></h2>
                   </div>
-                </div>
-              <% end %>
+                  <p class="ballot-section-desc mb-2"><%= s[:desc] %></p>
 
-            <% else %>
-              <%# ── Domestic (Haiti) checklist ── %>
-              <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.1);
-                          border-radius: 0.6rem; padding: 8px 12px; margin-bottom: 12px;">
-                <span style="font-size: 0.72rem; font-weight: 600; color: #065F46;">
-                  <i class="ri-map-pin-line me-1"></i> Aplikasyon Ayiti
-                </span>
-              </div>
-              <% [
-                { icon: "ri-mail-line",      label: "Adrès imel",           detail: "Pou verifikasyon kont ak koneksyon OTP" },
-                { icon: "ri-id-card-line",   label: "CIN oswa Paspò",      detail: "Devan ak dèyè kat idantite nasyonal ou oswa paspò" },
-                { icon: "ri-camera-line",    label: "Selfie klè",          detail: "Yon foto resan pou verifikasyon figi" },
-                { icon: "ri-file-text-line", label: "Prèv adrès",         detail: "Bòdwo elektrisite, kontra lokasyon, oswa lèt gouvènman" }
-              ].each do |req| %>
-                <div class="gs-row">
-                  <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
-                  <div class="gs-row-text">
-                    <span class="gs-row-label"><%= req[:label] %></span>
-                    <span class="gs-row-detail"><%= req[:detail] %></span>
-                  </div>
-                </div>
-              <% end %>
-            <% end %>
+                  <% if s[:num] == "2" && @is_diaspora %>
+                    <span style="font-size: 0.72rem; font-weight: 600; color: #00209F;">
+                      <i class="ri-global-line me-1"></i> Aplikasyon Dyaspora
+                      <% if @residence_country && @residence_country != "HT" %>
+                        <span style="color: #64748B; font-weight: 400;">(<%= ISO3166::Country[@residence_country]&.translations&.dig("en") || @residence_country %>)</span>
+                      <% end %>
+                    </span>
+                  <% end %>
 
-            </div>
-          </div>
-          </div>
-
-          <%# ── Kijan Li Fonksyone ── %>
-          <div class="col-md-6">
-          <div class="ballot-section card border-0 shadow-sm h-100">
-            <div class="card-body p-4">
-
-            <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title" style="font-size: 1.1rem;">Kijan Li Fonksyone</h2>
-              <p class="ballot-section-desc mb-0">Twa etap senp pou jwenn BonID ou.</p>
-            </div>
-
-            <% [
-              { step: "1", label: "Ranpli pwofil ou",           detail: "Antre enfòmasyon pèsonèl ou epi telechaje dokiman yo." },
-              { step: "2", label: "Soumèt pou verifikasyon",    detail: "Yon revizè BonID verifye idantite ou." },
-              { step: "3", label: "Resevwa BonID ou",           detail: "Resevwa ID dijital ou ak yon kòd QR sekirize." }
-            ].each do |s| %>
-              <div class="gs-row">
-                <div class="gs-step-num"><%= s[:step] %></div>
-                <div class="gs-row-text">
-                  <span class="gs-row-label"><%= s[:label] %></span>
-                  <span class="gs-row-detail"><%= s[:detail] %></span>
+                  <% s[:items].each do |req| %>
+                    <div class="gs-row">
+                      <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
+                      <div class="gs-row-text">
+                        <span class="gs-row-label"><%= req[:label] %></span>
+                        <span class="gs-row-detail"><%= req[:detail] %></span>
+                      </div>
+                    </div>
+                  <% end %>
                 </div>
               </div>
-            <% end %>
-
             </div>
-          </div>
-          </div>
+          <% end %>
         </div>
 
-        <%# ── Poukisa BonID? ── %>
-        <div class="ballot-section card border-0 shadow-sm mb-4">
-          <div class="card-body p-4">
-
-          <div class="ballot-section-head mb-4">
-            <h2 class="ballot-section-title">Poukisa BonID?</h2>
-            <p class="ballot-section-desc mb-0">Avantaj kle pou idantite dijital ou.</p>
-          </div>
-          <div class="gs-advantage-grid">
-            <% advantages = [
-              { icon: "ri-government-line",   title: "Sèvis Gouvènman an Liy", desc: "Aksè ak sèvis piblik ak administrativ dirèkteman sou telefòn ou — san ou pa fè liy." },
-              { icon: "ri-shield-check-line", title: "Sove si Yo Atake Kay Ou", desc: "Menm si gang, dife oswa katastwòf detwi papye ou yo, idantite ou rete an sekirite nan BonID." },
-              { icon: "ri-eye-line",          title: "Kontwòl Total",          desc: "Wè ki lè ak ki kote yo eskane BonID ou." },
-              { icon: "ri-lock-2-line",       title: "Prive",                  desc: "Done chifre, pa janm pataje san konsantman ou." }
-            ]
-            if @is_diaspora
-              advantages << { icon: "ri-global-line", title: "Vote Depi Aletranje", desc: "Vote nan eleksyon Ayiti dirèkteman sou telefòn ou." }
-            end
-            %>
-            <% advantages.each do |adv| %>
-              <div class="gs-advantage">
-                <i class="<%= adv[:icon] %>"></i>
-                <span class="gs-adv-title"><%= adv[:title] %></span>
-                <span class="gs-adv-desc"><%= adv[:desc] %></span>
-              </div>
-            <% end %>
-          </div>
-
-          </div>
-        </div>
-
-        <%# Primary CTA — anchored at the bottom so the citizen reads
-            "Sa Ou Bezwen / Kijan Li Fonksyone / Poukisa BonID" first,
-            then commits to starting. %>
+        <%# Primary CTA — after the three steps. %>
         <div class="text-center mb-4">
           <% if current_citizen.profile_complete? %>
             <%= link_to new_citizens_identity_submission_path,
