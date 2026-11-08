@@ -23,6 +23,21 @@ FactoryBot.define do
       user.add_role(:citizen) if user.respond_to?(:add_role)
     end
 
+    # Every factory user already gets the citizen role; kept for readability.
+    trait :citizen do
+    end
+
+    # ===== Complete profile (gate for identity submission) =====
+    trait :profile_complete do
+      with_address
+      id_type { :cin }
+      sequence(:id_number) { |n| format("%010d", 2_000_000_000 + n) }
+      after(:create) do |user|
+        png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+        user.photo.attach(io: StringIO.new(png), filename: "photo.png", content_type: "image/png")
+      end
+    end
+
     # ===== Address trait =====
     trait :with_address do
       after(:create) do |user|

@@ -60,9 +60,9 @@ RSpec.describe NameChangeRequest, type: :model do
       end
     end
 
-    describe "apply_name_change" do
-      it "updates the user's name when approved" do
-        user = create(:user, first_name: "Jean", middle_name: nil, last_name: "Louis")
+    describe "on approval" do
+      it "keeps the current name and revokes the active BonID until reverification" do
+        user = create(:user, :verified, first_name: "Jean", middle_name: nil, last_name: "Louis")
         request = create(:name_change_request,
                          user: user,
                          new_first_name: "Jean-Pierre",
@@ -76,9 +76,9 @@ RSpec.describe NameChangeRequest, type: :model do
         )
 
         user.reload
-        expect(user.first_name).to eq("Jean-Pierre")
-        expect(user.middle_name).to eq("Marcel")
-        expect(user.last_name).to eq("Dupont")
+        expect(user.first_name).to eq("Jean")
+        expect(user.last_name).to eq("Louis")
+        expect(user.identity_submissions.where(status: :approved)).to be_empty
       end
 
       it "does not update the user's name when rejected" do

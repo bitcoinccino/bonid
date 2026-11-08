@@ -3,7 +3,9 @@
 # spec/support/api_auth_helpers.rb
 RSpec.configure do |config|
   # 🔒 Skip partner, API key, and BonID authentication for request specs
-  config.before(:each, type: :request) do
+  config.before(:each, type: :request) do |example|
+    next if example.metadata[:real_auth]
+
     # Stub partner authentication
     allow_any_instance_of(Api::V1::BaseController)
       .to receive(:authenticate_partner!)

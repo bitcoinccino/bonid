@@ -2,27 +2,11 @@
 
 require "rails_helper"
 
-RSpec.describe "Api::V1::Webhooks", type: :request do
-  let!(:partner) do
-    Partner.create!(
-      name: "Webhook Partner",
-      verified_at: Time.current,
-      active: true,
-      api_key_digest: BCrypt::Password.create("secret")
-    )
-  end
+RSpec.describe "Api::V1::Webhooks", type: :request, real_auth: true do
+  let!(:partner) { create(:partner, verified_at: Time.current, active: true, raw_api_key: "secret") }
 
   let(:headers) { { "X-Partner-Api-Key" => "secret", "Content-Type" => "application/json" } }
 
-  before do
-    allow_any_instance_of(Api::V1::WebhooksController)
-      .to receive(:authenticate_api_key!)
-      .and_return(true)
-    allow_any_instance_of(Api::V1::WebhooksController)
-      .to receive(:instance_variable_get)
-      .with(:@current_partner)
-      .and_return(partner)
-  end
 
   describe "POST /api/v1/webhooks" do
     let(:payload) do

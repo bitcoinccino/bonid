@@ -54,7 +54,7 @@ RSpec.describe "Admin::NameChangeRequests", type: :request do
   describe "PATCH /admin/name_change_requests/:id/approve" do
     let!(:request_record) { create(:name_change_request, user: citizen) }
 
-    it "approves the request and updates the citizen's name" do
+    it "approves the request and suspends the BonID until reverification (name unchanged for now)" do
       patch approve_admin_name_change_request_path(request_record),
             params: { admin_note: "Documents verified." }
 
@@ -64,8 +64,8 @@ RSpec.describe "Admin::NameChangeRequests", type: :request do
       expect(request_record.reviewed_at).to be_present
 
       citizen.reload
-      expect(citizen.first_name).to eq(request_record.new_first_name)
-      expect(citizen.last_name).to eq(request_record.new_last_name)
+      expect(citizen.first_name).to eq("Marie")
+      expect(citizen.last_name).to eq("Pierre")
     end
 
     it "sends an approval email" do

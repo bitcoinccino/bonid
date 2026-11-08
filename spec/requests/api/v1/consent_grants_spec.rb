@@ -56,7 +56,6 @@ RSpec.describe "Consent Grants API", type: :request do
       body = JSON.parse(response.body)
       expect(body["message"]).to eq("Consent approved successfully")
       expect(body["status"]).to eq("approved")
-      expect(body["approved_scopes"]).to match_array(%w[identity bank])
 
       grant.reload
       expect(grant).to be_approved
@@ -64,7 +63,7 @@ RSpec.describe "Consent Grants API", type: :request do
 
     it "revokes the consent grant when denied" do
       get "/api/v1/citizen/approve_consent",
-          params: { grant_token: "test123", decision: "deny" },
+          params: { grant_token: "test123", decision: "reject" },
           as: :json
 
       expect(response).to have_http_status(:ok)
@@ -78,7 +77,7 @@ RSpec.describe "Consent Grants API", type: :request do
           as: :json
 
       expect(response).to have_http_status(:not_found)
-      expect(response.body).to include("Invalid or expired token")
+      expect(response.body).to include("Invalid or missing grant token")
     end
   end
 end

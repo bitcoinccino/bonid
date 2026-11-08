@@ -8,7 +8,11 @@ RSpec.describe PartnerPortal::TeamController, type: :controller do
   # ============================================================
   # SETUP
   # ============================================================
-  let(:partner) { create(:partner, :verified, sector: "dgi") }
+  let(:partner) do
+    create(:partner, :verified, sector: "dgi",
+           guidelines_accepted_at: Time.current,
+           guidelines_version: PartnerPortal::GuidelinesAcceptanceController::CURRENT_VERSION)
+  end
 
   let(:admin_user) do
     user = create(:user, email: "admin-#{SecureRandom.hex(4)}@bonid.ht")

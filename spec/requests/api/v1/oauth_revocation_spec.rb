@@ -3,10 +3,10 @@
 require "rails_helper"
 
 RSpec.describe "OAuth Revocation & Refresh", type: :request do
-  let!(:partner) { Partner.create!(name: "Partner", slug: "partner", verified_at: Time.current, active: true) }
-  let!(:citizen) { User.create!(email: "citizen@example.com", password: "password123") }
+  let!(:partner) { create(:partner, verified_at: Time.current, active: true) }
+  let!(:citizen) { create(:user) }
   let!(:token) do
-    OAuthAccessToken.create!(
+    OauthAccessToken.create!(
       partner: partner,
       citizen: citizen,
       token: SecureRandom.hex(32),

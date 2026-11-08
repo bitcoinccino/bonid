@@ -17,12 +17,12 @@ RSpec.describe Election::BallotRoutingService do
       end
     end
 
-    it "treats department codes that collide with ISO country codes as diaspora" do
-      # This is a known limitation of the current implementation:
-      # SD=Sudan, AR=Argentina, NE=Niger, NO=Norfolk, SE=Seychelles, GA=Gabon, NI=Nicaragua
+    it "treats department codes that collide with ISO country codes as domestic" do
+      # SD=Sudan, AR=Argentina, NE=Niger, NO=Norfolk, SE=Seychelles, GA=Gabon, NI=Nicaragua.
+      # Haitian departments are checked before country codes, so these stay domestic.
       colliding = %w[SD AR NE NO SE GA NI]
       colliding.each do |code|
-        expect(described_class.diaspora?(code)).to be true
+        expect(described_class.diaspora?(code)).to eq(false), "Expected #{code} to be domestic"
       end
     end
 

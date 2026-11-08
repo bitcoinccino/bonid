@@ -2,7 +2,9 @@
 
 require "rails_helper"
 
-RSpec.describe Election::MultiSigService do
+# The CEP 5-of-9 shard / tally-decryption ceremony is shelved (2026-04-20):
+# BonID stays verification-only for the CEP. Re-enable if the ceremony returns.
+RSpec.describe Election::MultiSigService, skip: "CEP decryption ceremony shelved for v1" do
   let(:election) { create(:bonvote_election, :closed) }
 
   def build_signatory(role:, bonid: nil)
