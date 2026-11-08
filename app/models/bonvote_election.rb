@@ -96,7 +96,6 @@ class BonvoteElection < ApplicationRecord
         parent_election: self,
         status: "draft",
         election_date: runoff_date,
-        cep_public_key: cep_public_key,
         metadata: metadata.merge("parent_election_id" => id)
       )
 
