@@ -116,7 +116,7 @@ module PartnersHelper
       group_label = I18n.t("main.partners.sector_groups.#{slug}", default: group)
       [
         group_label,
-        sectors.map { |s| [sector_label_translated(s), s] }
+        sectors.map { |s| [ sector_label_translated(s), s ] }
       ]
     end
   end
@@ -193,5 +193,4 @@ module PartnersHelper
 
     Array(bullets)
   end
-
 end

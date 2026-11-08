@@ -1113,7 +1113,7 @@ end
       # =========================================================================
       resources :fiscal_receipts, only: [] do
         collection do
-          get  :lookup   # GET  /api/v1/fiscal_receipts/lookup?receipt_number=...
+          get :lookup   # GET  /api/v1/fiscal_receipts/lookup?receipt_number=...
           patch :consume # PATCH /api/v1/fiscal_receipts/consume
         end
       end
