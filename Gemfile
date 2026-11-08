@@ -35,8 +35,10 @@ gem "ed25519", "~> 1.4"      # Ed25519 signatures for BonID QR offline verificat
 gem "secret_sharing", "~> 0.0" # Shamir 5-of-9 split for the CEP tally-decryption ceremony
 
 # === JSON Schema & Data Validation ===
+gem "json", "~> 2.0"         # Prevents Rails/ActiveSupport incompatibilities with json 3.x quirks_mode
 gem "json_schemer"           # Partner schema validation
 gem "rails-i18n"
+
 # === Forms & Pagination ===
 gem "simple_form"
 gem "country_select"
