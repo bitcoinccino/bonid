@@ -1,5 +1,5 @@
 <%# Shown when the citizen already approved this partner: brief confirmation, then auto-continue. %>
-<% content_for :title, "Redirecting to #{@partner.name} – BonID" %>
+<% content_for :title, "Returning to #{@partner.name} – BonID" %>
 <% content_for :head do %>
   <meta http-equiv="refresh" content="<%= @handoff_delay %>;url=<%= @redirect_url %>">
 <% end %>
@@ -19,25 +19,18 @@
         </div>
       <% end %>
 
-      <h1 class="h4 fw-bold mb-2">Redirecting you to <%= @partner.name %></h1>
-      <p class="text-muted mb-4">
-        You've already approved <strong><%= @partner.name %></strong>, so there's nothing else to confirm.
-      </p>
+      <h1 class="h5 fw-bold mb-1">Returning to <%= @partner.name %></h1>
+      <p class="text-muted small mb-4">You already approved access.</p>
 
       <div class="spinner-border mb-4" role="status" style="color:var(--haitian-blue);">
-        <span class="visually-hidden">Redirecting…</span>
+        <span class="visually-hidden">Returning…</span>
       </div>
 
-      <div>
-        <%= link_to "Continue to #{@partner.name}", @redirect_url,
-              class: "btn btn-primary btn-lg w-100",
-              style: "min-height:48px;",
-              data: { turbo: false },
-              rel: "noreferrer" %>
-      </div>
-      <p class="small text-muted mt-3 mb-0">
-        Changed your mind? You can revoke <%= @partner.name %>'s access anytime from your BonID dashboard.
-      </p>
+      <%= link_to "Continue", @redirect_url,
+            class: "btn btn-primary btn-lg w-100",
+            style: "min-height:48px;",
+            data: { turbo: false },
+            rel: "noreferrer" %>
     </div>
   </div>
 </section>
