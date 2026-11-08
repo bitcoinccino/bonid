@@ -47,7 +47,7 @@ module Api
             format.html { render :approve_consent }
             format.json do
               render json: {
-                message: "Consent #{params[:decision]}ed successfully",
+                message: "Consent #{params[:decision] == "approve" ? "approved" : "rejected"} successfully",
                 status: @grant.status,
                 partner: @grant.partner.name
               }, status: :ok

@@ -2,8 +2,7 @@
 module Api
   module V1
     class WebhooksController < Api::V1::BaseController
-      # skip_before_action :verify_authenticity_token
-      before_action :authenticate_api_key!
+      # Auth: Api::V1::BaseController#authenticate_partner_or_token!
 
       # POST /api/v1/webhooks
       def create

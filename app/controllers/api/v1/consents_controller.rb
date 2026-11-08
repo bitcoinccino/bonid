@@ -86,10 +86,10 @@ module Api
         return nil if api_key.blank?
 
         sha_digest = Digest::SHA256.hexdigest(api_key)
-        partner = Partner.find_by(api_key_digest: sha_digest)
+        partner = ::Partner.find_by(api_key_digest: sha_digest)
 
         if partner.nil?
-          partner = Partner.where.not(api_key_digest: nil).detect do |p|
+          partner = ::Partner.where.not(api_key_digest: nil).detect do |p|
             digest = p.api_key_digest.to_s
             next false if digest.blank?
             next false unless digest.start_with?("$2")
