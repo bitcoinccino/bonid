@@ -4,6 +4,9 @@
 class TransactionConsentReminderJob < ApplicationJob
   queue_as :default
 
+  # Arguments carry raw OTPs / SMS bodies containing codes — never log them.
+  self.log_arguments = false
+
   def perform(consent_id, otp)
     consent = TransactionConsent.find_by(id: consent_id)
     return unless consent&.pending?
