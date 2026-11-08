@@ -1,22 +1,25 @@
 # frozen_string_literal: true
 
 # Validates Haitian CIN (Carte d'Identification Nationale) numbers
-# and passport numbers based on official ONI formats.
+# and passport numbers.
 #
-# As of January 2026 the ONI mandates the 10-digit NINU (Numéro
-# d'Identification National Unique) for all passport applications,
-# renewals, and identification flows. Older 14- and 17-digit CINs are
-# no longer accepted — citizens still holding them must request a NINU
-# from ONI before submitting through BonID.
+# CIN: either the number printed on the CIN card (9 letters/digits,
+# e.g. T1K2N8697 — the format the profile form shows as its example) or
+# the 10-digit NINU (Numéro d'Identification National Unique).
 #
 # Passport: 6-9 alphanumeric characters
 #
 class CinNumberValidator
-  # NINU — 10-digit Numéro d'Identification National Unique (ONI 2018+).
+  # NINU — 10-digit Numéro d'Identification National Unique.
   NINU_FORMAT = /\A\d{10}\z/
+
+  # Number printed on the CIN card — 9 letters/digits (e.g. T1K2N8697).
+  CIN_CARD_FORMAT = /\A[A-Z0-9]{9}\z/i
 
   # Haitian passport — alphanumeric, 6–9 characters
   PASSPORT_FORMAT = /\A[A-Z0-9]{6,9}\z/i
+
+  CIN_ERROR = "Nimewo CIN pa valid. Antre nimewo ki sou kat CIN ou (egz. T1K2N8697) oswa NINU 10 chif ou."
 
   # Validate a document number against the expected format for the given ID type.
   # Strips dashes and spaces before checking.
@@ -27,7 +30,7 @@ class CinNumberValidator
 
     case id_type.to_s
     when "cin"
-      cleaned.match?(NINU_FORMAT)
+      cleaned.match?(NINU_FORMAT) || cleaned.match?(CIN_CARD_FORMAT)
     when "passport"
       cleaned.match?(PASSPORT_FORMAT)
     else
@@ -37,17 +40,22 @@ class CinNumberValidator
 
   # Returns a human-readable label for the CIN generation.
   def self.format_label(number)
-    return "Unknown" if number.blank?
-
-    cleaned = normalize(number)
-    cleaned.length == 10 ? "NINU (10 chif)" : "Enkoni"
+    case generation(number)
+    when :ninu then "NINU (10 chif)"
+    when :cin_card then "Kat CIN (9 karaktè)"
+    else number.blank? ? "Unknown" : "Enkoni"
+    end
   end
 
   # Returns the CIN generation as a symbol for programmatic use.
   def self.generation(number)
     return nil if number.blank?
+
     cleaned = normalize(number)
-    cleaned.length == 10 ? :ninu : nil
+    return :ninu if cleaned.match?(NINU_FORMAT)
+    return :cin_card if cleaned.match?(CIN_CARD_FORMAT)
+
+    nil
   end
 
   # Strip dashes, spaces, and dots from the number.

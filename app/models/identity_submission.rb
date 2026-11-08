@@ -580,7 +580,7 @@ end
     unless CinNumberValidator.valid?(document_number, id_type)
       case id_type
       when "cin"
-        errors.add(:document_number, "Nimewo CIN pa valid. NINU dwe gen 10 chif egzakteman.")
+        errors.add(:document_number, CinNumberValidator::CIN_ERROR)
       when "passport"
         errors.add(:document_number, "Nimewo paspò pa valid. Dwe gen 6–9 karaktè.")
       end
