@@ -23,6 +23,18 @@ FactoryBot.define do
     public_qr_png_base64 { "data:image/png;base64,fake_qr_base64" }
     secure_qr_png_base64 { "data:image/png;base64,fake_secure_qr_base64" }
 
+    # CIN submissions require front + back images (id_document_must_be_attached).
+    after(:build) do |submission|
+      next unless submission.id_type.to_s == "cin"
+
+      png = Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+      %i[cin_front cin_back].each do |side|
+        next if submission.public_send(side).attached?
+
+        submission.public_send(side).attach(io: StringIO.new(png), filename: "#{side}.png", content_type: "image/png")
+      end
+    end
+
     trait :pending do
       status { :pending }
       verified_at { nil }
