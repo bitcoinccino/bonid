@@ -31,6 +31,11 @@ module Citizens
     # OTP (Passwordless) Login Flow
     # =========================================================
     def otp_sign_in
+      # Already signed in (e.g. browser Back into the login page after an
+      # OAuth handoff) → don't ask for another OTP. Resume a live partner
+      # handoff if there is one, otherwise go to the dashboard.
+      return redirect_to after_sign_in_path_for(current_citizen) if citizen_signed_in?
+
       partner_slug = params[:from_partner] || params[:partner_slug]
       session[:login_source] = partner_slug.present? ? "partner:#{partner_slug}" : "citizen_portal"
       session[:pending_partner_slug] = partner_slug if partner_slug.present?
