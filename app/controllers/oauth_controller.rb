@@ -81,7 +81,7 @@ class OauthController < ApplicationController
         }
         redirect_params[:code] = auth_code if auth_code
         redirect_url = build_redirect_url(@redirect_uri, redirect_params)
-        return redirect_to redirect_url, allow_other_host: true
+        return render_partner_handoff(redirect_url)
       end
 
       # Otherwise show consent screen
@@ -148,7 +148,7 @@ class OauthController < ApplicationController
       redirect_params[:code] = auth_code if auth_code
       redirect_url = build_redirect_url(redirect_uri, redirect_params)
 
-      return redirect_to redirect_url, allow_other_host: true
+      return render_partner_handoff(redirect_url)
     end
 
     # Detect scope upgrade: existing grant covers some but not all requested scopes
@@ -692,6 +692,19 @@ class OauthController < ApplicationController
     end
 
     nil
+  end
+
+  # Already-approved partner: show a brief "redirecting you to <partner>"
+  # page instead of bouncing silently. A meta refresh does the hop so it
+  # works without JS; the page carries a one-time auth code, so no caching.
+  HANDOFF_DELAY_SECONDS = 2
+
+  def render_partner_handoff(redirect_url)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    @redirect_url  = redirect_url
+    @handoff_delay = HANDOFF_DELAY_SECONDS
+    render :handoff
   end
 
   def render_error(msg)
