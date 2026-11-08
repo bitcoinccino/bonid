@@ -19,7 +19,7 @@ RSpec.describe "Citizens::Activity", type: :request do
     Devise.mappings[:user] = Devise.mappings[:citizen]
   end
 
-  let!(:citizen)      { create(:user) }
+  let!(:citizen)      { create(:user, :with_address) }
   let!(:other_partner) { create(:partner) }
 
   before { sign_in citizen, scope: :citizen }
@@ -134,21 +134,21 @@ RSpec.describe "Citizens::Activity", type: :request do
 
     it "sessions tab renders session rows and no consent rows" do
       get citizens_activity_path, params: { tab: "sessions" }
-      expect(response.body).to include("Ou konekte sou BonID ou")
+      expect(activity_body).to include("Ou konekte sou BonID ou")
                           .or  include("Nouvo aparèy konekte sou BonID ou")
-      expect(response.body).not_to include("Ou bay") # consent-approved phrasing
+      expect(activity_body).not_to include("Ou bay") # consent-approved phrasing
     end
 
     it "consents tab renders consent rows and no session rows" do
       get citizens_activity_path, params: { tab: "consents" }
-      expect(response.body).to include("Ou bay")
-      expect(response.body).not_to include("konekte sou BonID")
+      expect(activity_body).to include("Ou bay")
+      expect(activity_body).not_to include("konekte sou BonID")
     end
 
     it "sessions tab renders empty state + period hint when the filter masks all sessions" do
       get citizens_activity_path, params: { tab: "sessions", filter: "administrative" }
-      expect(response.body).to include("Okenn koneksyon poko anrejistre")
-      expect(response.body).to include("Agrandi peryòd la")
+      expect(activity_body).to include("Okenn koneksyon poko anrejistre")
+      expect(activity_body).to include("Agrandi peryòd la")
     end
   end
 
@@ -160,16 +160,16 @@ RSpec.describe "Citizens::Activity", type: :request do
     it "session rows include IP + device + Haitian Creole field labels" do
       make_session(at: 1.hour.ago, ip: "190.115.190.42")
       get citizens_activity_path, params: { tab: "sessions" }
-      expect(response.body).to include("190.115.190.42")
-      expect(response.body).to include("Aparèy")
-      expect(response.body).to include("Adrès IP")
+      expect(activity_body).to include("190.115.190.42")
+      expect(activity_body).to include("Aparèy")
+      expect(activity_body).to include("Adrès IP")
     end
 
     it "consent rows include scope labels, not session fields" do
       make_consent(at: 2.hours.ago)
       get citizens_activity_path, params: { tab: "consents" }
-      expect(response.body).to include("Aksè mande")
-      expect(response.body).not_to include("Adrès IP")
+      expect(activity_body).to include("Aksè mande")
+      expect(activity_body).not_to include("Adrès IP")
     end
   end
 
@@ -191,6 +191,14 @@ RSpec.describe "Citizens::Activity", type: :request do
     return nil unless tab
     count = tab.at_css(".activity-tab-count")
     count&.text&.strip
+  end
+
+  # Page HTML without the topbar notifications dropdown, which lists recent
+  # events of every type on every page.
+  def activity_body
+    doc = Nokogiri::HTML(response.body)
+    doc.css("[aria-label^=\"Notifikasyon\"]").each { |bell| bell.parent.css("ul.dropdown-menu").remove }
+    doc.to_html
   end
 
   def session_pill(html);  pill_count_for(html, "Koneksyon"); end

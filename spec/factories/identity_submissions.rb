@@ -49,7 +49,7 @@ FactoryBot.define do
 
     trait :rejected do
       status { :rejected }
-      rejection_reason { "blurry_id" }
+      rejection_reason { "blurry_documents" }
     end
 
     trait :reissue do

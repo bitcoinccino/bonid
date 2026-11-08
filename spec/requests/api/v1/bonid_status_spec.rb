@@ -2,27 +2,11 @@
 
 require "rails_helper"
 
-RSpec.describe "Api::V1::BonidStatus", type: :request do
-  let!(:partner) do
-    Partner.create!(
-      name: "BonID Partner",
-      verified_at: Time.current,
-      active: true,
-      api_key_digest: BCrypt::Password.create("test_api_key")
-    )
-  end
+RSpec.describe "Api::V1::BonidStatus", type: :request, real_auth: true do
+  let!(:partner) { create(:partner, verified_at: Time.current, active: true, raw_api_key: "test_api_key") }
 
   let(:headers) { { "X-Partner-Api-Key" => "test_api_key", "Content-Type" => "application/json" } }
 
-  before do
-    allow_any_instance_of(Api::V1::BonidStatusController)
-      .to receive(:authenticate_api_key!)
-      .and_return(true)
-    allow_any_instance_of(Api::V1::BonidStatusController)
-      .to receive(:instance_variable_get)
-      .with(:@current_partner)
-      .and_return(partner)
-  end
 
   describe "GET /api/v1/bonid_status" do
     context "when BonID exists and is approved" do
@@ -34,7 +18,7 @@ RSpec.describe "Api::V1::BonidStatus", type: :request do
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
         expect(json["bonid"]).to eq(user.bonid)
-        expect(json["status"]).to eq("approved")
+        expect(json["status"]).to eq("verified")
       end
     end
 

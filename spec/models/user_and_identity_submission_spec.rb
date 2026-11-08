@@ -34,7 +34,7 @@ RSpec.describe "User & IdentitySubmission Factories", type: :model do
     end
 
     it "creates an approved submission" do
-      submission = create(:identity_submission)
+      submission = create(:identity_submission, :approved)
       expect(submission.status).to eq("approved")
       expect(submission.verified_at).not_to be_nil
     end
@@ -42,7 +42,7 @@ RSpec.describe "User & IdentitySubmission Factories", type: :model do
     it "creates a rejected submission" do
       submission = create(:identity_submission, :rejected)
       expect(submission.status).to eq("rejected")
-      expect(submission.rejection_reason).to eq("blurry_id")
+      expect(submission.rejection_reason).to eq("blurry_documents")
     end
   end
 

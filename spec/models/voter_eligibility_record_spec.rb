@@ -6,12 +6,12 @@ RSpec.describe VoterEligibilityRecord, type: :model do
   # ── Associations ──────────────────────────────────────────────
   describe "associations" do
     it { is_expected.to belong_to(:bonvote_election) }
-    it { is_expected.to belong_to(:user) }
+    it { is_expected.to belong_to(:user).optional } # analog (CIN-only) voters have no BonID user
   end
 
   # ── Validations ──────────────────────────────────────────────
   describe "validations" do
-    it { is_expected.to validate_presence_of(:bonid) }
+    it { is_expected.to allow_value(nil).for(:bonid) } # analog voters registered by a clerk
     it { is_expected.to validate_presence_of(:department_code) }
     it { is_expected.to validate_presence_of(:status) }
     it { is_expected.to validate_inclusion_of(:status).in_array(%w[eligible ineligible suspended]) }

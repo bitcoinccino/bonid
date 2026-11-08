@@ -22,8 +22,8 @@ RSpec.describe RoleRedirectService, type: :service do
       expect(described_class.redirect_path_for(partner_admin)).to eq("/partner_portal/dashboard")
     end
 
-    it "redirects citizens to /citizens/verification_records" do
-      expect(described_class.redirect_path_for(citizen)).to eq("/citizens/verification_records")
+    it "redirects citizens to /citizens/dashboard" do
+      expect(described_class.redirect_path_for(citizen)).to eq("/citizens/dashboard")
     end
 
     it "redirects reviewers to /admin/identity_submissions" do

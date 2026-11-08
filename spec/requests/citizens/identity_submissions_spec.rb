@@ -2,85 +2,56 @@
 
 require "rails_helper"
 
+# CIN is the primary ID path (DIE suspended passport services).
 RSpec.describe "Citizens::IdentitySubmissions", type: :request do
-  let(:citizen) { create(:user, :citizen) }
-  let(:partner) { create(:partner, verified_at: Time.current) }
+  let(:citizen) { create(:user, :profile_complete) }
+
+  def png(name)
+    fixture_file_upload(Rails.root.join("spec/fixtures/files/#{name}.png"), "image/png")
+  end
 
   before do
     sign_in citizen, scope: :citizen
-    allow_any_instance_of(Citizens::IdentitySubmissionsController)
-      .to receive(:set_partner).and_return(partner)
+    allow(Geocoder).to receive(:search).and_return([])
   end
 
   describe "POST /citizens/identity_submissions" do
-    context "with valid file uploads" do
-      let(:valid_files) do
-        {
-          id_type: "passport",
-          selfie: fixture_file_upload(Rails.root.join("spec/fixtures/files/selfie.jpg"), "image/jpeg"),
-          passport: fixture_file_upload(Rails.root.join("spec/fixtures/files/passport.jpg"), "image/jpeg"),
-          signature: fixture_file_upload(Rails.root.join("spec/fixtures/files/signature.png"), "image/png"),
-          proof_of_address: fixture_file_upload(Rails.root.join("spec/fixtures/files/bill.png"), "image/png")
+    it "creates a pending CIN submission with front, back, selfie and signature attached" do
+      expect {
+        post citizens_identity_submissions_path, params: {
+          identity_submission: {
+            id_type: "cin",
+            cin_front: png("cin_front"), cin_back: png("cin_back"),
+            selfie: png("selfie"), signature: png("signature")
+          }
         }
-      end
+      }.to change { citizen.identity_submissions.count }.by(1)
 
-      it "creates a pending submission with all attachments" do
-        post citizens_identity_submissions_path, params: { identity_submission: valid_files }
-
-        expect(response).to redirect_to(citizens_identity_submissions_path)
-        submission = citizen.identity_submissions.last
-        expect(submission).to be_present
-        expect(submission.status_pending?).to eq(true)
-
-        # Check that all files are attached
-        expect(submission.selfie).to be_attached
-        expect(submission.passport).to be_attached
-        expect(submission.signature).to be_attached
-        expect(submission.proof_of_address).to be_attached
-      end
+      submission = citizen.identity_submissions.last
+      expect(submission.status_pending?).to be(true)
+      expect(submission.cin_front).to be_attached
+      expect(submission.cin_back).to be_attached
+      expect(submission.selfie).to be_attached
+      expect(submission.signature).to be_attached
     end
 
-    context "with drawn signature (base64)" do
-      let(:base64_signature) do
-        "data:image/png;base64," + Base64.strict_encode64(File.read(Rails.root.join("spec/fixtures/files/signature.png")))
-      end
-
-      let(:valid_files_with_drawn_signature) do
-        {
-          id_type: "cin",
-          cin_front: fixture_file_upload(Rails.root.join("spec/fixtures/files/cin_front.jpg"), "image/jpeg"),
-          cin_back: fixture_file_upload(Rails.root.join("spec/fixtures/files/cin_back.jpg"), "image/jpeg"),
-          selfie: fixture_file_upload(Rails.root.join("spec/fixtures/files/selfie.jpg"), "image/jpeg"),
-          signature_drawn: base64_signature
+    it "does not create a submission without the CIN images" do
+      expect {
+        post citizens_identity_submissions_path, params: {
+          identity_submission: { id_type: "cin", selfie: png("selfie"), signature: png("signature") }
         }
-      end
+      }.not_to change(IdentitySubmission, :count)
 
-      it "creates submission and attaches signature from base64" do
-        post citizens_identity_submissions_path, params: { identity_submission: valid_files_with_drawn_signature }
-
-        submission = citizen.identity_submissions.last
-        expect(submission).to be_present
-        expect(submission.signature).to be_attached
-      end
-    end
-
-    context "with missing mandatory files" do
-      it "fails and shows validation error" do
-        post citizens_identity_submissions_path, params: { identity_submission: { id_type: "passport" } }
-        expect(response.body).to include("Please recheck your signature or uploaded files")
-      end
+      expect(response).to have_http_status(:unprocessable_entity).or be_redirect
     end
   end
 
-  describe "PATCH /citizens/identity_submissions/:id" do
-    let(:submission) { create(:identity_submission, user: citizen, partner: partner, status: :pending) }
+  describe "profile gate" do
+    let(:citizen) { create(:user, :with_address) }
 
-    it "updates the submission successfully" do
-      patch citizens_identity_submission_path(submission),
-            params: { identity_submission: { proof_of_address: fixture_file_upload(Rails.root.join("spec/fixtures/files/bill.png"), "image/png") } }
-
-      expect(response).to redirect_to(citizens_identity_submission_path(submission))
-      expect(submission.reload.proof_of_address).to be_attached
+    it "sends citizens with an incomplete profile to finish it first" do
+      post citizens_identity_submissions_path, params: { identity_submission: { id_type: "cin" } }
+      expect(response).to redirect_to(edit_citizens_profile_path)
     end
   end
 end

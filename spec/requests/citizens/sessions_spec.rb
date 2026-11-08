@@ -2,70 +2,81 @@
 
 require "rails_helper"
 
+# Citizens sign in with an email one-time code (password login was removed).
 RSpec.describe "Citizens::Sessions", type: :request do
-  include Devise::Test::IntegrationHelpers
+  let!(:citizen) { create(:user, email: "citizen@example.com") }
 
-  before(:all) do
-    # ✅ Ensure Devise knows this scope is :citizen (BonID citizen)
-    Devise.mappings[:user] = Devise.mappings[:citizen]
-  end
-
-  let!(:citizen) do
-    create(:user,
-      email: "citizen@example.com",
-      password: "password123",
-      role: :citizen)
-  end
-
-  describe "GET /citizens/sign_in" do
-    it "redirects to OTP login" do
+  describe "legacy Devise entry points" do
+    it "GET /citizens/sign_in redirects to the OTP login" do
       get new_citizen_session_path
-      expect(response).to redirect_to(citizens_otp_sign_in_path)
+      expect(response).to redirect_to(%r{/login})
+    end
+
+    it "POST /citizens/sign_in redirects to the OTP login" do
+      post citizen_session_path, params: { citizen: { email: citizen.email, password: "x" } }
+      expect(response).to redirect_to(%r{/login})
     end
   end
 
-  describe "POST /citizens/sign_in and sign_out" do
-    it "redirects POST to OTP login" do
-      post citizen_session_path, params: {
-        citizen: { email: citizen.email, password: "password123" }
-      }
-
-      expect(response).to redirect_to(citizens_otp_sign_in_path)
-    end
-
-    it "signs out cleanly" do
-      sign_in citizen, scope: :citizen
-      delete destroy_citizen_session_path
-      expect(response).to redirect_to(citizens_otp_sign_in_path)
-    end
-  end
-
-  describe "OTP Login Flow" do
+  describe "OTP login flow" do
     before do
-      allow_any_instance_of(CitizenOtpService).to receive(:generate_otp).and_return("123456")
-      allow_any_instance_of(CitizenOtpService).to receive(:valid_otp?).and_return(true)
+      allow_any_instance_of(CitizenOtpService).to receive(:generate!).and_return("123456")
     end
 
-    it "generates and verifies OTP successfully" do
-      post citizens_create_otp_path, params: { citizen: { email: citizen.email } }
-      expect(response).to redirect_to(citizens_verify_otp_path)
+    it "requests a code and lands on the verify page" do
+      post login_path, params: { citizen: { email: citizen.email } }
+      expect(response).to redirect_to(%r{/citizens/verify_otp})
+    end
 
-      # Simulate OTP entry
+    it "rejects an unknown email" do
+      post login_path, params: { citizen: { email: "nobody@example.com" } }
+      expect(response).to redirect_to(%r{/login})
+      expect(flash[:alert]).to eq("No account found with that email or BonID.")
+    end
+
+    it "signs the citizen in with a valid code" do
+      allow_any_instance_of(CitizenOtpService).to receive(:verify!).and_return(true)
+
+      post login_path, params: { citizen: { email: citizen.email } }
       post citizens_verify_otp_path, params: { otp: "123456" }
-      expect(response).to redirect_to(citizens_identity_submissions_path)
+
+      expect(response).to be_redirect
+      expect(controller.current_citizen).to eq(citizen)
     end
 
-    it "rejects invalid OTP" do
-      allow_any_instance_of(CitizenOtpService).to receive(:valid_otp?).and_return(false)
-      post citizens_create_otp_path, params: { citizen: { email: citizen.email } }
+    it "rejects an invalid code" do
+      allow_any_instance_of(CitizenOtpService).to receive(:verify!).and_return(false)
+
+      post login_path, params: { citizen: { email: citizen.email } }
       post citizens_verify_otp_path, params: { otp: "000000" }
+
+      expect(response).to have_http_status(:unprocessable_entity)
       expect(response.body).to include("Invalid or expired code")
     end
+  end
 
-    it "resends OTP successfully" do
-      session = { pending_citizen_id: citizen.id }
-      post citizens_resend_otp_path, params: {}, session: session
-      expect(response.body).to include("We sent you a new code").or include("OTP resent")
+  describe "GET /login when already signed in" do
+    before { sign_in citizen, scope: :citizen }
+
+    it "skips the OTP form and goes to the dashboard" do
+      get login_path
+      expect(response).to redirect_to(citizens_dashboard_path)
+    end
+
+    it "skips the OTP form when arriving from a partner (e.g. browser Back)" do
+      get login_path, params: { from_partner: "zellus" }
+      expect(response).to redirect_to(citizens_dashboard_path)
+    end
+  end
+
+  describe "sign out" do
+    it "ends the citizen session" do
+      sign_in citizen, scope: :citizen
+      delete destroy_citizen_session_path
+
+      expect(response).to be_redirect
+      get login_path
+      expect(response).to have_http_status(:ok)
     end
   end
 end

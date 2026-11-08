@@ -246,14 +246,12 @@ RSpec.describe "BonID → VoterEligibilityRecord Handoff", type: :model do
       expect(record.ineligibility_reason).to eq("expired_id")
     end
 
-    it "rejects user with no BonID" do
+    it "records a user with no BonID as ineligible (no_cin)" do
       user = create(:user, :domestic, dob: 25.years.ago, bonid: nil)
 
-      # bonid is blank so register_voter! sets ineligible, but
-      # validation still requires bonid presence — save! raises
-      expect {
-        VoterEligibilityRecord.register_voter!(election: election, user: user)
-      }.to raise_error(ActiveRecord::RecordInvalid, /Bonid/)
+      record = VoterEligibilityRecord.register_voter!(election: election, user: user)
+      expect(record.status).to eq("ineligible")
+      expect(record.ineligibility_reason).to eq("no_cin")
     end
   end
 
