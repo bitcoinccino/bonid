@@ -62,7 +62,7 @@ RSpec.describe "OAuth Consent Flow", type: :request do
       authorize!
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Redirecting you to Unibank")
+      expect(response.body).to include("Returning to Unibank")
       expect(response.headers["Cache-Control"]).to include("no-store")
 
       refresh = response.body[/<meta http-equiv="refresh" content="(\d+);url=([^"]+)"/, 2]
