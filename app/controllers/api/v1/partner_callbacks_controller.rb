@@ -22,7 +22,7 @@ module Api
       # ===========================================
       def revoke_token
         token_value = request.headers["Authorization"]&.split&.last || params[:token]
-        token = OAuthAccessToken.find_by(token: token_value)
+        token = OauthAccessToken.find_by(token: token_value)
         if token&.revoked?
           render json: { status: "already_revoked" }, status: :ok
         elsif token
@@ -36,7 +36,7 @@ module Api
       private
 
       def refresh_flow
-        token = OAuthAccessToken.find_by(refresh_token: params[:refresh_token])
+        token = OauthAccessToken.find_by(refresh_token: params[:refresh_token])
         return render json: { error: "Invalid refresh_token" }, status: :unauthorized unless token&.active?
 
         token.refresh!

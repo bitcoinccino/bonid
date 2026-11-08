@@ -66,23 +66,12 @@ module Api
       # 🔒 Partner API-key auth (SHA256 digest, bcrypt supported)
       # ============================================================
       def authenticate_partner!
-        return true if Rails.env.test?
-
         header_key = request.headers["X-Partner-Api-Key"].to_s.strip
         return render_unauthorized("Missing API key") if header_key.blank?
 
         # Fast path: SHA256 digest lookup (your current dev setup)
         sha_digest = Digest::SHA256.hexdigest(header_key)
         @partner = ::Partner.find_by(api_key_digest: sha_digest)
-
-        # Debug: log digest comparison
-        if @partner.nil?
-          Rails.logger.warn("[API AUTH DEBUG] SHA256 of received key: #{sha_digest}")
-          all_digests = ::Partner.where.not(api_key_digest: nil).pluck(:id, :name, :api_key_digest)
-          all_digests.each do |id, name, stored|
-            Rails.logger.warn("[API AUTH DEBUG] Partner ##{id} (#{name}) stored digest: #{stored[0..15]}... (len=#{stored.length})")
-          end
-        end
 
         # Slow fallback: bcrypt digests (only if you have any)
         if @partner.nil?
@@ -181,6 +170,8 @@ module Api
           end
         end
 
+        # Subclasses (bonid_status, webhooks, ...) read @current_partner.
+        @current_partner ||= @partner
         Current.partner = @partner
         Current.request = request
       rescue => e

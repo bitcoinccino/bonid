@@ -2,7 +2,7 @@
 module Api
   module V1
     class QrScansController < Api::V1::BaseController
-      before_action :authenticate_api_key!
+      # Auth: Api::V1::BaseController#authenticate_partner_or_token!
 
       # POST /api/v1/qr_scan
       def create
