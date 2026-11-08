@@ -81,7 +81,6 @@ class OauthController < ApplicationController
         }
         redirect_params[:code] = auth_code if auth_code
         redirect_url = build_redirect_url(@redirect_uri, redirect_params)
-        flash[:notice] = "You have already verified. You are now being redirected to #{@partner.name}."
         return redirect_to redirect_url, allow_other_host: true
       end
 
@@ -149,7 +148,6 @@ class OauthController < ApplicationController
       redirect_params[:code] = auth_code if auth_code
       redirect_url = build_redirect_url(redirect_uri, redirect_params)
 
-      flash[:notice] = "You have already verified. You are now being redirected to #{@partner.name}."
       return redirect_to redirect_url, allow_other_host: true
     end
 
