@@ -11,6 +11,9 @@
 class SendSmsJob < ApplicationJob
   queue_as :default
 
+  # Arguments carry raw OTPs / SMS bodies containing codes — never log them.
+  self.log_arguments = false
+
   # DeliveryError retries are bounded — SMS receipts are time-sensitive
   # and a permanent provider failure shouldn't hog the queue. Provider
   # ConfigurationError is NOT retried (the operator needs to fix creds).
