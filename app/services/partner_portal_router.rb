@@ -12,13 +12,11 @@ class PartnerPortalRouter
       partner = resource.partner
       return fallback_path unless partner
 
+      # Only law enforcement has a dedicated dashboard; every other sector
+      # (banking, embassy, ...) uses the shared partner portal root.
       case partner.sector&.to_s&.downcase
       when "law_enforcement"
         Rails.application.routes.url_helpers.partner_portal_law_enforcement_dashboard_path
-      when "embassy"
-        Rails.application.routes.url_helpers.partner_portal_embassy_dashboard_path
-      when "bank", "banking"
-        Rails.application.routes.url_helpers.partner_portal_banking_dashboard_path
       else
         fallback_path
       end

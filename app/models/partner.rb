@@ -125,7 +125,7 @@ class Partner < ApplicationRecord
   before_validation :set_default_oauth_scopes, on: :create
   before_validation :set_default_transaction_types, on: :create
   before_validation :ensure_default_redirect_uri, if: -> { redirect_uris.present? }
-  before_create :generate_api_key_pair, unless: -> { Rails.env.test? }
+  before_create :generate_api_key_pair, if: -> { api_key_digest.blank? }
   # When a partner is approved, mark its originating waitlist lead converted.
   after_save :mark_waitlist_lead_converted, if: :saved_change_to_status?
   before_create :generate_email_verification_token
