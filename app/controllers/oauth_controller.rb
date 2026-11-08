@@ -248,6 +248,7 @@ class OauthController < ApplicationController
     end
 
     redirect_url = build_redirect_url(redirect_uri, redirect_params)
+    end_partner_only_session!
 
     respond_to do |format|
       format.html { redirect_to redirect_url, allow_other_host: true }
@@ -700,11 +701,22 @@ class OauthController < ApplicationController
   HANDOFF_DELAY_SECONDS = 2
 
   def render_partner_handoff(redirect_url)
+    end_partner_only_session!
     response.headers["Cache-Control"] = "no-store"
     response.headers["Referrer-Policy"] = "no-referrer"
     @redirect_url  = redirect_url
     @handoff_delay = HANDOFF_DELAY_SECONDS
     render :handoff
+  end
+
+  # Like ID.me: a BonID login that started from a partner ends when the
+  # citizen is handed back, so a shared phone isn't left signed in to BonID.
+  # Citizens who were already signed in before the partner sent them keep
+  # their session.
+  def end_partner_only_session!
+    return unless session.delete(:partner_only_session)
+
+    sign_out(:citizen)
   end
 
   def render_error(msg)
