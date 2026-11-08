@@ -14,13 +14,6 @@ is_edit         = submission.persisted?
     the citizen advances past the first panel. %>
 <div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Back link — escape hatch back to submissions list ── %>
-  <div class="ballot-back-bar">
-    <%= link_to citizens_identity_submissions_path, class: "ballot-back-link" do %>
-      <i class="ri-arrow-left-line"></i>
-    <% end %>
-  </div>
-
   <div class="complaint-form-wrapper">
     <%= simple_form_for [:citizens, submission],
         html: { class: "needs-validation", novalidate: true, multipart: true,
@@ -177,6 +170,12 @@ is_edit         = submission.persisted?
           <div class="card-body p-4">
 
             <div class="ballot-section-head mb-4">
+              <%# Always-visible way back: the liveness box fills the viewport,
+                  pushing the bottom Back button off screen on phones. %>
+              <button type="button" class="btn btn-link p-0 mb-2 text-decoration-none small"
+                      data-action="wizard#previous">
+                <i class="ri-arrow-left-line me-1"></i> Back
+              </button>
               <h2 class="ballot-section-title">Face Verification</h2>
               <p class="ballot-section-desc mb-0">
                 <% if @skip_liveness %>
