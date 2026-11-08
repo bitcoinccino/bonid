@@ -539,8 +539,10 @@ end
         session[:liveness_created_at] = Time.current.to_i
         render json: { session_id: result[:session_id] }
       else
+        # Raw AWS error stays in the log; citizens get a plain message.
         Rails.logger.error "[LivenessSession] Failed: #{result[:error]}"
-        render json: { error: result[:error] || "Failed to create liveness session" }, status: :service_unavailable
+        render json: { error: "Verifikasyon figi a pa disponib kounye a. Tanpri eseye ankò pita." },
+               status: :service_unavailable
       end
     end
 
