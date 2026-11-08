@@ -14,11 +14,11 @@
   --nav-text: #0F172A;
   --nav-muted: #475569;
 
-  /* NEW: dark navbar text tokens */
-  --nav-on-dark: rgba(255, 255, 255, 0.92);
-  --nav-on-dark-muted: rgba(255, 255, 255, 0.72);
-  --nav-on-dark-border: rgba(255, 255, 255, 0.14);
-  --nav-on-dark-hover: rgba(255, 255, 255, 0.10);
+  /* White navbar text tokens */
+  --nav-link: #0F172A;
+  --nav-link-hover: var(--haitian-blue, #00209F);
+  --nav-border: rgba(15, 23, 42, 0.10);
+  --nav-hover-bg: rgba(0, 32, 159, 0.06);
 }
 
 /* Note: --haitian-blue, --haitian-red, --palm-green
@@ -30,26 +30,19 @@
 .bonid-navbar {
   padding: 0.9rem 1rem !important;
 
-  /* Match the hero's gradient so the navbar bleeds seamlessly into the
-     hero panel below it. Same direction (135deg) and same stops as
-     .hero-section in home/_hero.scss. */
-  background: linear-gradient(
-    135deg,
-    var(--haitian-blue, #00209F) 0%,
-    var(--haiti-space, #001b7a) 75%
-  ) !important;
-
-  border-bottom: none;
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--nav-border);
+  box-shadow: 0 1px 8px rgba(15, 23, 42, 0.04);
   font-family: "Inter", sans-serif;
   z-index: 1050;
 }
 
-/* ✅ Make all links readable on dark gradient */
+/* Links on the white navbar */
 .bonid-navbar .navbar-nav .nav-link,
 .bonid-navbar .navbar-nav a,
 .bonid-navbar a.nav-link,
 .navbar-nav .nav-link {
-  color: var(--nav-on-dark) !important;
+  color: var(--nav-link) !important;
   padding: 0.65rem 0.75rem;
   font-weight: 600;
   font-size: 0.93rem;
@@ -61,15 +54,15 @@
 .bonid-navbar .navbar-nav a:hover,
 .bonid-navbar a.nav-link:hover,
 .navbar-nav .nav-link:hover {
-  color: #ffffff !important;
+  color: var(--nav-link-hover) !important;
   text-decoration: none !important;
   transform: translateY(-1px);
 }
 
 /* ✅ Active link state (subtle, not loud) */
 .bonid-navbar .navbar-nav .nav-link.active {
-  color: #ffffff !important;
-  background: rgba(255,255,255,0.08);
+  color: var(--nav-link-hover) !important;
+  background: var(--nav-hover-bg);
   border-radius: 999px;
 }
 
@@ -107,14 +100,21 @@ a.navbar-brand.font-orbitron:hover,
   text-decoration: none !important;
 }
 
+/* Navbar brand on the white bar (the rules above also cover the
+   footer's .font-orbitron logo, which stays white on blue). */
+.bonid-navbar a.navbar-brand.font-orbitron,
+.bonid-navbar a.navbar-brand.font-orbitron:hover {
+  color: var(--haitian-blue, #00209F) !important;
+}
+
 /****************************************/
 /*            MOBILE COLLAPSE           */
 /****************************************/
 /* Collapse panel polish on mobile/tablet */
 @media (max-width: 991.98px) {
   .bonid-navbar .navbar-collapse {
-    background: rgba(0,0,0,0.18);
-    border: 1px solid var(--nav-on-dark-border);
+    background: #ffffff;
+    border: 1px solid var(--nav-border);
     border-radius: 16px;
     padding: .75rem;
     margin-top: .75rem;
@@ -152,7 +152,7 @@ a.navbar-brand.font-orbitron:hover,
 
 /* ✅ Make the hamburger icon inherit navbar color */
 .bonid-navbar .navbar-toggler i {
-  color: #ffffff !important;
+  color: var(--haitian-blue, #00209F) !important;
   font-size: 1.6rem;
   line-height: 1;
 }
@@ -162,11 +162,11 @@ a.navbar-brand.font-orbitron:hover,
 /****************************************/
 /* Dropdown trigger polish (Products + Language) */
 .bonid-navbar .dropdown-toggle {
-  color: var(--nav-on-dark) !important;
+  color: var(--nav-link) !important;
 }
 
 .bonid-navbar .dropdown-toggle:hover {
-  color: #ffffff !important;
+  color: var(--nav-link-hover) !important;
 }
 
 /* ✅ remove forced blue icons inside navbar triggers */
@@ -204,6 +204,23 @@ a.navbar-brand.font-orbitron:hover,
 
 /* Make Products dropdown responsive on small screens */
 @media (max-width: 768px) {
+  /* While a dropdown (Products / language) is open, show only its popup:
+     hide the hamburger panel's own box and items behind it. Children can
+     override `visibility`, so the open .dropdown-menu stays visible. */
+  .bonid-navbar .navbar-collapse:has(.dropdown-menu.show) {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  .bonid-navbar .navbar-collapse:has(.dropdown-menu.show) .navbar-nav > .nav-item {
+    visibility: hidden;
+  }
+
+  .bonid-navbar .navbar-collapse .dropdown-menu.show {
+    visibility: visible;
+  }
+
   .bonid-navbar .dropdown-menu,
   .bonid-navbar .dropdown-menu.bonid-dropdown {
     min-width: auto;
@@ -328,7 +345,7 @@ a.navbar-brand.font-orbitron:hover,
 }
 
 /****************************************/
-/*           LANGUAGE PILL (DARK)        */
+/*           LANGUAGE PILL              */
 /****************************************/
 .bonid-navbar .lang-pill {
   display: inline-flex;
@@ -339,10 +356,9 @@ a.navbar-brand.font-orbitron:hover,
   padding: 0 .55rem;
   border-radius: 999px;
 
-  /* ✅ match dark navbar */
-  border: 1px solid var(--nav-on-dark-border);
-  background: rgba(255,255,255,.10);
-  color: rgba(255,255,255,.92);
+  border: 1px solid var(--nav-border);
+  background: #F8FAFC;
+  color: var(--nav-link);
 
   font-size: .85rem;
   line-height: 1;
