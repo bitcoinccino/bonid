@@ -466,10 +466,11 @@
           <i class="ri-arrow-left-line me-2"></i>Return to Permissions
         </button>
         <%# Secondary: confirm cancel (dark gray outline — de-emphasized) %>
-        <button type="button"
+        <%# form="deny-form" makes this the form's submitter, so it gets the
+            global "Processing…" state like the Allow button. %>
+        <button type="submit" form="deny-form"
                 class="btn rounded-pill fw-semibold py-2"
-                style="background:transparent;border:1px solid #cbd5e1;color:#64748b;"
-                onclick="document.getElementById('deny-form').requestSubmit();">
+                style="background:transparent;border:1px solid #cbd5e1;color:#64748b;">
           Yes, Cancel Request
         </button>
       </div>
@@ -681,35 +682,10 @@
   </div>
 <% end %>
 
-<!-- Processing Overlay -->
-<div id="processing-overlay"
-     style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;justify-content:center;align-items:center;">
-  <div class="text-center text-white">
-    <div class="spinner-border mb-3" role="status">
-      <span class="visually-hidden">Processing...</span>
-    </div>
-    <h5>Processing your decision...</h5>
-  </div>
-</div>
-
+<%# Submit feedback comes from the global "Processing…" button state in
+    application.js — no extra full-screen overlay here. %>
 <script data-turbo-eval="false">
   document.addEventListener("DOMContentLoaded", () => {
-    const approvalForm = document.querySelector(".approval-form");
-    const denyForm     = document.getElementById("deny-form");
-    const overlay      = document.getElementById("processing-overlay");
-
-    function showOverlay() {
-      if (overlay) overlay.style.display = "flex";
-    }
-
-    if (approvalForm) {
-      approvalForm.addEventListener("submit", () => showOverlay());
-    }
-
-    if (denyForm) {
-      denyForm.addEventListener("submit", () => showOverlay());
-    }
-
     // ── Initialize Bootstrap tooltips ──
     const tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
     tooltipEls.forEach(el => new bootstrap.Tooltip(el));
