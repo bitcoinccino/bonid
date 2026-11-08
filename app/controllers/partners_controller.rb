@@ -13,7 +13,7 @@ class PartnersController < ApplicationController
       sector: params[:sector]
     )
     # Attribute this application to its originating waitlist lead, if valid.
-    @partner.waitlist_signup_id = params[:lead] if params[:lead].present? && WaitlistSignup.exists?(params[:lead])
+    @partner.waitlist_signup_id = params[:lead] if params[:lead].present? && WaitlistSignup.exists?(id: params[:lead])
     @partner.build_address
   end
 

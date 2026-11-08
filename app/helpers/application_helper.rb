@@ -11,6 +11,15 @@ module ApplicationHelper
     IdpolExtrasPausable.enabled?
   end
 
+  # Current page with ?lang= swapped. Built via url_for (only_path) rather
+  # than string-joining request.path, which would turn a "//evil.com" path
+  # into an off-site link.
+  def locale_switch_path(locale)
+    url_for(request.query_parameters.merge("lang" => locale, only_path: true))
+  rescue ActionController::UrlGenerationError
+    root_path(lang: locale)
+  end
+
   # === Role Helpers ===
   def current_role
     if admin_signed_in?

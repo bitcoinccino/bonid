@@ -47,6 +47,48 @@
     {
       "fingerprint": "faf07f85200c4e6cb77c651c67d5023054b9c15b74aaf587679f7903382c83f2",
       "note": "grandfathered 2026-04-16; triage in follow-up PR (SSL Verification Bypass - High)"
+    },
+    {
+      "warning_type": "HTTP Verb Confusion",
+      "warning_code": 118,
+      "fingerprint": "0227947e0241af6442d6b93d713407ce7c23acbaadd0d3a541af3e5b39cdb990",
+      "check_name": "VerbConfusion",
+      "message": "Potential HTTP verb confusion. `HEAD` is routed like `GET` but `request.get?` will return `false`",
+      "file": "app/controllers/citizens/base_controller.rb",
+      "line": 46,
+      "link": "https://brakemanscanner.org/docs/warning_types/http_verb_confusion/",
+      "code": "session[:after_onboarding_redirect_to] = request.fullpath if request.get?",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Citizens::BaseController",
+        "method": "require_diaspora_answer!"
+      },
+      "user_input": "request.get?",
+      "confidence": "Weak",
+      "cwe_id": [
+        352
+      ],
+      "note": "Only stores the post-onboarding return path on GET; skipping HEAD is intended."
+    },
+    {
+      "warning_type": "Unmaintained Dependency",
+      "warning_code": 120,
+      "fingerprint": "d84924377155b41e094acae7404ec2e521629d86f97b0ff628e3d1b263f8101c",
+      "check_name": "EOLRails",
+      "message": "Support for Rails 8.0.5.1 ended on 2026-11-07",
+      "file": "Gemfile.lock",
+      "line": 415,
+      "link": "https://brakemanscanner.org/docs/warning_types/unmaintained_dependency/",
+      "code": null,
+      "render_path": null,
+      "location": null,
+      "user_input": null,
+      "confidence": "High",
+      "cwe_id": [
+        1104
+      ],
+      "note": "Rails 8.0 EOL 2026-11-07. Temporarily ignored for v1 launch; upgrade to Rails 8.1 after launch."
     }
   ],
   "updated": "2026-04-17T02:54:12Z",

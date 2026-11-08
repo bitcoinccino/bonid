@@ -109,7 +109,7 @@ class Partner < ApplicationRecord
             on: :create
 
   # Webhook URL must be HTTPS (when provided)
-  validates :webhook_url, format: { with: /\Ahttps:\/\//, message: "must be HTTPS" }, allow_blank: true
+  validates :webhook_url, format: { with: %r{\Ahttps://\S+\z}, message: "must be HTTPS" }, allow_blank: true
 
   # OAuth validations
   validate :validate_redirect_uri_format, if: -> { redirect_uris.present? }
