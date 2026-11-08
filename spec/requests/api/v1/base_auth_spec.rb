@@ -3,7 +3,10 @@
 require "rails_helper"
 
 RSpec.describe "API Authentication", type: :request, real_auth: true do
-  let!(:partner) { create(:partner, verified_at: Time.current, active: true, raw_api_key: "valid_api_key_123") }
+  # Unique key: the factory default ("valid_api_key_123") is shared by every
+  # factory partner, so a leftover record from another spec could match first.
+  let(:api_key) { "base-auth-#{SecureRandom.hex(8)}" }
+  let!(:partner) { create(:partner, verified_at: Time.current, active: true, raw_api_key: api_key) }
 
   let!(:citizen) { create(:user, :verified) }
 
@@ -22,7 +25,7 @@ RSpec.describe "API Authentication", type: :request, real_auth: true do
 
     context "with valid API key" do
       it "authenticates and returns 200 OK" do
-        get endpoint, headers: { "X-Partner-Api-Key" => "valid_api_key_123" }
+        get endpoint, headers: { "X-Partner-Api-Key" => api_key }
         expect(response).to have_http_status(:ok)
         expect(response.headers).to include("X-BonID-API-Version")
       end
