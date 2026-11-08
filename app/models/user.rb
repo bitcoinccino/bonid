@@ -474,7 +474,7 @@ alias name full_name
     return if defined?(CinNumberValidator) && CinNumberValidator.valid?(id_number, id_type)
 
     if id_type.to_s == "cin"
-      errors.add(:id_number, "Nimewo CIN pa valid. NINU dwe gen 10 chif egzakteman.")
+      errors.add(:id_number, CinNumberValidator::CIN_ERROR)
     else
       errors.add(:id_number, "Nimewo paspò pa valid. Dwe gen 6 a 9 karaktè (lèt oswa chif).")
     end
