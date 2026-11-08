@@ -2,9 +2,6 @@
 class PartnersController < ApplicationController
   layout "partner_portal/public"
 
-  before_action :set_partner, only: %i[show edit update destroy approve reject]
-  before_action :authenticate_admin!, only: %i[approve reject destroy edit update]
-
   def new
     # Prefill from the landing "Organization" waitlist hand-off (org/email/sector).
     @partner = Partner.new(
@@ -56,10 +53,6 @@ class PartnersController < ApplicationController
   end
 
   private
-
-  def set_partner
-    @partner = Partner.find_by(uuid: params[:uuid]) if params[:uuid].present?
-  end
 
   def partner_params
     params.require(:partner).permit(
