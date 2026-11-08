@@ -89,14 +89,6 @@ module NavbarHelper
         classes: "",
         icon: nil,
         icon_wrapper: false
-      },
-      {
-        title: t("main.navbar.join"),
-        path: home_anchor("enskri"),
-        classes: "d-flex align-items-center",
-        icon: "ri-user-add-line",
-        icon_wrapper: true,
-        data: { enskri: "citizen" }
       }
     ]
   end
