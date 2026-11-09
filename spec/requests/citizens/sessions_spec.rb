@@ -44,6 +44,24 @@ RSpec.describe "Citizens::Sessions", type: :request do
       expect(controller.current_citizen).to eq(citizen)
     end
 
+    it "greets a direct login with Welcome back!" do
+      allow_any_instance_of(CitizenOtpService).to receive(:verify!).and_return(true)
+
+      post login_path, params: { citizen: { email: citizen.email } }
+      post citizens_verify_otp_path, params: { otp: "123456" }
+
+      expect(flash[:notice]).to eq("Welcome back!")
+    end
+
+    it "does not greet a login that came from a partner" do
+      allow_any_instance_of(CitizenOtpService).to receive(:verify!).and_return(true)
+
+      post login_path, params: { citizen: { email: citizen.email }, partner_slug: "zellus" }
+      post citizens_verify_otp_path, params: { otp: "123456" }
+
+      expect(flash[:notice]).not_to eq("Welcome back!")
+    end
+
     it "rejects an invalid code" do
       allow_any_instance_of(CitizenOtpService).to receive(:verify!).and_return(false)
 

@@ -237,8 +237,15 @@ module Citizens
       session[:partner_only_session] = partner_slug.present?
       session.delete(:pending_citizen_id)
 
-      redirect_to after_sign_in_path_for(user),
-                  notice: params[:signup] == "true" ? "Welcome! Please complete your profile." : "Welcome back!"
+      # No greeting on a partner login: the citizen lands on the consent
+      # screen mid-handoff, where "Welcome back!" makes no sense.
+      notice =
+        if partner_slug.present? then nil
+        elsif params[:signup] == "true" then "Welcome! Please complete your profile."
+        else "Welcome back!"
+        end
+
+      redirect_to after_sign_in_path_for(user), notice: notice
     rescue => e
       Rails.logger.error("Citizen sign-in failed: #{e.message}")
       redirect_to login_path,
