@@ -134,12 +134,11 @@ module Citizens
     # Sign Out
     # =========================================================
     def destroy
-      signed_out = sign_out(:citizen)
-      set_flash_message!(:notice, :signed_out) if signed_out
+      sign_out(:citizen)
 
       respond_to do |format|
-        format.html { redirect_to login_path }
-        format.turbo_stream { redirect_to login_path, status: :see_other }
+        format.html { redirect_to partners_path }
+        format.turbo_stream { redirect_to partners_path, status: :see_other }
       end
     end
 
@@ -161,7 +160,7 @@ module Citizens
     end
 
     def after_sign_out_path_for(_resource_or_scope)
-      login_path
+      partners_path
     end
 
     # =========================================================
