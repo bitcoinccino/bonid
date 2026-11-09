@@ -23,6 +23,7 @@ module Citizens
     def edit
       @citizen = current_citizen
       load_pending_email_change_state
+      load_known_devices
     end
 
     # POST /citizens/settings/email_change/cancel
@@ -69,6 +70,14 @@ module Citizens
     end
 
     private
+
+    # Browsers this citizen has signed in from (see Citizens::DeviceRecognition),
+    # newest first, with the one making this request flagged.
+    def load_known_devices
+      @known_devices = @citizen.known_devices.order(last_seen_at: :desc).limit(20)
+      token = cookies.encrypted[Citizens::DeviceRecognition::COOKIE]
+      @current_device_digest = token.present? ? KnownDevice.digest(token) : nil
+    end
 
     def collect_simple_attrs
       attrs = {}

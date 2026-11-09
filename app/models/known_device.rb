@@ -33,6 +33,10 @@ class KnownDevice < ApplicationRecord
     os ? "#{browser} on #{os}" : browser
   end
 
+  def mobile?
+    user_agent.to_s.match?(/Mobi|Android|iPhone|iPad|Tablet/i)
+  end
+
   def location
     [ city, country ].compact_blank.join(", ").presence
   end

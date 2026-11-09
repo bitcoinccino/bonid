@@ -70,6 +70,17 @@ RSpec.describe "Citizen device alerts & session revocation", type: :request do
     expect(signed_in?(phone)).to be(false)
   end
 
+  it "settings lists each device and marks the current one" do
+    log_in(laptop)
+    log_in(phone)
+
+    phone.get citizens_settings_path
+    body = phone.response.body
+    expect(body.scan(%r{<li class="d-flex align-items-start gap-2 py-2"}).size).to eq(2)
+    expect(body.scan("APARÈY SA A").size).to eq(1)
+    expect(body).to include("Dènye fwa: gen")
+  end
+
   describe "'This wasn't me' link" do
     let(:token) do
       log_in(laptop)
