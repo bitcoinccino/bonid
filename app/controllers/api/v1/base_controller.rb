@@ -3,8 +3,6 @@
 module Api
   module V1
     class BaseController < ApplicationController
-      include RateLimitable
-      include PlanEnforceable
       include ResponseSigner
 
       protect_from_forgery with: :null_session
@@ -13,6 +11,16 @@ module Api
       before_action :authenticate_partner_or_token!
       before_action :set_current_context
       before_action :enforce_scope!, if: -> { @oauth_token.present? }
+
+      # These two must come AFTER authenticate_partner_or_token!: both read
+      # @partner, and callbacks run in registration order. Included above the
+      # auth callback they saw a nil @partner and silently skipped — no
+      # per-partner rate limit, and partners with no credits got free API
+      # calls (only the post-response deduction noticed, logging a misleading
+      # "[Credits] Race condition"). Rate limit first, so a flood is turned
+      # away before credits are checked.
+      include RateLimitable
+      include PlanEnforceable
 
       around_action :log_partner_api_access
       after_action  :set_bonid_api_headers
