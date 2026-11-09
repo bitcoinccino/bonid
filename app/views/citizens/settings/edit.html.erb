@@ -76,10 +76,41 @@
             <div class="enroll-helpful-tip mt-3">
               <i class="ri-logout-box-r-line"></i>
               <div>
-                <strong>Lòt aparèy</strong>
+                <strong>Aparèy ou yo</strong>
                 <div class="mt-1">
-                  Dekonekte BonID ou sou tout lòt aparèy yo. Aparèy sa a ap rete konekte.
+                  Aparèy ou te itilize pou konekte sou BonID. Si ou wè youn ou pa rekonèt,
+                  dekonekte tout lòt aparèy yo epi chanje modpas imel ou.
                 </div>
+
+                <% if @known_devices.any? %>
+                  <ul class="list-unstyled mt-2 mb-0" id="known-devices">
+                    <% @known_devices.each do |device| %>
+                      <% this_device = device.token_digest == @current_device_digest %>
+                      <li class="d-flex align-items-start gap-2 py-2"
+                          style="border-top: 1px solid #E5E7EB;">
+                        <i class="<%= device.mobile? ? 'ri-smartphone-line' : 'ri-computer-line' %>"
+                           style="font-size: 1.1rem; color: #64748b;"></i>
+                        <div style="font-size: 0.82rem; min-width: 0;">
+                          <div class="fw-semibold" style="color: #0F172A;">
+                            <%= device.label %>
+                            <% if this_device %>
+                              <span class="badge rounded-pill ms-1"
+                                    style="background: #DCFCE7; color: #166534; font-size: 0.6rem; font-weight: 700;">
+                                APARÈY SA A
+                              </span>
+                            <% end %>
+                          </div>
+                          <div class="text-muted" style="font-size: 0.75rem;">
+                            <%= [ device.location,
+                                  this_device ? "Kounye a" : "Dènye fwa: gen #{time_ago_in_words(device.last_seen_at)}" ]
+                                  .compact.join(" · ") %>
+                          </div>
+                        </div>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% end %>
+
                 <button type="submit" form="sign-out-other-devices-form"
                         class="btn btn-outline-danger btn-sm mt-2"
                         style="font-size: 0.78rem;">
