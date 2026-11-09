@@ -228,6 +228,9 @@ module Citizens
         expires_at: 30.minutes.from_now
       )
 
+      # Recognise this browser; email the citizen if it's a new one.
+      Citizens::DeviceRecognition.new(user: user, request: request, cookies: cookies).call
+
       session[:login_source] = login_source
       # A login that started from a partner exists only to approve that
       # partner; OauthController ends it once the citizen is handed back.

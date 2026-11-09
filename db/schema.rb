@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_29_020000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1123,6 +1123,20 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_020000) do
     t.index ["user_id"], name: "index_invite_codes_on_user_id"
   end
 
+  create_table "known_devices", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token_digest", null: false
+    t.string "user_agent"
+    t.string "ip_address"
+    t.string "city"
+    t.string "country"
+    t.datetime "last_seen_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "token_digest"], name: "index_known_devices_on_user_id_and_token_digest", unique: true
+    t.index ["user_id"], name: "index_known_devices_on_user_id"
+  end
+
   create_table "local_contacts", force: :cascade do |t|
     t.string "name", null: false
     t.string "phone"
@@ -2209,6 +2223,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_020000) do
     t.string "preferred_locale", default: "ht"
     t.string "notification_channel", default: "email"
     t.boolean "is_diaspora"
+    t.integer "session_version", default: 0, null: false
     t.index ["active"], name: "index_users_on_active"
     t.index ["address_id"], name: "index_users_on_address_id"
     t.index ["agent_rank"], name: "index_users_on_agent_rank"
@@ -2560,6 +2575,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_29_020000) do
   add_foreign_key "invite_codes", "communes"
   add_foreign_key "invite_codes", "partners"
   add_foreign_key "invite_codes", "users"
+  add_foreign_key "known_devices", "users"
   add_foreign_key "local_contacts", "users"
   add_foreign_key "local_contacts", "visitor_submissions"
   add_foreign_key "name_change_requests", "admin_users", column: "reviewed_by_id"

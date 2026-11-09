@@ -553,6 +553,13 @@ end
     # citizen can correct a typo without waiting out the 15-min TTL.
     delete "paramet/email_change", to: "settings#cancel_email_change",
            as: :cancel_email_change
+    # Sign out every other device (keeps the current one).
+    delete "paramet/sesyon", to: "settings#sign_out_other_devices",
+           as: :sign_out_other_devices
+
+    # "This wasn't me" link from the new-device email — public, token is auth.
+    get  "sesyon/revoke", to: "session_revocations#show",   as: :session_revocation
+    post "sesyon/revoke", to: "session_revocations#create"
 
     # ✅ One-question onboarding gate — "Where do you live?" Haiti / Abroad.
     # Fires once on first sign-in (or until WaitlistSignup pre-fills the

@@ -15,6 +15,20 @@ module Citizens
       )
     end
 
+    # Sign-in from a browser this citizen hasn't used before.
+    # Carries a "This wasn't me" link that signs out every device.
+    def new_device_login
+      @user          = params[:user]
+      @device        = params[:device]
+      @revoke_url    = citizens_session_revocation_url(token: params[:revoke_token])
+      @email_product = "bonid"
+
+      mail(
+        to: @user.email,
+        subject: "BonID: Nouvo koneksyon sou kont ou"
+      )
+    end
+
     def incident_report_notification
       raw_user = params[:user]
       @user   = raw_user.is_a?(CitizenProfile) ? raw_user.user : raw_user
