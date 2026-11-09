@@ -1,0 +1,40 @@
+<% content_for :title, "Sign out everywhere – BonID" %>
+
+<div class="login-card">
+  <div class="text-center mb-4">
+    <div class="auth-icon-badge">
+      <i class="ri-shield-keyhole-line"></i>
+    </div>
+  </div>
+
+  <% if @valid %>
+    <h1 class="h4 fw-bold text-center mb-2">Sign out of every device?</h1>
+    <p class="text-muted text-center small mb-4">
+      This signs your BonID out everywhere, including the device you didn't recognise,
+      and cancels any login codes that haven't been used yet. You'll need a new code to sign back in.
+    </p>
+
+    <%= form_with url: citizens_session_revocation_path, method: :post, local: true,
+                  html: { data: { turbo: false } } do %>
+      <%= hidden_field_tag :token, @token %>
+      <%= submit_tag "Sign out everywhere",
+            class: "btn btn-haitian-primary w-100",
+            data: { disable_with: "Signing out…" } %>
+    <% end %>
+
+    <div class="auth-privacy-note mt-3">
+      <i class="ri-lock-line"></i>Then change your email password: anyone who can read your email can sign in to your BonID.
+    </div>
+  <% else %>
+    <h1 class="h4 fw-bold text-center mb-2">This link has expired</h1>
+    <p class="text-muted text-center small mb-4">
+      It's older than 7 days, or your devices were already signed out.
+      If you still see activity you don't recognise, contact us.
+    </p>
+    <%= link_to "Go to sign in", login_path, class: "btn btn-ghost-haitian w-100" %>
+  <% end %>
+
+  <div class="auth-help-link">
+    <a href="mailto:support@bonid.ht">Need help?</a>
+  </div>
+</div>

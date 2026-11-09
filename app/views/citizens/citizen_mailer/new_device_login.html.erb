@@ -1,0 +1,59 @@
+<% content_for :title, "New sign-in to your BonID" %>
+
+<div style="font-family:'Inter',Arial,sans-serif; color:#101828;">
+  <div style="margin:0 0 10px;">
+    <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-weight:700; font-size:20px; color:var(--primary); margin:0;">
+      New sign-in to your BonID
+    </div>
+    <div style="margin-top:6px; font-size:13px; color:#475467; line-height:1.6;">
+      Your account was just signed in to from a device we haven't seen before.
+    </div>
+  </div>
+
+  <!-- DEVICE CARD -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="margin:14px 0 16px; background:#ffffff; border-radius:14px;
+                border:1px solid rgba(0,32,159,0.18); overflow:hidden;">
+    <tr>
+      <td style="padding:14px 14px; background:#f7f9ff; font-size:14px; line-height:1.8; color:#101828;">
+        <div><strong>Device:</strong> <%= @device.label %></div>
+        <% if @device.location %>
+          <div><strong>Location:</strong> <%= @device.location %> <span style="color:#475467;">(approximate)</span></div>
+        <% end %>
+        <div><strong>When:</strong> <%= @device.created_at.in_time_zone.strftime("%b %-d, %Y at %-I:%M %p") %> (Haiti time)</div>
+      </td>
+    </tr>
+  </table>
+
+  <div style="font-size:14px; line-height:1.75; color:#101828;">
+    <p style="margin:0 0 10px;">
+      Dear <strong><%= @user.first_name %></strong>,
+    </p>
+
+    <p style="margin:0 0 10px;">
+      If this was you, you don't need to do anything.
+    </p>
+
+    <p style="margin:0 0 16px;">
+      <strong>If this wasn't you</strong>, sign out every device right away. Then change your
+      email password: anyone who can read your email can sign in to your BonID.
+    </p>
+
+    <p style="margin:0 0 16px;">
+      <a href="<%= @revoke_url %>"
+         style="display:inline-block; background:#D21034; color:#ffffff; text-decoration:none;
+                font-weight:700; padding:12px 20px; border-radius:10px;">
+        This wasn't me: sign out everywhere
+      </a>
+    </p>
+
+    <p style="margin:0 0 10px; color:#475467; font-size:13px;">
+      This link works for 7 days. For help, contact
+      <a href="mailto:support@bonid.ht" style="color:var(--primary); text-decoration:none; font-weight:600;">support@bonid.ht</a>.
+    </p>
+
+    <p style="margin:14px 0 0; color:#475467;">
+      — BonID Security Team
+    </p>
+  </div>
+</div>

@@ -40,6 +40,7 @@ class User < ApplicationRecord
   has_one  :health_profile,   dependent: :destroy
   has_one  :officer,          dependent: :destroy
   has_many :citizen_sessions, dependent: :destroy
+  has_many :known_devices,    dependent: :destroy
   has_many :identity_submissions, dependent: :destroy
   has_many :reviewer_activities, dependent: :destroy
   has_many :voter_eligibility_records, dependent: :destroy
@@ -456,6 +457,20 @@ alias name full_name
     score += 1 if bank_profiles.any?
     score += 1 if emergency_contacts.any?
     ((score / total) * 100).round
+  end
+
+  # === Sign out everywhere ===
+  # Invalidates every citizen session (see config/initializers/
+  # citizen_session_revocation.rb), remember-me cookies, unused login codes,
+  # and live partner access tokens. Returns the new session_version.
+  def revoke_all_citizen_sessions!
+    transaction do
+      increment!(:session_version)
+      update_columns(remember_created_at: nil)
+      citizen_sessions.where(used_at: nil).delete_all
+      OauthAccessToken.active.where(citizen_id: id).find_each(&:revoke!)
+    end
+    session_version
   end
 
   # === Default Roles ===

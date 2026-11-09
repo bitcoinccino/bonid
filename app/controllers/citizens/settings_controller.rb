@@ -35,6 +35,15 @@ module Citizens
       redirect_to citizens_settings_path
     end
 
+    # DELETE /citizens/paramet/sesyon
+    # Signs out every other device; this one stays signed in by adopting the
+    # new session_version straight away.
+    def sign_out_other_devices
+      version = current_citizen.revoke_all_citizen_sessions!
+      warden.session(:citizen)["session_version"] = version
+      redirect_to citizens_settings_path, notice: "Tout lòt aparèy yo dekonekte."
+    end
+
     def update
       @citizen = current_citizen
 
