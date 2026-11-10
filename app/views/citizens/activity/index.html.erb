@@ -377,12 +377,15 @@
     white-space: nowrap;
   }
 
-  /* ── Per-kind icon tint ─────────────────────────── */
-  .activity-event-row--scan        .scan-log-icon i { color: #0EA5E9; }
-  .activity-event-row--consent     .scan-log-icon i { color: var(--primary); }
-  .activity-event-row--transaction .scan-log-icon i { color: #0F766E; }
-  .activity-event-row--application .scan-log-icon i { color: #7C3AED; }
-  .activity-event-row--session     .scan-log-icon i { color: #0284C7; }
+  /* ── Icon color ─────────────────────────────────────
+     Every activity icon uses the BonID blue (previously each kind had
+     its own tint, and "oath" rows had none, so they rendered black). */
+  .activity-event-row .scan-log-icon i { color: var(--primary); }
+
+  /* Exception: sign-in from a NEW device stays amber so it stands out —
+     it's the row a citizen must check ("was this me?"). Only new-device
+     sessions use ri-alert-line (CitizenActivityEvent session builder). */
+  .activity-event-row--session .scan-log-icon i.ri-alert-line { color: #D97706; }
 
   .activity-event-row.scan-log-item {
     transition: background 0.1s ease-in-out;
