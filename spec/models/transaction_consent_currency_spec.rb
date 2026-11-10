@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe TransactionConsent, "currency and amount validation", type: :model do
   let(:partner) { create(:partner, :approved) }
-  let(:citizen) { create(:user) }
+  let(:citizen) { create(:user, :identity_verified) }
 
   def consent(type: "wire_transfer", **attrs)
     described_class.new(citizen: citizen, partner: partner, transaction_type: type, scopes: %w[profile], **attrs)

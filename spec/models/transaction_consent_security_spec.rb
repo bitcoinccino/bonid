@@ -6,7 +6,7 @@ RSpec.describe TransactionConsent, "security windows", type: :model do
   include ActiveSupport::Testing::TimeHelpers
 
   let(:partner) { create(:partner, :approved) }
-  let(:citizen) { create(:user) }
+  let(:citizen) { create(:user, :identity_verified) }
 
   def build_consent(type, **attrs)
     described_class.create!(citizen: citizen, partner: partner, transaction_type: type, scopes: %w[profile], **attrs)
