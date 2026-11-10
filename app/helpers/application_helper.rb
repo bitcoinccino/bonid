@@ -5,6 +5,12 @@ module ApplicationHelper
     BontourisPausable.enabled?
   end
 
+  # Whether citizen Sèvis / Aplikasyon Mwen are enabled (paused for v1).
+  # Mirrors the controller guard (CitizenServicesPausable).
+  def citizen_services_enabled?
+    CitizenServicesPausable.enabled?
+  end
+
   # Whether the paused IDPol/law-enforcement Tier-3 extras are enabled
   # (officer analytics, border entries, tickets, complaints, LE search/alert).
   def idpol_extras_enabled?

@@ -10,6 +10,7 @@
 #
 module Citizens
   class ServiceApplicationsController < Citizens::BaseController
+    include CitizenServicesPausable # v1 launch: paused unless CITIZEN_SERVICES_ENABLED=true (see concern)
     before_action :set_citizen
     before_action :enable_immersive_form, only: [ :new, :create, :show ]
     before_action :find_application, only: [ :show, :update, :submit, :receipt ]
