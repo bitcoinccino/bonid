@@ -34,6 +34,15 @@ module NavbarHelper
             icon: "ri-checkbox-circle-line",
             path: "/election/verify",
             **soon_badge
+          },
+          {
+            name: "BonTouris",
+            description: t("main.navbar.bontouris_desc"),
+            icon: "ri-suitcase-3-line",
+            path: new_public_visitor_path,
+            # Paused for v1 (BONTOURIS_ENABLED): the page bounces back with
+            # the "coming soon" notice, so badge it to match.
+            **(bontouris_enabled? ? new_badge : soon_badge)
           }
         ]
       },
