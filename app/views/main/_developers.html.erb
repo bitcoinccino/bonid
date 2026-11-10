@@ -32,13 +32,13 @@
 
             <%
               bullets = [
-                { icon: "ri-flashlight-line",      label: "Instant response under 200ms",                  detail: "Sub-second verification at scale" },
-                { icon: "ri-shield-keyhole-line",  label: "OAuth 2.0 + HMAC secured dual auth",            detail: "Defense in depth for sensitive scopes" },
-                { icon: "ri-database-2-line",      label: "Full JSON identity + biometrics profile",       detail: "Everything you need, structured" },
-                { icon: "ri-body-scan-line",       label: "AWS Rekognition liveness + face match scores",  detail: "Battle-tested vendor stack" },
-                { icon: "ri-bar-chart-box-line",   label: "Risk Score API with raw confidence",            detail: "You set the thresholds, not us" },
-                { icon: "ri-rocket-2-line",        label: "Sandbox + production environments",             detail: "Build safely, ship confidently" },
-                { icon: "ri-code-s-slash-line",    label: "Works with Rails, Node, Go, Python, PHP",       detail: "Plain HTTPS — bring your stack" }
+                { key: "fast",     icon: "ri-flashlight-line" },
+                { key: "secure",   icon: "ri-shield-keyhole-line" },
+                { key: "json",     icon: "ri-database-2-line" },
+                { key: "liveness", icon: "ri-body-scan-line" },
+                { key: "risk",     icon: "ri-bar-chart-box-line" },
+                { key: "envs",     icon: "ri-rocket-2-line" },
+                { key: "stacks",   icon: "ri-code-s-slash-line" }
               ]
             %>
 
@@ -47,8 +47,8 @@
                 <div class="gs-row">
                   <div class="gs-row-icon"><i class="<%= b[:icon] %>"></i></div>
                   <div class="gs-row-text">
-                    <span class="gs-row-label"><%= b[:label] %></span>
-                    <span class="gs-row-detail"><%= b[:detail] %></span>
+                    <span class="gs-row-label"><%= t("main.developers.card.bullets.#{b[:key]}.label") %></span>
+                    <span class="gs-row-detail"><%= t("main.developers.card.bullets.#{b[:key]}.detail") %></span>
                   </div>
                 </div>
               <% end %>
@@ -70,26 +70,36 @@
         <div class="dev-code-card w-100 d-flex flex-column">
 
           <%# Tabs %>
-          <div class="dev-tabs">
+          <div class="dev-tabs" role="tablist">
             <% tabs = [
-              { id: "identity", icon: "ri-user-search-line",     label: "Identity" },
-              { id: "consent",  icon: "ri-shield-check-line",    label: "Consent"  },
-              { id: "crime",    icon: "ri-alarm-warning-line",   label: "Crime"    },
-              { id: "qr",       icon: "ri-qr-scan-2-line",       label: "QR Scan"  },
-              { id: "webhook",  icon: "ri-link",                 label: "Webhook"  },
-              { id: "vote",     icon: "ri-checkbox-circle-line", label: "BonVote"  }
+              { id: "identity", icon: "ri-user-search-line" },
+              { id: "consent",  icon: "ri-shield-check-line" },
+              { id: "crime",    icon: "ri-alarm-warning-line" },
+              { id: "qr",       icon: "ri-qr-scan-2-line" },
+              { id: "webhook",  icon: "ri-link" },
+              { id: "vote",     icon: "ri-checkbox-circle-line" }
             ] %>
             <% tabs.each_with_index do |tab, i| %>
               <button
                 type="button"
+                role="tab"
+                aria-selected="<%= i.zero? %>"
+                aria-controls="api-<%= tab[:id] %>"
                 class="dev-tab <%= 'is-active' if i.zero? %>"
+                data-caption="<%= t("main.developers.tabs.#{tab[:id]}.caption") %>"
                 onclick="showApiTab('<%= tab[:id] %>', this)"
               >
-                <i class="<%= tab[:icon] %>"></i>
-                <span><%= tab[:label] %></span>
+                <i class="<%= tab[:icon] %>" aria-hidden="true"></i>
+                <span><%= t("main.developers.tabs.#{tab[:id]}.label") %></span>
               </button>
             <% end %>
           </div>
+
+          <%# Plain-language summary of what the selected call does %>
+          <p class="dev-tab-caption mb-0" aria-live="polite">
+            <i class="ri-information-line" aria-hidden="true"></i>
+            <span><%= t("main.developers.tabs.identity.caption") %></span>
+          </p>
 
           <button
             type="button"
@@ -146,48 +156,48 @@
 }</code></pre>
 
           <%# Crime Status %>
-          <pre id="api-crime" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #7dd3fc;">GET</span> /api/v1/crime_status/<span style="color: #86efac;">NB-1769-M-OU-P0815-C4R</span>
+          <pre id="api-crime" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #7dd3fc;">GET</span> /api/v1/crime_status/<span style="color: #86efac;">NB-1988-M-OU-P0815-C4R</span>
 <span style="color: #94a3b8;">Headers:</span> X-Partner-Api-Key + Authorization: Bearer TOKEN
 <span style="color: #94a3b8;">(Dual auth required — crime:status scope)</span>
 
 <span style="color: #94a3b8;">Response:</span> <span style="color: #7dd3fc;">200 OK</span>
 {
   <span style="color: #86efac;">"status"</span>: <span style="color: #86efac;">"success"</span>,
-  <span style="color: #86efac;">"bonid"</span>: <span style="color: #86efac;">"NB-1769-M-OU-P0815-C4R"</span>,
+  <span style="color: #86efac;">"bonid"</span>: <span style="color: #86efac;">"NB-1988-M-OU-P0815-C4R"</span>,
   <span style="color: #86efac;">"crime_status"</span>: {
-    <span style="color: #86efac;">"has_criminal_record"</span>: <span style="color: #fc8181;">true</span>,
-    <span style="color: #86efac;">"is_suspect_in_any"</span>: <span style="color: #fc8181;">true</span>,
-    <span style="color: #86efac;">"active_warrants"</span>: <span style="color: #fc8181;">true</span>,
-    <span style="color: #86efac;">"highest_severity_level"</span>: <span style="color: #fc8181;">6</span>,
-    <span style="color: #86efac;">"severity_label"</span>: <span style="color: #fc8181;">"Critical"</span>,
+    <span style="color: #86efac;">"has_criminal_record"</span>: <span style="color: #fbbf24;">true</span>,
+    <span style="color: #86efac;">"is_suspect_in_any"</span>: <span style="color: #fbbf24;">true</span>,
+    <span style="color: #86efac;">"active_warrants"</span>: <span style="color: #7dd3fc;">false</span>,
+    <span style="color: #86efac;">"highest_severity_level"</span>: <span style="color: #fbbf24;">4</span>,
+    <span style="color: #86efac;">"severity_label"</span>: <span style="color: #fbbf24;">"High"</span>,
     <span style="color: #86efac;">"involvement_count"</span>: <span style="color: #7dd3fc;">2</span>,
-    <span style="color: #86efac;">"roles"</span>: [<span style="color: #86efac;">"suspect"</span>],
     <span style="color: #86efac;">"crime_types"</span>: {
-      <span style="color: #86efac;">"Crimes Against Humanity"</span>: <span style="color: #7dd3fc;">1</span>,
-      <span style="color: #86efac;">"Genocide"</span>: <span style="color: #7dd3fc;">1</span>
+      <span style="color: #86efac;">"Gang Activity"</span>: <span style="color: #7dd3fc;">1</span>,
+      <span style="color: #86efac;">"Extortion"</span>: <span style="color: #7dd3fc;">1</span>
     },
     <span style="color: #86efac;">"incidents"</span>: [
       {
-        <span style="color: #86efac;">"report_id"</span>: <span style="color: #86efac;">"PNH-DDO-HIST-18020520-NB17"</span>,
-        <span style="color: #86efac;">"case_number"</span>: <span style="color: #86efac;">"BON-CASE-1802-000001"</span>,
-        <span style="color: #86efac;">"crime_type"</span>: <span style="color: #86efac;">"Crimes Against Humanity"</span>,
-        <span style="color: #86efac;">"severity_label"</span>: <span style="color: #fc8181;">"Critical"</span>,
+        <span style="color: #86efac;">"report_id"</span>: <span style="color: #86efac;">"PNH-DDO-20260512-NB17"</span>,
+        <span style="color: #86efac;">"case_number"</span>: <span style="color: #86efac;">"BON-CASE-2026-000184"</span>,
+        <span style="color: #86efac;">"crime_type"</span>: <span style="color: #86efac;">"Gang Activity"</span>,
+        <span style="color: #86efac;">"severity_label"</span>: <span style="color: #fbbf24;">"High"</span>,
+        <span style="color: #86efac;">"location"</span>: <span style="color: #86efac;">"Croix-des-Bouquets, zone controlled by 400 Mawozo"</span>,
         <span style="color: #86efac;">"involvement"</span>: {
           <span style="color: #86efac;">"role"</span>: <span style="color: #86efac;">"suspect"</span>,
-          <span style="color: #86efac;">"status"</span>: <span style="color: #86efac;">"wanted"</span>
+          <span style="color: #86efac;">"status"</span>: <span style="color: #86efac;">"under_surveillance"</span>
         },
-        <span style="color: #86efac;">"occurred_at"</span>: <span style="color: #86efac;">"1802-05-20"</span>
+        <span style="color: #86efac;">"occurred_at"</span>: <span style="color: #86efac;">"2026-05-12"</span>
       }
     ],
     <span style="color: #86efac;">"risk_assessment"</span>: {
-      <span style="color: #86efac;">"risk_level"</span>: <span style="color: #fc8181;">"critical"</span>,
-      <span style="color: #86efac;">"score"</span>: <span style="color: #fc8181;">100</span>,
-      <span style="color: #86efac;">"has_active_warrant"</span>: <span style="color: #fc8181;">true</span>
+      <span style="color: #86efac;">"risk_level"</span>: <span style="color: #fbbf24;">"elevated"</span>,
+      <span style="color: #86efac;">"score"</span>: <span style="color: #fbbf24;">50</span>,
+      <span style="color: #86efac;">"factors"</span>: { <span style="color: #86efac;">"has_active_warrant"</span>: <span style="color: #7dd3fc;">false</span> }
     }
   },
   <span style="color: #86efac;">"access_tier"</span>: <span style="color: #86efac;">"tier_3"</span>,
   <span style="color: #86efac;">"partner"</span>: <span style="color: #86efac;">"Police Nationale d'Haiti"</span>,
-  <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-03-23T23:30:00Z"</span>
+  <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-11-10T14:30:00Z"</span>
 }</code></pre>
 
           <%# QR Scan %>
@@ -237,33 +247,32 @@
 <span style="color: #94a3b8;">// compare with X-BonID-Signature header</span></code></pre>
 
           <%# BonVote — Election %>
-          <pre id="api-vote" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// 1. Check voter eligibility</span>
+          <pre id="api-vote" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// 1. Check that a voter is eligible</span>
 <span style="color: #7dd3fc;">GET</span> /api/v1/election/<span style="color: #86efac;">2026-presidential-round1</span>/eligibility
-<span style="color: #94a3b8;">Headers:</span> X-BonID-Voter-Token (biometric-verified)
+<span style="color: #94a3b8;">Headers:</span> X-BonID-Voter-Token (face-verified in the BonID app)
 
-<span style="color: #94a3b8;">Response:</span>
+<span style="color: #94a3b8;">Response:</span> <span style="color: #7dd3fc;">200 OK</span>
 {
   <span style="color: #86efac;">"eligible"</span>: <span style="color: #7dd3fc;">true</span>,
-  <span style="color: #86efac;">"voter_type"</span>: <span style="color: #86efac;">"diaspora"</span>,
-  <span style="color: #86efac;">"ballot_type"</span>: <span style="color: #86efac;">"presidential"</span>,
-  <span style="color: #86efac;">"country_code"</span>: <span style="color: #86efac;">"US"</span>
+  <span style="color: #86efac;">"election_id"</span>: <span style="color: #86efac;">"2026-presidential-round1"</span>,
+  <span style="color: #86efac;">"bonid"</span>: <span style="color: #86efac;">"BZ-1970-M-ND-P2334-0B6"</span>,
+  <span style="color: #86efac;">"country"</span>: <span style="color: #86efac;">"HT"</span>,
+  <span style="color: #86efac;">"ballot"</span>: {
+    <span style="color: #86efac;">"type"</span>: <span style="color: #86efac;">"domestic"</span>,
+    <span style="color: #86efac;">"department"</span>: <span style="color: #86efac;">"Nord"</span>
+  }
 }
 
-<span style="color: #94a3b8;">// 2. Cast encrypted vote (ZKP + Pedersen Commitment)</span>
-<span style="color: #7dd3fc;">POST</span> /api/v1/election/<span style="color: #86efac;">2026-presidential-round1</span>/cast
+<span style="color: #94a3b8;">// 2. Anyone can check a receipt — no login needed</span>
+<span style="color: #7dd3fc;">GET</span> /api/v1/election/<span style="color: #86efac;">2026-presidential-round1</span>/verify/<span style="color: #86efac;">{receipt_hash}</span>
+
+<span style="color: #94a3b8;">Response:</span> <span style="color: #7dd3fc;">200 OK</span>
 {
-  <span style="color: #86efac;">"nullifier"</span>: <span style="color: #86efac;">"a8f3b2c1d4e5..."</span>,
-  <span style="color: #86efac;">"encrypted_choice"</span>: <span style="color: #86efac;">"AES-256-GCM(...)"</span>,
-  <span style="color: #86efac;">"zkp_commitment"</span>: <span style="color: #86efac;">"pedersen(...)"</span>,
-  <span style="color: #86efac;">"zkp_proof"</span>: <span style="color: #86efac;">"schnorr(...)"</span>
-}
-
-<span style="color: #94a3b8;">Response:</span> <span style="color: #7dd3fc;">201 Created</span>
-{ <span style="color: #86efac;">"ballot_hash"</span>: <span style="color: #86efac;">"sha256..."</span>, <span style="color: #86efac;">"position"</span>: <span style="color: #7dd3fc;">4523</span> }
-
-<span style="color: #94a3b8;">// 3. Public verification (no auth required)</span>
-<span style="color: #7dd3fc;">GET</span> /api/v1/election/<span style="color: #86efac;">2026-presidential-round1</span>/verify/<span style="color: #86efac;">sha256...</span>
-{ <span style="color: #86efac;">"verified"</span>: <span style="color: #7dd3fc;">true</span>, <span style="color: #86efac;">"message"</span>: <span style="color: #86efac;">"Vot ou konte"</span> }</code></pre>
+  <span style="color: #86efac;">"verified"</span>: <span style="color: #7dd3fc;">true</span>,
+  <span style="color: #86efac;">"message"</span>: <span style="color: #86efac;">"Vòt ou konte"</span>,
+  <span style="color: #86efac;">"election_id"</span>: <span style="color: #86efac;">"2026-presidential-round1"</span>,
+  <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-11-29T15:42:10Z"</span>
+}</code></pre>
 
         </div>
       </div>
@@ -285,10 +294,15 @@
     var copyBtn = btn.closest('.dev-code-card').querySelector('.copy-btn');
     if (copyBtn) copyBtn.setAttribute('data-copy-target', '#api-' + tab);
 
+    var caption = btn.closest('.dev-code-card').querySelector('.dev-tab-caption span');
+    if (caption) caption.textContent = btn.getAttribute('data-caption') || '';
+
     btn.closest('.dev-tabs').querySelectorAll('.dev-tab').forEach(function(t) {
       t.classList.remove('is-active');
+      t.setAttribute('aria-selected', 'false');
     });
     btn.classList.add('is-active');
+    btn.setAttribute('aria-selected', 'true');
   }
 
   document.addEventListener("click", async (e) => {

@@ -22,8 +22,11 @@
 
       <% group[:items].each do |product| %>
         <li>
-          <%= link_to product[:path],
-            class: "dropdown-item d-flex align-items-center gap-3" do %>
+          <%# Disabled items render as a non-link span; Bootstrap .disabled mutes them. %>
+          <%= content_tag(product[:disabled] ? :span : :a,
+            href: (product[:path] unless product[:disabled]),
+            class: "dropdown-item d-flex align-items-center gap-3#{' disabled' if product[:disabled]}",
+            "aria-disabled": (true if product[:disabled])) do %>
             <i class="<%= product[:icon] %> dropdown-icon"></i>
             <div>
               <strong><%= product[:name] %></strong>
