@@ -4,6 +4,7 @@ module Citizens
   class TransactionConsentMailer < Citizens::BaseMailer
     default from: "bonid@verifyem.ht"
     layout "mailer"
+    helper ConsentAmountHelper
 
     def consent_request
       @consent = params[:consent]
