@@ -656,7 +656,7 @@
         </li>
         <li>
           <strong>Get the answer</strong>
-          <p>BonID calls your <code>callback_url</code> (see <a href="#webhooks">Webhooks</a>). Before acting on it, confirm the status yourself with the <code>consent_token</code>.</p>
+          <p>BonID sends a signed request to your <code>callback_url</code> (see <a href="#webhooks">Webhooks</a>). You can also check the status yourself any time with the <code>consent_token</code>.</p>
         </li>
         <li>
           <strong>Fetch the approved details</strong>
@@ -713,25 +713,24 @@
     <!-- ─────────────── WEBHOOKS ─────────────── -->
     <section class="doc-section" id="webhooks">
       <h2><i class="ri-link"></i> Webhooks</h2>
-      <p class="lead">BonID tells your server when something changes, so you don't have to keep asking. There are two kinds of notifications.</p>
+      <p class="lead">BonID tells your server when something changes, so you don't have to keep asking. Every notification is a signed <code>POST</code>. Check the signature before trusting it.</p>
 
-      <h3>1. Transaction consent results</h3>
-      <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">Sent to the <code>callback_url</code> you passed when <a href="#consent">asking for consent</a>, once the citizen approves, declines or lets the request expire. The <code>X-BonID-Event</code> header says which: <code>transaction_consent.approved</code>, <code>.denied</code> or <code>.expired</code>.</p>
-      <div class="note warn">
-        <i class="ri-shield-keyhole-line"></i>
-        <p><strong>Confirm before you act.</strong> These callbacks don't carry a signature you can check, so treat them as a heads-up. Before releasing money or data, confirm the status by calling <code>GET /transaction_consents/{consent_token}</code> with your API key.</p>
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Sent to</th><th>When</th><th>Events</th></tr></thead>
+          <tbody>
+            <tr><td>The <code>callback_url</code> on a consent request</td><td>The citizen approves, declines or lets it expire</td><td><code>transaction_consent.approved</code>, <code>.denied</code>, <code>.expired</code></td></tr>
+            <tr><td>The webhook URL on your partner account</td><td>A citizen's consent or BonID changes</td><td><code>consent.approved</code>, <code>consent.revoked</code>, <code>consent.restored</code>, <code>bonid.changed</code>, <code>bonid.suspended</code></td></tr>
+          </tbody>
+        </table>
       </div>
-      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl <span class="base-url"></span>/transaction_consents/CONSENT_TOKEN \
-  -H "X-Partner-Api-Key: YOUR_API_KEY"</code></pre>
 
-      <h3>2. Account webhooks</h3>
-      <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">Sent to the webhook URL registered on your partner account when a citizen's consent or BonID changes: <code>consent.approved</code>, <code>consent.revoked</code>, <code>consent.restored</code>, <code>bonid.changed</code> and <code>bonid.suspended</code>. These are signed, so check the signature before trusting one.</p>
-
+      <h3>Headers on every notification</h3>
       <div class="table-wrap">
         <table class="simple">
           <thead><tr><th>Header</th><th>What it is</th></tr></thead>
           <tbody>
-            <tr><td><code>X-BonID-Event</code></td><td>What happened, e.g. <code>consent.revoked</code></td></tr>
+            <tr><td><code>X-BonID-Event</code></td><td>What happened, e.g. <code>transaction_consent.approved</code></td></tr>
             <tr><td><code>X-BonID-Signature</code></td><td>HMAC-SHA256 of the raw request body, using your webhook secret (hex)</td></tr>
             <tr><td><code>X-BonID-Timestamp</code></td><td>When it was sent (Unix seconds)</td></tr>
           </tbody>

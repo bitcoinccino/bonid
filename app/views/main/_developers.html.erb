@@ -228,6 +228,8 @@
 <span style="color: #7dd3fc;">POST</span> https://your-app.com/bonid/webhook
 <span style="color: #94a3b8;">Headers:</span>
   X-BonID-Event: transaction_consent.approved
+  X-BonID-Signature: HMAC-SHA256(raw_body, your_webhook_secret)
+  X-BonID-Timestamp: 1794839700
   Content-Type: application/json
 
 <span style="color: #94a3b8;">Body:</span>
@@ -246,9 +248,9 @@
   }
 }
 
-<span style="color: #94a3b8;">// Confirm before releasing money or data:</span>
-<span style="color: #7dd3fc;">GET</span> /api/v1/transaction_consents/<span style="color: #86efac;">{consent_token}</span>
-<span style="color: #94a3b8;">Headers:</span> X-Partner-Api-Key: YOUR_KEY</code></pre>
+<span style="color: #94a3b8;">// Verify before processing:</span>
+<span style="color: #94a3b8;">// expected = HMAC-SHA256(raw_body, your_webhook_secret)</span>
+<span style="color: #94a3b8;">// compare with the X-BonID-Signature header</span></code></pre>
 
           <%# BonVote — Election %>
           <pre id="api-vote" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// 1. Check that a voter is eligible</span>

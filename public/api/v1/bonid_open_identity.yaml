@@ -779,7 +779,7 @@ paths:
         1. **Partner creates** a consent request with the citizen's BonID, transaction type, and optional amount.
         2. **Citizen receives** a 6-digit OTP via email (and SMS if phone is on file), plus a real-time push notification in their BonID dashboard.
         3. **Citizen decides** — approves (with OTP or face liveness) or denies via `POST /transaction_consents/{token}/decide`.
-        4. **Partner receives** the result via webhook callback to your `callback_url`, including an HMAC-SHA256 signature for non-repudiation.
+        4. **Partner receives** the result via a signed webhook callback to your `callback_url` (`X-BonID-Signature` header).
 
         ---
 
@@ -823,7 +823,7 @@ paths:
 
         When a citizen decides, BonID sends a `POST` to your `callback_url`:
 
-        **Headers:** `Content-Type: application/json` and `X-BonID-Event: transaction_consent.approved` (or `.denied`, `.expired`)
+        **Headers:** `Content-Type: application/json`, `X-BonID-Event: transaction_consent.approved` (or `.denied`, `.expired`), `X-BonID-Signature` and `X-BonID-Timestamp`
 
         **Payload:**
         ```json
@@ -848,11 +848,13 @@ paths:
 
         ### Signature Verification (HMAC-SHA256)
 
-        The `signature` field provides non-repudiation — cryptographic proof the citizen approved.
+        Every callback is signed. Verify it before acting:
 
-        1. Reconstruct the proof: `{ consent_token, bonid, partner_id, transaction_type, reference_id, amount, currency, status, decided_at, scopes }`
-        2. Compute `HMAC-SHA256(proof_json, your_api_key_digest)`
-        3. Compare with the `signature` field — match = authentic.
+        1. Read the raw request body exactly as received (don't re-serialize the JSON).
+        2. Compute `HMAC-SHA256(raw_body, your_webhook_secret)` as lowercase hex.
+        3. Compare it with the `X-BonID-Signature` header using a constant-time comparison. A match means it came from BonID.
+
+        The `signature` field in the body is BonID's own record of the citizen's decision (non-repudiation). It is not meant for partners to verify.
       operationId: createTransactionConsent
       security:
         - PartnerApiKeyAuth: []
@@ -1819,7 +1821,8 @@ components:
       type: object
       description: |
         Payload sent to your `callback_url` when a consent decision is made.
-        Delivered as a POST with header `X-BonID-Event: transaction_consent.{status}`.
+        Delivered as a POST with headers `X-BonID-Event: transaction_consent.{status}`,
+        `X-BonID-Signature` (hex HMAC-SHA256 of the raw body with your webhook secret) and `X-BonID-Timestamp`.
         Retried 3 times with exponential backoff (2 s, 4 s, 8 s) on failure.
       properties:
         consent_token:
