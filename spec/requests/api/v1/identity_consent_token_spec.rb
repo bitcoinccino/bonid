@@ -9,7 +9,7 @@ RSpec.describe "Api::V1::Identity with consent_token", type: :request, real_auth
   let(:headers)  { { "X-Partner-Api-Key" => "test_api_key", "Content-Type" => "application/json" } }
 
   let!(:citizen)    { create(:user, :with_address, bonid: "BZ-1970-M-ND-P2334-0B6") }
-  let!(:submission) { create(:identity_submission, user: citizen, status: :approved, verified_at: Time.current) }
+  let!(:submission) { create(:identity_submission, :approved, user: citizen) }
 
   def approved_consent(type)
     TransactionConsent.create!(citizen: citizen, partner: partner, transaction_type: type, scopes: %w[profile]).tap do |c|

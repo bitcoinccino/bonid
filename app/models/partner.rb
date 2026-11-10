@@ -280,6 +280,13 @@ class Partner < ApplicationRecord
     types.include?(type.to_s)
   end
 
+  # Details this partner may ask a citizen for in a transaction consent,
+  # based on its sector (see TransactionConsent::DEFAULT_SCOPES_BY_SECTOR).
+  # Separate from allowed_scopes, which governs OAuth sign-in.
+  def allowed_consent_scopes
+    TransactionConsent.default_scopes_for_sector(sector)
+  end
+
   def effective_allowed_transaction_types
     allowed_transaction_types.presence ||
       TransactionConsent.default_types_for_sector(sector)

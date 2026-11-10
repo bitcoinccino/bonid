@@ -27,6 +27,14 @@ FactoryBot.define do
     trait :citizen do
     end
 
+    # Citizen whose identity is approved, verified and unexpired right now
+    # (User#identity_currently_verified? is true).
+    trait :identity_verified do
+      after(:create) do |user|
+        create(:identity_submission, :approved, user: user)
+      end
+    end
+
     # ===== Complete profile (gate for identity submission) =====
     trait :profile_complete do
       with_address

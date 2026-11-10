@@ -17,6 +17,16 @@ module Api
         citizen = User.find_by(bonid: params[:bonid]&.strip&.upcase)
         return render json: { error: "Citizen not found" }, status: :not_found unless citizen
 
+        unless citizen.identity_currently_verified?
+          return render json: {
+            status: "forbidden",
+            error: "This BonID is not currently verified",
+            reason: "bonid_not_verified",
+            hint: "The citizen's identity must be approved and unexpired before they can approve transactions. Ask them to renew or complete verification in BonID.",
+            timestamp: Time.current.iso8601
+          }, status: :forbidden
+        end
+
         type = params[:transaction_type].to_s
         unless TransactionConsent::VALID_TRANSACTION_TYPES.include?(type)
           return render json: {
@@ -34,9 +44,28 @@ module Api
           }, status: :forbidden
         end
 
-        scopes = Array(params[:scopes])
+        scopes = Array(params[:scopes]).map(&:to_s)
         if scopes.empty?
           return render json: { error: "Missing scopes" }, status: :unprocessable_entity
+        end
+
+        unknown = scopes - TransactionConsent::CONSENT_SCOPES
+        if unknown.any?
+          return render json: {
+            error: "Unknown scopes: #{unknown.join(', ')}",
+            valid_scopes: TransactionConsent::CONSENT_SCOPES,
+            timestamp: Time.current.iso8601
+          }, status: :unprocessable_entity
+        end
+
+        not_allowed = scopes - @partner.allowed_consent_scopes
+        if not_allowed.any?
+          return render json: {
+            status: "forbidden",
+            error: "Partner not authorized to request: #{not_allowed.join(', ')}",
+            allowed_scopes: @partner.allowed_consent_scopes,
+            timestamp: Time.current.iso8601
+          }, status: :forbidden
         end
 
         consent = TransactionConsentService.create_request!(
@@ -99,6 +128,15 @@ module Api
 
         if otp_code.blank?
           return render json: { error: "OTP code is required" }, status: :unprocessable_entity
+        end
+
+        # Identity may have been revoked or expired since the request was
+        # sent. Declining is always allowed; approving is not.
+        if decision == "approve" && !consent.citizen.identity_currently_verified?
+          return render json: {
+            error: "This BonID is not currently verified, so it can't approve transactions",
+            reason: "bonid_not_verified"
+          }, status: :forbidden
         end
 
         result = TransactionConsentService.verify_and_decide!(

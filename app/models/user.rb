@@ -412,6 +412,18 @@ alias name full_name
     identity_submissions.approved.exists?
   end
 
+  # Stricter than bonid_verified?: the identity must be approved, actually
+  # verified, and not expired *right now*. A BonID stays on the account
+  # after its identity is revoked (e.g. name change suspension) or
+  # expires, so having a BonID is not proof it is still valid. Used to
+  # gate transaction consents, where money moves on the citizen's say-so.
+  def identity_currently_verified?
+    identity_submissions.approved
+      .where.not(verified_at: nil)
+      .where("identity_submissions.expires_at > ?", Time.current)
+      .exists?
+  end
+
   # Returns true when the citizen's profile holds a CIN that doesn't match
   # ONI's January 2026 NINU mandate (10 digits). Used to surface the
   # migrate-to-NINU banner on the dashboard and the profile edit page —

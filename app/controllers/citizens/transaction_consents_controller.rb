@@ -244,7 +244,7 @@ module Citizens
 
     # Block unverified citizens from approving/denying transactions
     def ensure_verified_bonid!
-      unless @citizen&.bonid_verified?
+      unless @citizen&.identity_currently_verified?
         respond_to do |format|
           format.turbo_stream do
             render turbo_stream: turbo_stream.update(

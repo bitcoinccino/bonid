@@ -626,6 +626,10 @@
     <section class="doc-section" id="consent">
       <h2><i class="ri-shield-check-line"></i> Ask a citizen for consent</h2>
       <p class="lead">For a transaction, like a wire transfer or opening an account, the citizen approves your request in BonID with a code and a face check. You only receive the details they agreed to share.</p>
+      <div class="note">
+        <i class="ri-shield-user-line"></i>
+        <p>You can only send requests to citizens whose identity is verified <strong>right now</strong>. If their identity has expired or been suspended, you get <code>403</code> with <code>"reason": "bonid_not_verified"</code>, and they can't approve requests already sent.</p>
+      </div>
       <div class="meta-row">
         <span class="chip"><i class="ri-key-2-line"></i> API key</span>
         <span class="chip"><i class="ri-list-check-2"></i> 40+ transaction types</span>
@@ -687,6 +691,23 @@
         </table>
       </div>
       <p style="font-size:0.9rem;color:var(--text-muted);margin:10px 0 0;">Ask only for what the transaction needs. Citizens are more likely to approve a short list.</p>
+
+      <h3>What your sector allows</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">Your partner sector decides which transaction types you can use and which details you can ask for. Asking for something outside it returns <code>403</code> with the list you're allowed.</p>
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Sector</th><th>Details you can ask for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Finance</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">Banks, microfinance, credit unions, fintech, insurance, crypto</span></td><td><code>profile</code> <code>address</code> <code>email</code> <code>phone</code> <code>identity:verify</code></td></tr>
+            <tr><td><strong>Government</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">Ministries, municipalities, customs, immigration</span></td><td><code>profile</code> <code>address</code> <code>email</code> <code>phone</code> <code>identity:verify</code> <code>civil</code> <code>tax</code></td></tr>
+            <tr><td><strong>Law enforcement</strong></td><td><code>profile</code> <code>address</code> <code>phone</code> <code>identity:verify</code> <code>physical</code> <code>civil</code></td></tr>
+            <tr><td><strong>Diplomacy</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">Embassies, consulates</span></td><td><code>profile</code> <code>address</code> <code>email</code> <code>phone</code> <code>identity:verify</code> <code>civil</code></td></tr>
+            <tr><td><strong>Health</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">Hospitals, clinics, pharmacies, labs</span></td><td><code>profile</code> <code>address</code> <code>phone</code> <code>identity:verify</code> <code>health</code> <code>physical</code> <code>emergency_contacts</code></td></tr>
+            <tr><td><strong>Civil</strong><br><span style="color:var(--text-muted);font-size:0.8rem;">Notaries, NGOs, social services</span></td><td><code>profile</code> <code>address</code> <code>email</code> <code>phone</code> <code>civil</code> <code>emergency_contacts</code></td></tr>
+            <tr><td><strong>Other</strong></td><td><code>profile</code> <code>phone</code></td></tr>
+          </tbody>
+        </table>
+      </div>
 
       <h3>Amounts and currencies</h3>
       <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">The citizen sees the amount and currency on their approval screen, so send the real ones. <code>amount</code> must be greater than 0.</p>
@@ -963,7 +984,7 @@ def is_from_bonid(raw_body: bytes, signature: str) -> bool:
           <thead><tr><th>Status</th><th>Meaning</th><th>What to do</th></tr></thead>
           <tbody>
             <tr><td><code>401</code></td><td>Missing or wrong API key or token</td><td>Check the headers and that the key is for this environment</td></tr>
-            <tr><td><code>403</code></td><td>Your token lacks a permission</td><td>See <code>required_scope</code> in the response</td></tr>
+            <tr><td><code>403</code></td><td>Not allowed: your token lacks a permission, your sector can't use that type or detail, or the citizen's BonID isn't currently verified</td><td>Read <code>error</code>; the response lists what you're allowed (<code>required_scope</code>, <code>allowed_types</code> or <code>allowed_scopes</code>) or gives <code>reason: bonid_not_verified</code></td></tr>
             <tr><td><code>404</code></td><td>BonID or record not found</td><td>Check the ID for typos</td></tr>
             <tr><td><code>422</code></td><td>Something in the request is missing or invalid</td><td>Read the <code>error</code> message</td></tr>
             <tr><td><code>429</code></td><td>Too many requests</td><td>Wait for the <code>Retry-After</code> seconds, then retry</td></tr>

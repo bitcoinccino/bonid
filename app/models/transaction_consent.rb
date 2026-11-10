@@ -152,23 +152,46 @@ class TransactionConsent < ApplicationRecord
 
   CIVIL_SECTORS = %w[notary ngo microfinance social_services community_org].freeze
 
-  def self.default_types_for_sector(sector)
+  # Which group a partner's sector belongs to. Order matters: a sector in
+  # two lists (microfinance) resolves to the first match (finance).
+  def self.sector_group(sector)
     s = sector.to_s.downcase
-    if FINANCE_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["finance"]
-    elsif GOVERNMENT_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["government"]
-    elsif LAW_ENFORCEMENT_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["law_enforcement"]
-    elsif DIPLOMACY_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["diplomacy"]
-    elsif HEALTHCARE_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["healthcare"]
-    elsif CIVIL_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["civil"]
-    else
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["default"]
+    if FINANCE_SECTORS.include?(s)            then "finance"
+    elsif GOVERNMENT_SECTORS.include?(s)      then "government"
+    elsif LAW_ENFORCEMENT_SECTORS.include?(s) then "law_enforcement"
+    elsif DIPLOMACY_SECTORS.include?(s)       then "diplomacy"
+    elsif HEALTHCARE_SECTORS.include?(s)      then "healthcare"
+    elsif CIVIL_SECTORS.include?(s)           then "civil"
+    else "default"
     end
+  end
+
+  def self.default_types_for_sector(sector)
+    DEFAULT_TRANSACTION_TYPES_BY_SECTOR[sector_group(sector)]
+  end
+
+  # ── Consent scopes (what details a partner may ask the citizen for) ──
+  # Every scope IdentityController#filter_response_by_consent_scopes knows.
+  CONSENT_SCOPES = %w[
+    profile address email phone identity:verify identity:details
+    civil health physical tax emergency_contacts social
+  ].freeze
+
+  # What each sector group may request. Least privilege: a bank never
+  # needs health records, a pharmacy never needs a tax ID. identity:details
+  # (everything) is in no default set.
+  DEFAULT_SCOPES_BY_SECTOR = {
+    "finance"         => %w[profile address email phone identity:verify],
+    "government"      => %w[profile address email phone identity:verify civil tax],
+    "law_enforcement" => %w[profile address phone identity:verify physical civil],
+    "diplomacy"       => %w[profile address email phone identity:verify civil],
+    "healthcare"      => %w[profile address phone identity:verify health physical emergency_contacts],
+    "civil"           => %w[profile address email phone civil emergency_contacts],
+    "default"         => %w[profile phone]
+  }.freeze
+
+  def self.default_scopes_for_sector(sector)
+    DEFAULT_SCOPES_BY_SECTOR[sector_group(sector)]
   end
 
   # ============================================================
@@ -184,6 +207,8 @@ class TransactionConsent < ApplicationRecord
   validates :expires_at, presence: true
   validates :amount, numericality: { greater_than: 0 }, allow_nil: true
   validate  :currency_allowed_for_type
+  validate  :citizen_identity_verified, on: :create
+  validate  :scopes_allowed_for_partner, on: :create
   validate  :amount_precision_matches_currency
   validates :reference_id, uniqueness: { scope: [:citizen_id, :partner_id] },
             allow_blank: true
@@ -428,6 +453,25 @@ class TransactionConsent < ApplicationRecord
   def set_expiry
     self.expires_at ||= ttl_for_type.from_now
     self.otp_expires_at ||= self.expires_at
+  end
+
+  # Backstop for the API check: no consent can be created for a BonID
+  # whose identity isn't approved and unexpired right now.
+  def citizen_identity_verified
+    return if citizen.nil? || citizen.identity_currently_verified?
+    errors.add(:citizen, "BonID is not currently verified")
+  end
+
+  # Backstop for the API check: only known scopes, and only ones the
+  # partner's sector may request.
+  def scopes_allowed_for_partner
+    requested = Array(scopes).map(&:to_s)
+    unknown = requested - CONSENT_SCOPES
+    errors.add(:scopes, "unknown: #{unknown.join(', ')}") if unknown.any?
+    return if partner.nil?
+
+    not_allowed = requested - unknown - partner.allowed_consent_scopes
+    errors.add(:scopes, "not allowed for this partner: #{not_allowed.join(', ')}") if not_allowed.any?
   end
 
   def crypto_currency?

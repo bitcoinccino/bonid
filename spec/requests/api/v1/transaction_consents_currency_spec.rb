@@ -5,7 +5,7 @@ require "rails_helper"
 RSpec.describe "POST /api/v1/transaction_consents currency validation", type: :request, real_auth: true do
   let!(:partner) { create(:partner, :approved, raw_api_key: "test_api_key") }
   let(:headers)  { { "X-Partner-Api-Key" => "test_api_key", "Content-Type" => "application/json" } }
-  let!(:citizen) { create(:user, :with_address, bonid: "BZ-1970-M-ND-P2334-0B6") }
+  let!(:citizen) { create(:user, :with_address, :identity_verified, bonid: "BZ-1970-M-ND-P2334-0B6") }
 
   def create_consent(**body)
     post "/api/v1/transaction_consents",
