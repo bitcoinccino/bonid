@@ -43,18 +43,17 @@
         q12: "faq11"
       } %>
 
-      <% faq_ids.each_with_index do |(key, collapse_id), idx| %>
-        <% is_first = (idx == 0) %>
+      <% faq_ids.each do |key, collapse_id| %>
         <% heading_id = "heading-#{collapse_id}" %>
 
         <article class="accordion-item">
           <h3 class="accordion-header" id="<%= heading_id %>">
             <button
-              class="accordion-button fw-semibold <%= 'collapsed' unless is_first %>"
+              class="accordion-button fw-semibold collapsed"
               type="button"
               data-bs-toggle="collapse"
               data-bs-target="#<%= collapse_id %>"
-              aria-expanded="<%= is_first ? 'true' : 'false' %>"
+              aria-expanded="false"
               aria-controls="<%= collapse_id %>"
             >
               <%= t("main.faq.items.#{key}.q").html_safe %>
@@ -63,7 +62,7 @@
 
           <div
             id="<%= collapse_id %>"
-            class="accordion-collapse collapse <%= 'show' if is_first %>"
+            class="accordion-collapse collapse"
             aria-labelledby="<%= heading_id %>"
             data-bs-parent="#bonidFaq"
           >
