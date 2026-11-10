@@ -210,7 +210,18 @@ class BonidNotifier
         }.compact
       end
 
-      response = send_request(uri, payload.to_json, headers)
+      # Sign exactly the bytes we send, same scheme as account webhooks:
+      # hex HMAC-SHA256 of the raw body with the partner's webhook secret.
+      body = payload.to_json
+      signature = consent.partner&.sign_webhook_payload(body)
+      if signature
+        headers["X-BonID-Signature"] = signature
+        headers["X-BonID-Timestamp"] = Time.current.to_i.to_s
+      else
+        Rails.logger.warn("[BonidNotifier] Partner #{consent.partner_id} has no webhook secret; transaction consent callback sent unsigned")
+      end
+
+      response = send_request(uri, body, headers)
 
       if response.is_a?(Net::HTTPSuccess)
         Rails.logger.info("[BonidNotifier] Transaction consent callback delivered to #{uri.host}")
