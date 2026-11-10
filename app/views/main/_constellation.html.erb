@@ -1,7 +1,60 @@
 <!-- ======================================================
      SECTION 3 — ONE IDENTITY. EVERY INSTITUTION.
-     Hub (BonID) emits verified identity to partners (grid).
+     Hub-and-spoke: BonID in the centre, partners on a fixed ring,
+     data "packets" travelling out along each spoke in turn. On phones
+     the nodes shrink to logo + name so the ring still fits.
 ====================================================== -->
+<%
+  partners = [
+    { logo: "partners/unibank.svg",        name: "Unibank",         sector: "Banking",            icon: "ri-bank-line" },
+    { logo: "partners/sogebank.svg",       name: "Sogebank",        sector: "Banking",            icon: "ri-bank-line" },
+    { logo: "partners/digicel.svg",        name: "Digicel",         sector: "Telecom",            icon: "ri-signal-tower-line" },
+    { logo: "partners/faes.svg",           name: "FAES",            sector: "Aid & Development",  icon: "ri-hand-heart-line" },
+    { logo: "partners/pnh.svg",            name: "PNH",             sector: "Public Safety",      icon: "ri-shield-star-line" },
+    { logo: "partners/us_embassy.svg",     name: "US Embassy",      sector: "Diplomatic Mission", icon: "ri-government-line" },
+    { logo: "partners/france_embassy.svg", name: "France Embassy",  sector: "Diplomatic Mission", icon: "ri-government-line" }
+  ]
+
+  # Ring geometry, in SVG user units (viewBox 0 0 640 640). Node positions are
+  # emitted as percentages so the whole ring scales with its container.
+  ring_size   = 640.0
+  ring_center = ring_size / 2
+  ring_radius = 245.0
+  spoke_start = 92.0   # just outside the hub card
+  spoke_end   = 190.0  # just short of the partner node
+  nodes = partners.each_with_index.map do |p, i|
+    angle = (-90 + i * 360.0 / partners.size) * Math::PI / 180
+    cos, sin = Math.cos(angle), Math.sin(angle)
+    p.merge(
+      i: i,
+      left: ((ring_center + ring_radius * cos) / ring_size * 100).round(3),
+      top:  ((ring_center + ring_radius * sin) / ring_size * 100).round(3),
+      x1: (ring_center + spoke_start * cos).round(2), y1: (ring_center + spoke_start * sin).round(2),
+      x2: (ring_center + spoke_end   * cos).round(2), y2: (ring_center + spoke_end   * sin).round(2)
+    )
+  end
+
+  hub_card = capture do %>
+    <div class="constellation-hub">
+      <span class="constellation-pulse"></span>
+      <span class="constellation-pulse" style="animation-delay: 1.2s;"></span>
+      <span class="constellation-pulse" style="animation-delay: 2.4s;"></span>
+
+      <div class="constellation-hub-card">
+        <span class="constellation-hub-logo constellation-hub-icon" aria-hidden="true">
+          <i class="ri-fingerprint-line"></i>
+        </span>
+        <div class="constellation-hub-text">
+          <span class="constellation-hub-name">BonID</span>
+          <span class="constellation-hub-role">
+            <i class="ri-shield-check-fill"></i>
+            <%= t("main.constellation.hub_role", default: "Identity Issuer") %>
+          </span>
+        </div>
+      </div>
+    </div>
+  <% end
+%>
 <section class="hero-section-constellation py-5 position-relative overflow-hidden">
 
   <div class="container position-relative py-5">
@@ -16,69 +69,37 @@
       </p>
     </div>
 
-    <!-- Hub: BonID broadcasts verified identity -->
-    <div class="constellation-hub-wrap" aria-hidden="false">
-      <div class="constellation-hub">
-        <!-- Concentric pulse rings (CSS-animated outward) -->
-        <span class="constellation-pulse"></span>
-        <span class="constellation-pulse" style="animation-delay: 1.2s;"></span>
-        <span class="constellation-pulse" style="animation-delay: 2.4s;"></span>
+    <!-- ── Hub-and-spoke ring (all widths; compact on phones) ── -->
+    <div>
+      <div class="constellation-orbit" style="--orbit-count: <%= partners.size %>;">
 
-        <!-- The hub card itself -->
-        <div class="constellation-hub-card">
-          <%= image_tag "bonid/monogram.svg", alt: "BonID", class: "constellation-hub-logo" %>
-          <div class="constellation-hub-text">
-            <span class="constellation-hub-name">BonID</span>
-            <span class="constellation-hub-role">
-              <i class="ri-shield-check-fill"></i>
-              <%= t("main.constellation.hub_role", default: "Identity Issuer") %>
-            </span>
-          </div>
-        </div>
+        <svg class="orbit-spokes" viewBox="0 0 <%= ring_size.to_i %> <%= ring_size.to_i %>" aria-hidden="true" focusable="false">
+          <% nodes.each do |n| %>
+            <line class="orbit-spoke-track" x1="<%= n[:x1] %>" y1="<%= n[:y1] %>" x2="<%= n[:x2] %>" y2="<%= n[:y2] %>" />
+            <line class="orbit-spoke-flow" data-i="<%= n[:i] %>" style="--i: <%= n[:i] %>;"
+                  x1="<%= n[:x1] %>" y1="<%= n[:y1] %>" x2="<%= n[:x2] %>" y2="<%= n[:y2] %>" />
+          <% end %>
+        </svg>
+
+        <div class="orbit-hub"><%= hub_card %></div>
+
+        <ul class="orbit-nodes list-unstyled mb-0"
+            aria-label="<%= t("main.constellation.flow_label", default: "Verified identity flows to") %>">
+          <% nodes.each do |n| %>
+            <li class="orbit-node" data-i="<%= n[:i] %>" tabindex="0"
+                style="--i: <%= n[:i] %>; left: <%= n[:left] %>%; top: <%= n[:top] %>%;">
+              <span class="orbit-node-logo"><%= image_tag n[:logo], alt: "" %></span>
+              <span class="orbit-node-name"><%= n[:name] %></span>
+              <span class="orbit-node-sector"><i class="<%= n[:icon] %>"></i><%= n[:sector] %></span>
+            </li>
+          <% end %>
+        </ul>
       </div>
 
-      <!-- Flow indicator: explicit downward direction -->
-      <div class="constellation-flow-label">
-        <span class="constellation-flow-arrow" aria-hidden="true">
-          <span class="constellation-flow-arrow-line"></span>
-          <i class="ri-arrow-down-line"></i>
-        </span>
-        <span class="constellation-flow-text">
-          <%= t("main.constellation.flow_label", default: "Verified identity flows to") %>
-        </span>
+      <div class="orbit-consent">
+        <i class="ri-lock-2-line" aria-hidden="true"></i>
+        <%= t("main.constellation.consent_label", default: "Shared only with your consent") %>
       </div>
-    </div>
-
-    <!-- Partner grid -->
-    <%
-      partners = [
-        { logo: "partners/unibank.svg",        name: "Unibank",         sector: "Banking",            icon: "ri-bank-line" },
-        { logo: "partners/sogebank.svg",       name: "Sogebank",        sector: "Banking",            icon: "ri-bank-line" },
-        { logo: "partners/digicel.svg",        name: "Digicel",         sector: "Telecom",            icon: "ri-signal-tower-line" },
-        { logo: "partners/faes.svg",           name: "FAES",            sector: "Aid & Development",  icon: "ri-hand-heart-line" },
-        { logo: "partners/pnh.svg",            name: "PNH",             sector: "Public Safety",      icon: "ri-shield-star-line" },
-        { logo: "partners/us_embassy.svg",     name: "US Embassy",      sector: "Diplomatic Mission", icon: "ri-government-line" },
-        { logo: "partners/france_embassy.svg", name: "France Embassy",  sector: "Diplomatic Mission", icon: "ri-government-line" }
-      ]
-    %>
-
-    <div class="row g-3 g-md-4 constellation-grid justify-content-center">
-      <% partners.each do |p| %>
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="constellation-tile h-100">
-            <div class="constellation-tile-logo">
-              <%= image_tag p[:logo], alt: p[:name] %>
-            </div>
-            <div class="constellation-tile-meta">
-              <span class="constellation-tile-name"><%= p[:name] %></span>
-              <span class="constellation-tile-sector">
-                <i class="<%= p[:icon] %>"></i>
-                <%= p[:sector] %>
-              </span>
-            </div>
-          </div>
-        </div>
-      <% end %>
     </div>
 
     <!-- CTA -->
