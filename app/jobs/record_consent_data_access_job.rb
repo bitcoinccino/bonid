@@ -8,9 +8,9 @@ class RecordConsentDataAccessJob < ApplicationJob
   retry_on ActiveRecord::ConnectionNotEstablished, wait: 5.seconds, attempts: 3
   discard_on ActiveRecord::RecordNotFound
 
-  def perform(consent_id:, ip:, scopes_used:)
+  def perform(consent_id:, ip:, scopes_used:, counted: false)
     consent = TransactionConsent.find(consent_id)
-    consent.record_data_access!(ip: ip, scopes_used: scopes_used)
+    consent.record_data_access!(ip: ip, scopes_used: scopes_used, counted: counted)
 
     # Burn-after-read: invalidate Redis cache after first access
     if consent.burn_after_read?

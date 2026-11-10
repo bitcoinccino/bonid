@@ -52,7 +52,7 @@ class TransactionConsent < ApplicationRecord
     "crypto_sell"        => 5.minutes,   # Crypto-to-fiat off-ramp — AML reporting required
     "crypto_transfer"    => 10.minutes,  # Peer-to-peer on-chain — Travel Rule for transfers > $1000
     "crypto_swap"        => 10.minutes,  # Token-to-token exchange — no fiat, lower risk
-    "crypto_kyc"         => 30.minutes,  # Exchange onboarding — enhanced due diligence (EDD)
+    "crypto_kyc"         => 15.minutes,  # Exchange onboarding — enhanced due diligence (EDD)
     # ── Diplomacy / Embassies (US, CA, FR, BR) ──
     "consular_id"        => 15.minutes,  # Embassy — consular ID issuance / renewal
     "passport_renewal"   => 15.minutes,  # Embassy — passport renewal for diaspora
@@ -74,6 +74,15 @@ class TransactionConsent < ApplicationRecord
   }.freeze
 
   DEFAULT_TTL = 10.minutes
+
+  # Types that move money or value. Their consent tokens are one-time use
+  # (burn-after-read): the partner can pull identity data once, then the
+  # token is spent. Enforced on create, so partners can't opt out.
+  MONEY_MOVEMENT_TYPES = %w[
+    wire_transfer p2p_transfer remittance bill_payment merchant_payment
+    cash_out cash_in mobile_topup
+    crypto_buy crypto_sell crypto_transfer crypto_swap
+  ].freeze
   VALID_TRANSACTION_TYPES = TTL_BY_TYPE.keys.freeze
 
   # ============================================================
@@ -170,6 +179,7 @@ class TransactionConsent < ApplicationRecord
   # ============================================================
   before_validation :generate_consent_token, on: :create
   before_validation :set_expiry, on: :create
+  before_validation :apply_one_time_use_for_money, on: :create
   before_save :expire_if_due
 
   # ============================================================
@@ -320,12 +330,12 @@ class TransactionConsent < ApplicationRecord
   # ============================================================
   # DOUBLE-LOCK: DATA ACCESS CONTROL
   # ============================================================
-  DEFAULT_DATA_ACCESS_WINDOW = 30.minutes
+  DEFAULT_DATA_ACCESS_WINDOW = 10.minutes
 
   # How long after approval the consent_token can pull identity data.
   # Configurable per-consent (set by partner plan or admin override).
   def data_access_window
-    (data_access_window_minutes || 30).minutes
+    data_access_window_minutes.present? ? data_access_window_minutes.minutes : DEFAULT_DATA_ACCESS_WINDOW
   end
 
   # Can this consent still be used to access identity data?
@@ -337,11 +347,29 @@ class TransactionConsent < ApplicationRecord
     true
   end
 
+  # Atomically claim the single read of a burn-after-read consent.
+  # One SQL UPDATE that only succeeds while the count is still 0, so two
+  # simultaneous requests can't both get the data. Returns true for the
+  # request that wins, false for every other one.
+  def claim_single_read!
+    claimed = self.class
+      .where(id: id, data_access_count: 0)
+      .update_all([ "data_access_count = data_access_count + 1, data_accessed_at = ?", Time.current ]) == 1
+    if claimed
+      invalidate_cache!
+      reload
+    end
+    claimed
+  end
+
   # Record that identity data was accessed via this consent.
-  # Called by background job (non-blocking).
-  def record_data_access!(ip:, scopes_used:)
-    increment!(:data_access_count)
-    update_columns(data_accessed_at: Time.current)
+  # Called by background job (non-blocking). `counted: true` means the
+  # read was already counted synchronously by claim_single_read!.
+  def record_data_access!(ip:, scopes_used:, counted: false)
+    unless counted
+      increment!(:data_access_count)
+      update_columns(data_accessed_at: Time.current)
+    end
     append_audit!("data_accessed", ip: ip, scopes: scopes_used, access_number: data_access_count)
   end
 
@@ -385,6 +413,10 @@ class TransactionConsent < ApplicationRecord
   def set_expiry
     self.expires_at ||= ttl_for_type.from_now
     self.otp_expires_at ||= self.expires_at
+  end
+
+  def apply_one_time_use_for_money
+    self.burn_after_read = true if MONEY_MOVEMENT_TYPES.include?(transaction_type)
   end
 
   def expire_if_due
