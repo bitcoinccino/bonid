@@ -3,7 +3,7 @@
      style="background: var(--primary); border-bottom: 4px solid #D21034;">
   <div class="container-fluid justify-content-between align-items-center">
 
-    <%# Left: Mobile Sidebar Toggle only %>
+    <%# Left: Mobile Sidebar Toggle + Greeting %>
     <div class="d-flex align-items-center gap-3">
       <button class="btn d-lg-none text-white p-0"
               type="button"
@@ -13,6 +13,12 @@
               aria-label="Toggle sidebar">
         <i class="ri-menu-line ri-xl"></i>
       </button>
+
+      <% if current_citizen %>
+        <span class="d-none d-md-inline" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);">
+          Byenveni, <strong style="color: #fff;"><%= current_citizen.first_name || "Sitwayen" %></strong>
+        </span>
+      <% end %>
     </div>
 
     <style>
@@ -212,10 +218,6 @@
         </div>
         <% end %>
 
-        <span class="d-none d-md-inline" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);">
-          Byenveni, <strong style="color: #fff;"><%= current_citizen.first_name || "Sitwayen" %></strong>
-        </span>
-
         <%# Notifications — bell counts events newer than the citizen's
             `notifications_seen_at` across the same five sources Aktivite
             surfaces. Live-updated via Turbo Streams; clicking goes to
@@ -250,10 +252,6 @@
 
           <ul class="dropdown-menu dropdown-menu-end mt-2 shadow-sm" aria-labelledby="citizenDropdown"
               style="border: 1px solid rgba(0,32,159,0.12); border-radius: 0.75rem;">
-            <li class="px-3 py-2 border-bottom">
-              <div class="fw-semibold"><%= current_citizen.full_name || "Sitwayen" %></div>
-              <small class="text-muted">BonID Portal</small>
-            </li>
             <li>
               <%= link_to citizens_dashboard_path, class: "dropdown-item" do %>
                 <i class="ri-dashboard-line me-2"></i> Dashboard
