@@ -124,6 +124,25 @@
   filter: brightness(0) invert(1);
 }
 
+/* Fingerprint glyph on the same navy plate (replaces the monogram image) */
+.constellation-hub-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  filter: none;
+
+  i {
+    font-size: 1.55rem;
+    line-height: 1;
+    color: #ffffff;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .constellation-hub-icon i { font-size: 1.35rem; }
+}
+
 .constellation-hub-text {
   display: flex;
   flex-direction: column;
@@ -353,4 +372,245 @@
   .constellation-tile-logo  { height: 52px; }
   .constellation-tile-name  { font-size: 0.8rem; }
   .constellation-tile-sector { font-size: 0.68rem; padding: 2px 7px; }
+}
+
+/* ────────────────────────────────────────────────────
+   HUB-AND-SPOKE RING (md+)
+
+   Partners sit still on a fixed ring (360°/7 apart); only the data
+   moves. Each spoke carries dashes travelling hub → partner, and the
+   spokes light up one at a time (1s apart, 7s cycle) so the eye follows
+   BonID → Unibank → Sogebank → … rather than seeing all seven at once.
+   Hover/focus on a partner pins its spoke on. Node positions come from
+   the partial as % of the square, so the ring scales with its width.
+──────────────────────────────────────────────────── */
+$orbit-cycle: 7s;   // = partners × 1s
+$orbit-count: 7;
+
+.constellation-orbit {
+  position: relative;
+  width: min(100%, 640px);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+
+.orbit-spokes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  z-index: 1;
+}
+
+.orbit-spoke-track {
+  stroke: rgba(0, 32, 159, 0.12);
+  stroke-width: 1.5;
+}
+
+.orbit-spoke-flow {
+  stroke: var(--haitian-blue, #00209F);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 2 12;
+  opacity: 0.15;
+  animation:
+    orbit-flow 0.9s linear infinite,
+    orbit-spoke-active $orbit-cycle ease-in-out infinite;
+  animation-delay: 0s, calc(var(--i) * 1s);
+  transition: opacity 0.2s ease;
+}
+
+/* Negative offset moves the dashes from (x1,y1) — the hub — outward */
+@keyframes orbit-flow {
+  to { stroke-dashoffset: -14; }
+}
+
+@keyframes orbit-spoke-active {
+  0%        { opacity: 0.15; }
+  4%, 13%   { opacity: 1; }
+  19%, 100% { opacity: 0.15; }
+}
+
+/* Centre hub */
+.orbit-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+}
+
+/* Partner nodes */
+.orbit-nodes {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* Each partner: round logo badge with its name underneath. The badge
+   (not the label) is centred on the ring point, so spokes meet circles. */
+.orbit-node {
+  --logo-size: 76px;
+  position: absolute;
+  transform: translate(-50%, calc(var(--logo-size) / -2));
+  width: 120px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+  cursor: default;
+  outline: none;
+}
+
+.orbit-node-logo {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14%;
+
+  background: #ffffff;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+
+  animation: orbit-node-receive $orbit-cycle ease-in-out infinite;
+  animation-delay: calc(var(--i) * 1s);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(0.35) contrast(1.02);
+    opacity: 0.92;
+    transition: filter 0.2s ease, opacity 0.2s ease;
+  }
+}
+
+/* The badge "receives" just after its spoke peaks */
+@keyframes orbit-node-receive {
+  0%, 6%    { border-color: #E2E8F0; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06); }
+  10%, 15%  { border-color: rgba(0, 32, 159, 0.55);
+              box-shadow: 0 0 0 5px rgba(0, 32, 159, 0.10), 0 10px 26px rgba(0, 32, 159, 0.16); }
+  21%, 100% { border-color: #E2E8F0; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06); }
+}
+
+.orbit-node-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #1E293B;
+  line-height: 1.2;
+}
+
+/* Sector pill: revealed on hover/focus; always shown on touch screens */
+.orbit-node-sector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: #64748B;
+  background: rgba(0, 32, 159, 0.05);
+  border-radius: 999px;
+  padding: 0 8px;
+  white-space: nowrap;
+
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease;
+
+  i { font-size: 0.8rem; color: var(--haitian-blue, #00209F); line-height: 1; }
+}
+
+.orbit-node:hover,
+.orbit-node:focus-visible {
+  .orbit-node-logo {
+    animation-play-state: paused;
+    border-color: rgba(0, 32, 159, 0.55);
+    box-shadow: 0 0 0 5px rgba(0, 32, 159, 0.10), 0 10px 26px rgba(0, 32, 159, 0.16);
+  }
+  .orbit-node-logo img { filter: none; opacity: 1; }
+  .orbit-node-sector  { max-height: 2em; opacity: 1; padding: 2px 8px; }
+}
+
+@media (hover: none) {
+  .orbit-node-sector { max-height: 2em; opacity: 1; padding: 2px 8px; }
+}
+
+/* Hover/focus a partner → pin its spoke on, dim the rest */
+@for $i from 0 through $orbit-count - 1 {
+  .constellation-orbit:has(.orbit-node[data-i="#{$i}"]:hover, .orbit-node[data-i="#{$i}"]:focus-visible) {
+    .orbit-spoke-flow { animation-play-state: running, paused; opacity: 0.08; }
+    .orbit-spoke-flow[data-i="#{$i}"] { animation: orbit-flow 0.9s linear infinite; opacity: 1; }
+  }
+}
+
+/* Consent label under the ring */
+.orbit-consent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
+  i { color: var(--haitian-blue, #00209F); font-size: 0.95rem; }
+}
+
+/* Tablet: tighter nodes so the ring fits ~560px */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .orbit-node { --logo-size: 64px; width: 108px; }
+  .orbit-node-name { font-size: 0.72rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-spoke-flow { animation: none; opacity: 0.45; }
+  .orbit-node-logo  { animation: none; }
+}
+
+/* Phones: same ring, compact nodes (logo + name), compact hub. At ~330px
+   wide the ring radius is ~125px, so 48px badges (76px-wide labels)
+   still clear each other (chord ≈ 108px). */
+@media (max-width: 575.98px) {
+  .orbit-node { --logo-size: 48px; width: 76px; gap: 0.25rem; }
+  .orbit-node-name { font-size: 0.6rem; }
+  .orbit-node-sector,
+  .orbit-node:hover .orbit-node-sector,
+  .orbit-node:focus-visible .orbit-node-sector { display: none; }
+
+  .orbit-hub .constellation-hub { padding: 0; }
+  .orbit-hub .constellation-hub-card {
+    gap: 0.45rem;
+    padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+    box-shadow: 0 10px 24px rgba(0, 32, 159, 0.12), 0 0 0 4px rgba(255, 255, 255, 0.9);
+  }
+  .orbit-hub .constellation-hub-logo { width: 32px; height: 32px; }
+  .orbit-hub .constellation-hub-icon i { font-size: 1.1rem; }
+  .orbit-hub .constellation-hub-name { font-size: 0.85rem; }
+  .orbit-hub .constellation-hub-role { display: none; }
+  .orbit-hub .constellation-pulse {
+    width: 130px; height: 130px; margin-top: -65px; margin-left: -65px;
+  }
+
+  .orbit-spoke-flow { stroke-width: 4; }   /* viewBox scales ~0.5× on phones */
+  .orbit-spoke-track { stroke-width: 2; }
+
+  .orbit-consent { font-size: 0.68rem; margin-top: 0.75rem; }
 }
