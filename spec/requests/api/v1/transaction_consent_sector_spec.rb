@@ -65,6 +65,18 @@ RSpec.describe "Transaction consents limited by partner sector", type: :request,
     expect(response).to have_http_status(:forbidden)
   end
 
+  it "lets an embassy ask for social media handles on a visa check" do
+    partner_in("embassy", "embassy_key")
+    request_consent("embassy_key", type: "visa_processing", scopes: %w[profile social])
+    expect(response).to have_http_status(:created), response.body
+  end
+
+  it "doesn't let a bank ask for social media handles" do
+    partner_in("banking", "bank_key")
+    request_consent("bank_key", type: "kyc_check", scopes: %w[profile social])
+    expect(response).to have_http_status(:forbidden)
+  end
+
   it "lets a hospital ask for health records on a medical consultation" do
     partner_in("hospital", "hospital_key")
     request_consent("hospital_key", type: "medical_consultation", scopes: %w[profile health])

@@ -184,7 +184,9 @@ class TransactionConsent < ApplicationRecord
     "finance"         => %w[profile address email phone identity:verify],
     "government"      => %w[profile address email phone identity:verify civil tax],
     "law_enforcement" => %w[profile address phone identity:verify physical civil],
-    "diplomacy"       => %w[profile address email phone identity:verify civil],
+    # social: U.S. visa forms (DS-160/DS-260) ask for 5 years of social
+    # media handles; embassies may request them with citizen consent.
+    "diplomacy"       => %w[profile address email phone identity:verify civil social],
     "healthcare"      => %w[profile address phone identity:verify health physical emergency_contacts],
     "civil"           => %w[profile address email phone civil emergency_contacts],
     "default"         => %w[profile phone]
