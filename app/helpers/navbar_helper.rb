@@ -40,8 +40,9 @@ module NavbarHelper
             description: t("main.navbar.bontouris_desc"),
             icon: "ri-suitcase-3-line",
             path: new_public_visitor_path,
-            # Paused for v1 (BONTOURIS_ENABLED): the page bounces back with
-            # the "coming soon" notice, so badge it to match.
+            # Paused for v1 (BONTOURIS_ENABLED): shown but not clickable,
+            # badged "coming soon", until the flag is turned on.
+            disabled: !bontouris_enabled?,
             **(bontouris_enabled? ? new_badge : soon_badge)
           }
         ]
@@ -67,12 +68,6 @@ module NavbarHelper
 
   def getting_started_links
     [
-      {
-        title: t("main.navbar.create_bonid"),
-        description: t("main.navbar.create_bonid_desc"),
-        icon: "ri-login-box-line",
-        path: login_path
-      },
       {
         title: t("main.navbar.become_partner"),
         description: t("main.navbar.become_partner_desc"),
