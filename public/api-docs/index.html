@@ -15,119 +15,267 @@
       --bonid-blue-light: #e6ecf6;
       --bonid-blue-hover: #001a7a;
       --bonid-blue-10: rgba(0, 32, 159, 0.1);
+      --flag-red: #D21034;
+      --green: #198754;
+      --amber: #b45309;
       --white: #ffffff;
       --bg: #f8f9fc;
-      --text-muted: #6c757d;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e5e7eb;
+      --code-bg: #0f172a;
+      --header-h: 64px;
     }
 
-    html { box-sizing: border-box; overflow-y: scroll; }
+    html { box-sizing: border-box; overflow-y: scroll; scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 16px); }
     *, *:before, *:after { box-sizing: inherit; }
 
     body {
       margin: 0;
       background: var(--bg);
+      color: var(--text);
       font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.6;
+    }
+    a { color: var(--bonid-blue); }
+    code { font-family: 'Source Code Pro', monospace; font-size: 0.9em; }
+    p code, li code, td code {
+      background: var(--bonid-blue-light);
+      color: var(--bonid-blue);
+      padding: 1px 6px;
+      border-radius: 4px;
+      overflow-wrap: anywhere;
     }
 
     /* ── Header ── */
     .bonid-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--header-h);
       background: var(--bonid-blue);
       color: var(--white);
-      padding: 16px 28px;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
     }
-    .bonid-header-left {
-      display: flex;
-      align-items: center;
+    .bonid-header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .bonid-header-left > i { font-size: 1.6rem; opacity: 0.9; }
+    .bonid-header h1 { margin: 0; font-size: 1.15rem; font-weight: 700; white-space: nowrap; }
+    .version-pill {
+      font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+      background: rgba(255,255,255,0.15); margin-left: 6px; vertical-align: middle;
+    }
+    .bonid-header-right { display: flex; align-items: center; gap: 8px; }
+    .env-label { font-size: 0.75rem; opacity: 0.8; }
+    .env-select {
+      font-family: inherit; font-size: 0.8rem; font-weight: 600;
+      color: var(--bonid-blue); background: var(--white);
+      border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer;
+    }
+
+    /* ── Layout ── */
+    .docs-layout {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 32px;
+      padding: 24px;
+    }
+
+    /* Sidebar */
+    .docs-nav {
+      position: sticky;
+      top: calc(var(--header-h) + 24px);
+      align-self: start;
+      max-height: calc(100vh - var(--header-h) - 48px);
+      overflow-y: auto;
+      font-size: 0.88rem;
+    }
+    .docs-nav h4 {
+      margin: 18px 0 6px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+    .docs-nav h4:first-child { margin-top: 0; }
+    .docs-nav a {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .docs-nav a i { color: var(--bonid-blue); font-size: 1rem; }
+    .docs-nav a:hover { background: var(--bonid-blue-light); }
+    .docs-nav a.is-active { background: var(--bonid-blue); color: var(--white); }
+    .docs-nav a.is-active i { color: var(--white); }
+
+    /* Content */
+    .docs-main { min-width: 0; }
+    .doc-section {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .doc-section > h2 {
+      margin: 0 0 6px;
+      font-size: 1.35rem;
+      color: var(--bonid-blue);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .doc-section > h2 i { font-size: 1.4rem; }
+    .doc-section .lead { margin: 0 0 20px; color: var(--text-muted); }
+    .doc-section h3 { font-size: 1rem; margin: 24px 0 8px; }
+
+    /* Hero */
+    .docs-hero h2 { font-size: 1.7rem !important; }
+
+    /* Steps */
+    .steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 14px; }
+    .steps > li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 46px;
+    }
+    .steps > li::before {
+      content: counter(step);
+      position: absolute; left: 0; top: 0;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--bonid-blue); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem;
+    }
+    .steps strong { display: block; }
+    .steps p { margin: 2px 0 0; color: var(--text-muted); font-size: 0.92rem; }
+
+    /* Use-case cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
       gap: 14px;
     }
-    .bonid-header-left i {
-      font-size: 1.8rem;
-      opacity: 0.9;
-    }
-    .bonid-header h1 {
-      margin: 0;
-      font-size: 1.35rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
-    .bonid-header p {
-      margin: 2px 0 0;
-      font-size: 0.78rem;
-      opacity: 0.8;
-      font-weight: 400;
-    }
-    .bonid-header-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .env-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-family: 'Montserrat', sans-serif;
-      letter-spacing: 0.3px;
-    }
-    .env-toggle-btn {
-      background: var(--white);
-      color: var(--bonid-blue);
-      border: none;
-      border-radius: 6px;
-      padding: 6px 14px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: 'Montserrat', sans-serif;
-      font-size: 0.78rem;
-      transition: background 0.2s;
-    }
-    .env-toggle-btn:hover {
-      background: var(--bonid-blue-light);
-    }
-
-    /* ── Content Card ── */
-    .api-card {
-      max-width: 1260px;
-      margin: 24px auto;
-      background: var(--white);
+    .use-card {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 18px;
+      border: 1px solid var(--border);
       border-radius: 10px;
-      border: 1px solid #e5e7eb;
-      padding: 28px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
     }
-    .api-card-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      color: var(--bonid-blue);
+    .use-card:hover { border-color: var(--bonid-blue); box-shadow: 0 6px 18px rgba(0,32,159,0.08); transform: translateY(-1px); }
+    .use-card .ic {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--bonid-blue-light); color: var(--bonid-blue);
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
     }
-    .api-card-header i { font-size: 1.3rem; }
-    .api-card-header h2 {
-      margin: 0;
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
+    .use-card strong { font-size: 0.98rem; }
+    .use-card span { font-size: 0.85rem; color: var(--text-muted); }
+    .use-card .who { margin-top: auto; font-size: 0.75rem; font-weight: 600; color: var(--bonid-blue); }
 
-    .info-banner {
-      background: var(--bonid-blue-light);
-      border-left: 4px solid var(--bonid-blue);
-      padding: 12px 16px;
-      border-radius: 6px;
-      margin-bottom: 20px;
+    /* Meta row on guides */
+    .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px;
+      background: var(--bonid-blue-light); color: var(--bonid-blue);
+    }
+    .chip.green { background: #e8f5ee; color: var(--green); }
+    .chip.amber { background: #fdf3e2; color: var(--amber); }
+
+    /* Endpoint list */
+    .endpoints { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+    .endpoints a {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
       font-size: 0.88rem;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
     }
-    .info-banner i {
-      font-size: 1.2rem;
-      color: var(--bonid-blue);
-      margin-top: 2px;
+    .endpoints a:hover { border-color: var(--bonid-blue); background: #fafbff; }
+    .endpoints .path { font-family: 'Source Code Pro', monospace; font-weight: 600; overflow-wrap: anywhere; }
+    .endpoints .desc { color: var(--text-muted); margin-left: auto; font-size: 0.82rem; }
+    .method {
+      display: inline-block; min-width: 50px; text-align: center;
+      font-size: 0.7rem; font-weight: 700; color: var(--white);
+      padding: 2px 6px; border-radius: 4px; background: var(--bonid-blue);
     }
-    .info-banner strong { color: var(--bonid-blue); }
+    .method.post { background: var(--green); }
+
+    /* Code */
+    .code {
+      position: relative;
+      margin: 10px 0 0;
+      background: var(--code-bg);
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 16px 16px;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    .code code { font-family: 'Source Code Pro', monospace; white-space: pre; }
+    /* Leave room so the Copy button never sits on top of the first line */
+    .code:has(> .copy-btn) { padding-top: 40px; }
+    .code .c { color: #94a3b8; }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(255,255,255,0.1); color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 5px; padding: 3px 9px;
+      font-size: 0.72rem; font-family: 'Montserrat', sans-serif; font-weight: 600;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* Language tabs */
+    .lang-tabs { display: flex; gap: 4px; margin-top: 12px; }
+    .lang-tabs button {
+      font-family: inherit; font-size: 0.78rem; font-weight: 600;
+      border: 1px solid var(--border); background: var(--white); color: var(--text-muted);
+      border-radius: 6px; padding: 4px 12px; cursor: pointer;
+    }
+    .lang-tabs button.is-active { background: var(--bonid-blue); border-color: var(--bonid-blue); color: var(--white); }
+    .lang-pane { display: none; }
+    .lang-pane.is-active { display: block; }
+    .lang-pane .code { margin-top: 8px; }
+
+    /* Callouts */
+    .note {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 12px 14px; border-radius: 8px;
+      background: var(--bonid-blue-light); border-left: 4px solid var(--bonid-blue);
+      font-size: 0.88rem; margin: 16px 0 0;
+    }
+    .note i { color: var(--bonid-blue); font-size: 1.1rem; line-height: 1.4; }
+    .note.warn { background: #fdf3e2; border-left-color: var(--amber); }
+    .note.warn i { color: var(--amber); }
+    .note p { margin: 0; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; margin-top: 10px; }
+    table.simple { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    table.simple th, table.simple td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    table.simple th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+
+    details.more { margin-top: 12px; }
+    details.more summary { cursor: pointer; font-weight: 600; color: var(--bonid-blue); font-size: 0.88rem; }
+    .type-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .type-list code { background: var(--bonid-blue-light); color: var(--bonid-blue); padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; }
+
+    /* Reference */
+    .reference-intro { display: flex; gap: 10px; align-items: flex-start; }
 
     /* ── Swagger UI Overrides ── */
     .swagger-ui .topbar { display: none !important; }
@@ -150,6 +298,42 @@
     }
     .swagger-ui .opblock-tag:hover {
       background: var(--bonid-blue-light);
+    }
+
+    /* Small screens: Swagger lays the tag name + description out in one
+       row with no wrapping, so long tags ("Crime & Incident Reports")
+       push the description off-screen. Stack them and let text wrap. */
+    @media (max-width: 640px) {
+      .swagger-ui .opblock-tag-section h3.opblock-tag {
+        flex-wrap: wrap;
+        row-gap: 4px;
+        padding: 10px 4px;
+        font-size: 18px;
+      }
+      .swagger-ui .opblock-tag a.nostyle,
+      .swagger-ui .opblock-tag a.nostyle span {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .swagger-ui .opblock-tag small {
+        order: 3;
+        flex: 1 0 100%;
+        padding: 0;
+        font-size: 13px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      .swagger-ui .opblock-tag .info__externaldocs { order: 4; flex-basis: 100%; }
+      .swagger-ui .opblock-tag > button.expand-operation { margin-left: auto; }
+
+      /* Long endpoint paths and descriptions inside each operation */
+      .swagger-ui .opblock .opblock-summary { flex-wrap: wrap; }
+      .swagger-ui .opblock .opblock-summary-path,
+      .swagger-ui .opblock .opblock-summary-description {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        max-width: 100%;
+      }
     }
 
     .swagger-ui .opblock.opblock-get .opblock-summary-method { background: var(--bonid-blue); }
@@ -234,57 +418,11 @@
       font-family: 'Source Code Pro', monospace;
     }
 
-    /* ── Testing Guide ── */
-    .test-guide { margin-top: 24px; }
-    .test-guide h3 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--bonid-blue);
-      margin-bottom: 12px;
-    }
-    .test-guide details {
-      margin-bottom: 8px;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .test-guide summary {
-      padding: 10px 14px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      background: var(--bonid-blue-light);
-      color: var(--bonid-blue);
-    }
-    .test-guide summary:hover { background: #d4ddf0; }
-    .test-guide pre {
-      margin: 0;
-      padding: 14px;
-      background: #1e1e2e;
-      color: #e0e0e0;
-      font-size: 0.82rem;
-      font-family: 'Source Code Pro', monospace;
-      overflow-x: auto;
-      position: relative;
-    }
-    .copy-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: var(--bonid-blue);
-      color: var(--white);
-      border: none;
-      border-radius: 4px;
-      padding: 3px 8px;
-      font-size: 0.72rem;
-      cursor: pointer;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 500;
-    }
-    .copy-btn:hover { background: var(--bonid-blue-hover); }
+
+    /* Our own overview replaces Swagger's info block */
+    .swagger-ui .information-container { display: none; }
+    .swagger-ui .wrapper { padding: 0; }
+    .swagger-ui .scheme-container { box-shadow: none; padding: 12px 0; margin: 0 0 8px; }
 
     /* ── Footer ── */
     .bonid-footer {
@@ -292,283 +430,697 @@
       padding: 20px;
       color: var(--text-muted);
       font-size: 0.8rem;
-      border-top: 1px solid var(--bonid-blue-light);
-      margin-top: 20px;
     }
-    .bonid-footer a {
-      color: var(--bonid-blue);
-      text-decoration: none;
-      font-weight: 600;
+    .bonid-footer a { color: var(--bonid-blue); text-decoration: none; font-weight: 600; }
+
+    /* ── Tablet / phone ── */
+    @media (max-width: 960px) {
+      .docs-layout { grid-template-columns: minmax(0, 1fr); padding: 0 12px 16px; gap: 0; }
+      .docs-nav {
+        position: sticky;
+        top: var(--header-h);
+        z-index: 40;
+        max-height: none;
+        margin: 0 -12px 16px;
+        padding: 8px 12px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .docs-nav::-webkit-scrollbar { display: none; }
+      .docs-nav h4 { display: none; }
+      .docs-nav a {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        border: 1px solid var(--border);
+        background: var(--white);
+        font-size: 0.8rem;
+        padding: 5px 10px;
+      }
+      html { scroll-padding-top: calc(var(--header-h) + 64px); }
     }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: var(--bonid-blue-light); }
-    ::-webkit-scrollbar-thumb { background: var(--bonid-blue); border-radius: 4px; }
-
-    /* ── Mobile ── */
-    @media (max-width: 768px) {
-      .bonid-header { padding: 12px 16px; flex-direction: column; gap: 10px; }
-      .bonid-header h1 { font-size: 1.1rem; }
-      .api-card { margin: 12px; padding: 16px; }
+    @media (max-width: 640px) {
+      :root { --header-h: 56px; }
+      .bonid-header { padding: 0 12px; }
+      .bonid-header h1 { font-size: 0.98rem; }
+      .bonid-header-left > i, .env-label, .version-pill { display: none; }
+      .doc-section { padding: 20px 16px; border-radius: 10px; margin-bottom: 16px; }
+      .doc-section > h2 { font-size: 1.15rem; }
+      .docs-hero h2 { font-size: 1.35rem !important; }
+      .endpoints .desc { margin-left: 0; flex-basis: 100%; }
     }
   </style>
 </head>
 
 <body>
 
-<div class="bonid-header">
+<header class="bonid-header">
   <div class="bonid-header-left">
-    <i class="ri-shield-keyhole-line"></i>
-    <div>
-      <h1>BonID API Documentation</h1>
-      <p>Secure Digital Identity Verification for Haiti</p>
-    </div>
+    <i class="ri-shield-keyhole-line" aria-hidden="true"></i>
+    <h1>BonID API <span class="version-pill" id="version-pill">v1</span></h1>
   </div>
   <div class="bonid-header-right">
-    <span class="env-badge" id="env-badge" style="background: var(--white); color: var(--bonid-blue);">Production</span>
-    <button class="env-toggle-btn" id="env-toggle">Switch Environment</button>
+    <label class="env-label" for="env-select">Environment</label>
+    <select class="env-select" id="env-select" aria-label="API environment"></select>
   </div>
-</div>
+</header>
 
-<div class="api-card">
-  <div class="api-card-header">
-    <i class="ri-code-s-slash-line"></i>
-    <h2>Interactive API Explorer</h2>
-  </div>
+<div class="docs-layout">
 
-  <div class="info-banner">
-    <i class="ri-information-line"></i>
-    <div>
-      <strong>All endpoints are testable.</strong>
-      Click <em>Authorize</em> to enter your <code>X-Partner-Api-Key</code>, then expand
-      any endpoint and click <em>Try it out</em> to send live requests.
-    </div>
-  </div>
+  <!-- ─────────────── NAV ─────────────── -->
+  <nav class="docs-nav" id="docs-nav" aria-label="Documentation">
+    <h4>Get started</h4>
+    <a href="#start"><i class="ri-rocket-2-line"></i> Quick start</a>
+    <a href="#use-cases"><i class="ri-compass-3-line"></i> What are you building?</a>
 
-  <div id="swagger-ui"></div>
+    <h4>Guides</h4>
+    <a href="#verify"><i class="ri-user-search-line"></i> Verify an identity</a>
+    <a href="#consent"><i class="ri-shield-check-line"></i> Ask for consent</a>
+    <a href="#qr"><i class="ri-qr-scan-2-line"></i> Scan a QR code</a>
+    <a href="#webhooks"><i class="ri-link"></i> Webhooks</a>
+    <a href="#law"><i class="ri-police-badge-line"></i> Background checks</a>
+    <a href="#certificates"><i class="ri-file-shield-2-line"></i> Certificates</a>
+    <a href="#elections"><i class="ri-checkbox-circle-line"></i> Elections</a>
 
-  <div class="test-guide">
-    <h3><i class="ri-terminal-box-line"></i> Quick Start (cURL)</h3>
+    <h4>Essentials</h4>
+    <a href="#auth"><i class="ri-key-2-line"></i> Authentication</a>
+    <a href="#environments"><i class="ri-server-line"></i> Environments</a>
+    <a href="#errors"><i class="ri-error-warning-line"></i> Errors &amp; limits</a>
 
-    <details>
-      <summary>Verify a Citizen's BonID</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+    <h4>Reference</h4>
+    <a href="#reference"><i class="ri-book-open-line"></i> All endpoints</a>
+  </nav>
+
+  <main class="docs-main">
+
+    <!-- ─────────────── QUICK START ─────────────── -->
+    <section class="doc-section docs-hero" id="start">
+      <h2><i class="ri-rocket-2-line"></i> Verify a BonID in three steps</h2>
+      <p class="lead">BonID lets your app confirm who someone is: a bank opening an account, a clinic checking in a patient, an embassy checking a document. Start in the sandbox, then switch to production when you're ready.</p>
+
+      <ol class="steps">
+        <li>
+          <strong>Become a partner</strong>
+          <p>Apply on the <a href="/partners">partners page</a>. Once BonID approves your organization, your API credentials are created for you.</p>
+        </li>
+        <li>
+          <strong>Get your API key</strong>
+          <p>Sign in to the <a href="/partners/login">partner portal</a> and open <em>API keys</em>. Your OAuth client ID and secret arrive in a one-time secure link (valid 72 hours, viewable once), so save them right away.</p>
+        </li>
+        <li>
+          <strong>Make your first call</strong>
+          <p>Check whether a BonID is valid. Replace <code>YOUR_API_KEY</code> and run:</p>
+        </li>
+      </ol>
+
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl <span class="base-url"></span>/identity/BZ-1970-M-ND-P2334-0B6/status \
+  -H "X-Partner-Api-Key: YOUR_API_KEY"</code></pre>
+
+      <pre class="code"><code><span class="c">// Response</span>
+{
+  "status": "success",
+  "bonid": "BZ-1970-M-ND-P2334-0B6",
+  "verification": { "found": true, "verified": true, "status": "approved" }
+}</code></pre>
+    </section>
+
+    <!-- ─────────────── USE CASES ─────────────── -->
+    <section class="doc-section" id="use-cases">
+      <h2><i class="ri-compass-3-line"></i> What are you building?</h2>
+      <p class="lead">Pick the task that matches your app. Each guide shows the steps, the code and the endpoints you'll use.</p>
+
+      <div class="card-grid">
+        <a class="use-card" href="#verify">
+          <span class="ic"><i class="ri-user-search-line"></i></span>
+          <strong>Verify an identity</strong>
+          <span>Check that a BonID is real, approved and not expired.</span>
+          <span class="who">Banks · clinics · employers</span>
+        </a>
+        <a class="use-card" href="#consent">
+          <span class="ic"><i class="ri-shield-check-line"></i></span>
+          <strong>Ask for consent</strong>
+          <span>Have a citizen approve a transaction before you see their details.</span>
+          <span class="who">Banks · fintech · insurers</span>
+        </a>
+        <a class="use-card" href="#qr">
+          <span class="ic"><i class="ri-qr-scan-2-line"></i></span>
+          <strong>Scan a QR code</strong>
+          <span>Verify the QR code on a citizen's BonID at your counter.</span>
+          <span class="who">Front desks · checkpoints</span>
+        </a>
+        <a class="use-card" href="#webhooks">
+          <span class="ic"><i class="ri-link"></i></span>
+          <strong>Get notified</strong>
+          <span>Hear from BonID when a citizen decides or their consent changes.</span>
+          <span class="who">Any server-side app</span>
+        </a>
+        <a class="use-card" href="#law">
+          <span class="ic"><i class="ri-police-badge-line"></i></span>
+          <strong>Background checks</strong>
+          <span>Check criminal records and incident reports.</span>
+          <span class="who">Police · embassies (authorized)</span>
+        </a>
+        <a class="use-card" href="#certificates">
+          <span class="ic"><i class="ri-file-shield-2-line"></i></span>
+          <strong>Check a certificate</strong>
+          <span>Confirm a BonID-issued certificate hasn't been forged.</span>
+          <span class="who">Anyone · no key needed</span>
+        </a>
+        <a class="use-card" href="#elections">
+          <span class="ic"><i class="ri-checkbox-circle-line"></i></span>
+          <strong>Elections</strong>
+          <span>Check voter eligibility and verify ballot receipts.</span>
+          <span class="who">CEP · consulates · auditors</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ─────────────── VERIFY ─────────────── -->
+    <section class="doc-section" id="verify">
+      <h2><i class="ri-user-search-line"></i> Verify an identity</h2>
+      <p class="lead">The quickest check: does this BonID exist, is it approved, and is it still valid? You get a yes/no answer without any personal details.</p>
+      <div class="meta-row">
+        <span class="chip"><i class="ri-key-2-line"></i> API key</span>
+        <span class="chip green"><i class="ri-timer-flash-line"></i> Usually under 200ms</span>
+      </div>
+
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl <span class="base-url"></span>/identity/BZ-1970-M-ND-P2334-0B6/status \
+  -H "X-Partner-Api-Key: YOUR_API_KEY"</code></pre>
+
+      <div class="note">
+        <i class="ri-lock-line"></i>
+        <p><strong>Need the person's name, photo or address?</strong> Those are only shared after the citizen approves. Use <a href="#consent">Ask for consent</a>, then call the full identity endpoint with the <code>consent_token</code>. Without it, you only get the verification status.</p>
+      </div>
+
+      <h3>Endpoints</h3>
+      <ul class="endpoints">
+        <li><a href="#reference" data-op="Identity/getIdentityStatus"><span class="method">GET</span><span class="path">/identity/{bonid}/status</span><span class="desc">Yes/no status check</span></a></li>
+        <li><a href="#reference" data-op="Identity/getIdentity"><span class="method">GET</span><span class="path">/identity/{bonid}</span><span class="desc">Full details (with consent)</span></a></li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── CONSENT ─────────────── -->
+    <section class="doc-section" id="consent">
+      <h2><i class="ri-shield-check-line"></i> Ask a citizen for consent</h2>
+      <p class="lead">For a transaction, like a wire transfer or opening an account, the citizen approves your request in BonID with a code and a face check. You only receive the details they agreed to share.</p>
+      <div class="meta-row">
+        <span class="chip"><i class="ri-key-2-line"></i> API key</span>
+        <span class="chip"><i class="ri-list-check-2"></i> 25+ transaction types</span>
+      </div>
+
+      <ol class="steps">
+        <li>
+          <strong>Send the request</strong>
+          <p>Say what the transaction is and which details you need. Add a <code>callback_url</code> to be notified of the answer.</p>
+        </li>
+      </ol>
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl -X POST <span class="base-url"></span>/transaction_consents \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -H "X-Partner-Api-Key: YOUR_API_KEY" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"bonid": "JM-1968-M-OUEST-P2334-217"}' \
-  https://api.bonid.ht/api/v1/verify_identity</code></pre>
-    </details>
-
-    <details>
-      <summary>Get Full Identity Details</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X GET \
-  -H "X-Partner-Api-Key: YOUR_API_KEY" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  https://api.bonid.ht/api/v1/identity/JM-1968-M-OUEST-P2334-217</code></pre>
-    </details>
-
-    <details>
-      <summary>Check Crime Status</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X GET \
-  -H "X-Partner-Api-Key: YOUR_API_KEY" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  https://api.bonid.ht/api/v1/crime_status/JM-1968-M-OUEST-P2334-217</code></pre>
-    </details>
-
-    <details>
-      <summary>Exchange OAuth Token</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "X-Partner-Api-Key: YOUR_API_KEY" \
-  -d '{"grant_type": "authorization_code", "code": "AUTH_CODE"}' \
-  https://api.bonid.ht/api/v1/oauth/token</code></pre>
-    </details>
-
-    <details>
-      <summary>Verify Certificate Signature (Public)</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
-  -H "Content-Type: application/json" \
-  -d '{"certificate_id": "A3F8B2C1", "report_id": "PNH-DDO-HOMO-20260222", "algorithm": "RSASSA-PSS", "issued_at": "2026-02-22T10:30:00Z", "signature_value": "BASE64_SIG"}' \
-  https://api.bonid.ht/api/v1/certificates/verify</code></pre>
-    </details>
-
-    <details>
-      <summary>Create Transaction Consent</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># Step 1: Request citizen consent
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "X-Partner-Api-Key: YOUR_API_KEY" \
-  -d '{"bonid": "JM-1968-M-OUEST-P2334-217", "transaction_type": "wire_transfer", "scopes": ["profile", "address"], "amount": 5000, "currency": "HTG"}' \
-  https://api.bonid.ht/api/v1/transaction_consents</code></pre>
-    </details>
-
-    <details>
-      <summary>Double-Lock: Get Identity with Consent</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># Step 2: After citizen approves, use consent_token to access identity data
-# Only the scopes the citizen consented to will be returned
-curl -X GET \
-  -H "X-Partner-Api-Key: YOUR_API_KEY" \
-  "https://api.bonid.ht/api/v1/identity/JM-1968-M-OUEST-P2334-217?consent_token=txn_abc123xyz"
-
-# Without consent_token, only verification status is returned:
-# { "verified": true, "bonid": "JM-1968-M-OUEST-P2334-217" }</code></pre>
-    </details>
-
-    <details>
-      <summary>Check Voter Eligibility (Election)</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X GET \
-  -H "X-BonID-Voter-Token: VOTER_SESSION_TOKEN" \
-  -H "X-BonID-Attestation: APP_HMAC_NONCE" \
-  -H "X-BonID-Timestamp: 1724947200" \
-  -H "X-BonID-Device: DEVICE_FINGERPRINT" \
-  https://api.bonid.ht/api/v1/election/2026-presidential-round1/eligibility</code></pre>
-    </details>
-
-    <details>
-      <summary>Cast a Vote (Election — ZKP Encrypted)</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># The server NEVER sees the vote choice — only encrypted payload
-curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "X-BonID-Voter-Token: VOTER_SESSION_TOKEN" \
-  -H "X-BonID-Attestation: APP_HMAC_NONCE" \
-  -H "X-BonID-Timestamp: 1724947200" \
-  -H "X-BonID-Source: remote" \
   -d '{
-    "nullifier": "e3b0c44298fc1c14...",
-    "encrypted_choice": {
-      "encrypted_choice": "BASE64...",
-      "encrypted_key": "BASE64...",
-      "iv": "BASE64...",
-      "auth_tag": "BASE64..."
-    },
-    "zkp_commitment": "a8f3b2c1...",
-    "zkp_proof": {
-      "challenge": "HEX...",
-      "response": "HEX...",
-      "public_commitment": "HEX..."
-    },
-    "liveness_session_id": "6e183b42-a256-45b1-af0c-1b7d4c5761ae",
-    "biometric_hash": "d4e5f607..."
-  }' \
-  https://api.bonid.ht/api/v1/election/2026-presidential-round1/cast</code></pre>
-    </details>
+    "bonid": "BZ-1970-M-ND-P2334-0B6",
+    "transaction_type": "wire_transfer",
+    "scopes": ["identity:verify"],
+    "amount": 5000,
+    "currency": "HTG",
+    "callback_url": "https://your-app.com/bonid/webhook"
+  }'</code></pre>
 
-    <details>
-      <summary>Verify Ballot — "Vòt ou konte" (Public)</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code># No authentication needed — anyone can verify
-curl -X GET \
-  https://api.bonid.ht/api/v1/election/2026-presidential-round1/verify/a8f3b2c1d4e5f607...
+      <ol class="steps" start="2" style="counter-reset: step 1; margin-top: 18px;">
+        <li>
+          <strong>The citizen approves (or declines) in BonID</strong>
+          <p>If they don't answer, the request expires, after 5 to 30 minutes depending on the transaction type.</p>
+        </li>
+        <li>
+          <strong>Get the answer</strong>
+          <p>BonID calls your <code>callback_url</code> (see <a href="#webhooks">Webhooks</a>). Before acting on it, confirm the status yourself with the <code>consent_token</code>.</p>
+        </li>
+        <li>
+          <strong>Fetch the approved details</strong>
+          <p>Only the scopes the citizen approved are returned.</p>
+        </li>
+      </ol>
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl "<span class="base-url"></span>/identity/BZ-1970-M-ND-P2334-0B6?consent_token=CONSENT_TOKEN" \
+  -H "X-Partner-Api-Key: YOUR_API_KEY"</code></pre>
 
-# Response: { "verified": true, "message": "Vòt ou konte", "position": 4523 }</code></pre>
-    </details>
+      <details class="more">
+        <summary>Supported transaction types</summary>
+        <div class="type-list" id="txn-types"></div>
+      </details>
 
-    <details>
-      <summary>Register Consulate Kiosk (Election)</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
+      <h3>Endpoints</h3>
+      <ul class="endpoints">
+        <li><a href="#reference" data-op="Transaction Consent/createTransactionConsent"><span class="method post">POST</span><span class="path">/transaction_consents</span><span class="desc">Send a consent request</span></a></li>
+        <li><a href="#reference" data-op="Transaction Consent/getTransactionConsent"><span class="method">GET</span><span class="path">/transaction_consents/{consent_token}</span><span class="desc">Check its status</span></a></li>
+        <li><a href="#reference" data-op="Identity/getIdentity"><span class="method">GET</span><span class="path">/identity/{bonid}?consent_token=…</span><span class="desc">Fetch approved details</span></a></li>
+      </ul>
+
+      <details class="more">
+        <summary>Signing citizens in with BonID (OAuth / OpenID Connect)</summary>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin:10px 0 0;">If you want a "Sign in with BonID" button rather than per-transaction approval, use the OAuth flow: request consent, exchange the code for a token, then read the profile from <code>/userinfo</code>.</p>
+        <ul class="endpoints">
+          <li><a href="#reference" data-op="OAuth & Consent/requestConsent"><span class="method post">POST</span><span class="path">/request_consent</span><span class="desc">Start sign-in</span></a></li>
+          <li><a href="#reference" data-op="OAuth & Consent/exchangeToken"><span class="method post">POST</span><span class="path">/oauth/token</span><span class="desc">Exchange code for token</span></a></li>
+          <li><a href="#reference" data-op="OAuth & Consent/getUserInfo"><span class="method">GET</span><span class="path">/userinfo</span><span class="desc">Read the profile</span></a></li>
+          <li><a href="#reference" data-op="OAuth & Consent/openidDiscovery"><span class="method">GET</span><span class="path">/.well-known/openid-configuration</span><span class="desc">OpenID discovery</span></a></li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- ─────────────── QR ─────────────── -->
+    <section class="doc-section" id="qr">
+      <h2><i class="ri-qr-scan-2-line"></i> Scan a QR code</h2>
+      <p class="lead">Every BonID carries a signed QR code. Scan it with your app, send what you read to BonID, and get back whether it's genuine along with the citizen's name and photo.</p>
+      <div class="meta-row">
+        <span class="chip"><i class="ri-key-2-line"></i> API key</span>
+        <span class="chip amber"><i class="ri-coins-line"></i> Uses credits</span>
+      </div>
+
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl -X POST <span class="base-url"></span>/qr_scan \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -H "X-BonID-Kiosk-Secret: CONSULATE_SECRET" \
+  -d '{ "qr_data": "CONTENTS_OF_THE_QR_CODE" }'</code></pre>
+
+      <h3>Endpoints</h3>
+      <ul class="endpoints">
+        <li><a href="#reference" data-op="Partners/scanQrCode"><span class="method post">POST</span><span class="path">/qr_scan</span><span class="desc">Verify a scanned QR</span></a></li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── WEBHOOKS ─────────────── -->
+    <section class="doc-section" id="webhooks">
+      <h2><i class="ri-link"></i> Webhooks</h2>
+      <p class="lead">BonID tells your server when something changes, so you don't have to keep asking. There are two kinds of notifications.</p>
+
+      <h3>1. Transaction consent results</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">Sent to the <code>callback_url</code> you passed when <a href="#consent">asking for consent</a>, once the citizen approves, declines or lets the request expire. The <code>X-BonID-Event</code> header says which: <code>transaction_consent.approved</code>, <code>.denied</code> or <code>.expired</code>.</p>
+      <div class="note warn">
+        <i class="ri-shield-keyhole-line"></i>
+        <p><strong>Confirm before you act.</strong> These callbacks don't carry a signature you can check, so treat them as a heads-up. Before releasing money or data, confirm the status by calling <code>GET /transaction_consents/{consent_token}</code> with your API key.</p>
+      </div>
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl <span class="base-url"></span>/transaction_consents/CONSENT_TOKEN \
+  -H "X-Partner-Api-Key: YOUR_API_KEY"</code></pre>
+
+      <h3>2. Account webhooks</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">Sent to the webhook URL registered on your partner account when a citizen's consent or BonID changes: <code>consent.approved</code>, <code>consent.revoked</code>, <code>consent.restored</code>, <code>bonid.changed</code> and <code>bonid.suspended</code>. These are signed, so check the signature before trusting one.</p>
+
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Header</th><th>What it is</th></tr></thead>
+          <tbody>
+            <tr><td><code>X-BonID-Event</code></td><td>What happened, e.g. <code>consent.revoked</code></td></tr>
+            <tr><td><code>X-BonID-Signature</code></td><td>HMAC-SHA256 of the raw request body, using your webhook secret (hex)</td></tr>
+            <tr><td><code>X-BonID-Timestamp</code></td><td>When it was sent (Unix seconds)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note warn">
+        <i class="ri-delete-bin-6-line"></i>
+        <p>When you receive <code>consent.revoked</code>, you must delete or anonymize that citizen's data within 30 days. The payload includes the deadline.</p>
+      </div>
+
+      <h3>Check the signature</h3>
+      <div class="lang-tabs" role="tablist">
+        <button type="button" class="is-active" data-lang="node">Node.js</button>
+        <button type="button" data-lang="ruby">Ruby</button>
+        <button type="button" data-lang="python">Python</button>
+      </div>
+      <div class="lang-pane is-active" data-lang="node">
+        <pre class="code"><button class="copy-btn" type="button">Copy</button><code>const crypto = require("crypto");
+
+// rawBody must be the exact bytes BonID sent (not re-serialized JSON)
+function isFromBonID(rawBody, signature) {
+  const expected = crypto
+    .createHmac("sha256", process.env.BONID_WEBHOOK_SECRET)
+    .update(rawBody)
+    .digest("hex");
+  return signature?.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+}</code></pre>
+      </div>
+      <div class="lang-pane" data-lang="ruby">
+        <pre class="code"><button class="copy-btn" type="button">Copy</button><code>expected = OpenSSL::HMAC.hexdigest(
+  "SHA256", ENV.fetch("BONID_WEBHOOK_SECRET"), request.raw_post
+)
+signature = request.headers["X-BonID-Signature"].to_s
+
+head :unauthorized unless ActiveSupport::SecurityUtils.secure_compare(expected, signature)</code></pre>
+      </div>
+      <div class="lang-pane" data-lang="python">
+        <pre class="code"><button class="copy-btn" type="button">Copy</button><code>import hashlib, hmac, os
+
+def is_from_bonid(raw_body: bytes, signature: str) -> bool:
+    expected = hmac.new(
+        os.environ["BONID_WEBHOOK_SECRET"].encode(), raw_body, hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature or "")</code></pre>
+      </div>
+
+      <div class="note">
+        <i class="ri-refresh-line"></i>
+        <p>Reply with any <code>2xx</code> status quickly. If your server fails, BonID tries again a few times with growing delays. Don't have your webhook secret? Email <a href="mailto:support@bonid.ht">support@bonid.ht</a>.</p>
+      </div>
+    </section>
+
+    <!-- ─────────────── LAW ENFORCEMENT ─────────────── -->
+    <section class="doc-section" id="law">
+      <h2><i class="ri-police-badge-line"></i> Background checks</h2>
+      <p class="lead">Authorized partners, such as the police and embassies, can check whether a person has a criminal record or active warrants, and pull incident reports.</p>
+      <div class="meta-row">
+        <span class="chip"><i class="ri-key-2-line"></i> API key + access token</span>
+        <span class="chip amber"><i class="ri-shield-user-line"></i> Approval required</span>
+      </div>
+
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl <span class="base-url"></span>/crime_status/BZ-1970-M-ND-P2334-0B6 \
+  -H "X-Partner-Api-Key: YOUR_API_KEY" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"</code></pre>
+
+      <div class="note warn">
+        <i class="ri-lock-2-line"></i>
+        <p>These endpoints need <strong>both</strong> your API key and an access token with the right permission (<code>crime:status</code>, <code>crime:reports</code> or <code>crime:certificate</code>). How much detail you see depends on your access level. Crime status checks are limited to 50 requests per 15 minutes.</p>
+      </div>
+
+      <h3>Endpoints</h3>
+      <ul class="endpoints">
+        <li><a href="#reference" data-op="Crime & Incident Reports/getCrimeStatus"><span class="method">GET</span><span class="path">/crime_status/{bonid}</span><span class="desc">Record &amp; warrant check</span></a></li>
+        <li><a href="#reference" data-op="Crime & Incident Reports/searchIncidentReports"><span class="method">GET</span><span class="path">/incident_reports</span><span class="desc">Search incident reports</span></a></li>
+        <li><a href="#reference" data-op="Crime & Incident Reports/getIncidentCertificate"><span class="method">GET</span><span class="path">/incident_reports/{id}/certificate</span><span class="desc">Signed report certificate</span></a></li>
+        <li><a href="#reference" data-op="Crime & Incident Reports/getOfficerComplaintSummary"><span class="method">GET</span><span class="path">/officers/{badge_id}/complaints/summary</span><span class="desc">Officer complaint summary</span></a></li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── CERTIFICATES ─────────────── -->
+    <section class="doc-section" id="certificates">
+      <h2><i class="ri-file-shield-2-line"></i> Check a certificate</h2>
+      <p class="lead">Someone handed you a BonID certificate, such as a police report? Confirm its signature is genuine. No account needed.</p>
+      <div class="meta-row">
+        <span class="chip green"><i class="ri-earth-line"></i> Public, no key</span>
+      </div>
+
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl -X POST <span class="base-url"></span>/certificates/verify \
+  -H "Content-Type: application/json" \
   -d '{
-    "consulate_id": "HT-CONS-MIAMI",
-    "station_id": "KIOSK-01",
-    "latitude": 25.7617,
-    "longitude": -80.1918
-  }' \
-  https://api.bonid.ht/api/v1/election/2026-presidential-round1/kiosk/register</code></pre>
-    </details>
+    "certificate_id": "A3F8B2C1",
+    "report_id": "PNH-DDO-20260512-NB17",
+    "algorithm": "RSASSA-PSS",
+    "issued_at": "2026-05-12T10:30:00Z",
+    "signature_value": "BASE64_SIGNATURE"
+  }'</code></pre>
 
-    <details>
-      <summary>Scan Voter BonID at Kiosk (Election)</summary>
-      <pre><button class="copy-btn" onclick="copyCode(this)">Copy</button><code>curl -X POST \
-  -H "Content-Type: application/json" \
-  -H "X-BonID-Kiosk-Token: KIOSK_SESSION_TOKEN" \
-  -d '{"bonid": "VP-1970-M-US-P2334-4EC"}' \
-  https://api.bonid.ht/api/v1/election/2026-presidential-round1/kiosk/scan
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:14px 0 0;">Working offline? Download the public key once and check signatures yourself.</p>
 
-# Response: { "status": "eligible", "voter_token": "...", "display": { "title": "Elektè Elijib" } }</code></pre>
-    </details>
-  </div>
-</div>
+      <h3>Endpoints</h3>
+      <ul class="endpoints">
+        <li><a href="#reference" data-op="Crime & Incident Reports/verifyCertificate"><span class="method post">POST</span><span class="path">/certificates/verify</span><span class="desc">Check a signature</span></a></li>
+        <li><a href="#reference" data-op="Crime & Incident Reports/getCertificatePublicKey"><span class="method">GET</span><span class="path">/certificates/public_key</span><span class="desc">Public key for offline checks</span></a></li>
+        <li><a href="#reference" data-op="Public/publicBonidLookup"><span class="method">GET</span><span class="path">/public/bonid_lookup</span><span class="desc">Public BonID lookup</span></a></li>
+      </ul>
+    </section>
 
-<div class="bonid-footer">
-  Powered by <a href="https://bonid.ht" target="_blank">BonID</a> &mdash; Haiti's National Digital Identity Platform
+    <!-- ─────────────── ELECTIONS ─────────────── -->
+    <section class="doc-section" id="elections">
+      <h2><i class="ri-checkbox-circle-line"></i> Elections (BonVote)</h2>
+      <p class="lead">Anyone can confirm that a ballot receipt was counted, with no login. Voter eligibility checks run from the official BonID app after a face check.</p>
+      <div class="meta-row">
+        <span class="chip green"><i class="ri-earth-line"></i> Receipt check is public</span>
+      </div>
+
+      <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl <span class="base-url"></span>/election/2026-presidential-round1/verify/RECEIPT_HASH
+
+<span class="c"># { "verified": true, "message": "Vòt ou konte", ... }</span></code></pre>
+
+      <div class="note">
+        <i class="ri-smartphone-line"></i>
+        <p>Eligibility checks and casting a ballot only work from the official BonID app, which proves it's genuine with signed headers. They aren't part of a partner integration.</p>
+      </div>
+
+      <h3>Endpoints</h3>
+      <ul class="endpoints">
+        <li><a href="#reference" data-op="Election/verifyBallot"><span class="method">GET</span><span class="path">/election/{election_id}/verify/{hash}</span><span class="desc">Check a receipt (public)</span></a></li>
+        <li><a href="#reference" data-op="Election/checkEligibility"><span class="method">GET</span><span class="path">/election/{election_id}/eligibility</span><span class="desc">Voter eligibility (BonID app)</span></a></li>
+        <li><a href="#reference" data-op="Election Kiosk/registerKiosk"><span class="method post">POST</span><span class="path">/election/{election_id}/kiosk/register</span><span class="desc">Set up a consulate kiosk</span></a></li>
+        <li><a href="#reference" data-op="Election Kiosk/kioskScan"><span class="method post">POST</span><span class="path">/election/{election_id}/kiosk/scan</span><span class="desc">Scan a voter at a kiosk</span></a></li>
+      </ul>
+    </section>
+
+    <!-- ─────────────── AUTH ─────────────── -->
+    <section class="doc-section" id="auth">
+      <h2><i class="ri-key-2-line"></i> Authentication</h2>
+      <p class="lead">Most requests only need your API key. Sensitive data, like background checks, also needs an access token.</p>
+
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>What</th><th>Header</th><th>When you need it</th></tr></thead>
+          <tbody>
+            <tr><td><strong>API key</strong></td><td><code>X-Partner-Api-Key: YOUR_API_KEY</code></td><td>Every partner request</td></tr>
+            <tr><td><strong>Access token</strong></td><td><code>Authorization: Bearer YOUR_ACCESS_TOKEN</code></td><td>Background checks and incident reports (together with the API key), and OAuth sign-in</td></tr>
+            <tr><td><strong>Nothing</strong></td><td>none</td><td>Public checks: certificates, ballot receipts, public keys</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Permissions (scopes)</h3>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:0;">Access tokens carry permissions. If one is missing, you get a <code>403</code> that names the permission you need.</p>
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Scope</th><th>Lets you</th></tr></thead>
+          <tbody>
+            <tr><td><code>identity:verify</code></td><td>Check identity status and details</td></tr>
+            <tr><td><code>crime:status</code></td><td>Run background checks</td></tr>
+            <tr><td><code>crime:reports</code></td><td>Search incident reports</td></tr>
+            <tr><td><code>crime:certificate</code></td><td>Download signed report certificates</td></tr>
+            <tr><td><code>officer:complaints</code></td><td>Read officer complaint summaries</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note warn">
+        <i class="ri-eye-off-line"></i>
+        <p>Keep your API key and secrets on your server. Never put them in a mobile app or website code that users can download.</p>
+      </div>
+    </section>
+
+    <!-- ─────────────── ENVIRONMENTS ─────────────── -->
+    <section class="doc-section" id="environments">
+      <h2><i class="ri-server-line"></i> Environments</h2>
+      <p class="lead">Build and test in the sandbox, then switch the base URL to go live. The environment picker at the top changes every example on this page.</p>
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Environment</th><th>Base URL</th><th>Use it for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Sandbox</strong></td><td><code>https://sandbox.bonid.ht/api/v1</code></td><td>Development and testing</td></tr>
+            <tr><td><strong>Production</strong></td><td><code>https://api.bonid.ht/api/v1</code></td><td>Real citizens and real data</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:14px 0 0;">Plain HTTPS with JSON, so it works from any language: Rails, Node, Go, Python, PHP and more.</p>
+    </section>
+
+    <!-- ─────────────── ERRORS ─────────────── -->
+    <section class="doc-section" id="errors">
+      <h2><i class="ri-error-warning-line"></i> Errors &amp; limits</h2>
+      <p class="lead">Errors come back as JSON with an <code>error</code> message you can log or show.</p>
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Status</th><th>Meaning</th><th>What to do</th></tr></thead>
+          <tbody>
+            <tr><td><code>401</code></td><td>Missing or wrong API key or token</td><td>Check the headers and that the key is for this environment</td></tr>
+            <tr><td><code>403</code></td><td>Your token lacks a permission</td><td>See <code>required_scope</code> in the response</td></tr>
+            <tr><td><code>404</code></td><td>BonID or record not found</td><td>Check the ID for typos</td></tr>
+            <tr><td><code>422</code></td><td>Something in the request is missing or invalid</td><td>Read the <code>error</code> message</td></tr>
+            <tr><td><code>429</code></td><td>Too many requests</td><td>Wait for the <code>Retry-After</code> seconds, then retry</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre class="code"><code><span class="c">// Example: 403</span>
+{
+  "status": "forbidden",
+  "error": "Forbidden: insufficient scope",
+  "required_scope": "crime:status",
+  "timestamp": "2026-11-10T14:30:00Z"
+}</code></pre>
+      <div class="note">
+        <i class="ri-speed-up-line"></i>
+        <p>Each API key can make up to 1,000 requests per minute. Some sensitive endpoints have lower limits, shown on each endpoint in the reference.</p>
+      </div>
+    </section>
+
+    <!-- ─────────────── REFERENCE ─────────────── -->
+    <section class="doc-section" id="reference">
+      <h2><i class="ri-book-open-line"></i> All endpoints</h2>
+      <p class="lead">The full reference. Click <em>Authorize</em> to enter your API key, open any endpoint, and use <em>Try it out</em> to send a real request to the environment selected at the top.</p>
+      <div id="swagger-ui"></div>
+    </section>
+
+    <footer class="bonid-footer">
+      Questions? <a href="mailto:support@bonid.ht">support@bonid.ht</a> · Powered by <a href="https://bonid.ht" target="_blank" rel="noopener">BonID</a>
+    </footer>
+  </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
 
 <script>
-  function copyCode(btn) {
-    const code = btn.nextElementSibling.textContent;
-    navigator.clipboard.writeText(code);
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy', 1500);
+(function () {
+  var SPEC_URL = './openapi.json';
+  var ENVS = [
+    { key: 'sandbox',    name: 'Sandbox',    url: 'https://sandbox.bonid.ht/api/v1' },
+    { key: 'production', name: 'Production', url: 'https://api.bonid.ht/api/v1' }
+  ];
+  var host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    ENVS.unshift({ key: 'local', name: 'Local', url: window.location.origin + '/api/v1' });
   }
 
-  window.onload = () => {
-    const specUrl = './openapi.json';
+  // Default: local when running locally, otherwise sandbox (safest place to start).
+  var saved = null;
+  try { saved = localStorage.getItem('bonid-docs-env'); } catch (e) {}
+  var env = ENVS.find(function (e) { return e.key === saved; }) || ENVS[0];
 
-    const envs = [
-      { name: 'Local', url: 'http://localhost:3100/api/v1', badge: '#e67e22' },
-      { name: 'Sandbox', url: 'https://sandbox.bonid.ht/api/v1', badge: '#198754' },
-      { name: 'Production', url: 'https://api.bonid.ht/api/v1', badge: '#00209F' }
-    ];
+  // ── Environment picker ──
+  var select = document.getElementById('env-select');
+  ENVS.forEach(function (e) {
+    var o = document.createElement('option');
+    o.value = e.key; o.textContent = e.name;
+    select.appendChild(o);
+  });
+  select.value = env.key;
 
-    // Auto-detect environment
-    let envIdx = 2; // production default
-    const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
-      envIdx = 0;
-    } else if (host.includes('sandbox') || host.includes('ngrok')) {
-      envIdx = 1;
+  function paintBaseUrls() {
+    document.querySelectorAll('.base-url').forEach(function (el) { el.textContent = env.url; });
+  }
+  select.addEventListener('change', function () {
+    env = ENVS.find(function (e) { return e.key === select.value; });
+    try { localStorage.setItem('bonid-docs-env', env.key); } catch (e) {}
+    paintBaseUrls();
+  });
+  paintBaseUrls();
+
+  // ── Copy buttons ──
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.copy-btn');
+    if (!btn) return;
+    var code = btn.parentElement.querySelector('code');
+    var text = code ? code.textContent : '';
+    var done = function () {
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(done, function () {});
     }
+  });
 
-    const badge = document.getElementById('env-badge');
-    const toggleBtn = document.getElementById('env-toggle');
+  // ── Language tabs (webhook samples) ──
+  document.querySelectorAll('.lang-tabs').forEach(function (tabs) {
+    tabs.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-lang]');
+      if (!b) return;
+      var section = tabs.parentElement;
+      tabs.querySelectorAll('button').forEach(function (x) { x.classList.toggle('is-active', x === b); });
+      section.querySelectorAll('.lang-pane').forEach(function (p) {
+        p.classList.toggle('is-active', p.dataset.lang === b.dataset.lang);
+      });
+    });
+  });
 
-    function updateBadge() {
-      const env = envs[envIdx];
-      badge.textContent = env.name;
-      badge.style.background = 'var(--white)';
-      badge.style.color = env.badge;
-    }
-
-    function loadSwagger() {
-      const env = envs[envIdx];
-      document.getElementById('swagger-ui').innerHTML = '';
-
-      SwaggerUIBundle({
-        url: specUrl,
-        dom_id: '#swagger-ui',
-        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
-        layout: 'BaseLayout',
-        docExpansion: 'list',
-        defaultModelsExpandDepth: 2,
-        tryItOutEnabled: true,
-        persistAuthorization: true,
-        filter: true,
-        displayRequestDuration: true,
-        requestInterceptor: (req) => {
-          // Rewrite server URL to current environment
-          if (req.url && req.url.includes('/api/v1/')) {
-            const path = req.url.split('/api/v1/').pop();
-            req.url = env.url + '/' + path;
-          }
-          return req;
+  // ── Highlight the current section in the nav ──
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.docs-nav a'));
+  var byId = {};
+  navLinks.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var link = byId[en.target.id];
+        if (!link) return;
+        navLinks.forEach(function (a) { a.classList.remove('is-active'); });
+        link.classList.add('is-active');
+        // keep the active chip visible in the horizontal mobile nav
+        var nav = link.parentElement;
+        if (nav.scrollWidth > nav.clientWidth) {
+          nav.scrollTo({ left: link.offsetLeft - 12, behavior: 'smooth' });
         }
       });
+    }, { rootMargin: '-30% 0px -65% 0px' });
+    document.querySelectorAll('.doc-section[id]').forEach(function (s) { io.observe(s); });
+  }
+
+  // ── Endpoint links → open that operation in the reference ──
+  function opElementId(op) {
+    var parts = op.split('/');
+    // Swagger UI builds ids as operations-<tag>-<operationId>, with spaces → "_"
+    // and "&" written as "\&" (e.g. operations-OAuth_\&_Consent-exchangeToken)
+    return 'operations-' + parts[0].replace(/\s/g, '_').replace(/&/g, '\\&') + '-' + parts[1];
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-op]');
+    if (!a) return;
+    var el = document.getElementById(opElementId(a.dataset.op));
+    if (!el) return; // reference still loading: fall back to the #reference anchor
+    e.preventDefault();
+    var section = el.closest('.opblock-tag-section');
+    if (section && !section.classList.contains('is-open')) {
+      var tagHeader = section.querySelector('.opblock-tag');
+      if (tagHeader) tagHeader.click();
     }
+    setTimeout(function () {
+      var op = document.getElementById(opElementId(a.dataset.op));
+      if (!op) return;
+      if (!op.classList.contains('is-open')) {
+        var summary = op.querySelector('.opblock-summary-control') || op.querySelector('.opblock-summary');
+        if (summary) summary.click();
+      }
+      op.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  });
 
-    toggleBtn.addEventListener('click', () => {
-      envIdx = (envIdx + 1) % envs.length;
-      updateBadge();
-      loadSwagger();
+  // ── Interactive reference ──
+  var TAG_ORDER = [
+    'Identity', 'Transaction Consent', 'OAuth & Consent', 'Partners',
+    'Crime & Incident Reports', 'Public', 'Election', 'Election Kiosk'
+  ];
+  function tagRank(t) { var i = TAG_ORDER.indexOf(t); return i === -1 ? 99 : i; }
+
+  window.addEventListener('load', function () {
+    var ui = SwaggerUIBundle({
+      url: SPEC_URL,
+      dom_id: '#swagger-ui',
+      presets: [SwaggerUIBundle.presets.apis],
+      layout: 'BaseLayout',
+      docExpansion: 'list',
+      defaultModelsExpandDepth: -1,
+      tagsSorter: function (a, b) { return tagRank(a) - tagRank(b); },
+      tryItOutEnabled: false,
+      persistAuthorization: true,
+      filter: true,
+      displayRequestDuration: true,
+      requestInterceptor: function (req) {
+        // Send "Try it out" requests to the environment picked in the header
+        if (req.url && req.url.indexOf('/api/v1/') !== -1) {
+          req.url = env.url + '/' + req.url.split('/api/v1/').pop();
+        }
+        return req;
+      },
+      onComplete: function () {
+        try {
+          var spec = ui.specSelectors.specJson().toJS();
+          if (spec.info && spec.info.version) {
+            document.getElementById('version-pill').textContent = 'v' + spec.info.version;
+          }
+          var types = (((spec.components || {}).schemas || {}).TransactionType || {})['enum'] || [];
+          document.getElementById('txn-types').innerHTML = types.map(function (t) {
+            return '<code>' + t + '</code>';
+          }).join('');
+        } catch (e) {}
+      }
     });
-
-    updateBadge();
-    loadSwagger();
-  };
+  });
+})();
 </script>
 </body>
 </html>

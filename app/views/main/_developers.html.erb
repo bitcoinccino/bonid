@@ -223,28 +223,32 @@
 }</code></pre>
 
           <%# Webhook %>
-          <pre id="api-webhook" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// BonID sends to your callback_url when citizen decides</span>
+          <pre id="api-webhook" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// BonID calls your callback_url when the citizen decides</span>
 
-<span style="color: #7dd3fc;">POST</span> https://your-app.com/bonid_webhook
+<span style="color: #7dd3fc;">POST</span> https://your-app.com/bonid/webhook
 <span style="color: #94a3b8;">Headers:</span>
-  X-BonID-Signature: HMAC-SHA256(body, your_api_key)
+  X-BonID-Event: transaction_consent.approved
   Content-Type: application/json
 
 <span style="color: #94a3b8;">Body:</span>
 {
-  <span style="color: #86efac;">"event"</span>: <span style="color: #86efac;">"transaction_consent.approved"</span>,
   <span style="color: #86efac;">"consent_token"</span>: <span style="color: #86efac;">"81f81ef7b9f5339085b7..."</span>,
   <span style="color: #86efac;">"bonid"</span>: <span style="color: #86efac;">"BZ-1970-M-ND-P2334-0B6"</span>,
-  <span style="color: #86efac;">"decision"</span>: <span style="color: #86efac;">"approved"</span>,
-  <span style="color: #86efac;">"approved_scopes"</span>: [<span style="color: #86efac;">"identity"</span>],
-  <span style="color: #86efac;">"liveness_verified"</span>: <span style="color: #7dd3fc;">true</span>,
-  <span style="color: #86efac;">"liveness_confidence"</span>: <span style="color: #7dd3fc;">99.65</span>,
-  <span style="color: #86efac;">"decided_at"</span>: <span style="color: #86efac;">"2026-03-23T23:35:00Z"</span>
+  <span style="color: #86efac;">"transaction_type"</span>: <span style="color: #86efac;">"wire_transfer"</span>,
+  <span style="color: #86efac;">"status"</span>: <span style="color: #86efac;">"approved"</span>,
+  <span style="color: #86efac;">"amount"</span>: <span style="color: #86efac;">"5000.0"</span>,
+  <span style="color: #86efac;">"currency"</span>: <span style="color: #86efac;">"HTG"</span>,
+  <span style="color: #86efac;">"decided_at"</span>: <span style="color: #86efac;">"2026-11-10T14:35:00Z"</span>,
+  <span style="color: #86efac;">"biometric_verification"</span>: {
+    <span style="color: #86efac;">"liveness_passed"</span>: <span style="color: #7dd3fc;">true</span>,
+    <span style="color: #86efac;">"liveness_confidence"</span>: <span style="color: #7dd3fc;">99.65</span>,
+    <span style="color: #86efac;">"face_matched"</span>: <span style="color: #7dd3fc;">true</span>
+  }
 }
 
-<span style="color: #94a3b8;">// Verify signature before processing:</span>
-<span style="color: #94a3b8;">// expected = HMAC-SHA256(raw_body, your_api_key)</span>
-<span style="color: #94a3b8;">// compare with X-BonID-Signature header</span></code></pre>
+<span style="color: #94a3b8;">// Confirm before releasing money or data:</span>
+<span style="color: #7dd3fc;">GET</span> /api/v1/transaction_consents/<span style="color: #86efac;">{consent_token}</span>
+<span style="color: #94a3b8;">Headers:</span> X-Partner-Api-Key: YOUR_KEY</code></pre>
 
           <%# BonVote — Election %>
           <pre id="api-vote" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// 1. Check that a voter is eligible</span>
