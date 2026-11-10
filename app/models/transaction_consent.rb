@@ -83,6 +83,17 @@ class TransactionConsent < ApplicationRecord
     cash_out cash_in mobile_topup
     crypto_buy crypto_sell crypto_transfer crypto_swap
   ].freeze
+
+  # ── Currencies ──
+  # Fiat a Haitian partner realistically settles in: gourdes, plus the
+  # diaspora corridors (US, Canada, France/EU, Dominican Republic).
+  FIAT_CURRENCIES = %w[HTG USD CAD EUR DOP].freeze
+  # Crypto assets — accepted only on crypto_* transaction types.
+  CRYPTO_CURRENCIES = %w[BTC ETH USDC USDT].freeze
+  CRYPTO_TYPES = %w[crypto_buy crypto_sell crypto_transfer crypto_swap crypto_kyc].freeze
+  # Max decimal places: cents for fiat, satoshis (8) for crypto.
+  FIAT_DECIMALS   = 2
+  CRYPTO_DECIMALS = 8
   VALID_TRANSACTION_TYPES = TTL_BY_TYPE.keys.freeze
 
   # ============================================================
@@ -171,12 +182,16 @@ class TransactionConsent < ApplicationRecord
   validates :consent_token, presence: true, uniqueness: true
   validates :transaction_type, presence: true, inclusion: { in: VALID_TRANSACTION_TYPES }
   validates :expires_at, presence: true
+  validates :amount, numericality: { greater_than: 0 }, allow_nil: true
+  validate  :currency_allowed_for_type
+  validate  :amount_precision_matches_currency
   validates :reference_id, uniqueness: { scope: [:citizen_id, :partner_id] },
             allow_blank: true
 
   # ============================================================
   # LIFECYCLE
   # ============================================================
+  before_validation :normalize_currency
   before_validation :generate_consent_token, on: :create
   before_validation :set_expiry, on: :create
   before_validation :apply_one_time_use_for_money, on: :create
@@ -413,6 +428,34 @@ class TransactionConsent < ApplicationRecord
   def set_expiry
     self.expires_at ||= ttl_for_type.from_now
     self.otp_expires_at ||= self.expires_at
+  end
+
+  def crypto_currency?
+    CRYPTO_CURRENCIES.include?(currency)
+  end
+
+  def normalize_currency
+    self.currency = currency.to_s.strip.upcase.presence || "HTG"
+  end
+
+  def currency_allowed_for_type
+    return if FIAT_CURRENCIES.include?(currency)
+
+    if crypto_currency?
+      return if CRYPTO_TYPES.include?(transaction_type)
+      errors.add(:currency, "#{currency} is only allowed on crypto transaction types (#{CRYPTO_TYPES.join(', ')})")
+    else
+      allowed = FIAT_CURRENCIES + (CRYPTO_TYPES.include?(transaction_type) ? CRYPTO_CURRENCIES : [])
+      errors.add(:currency, "#{currency.inspect} is not supported. Use one of: #{allowed.join(', ')}")
+    end
+  end
+
+  def amount_precision_matches_currency
+    return if amount.blank? || errors[:currency].any?
+
+    max = crypto_currency? ? CRYPTO_DECIMALS : FIAT_DECIMALS
+    decimals = amount.to_d.to_s("F").split(".", 2)[1].to_s.sub(/0+\z/, "").length
+    errors.add(:amount, "has too many decimal places for #{currency} (max #{max})") if decimals > max
   end
 
   def apply_one_time_use_for_money

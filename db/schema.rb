@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_10_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2117,7 +2117,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
     t.string "transaction_type", null: false
     t.integer "status", default: 0, null: false
     t.text "scopes", default: [], array: true
-    t.decimal "amount", precision: 12, scale: 2
+    t.decimal "amount", precision: 20, scale: 8
     t.string "currency", default: "HTG"
     t.text "description"
     t.string "reference_id"
