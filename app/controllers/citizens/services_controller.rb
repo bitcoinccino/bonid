@@ -3,6 +3,7 @@
 module Citizens
   class ServicesController < ApplicationController
     before_action :authenticate_citizen!
+    include CitizenServicesPausable # v1 launch: paused unless CITIZEN_SERVICES_ENABLED=true (see concern)
     layout "citizen"
 
     # ================================================================

@@ -23,6 +23,10 @@
   </li>
 
   <%# ── Mobile-only: Sèvis and Aplikasyon Mwen also appear in the desktop topbar ── %>
+  <%# NOTE: paused for the v1 launch: no partner has published an application  %>
+  <%# form yet. Re-enable with CITIZEN_SERVICES_ENABLED=true (see              %>
+  <%# app/controllers/concerns/citizen_services_pausable.rb).                 %>
+  <% if citizen_services_enabled? %>
   <li class="nav-item d-lg-none">
     <%= link_to citizens_services_path,
                 class: "nav-link #{'active' if request.path.start_with?(citizens_services_path)}" do %>
@@ -42,6 +46,7 @@
       <% end %>
     <% end %>
   </li>
+  <% end %>
 
   <%# ── ELEKSYON ──────────────────────────────
       Links are ordered + badged based on the active election's lifecycle
