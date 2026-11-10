@@ -70,6 +70,12 @@ module Api
         if consent_token
           @consent = validate_consent_token!(consent_token, bonid)
           return unless @consent # validation rendered an error
+
+          # One-time tokens: claim the single read atomically *before*
+          # returning data, so parallel requests can't each get a copy.
+          if @consent.burn_after_read? && !@consent.claim_single_read!
+            return render_consent_error("Consent token has been consumed (burn-after-read)", :gone)
+          end
         end
 
         # Lookup person (citizen or tourist)
@@ -86,7 +92,8 @@ module Api
             RecordConsentDataAccessJob.perform_later(
               consent_id: @consent.id,
               ip: request.remote_ip,
-              scopes_used: @consent.scopes
+              scopes_used: @consent.scopes,
+              counted: @consent.burn_after_read? # already counted by claim_single_read!
             )
           elsif @oauth_token.nil?
             # No consent, no OAuth → strip all PII, return verification status only

@@ -787,6 +787,8 @@ paths:
 
         Each type has a time-to-live (TTL). Shorter TTLs reduce fraud windows.
 
+        **After approval:** the `consent_token` can fetch identity data for 10 minutes. For money-moving types (transfers, payments, cash in/out, top-ups, crypto buy/sell/transfer/swap) it is single-use: the first fetch spends it and later calls get `410 Gone`.
+
         | Category | Type | TTL | Use Case |
         |----------|------|-----|----------|
         | **Financial** | `account_opening` | 15 min | Open a new bank or fintech account |
@@ -815,7 +817,7 @@ paths:
         | | `crypto_sell` | 5 min | Crypto-to-fiat off-ramp — AML reporting required |
         | | `crypto_transfer` | 10 min | Peer-to-peer on-chain — Travel Rule for > $1000 |
         | | `crypto_swap` | 10 min | Token-to-token exchange — no fiat, lower risk |
-        | | `crypto_kyc` | 30 min | Exchange onboarding — enhanced due diligence (EDD) |
+        | | `crypto_kyc` | 15 min | Exchange onboarding — enhanced due diligence (EDD) |
         | **Diplomacy / Embassies** | `consular_id` | 15 min | Embassy: consular ID issuance or renewal |
         |  | `passport_renewal` | 15 min | Embassy: passport renewal for the diaspora |
         |  | `citizen_services` | 15 min | Embassy: notarization, birth registration abroad |
