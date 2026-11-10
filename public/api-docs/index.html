@@ -628,7 +628,7 @@
       <p class="lead">For a transaction, like a wire transfer or opening an account, the citizen approves your request in BonID with a code and a face check. You only receive the details they agreed to share.</p>
       <div class="meta-row">
         <span class="chip"><i class="ri-key-2-line"></i> API key</span>
-        <span class="chip"><i class="ri-list-check-2"></i> 25+ transaction types</span>
+        <span class="chip"><i class="ri-list-check-2"></i> 40+ transaction types</span>
       </div>
 
       <ol class="steps">
@@ -643,7 +643,7 @@
   -d '{
     "bonid": "BZ-1970-M-ND-P2334-0B6",
     "transaction_type": "wire_transfer",
-    "scopes": ["identity:verify"],
+    "scopes": ["profile", "address"],
     "amount": 5000,
     "currency": "HTG",
     "callback_url": "https://your-app.com/bonid/webhook"
@@ -660,11 +660,33 @@
         </li>
         <li>
           <strong>Fetch the approved details</strong>
-          <p>Only the scopes the citizen approved are returned.</p>
+          <p>You get only what the citizen approved. The token works for 30 minutes after approval, and some consents can be used only once, so fetch the data right away.</p>
         </li>
       </ol>
       <pre class="code"><button class="copy-btn" type="button">Copy</button><code>curl "<span class="base-url"></span>/identity/BZ-1970-M-ND-P2334-0B6?consent_token=CONSENT_TOKEN" \
   -H "X-Partner-Api-Key: YOUR_API_KEY"</code></pre>
+
+      <h3>What you can ask for</h3>
+      <div class="table-wrap">
+        <table class="simple">
+          <thead><tr><th>Scope</th><th>Shares</th></tr></thead>
+          <tbody>
+            <tr><td><code>profile</code></td><td>Name, date of birth, age, sex, nationality and photo</td></tr>
+            <tr><td><code>address</code></td><td>Address, department and commune</td></tr>
+            <tr><td><code>email</code></td><td>Email address</td></tr>
+            <tr><td><code>phone</code></td><td>Phone number</td></tr>
+            <tr><td><code>identity:verify</code></td><td>Photo and biometric verification data</td></tr>
+            <tr><td><code>civil</code></td><td>Place of birth and family records</td></tr>
+            <tr><td><code>health</code></td><td>Blood type, organ donor status, allergies, conditions and medications</td></tr>
+            <tr><td><code>physical</code></td><td>Physical description (height, eye color and similar)</td></tr>
+            <tr><td><code>emergency_contacts</code></td><td>Emergency contact people</td></tr>
+            <tr><td><code>social</code></td><td>Social media handles</td></tr>
+            <tr><td><code>tax</code></td><td>Tax ID (NIF / Matricule Fiscale), where on file</td></tr>
+            <tr><td><code>identity:details</code></td><td>Everything above</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin:10px 0 0;">Ask only for what the transaction needs. Citizens are more likely to approve a short list.</p>
 
       <details class="more">
         <summary>Supported transaction types</summary>
