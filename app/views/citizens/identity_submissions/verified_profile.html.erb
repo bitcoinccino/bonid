@@ -8,8 +8,10 @@
   user   = @submission.user
   show_person = %i[valid expired].include?(status)
 
-  bonid_parts  = user&.bonid.to_s.split("-")
-  masked_bonid = bonid_parts.size >= 2 ? "#{bonid_parts.first}-••••-#{bonid_parts.last}" : "••••"
+  # Same mask as the wallet card: initials + last 6 characters (lookup suffix),
+  # e.g. DL-****-*-**-697C56.
+  bonid_stripped = user&.bonid.to_s.delete("-")
+  masked_bonid = bonid_stripped.length >= 8 ? "#{bonid_stripped[0..1]}-****-*-**-#{bonid_stripped.last(6)}" : "****"
 
   fmt = ->(t) { t&.strftime("%d/%m/%Y") }
 
