@@ -106,24 +106,27 @@ module Citizens
     end
 
     #  Move this OUTSIDE new
+    # PUBLIC verification page — what anyone sees after scanning a citizen's
+    # wallet QR (via #verify) or opening a shared link. No login required, so
+    # it shows the minimum needed to answer "is this BonID real and valid?":
+    # photo, name, status, masked BonID, dates. Never DOB, address, the full
+    # BonID (its P#### segment is the last 4 CIN digits) or internal codes.
     def verified_profile
-      @submission = IdentitySubmission.find_by!(public_token: params[:public_token])
+      @submission = IdentitySubmission.find_by(public_token: params[:public_token])
+      return render(plain: "BonID not found.", status: :not_found) unless @submission
 
-      unless @submission.status_approved?
-        render plain: "This BonID has not been verified.", status: :forbidden
-        return
-      end
+      @verification_status =
+        if @submission.status_revoked?
+          :suspended
+        elsif !@submission.status_approved? || @submission.verified_at.blank?
+          :not_valid
+        elsif @submission.expires_at.present? && @submission.expires_at.past?
+          :expired
+        else
+          :valid
+        end
 
-      if @submission.expires_at.present? && @submission.expires_at < Time.current
-        render plain: "This BonID has expired.", status: :forbidden
-        return
-      end
-
-      @partner_name =
-        params[:partner].present? ?
-          Partner.find_by(slug: params[:partner])&.name :
-          nil
-
+      response.headers["X-Robots-Tag"] = "noindex, nofollow"
       render "citizens/identity_submissions/verified_profile", layout: "public"
     end
 
@@ -437,11 +440,16 @@ end
 
 
 def verify
-  token = params[:token].to_s
-  submission = IdentitySubmission.find_by(verification_token: token)
+  # The wallet QR (IdentitySubmission#public_verify_url) sends
+  # ?verification_token=…; accept the older ?token=… too. Reading only
+  # :token made every wallet QR scan fail with "Invalid … QR code".
+  token = (params[:verification_token].presence || params[:token]).to_s
+  submission = token.present? && IdentitySubmission.find_by(verification_token: token)
 
-  unless submission&.status_approved?
-    render plain: "⚠️ Invalid or expired BonID QR code.", status: :not_found
+  # Unknown code → error. Known but expired/suspended/unverified → still go
+  # to the public page, which tells the person scanning exactly why.
+  unless submission
+    render plain: "⚠️ Invalid BonID QR code.", status: :not_found
     return
   end
 
