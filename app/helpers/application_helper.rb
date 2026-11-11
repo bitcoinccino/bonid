@@ -5,6 +5,16 @@ module ApplicationHelper
     BontourisPausable.enabled?
   end
 
+  # True when the current page is at or under `path`. Route helpers append
+  # ?lang=…, so a plain request.path.start_with?(some_path) never matched and
+  # nav links never highlighted. Compares paths only.
+  # Pass exact: true for paths that prefix every page (e.g. /citizens).
+  def nav_path_active?(path, exact: false)
+    base = path.to_s.split("?").first
+    return request.path == base if exact
+    request.path == base || request.path.start_with?("#{base}/")
+  end
+
   # Whether citizen Sèvis / Aplikasyon Mwen are enabled (paused for v1).
   # Mirrors the controller guard (CitizenServicesPausable).
   def citizen_services_enabled?

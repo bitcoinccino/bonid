@@ -8,15 +8,29 @@
 
   <li class="nav-item">
     <%= link_to citizens_dashboard_path,
-                class: "nav-link #{'active' if current_page?(citizens_dashboard_path) || current_page?(citizens_root_path)}" do %>
+                class: "nav-link #{'active' if nav_path_active?(citizens_dashboard_path) || nav_path_active?(citizens_root_path, exact: true)}" do %>
       <i class="ri-dashboard-line"></i>
       <span>Dashboard</span>
     <% end %>
   </li>
 
+  <%# Konsantman — approve/deny partner transaction requests. Badge = requests
+      still waiting (they expire in 5–15 min, so citizens need to see them). %>
+  <li class="nav-item">
+    <%= link_to citizens_transaction_consents_path,
+                class: "nav-link #{'active' if nav_path_active?(citizens_transaction_consents_path) || nav_path_active?(citizens_consents_path)}" do %>
+      <i class="ri-shield-check-line"></i>
+      <span>Konsantman</span>
+      <% pending_consents = current_citizen&.transaction_consents&.active&.count.to_i %>
+      <% if pending_consents > 0 %>
+        <span class="badge bg-warning text-dark ms-auto"><%= pending_consents %></span>
+      <% end %>
+    <% end %>
+  </li>
+
   <li class="nav-item">
     <%= link_to citizens_activity_path,
-                class: "nav-link #{'active' if request.path.start_with?(citizens_activity_path)}" do %>
+                class: "nav-link #{'active' if nav_path_active?(citizens_activity_path)}" do %>
       <i class="ri-pulse-line"></i>
       <span>Aktivite</span>
     <% end %>
@@ -29,7 +43,7 @@
   <% if citizen_services_enabled? %>
   <li class="nav-item d-lg-none">
     <%= link_to citizens_services_path,
-                class: "nav-link #{'active' if request.path.start_with?(citizens_services_path)}" do %>
+                class: "nav-link #{'active' if nav_path_active?(citizens_services_path)}" do %>
       <i class="ri-apps-2-line"></i>
       <span>Sèvis</span>
     <% end %>
@@ -37,7 +51,7 @@
 
   <li class="nav-item d-lg-none">
     <%= link_to citizens_service_applications_path,
-                class: "nav-link #{'active' if request.path.start_with?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
+                class: "nav-link #{'active' if nav_path_active?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
       <i class="ri-file-list-3-line"></i>
       <span>Aplikasyon Mwen</span>
       <% draft_count = current_citizen&.service_applications&.drafts&.count || 0 %>
@@ -74,7 +88,7 @@
   <% if idpol_extras_enabled? %>
     <li class="nav-item">
       <%= link_to citizens_officer_complaints_path,
-                  class: "nav-link #{'active' if request.path.start_with?(citizens_officer_complaints_path)}" do %>
+                  class: "nav-link #{'active' if nav_path_active?(citizens_officer_complaints_path)}" do %>
         <i class="ri-file-shield-2-line"></i>
         <span>Plent</span>
       <% end %>
@@ -83,7 +97,7 @@
 
   <li class="nav-item">
     <%= link_to citizens_support_path,
-                class: "nav-link #{'active' if current_page?(citizens_support_path)}" do %>
+                class: "nav-link #{'active' if nav_path_active?(citizens_support_path)}" do %>
       <i class="ri-customer-service-2-line"></i>
       <span>Sipò</span>
     <% end %>

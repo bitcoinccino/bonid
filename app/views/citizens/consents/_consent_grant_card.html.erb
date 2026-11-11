@@ -1,162 +1,158 @@
 <%# app/views/citizens/consents/_consent_grant_card.html.erb
-     Renders the INNER content of a consent card (forms + card markup).
-     The col-* grid wrapper lives in the index view. %>
+     A partner that can see the citizen's information ("Aksè aktif").
+     Plain-English wording throughout. The "Remove access" button sits at the
+     bottom of the card (not hidden in a menu) and asks for confirmation in a
+     page dialog that explains what happens. The col-* wrapper is in the index. %>
+<% partner = grant.partner %>
+<% status_text = { "approved" => "Has access", "pending" => "Waiting for you",
+                   "revoked" => "Access removed", "expired" => "Access ended" }[grant.status] || grant.status.humanize %>
 <% theme = grant.status_theme %>
+<% modal_id = "remove-access-#{grant.id}" %>
 
 <%# ── Hidden action forms ── %>
 <% if grant.pending? %>
-  <%= form_with url: citizens_consents_path,
-                method: :post,
-                id: "approve-form-#{grant.id}",
-                data: { turbo_confirm: "Approve access request for #{grant.partner.name}?" },
-                style: "display:none" do %>
+  <%= form_with url: citizens_consents_path, method: :post, id: "approve-form-#{grant.id}",
+                data: { turbo_confirm: "Let #{partner.name} see this information?" }, style: "display:none" do %>
     <input type="hidden" name="consent_grant[partner_id]" value="<%= grant.partner_id %>">
     <% Array(grant.requested_scopes).each do |scope| %>
       <input type="hidden" name="consent_grant[requested_scopes][]" value="<%= scope %>">
     <% end %>
   <% end %>
-  <%= form_with url: citizens_consent_path(grant),
-                method: :delete,
-                id: "deny-form-#{grant.id}",
-                data: { turbo_confirm: "Deny access for #{grant.partner.name}?" },
-                style: "display:none" do %>
+  <%= form_with url: citizens_consent_path(grant), method: :delete, id: "deny-form-#{grant.id}",
+                data: { turbo_confirm: "Say no to #{partner.name}?" }, style: "display:none" do %>
   <% end %>
 <% elsif grant.approved? %>
-  <%= form_with url: citizens_consent_path(grant),
-                method: :delete,
-                id: "revoke-form-#{grant.id}",
-                data: { turbo_confirm: "Revoke access for #{grant.partner.name}? This cannot be undone." },
-                style: "display:none" do %>
+  <%# Submitted from the confirmation dialog below %>
+  <%= form_with url: citizens_consent_path(grant), method: :delete, id: "revoke-form-#{grant.id}", style: "display:none" do %>
   <% end %>
 <% end %>
 
 <div class="card consent-card h-100 border-0 rounded-4 overflow-hidden" style="border:1px solid #e9ecef !important;">
 
-  <%# ── Card Header: logo + name + status badge + kebab menu ── %>
+  <%# ── Header: partner + status ── %>
   <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-    <div class="d-flex justify-content-between align-items-start">
-
-      <%# Partner identity %>
-      <div class="d-flex align-items-center gap-3">
-        <% if grant.partner.logo.attached? %>
-          <%= image_tag grant.partner.logo,
-                class: "rounded-3 flex-shrink-0",
-                style: "width:52px;height:52px;object-fit:cover;" %>
-        <% else %>
-          <div class="partner-avatar-circle flex-shrink-0">
-            <i class="ri-building-2-fill fs-3"></i>
-          </div>
-        <% end %>
-        <div>
-          <h5 class="mb-1 fw-bold lh-1"><%= grant.partner.name %></h5>
-          <span class="badge bg-<%= theme[:css] %>-subtle text-<%= theme[:css] %> border border-<%= theme[:css] %>-subtle fw-semibold">
-            <i class="<%= theme[:icon] %> me-1"></i><%= grant.status.capitalize %>
-          </span>
-        </div>
-      </div>
-
-      <%# Kebab menu — only meaningful for approved grants %>
-      <% if grant.approved? %>
-        <div class="dropdown">
-          <a href="#"
-             class="consent-kebab-btn"
-             data-bs-toggle="dropdown"
-             aria-expanded="false">
-            <i class="ri-more-line"></i>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end border">
-            <li>
-              <a class="dropdown-item py-2 text-danger"
-                 href="#"
-                 onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit(); return false;">
-                <i class="ri-close-circle-line me-2"></i>Revoke Access
-              </a>
-            </li>
-          </ul>
-        </div>
+    <div class="d-flex align-items-center gap-3">
+      <% if partner.logo.attached? %>
+        <%= image_tag partner.logo, class: "rounded-3 flex-shrink-0", style: "width:52px;height:52px;object-fit:cover;", alt: "" %>
+      <% else %>
+        <div class="partner-avatar-circle flex-shrink-0"><i class="ri-building-2-fill fs-3"></i></div>
       <% end %>
+      <div>
+        <h5 class="mb-1 fw-bold lh-1"><%= partner.name %></h5>
+        <span class="badge bg-<%= theme[:css] %>-subtle text-<%= theme[:css] %> border border-<%= theme[:css] %>-subtle fw-semibold">
+          <i class="<%= theme[:icon] %> me-1"></i><%= status_text %>
+        </span>
+      </div>
     </div>
-
-    <%# Sector tag %>
     <div class="mt-2 mb-1">
       <span class="small text-muted">
-        <i class="ri-building-4-line me-1"></i><%= grant.partner.sector&.titleize || "Verified Partner" %>
+        <i class="ri-building-4-line me-1"></i><%= partner.sector&.titleize || "Verified partner" %>
       </span>
     </div>
   </div>
 
-  <%# ── Card Body ── %>
+  <%# ── Body ── %>
   <div class="card-body px-4 pt-3 pb-2">
 
-    <%# Scopes %>
+    <%# What they can see %>
     <div class="mb-3">
-      <div class="small text-uppercase fw-bold text-muted mb-2">Permissions</div>
-      <div class="d-flex flex-wrap gap-2">
-        <% scopes = (grant.granted_scopes.presence || grant.requested_scopes).to_a.reject { |s| s == "openid" } %>
-        <% if scopes.any? %>
+      <div class="small fw-bold text-muted mb-2">
+        <%= grant.approved? ? "What #{partner.name} can see" : (grant.pending? ? "What #{partner.name} is asking to see" : "What #{partner.name} could see") %>
+      </div>
+      <% scopes = visible_consent_scopes(grant.granted_scopes.presence || grant.requested_scopes) %>
+      <% if scopes.any? %>
+        <ul class="consent-scope-list list-unstyled mb-0">
           <% scopes.each do |scope| %>
-            <span class="badge rounded-pill consent-scope-badge px-3 py-2">
-              <i class="ri-check-line me-1"></i><%= scope.titleize %>
-            </span>
+            <li><i class="ri-check-line"></i><%= consent_scope_label(scope) %></li>
           <% end %>
-        <% else %>
-          <span class="small text-muted">Basic authentication only</span>
-        <% end %>
-      </div>
+        </ul>
+      <% else %>
+        <span class="small text-muted">Only that you have a verified BonID</span>
+      <% end %>
     </div>
 
-    <%# Activity metrics %>
-    <div class="consent-metrics rounded-3 p-3 mb-3">
-      <div class="row text-center g-0">
-        <div class="col-6 border-end">
-          <div class="small text-muted mb-1">Last Accessed</div>
-          <div class="fw-semibold small">
-            <%= grant.last_accessed_at ? "#{time_ago_in_words(grant.last_accessed_at)} ago" : "Never" %>
-          </div>
-        </div>
-        <div class="col-6">
-          <div class="small text-muted mb-1">Access Count</div>
-          <div class="fw-semibold small"><%= grant.access_count %></div>
-        </div>
-      </div>
+    <%# How often they've used it %>
+    <div class="consent-metrics rounded-3 p-3 mb-3 small">
+      <% if grant.last_accessed_at %>
+        <i class="ri-eye-line me-1"></i>
+        Last looked at your information <strong><%= time_ago_in_words(grant.last_accessed_at) %> ago</strong>
+        · <strong><%= pluralize(grant.access_count.to_i, "time") %></strong> in total
+      <% else %>
+        <i class="ri-eye-off-line me-1"></i> Hasn't looked at your information yet
+      <% end %>
     </div>
 
-    <%# Expiry %>
-    <% if grant.expires_at.present? %>
+    <%# When access ends %>
+    <% if grant.approved? && grant.expires_at.present? %>
       <div class="alert <%= grant.expires_at < 3.days.from_now ? 'alert-warning' : 'alert-light' %> py-2 px-3 small border-0 rounded-3 d-flex align-items-center mb-0">
         <i class="ri-calendar-event-line me-2 flex-shrink-0"></i>
-        Valid until <%= grant.expires_at.strftime("%b %d, %Y") %>
+        Access ends on <%= grant.expires_at.strftime("%b %-d, %Y") %>
       </div>
     <% end %>
-
   </div>
 
-  <%# ── Card Footer: action buttons ── %>
+  <%# ── Footer: the action ── %>
   <div class="card-footer border-0 bg-white px-4 pb-4 pt-2">
     <% if grant.pending? %>
       <div class="d-grid gap-2">
-        <button type="button"
-                class="btn btn-primary fw-bold py-2 rounded-3"
+        <button type="button" class="btn btn-primary fw-bold py-2 rounded-3"
                 onclick="document.getElementById('approve-form-<%= grant.id %>').requestSubmit(); return false;">
-          <i class="ri-check-line me-1"></i>Grant Secure Access
+          <i class="ri-check-line me-1"></i>Allow
         </button>
-        <button type="button"
-                class="btn btn-outline-danger btn-sm border-0"
+        <button type="button" class="btn btn-outline-danger btn-sm border-0"
                 onclick="document.getElementById('deny-form-<%= grant.id %>').requestSubmit(); return false;">
-          <i class="ri-close-line me-1"></i>Decline Request
+          <i class="ri-close-line me-1"></i>Don't allow
         </button>
       </div>
     <% elsif grant.approved? %>
-      <button type="button"
-              class="btn btn-outline-secondary w-100 rounded-3 py-2 fw-medium"
-              onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit(); return false;">
-        <i class="ri-forbid-2-line text-danger me-2"></i>Revoke Access
+      <button type="button" class="btn btn-outline-danger w-100 rounded-3 py-2 fw-semibold"
+              data-bs-toggle="modal" data-bs-target="#<%= modal_id %>">
+        <i class="ri-forbid-2-line me-2"></i>Remove access
       </button>
     <% elsif grant.revoked? %>
       <div class="text-center small text-muted py-1">
-        <i class="ri-information-line me-1"></i>Access was revoked
+        <i class="ri-information-line me-1"></i>
+        You removed access<%= " on #{grant.revoked_at.strftime('%b %-d, %Y')}" if grant.revoked_at %>
+      </div>
+    <% elsif grant.expired? %>
+      <div class="text-center small text-muted py-1">
+        <i class="ri-information-line me-1"></i>Access ended<%= " on #{grant.expires_at.strftime('%b %-d, %Y')}" if grant.expires_at %>
       </div>
     <% end %>
   </div>
-
 </div>
+
+<%# ── Confirmation dialog (page dialog, not a browser pop-up) ── %>
+<% if grant.approved? %>
+  <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 border-0">
+        <div class="modal-body p-4 text-center">
+          <div class="remove-access-icon mx-auto mb-3"><i class="ri-forbid-2-line"></i></div>
+          <h5 class="fw-bold mb-3" id="<%= modal_id %>-title">Remove <%= partner.name %>'s access?</h5>
+          <ul class="text-start small text-muted remove-access-points mb-4">
+            <li><%= partner.name %> will <strong>stop seeing your information right away</strong>.</li>
+            <li>They must <strong>delete the information they already have within 30 days</strong>.</li>
+            <li>You can give access again later if you change your mind.</li>
+          </ul>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-danger fw-semibold rounded-3 py-2" data-bs-dismiss="modal"
+                    onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit();">
+              Yes, remove access
+            </button>
+            <button type="button" class="btn btn-light rounded-3 py-2" data-bs-dismiss="modal">Keep access</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<style>
+  .consent-scope-list li { display: flex; gap: 6px; align-items: flex-start; padding: 3px 0; font-size: 0.9rem; color: #1E293B; }
+  .consent-scope-list li i { color: #15803D; line-height: 1.4; }
+  .remove-access-icon { width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; color: #B91C1C;
+                        display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+  .remove-access-points { padding-left: 1.1rem; }
+  .remove-access-points li { margin-bottom: 6px; }
+</style>
