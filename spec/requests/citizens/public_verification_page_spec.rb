@@ -26,7 +26,7 @@ RSpec.describe "Public BonID verification page", type: :request do
     it "shows the name, a Valid badge and the masked BonID" do
       expect(response.body).to include("Davidson Louis")
       expect(response.body).to include("Valid BonID")
-      expect(response.body).to include("DL-••••-TST")
+      expect(response.body).to include("DL-****-*-**-821TST")
     end
 
     it "never shows the full BonID or its CIN digits" do
