@@ -47,3 +47,21 @@ RSpec.describe "Citizen services pause", type: :request do
     end
   end
 end
+
+RSpec.describe "Citizen sidebar: Konsantman link", type: :request do
+  let(:citizen) { create(:user, :with_address, :identity_verified) }
+  before { sign_in citizen }
+
+  it "links to the transaction consents page" do
+    get "/citizens/dashboard"
+    expect(response.body).to include(%(href="/citizens/transaction_consents))
+    expect(response.body).to include("Konsantman")
+  end
+
+  it "shows how many requests are waiting" do
+    partner = create(:partner, :approved)
+    2.times { TransactionConsent.create!(citizen: citizen, partner: partner, transaction_type: "kyc_check", scopes: %w[profile]) }
+    get "/citizens/dashboard"
+    expect(response.body).to match(%r{Konsantman</span>\s*<span class="badge[^"]*">2</span>})
+  end
+end

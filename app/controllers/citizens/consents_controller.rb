@@ -67,19 +67,19 @@ module Citizens
       ConsentWebhookJob.perform_later(@consent.id, "consent.revoked") rescue nil
 
       @consent_grants = @citizen.consent_grants.includes(partner: { logo_attachment: :blob }).order(created_at: :desc)
-      flash.now[:notice] = "Access successfully revoked for #{@consent.partner.name}."
+      flash.now[:notice] = "#{@consent.partner.name} can no longer see your information."
 
       respond_to do |format|
         format.turbo_stream
-        format.html { redirect_to citizens_consents_path, notice: "Access revoked." }
+        format.html { redirect_to citizens_consents_path, notice: "Access removed." }
       end
     rescue => e
       Rails.logger.error("Consent revocation failed: #{e.message}\n#{e.backtrace.join("\n")}")
-      flash.now[:alert] = "Could not revoke access. Please try again."
+      flash.now[:alert] = "We couldn't remove access. Please try again."
       @consent_grants = @citizen.consent_grants.includes(partner: { logo_attachment: :blob }).order(created_at: :desc)
       respond_to do |format|
         format.turbo_stream
-        format.html { redirect_to citizens_consents_path, alert: "Could not revoke access." }
+        format.html { redirect_to citizens_consents_path, alert: "We couldn't remove access. Please try again." }
       end
     end
 
