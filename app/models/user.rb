@@ -122,6 +122,18 @@ class User < ApplicationRecord
   validates :partner, presence: true, if: :partner_admin?
   validate  :branch_belongs_to_partner, if: -> { partner_branch.present? && partner.present? }
 
+  # === Citizen portal language ===
+  # Languages a citizen can pick under Paramèt → Lang. Kreyòl is the default
+  # (matches the preferred_locale column default).
+  CITIZEN_LOCALES = %w[ht fr en].freeze
+
+  # The locale the citizen portal renders in for this user, falling back
+  # to Kreyòl when the stored value is blank or unsupported.
+  def portal_locale
+    locale = preferred_locale.to_s
+    CITIZEN_LOCALES.include?(locale) ? locale : "ht"
+  end
+
   # === Enums ===
   enum :sex, { male: 0, female: 1, other: 2 }
   enum :marital_status, { single: 0, married: 1, divorced: 2, widowed: 3 }

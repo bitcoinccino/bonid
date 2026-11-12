@@ -52,7 +52,7 @@ class CitizenElectionSidebarPresenter
     Link.new(
       path: citizens_election_enrollment_path,
       icon: "ri-user-voice-line",
-      label: "Anrejistre",
+      label: I18n.t("citizen_portal.nav.enroll"),
       active_match: "election/enskri",
       badge: nil, badge_class: nil
     ).tap { |l| overrides.each { |k, v| l[k] = v } }
@@ -62,23 +62,23 @@ class CitizenElectionSidebarPresenter
     Link.new(
       path: citizens_election_calendar_path,
       icon: "ri-calendar-event-line",
-      label: "Kalandriye",
+      label: I18n.t("citizen_portal.nav.calendar"),
       active_match: "election/kalandriye",
       badge: nil, badge_class: nil
     ).tap { |l| overrides.each { |k, v| l[k] = v } }
   end
 
   # Countdown to the election date, shown on the enrollment link so every
-  # login reinforces the registration deadline. "Jodi a" / "Demen" / "nan N jou".
+  # login reinforces the registration deadline (today / tomorrow / in N days).
   def enrollment_badge
     return nil unless election&.election_date
 
     days = (election.election_date - Date.current).to_i
     case days
     when ..-1 then nil
-    when 0    then "Jodi a"
-    when 1    then "Demen"
-    else           "nan #{days} jou"
+    when 0    then I18n.t("citizen_portal.election_badge.today")
+    when 1    then I18n.t("citizen_portal.election_badge.tomorrow")
+    else           I18n.t("citizen_portal.election_badge.in_days", count: days)
     end
   end
 end

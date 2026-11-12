@@ -165,11 +165,10 @@
                         class: "election-btn-primary",
                         form: { data: { turbo: false } } do %>
             <i class="ri-play-circle-line"></i>
-            Kontinye vòt ou
+            <%= t("citizen_portal.election.misc.continue_vote") %>
           <% end %>
           <p class="election-footnote mt-3">
-            Verifikasyon ou toujou valab. Ou gen
-            <%= (@resume_remaining.to_i / 60.0).ceil %> minit pou fini vòt ou san w pa bezwen rescan.
+            <%= t("citizen_portal.election.misc.resume_note", minutes: (@resume_remaining.to_i / 60.0).ceil) %>
           </p>
         <% elsif eligible %>
           <%= form_with url: citizens_election_vote_begin_path, method: :post, local: true,
@@ -196,20 +195,20 @@
           <%# Gate #1 state — no enrolled Rekognition face on the roll. %>
           <button disabled class="election-btn-primary">
             <i class="ri-user-search-line"></i>
-            Pa gen anrejistreman biyometrik
+            <%= t("citizen_portal.election.misc.no_biometric") %>
           </button>
           <p class="election-footnote mt-3">
-            Ale nan yon biwo CEP pou w enskri figi ou anvan jou eleksyon an.
+            <%= t("citizen_portal.election.misc.no_biometric_note") %>
           </p>
         <% elsif @scan_cooldown_remaining.positive? %>
           <%# Gate #2 state — recent scan, in cooldown. Ticks down live
               and auto-reloads the page when it reaches zero. %>
           <button disabled class="election-btn-primary" data-scan-cooldown="<%= @scan_cooldown_remaining %>">
             <i class="ri-time-line"></i>
-            <span data-scan-cooldown-label>Tann <%= @scan_cooldown_remaining %> segond</span>
+            <span data-scan-cooldown-label><%= t("citizen_portal.election.misc.wait_seconds", seconds: @scan_cooldown_remaining) %></span>
           </button>
           <p class="election-footnote mt-3">
-            Nou te fè yon tantativ verifikasyon dènyèman. Tann yon ti moman anvan w eseye ankò.
+            <%= t("citizen_portal.election.misc.cooldown_note") %>
           </p>
           <script>
             (function() {
@@ -233,9 +232,9 @@
                   var s = left % 60;
                   if (m > 0) {
                     var pad = s < 10 ? '0' : '';
-                    return 'Tann ' + m + 'm ' + pad + s + 's';
+                    return '<%= j t("citizen_portal.election.misc.wait_min_sec", m: "__M__", s: "__S__") %>'.replace('__M__', m).replace('__S__', pad + s);
                   }
-                  return 'Tann ' + s + ' segond';
+                  return '<%= j t("citizen_portal.election.misc.wait_seconds", seconds: "__S__") %>'.replace('__S__', s);
                 }
 
                 function tick() {

@@ -3,20 +3,19 @@
 <div class="alert alert-info alert-dismissible d-flex align-items-start mb-4 rounded-3 compact-info-banner" role="alert">
   <i class="ri-shield-check-line me-2 mt-1"></i>
   <span>
-    <strong>Your health information is encrypted and secure.</strong>
-    Share your health profile for <strong>faster identity verification</strong> with medical partners. BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
+    <%= t("citizen_portal.profile.health.banner_html") %>
   </span>
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<%= t("citizen_portal.common.close") %>"></button>
 </div>
 
 <%# Blood Type — Full-width row %>
 <div class="mb-3">
   <label class="form-label fw-semibold health-field-label">
-    <i class="ri-drop-line me-1"></i> Blood Type
+    <i class="ri-drop-line me-1"></i> <%= t("citizen_portal.profile.health.blood_type") %>
   </label>
   <%= f.select :blood_type,
         options_for_select(
-          [["Select blood type...", ""]] + HealthProfile::BLOOD_TYPES.map { |bt| [bt, bt] },
+          [[t("citizen_portal.profile.health.select_blood_type"), ""]] + HealthProfile::BLOOD_TYPES.map { |bt| [bt, bt] },
           f.object.blood_type
         ),
         {},
@@ -28,20 +27,20 @@
   <div class="form-check form-switch d-flex align-items-center gap-2 mb-0">
     <%= f.check_box :organ_donor, class: "form-check-input", role: "switch", id: "organDonorSwitch" %>
     <label class="form-check-label fw-semibold health-field-label" for="organDonorSwitch">
-      <i class="ri-heart-add-line me-1"></i> Organ Donor
+      <i class="ri-heart-add-line me-1"></i> <%= t("citizen_portal.profile.health.organ_donor") %>
     </label>
   </div>
   <small class="text-muted d-block mt-1 health-organ-helper">
-    Critical for emergency responders. This is visible on your BonID health card.
+    <%= t("citizen_portal.profile.health.organ_donor_hint") %>
   </small>
 </div>
 
 <%# Allergies — Multi-select with inline chips %>
 <div class="mb-3">
   <label class="form-label fw-semibold health-field-label">
-    <i class="ri-alarm-warning-line me-1"></i> Allergies
+    <i class="ri-alarm-warning-line me-1"></i> <%= t("citizen_portal.profile.health.allergies") %>
   </label>
-  <div class="dropdown health-multiselect" data-controller="health-multiselect" data-field="allergies">
+  <div class="dropdown health-multiselect" data-controller="health-multiselect" data-health-multiselect-placeholder-value="<%= t("citizen_portal.profile.health.none_known") %>" data-health-multiselect-selected-value="<%= t("citizen_portal.profile.health.selected_count", count: "%{count}") %>" data-field="allergies">
     <button class="form-select text-start dropdown-toggle d-flex justify-content-between align-items-center rounded-3 health-chip-trigger"
             type="button"
             data-bs-toggle="dropdown"
@@ -49,7 +48,7 @@
             aria-expanded="false"
             data-health-multiselect-target="button">
       <span class="health-chip-area" data-health-multiselect-target="chipArea">
-        <span data-health-multiselect-target="label" class="text-muted">None known</span>
+        <span data-health-multiselect-target="label" class="text-muted"><%= t("citizen_portal.profile.health.none_known") %></span>
       </span>
     </button>
     <ul class="dropdown-menu w-100 p-2">
@@ -62,7 +61,7 @@
                    class="form-check-input m-0"
                    <%= f.object.allergies_list.include?(allergy) ? "checked" : "" %>
                    data-action="change->health-multiselect#updateLabel">
-            <span><%= allergy %></span>
+            <span><%= t("citizen_portal.profile.health.allergy_options.#{allergy.parameterize(separator: '_')}", default: allergy) %></span>
           </label>
         </li>
       <% end %>
@@ -74,9 +73,9 @@
 <%# Chronic Conditions — Multi-select with inline chips %>
 <div class="mb-3">
   <label class="form-label fw-semibold health-field-label">
-    <i class="ri-heart-pulse-line me-1"></i> Chronic Conditions
+    <i class="ri-heart-pulse-line me-1"></i> <%= t("citizen_portal.profile.health.conditions") %>
   </label>
-  <div class="dropdown health-multiselect" data-controller="health-multiselect" data-field="chronic_conditions">
+  <div class="dropdown health-multiselect" data-controller="health-multiselect" data-health-multiselect-placeholder-value="<%= t("citizen_portal.profile.health.none_known") %>" data-health-multiselect-selected-value="<%= t("citizen_portal.profile.health.selected_count", count: "%{count}") %>" data-field="chronic_conditions">
     <button class="form-select text-start dropdown-toggle d-flex justify-content-between align-items-center rounded-3 health-chip-trigger"
             type="button"
             data-bs-toggle="dropdown"
@@ -84,7 +83,7 @@
             aria-expanded="false"
             data-health-multiselect-target="button">
       <span class="health-chip-area" data-health-multiselect-target="chipArea">
-        <span data-health-multiselect-target="label" class="text-muted">None known</span>
+        <span data-health-multiselect-target="label" class="text-muted"><%= t("citizen_portal.profile.health.none_known") %></span>
       </span>
     </button>
     <ul class="dropdown-menu w-100 p-2">
@@ -97,7 +96,7 @@
                    class="form-check-input m-0"
                    <%= f.object.chronic_conditions_list.include?(condition) ? "checked" : "" %>
                    data-action="change->health-multiselect#updateLabel">
-            <span><%= condition %></span>
+            <span><%= t("citizen_portal.profile.health.condition_options.#{condition.parameterize(separator: '_')}", default: condition) %></span>
           </label>
         </li>
       <% end %>
@@ -109,9 +108,9 @@
 <%# Medications — Multi-select with inline chips %>
 <div class="mb-3">
   <label class="form-label fw-semibold health-field-label">
-    <i class="ri-capsule-line me-1"></i> Medications
+    <i class="ri-capsule-line me-1"></i> <%= t("citizen_portal.profile.health.medications") %>
   </label>
-  <div class="dropdown health-multiselect" data-controller="health-multiselect" data-field="medications">
+  <div class="dropdown health-multiselect" data-controller="health-multiselect" data-health-multiselect-placeholder-value="<%= t("citizen_portal.profile.health.none_known") %>" data-health-multiselect-selected-value="<%= t("citizen_portal.profile.health.selected_count", count: "%{count}") %>" data-field="medications">
     <button class="form-select text-start dropdown-toggle d-flex justify-content-between align-items-center rounded-3 health-chip-trigger"
             type="button"
             data-bs-toggle="dropdown"
@@ -119,7 +118,7 @@
             aria-expanded="false"
             data-health-multiselect-target="button">
       <span class="health-chip-area" data-health-multiselect-target="chipArea">
-        <span data-health-multiselect-target="label" class="text-muted">None known</span>
+        <span data-health-multiselect-target="label" class="text-muted"><%= t("citizen_portal.profile.health.none_known") %></span>
       </span>
     </button>
     <ul class="dropdown-menu w-100 p-2">
@@ -132,7 +131,7 @@
                    class="form-check-input m-0"
                    <%= f.object.medications_list.include?(medication) ? "checked" : "" %>
                    data-action="change->health-multiselect#updateLabel">
-            <span><%= medication %></span>
+            <span><%= t("citizen_portal.profile.health.medication_options.#{medication.parameterize(separator: '_')}", default: medication) %></span>
           </label>
         </li>
       <% end %>
@@ -145,7 +144,6 @@
 <div class="d-flex align-items-center mt-3 mb-0 health-privacy-footer">
   <i class="ri-lock-line me-2"></i>
   <small>
-    BonID follows strict <strong>health data protection</strong> standards.
-    Your information will <strong>never be shared without consent</strong>.
+    <%= t("citizen_portal.profile.health.privacy_html") %>
   </small>
 </div>

@@ -2,11 +2,26 @@
 module Citizens
   class BaseController < ApplicationController
     before_action :authenticate_citizen!
+    # Must run before anything builds a URL: Rails memoizes url_options
+    # (which carry lang=) on first use within a request.
+    before_action :apply_citizen_locale
     before_action :require_citizen!
     before_action :require_diaspora_answer!
     layout "citizen"
 
     private
+
+    # The citizen's saved language (Paramèt → Lang) wins over ?lang= and the
+    # browser inside the portal, so every page renders in the language they
+    # picked. Mirrored into session[:lang] so public pages they visit next
+    # (and links built from default_url_options) follow it too.
+    def apply_citizen_locale
+      return unless current_citizen
+
+      locale = current_citizen.portal_locale
+      I18n.locale    = locale
+      session[:lang] = locale
+    end
 
     def require_citizen!
       unless current_citizen&.has_role?(:citizen)

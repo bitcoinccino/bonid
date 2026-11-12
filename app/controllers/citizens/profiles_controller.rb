@@ -34,12 +34,12 @@ module Citizens
         notice =
           if was_incomplete && @citizen.profile_complete?
             if already_verified
-              "✅ Profile updated successfully."
+              t("citizen_portal.profile.flash.updated")
             else
-              "🎉 Profile completed! You can now submit for BonID verification."
+              t("citizen_portal.profile.flash.completed")
             end
           else
-            "✅ Profile updated successfully."
+            t("citizen_portal.profile.flash.updated")
           end
 
         redirect_path =
@@ -63,7 +63,7 @@ module Citizens
       return if @citizen
 
       redirect_to new_citizens_session_path,
-                  alert: "Session expired. Please sign in again."
+                  alert: t("citizen_portal.profile.flash.session_expired")
     end
 
     def set_identity_verified
@@ -179,7 +179,7 @@ module Citizens
       end
       flash.now[:alert] =
         @citizen.errors.full_messages.to_sentence.presence ||
-        "⚠️ Could not update profile."
+        t("citizen_portal.profile.flash.update_failed")
     end
   end
 end

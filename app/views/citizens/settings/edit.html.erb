@@ -1,219 +1,285 @@
 <%# app/views/citizens/settings/edit.html.erb
-    Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head).
-    All three sections submit through a single form so the citizen can
-    change anything in one round-trip. %>
+    Settings as two grouped lists of rows:
+      * Sekirite  — Imel (opens email-change modal), 2FA (K AP VINI),
+                    Jere aparèy (expands device list + sign-out-others)
+      * Preferans — Notifikasyon (expands channel picker), Lang (dropdown)
+    Every control saves on its own (auto-submit), so there's no global
+    Save button. Header chrome matches the Anrejistre wizard. %>
+<% sk = "citizen_portal.settings." %>
+
+<style>
+  .settings-group { border-radius: 0.85rem; overflow: hidden; }
+  .settings-group-head { padding: 1.25rem 1.5rem 0.75rem; }
+  .settings-group-title {
+    font-family: "Montserrat", sans-serif; font-weight: 700;
+    font-size: 1.1rem; color: #0F172A; margin: 0 0 0.2rem;
+  }
+  .settings-group-desc { font-size: 0.82rem; color: #64748B; line-height: 1.45; margin: 0; }
+  .settings-list { border-top: 1px solid #EEF2F7; }
+
+  .settings-row {
+    display: flex; align-items: center; gap: 0.9rem;
+    width: 100%; padding: 0.95rem 1.5rem;
+    background: #fff; border: 0; border-bottom: 1px solid #EEF2F7;
+    text-align: left; color: inherit; text-decoration: none;
+    transition: background 0.12s ease-in-out;
+  }
+  .settings-list > :last-child,
+  .settings-list > .collapse:last-child { border-bottom: 0; }
+  button.settings-row:hover,
+  label.settings-row:hover { background: #F8FAFC; }
+  button.settings-row:focus-visible {
+    outline: 2px solid rgba(0, 32, 159, 0.4); outline-offset: -2px;
+  }
+  .settings-row.is-disabled { cursor: default; }
+  .settings-row.is-disabled .settings-row-icon,
+  .settings-row.is-disabled .settings-row-label { opacity: 0.6; }
+
+  .settings-row-icon {
+    flex-shrink: 0; width: 38px; height: 38px; border-radius: 0.6rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(0, 32, 159, 0.07); color: var(--primary);
+    font-size: 1.15rem;
+  }
+  .settings-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .settings-row-label {
+    font-weight: 600; font-size: 0.9rem; color: #0F172A;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .settings-row-value {
+    font-size: 0.78rem; color: #64748B;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .settings-row-chevron {
+    flex-shrink: 0; font-size: 1.25rem; color: #94A3B8;
+    transition: transform 0.15s ease-in-out;
+  }
+  .settings-row[aria-expanded="true"] .settings-row-chevron { transform: rotate(90deg); }
+
+  .settings-soon-badge {
+    background: #FEF3C7; color: #92400E;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.02em;
+  }
+
+  .settings-row-panel {
+    padding: 0.25rem 1.5rem 1.1rem calc(1.5rem + 38px + 0.9rem);
+    border-bottom: 1px solid #EEF2F7; background: #fff;
+  }
+  @media (max-width: 575.98px) {
+    .settings-row { padding: 0.9rem 1rem; }
+    .settings-group-head { padding: 1.1rem 1rem 0.6rem; }
+    .settings-row-panel { padding: 0.25rem 1rem 1rem; }
+  }
+
+  .settings-lang-select {
+    flex-shrink: 0; width: auto; min-width: 9.5rem;
+    font-size: 0.85rem; font-weight: 500;
+  }
+  /* Phones: the language dropdown drops onto its own full-width line
+     under the label instead of squeezing beside it. */
+  @media (max-width: 575.98px) {
+    .settings-group-title { font-size: 1rem; }
+    .settings-group-desc { font-size: 0.78rem; }
+    .settings-row--select { flex-wrap: wrap; row-gap: 0.65rem; }
+    .settings-row--select .settings-row-text { flex: 1 1 calc(100% - 38px - 0.9rem); }
+    .settings-row--select .settings-row-value { white-space: normal; }
+    .settings-row--select .settings-lang-select {
+      flex: 1 1 100%; width: 100%; min-width: 0;
+      font-size: 0.9rem; padding-top: 0.5rem; padding-bottom: 0.5rem;
+    }
+  }
+</style>
+
 <div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
   <%# ── Page Header (wizard style) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-settings-3-line me-2"></i>Paramèt
+      <i class="ri-settings-3-line me-2"></i><%= t("#{sk}title") %>
     </h1>
-    <p class="ballot-subtitle mb-0">
-      Jere sekirite, lang, ak notifikasyon BonID ou.
-    </p>
+    <p class="ballot-subtitle mb-0"><%= t("#{sk}subtitle") %></p>
   </div>
 
   <div class="row justify-content-center">
-    <div class="col-lg-9">
+    <div class="col-lg-8">
 
-      <%= form_with model: @citizen, url: citizens_settings_path, method: :patch,
-                    html: { class: "needs-validation", novalidate: true,
-                            data: { turbo: false } } do |f| %>
+      <%# ── 1. SEKIRITE ─────────────────────────────────────── %>
+      <section class="settings-group card border-0 shadow-sm mb-4" aria-labelledby="settings-security-title">
+        <div class="settings-group-head">
+          <h2 class="settings-group-title" id="settings-security-title"><%= t("#{sk}security.title") %></h2>
+          <p class="settings-group-desc"><%= t("#{sk}security.desc") %></p>
+        </div>
 
-        <%# ── 1. SECURITY ─────────────────────────────────────── %>
-        <div class="ballot-section card border-0 shadow-sm mb-4">
-          <div class="card-body p-4">
-
-            <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Sekirite</h2>
-              <p class="ballot-section-desc mb-0">
-                Imel ou ak metòd otantifikasyon doub.
-              </p>
-            </div>
-
-            <%# Change Email — masked display + Modifye button opens the
-                two-phase modal below (new email → code). The modal is the
-                ONLY place the email + code fields live, so this outer form
-                doesn't carry an email field at all. %>
-            <div class="mb-3">
-              <label class="form-label">Imel</label>
-              <div class="d-flex align-items-center gap-2">
-                <span class="form-control bg-light text-muted"
-                      style="font-family: 'Inter', sans-serif;">
-                  <i class="ri-mail-line me-1"></i><%= mask_email(@citizen.email) %>
-                </span>
-                <button type="button" class="btn btn-outline-secondary btn-sm"
-                        style="font-size: 0.78rem; white-space: nowrap;"
-                        data-bs-toggle="modal"
-                        data-bs-target="#emailChangeModal">
-                  <i class="ri-edit-line me-1"></i>Modifye
-                </button>
-              </div>
-            </div>
-
-            <%# 2FA — disabled / coming soon %>
-            <div class="enroll-helpful-tip mt-3">
-              <i class="ri-shield-keyhole-line"></i>
-              <div>
-                <strong>Otantifikasyon 2 faktè</strong>
-                <span class="badge rounded-pill ms-2"
-                      style="background: #FEF3C7; color: #92400E; font-size: 0.65rem; font-weight: 700;">
-                  K AP VINI
-                </span>
-                <div class="mt-1">
-                  Yon nivo sekirite anplis pou kont ou. Pral disponib byento.
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm mt-2" disabled
-                        style="font-size: 0.78rem;">
-                  <i class="ri-lock-2-line me-1"></i> Aktive 2FA
-                </button>
-              </div>
-            </div>
-
-            <%# Sign out other devices — submits the standalone form below the
-                settings form (forms can't nest). %>
-            <div class="enroll-helpful-tip mt-3">
-              <i class="ri-logout-box-r-line"></i>
-              <div>
-                <strong>Aparèy ou yo</strong>
-                <div class="mt-1">
-                  Aparèy ou te itilize pou konekte sou BonID. Si ou wè youn ou pa rekonèt,
-                  dekonekte tout lòt aparèy yo epi chanje modpas imel ou.
-                </div>
-
-                <% if @known_devices.any? %>
-                  <ul class="list-unstyled mt-2 mb-0" id="known-devices">
-                    <% @known_devices.each do |device| %>
-                      <% this_device = device.token_digest == @current_device_digest %>
-                      <li class="d-flex align-items-start gap-2 py-2"
-                          style="border-top: 1px solid #E5E7EB;">
-                        <i class="<%= device.mobile? ? 'ri-smartphone-line' : 'ri-computer-line' %>"
-                           style="font-size: 1.1rem; color: #64748b;"></i>
-                        <div style="font-size: 0.82rem; min-width: 0;">
-                          <div class="fw-semibold" style="color: #0F172A;">
-                            <%= device.label %>
-                            <% if this_device %>
-                              <span class="badge rounded-pill ms-1"
-                                    style="background: #DCFCE7; color: #166534; font-size: 0.6rem; font-weight: 700;">
-                                APARÈY SA A
-                              </span>
-                            <% end %>
-                          </div>
-                          <div class="text-muted" style="font-size: 0.75rem;">
-                            <%= [ device.location,
-                                  this_device ? "Kounye a" : "Dènye fwa: gen #{time_ago_in_words(device.last_seen_at)}" ]
-                                  .compact.join(" · ") %>
-                          </div>
-                        </div>
-                      </li>
-                    <% end %>
-                  </ul>
+        <div class="settings-list">
+          <%# Imel — opens the two-phase email-change modal below. %>
+          <button type="button" class="settings-row"
+                  data-bs-toggle="modal" data-bs-target="#emailChangeModal">
+            <span class="settings-row-icon"><i class="ri-mail-line"></i></span>
+            <span class="settings-row-text">
+              <span class="settings-row-label"><%= t("#{sk}email.label") %></span>
+              <span class="settings-row-value">
+                <% if @email_change_pending && @pending_new_email.present? %>
+                  <%= t("#{sk}email.pending", email: @pending_new_email) %>
+                <% else %>
+                  <%= mask_email(@citizen.email) %>
                 <% end %>
+              </span>
+            </span>
+            <i class="ri-arrow-right-s-line settings-row-chevron" aria-hidden="true"></i>
+          </button>
 
-                <button type="submit" form="sign-out-other-devices-form"
-                        class="btn btn-outline-danger btn-sm mt-2"
-                        style="font-size: 0.78rem;">
-                  <i class="ri-logout-box-r-line me-1"></i> Dekonekte lòt aparèy yo
-                </button>
-              </div>
+          <%# Otantifikasyon 2 faktè — not built yet (see staff 2FA plan). %>
+          <div class="settings-row is-disabled" aria-disabled="true">
+            <span class="settings-row-icon"><i class="ri-shield-keyhole-line"></i></span>
+            <span class="settings-row-text">
+              <span class="settings-row-label">
+                <%= t("#{sk}two_factor.label") %>
+                <span class="badge rounded-pill settings-soon-badge"><%= t("citizen_portal.common.coming_soon") %></span>
+              </span>
+              <span class="settings-row-value"><%= t("#{sk}two_factor.desc") %></span>
+            </span>
+          </div>
+
+          <%# Jere aparèy — expands the known-devices list. %>
+          <button type="button" class="settings-row"
+                  data-bs-toggle="collapse" data-bs-target="#settings-devices-panel"
+                  aria-expanded="false" aria-controls="settings-devices-panel">
+            <span class="settings-row-icon"><i class="ri-device-line"></i></span>
+            <span class="settings-row-text">
+              <span class="settings-row-label"><%= t("#{sk}devices.label") %></span>
+              <span class="settings-row-value"><%= t("#{sk}devices.count", count: @known_devices.size) %></span>
+            </span>
+            <i class="ri-arrow-right-s-line settings-row-chevron" aria-hidden="true"></i>
+          </button>
+          <div class="collapse" id="settings-devices-panel">
+            <div class="settings-row-panel">
+              <p class="ballot-section-desc small mb-2"><%= t("#{sk}devices.desc") %></p>
+
+              <% if @known_devices.any? %>
+                <ul class="list-unstyled mb-0" id="known-devices">
+                  <% @known_devices.each do |device| %>
+                    <% this_device = device.token_digest == @current_device_digest %>
+                    <li class="d-flex align-items-start gap-2 py-2"
+                        style="border-top: 1px solid #E5E7EB;">
+                      <i class="<%= device.mobile? ? 'ri-smartphone-line' : 'ri-computer-line' %>"
+                         style="font-size: 1.1rem; color: #64748b;"></i>
+                      <div style="font-size: 0.82rem; min-width: 0;">
+                        <div class="fw-semibold" style="color: #0F172A;">
+                          <%= device.label %>
+                          <% if this_device %>
+                            <span class="badge rounded-pill ms-1"
+                                  style="background: #DCFCE7; color: #166534; font-size: 0.6rem; font-weight: 700;">
+                              <%= t("#{sk}devices.this_device") %>
+                            </span>
+                          <% end %>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                          <%= [ device.location,
+                                this_device ? t("#{sk}devices.now") : t("#{sk}devices.last_seen", time: time_ago_in_words(device.last_seen_at)) ]
+                                .compact.join(" · ") %>
+                        </div>
+                      </div>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+
+              <%= button_to citizens_sign_out_other_devices_path,
+                    method: :delete,
+                    form: { data: { turbo: false } },
+                    class: "btn btn-outline-danger btn-sm mt-2",
+                    style: "font-size: 0.78rem;" do %>
+                <i class="ri-logout-box-r-line me-1"></i> <%= t("#{sk}devices.sign_out_others") %>
+              <% end %>
             </div>
           </div>
         </div>
+      </section>
 
-        <%# ── 2. LANGUAGE ─────────────────────────────────────── %>
-        <div class="ballot-section card border-0 shadow-sm mb-4">
-          <div class="card-body p-4">
+      <%# ── 2. PREFERANS ────────────────────────────────────── %>
+      <section class="settings-group card border-0 shadow-sm mb-4" aria-labelledby="settings-preferences-title">
+        <div class="settings-group-head">
+          <h2 class="settings-group-title" id="settings-preferences-title"><%= t("#{sk}preferences.title") %></h2>
+          <p class="settings-group-desc"><%= t("#{sk}preferences.desc") %></p>
+        </div>
 
-            <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Lang</h2>
-              <p class="ballot-section-desc mb-0">
-                Chwazi lang pou afichaj BonID.
-              </p>
+        <div class="settings-list">
+          <%# Notifikasyon — expands the channel picker; saves on change. %>
+          <% channel_labels = { "email" => t("#{sk}notifications.by_email"), "phone" => t("#{sk}notifications.by_phone") } %>
+          <button type="button" class="settings-row"
+                  data-bs-toggle="collapse" data-bs-target="#settings-notifications-panel"
+                  aria-expanded="false" aria-controls="settings-notifications-panel">
+            <span class="settings-row-icon"><i class="ri-notification-3-line"></i></span>
+            <span class="settings-row-text">
+              <span class="settings-row-label"><%= t("#{sk}notifications.label") %></span>
+              <span class="settings-row-value"><%= channel_labels[@citizen.notification_channel.to_s] || channel_labels["email"] %></span>
+            </span>
+            <i class="ri-arrow-right-s-line settings-row-chevron" aria-hidden="true"></i>
+          </button>
+          <div class="collapse" id="settings-notifications-panel">
+            <div class="settings-row-panel">
+              <%= form_with url: citizens_settings_path, method: :patch, scope: :user,
+                            data: { controller: "auto-submit", turbo: false } do |f| %>
+                <% channel_choices = [
+                  { value: "email", icon: "ri-mail-line", disabled: false,
+                    sub: t("#{sk}notifications.by_email_desc_html", email: mask_email(@citizen.email)) },
+                  { value: "phone", icon: "ri-smartphone-line", disabled: true,
+                    sub: t("#{sk}notifications.by_phone_desc") }
+                ] %>
+                <% channel_choices.each do |opt| %>
+                  <% disabled = opt[:disabled] %>
+                  <% selected = @citizen.notification_channel.to_s == opt[:value] && !disabled %>
+                  <label class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
+                         style="border: 1px solid #E5E7EB;
+                                <%= disabled ? 'cursor: not-allowed; opacity: 0.55;' : 'cursor: pointer;' %>
+                                <%= 'background: rgba(0, 32, 159, 0.04); border-color: rgba(0, 32, 159, 0.4);' if selected %>">
+                    <%= f.radio_button :notification_channel, opt[:value],
+                          checked: @citizen.notification_channel.to_s == opt[:value],
+                          disabled: disabled,
+                          class: "form-check-input mt-1 flex-shrink-0",
+                          data: { action: "change->auto-submit#submit" } %>
+                    <div>
+                      <div class="fw-semibold d-flex align-items-center gap-2" style="font-size: 0.88rem;">
+                        <i class="<%= opt[:icon] %>"></i>
+                        <%= channel_labels[opt[:value]] %>
+                        <% if disabled %>
+                          <span class="badge rounded-pill settings-soon-badge"><%= t("citizen_portal.common.coming_soon") %></span>
+                        <% end %>
+                      </div>
+                      <small class="text-muted"><%= opt[:sub] %></small>
+                    </div>
+                  </label>
+                <% end %>
+              <% end %>
             </div>
-
-            <% locale_choices = [
-              { value: "ht", label: "Kreyòl Ayisyen", sub: "Lang prensipal BonID." },
-              { value: "fr", label: "Français",       sub: "Pou itilizatè ki pi alèz ak fransè." }
-            ] %>
-            <% locale_choices.each do |opt| %>
-              <label class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
-                     style="border: 1px solid #E5E7EB; cursor: pointer;
-                            <%= 'background: rgba(0, 32, 159, 0.04); border-color: rgba(0, 32, 159, 0.4);' if @citizen.preferred_locale.to_s == opt[:value] %>">
-                <%= f.radio_button :preferred_locale, opt[:value],
-                      checked: @citizen.preferred_locale.to_s == opt[:value],
-                      class: "form-check-input mt-1 flex-shrink-0" %>
-                <div>
-                  <div class="fw-semibold" style="font-size: 0.9rem;"><%= opt[:label] %></div>
-                  <small class="text-muted"><%= opt[:sub] %></small>
-                </div>
-              </label>
-            <% end %>
           </div>
+
+          <%# Lang — dropdown saves on change and reloads the portal in that
+              language. Names are shown in their own language on purpose. %>
+          <%= form_with url: citizens_settings_path, method: :patch, scope: :user,
+                        class: "settings-row settings-row--select",
+                        data: { controller: "auto-submit", turbo: false } do |f| %>
+            <span class="settings-row-icon"><i class="ri-global-line"></i></span>
+            <span class="settings-row-text">
+              <label for="settings-locale-select" class="settings-row-label mb-0"><%= t("#{sk}language.label") %></label>
+              <span class="settings-row-value"><%= t("#{sk}language.desc") %></span>
+            </span>
+            <%= f.select :preferred_locale,
+                  options_for_select(
+                    [["Kreyòl Ayisyen", "ht"], ["Français", "fr"], ["English", "en"]],
+                    @citizen.portal_locale
+                  ),
+                  {},
+                  id: "settings-locale-select",
+                  class: "form-select form-select-sm settings-lang-select",
+                  data: { action: "change->auto-submit#submit" } %>
+            <noscript>
+              <%= f.submit t("#{sk}language.save"), class: "btn btn-primary btn-sm" %>
+            </noscript>
+          <% end %>
         </div>
+      </section>
 
-        <%# ── 3. NOTIFICATIONS ────────────────────────────────── %>
-        <div class="ballot-section card border-0 shadow-sm mb-4">
-          <div class="card-body p-4">
-
-            <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Notifikasyon</h2>
-              <p class="ballot-section-desc mb-0">
-                Kanal pou nou kontakte w lè gen aktivite enpòtan sou kont ou.
-              </p>
-            </div>
-
-            <% channel_choices = [
-              { value: "email", icon: "ri-mail-line",  label: "Pa imel",
-                disabled: false,
-                sub: "Voye notifikasyon yo nan <strong>#{ERB::Util.h(mask_email(@citizen.email))}</strong>." },
-              { value: "phone", icon: "ri-smartphone-line", label: "Pa telefòn",
-                disabled: true,
-                sub: "Notifikasyon SMS pral disponib byento." }
-            ] %>
-            <% channel_choices.each do |opt| %>
-              <% disabled = opt[:disabled] %>
-              <label class="d-flex align-items-start gap-3 p-3 rounded-3 mb-2"
-                     style="border: 1px solid #E5E7EB;
-                            <%= 'cursor: not-allowed; opacity: 0.55;' if disabled %>
-                            <%= 'cursor: pointer;' unless disabled %>
-                            <%= 'background: rgba(0, 32, 159, 0.04); border-color: rgba(0, 32, 159, 0.4);' if @citizen.notification_channel.to_s == opt[:value] && !disabled %>">
-                <%= f.radio_button :notification_channel, opt[:value],
-                      checked: @citizen.notification_channel.to_s == opt[:value],
-                      disabled: disabled,
-                      class: "form-check-input mt-1 flex-shrink-0" %>
-                <div>
-                  <div class="fw-semibold d-flex align-items-center gap-2" style="font-size: 0.9rem;">
-                    <i class="<%= opt[:icon] %>"></i>
-                    <%= opt[:label] %>
-                    <% if disabled %>
-                      <span class="badge rounded-pill"
-                            style="background: #FEF3C7; color: #92400E; font-size: 0.6rem; font-weight: 700;">
-                        K AP VINI
-                      </span>
-                    <% end %>
-                  </div>
-                  <small class="text-muted"><%= opt[:sub].html_safe %></small>
-                </div>
-              </label>
-            <% end %>
-          </div>
-        </div>
-
-        <%# Submit %>
-        <div class="d-flex justify-content-end mb-4">
-          <%= f.submit "Sove paramèt yo",
-                class: "btn btn-primary fw-semibold px-4 py-2",
-                style: "font-size: 0.85rem;",
-                data: { disable_with: "Ap sove..." } %>
-        </div>
-
-      <% end %>
-
-      <%= form_with url: citizens_sign_out_other_devices_path, method: :delete,
-                    id: "sign-out-other-devices-form",
-                    html: { data: { turbo: false } } do %>
-      <% end %>
     </div>
   </div>
 </div>
@@ -259,9 +325,9 @@
         <h5 class="modal-title fw-bold" id="emailChangeModalTitle"
             style="font-family: 'Montserrat', sans-serif; color: #1E293B; font-size: 1.05rem;">
           <i class="ri-mail-settings-line me-2" style="color: var(--primary);"></i>
-          <% if @email_change_pending %>Antre kòd verifikasyon<% else %>Chanje imel<% end %>
+          <% if @email_change_pending %><%= t("citizen_portal.settings.email_modal.enter_code_title") %><% else %><%= t("citizen_portal.settings.email_modal.change_title") %><% end %>
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fèmen"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= t("citizen_portal.common.close") %>"></button>
       </div>
 
       <% if @email_change_pending %>
@@ -269,12 +335,14 @@
         <div data-controller="otp-input"
              data-otp-input-length-value="6"
              data-otp-input-expires-at-value="<%= @pending_expires_at.to_i %>"
-             data-otp-input-resend-after-seconds-value="60">
+             data-otp-input-resend-after-seconds-value="60"
+             data-otp-input-expires-in-text-value="<%= t("citizen_portal.settings.email_modal.expires_in", time: "%{time}") %>"
+             data-otp-input-expired-text-value="<%= t("citizen_portal.settings.email_modal.expired") %>">
           <%= form_with url: citizens_settings_path, method: :patch,
                         html: { data: { turbo: false } } do %>
             <div class="modal-body">
               <p class="ballot-section-desc mb-2">
-                Nou voye yon kòd verifikasyon nan :
+                <%= t("citizen_portal.settings.email_modal.code_sent_to") %>
               </p>
               <%# Email "pill" with edit affordance docked at the right —
                   separates the address from the prose so a typo is easy
@@ -291,18 +359,18 @@
                 <%= link_to citizens_cancel_email_change_path,
                       data: { turbo: true, turbo_method: :delete },
                       class: "btn btn-sm py-1 px-2 flex-shrink-0",
-                      title: "Modifye imel",
+                      title: t("citizen_portal.settings.email_modal.edit_email"),
                       style: "color: var(--primary); line-height: 1; background: #fff; border: 1px solid #E5E7EB;" do %>
                   <i class="ri-edit-line" style="font-size: 0.95rem;"></i>
                 <% end %>
               </div>
               <p class="ballot-section-desc mb-3 small">
-                Tcheke bwat resepsyon ou (ak espam).
+                <%= t("citizen_portal.settings.email_modal.check_inbox") %>
               </p>
 
               <input type="hidden" name="user[email]" value="<%= @pending_new_email %>">
 
-              <label class="form-label fw-semibold mb-2">Kòd verifikasyon</label>
+              <label class="form-label fw-semibold mb-2"><%= t("citizen_portal.settings.email_modal.code_label") %></label>
               <div class="otp-input-row mb-2" data-otp-input-target="row">
                 <% 6.times do %>
                   <input type="text" class="otp-box"
@@ -319,7 +387,7 @@
                 <span class="badge rounded-pill text-bg-light"
                       data-otp-input-target="timer"
                       style="font-size: 0.75rem; font-weight: 500; padding: 0.4rem 0.75rem;">
-                  Kòd la ekspire nan 15:00
+                  <%= t("citizen_portal.settings.email_modal.expires_in", time: "15:00") %>
                 </span>
               </div>
 
@@ -329,7 +397,7 @@
                         data-otp-input-target="resend"
                         hidden
                         style="font-size: 0.8rem; text-decoration: underline; color: var(--primary);">
-                  Pa resevwa kòd la? Voye l ankò
+                  <%= t("citizen_portal.settings.email_modal.resend") %>
                 </button>
               </div>
             </div>
@@ -340,10 +408,10 @@
                   the pending state intact, less off-ramping than "Anile". %>
               <button type="button" class="btn btn-link btn-sm" data-bs-dismiss="modal"
                       style="color: #6b7280; text-decoration: none;">
-                Verifye pi ta
+                <%= t("citizen_portal.settings.email_modal.verify_later") %>
               </button>
               <button type="submit" class="btn btn-primary btn-sm fw-semibold px-4">
-                <i class="ri-check-line me-1"></i> Konfime
+                <i class="ri-check-line me-1"></i> <%= t("citizen_portal.settings.email_modal.confirm") %>
               </button>
             </div>
           <% end %>
@@ -362,11 +430,10 @@
                       html: { data: { turbo: false } } do %>
           <div class="modal-body">
             <p class="ballot-section-desc mb-3">
-              Antre nouvo imel ou. N ap voye yon kòd verifikasyon nan adrès sa a
-              pou konfime ke se pa w.
+              <%= t("citizen_portal.settings.email_modal.intro") %>
             </p>
 
-            <label for="email_change_new_email" class="form-label fw-semibold">Nouvo imel</label>
+            <label for="email_change_new_email" class="form-label fw-semibold"><%= t("citizen_portal.settings.email_modal.new_email_label") %></label>
             <div class="input-group">
               <span class="input-group-text bg-light" style="border-right: 0;">
                 <i class="ri-mail-line" style="color: var(--primary);"></i>
@@ -376,22 +443,21 @@
                      name="user[email]"
                      class="form-control"
                      autocomplete="email"
-                     placeholder="ekzanp@imel.com"
+                     placeholder="<%= t("citizen_portal.settings.email_modal.placeholder") %>"
                      style="color: #000; font-weight: 500; border-left: 0;"
                      required autofocus>
             </div>
             <small class="text-muted d-block mt-2">
-              Imel aktyèl: <strong><%= mask_email(@citizen.email) %></strong>.
-              Imel sa a p ap chanje toutotan ou pa konfime kòd la.
+              <%= t("citizen_portal.settings.email_modal.current_email_html", email: mask_email(@citizen.email)) %>
             </small>
           </div>
           <div class="modal-footer" style="border-top: 1px solid #E5E7EB;">
             <button type="button" class="btn btn-link btn-sm" data-bs-dismiss="modal"
                     style="color: #6b7280; text-decoration: none;">
-              Anile
+              <%= t("citizen_portal.common.cancel") %>
             </button>
             <button type="submit" class="btn btn-primary btn-sm fw-semibold px-4">
-              <i class="ri-mail-send-line me-1"></i> Voye kòd
+              <i class="ri-mail-send-line me-1"></i> <%= t("citizen_portal.settings.email_modal.send_code") %>
             </button>
           </div>
         <% end %>

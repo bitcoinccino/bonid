@@ -16,7 +16,7 @@
       <button type="button"
               class="qr-modal-close"
               data-bs-dismiss="modal"
-              aria-label="Close">
+              aria-label="<%= t("citizen_portal.common.close") %>">
         <i class="ri-close-line"></i>
       </button>
 
@@ -28,7 +28,7 @@
           <div class="qr-modal-icon">
             <i class="ri-shield-check-fill"></i>
           </div>
-          <h4 class="qr-modal-title">Your BonID</h4>
+          <h4 class="qr-modal-title"><%= t("citizen_portal.submission.qr.title") %></h4>
           <% bonid_str = submission.user.bonid.to_s %>
           <% masked_bonid = bonid_str.length > 8 ? "#{bonid_str.first(4)}••••#{bonid_str.last(4)}" : bonid_str %>
           <p class="qr-modal-bonid"><%= masked_bonid %></p>
@@ -43,7 +43,7 @@
             <%= image_tag("data:image/png;base64,#{submission.qr_for(:citizen)}",
                           id: dom_id(submission, :qr_rotating_image),
                           class: "qr-code-image",
-                          alt: "BonID QR Code") %>
+                          alt: t("citizen_portal.submission.qr.alt")) %>
 
             <%# Photo Overlay %>
             <div class="qr-photo-overlay">
@@ -62,7 +62,7 @@
         <div class="qr-modal-status">
           <span class="status-badge-active">
             <i class="ri-checkbox-circle-fill"></i>
-            Verified & Active
+            <%= t("citizen_portal.submission.qr.verified_active") %>
           </span>
         </div>
 
@@ -70,14 +70,14 @@
         <div class="qr-modal-countdown"
              data-controller="qr-countdown"
              data-qr-countdown-interval-value="60">
-          <span class="countdown-label">Auto-refresh in</span>
+          <span class="countdown-label"><%= t("citizen_portal.submission.qr.auto_refresh_in") %></span>
           <span class="countdown-timer" data-qr-countdown-target="display">1:00</span>
         </div>
 
         <%# Info Section %>
         <div class="qr-modal-info">
           <i class="ri-information-line"></i>
-          <p>Your QR code rotates periodically for enhanced security. Partners and officers scan this to verify your identity.</p>
+          <p><%= t("citizen_portal.submission.qr.rotates_note") %></p>
         </div>
 
         <%# Refresh Button %>
@@ -85,6 +85,8 @@
                       method: :post,
                       data: {
                         controller: "qr-refresh",
+                        qr_refresh_idle_text_value: t("citizen_portal.submission.qr.refresh_now"),
+                        qr_refresh_busy_text_value: t("citizen_portal.submission.qr.refreshing"),
                         qr_rotator_target: "refreshForm",
                         action: "turbo:submit-start->qr-refresh#start turbo:submit-end->qr-refresh#finish"
                       },
@@ -95,7 +97,7 @@
                   data-qr-refresh-target="submit">
             <span data-qr-refresh-target="spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
             <i class="ri-refresh-line" data-qr-refresh-target="icon"></i>
-            <span data-qr-refresh-target="label">Refresh Now</span>
+            <span data-qr-refresh-target="label"><%= t("citizen_portal.submission.qr.refresh_now") %></span>
           </button>
 
         <% end %>

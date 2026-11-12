@@ -26,8 +26,11 @@ module ConsentScopeLabelsHelper
   # Technical scopes that don't share any information on their own.
   HIDDEN_SCOPES = %w[openid].freeze
 
+  # Localized under citizen_portal.consents.scope_labels.* (":" → "_" in
+  # keys); SCOPE_LABELS is the English fallback.
   def consent_scope_label(scope)
-    SCOPE_LABELS.fetch(scope.to_s) { scope.to_s.tr(":_", "  ").capitalize }
+    fallback = SCOPE_LABELS.fetch(scope.to_s) { scope.to_s.tr(":_", "  ").capitalize }
+    I18n.t("citizen_portal.consents.scope_labels.#{scope.to_s.tr(':', '_')}", default: fallback)
   end
 
   def visible_consent_scopes(scopes)

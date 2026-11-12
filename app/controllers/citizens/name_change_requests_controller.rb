@@ -14,7 +14,7 @@ module Citizens
         UserMailer.name_change_submitted(current_citizen, @name_change_request).deliver_later
 
         redirect_to citizens_dashboard_path,
-                    notice: "Your name change request has been submitted for review. A confirmation email has been sent."
+                    notice: t("citizen_portal.name_change.flash.submitted")
       else
         render :new, status: :unprocessable_entity
       end
@@ -25,7 +25,7 @@ module Citizens
     def ensure_verified
       unless current_citizen.identity_submissions.exists?(status: :approved)
         redirect_to citizens_profile_path,
-                    alert: "You must have a verified identity to request a name change."
+                    alert: t("citizen_portal.name_change.flash.must_be_verified")
       end
     end
 

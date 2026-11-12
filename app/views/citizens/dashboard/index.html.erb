@@ -15,10 +15,10 @@
       aesthetic, which caused the h1 + subtitle to stack awkwardly. %>
   <div class="ballot-head text-center mb-4">
     <h1 class="ballot-title">
-      <i class="ri-dashboard-line me-2"></i>My BonID Wallet
+      <i class="ri-dashboard-line me-2"></i><%= t("citizen_portal.dashboard.wallet_title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
-      View your verified identity card, manage your profile information, and access all BonID services from one place.
+      <%= t("citizen_portal.dashboard.wallet_subtitle") %>
     </p>
   </div>
 <% end %>
@@ -62,7 +62,7 @@
             </div>
             <div class="wallet-status">
               <span class="status-badge active">
-                <i class="ri-checkbox-circle-fill"></i> Active
+                <i class="ri-checkbox-circle-fill"></i> <%= t("citizen_portal.dashboard.active") %>
               </span>
             </div>
           </div>
@@ -71,7 +71,7 @@
             <div class="wallet-photo">
               <% if current_citizen.photo.attached? %>
                 <%= image_tag url_for(current_citizen.photo),
-                              alt: "Profile photo", class: "photo-img",
+                              alt: t("citizen_portal.dashboard.profile_photo"), class: "photo-img",
                               style: "width: 120px; height: 120px; object-fit: cover; object-position: center top;" %>
               <% else %>
                 <div class="photo-placeholder">
@@ -99,7 +99,7 @@
           <%# Signature Section %>
           <% if submission.signature.attached? %>
             <div class="wallet-signature-section">
-              <%= image_tag submission.signature, alt: "Signature", class: "signature-image" %>
+              <%= image_tag submission.signature, alt: t("citizen_portal.dashboard.signature"), class: "signature-image" %>
             </div>
           <% end %>
 
@@ -110,18 +110,18 @@
                     data-bs-toggle="modal"
                     data-bs-target="#qrCodeModal_<%= submission.id %>">
               <i class="ri-qr-code-line"></i>
-              <span>View QR Code</span>
+              <span><%= t("citizen_portal.dashboard.view_qr") %></span>
             </button>
           </div>
 
           <div class="wallet-card-footer">
             <div class="footer-item">
-              <span class="footer-label">Issued</span>
-              <span class="footer-value"><%= submission.updated_at.strftime("%b %d, %Y") %></span>
+              <span class="footer-label"><%= t("citizen_portal.dashboard.issued") %></span>
+              <span class="footer-value"><%= l(submission.updated_at.to_date, format: :long) %></span>
             </div>
             <div class="footer-item">
-              <span class="footer-label">Expires</span>
-              <span class="footer-value"><%= submission.expires_at&.strftime("%b %d, %Y") || "N/A" %></span>
+              <span class="footer-label"><%= t("citizen_portal.dashboard.expires") %></span>
+              <span class="footer-value"><%= submission.expires_at ? l(submission.expires_at.to_date, format: :long) : t("citizen_portal.dashboard.not_available") %></span>
             </div>
           </div>
         </div>
@@ -137,7 +137,7 @@
               <div class="detail-card-icon">
                 <i class="ri-heart-pulse-fill"></i>
               </div>
-              <h5>Health</h5>
+              <h5><%= t("citizen_portal.dashboard.health.title") %></h5>
               <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#healthModal">
                 <i class="ri-pencil-line"></i>
               </button>
@@ -147,33 +147,33 @@
               <% health_has_data = hp && (hp.blood_type.present? || hp.allergies_list.any? || hp.chronic_conditions_list.any? || hp.medications_list.any?) %>
               <% if health_has_data %>
                 <div class="detail-row">
-                  <span class="detail-label">Blood Type</span>
+                  <span class="detail-label"><%= t("citizen_portal.dashboard.health.blood_type") %></span>
                   <span class="detail-value"><%= hp.blood_type&.upcase || "—" %></span>
                 </div>
                 <% if hp.allergies_list.any? %>
                   <div class="detail-row">
-                    <span class="detail-label">Allergies</span>
-                    <span class="detail-value"><%= hp.allergies_list.join(", ") %></span>
+                    <span class="detail-label"><%= t("citizen_portal.dashboard.health.allergies") %></span>
+                    <span class="detail-value"><%= hp.allergies_list.map { |a| t("citizen_portal.profile.health.allergy_options.#{a.parameterize(separator: '_')}", default: a) }.join(", ") %></span>
                   </div>
                 <% end %>
                 <% if hp.chronic_conditions_list.any? %>
                   <div class="detail-row">
-                    <span class="detail-label">Conditions</span>
-                    <span class="detail-value"><%= hp.chronic_conditions_list.join(", ") %></span>
+                    <span class="detail-label"><%= t("citizen_portal.dashboard.health.conditions") %></span>
+                    <span class="detail-value"><%= hp.chronic_conditions_list.map { |c| t("citizen_portal.profile.health.condition_options.#{c.parameterize(separator: '_')}", default: c) }.join(", ") %></span>
                   </div>
                 <% end %>
                 <% if hp.medications_list.any? %>
                   <div class="detail-row">
-                    <span class="detail-label">Medications</span>
+                    <span class="detail-label"><%= t("citizen_portal.dashboard.health.medications") %></span>
                     <span class="detail-value"><%= hp.medications_list.join(", ") %></span>
                   </div>
                 <% end %>
               <% else %>
                 <div class="text-center text-muted py-4">
                   <i class="ri-heart-pulse-line ri-2x mb-2 d-block opacity-50"></i>
-                  <p class="mb-2">No health info added yet</p>
+                  <p class="mb-2"><%= t("citizen_portal.dashboard.health.empty") %></p>
                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#healthModal">
-                    <i class="ri-add-line me-1"></i> Add Health
+                    <i class="ri-add-line me-1"></i> <%= t("citizen_portal.dashboard.health.add") %>
                   </button>
                 </div>
               <% end %>
@@ -192,7 +192,7 @@
               <div class="detail-card-icon">
                 <i class="ri-bank-fill"></i>
               </div>
-              <h5>Financial</h5>
+              <h5><%= t("citizen_portal.dashboard.financial.title") %></h5>
               <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#bankModal">
                 <i class="ri-pencil-line"></i>
               </button>
@@ -215,7 +215,7 @@
                     </div>
                     <div class="bank-info">
                       <% if bp.account_source == "bank" %>
-                        <span class="bank-name"><%= bp.bank_name.presence || "Bank Account" %></span>
+                        <span class="bank-name"><%= bp.bank_name.presence || t("citizen_portal.dashboard.financial.bank_account") %></span>
                         <%# Mask account number - show only last 4 characters %>
                         <% masked_acct = bp.account_number.present? ? "••••••" + bp.account_number.gsub(/[^0-9A-Za-z]/, "").last(4).to_s : "" %>
                         <span class="bank-details">
@@ -225,7 +225,7 @@
                           <% end %>
                         </span>
                       <% elsif bp.account_source == "mobile_wallet" %>
-                        <span class="bank-name"><%= bp.wallet_provider.presence&.titleize || "Mobile Wallet" %></span>
+                        <span class="bank-name"><%= bp.wallet_provider.presence&.titleize || t("citizen_portal.dashboard.financial.mobile_wallet") %></span>
                         <%# Mask phone - show only last 4 digits %>
                         <% masked_phone = bp.wallet_address.present? ? "••••••" + bp.wallet_address.gsub(/[^0-9]/, "").last(4).to_s : "" %>
                         <span class="bank-details">
@@ -235,7 +235,7 @@
                           <% end %>
                         </span>
                       <% elsif bp.account_source == "crypto_wallet" %>
-                        <span class="bank-name"><%= bp.wallet_provider.presence&.titleize || "Crypto Wallet" %></span>
+                        <span class="bank-name"><%= bp.wallet_provider.presence&.titleize || t("citizen_portal.dashboard.financial.crypto_wallet") %></span>
                         <%# Mask wallet address - show first 4 and last 4 characters %>
                         <% addr = bp.wallet_address.to_s %>
                         <% masked_addr = addr.length > 8 ? "#{addr.first(4)}...#{addr.last(4)}" : addr %>
@@ -246,8 +246,8 @@
                           <% end %>
                         </span>
                       <% else %>
-                        <span class="bank-name">Unknown Account Type</span>
-                        <span class="bank-details">Source: <%= bp.account_source.inspect %></span>
+                        <span class="bank-name"><%= t("citizen_portal.dashboard.financial.unknown_type") %></span>
+                        <span class="bank-details"><%= t("citizen_portal.dashboard.financial.source") %>: <%= bp.account_source.inspect %></span>
                       <% end %>
                     </div>
                   </div>
@@ -255,9 +255,9 @@
               <% else %>
                 <div class="text-center text-muted py-4">
                   <i class="ri-bank-line ri-2x mb-2 d-block opacity-50"></i>
-                  <p class="mb-2">No financial accounts added yet</p>
+                  <p class="mb-2"><%= t("citizen_portal.dashboard.financial.empty") %></p>
                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#bankModal">
-                    <i class="ri-add-line me-1"></i> Add Account
+                    <i class="ri-add-line me-1"></i> <%= t("citizen_portal.dashboard.financial.add") %>
                   </button>
                 </div>
               <% end %>
@@ -276,7 +276,7 @@
               <div class="detail-card-icon">
                 <i class="ri-contacts-book-fill"></i>
               </div>
-              <h5>Emergency Contacts</h5>
+              <h5><%= t("citizen_portal.dashboard.emergency.title") %></h5>
               <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#emergencyModal">
                 <i class="ri-pencil-line"></i>
               </button>
@@ -297,7 +297,7 @@
                     <div class="contact-info">
                       <span class="contact-name"><%= ec.name %></span>
                       <span class="contact-details">
-                        <%= ec.relation&.titleize || "Contact" %>
+                        <%= ec.relation.present? ? t("citizen_portal.relations.#{ec.relation.downcase}", default: ec.relation.titleize) : t("citizen_portal.dashboard.emergency.contact_fallback") %>
                         <% if ec.phone.present? %> • <%= ec.phone %><% end %>
                       </span>
                     </div>
@@ -306,9 +306,9 @@
               <% else %>
                 <div class="text-center text-muted py-4">
                   <i class="ri-contacts-book-line ri-2x mb-2 d-block opacity-50"></i>
-                  <p class="mb-2">No emergency contacts added yet</p>
+                  <p class="mb-2"><%= t("citizen_portal.dashboard.emergency.empty") %></p>
                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#emergencyModal">
-                    <i class="ri-add-line me-1"></i> Add Contact
+                    <i class="ri-add-line me-1"></i> <%= t("citizen_portal.dashboard.emergency.add") %>
                   </button>
                 </div>
               <% end %>
@@ -328,7 +328,7 @@
               <div class="detail-card-icon">
                 <i class="ri-parent-fill"></i>
               </div>
-              <h5>Fanmi</h5>
+              <h5><%= t("citizen_portal.dashboard.family.title") %></h5>
               <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#familyModal">
                 <i class="ri-pencil-line"></i>
               </button>
@@ -341,10 +341,10 @@
               <% else %>
                 <div class="text-center text-muted py-4">
                   <i class="ri-parent-line ri-2x mb-2 d-block opacity-50"></i>
-                  <p class="mb-2">Pa gen enfòmasyon fanmi ankò</p>
-                  <small class="d-block mb-3 px-3">Opsyonèl — ajoute manman oswa papa ou pou sèvis sivil (sètifika nesans, tè, eritaj)</small>
+                  <p class="mb-2"><%= t("citizen_portal.dashboard.family.empty") %></p>
+                  <small class="d-block mb-3 px-3"><%= t("citizen_portal.dashboard.family.hint") %></small>
                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#familyModal">
-                    <i class="ri-add-line me-1"></i> Ajoute Fanmi
+                    <i class="ri-add-line me-1"></i> <%= t("citizen_portal.dashboard.family.add") %>
                   </button>
                 </div>
               <% end %>
@@ -363,7 +363,7 @@
               <div class="detail-card-icon">
                 <i class="ri-share-fill"></i>
               </div>
-              <h5>Social</h5>
+              <h5><%= t("citizen_portal.dashboard.social.title") %></h5>
               <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#socialModal">
                 <i class="ri-pencil-line"></i>
               </button>
@@ -384,9 +384,9 @@
               <% else %>
                 <div class="text-center text-muted py-4">
                   <i class="ri-share-line ri-2x mb-2 d-block opacity-50"></i>
-                  <p class="mb-2">No social profiles added yet</p>
+                  <p class="mb-2"><%= t("citizen_portal.dashboard.social.empty") %></p>
                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#socialModal">
-                    <i class="ri-add-line me-1"></i> Add Profile
+                    <i class="ri-add-line me-1"></i> <%= t("citizen_portal.dashboard.social.add") %>
                   </button>
                 </div>
               <% end %>
@@ -405,7 +405,7 @@
               <div class="detail-card-icon">
                 <i class="ri-body-scan-fill"></i>
               </div>
-              <h5>Physical</h5>
+              <h5><%= t("citizen_portal.dashboard.physical.title") %></h5>
               <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#physicalModal">
                 <i class="ri-pencil-line"></i>
               </button>
@@ -415,27 +415,27 @@
               <% physical_has_data = pp && (pp.height_cm.present? || pp.weight_kg.present? || pp.eye_color.present? || pp.hair_color.present?) %>
               <% if physical_has_data %>
                 <div class="detail-row">
-                  <span class="detail-label">Height</span>
+                  <span class="detail-label"><%= t("citizen_portal.dashboard.physical.height") %></span>
                   <span class="detail-value"><%= pp.height_cm.present? ? "#{pp.height_cm} cm" : "—" %></span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Weight</span>
+                  <span class="detail-label"><%= t("citizen_portal.dashboard.physical.weight") %></span>
                   <span class="detail-value"><%= pp.weight_kg.present? ? "#{pp.weight_kg} kg" : "—" %></span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Eye Color</span>
-                  <span class="detail-value"><%= pp.eye_color&.titleize || "—" %></span>
+                  <span class="detail-label"><%= t("citizen_portal.dashboard.physical.eye_color") %></span>
+                  <span class="detail-value"><%= pp.eye_color.present? ? t("citizen_portal.profile.physical.options.eye_color.#{pp.eye_color}", default: pp.eye_color.titleize) : "—" %></span>
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Hair Color</span>
-                  <span class="detail-value"><%= pp.hair_color&.titleize || "—" %></span>
+                  <span class="detail-label"><%= t("citizen_portal.dashboard.physical.hair_color") %></span>
+                  <span class="detail-value"><%= pp.hair_color.present? ? t("citizen_portal.profile.physical.options.hair_color.#{pp.hair_color}", default: pp.hair_color.titleize) : "—" %></span>
                 </div>
               <% else %>
                 <div class="text-center text-muted py-4">
                   <i class="ri-body-scan-line ri-2x mb-2 d-block opacity-50"></i>
-                  <p class="mb-2">No physical info added yet</p>
+                  <p class="mb-2"><%= t("citizen_portal.dashboard.physical.empty") %></p>
                   <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#physicalModal">
-                    <i class="ri-add-line me-1"></i> Add Physical
+                    <i class="ri-add-line me-1"></i> <%= t("citizen_portal.dashboard.physical.add") %>
                   </button>
                 </div>
               <% end %>
@@ -450,9 +450,9 @@
     <div class="certificate-action">
       <%= link_to verified_profile_citizens_identity_submission_path(submission.public_token),
                   class: "certificate-btn" do %>
-        <i class="ri-award-line"></i> View Certificate
+        <i class="ri-award-line"></i> <%= t("citizen_portal.dashboard.view_certificate") %>
       <% end %>
-      <p class="small text-muted mt-2 mb-0">Preview what others see when they scan my QR</p>
+      <p class="small text-muted mt-2 mb-0"><%= t("citizen_portal.dashboard.certificate_hint") %></p>
     </div>
 
   <% elsif (pending = @submissions.find(&:status_pending?)) %>
@@ -463,9 +463,9 @@
         <div class="pending-icon">
           <i class="ri-time-line"></i>
         </div>
-        <h3>Verification in Progress</h3>
-        <p>Submitted on <%= pending.created_at.strftime("%B %d, %Y") %></p>
-        <p class="pending-note">We'll notify you by email when your BonID is ready.</p>
+        <h3><%= t("citizen_portal.dashboard.pending.title") %></h3>
+        <p><%= t("citizen_portal.dashboard.pending.submitted_on", date: l(pending.created_at.to_date, format: :long)) %></p>
+        <p class="pending-note"><%= t("citizen_portal.dashboard.pending.note") %></p>
       </div>
     </div>
 
@@ -477,16 +477,16 @@
         <div class="rejected-icon">
           <i class="ri-close-circle-line"></i>
         </div>
-        <h3>Submission Rejected</h3>
-        <p>Your BonID submission was not approved. Please review the reason below and resubmit.</p>
+        <h3><%= t("citizen_portal.dashboard.rejected.title") %></h3>
+        <p><%= t("citizen_portal.dashboard.rejected.body") %></p>
 
         <% if rejected.rejection_reason.present? || rejected.other_reason.present? %>
           <div class="rejected-reason">
             <div class="reason-label">
-              <i class="ri-information-line me-1"></i> Reason
+              <i class="ri-information-line me-1"></i> <%= t("citizen_portal.dashboard.rejected.reason") %>
             </div>
             <div class="reason-text">
-              <%= rejected.rejection_reason&.humanize || "Not specified" %>
+              <%= rejected.rejection_reason&.humanize || t("citizen_portal.dashboard.rejected.not_specified") %>
               <% if rejected.other_reason.present? %>
                 <br><%= rejected.other_reason %>
               <% end %>
@@ -497,13 +497,13 @@
         <div class="rejected-actions">
           <%= link_to new_citizens_identity_submission_path(resubmission_from: rejected.public_token),
                       class: "gs-cta-btn" do %>
-            <i class="ri-refresh-line me-1"></i> Resubmit
+            <i class="ri-refresh-line me-1"></i> <%= t("citizen_portal.dashboard.rejected.resubmit") %>
           <% end %>
         </div>
 
         <p class="rejected-note">
           <i class="ri-mail-line me-1"></i>
-          A detailed email was also sent to your inbox.
+          <%= t("citizen_portal.dashboard.rejected.email_note") %>
         </p>
       </div>
     </div>
@@ -517,13 +517,13 @@
       <%# ── Page Header (wizard style) ── %>
       <div class="ballot-head text-center">
         <h1 class="ballot-title">
-          <i class="ri-shield-check-line me-2"></i>Jwenn BonID Ou
+          <i class="ri-shield-check-line me-2"></i><%= t("citizen_portal.dashboard.get_started.title") %>
         </h1>
         <p class="ballot-subtitle mb-0">
           <% if @is_diaspora %>
-            Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti, menm depi aletranje.
+            <%= t("citizen_portal.dashboard.get_started.subtitle_diaspora") %>
           <% else %>
-            Idantite dijital prive ou aksepte nan bank, lopital, anbasad, ak sèvis toupatou an Ayiti.
+            <%= t("citizen_portal.dashboard.get_started.subtitle") %>
           <% end %>
         </p>
       </div>
@@ -534,24 +534,24 @@
         <%# Three steps — each lists only what the citizen needs for that step. %>
         <%
           docs = [
-            { icon: "ri-id-card-line",   label: "CIN oswa Paspò", detail: "Devan ak dèyè" },
-            { icon: "ri-camera-line",    label: "Selfie klè",     detail: "Pou verifikasyon figi" }
+            { icon: "ri-id-card-line",   label: t("citizen_portal.dashboard.get_started.doc_id_label"), detail: t("citizen_portal.dashboard.get_started.doc_id_detail") },
+            { icon: "ri-camera-line",    label: t("citizen_portal.dashboard.get_started.selfie_label"), detail: t("citizen_portal.dashboard.get_started.selfie_detail") }
           ]
           if @is_diaspora
-            docs << { icon: "ri-bank-card-line", label: "ID peyi rezidans ou",       detail: "Green Card, State ID, Driver's License, Cedula, oswa Residence Permit" }
-            docs << { icon: "ri-file-text-line", label: "Prèv adrès peyi rezidans", detail: "Bòdwo oswa bank statement (mwens pase 3 mwa)" }
+            docs << { icon: "ri-bank-card-line", label: t("citizen_portal.dashboard.get_started.res_id_label"), detail: t("citizen_portal.dashboard.get_started.res_id_detail") }
+            docs << { icon: "ri-file-text-line", label: t("citizen_portal.dashboard.get_started.res_address_label"), detail: t("citizen_portal.dashboard.get_started.res_address_detail") }
           else
-            docs << { icon: "ri-file-text-line", label: "Prèv adrès", detail: "Bòdwo elektrisite, kontra lokasyon, oswa lèt gouvènman" }
+            docs << { icon: "ri-file-text-line", label: t("citizen_portal.dashboard.get_started.address_label"), detail: t("citizen_portal.dashboard.get_started.address_detail") }
           end
 
           steps = [
             (if current_citizen.profile_complete?
-               { num: "1", title: "Ranpli pwofil ou", desc: "Pwofil ou konplè.", items: [], done: true }
+               { num: "1", title: t("citizen_portal.dashboard.get_started.step1_title"), desc: t("citizen_portal.dashboard.get_started.step1_done"), items: [], done: true }
              else
-               { num: "1", title: "Ranpli pwofil ou", desc: "Enfòmasyon pèsonèl ak adrès ou.", items: [] }
+               { num: "1", title: t("citizen_portal.dashboard.get_started.step1_title"), desc: t("citizen_portal.dashboard.get_started.step1_desc"), items: [] }
              end),
-            { num: "2", title: "Telechaje dokiman ou", desc: "Pare dokiman sa yo:",           items: docs },
-            { num: "3", title: "Resevwa BonID ou",    desc: "Yon revizè BonID verifye idantite ou, epi ou resevwa ID dijital ou ak yon kòd QR sekirize.", items: [] }
+            { num: "2", title: t("citizen_portal.dashboard.get_started.step2_title"), desc: t("citizen_portal.dashboard.get_started.step2_desc"),           items: docs },
+            { num: "3", title: t("citizen_portal.dashboard.get_started.step3_title"), desc: t("citizen_portal.dashboard.get_started.step3_desc"), items: [] }
           ]
         %>
         <div class="row g-3 mb-4">
@@ -561,7 +561,7 @@
                 <div class="card-body p-4">
                   <div class="d-flex align-items-center gap-2 mb-2">
                     <% if s[:done] %>
-                      <div class="gs-step-num" style="background:#10B981;color:#fff;" aria-label="Fini"><i class="ri-check-line"></i></div>
+                      <div class="gs-step-num" style="background:#10B981;color:#fff;" aria-label="<%= t("citizen_portal.dashboard.get_started.done") %>"><i class="ri-check-line"></i></div>
                     <% else %>
                       <div class="gs-step-num"><%= s[:num] %></div>
                     <% end %>
@@ -571,9 +571,9 @@
 
                   <% if s[:num] == "2" && @is_diaspora %>
                     <span style="font-size: 0.72rem; font-weight: 600; color: #00209F;">
-                      <i class="ri-global-line me-1"></i> Aplikasyon Dyaspora
+                      <i class="ri-global-line me-1"></i> <%= t("citizen_portal.dashboard.get_started.diaspora_application") %>
                       <% if @residence_country && @residence_country != "HT" %>
-                        <span style="color: #64748B; font-weight: 400;">(<%= ISO3166::Country[@residence_country]&.translations&.dig("en") || @residence_country %>)</span>
+                        <span style="color: #64748B; font-weight: 400;">(<%= ISO3166::Country[@residence_country]&.translations&.dig(I18n.locale.to_s == "ht" ? "fr" : I18n.locale.to_s) || @residence_country %>)</span>
                       <% end %>
                     </span>
                   <% end %>
@@ -598,12 +598,12 @@
           <% if current_citizen.profile_complete? %>
             <%= link_to new_citizens_identity_submission_path,
                         class: "election-btn-primary" do %>
-              <i class="ri-send-plane-line me-1"></i> Kòmanse
+              <i class="ri-send-plane-line me-1"></i> <%= t("citizen_portal.dashboard.get_started.start") %>
             <% end %>
           <% else %>
             <%= link_to edit_citizens_profile_path,
                         class: "election-btn-primary" do %>
-              <i class="ri-edit-line me-1"></i> Kòmanse
+              <i class="ri-edit-line me-1"></i> <%= t("citizen_portal.dashboard.get_started.start") %>
             <% end %>
           <% end %>
         </div>

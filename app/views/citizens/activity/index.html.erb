@@ -3,10 +3,10 @@
   <%# ── Page Header (wizard style — matches Kalandriye / Anrejistre) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-pulse-line me-2"></i>Aktivite
+      <i class="ri-pulse-line me-2"></i><%= t("citizen_portal.activity.title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
-      Tout sa ki pase ak idantite BonID ou a, nan yon sèl kote.
+      <%= t("citizen_portal.activity.subtitle") %>
     </p>
   </div>
 
@@ -18,9 +18,8 @@
       <div class="activity-security-note mb-3">
         <i class="ri-shield-check-line"></i>
         <span>
-          <strong>Ou wè yon aktivite ou pa rekonèt?</strong>
-          Retire aksè patnè a nan <%= link_to "Konsantman", citizens_consents_path %>,
-          oswa kontakte <%= link_to "Sipò", citizens_support_path %>.
+          <strong><%= t("citizen_portal.activity.unrecognized_title") %></strong>
+          <%= t("citizen_portal.activity.unrecognized_body_html", consents: link_to(t("citizen_portal.nav.consents"), citizens_consents_path), support: link_to(t("citizen_portal.nav.support"), citizens_support_path)) %>
         </span>
       </div>
 
@@ -34,13 +33,13 @@
             <%= hidden_field_tag :filter, @filter %>
 
             <div class="activity-filter-dates">
-              <span class="activity-filter-label">Peryòd</span>
-              <%= date_field_tag :from, @from, class: "activity-date-input", aria: { label: "Soti" } %>
+              <span class="activity-filter-label"><%= t("citizen_portal.activity.period") %></span>
+              <%= date_field_tag :from, @from, class: "activity-date-input", aria: { label: t("citizen_portal.activity.from") } %>
               <span class="activity-date-sep">—</span>
-              <%= date_field_tag :to,   @to,   class: "activity-date-input", aria: { label: "Rive" } %>
+              <%= date_field_tag :to,   @to,   class: "activity-date-input", aria: { label: t("citizen_portal.activity.to") } %>
               <button type="submit" class="activity-filter-apply">
                 <i class="ri-filter-3-line"></i>
-                <span>Aplike</span>
+                <span><%= t("citizen_portal.activity.apply") %></span>
               </button>
             </div>
 
@@ -48,18 +47,18 @@
                         class: "activity-export-btn",
                         data: { turbo: false } do %>
               <i class="ri-download-2-line"></i>
-              <span>Exporte PDF</span>
+              <span><%= t("citizen_portal.activity.export_pdf") %></span>
             <% end %>
           <% end %>
 
           <div class="activity-filter-row">
-            <span class="activity-filter-label">Kategori</span>
+            <span class="activity-filter-label"><%= t("citizen_portal.activity.category") %></span>
             <div class="activity-filter-categories" role="group" aria-label="Kategori">
               <% categories = [
-                { key: "all",            label: "Tout" },
-                { key: "security",       label: "Sekirite" },
-                { key: "financial",      label: "Finansye" },
-                { key: "administrative", label: "Administratif" }
+                { key: "all",            label: t("citizen_portal.activity.categories.all") },
+                { key: "security",       label: t("citizen_portal.activity.categories.security") },
+                { key: "financial",      label: t("citizen_portal.activity.categories.financial") },
+                { key: "administrative", label: t("citizen_portal.activity.categories.administrative") }
               ] %>
               <% categories.each do |c| %>
                 <% active = (@filter == c[:key]) %>
@@ -74,24 +73,24 @@
 
       <%# ── Tab pills ── %>
       <% tabs = [
-        { key: "all",          label: "Tout",        icon: "ri-list-check", count: nil },
-        { key: "scans",        label: "Eskanè",      icon: "ri-qr-scan-2-line", count: @counts[:scans] },
-        { key: "consents",     label: "Konsantman",  icon: "ri-id-card-line", count: @counts[:consents] },
-        { key: "transactions", label: "Tranzaksyon", icon: "ri-exchange-funds-line", count: @counts[:transactions] },
-        { key: "applications", label: "Aplikasyon",  icon: "ri-file-list-3-line", count: @counts[:applications] },
-        { key: "sessions",     label: "Koneksyon",   icon: "ri-login-box-line", count: @counts[:sessions] }
+        { key: "all",          label: t("citizen_portal.activity.tabs.all"),          icon: "ri-list-check", count: nil },
+        { key: "scans",        label: t("citizen_portal.activity.tabs.scans"),        icon: "ri-qr-scan-2-line", count: @counts[:scans] },
+        { key: "consents",     label: t("citizen_portal.activity.tabs.consents"),     icon: "ri-id-card-line", count: @counts[:consents] },
+        { key: "transactions", label: t("citizen_portal.activity.tabs.transactions"), icon: "ri-exchange-funds-line", count: @counts[:transactions] },
+        { key: "applications", label: t("citizen_portal.activity.tabs.applications"), icon: "ri-file-list-3-line", count: @counts[:applications] },
+        { key: "sessions",     label: t("citizen_portal.activity.tabs.sessions"),     icon: "ri-login-box-line", count: @counts[:sessions] }
       ] %>
 
       <% unless export_mode %>
         <div class="activity-tabs mb-3" role="tablist">
-          <% tabs.each do |t| %>
-            <% active = (@tab == t[:key]) %>
-            <%= link_to citizens_activity_path(tab: t[:key], filter: @filter, from: @from, to: @to),
+          <% tabs.each do |tab_item| %>
+            <% active = (@tab == tab_item[:key]) %>
+            <%= link_to citizens_activity_path(tab: tab_item[:key], filter: @filter, from: @from, to: @to),
                         class: "activity-tab #{'activity-tab--active' if active}" do %>
-              <i class="<%= t[:icon] %>"></i>
-              <span class="activity-tab-label"><%= t[:label] %></span>
-              <% if t[:count].to_i > 0 %>
-                <span class="activity-tab-count"><%= t[:count] %></span>
+              <i class="<%= tab_item[:icon] %>"></i>
+              <span class="activity-tab-label"><%= tab_item[:label] %></span>
+              <% if tab_item[:count].to_i > 0 %>
+                <span class="activity-tab-count"><%= tab_item[:count] %></span>
               <% end %>
             <% end %>
           <% end %>
@@ -100,10 +99,10 @@
 
       <% if export_mode %>
         <div class="export-meta mb-3">
-          <div><strong>Seksyon:</strong> <%= (tabs.find { |t| t[:key] == @tab } || {})[:label] %></div>
-          <div><strong>Kategori:</strong> <%= @filter == "all" ? "Tout" : @filter.humanize %></div>
-          <div><strong>Peryòd:</strong> <%= l(@from, format: :long) rescue @from %> — <%= l(@to, format: :long) rescue @to %></div>
-          <div><strong>Jenere:</strong> <%= l(Time.current, format: :long) rescue Time.current.to_s %></div>
+          <div><strong><%= t("citizen_portal.activity.export.section") %>:</strong> <%= (tabs.find { |tab_item| tab_item[:key] == @tab } || {})[:label] %></div>
+          <div><strong><%= t("citizen_portal.activity.category") %>:</strong> <%= t("citizen_portal.activity.categories.#{@filter}", default: @filter.to_s.humanize) %></div>
+          <div><strong><%= t("citizen_portal.activity.period") %>:</strong> <%= l(@from, format: :long) rescue @from %> — <%= l(@to, format: :long) rescue @to %></div>
+          <div><strong><%= t("citizen_portal.activity.export.generated") %>:</strong> <%= l(Time.current, format: :long) rescue Time.current.to_s %></div>
         </div>
       <% end %>
 

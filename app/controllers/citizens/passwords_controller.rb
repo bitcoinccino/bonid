@@ -6,25 +6,25 @@ module Citizens
     # GET /citizens/password/new
     def new
       redirect_to login_path,
-                  notice: "BonID uses one-time codes instead of passwords. Sign in with your email below."
+                  notice: t("citizen_portal.auth.flash.no_passwords")
     end
 
     # POST /citizens/password
     def create
       redirect_to login_path,
-                  notice: "BonID uses one-time codes instead of passwords. Sign in with your email below."
+                  notice: t("citizen_portal.auth.flash.no_passwords")
     end
 
     # GET /citizens/password/edit?reset_password_token=...
     def edit
       redirect_to login_path,
-                  notice: "BonID uses one-time codes instead of passwords. Sign in with your email below."
+                  notice: t("citizen_portal.auth.flash.no_passwords")
     end
 
     # PUT /citizens/password
     def update
       redirect_to login_path,
-                  notice: "BonID uses one-time codes instead of passwords. Sign in with your email below."
+                  notice: t("citizen_portal.auth.flash.no_passwords")
     end
   end
 end

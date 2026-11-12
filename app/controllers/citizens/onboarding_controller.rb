@@ -29,16 +29,16 @@ module Citizens
     def update
       choice = params[:is_diaspora].to_s
       unless %w[true false].include?(choice)
-        flash.now[:alert] = "Tanpri chwazi yon opsyon."
+        flash.now[:alert] = t("citizen_portal.onboarding.flash.choose")
         @citizen = current_citizen
         return render :show, status: :unprocessable_entity
       end
 
       if current_citizen.update(is_diaspora: choice == "true")
-        redirect_to redirect_target, notice: "Mèsi! Anrejistreman ap kòmanse."
+        redirect_to redirect_target, notice: t("citizen_portal.onboarding.flash.thanks")
       else
         flash.now[:alert] = current_citizen.errors.full_messages.to_sentence.presence ||
-                            "Pa kapab sove repons lan."
+                            t("citizen_portal.onboarding.flash.save_failed")
         @citizen = current_citizen
         render :show, status: :unprocessable_entity
       end

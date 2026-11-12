@@ -107,6 +107,7 @@ register("certificate-toggle", () =>
   register("otp-consent", () => import("./otp_consent_controller"))
   register("otp-input", () => import("./otp_input_controller"))
   register("auto-modal", () => import("./auto_modal_controller"))
+  register("auto-submit", () => import("./auto_submit_controller"))
   register("consent-focus", () => import("./consent_focus_controller"))
   register("consent-liveness", () => import("./consent_liveness_controller"))
   register("liveness-gate", () => import("./liveness_gate_controller"))

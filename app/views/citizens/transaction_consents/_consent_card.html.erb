@@ -131,17 +131,17 @@
       <% elsif is_pending && !consent.citizen.bonid_verified? %>
         <div class="text-center small text-warning">
           <i class="ri-shield-check-line me-1"></i>
-          <%= link_to "Verify your BonID", citizens_identity_submissions_path, class: "citizen-link-alert fw-bold" %> first.
+          <%= t("citizen_portal.consents.verify_bonid_first_html", link: link_to(t("citizen_portal.consents.verify_bonid"), citizens_identity_submissions_path, class: "citizen-link-alert fw-bold")) %>
         </div>
 
       <% elsif effective_status == "approved" %>
         <div class="text-center small text-success py-1">
-          <i class="ri-check-double-line me-1"></i>Approved <%= consent.decided_at&.strftime("%b %d at %I:%M %p") %>
+          <i class="ri-check-double-line me-1"></i><%= t("citizen_portal.consents.approved_at", date: consent.decided_at ? l(consent.decided_at, format: :consent_time) : "") %>
         </div>
 
       <% elsif effective_status == "denied" %>
         <div class="text-center small text-danger py-1">
-          <i class="ri-close-circle-line me-1"></i>Denied <%= consent.decided_at&.strftime("%b %d at %I:%M %p") %>
+          <i class="ri-close-circle-line me-1"></i><%= t("citizen_portal.consents.denied_at", date: consent.decided_at ? l(consent.decided_at, format: :consent_time) : "") %>
         </div>
 
       <% else %>

@@ -7,10 +7,10 @@
   <%# ── Page Header (wizard style) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-edit-line me-2"></i>Request a Name Change
+      <i class="ri-edit-line me-2"></i><%= t("citizen_portal.name_change.title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
-      Submit a request to update your legal name with supporting documentation.
+      <%= t("citizen_portal.name_change.subtitle") %>
     </p>
   </div>
 
@@ -24,24 +24,23 @@
         <div class="card-body p-4">
 
           <div class="ballot-section-head mb-4">
-            <h2 class="ballot-section-title">Current Name</h2>
+            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.current_name") %></h2>
             <p class="ballot-section-desc mb-0">
-              These names come from your existing BonID profile and cannot be
-              edited here.
+              <%= t("citizen_portal.name_change.current_name_desc") %>
             </p>
           </div>
 
           <div class="row g-3">
             <div class="col-md-4">
-              <label class="form-label text-muted small">First Name</label>
+              <label class="form-label text-muted small"><%= t("citizen_portal.name_change.first_name") %></label>
               <div class="form-control bg-light"><%= current_citizen.first_name %></div>
             </div>
             <div class="col-md-4">
-              <label class="form-label text-muted small">Middle Name</label>
+              <label class="form-label text-muted small"><%= t("citizen_portal.name_change.middle_name") %></label>
               <div class="form-control bg-light"><%= current_citizen.middle_name.presence || "—" %></div>
             </div>
             <div class="col-md-4">
-              <label class="form-label text-muted small">Last Name</label>
+              <label class="form-label text-muted small"><%= t("citizen_portal.name_change.last_name") %></label>
               <div class="form-control bg-light"><%= current_citizen.last_name %></div>
             </div>
           </div>
@@ -53,9 +52,9 @@
         <div class="card-body p-4">
 
           <div class="ballot-section-head mb-4">
-            <h2 class="ballot-section-title">New Name</h2>
+            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.new_name") %></h2>
             <p class="ballot-section-desc mb-0">
-              Enter the legal name you would like on file going forward.
+              <%= t("citizen_portal.name_change.new_name_desc") %>
             </p>
           </div>
 
@@ -63,31 +62,31 @@
             <div class="col-md-4">
               <%= f.input :new_first_name, required: true,
                 input_html: {
-                  placeholder: "e.g. Marie",
+                  placeholder: t("citizen_portal.name_change.ph_first"),
                   class: "form-control",
                   autocomplete: "given-name"
                 },
-                label: "First Name",
+                label: t("citizen_portal.name_change.first_name"),
                 label_html: { class: "form-label" } %>
             </div>
             <div class="col-md-4">
               <%= f.input :new_middle_name,
                 input_html: {
-                  placeholder: "e.g. Claudette (optional)",
+                  placeholder: t("citizen_portal.name_change.ph_middle"),
                   class: "form-control",
                   autocomplete: "additional-name"
                 },
-                label: "Middle Name",
+                label: t("citizen_portal.name_change.middle_name"),
                 label_html: { class: "form-label" } %>
             </div>
             <div class="col-md-4">
               <%= f.input :new_last_name, required: true,
                 input_html: {
-                  placeholder: "e.g. Dupont",
+                  placeholder: t("citizen_portal.name_change.ph_last"),
                   class: "form-control",
                   autocomplete: "family-name"
                 },
-                label: "Last Name",
+                label: t("citizen_portal.name_change.last_name"),
                 label_html: { class: "form-label" } %>
             </div>
           </div>
@@ -99,18 +98,17 @@
         <div class="card-body p-4">
 
           <div class="ballot-section-head mb-4">
-            <h2 class="ballot-section-title">Reason &amp; Supporting Document</h2>
+            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.reason_title") %></h2>
             <p class="ballot-section-desc mb-0">
-              Select why you are changing your name and upload a document that
-              proves the change.
+              <%= t("citizen_portal.name_change.reason_desc") %>
             </p>
           </div>
 
           <div class="row g-3">
             <div class="col-md-6">
               <%= f.input :reason, required: true,
-                collection: NameChangeRequest::REASONS.map { |k, v| [v, k] },
-                include_blank: "Select a reason",
+                collection: NameChangeRequest::REASONS.map { |k, v| [t("citizen_portal.name_change.reasons.#{k}", default: v), k] },
+                include_blank: t("citizen_portal.name_change.select_reason"),
                 input_html: {
                   class: "form-select",
                   data: {
@@ -118,18 +116,18 @@
                     action: "change->name-change-reason#toggle"
                   }
                 },
-                label: "Reason for Name Change",
+                label: t("citizen_portal.name_change.reason_label"),
                 label_html: { class: "form-label" } %>
             </div>
 
             <div class="col-md-6" data-name-change-reason-target="otherField" style="display: none;">
               <%= f.input :other_reason,
                 input_html: {
-                  placeholder: "Please describe...",
+                  placeholder: t("citizen_portal.name_change.other_placeholder"),
                   class: "form-control",
                   rows: 2
                 },
-                label: "Other Reason",
+                label: t("citizen_portal.name_change.other_reason"),
                 label_html: { class: "form-label" } %>
             </div>
 
@@ -139,9 +137,9 @@
                   class: "form-control",
                   accept: ".pdf,.jpg,.jpeg,.png"
                 },
-                label: "Supporting Document",
+                label: t("citizen_portal.name_change.supporting_document"),
                 label_html: { class: "form-label" },
-                hint: "Upload a marriage certificate, court order, or official document (PDF, JPG, or PNG)." %>
+                hint: t("citizen_portal.name_change.supporting_hint") %>
             </div>
           </div>
         </div>
@@ -151,9 +149,7 @@
       <div class="enroll-helpful-tip mb-4">
         <i class="ri-shield-check-line"></i>
         <div>
-          <strong>Your request is encrypted and secure.</strong>
-          Only authorized administrators can review name change requests.
-          You will be notified by email once your request is reviewed.
+          <%= t("citizen_portal.name_change.secure_html") %>
         </div>
       </div>
 
@@ -162,18 +158,18 @@
         <%= link_to edit_citizens_profile_path,
               class: "btn btn-outline-secondary fw-semibold px-4 py-2",
               style: "font-size: 0.85rem;" do %>
-          <i class="ri-arrow-left-line me-1"></i> Cancel
+          <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.common.cancel") %>
         <% end %>
 
-        <%= f.submit "Submit Request",
+        <%= f.submit t("citizen_portal.name_change.submit"),
             class: "btn btn-primary fw-semibold px-4 py-2",
             style: "font-size: 0.85rem;",
-            data: { disable_with: "Submitting..." } %>
+            data: { disable_with: t("citizen_portal.submission.submitting") } %>
       </div>
     <% end %>
 
     <div class="mt-4 text-center small text-muted">
-      <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
+      <i class="ri-lock-2-fill text-success me-2"></i><%= t("citizen_portal.profile.encrypted_footer") %>
     </div>
   </div>
 </div>

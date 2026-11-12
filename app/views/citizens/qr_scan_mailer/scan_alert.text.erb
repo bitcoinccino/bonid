@@ -1,18 +1,13 @@
-Hello <%= @user.full_name %>,
+Your BonID was checked
 
-Your BonID was scanned.
+Hi <%= @user.first_name.presence || @user.full_name %>,
 
-Scanned At: <%= @scan_log.scanned_at.strftime("%B %d, %Y at %I:%M %p") %>
-IP Address: <%= @scan_log.ip_address %>
-City: <%= @scan_log.city.presence || "Unknown" %>
-Country: <%= @scan_log.country.presence || "Unknown" %>
-Organization: <%= @scan_log.organization.presence || "Unknown" %>
-Source: <%= @scan_log.source.humanize %>
+Someone just checked your BonID to confirm who you are.
 
-View your verified certificate:
-<%= verified_profile_citizens_identity_submission_url(
-      @submission,
-      host: Rails.application.config.action_mailer.default_url_options[:host]
-    ) %>
+Who: <%= @officer ? "#{@officer.full_name.presence || 'A police officer'} (police)" : (@partner&.name || "Someone using a phone camera") %>
+When: <%= @scan_log.scanned_at.strftime("%b %-d, %Y at %-I:%M %p") %>
+<% place = [ @scan_log.city.presence, @scan_log.country.presence ].compact.join(", ").presence %><% if place %>Where: about <%= place %>
+<% end %>
+Wasn't you? Someone may have a photo of your QR code. Contact support@bonid.ht right away.
 
-⚠️ If this wasn’t you, contact BonID Support immediately.
+See your activity: <%= citizens_activity_url %>

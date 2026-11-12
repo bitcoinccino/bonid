@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
 <head>
-  <title><%= content_for?(:title) ? yield(:title) : "BonID – Citizen Access" %></title>
+  <title><%= content_for?(:title) ? yield(:title) : t("citizen_portal.auth.page_title") %></title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -30,6 +30,18 @@
     <!-- RIGHT COLUMN -->
     <section class="auth-right">
       <div class="auth-right-inner">
+
+        <%# Language picker — pre-login pages follow ?lang= (kept in the
+            session), so each option reloads this page in that language. %>
+        <div class="auth-lang-switch">
+          <i class="ri-global-line" aria-hidden="true"></i>
+          <select class="form-select form-select-sm" aria-label="<%= t("citizen_portal.settings.language.label") %>"
+                  onchange="window.location.href = this.value">
+            <% [["ht", "Kreyòl Ayisyen"], ["fr", "Français"], ["en", "English"]].each do |code, name| %>
+              <option value="<%= url_for(request.query_parameters.merge(lang: code)) %>" <%= "selected" if I18n.locale.to_s == code %>><%= name %></option>
+            <% end %>
+          </select>
+        </div>
 
         <%= render "shared/flash" %>
 

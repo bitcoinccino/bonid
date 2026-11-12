@@ -8,7 +8,7 @@ module Citizens
 
     def new
       if @partner.nil?
-        redirect_to partners_path, alert: "Citizen sign-up must be started via a verified partner."
+        redirect_to partners_path, alert: t("citizen_portal.auth.flash.partner_required")
       else
         super
       end
@@ -16,7 +16,7 @@ module Citizens
 
     def create
       if @partner.nil?
-        redirect_to partners_path, alert: "Invalid or unverified partner."
+        redirect_to partners_path, alert: t("citizen_portal.auth.flash.invalid_partner")
         return
       end
 
@@ -29,10 +29,10 @@ module Citizens
 
           if existing_user.identity_submissions.status_approved.exists?
             redirect_to login_path(from_partner: @partner.slug),
-                        notice: "You have already verified. Sign in to continue to #{@partner.name}."
+                        notice: t("citizen_portal.auth.flash.already_verified_partner", partner: @partner.name)
           else
             redirect_to login_path(from_partner: @partner.slug),
-                        notice: "You already have an account. Sign in to continue."
+                        notice: t("citizen_portal.auth.flash.have_account")
           end
           return
         end
@@ -90,6 +90,9 @@ module Citizens
     def build_resource(hash = {})
       super
       resource.skip_password = true
+      # Start the portal in the language they signed up in (globe picker on
+      # the sign-up page); otherwise the column default (Kreyòl) applies.
+      resource.preferred_locale = I18n.locale.to_s if User::CITIZEN_LOCALES.include?(I18n.locale.to_s)
     end
 
     def sign_up_params

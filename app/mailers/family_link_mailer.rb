@@ -2,7 +2,7 @@
 
 class FamilyLinkMailer < ApplicationMailer
   default from: "bonid@verifyem.ht"
-  layout "mailer_citizen"
+  layout "mailer" # shared Haitian-blue email style (layouts/mailer)
 
   # Two-Way Shake: asks the parent to confirm the relationship
   # "Marie di ou se Manman li. Èske se vre?"
@@ -10,7 +10,7 @@ class FamilyLinkMailer < ApplicationMailer
     @family_member = family_member
     @citizen = family_member.user
     @relative = family_member.linked_user
-    @relationship = family_member.display_relationship
+    @relationship = family_member.display_relationship(locale: :ht)
     @token = family_member.link_consent_token
 
     @confirm_url = confirm_family_link_url(token: @token)

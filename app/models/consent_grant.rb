@@ -26,12 +26,43 @@ class ConsentGrant < ApplicationRecord
   # ======================================================
   before_validation :generate_grant_token, on: :create
   before_save :expire_if_due
+  # Remember the status change at save time: other commit callbacks
+  # (track_status_change → append_audit!) save again before this runs, which
+  # would wipe saved_change_to_status.
+  after_save :remember_status_transition, if: :saved_change_to_status?
   after_update_commit :track_status_change, if: :saved_change_to_status?
-  after_create_commit  :broadcast_alert_to_citizen
-  after_update_commit  :broadcast_alert_to_citizen, if: :saved_change_to_status?
+  # One after_commit (not after_create_commit + after_update_commit with the
+  # same method — Rails keeps only the last of those, so creates were missed).
+  # Runs before email_citizen_about_access (callbacks run in the order
+  # defined), so @status_transition is still set here.
+  after_commit :broadcast_alert_to_citizen, on: %i[create update],
+               if: -> { previously_new_record? || @status_transition.present? }
 
   def broadcast_alert_to_citizen
     Citizens::AlertBroadcastJob.perform_later(citizen_id) if citizen_id
+  end
+
+  # Email the citizen when a partner starts or stops seeing their information.
+  # Lives on the model so every path (dashboard, OAuth sign-in, API) sends it.
+  # A declined *pending* request is not a removal, so it sends nothing.
+  after_commit :email_citizen_about_access, on: %i[create update]
+
+  def remember_status_transition
+    @status_transition = saved_change_to_status
+  end
+
+  def email_citizen_about_access
+    from, to = @status_transition
+    @status_transition = nil
+    return if to.nil?
+
+    if to.to_s == "approved" && from.to_s != "approved"
+      Citizens::AccessMailer.with(grant: self).access_granted.deliver_later
+    elsif to.to_s == "revoked" && from.to_s == "approved"
+      Citizens::AccessMailer.with(grant: self).access_removed.deliver_later
+    end
+  rescue => e
+    Rails.logger.error("[ConsentGrant##{id}] access email failed: #{e.class}: #{e.message}")
   end
 
   # ======================================================

@@ -2,6 +2,7 @@
 
 module Citizens
   class BaseMailer < VerifyemMailer
-    layout "mailer_citizen"
+    before_action { @email_product = "bonid" } # citizen emails are BonID
+    layout "mailer" # shared Haitian-blue email style (layouts/mailer)
   end
 end

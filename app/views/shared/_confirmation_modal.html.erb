@@ -3,6 +3,9 @@
      Intercepts all data-turbo-confirm dialogs app-wide.
      Redesigned: clean, centered, Haitian Creole.
 ================================ -->
+<%# Copy stays Kreyòl everywhere except where the caller passes
+    localized: true (the citizen portal), which uses the citizen's language. %>
+<% cm = ->(key, kreyol) { local_assigns[:localized] ? t("citizen_portal.confirm.#{key}") : kreyol } %>
 <div class="modal fade bonid-confirmation-modal"
      id="confirmationModal"
      tabindex="-1"
@@ -18,13 +21,13 @@
           <i class="ri-error-warning-line"></i>
         </div>
         <h6 class="bonid-confirm-title" id="confirmationModalTitle">
-          Èske ou sèten?
+          <%= cm.call("title", "Èske ou sèten?") %>
         </h6>
       </div>
 
       <!-- BODY — populated dynamically by Turbo.config.forms.confirm -->
       <div class="modal-body bonid-confirm-body" id="confirmationModalBody">
-        Èske ou vle kontinye ak aksyon sa a?
+        <%= cm.call("body", "Èske ou vle kontinye ak aksyon sa a?") %>
       </div>
 
       <!-- FOOTER -->
@@ -32,12 +35,12 @@
         <button type="button"
                 class="bonid-confirm-cancel-btn"
                 data-bs-dismiss="modal">
-          Non, Anile
+          <%= cm.call("cancel", "Non, Anile") %>
         </button>
         <button type="button"
                 id="confirmationModalConfirmBtn"
                 class="bonid-confirm-btn">
-          Wi, Kontinye
+          <%= cm.call("confirm", "Wi, Kontinye") %>
         </button>
       </div>
 

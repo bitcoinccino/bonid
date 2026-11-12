@@ -5,28 +5,25 @@
 
     <%# Wizard-style section head: bold title + subdued desc %>
     <div class="ballot-section-head mb-4">
-      <h2 class="ballot-section-title">Address</h2>
+      <h2 class="ballot-section-title"><%= t("citizen_portal.profile.address.title") %></h2>
       <p class="ballot-section-desc mb-0">
-        Your address helps verify your residency. BonID uses this data to
-        confirm your identity and location for partner institutions such as
-        <strong>banks</strong>, <strong>hospitals</strong>, and
-        <strong>law enforcement</strong>.
+        <%= t("citizen_portal.profile.address.desc_html") %>
       </p>
     </div>
 
     <%# Spinner + Error placeholders %>
     <div data-address-target="spinner" class="text-center mb-3 d-none">
       <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden"><%= t("citizen_portal.profile.address.loading") %></span>
       </div>
-      <p class="small text-muted mt-2 mb-0">Loading address data…</p>
+      <p class="small text-muted mt-2 mb-0"><%= t("citizen_portal.profile.address.loading_data") %></p>
     </div>
 
     <div data-address-target="error"
          class="alert alert-danger small d-none text-center">
       <i class="ri-alert-line me-1"></i>
-      Failed to load address data.
-      <a href="#" data-action="click->address#retry" class="fw-semibold">Retry</a>
+      <%= t("citizen_portal.profile.address.load_failed") %>
+      <a href="#" data-action="click->address#retry" class="fw-semibold"><%= t("citizen_portal.profile.address.retry") %></a>
     </div>
 
     <%= f.simple_fields_for :address do |a| %>
@@ -37,7 +34,8 @@
         <%= a.input :country, as: :select,
           collection: ISO3166::Country.all.map { |c| [c.translations[I18n.locale.to_s] || c.common_name.presence || c.name, c.common_name.presence || c.name] }.sort_by(&:first).unshift(["Haiti", "Haiti"]).uniq { |c| c[1] },
           selected: a.object.country || "Haiti",
-          prompt: "Chwazi Peyi",
+          prompt: t("citizen_portal.profile.address.choose_country"),
+          label: t("citizen_portal.profile.address.country"),
           input_html: { class: "form-select", id: "address_country" },
           label_html: { class: "form-label" } %>
       </div>
@@ -47,8 +45,8 @@
         <div class="alert d-flex align-items-start mb-0 diaspora-notice">
           <i class="ri-global-line ri-lg me-2 mt-1"></i>
           <div>
-            <strong>Ou ap viv aletranje.</strong><br>
-            Adrès ou ap verifye atravè dokiman prèv adrès ou telechaje nan paj verifikasyon idantite a (fakti, relve bank, oswa kontra lwaye).
+            <strong><%= t("citizen_portal.profile.address.abroad_title") %></strong><br>
+            <%= t("citizen_portal.profile.address.abroad_body") %>
           </div>
         </div>
       </div>
@@ -59,81 +57,86 @@
         <div class="col-md-6">
           <%= a.input :department_id,
             collection: @departments.map { |d| [d.name, d.id] },
-            prompt: "Select Department",
+            prompt: t("citizen_portal.profile.address.select_department"),
+            label: t("citizen_portal.profile.address.department"),
             input_html: {
               class: "form-select",
               "data-address-target": "department",
               "data-action": "change->address#loadArrondissements",
               "data-slug-map-value": @departments.index_by(&:id).transform_values(&:slug).to_json,
-              "data-prompt": "Select Department",
+              "data-prompt": t("citizen_portal.profile.address.select_department"),
               "data-selected": a.object.department_id.to_s,
               id: "address_department_id"
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted">Select your department (e.g., Ouest).</small>
+          <small class="text-muted"><%= t("citizen_portal.profile.address.department_hint") %></small>
         </div>
 
         <%# Arrondissement %>
         <div class="col-md-6">
           <%= a.input :arrondissement_id,
             collection: [],
-            prompt: "Select Arrondissement",
+            prompt: t("citizen_portal.profile.address.select_arrondissement"),
+            label: t("citizen_portal.profile.address.arrondissement"),
             input_html: {
               class: "form-select",
               "data-address-target": "arrondissement",
               "data-action": "change->address#loadCommunes",
-              "data-prompt": "Select Arrondissement",
+              "data-prompt": t("citizen_portal.profile.address.select_arrondissement"),
               "data-selected": a.object.arrondissement_id.to_s,
               id: "address_arrondissement_id",
               disabled: true
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted">Select your arrondissement.</small>
+          <small class="text-muted"><%= t("citizen_portal.profile.address.arrondissement_hint") %></small>
         </div>
 
         <%# Commune %>
         <div class="col-md-6">
           <%= a.input :commune_id,
             collection: [],
-            prompt: "Select Commune",
+            prompt: t("citizen_portal.profile.address.select_commune"),
+            label: t("citizen_portal.profile.address.commune"),
             input_html: {
               class: "form-select",
               "data-address-target": "commune",
               "data-action": "change->address#loadCommunalSections",
-              "data-prompt": "Select Commune",
+              "data-prompt": t("citizen_portal.profile.address.select_commune"),
               "data-selected": a.object.commune_id.to_s,
               id: "address_commune_id",
               disabled: true
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted">Select your commune.</small>
+          <small class="text-muted"><%= t("citizen_portal.profile.address.commune_hint") %></small>
         </div>
 
         <%# Section Communale %>
         <div class="col-md-6">
           <%= a.input :communal_section_id,
             collection: [],
-            prompt: "Select Section Communale",
+            prompt: t("citizen_portal.profile.address.select_section"),
+            label: t("citizen_portal.profile.address.section"),
             input_html: {
               class: "form-select",
               "data-address-target": "section",
               "data-action": "change->address#loadPostalCode",
-              "data-prompt": "Select Section Communale",
+              "data-prompt": t("citizen_portal.profile.address.select_section"),
               "data-selected": a.object.communal_section_id.to_s,
               id: "address_communal_section_id",
               disabled: true
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted">Select your communal section.</small>
+          <small class="text-muted"><%= t("citizen_portal.profile.address.section_hint") %></small>
         </div>
 
         <%# Postal Code %>
         <div class="col-md-6">
           <%= a.input :postal_code,
+            label: t("citizen_portal.profile.address.postal_code"),
             input_html: {
               class: "form-control bg-light",
               readonly: true,
-              placeholder: "e.g. HT6110",
+              placeholder: t("citizen_portal.profile.address.postal_code_placeholder"),
               "data-address-target": "postalCode",
               value: a.object.postal_code
             },
@@ -143,9 +146,10 @@
         <%# Street Address %>
         <div class="col-md-6">
           <%= a.input :street_address,
+            label: t("citizen_portal.profile.address.street"),
             input_html: {
               class: "form-control",
-              placeholder: "e.g. 123 Rue Principale"
+              placeholder: t("citizen_portal.profile.address.street_placeholder")
             },
             label_html: { class: "form-label" } %>
         </div>
@@ -157,8 +161,7 @@
     <div class="enroll-helpful-tip mt-4">
       <i class="ri-lock-2-fill"></i>
       <div>
-        <strong>Your address is encrypted.</strong>
-        It is only shared with verified institutions when required.
+        <%= t("citizen_portal.profile.address.privacy_html") %>
       </div>
     </div>
   </div>

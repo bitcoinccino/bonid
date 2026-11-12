@@ -7,13 +7,13 @@
   <%# ── Page Header (wizard style) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-user-voice-line me-2"></i><%= "Eleksyon Mwen" %>
+      <i class="ri-user-voice-line me-2"></i><%= t("citizen_portal.election.enrollment.title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
       <% if @election %>
         <%= @election.title %>
       <% else %>
-        Enskri pou vote ak swivi estati w
+        <%= t("citizen_portal.election.enrollment.subtitle") %>
       <% end %>
     </p>
   </div>
@@ -36,12 +36,12 @@
             <div class="election-icon-circle" style="background: #F1F5F9;">
               <i class="ri-calendar-close-line" style="color: #64748B;"></i>
             </div>
-            <h5 class="fw-bold mb-2">Pa gen eleksyon aktif</h5>
+            <h5 class="fw-bold mb-2"><%= t("citizen_portal.election.enrollment.no_election_title") %></h5>
             <p class="text-muted mb-3" style="font-size: 0.88rem;">
-              Lè CEP anonse yon eleksyon, ou ka enskri isit la pou w vote.
+              <%= t("citizen_portal.election.enrollment.no_election_body") %>
             </p>
             <%= link_to citizens_election_calendar_path, class: "election-btn-primary election-btn-primary--sm" do %>
-              <i class="ri-calendar-event-line"></i> Wè Kalandriye
+              <i class="ri-calendar-event-line"></i> <%= t("citizen_portal.election.enrollment.see_calendar") %>
             <% end %>
           </div>
         </div>
@@ -53,21 +53,21 @@
             <div class="election-icon-circle" style="background: #DCFCE7;">
               <i class="ri-checkbox-circle-fill" style="color: #16A34A;"></i>
             </div>
-            <h5 class="fw-bold mb-2 text-success">Ou deja vote</h5>
+            <h5 class="fw-bold mb-2 text-success"><%= t("citizen_portal.election.enrollment.voted_title") %></h5>
             <p class="text-muted mb-3" style="font-size: 0.88rem;">
-              Vòt ou anrejistre nan sistèm nan.
+              <%= t("citizen_portal.election.enrollment.voted_body") %>
               <% if @record.voted_at %>
                 <br>
                 <span class="small">
                   <%= l(@record.voted_at, format: :short) %>
                   <% if @record.voted_channel.present? %>
-                    — kanal: <strong><%= @record.voted_channel.humanize %></strong>
+                    — <%= t("citizen_portal.election.enrollment.channel") %>: <strong><%= @record.voted_channel.humanize %></strong>
                   <% end %>
                 </span>
               <% end %>
             </p>
             <%= link_to citizens_election_verify_path, class: "election-btn-primary election-btn-primary--sm" do %>
-              <i class="ri-shield-check-line"></i> Verifye Vòt Mwen
+              <i class="ri-shield-check-line"></i> <%= t("citizen_portal.election.enrollment.verify_my_vote") %>
             <% end %>
           </div>
         </div>
@@ -87,8 +87,8 @@
                   <path class="enroll-success-tick" d="M20 33 l9 9 l16 -18" fill="none"></path>
                 </svg>
               </div>
-              <div class="enroll-success-title">Ou anrejistre!</div>
-              <div class="enroll-success-subtitle">N ap afiche kat votè ou…</div>
+              <div class="enroll-success-title"><%= t("citizen_portal.election.enrollment.success_title") %></div>
+              <div class="enroll-success-subtitle"><%= t("citizen_portal.election.enrollment.success_subtitle") %></div>
             </div>
           </div>
           <script>
@@ -117,20 +117,20 @@
           </div>
           <div class="voter-status-header__body">
             <div class="voter-status-header__title-row">
-              <h5 class="voter-status-header__title">Ou anrejistre pou vote</h5>
+              <h5 class="voter-status-header__title"><%= t("citizen_portal.election.enrollment.registered_title") %></h5>
               <% unless cookies[:cep_postponement_banner_dismissed] == "1" %>
                 <span class="voter-status-header__badge"
-                      title="Daprè kominike CEP 8 avril 2026">
+                      title="<%= t("citizen_portal.election.enrollment.postponed_tooltip") %>">
                   <i class="ri-megaphone-line"></i>
-                  Enskripsyon CEP ranpòte
+                  <%= t("citizen_portal.election.enrollment.postponed_badge") %>
                 </span>
               <% end %>
             </div>
             <p class="voter-status-header__sub">
               <% if @record.registered_by_partner_id.present? %>
-                Anrejistre pa <%= @record.registered_by_partner&.name.presence || "CEP/Konsila" %>
+                <%= t("citizen_portal.election.enrollment.registered_by", name: @record.registered_by_partner&.name.presence || t("citizen_portal.election.enrollment.cep_consulate")) %>
               <% else %>
-                Anrejistre anliy
+                <%= t("citizen_portal.election.enrollment.registered_online") %>
               <% end %>
               <% if @record.registered_at.present? %>
                 — <%= l(@record.registered_at, format: "%d %B %Y, %H:%M") %>
@@ -145,9 +145,9 @@
             verified badge. %>
         <div class="voter-id-card mb-4">
           <div class="voter-id-card__header">
-            <span class="voter-id-card__label">Nimewo Votè</span>
+            <span class="voter-id-card__label"><%= t("citizen_portal.election.enrollment.voter_number") %></span>
             <span class="voter-id-card__verified">
-              <i class="ri-verified-badge-fill"></i>Verifye
+              <i class="ri-verified-badge-fill"></i><%= t("citizen_portal.election.enrollment.verified") %>
             </span>
           </div>
           <div class="voter-id-card__value-row">
@@ -155,7 +155,7 @@
             <button type="button"
                     class="voter-id-card__copy"
                     data-copy="<%= @record.voter_reference %>"
-                    aria-label="Kopye nimewo a">
+                    aria-label="<%= t("citizen_portal.election.enrollment.copy_number") %>">
               <i class="ri-file-copy-line"></i>
             </button>
           </div>
@@ -163,11 +163,11 @@
             <span><i class="ri-calendar-line"></i> <%= l(@record.registered_at, format: "%d %B %Y, %H:%M") if @record.registered_at %></span>
             <% if @record.preferred_channel == "online" %>
               <span class="voter-id-card__channel voter-id-card__channel--online">
-                <i class="ri-smartphone-line"></i> Anliy
+                <i class="ri-smartphone-line"></i> <%= t("citizen_portal.election.enrollment.online") %>
               </span>
             <% else %>
               <span class="voter-id-card__channel voter-id-card__channel--inperson">
-                <i class="ri-archive-drawer-line"></i> An pèsòn
+                <i class="ri-archive-drawer-line"></i> <%= t("citizen_portal.election.enrollment.in_person") %>
               </span>
             <% end %>
           </div>
@@ -182,37 +182,37 @@
           <div class="voter-info-card">
             <div class="voter-info-card__head">
               <i class="ri-map-pin-2-line voter-info-card__head-icon"></i>
-              <span>Lokasyon</span>
+              <span><%= t("citizen_portal.election.enrollment.location") %></span>
               <% if @record.diaspora? %>
-                <span class="badge bg-info-subtle text-info ms-auto">Dyaspora</span>
+                <span class="badge bg-info-subtle text-info ms-auto"><%= t("citizen_portal.election.enrollment.diaspora") %></span>
               <% end %>
             </div>
             <div class="voter-info-card__body">
               <div class="voter-info-row">
-                <span class="voter-info-row__key">Depatman</span>
+                <span class="voter-info-row__key"><%= t("citizen_portal.election.enrollment.department") %></span>
                 <span class="voter-info-row__val"><%= geo[:department] %></span>
               </div>
               <% if geo[:arrondissement].present? %>
                 <div class="voter-info-row">
-                  <span class="voter-info-row__key">Arondisman</span>
+                  <span class="voter-info-row__key"><%= t("citizen_portal.election.enrollment.arrondissement") %></span>
                   <span class="voter-info-row__val"><%= geo[:arrondissement] %></span>
                 </div>
               <% end %>
               <% if geo[:commune].present? %>
                 <div class="voter-info-row">
-                  <span class="voter-info-row__key">Komin</span>
+                  <span class="voter-info-row__key"><%= t("citizen_portal.election.enrollment.commune") %></span>
                   <span class="voter-info-row__val"><%= geo[:commune] %></span>
                 </div>
               <% end %>
               <% if geo[:section].present? %>
                 <div class="voter-info-row">
-                  <span class="voter-info-row__key">Seksyon Komunal</span>
+                  <span class="voter-info-row__key"><%= t("citizen_portal.election.enrollment.section") %></span>
                   <span class="voter-info-row__val"><%= geo[:section] %></span>
                 </div>
               <% end %>
               <% if @record.constituency_name.present? && @record.constituency_name != @record.department_code %>
                 <div class="voter-info-row">
-                  <span class="voter-info-row__key">Sikonskripsyon</span>
+                  <span class="voter-info-row__key"><%= t("citizen_portal.election.enrollment.constituency") %></span>
                   <span class="voter-info-row__val"><%= @record.constituency_name %></span>
                 </div>
               <% end %>
@@ -223,7 +223,7 @@
           <div class="voter-info-card">
             <div class="voter-info-card__head">
               <i class="ri-government-line voter-info-card__head-icon"></i>
-              <span>Biwo Vòt</span>
+              <span><%= t("citizen_portal.election.enrollment.polling_station") %></span>
             </div>
             <div class="voter-info-card__body">
               <% if @record.polling_station.present? %>
@@ -236,7 +236,7 @@
                 <% if center.formatted_haiti_display.present? %>
                   <div class="voter-info-row">
                     <span class="voter-info-row__key">
-                      <i class="ri-map-pin-line me-1"></i>Adrès
+                      <i class="ri-map-pin-line me-1"></i><%= t("citizen_portal.election.enrollment.address") %>
                     </span>
                     <span class="voter-info-row__val">
                       <%= simple_format(center.formatted_haiti_display, {}, wrapper_tag: "span") %>
@@ -246,7 +246,7 @@
                 <% if center.contact_phone.present? %>
                   <div class="voter-info-row">
                     <span class="voter-info-row__key">
-                      <i class="ri-phone-line me-1"></i>Telefòn
+                      <i class="ri-phone-line me-1"></i><%= t("citizen_portal.election.enrollment.phone") %>
                     </span>
                     <span class="voter-info-row__val">
                       <%= link_to center.contact_phone, "tel:#{center.contact_phone}",
@@ -258,26 +258,26 @@
                   <% hours_value = center.contact_hours.sub(/\A\s*Jou\s+eleksyon(?:\s+an)?\s*[:\-–—]?\s*/i, "").strip %>
                   <div class="voter-info-row">
                     <span class="voter-info-row__key">
-                      <i class="ri-time-line me-1"></i>Orè vòt
+                      <i class="ri-time-line me-1"></i><%= t("citizen_portal.election.enrollment.voting_hours") %>
                     </span>
                     <span class="voter-info-row__val">
                       <%= hours_value.presence || center.contact_hours %>
-                      <div class="voter-info-row__sub">Jou eleksyon sèlman</div>
+                      <div class="voter-info-row__sub"><%= t("citizen_portal.election.enrollment.election_day_only") %></div>
                     </span>
                   </div>
                 <% end %>
                 <% if @record.preferred_channel == "online" && !@election.allows_online_voting %>
                   <div class="voter-info-warn">
                     <i class="ri-alert-line"></i>
-                    Vòt anliy pa disponib — w ap bezwen ale an pèsòn.
+                    <%= t("citizen_portal.election.enrollment.online_unavailable") %>
                   </div>
                 <% end %>
               <% else %>
                 <div class="voter-info-pending">
                   <i class="ri-time-line"></i>
                   <div>
-                    <div class="voter-info-pending__title">Pa ko atribye</div>
-                    <div class="voter-info-pending__desc">CEP ap atribye biwo vòt ou byento.</div>
+                    <div class="voter-info-pending__title"><%= t("citizen_portal.election.enrollment.not_assigned") %></div>
+                    <div class="voter-info-pending__desc"><%= t("citizen_portal.election.enrollment.assigning_soon") %></div>
                   </div>
                 </div>
               <% end %>
@@ -293,23 +293,22 @@
         <div class="voter-verify-card mb-4">
           <div class="voter-verify-card__head">
             <i class="ri-shield-check-line"></i>
-            <span>Sekirite ak Verifikasyon</span>
+            <span><%= t("citizen_portal.election.enrollment.security_title") %></span>
           </div>
           <div class="voter-verify-card__body">
             <div class="voter-verify-card__qr">
               <img src="data:image/svg+xml;base64,<%= qr_svg_b64 %>"
-                   alt="Kòd QR Verifikasyon">
+                   alt="<%= t("citizen_portal.election.enrollment.qr_alt") %>">
             </div>
             <div class="voter-verify-card__copy">
-              <div class="voter-verify-card__title">Resi sa a verifyab</div>
+              <div class="voter-verify-card__title"><%= t("citizen_portal.election.enrollment.receipt_verifiable") %></div>
               <p class="voter-verify-card__desc">
-                Eskane kòd la ak nenpòt telefòn pou konfime resi sa a otantik.
-                Nenpòt moun ka verifye li — fanmi w, jounalis, oswa obsèvatè.
+                <%= t("citizen_portal.election.enrollment.receipt_desc") %>
               </p>
               <%= link_to election_verify_receipt_path(d: Base64.urlsafe_encode64(@record.receipt_qr_payload.to_json, padding: false)),
                           class: "voter-verify-card__btn",
                           target: "_blank", rel: "noopener" do %>
-                <i class="ri-external-link-line"></i> Tcheke kounye a
+                <i class="ri-external-link-line"></i> <%= t("citizen_portal.election.enrollment.check_now") %>
               <% end %>
             </div>
           </div>
@@ -322,13 +321,13 @@
           <%= link_to citizens_election_receipt_download_path(format: :pdf),
                       class: "voter-action-bar__btn voter-action-bar__btn--primary" do %>
             <i class="ri-download-2-line"></i>
-            <span>Telechaje Resi</span>
+            <span><%= t("citizen_portal.election.enrollment.download_receipt") %></span>
           <% end %>
           <%= link_to citizens_election_receipt_print_path(format: :pdf),
                       class: "voter-action-bar__btn voter-action-bar__btn--ghost",
                       target: "_blank", rel: "noopener" do %>
             <i class="ri-printer-line"></i>
-            <span>Enprime Resi</span>
+            <span><%= t("citizen_portal.election.enrollment.print_receipt") %></span>
           <% end %>
         </div>
 
@@ -356,7 +355,7 @@
         <% if @election.open? %>
           <% if @record.preferred_channel == "online" && @election.allows_online_voting %>
             <%= link_to citizens_election_vote_path, class: "election-btn-primary w-100" do %>
-              <i class="ri-checkbox-circle-line"></i> Ale Vote Kounye a
+              <i class="ri-checkbox-circle-line"></i> <%= t("citizen_portal.election.enrollment.go_vote") %>
             <% end %>
           <% else %>
             <%# In-person preference OR online not allowed for this election —
@@ -366,13 +365,13 @@
                 <i class="ri-map-pin-line"></i>
               </div>
               <div>
-                <div class="election-in-person-cta__title">Ou chwazi vote an pèsòn</div>
+                <div class="election-in-person-cta__title"><%= t("citizen_portal.election.enrollment.in_person_title") %></div>
                 <div class="election-in-person-cta__desc">
-                  Ale nan biwo vòt ou a
+                  <%= t("citizen_portal.election.enrollment.in_person_go") %>
                   <% if @record.polling_station&.polling_center&.name.present? %>
                     (<strong><%= @record.polling_station.polling_center.name %></strong>)
                   <% end %>
-                  jou eleksyon an ak pyès idantite ou.
+                  <%= t("citizen_portal.election.enrollment.in_person_bring_id") %>
                 </div>
               </div>
             </div>
@@ -380,7 +379,7 @@
         <% else %>
           <div class="text-center text-muted small">
             <i class="ri-time-line me-1"></i>
-            Vòt la ap kòmanse
+            <%= t("citizen_portal.election.enrollment.voting_starts") %>
             <% if @election.election_date %>
               <strong><%= l(@election.election_date, format: :long) %></strong>
             <% end %>
@@ -391,7 +390,7 @@
         <%# ─── CAN ENROLL ONLINE ─── %>
         <%
           addr              = current_citizen.address
-          citizen_name      = current_citizen.full_name.presence || current_citizen.first_name.presence || "Sitwayen"
+          citizen_name      = current_citizen.full_name.presence || current_citizen.first_name.presence || t("citizen_portal.election.enrollment.citizen_fallback")
           commune_name      = addr&.commune&.name.presence
           dept_full         = addr&.department&.name.presence
           context_loc       = [commune_name, dept_full].compact.join(", ").presence
@@ -407,12 +406,12 @@
               <div class="election-icon-circle" style="background: #DBEAFE;">
                 <i class="ri-map-pin-line" style="color: #1D4ED8;"></i>
               </div>
-              <h5 class="fw-bold mb-2">Enskripsyon anliy pa disponib pou moman an</h5>
+              <h5 class="fw-bold mb-2"><%= t("citizen_portal.election.enrollment.online_paused_title") %></h5>
               <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                Pou eleksyon sa a, ale nan yon biwo BonID pou yo enskri w an pèsòn.
+                <%= t("citizen_portal.election.enrollment.online_paused_body") %>
               </p>
               <%= link_to citizens_election_offices_path, class: "election-btn-primary mb-2" do %>
-                <i class="ri-map-pin-line me-1"></i>Jwenn biwo ki pi pre m
+                <i class="ri-map-pin-line me-1"></i><%= t("citizen_portal.election.enrollment.find_office") %>
               <% end %>
             </div>
           </div>
@@ -424,10 +423,9 @@
 
             <%# Wizard-style section head: bold title + subdued desc + divider %>
             <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Enskri pou Vote</h2>
+              <h2 class="ballot-section-title"><%= t("citizen_portal.election.enrollment.register_title") %></h2>
               <p class="ballot-section-desc mb-0">
-                Ou elijib pou vote nan <strong><%= @election.title %></strong>.
-                Enskri kounye a pou w sekirize plas ou.
+                <%= t("citizen_portal.election.enrollment.register_desc_html", election: @election.title) %>
               </p>
             </div>
 
@@ -444,13 +442,13 @@
               </div>
               <span class="enroll-context-strip-verified">
                 <i class="ri-verified-badge-line"></i>
-                BonID verifye
+                <%= t("citizen_portal.election.enrollment.bonid_verified") %>
               </span>
             </div>
 
             <%= form_with url: citizens_election_enrollment_path, method: :post, local: true,
                           class: "enroll-form" do |f| %>
-              <label class="election-form-label mb-2">Kijan ou planifye vote?</label>
+              <label class="election-form-label mb-2"><%= t("citizen_portal.election.enrollment.how_vote") %></label>
 
               <%# ── Method Card: In-person (reuses .candidate-card wizard style) ── %>
               <label class="ballot-candidate-label mb-2">
@@ -462,9 +460,9 @@
                     <i class="ri-archive-drawer-line"></i>
                   </div>
                   <div class="candidate-meta">
-                    <div class="enroll-method-title">An pèsòn nan yon biwo vòt</div>
+                    <div class="enroll-method-title"><%= t("citizen_portal.election.enrollment.method_in_person") %></div>
                     <div class="enroll-method-desc">
-                      Ou ap parèt nan BV yo asiyen ou jou eleksyon an.
+                      <%= t("citizen_portal.election.enrollment.method_in_person_desc") %>
                     </div>
                   </div>
                   <div class="candidate-card-check">
@@ -489,16 +487,16 @@
                   </div>
                   <div class="candidate-meta">
                     <div class="enroll-method-title">
-                      Anliy nan aplikasyon an
+                      <%= t("citizen_portal.election.enrollment.method_online") %>
                       <% unless online_ok %>
-                        <span class="enroll-method-badge">Pral disponib byento</span>
+                        <span class="enroll-method-badge"><%= t("citizen_portal.election.enrollment.coming_soon") %></span>
                       <% end %>
                     </div>
                     <div class="enroll-method-desc">
                       <% if online_ok %>
-                        Vote dirèkteman nan BonID jou eleksyon an.
+                        <%= t("citizen_portal.election.enrollment.method_online_desc") %>
                       <% else %>
-                        Pa disponib pou eleksyon sa a — ale an pèsòn pou kounye a.
+                        <%= t("citizen_portal.election.enrollment.method_online_unavailable") %>
                       <% end %>
                     </div>
                   </div>
@@ -512,8 +510,7 @@
               <div class="enroll-helpful-tip">
                 <i class="ri-information-line"></i>
                 <div>
-                  <strong>Konsèy:</strong>
-                  Ou ka pase nan nenpòt biwo CEP oswa konsila pou w enskri an pèsòn tou.
+                  <%= t("citizen_portal.election.enrollment.tip_html") %>
                 </div>
               </div>
 
@@ -521,11 +518,11 @@
               <button type="submit" class="election-btn-primary w-100 enroll-submit">
                 <span class="enroll-submit-default">
                   <i class="ri-shield-check-line"></i>
-                  <span>Konfime Enskripsyon</span>
+                  <span><%= t("citizen_portal.election.enrollment.confirm_registration") %></span>
                 </span>
                 <span class="enroll-submit-loading" aria-hidden="true">
                   <span class="enroll-spinner"></span>
-                  <span>N ap anrejistre…</span>
+                  <span><%= t("citizen_portal.election.enrollment.registering") %></span>
                 </span>
               </button>
             <% end %>
@@ -569,29 +566,29 @@
             <div class="election-icon-circle" style="background: #FEF3C7;">
               <i class="ri-error-warning-line" style="color: #D97706;"></i>
             </div>
-            <h5 class="fw-bold mb-2">Ou pa elijib pou eleksyon sa a</h5>
+            <h5 class="fw-bold mb-2"><%= t("citizen_portal.election.enrollment.ineligible_title") %></h5>
 
             <% if @ineligibility_reason == "underage" %>
               <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                Ou dwe gen 18 an oswa plis pou w ka vote.
+                <%= t("citizen_portal.election.enrollment.underage") %>
               </p>
             <% elsif @ineligibility_reason == "no_cin" && !current_citizen.bonid_verified? %>
               <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                Ou bezwen fini verifikasyon BonID ou anvan ou enskri pou vote.
+                <%= t("citizen_portal.election.enrollment.finish_verification_body") %>
               </p>
               <%= link_to citizens_identity_submissions_path, class: "election-btn-primary election-btn-primary--sm" do %>
-                <i class="ri-id-card-line"></i> Fini Verifikasyon
+                <i class="ri-id-card-line"></i> <%= t("citizen_portal.election.enrollment.finish_verification") %>
               <% end %>
             <% elsif @ineligibility_reason == "no_cin" %>
               <p class="text-muted mb-3" style="font-size: 0.88rem;">
-                Ou bezwen ajoute yon CIN verifye nan pwofil ou anvan ou enskri pou vote.
+                <%= t("citizen_portal.election.enrollment.add_cin_body") %>
               </p>
               <%= link_to citizens_profile_path, class: "election-btn-primary election-btn-primary--sm" do %>
-                <i class="ri-user-settings-line"></i> Mete Ajou Pwofil
+                <i class="ri-user-settings-line"></i> <%= t("citizen_portal.election.enrollment.update_profile") %>
               <% end %>
             <% else %>
               <p class="text-muted mb-0" style="font-size: 0.88rem;">
-                Kontakte CEP pou plis enfòmasyon.
+                <%= t("citizen_portal.election.enrollment.contact_cep") %>
               </p>
             <% end %>
           </div>

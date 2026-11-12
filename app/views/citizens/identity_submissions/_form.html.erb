@@ -18,6 +18,9 @@ is_edit         = submission.persisted?
     <%= simple_form_for [:citizens, submission],
         html: { class: "needs-validation", novalidate: true, multipart: true,
                 data: { controller: "wizard submission-review form-handler wizard-persistence",
+                        submission_review_labels_value: %w[id_type cin_front cin_back passport face_liveness verified not_completed
+                                                           document_type file signature drawn not_provided previously_uploaded not_uploaded]
+                                                          .index_with { |k| t("citizen_portal.submission.review.#{k}") }.to_json,
                         wizard_current_step_value: "1",
                         wizard_persistence_key_value: "identity-submission",
                         wizard_skip_steps_value: [].tap { |s|
@@ -33,11 +36,11 @@ is_edit         = submission.persisted?
       <div class="mb-4">
         <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 600px; margin: 0 auto;">
           <% submission_steps = [
-            { icon: "ri-id-card-line",        label: "Documents" },
-            { icon: "ri-file-list-3-line",    label: "Dokiman Sipò" },
-            { icon: "ri-emotion-happy-line",  label: "Face Check" },
-            { icon: "ri-quill-pen-line",      label: "Signature" },
-            { icon: "ri-checkbox-circle-line", label: "Review" }
+            { icon: "ri-id-card-line",        label: t("citizen_portal.submission.steps.documents") },
+            { icon: "ri-file-list-3-line",    label: t("citizen_portal.submission.steps.supporting") },
+            { icon: "ri-emotion-happy-line",  label: t("citizen_portal.submission.steps.face") },
+            { icon: "ri-quill-pen-line",      label: t("citizen_portal.submission.steps.signature") },
+            { icon: "ri-checkbox-circle-line", label: t("citizen_portal.submission.steps.review") }
           ] %>
           <% submission_steps.each_with_index do |step, i| %>
             <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
@@ -73,10 +76,10 @@ is_edit         = submission.persisted?
             on advance so "Verify Your Identity" disappears past the first panel. %>
         <div class="ballot-head text-center">
           <h1 class="ballot-title">
-            <i class="ri-shield-user-line me-2"></i>Verify Your Identity
+            <i class="ri-shield-user-line me-2"></i><%= t("citizen_portal.submission.title") %>
           </h1>
           <p class="ballot-subtitle mb-0">
-            Upload your ID, complete a face check, sign, and review your submission.
+            <%= t("citizen_portal.submission.subtitle") %>
           </p>
         </div>
 
@@ -85,9 +88,7 @@ is_edit         = submission.persisted?
              style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
           <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
           <div>
-            <strong>Important:</strong> Your CIN, passport, and supporting documents must match the
-            personal information in your profile, including your <strong>full name</strong> and
-            <strong>date of birth</strong>. Mismatched information will result in rejection.
+            <%= t("citizen_portal.submission.important_match_html") %>
           </div>
         </div>
 
@@ -95,9 +96,9 @@ is_edit         = submission.persisted?
           <div class="card-body p-4">
 
             <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Government ID</h2>
+              <h2 class="ballot-section-title"><%= t("citizen_portal.submission.gov_id_title") %></h2>
               <p class="ballot-section-desc mb-0">
-                Upload your CIN or passport, plus any supporting documents.
+                <%= t("citizen_portal.submission.gov_id_desc") %>
               </p>
             </div>
 
@@ -111,7 +112,7 @@ is_edit         = submission.persisted?
           <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#next">
-            Continue <i class="ri-arrow-right-line ms-1"></i>
+            <%= t("citizen_portal.profile.continue") %> <i class="ri-arrow-right-line ms-1"></i>
           </button>
         </div>
       </section>
@@ -122,9 +123,7 @@ is_edit         = submission.persisted?
              style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
           <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
           <div>
-            <strong>Important:</strong> Upload an <strong>original, authentic</strong>
-            document. Photocopies of photocopies, expired bills, or altered documents
-            will be flagged and rejected.
+            <%= t("citizen_portal.submission.important_original_html") %>
           </div>
         </div>
 
@@ -132,15 +131,12 @@ is_edit         = submission.persisted?
           <div class="card-body p-4">
 
             <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Dokiman Sipò</h2>
+              <h2 class="ballot-section-title"><%= t("citizen_portal.submission.supporting_title") %></h2>
               <p class="ballot-section-desc mb-0">
                 <% if current_citizen.is_diaspora %>
-                  Telechaje yon prèv adrès peyi rezidans ou ak yon dokiman
-                  ki montre adrès aktyèl ou (bòdwo, kontra lokasyon, resi
-                  transfè, oswa relve bank).
+                  <%= t("citizen_portal.submission.supporting_desc_diaspora") %>
                 <% else %>
-                  Telechaje yon dokiman ki montre adrès aktyèl ou (bòdwo,
-                  kontra lokasyon, resi transfè, oswa relve bank).
+                  <%= t("citizen_portal.submission.supporting_desc") %>
                 <% end %>
               </p>
             </div>
@@ -154,12 +150,12 @@ is_edit         = submission.persisted?
           <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#previous">
-            <i class="ri-arrow-left-line me-1"></i> Back
+            <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
           </button>
           <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#next">
-            Continue <i class="ri-arrow-right-line ms-1"></i>
+            <%= t("citizen_portal.profile.continue") %> <i class="ri-arrow-right-line ms-1"></i>
           </button>
         </div>
       </section>
@@ -174,15 +170,14 @@ is_edit         = submission.persisted?
                   pushing the bottom Back button off screen on phones. %>
               <button type="button" class="btn btn-link p-0 mb-2 text-decoration-none small"
                       data-action="wizard#previous">
-                <i class="ri-arrow-left-line me-1"></i> Back
+                <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
               </button>
-              <h2 class="ballot-section-title">Face Verification</h2>
+              <h2 class="ballot-section-title"><%= t("citizen_portal.submission.face_title") %></h2>
               <p class="ballot-section-desc mb-0">
                 <% if @skip_liveness %>
-                  Your face check from a previous submission is still valid. No new
-                  liveness check is required.
+                  <%= t("citizen_portal.submission.face_reused") %>
                 <% else %>
-                  Confirm you are the person on the ID with a quick face check.
+                  <%= t("citizen_portal.submission.face_desc") %>
                 <% end %>
               </p>
             </div>
@@ -196,12 +191,12 @@ is_edit         = submission.persisted?
           <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#previous">
-            <i class="ri-arrow-left-line me-1"></i> Back
+            <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
           </button>
           <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#next">
-            Next <i class="ri-arrow-right-line ms-1"></i>
+            <%= t("citizen_portal.submission.next") %> <i class="ri-arrow-right-line ms-1"></i>
           </button>
         </div>
       </section>
@@ -212,8 +207,7 @@ is_edit         = submission.persisted?
              style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
           <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
           <div>
-            <strong>Important:</strong> Your signature must be consistent with the one on your ID.
-            Upload a scanned copy or draw it below.
+            <%= t("citizen_portal.submission.important_signature_html") %>
           </div>
         </div>
 
@@ -221,13 +215,12 @@ is_edit         = submission.persisted?
           <div class="card-body p-4">
 
             <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Signature</h2>
+              <h2 class="ballot-section-title"><%= t("citizen_portal.submission.signature_title") %></h2>
               <p class="ballot-section-desc mb-0">
                 <% if @skip_signature %>
-                  Your signature from a previous submission is still on file and
-                  will be carried forward.
+                  <%= t("citizen_portal.submission.signature_reused") %>
                 <% else %>
-                  Upload a scanned signature or draw one below.
+                  <%= t("citizen_portal.submission.signature_desc") %>
                 <% end %>
               </p>
             </div>
@@ -241,12 +234,12 @@ is_edit         = submission.persisted?
           <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#previous">
-            <i class="ri-arrow-left-line me-1"></i> Back
+            <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
           </button>
           <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#next">
-            Review <i class="ri-arrow-right-line ms-1"></i>
+            <%= t("citizen_portal.profile.review") %> <i class="ri-arrow-right-line ms-1"></i>
           </button>
         </div>
       </section>
@@ -257,8 +250,7 @@ is_edit         = submission.persisted?
              style="font-size: 0.82rem; background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E;">
           <i class="ri-error-warning-line me-2 mt-1" style="font-size: 1.1rem; color: #D97706;"></i>
           <div>
-            <strong>Important:</strong> Review all information carefully before submitting.
-            Incorrect or mismatched data will result in rejection.
+            <%= t("citizen_portal.submission.important_review_html") %>
           </div>
         </div>
 
@@ -266,9 +258,9 @@ is_edit         = submission.persisted?
           <div class="card-body p-4">
 
             <div class="ballot-section-head mb-4">
-              <h2 class="ballot-section-title">Review &amp; Confirm</h2>
+              <h2 class="ballot-section-title"><%= t("citizen_portal.submission.review_title") %></h2>
               <p class="ballot-section-desc mb-0">
-                Check everything below before submitting for verification.
+                <%= t("citizen_portal.submission.review_desc") %>
               </p>
             </div>
 
@@ -280,14 +272,14 @@ is_edit         = submission.persisted?
           <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2"
                   style="font-size: 0.85rem;"
                   data-action="wizard#previous">
-            <i class="ri-arrow-left-line me-1"></i> Back
+            <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
           </button>
 
-          <%= f.submit (is_edit ? "Update Submission" : "Submit for Verification"),
+          <%= f.submit (is_edit ? t("citizen_portal.submission.update") : t("citizen_portal.submission.submit")),
               class: "btn btn-success fw-semibold px-4 py-2",
               style: "font-size: 0.85rem;",
               disabled: true,
-              data: { disable_with: "Submitting...",
+              data: { disable_with: t("citizen_portal.submission.submitting"),
                       submission_review_target: "submitButton" } %>
         </div>
       </section>
@@ -295,7 +287,7 @@ is_edit         = submission.persisted?
     <% end %>
 
     <div class="mt-4 text-center small text-muted">
-      <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
+      <i class="ri-lock-2-fill text-success me-2"></i><%= t("citizen_portal.profile.encrypted_footer") %>
     </div>
   </div>
 </div>

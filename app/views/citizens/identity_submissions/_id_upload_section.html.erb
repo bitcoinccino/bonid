@@ -32,17 +32,18 @@
        style="background: rgba(0, 32, 159, 0.04); border: 1px solid rgba(0, 32, 159, 0.12); font-size: 0.82rem; line-height: 1.5;">
     <i class="ri-shield-check-line flex-shrink-0 mt-1" style="color: var(--primary); font-size: 1.1rem;"></i>
     <div class="flex-grow-1">
-      <strong style="color: var(--primary);">Done sou dokiman ou (depi nan pwofil)</strong>
+      <strong style="color: var(--primary);"><%= t("citizen_portal.submission.id_upload.profile_doc_title") %></strong>
       <div class="mt-1 text-dark">
-        <%= (current_citizen.id_type.to_s == "cin" ? "CIN" : current_citizen.id_type.to_s.titleize) %>
-        <strong><%= current_citizen.id_number %></strong>,
-        emèt <strong><%= current_citizen.id_issued_on.strftime("%d/%m/%Y") %></strong>,
-        ekspire <strong><%= current_citizen.id_expires_on.strftime("%d/%m/%Y") %></strong>.
+        <%= t("citizen_portal.submission.id_upload.profile_doc_summary_html",
+              type: (current_citizen.id_type.to_s == "cin" ? "CIN" : t("citizen_portal.submission.id_upload.id_types.#{current_citizen.id_type}", default: current_citizen.id_type.to_s.titleize)),
+              number: current_citizen.id_number,
+              issued: current_citizen.id_issued_on.strftime("%d/%m/%Y"),
+              expires: current_citizen.id_expires_on.strftime("%d/%m/%Y")) %>
       </div>
       <%= link_to edit_citizens_profile_path,
                   class: "small fw-semibold text-decoration-none mt-2 d-inline-block",
                   style: "color: var(--primary);" do %>
-        <i class="ri-edit-line me-1"></i> Modifye nan pwofil
+        <i class="ri-edit-line me-1"></i> <%= t("citizen_portal.submission.id_upload.edit_in_profile") %>
       <% end %>
     </div>
   </div>
@@ -54,33 +55,33 @@
      style="<%= 'display: none;' unless is_diaspora %>">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
       class="mb-3">
-    <i class="ri-global-line me-1"></i> Dokiman Rezidans (Diaspora)
+    <i class="ri-global-line me-1"></i> <%= t("citizen_portal.submission.id_upload.residence_title") %>
   </h6>
   <p style="font-size: 0.78rem; color: #666; margin-bottom: 1rem; line-height: 1.5;">
-    Kòm ou ap viv aletranje, tanpri telechaje yon dokiman idantite gouvènman peyi kote ou ap viv la.
+    <%= t("citizen_portal.submission.id_upload.residence_desc") %>
   </p>
 
   <div class="row g-3">
     <div class="col-12 col-md-6">
       <%= f.input :host_country_id_type,
-            label: "Ki kalite dokiman ou genyen?",
+            label: t("citizen_portal.submission.id_upload.residence_type"),
             collection: [
-              ["Green Card / Permanent Resident Card", "green_card"],
-              ["State ID / Government ID", "state_id"],
-              ["Driver's License", "drivers_license"],
-              ["Cédula / National ID", "cedula"],
-              ["PR Card (Canada)", "pr_card"],
-              ["Residence Permit", "residence_permit"],
-              ["Lòt / Other", "other"]
+              [t("citizen_portal.submission.id_upload.residence_types.green_card"), "green_card"],
+              [t("citizen_portal.submission.id_upload.residence_types.state_id"), "state_id"],
+              [t("citizen_portal.submission.id_upload.residence_types.drivers_license"), "drivers_license"],
+              [t("citizen_portal.submission.id_upload.residence_types.cedula"), "cedula"],
+              [t("citizen_portal.submission.id_upload.residence_types.pr_card"), "pr_card"],
+              [t("citizen_portal.submission.id_upload.residence_types.residence_permit"), "residence_permit"],
+              [t("citizen_portal.submission.id_upload.residence_types.other"), "other"]
             ],
-            prompt: "Chwazi kalite dokiman",
+            prompt: t("citizen_portal.submission.id_upload.residence_type_prompt"),
             input_html: { class: "form-select form-select-lg" },
             label_html: { class: "form-label fw-semibold" } %>
     </div>
     <div class="col-12 col-md-6" data-controller="image-quality">
       <%= f.input :host_country_id,
             as: :file,
-            label: "Telechaje dokiman an",
+            label: t("citizen_portal.submission.id_upload.upload_document"),
             input_html: {
               accept: "image/jpeg,image/png",
               capture: "environment",
@@ -91,7 +92,7 @@
       <div data-image-quality-target="status"></div>
       <div data-image-quality-target="thumbnail"></div>
       <% if submission.persisted? && submission.host_country_id.attached? %>
-        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.id_upload.uploaded") %></small>
       <% end %>
     </div>
   </div>
@@ -106,7 +107,7 @@
     step stays focused on the primary government ID. %>
 
 <% prefilled_id_type = submission.id_type.presence || current_citizen.id_type.presence %>
-<% id_type_labels = { "cin" => "CIN", "passport" => "Passport", "license" => "Driver's License", "voter_id" => "Voter ID", "driver_license" => "Driver's License", "national_card" => "National Card", "nif" => "NIF" } %>
+<% id_type_labels = %w[cin passport license voter_id driver_license national_card nif].index_with { |k| t("citizen_portal.submission.id_upload.id_types.#{k}") } %>
 <% if prefilled_id_type %>
   <%# ID type already known from profile — carry it as a hidden field. %>
   <input type="hidden" name="identity_submission[id_type]" value="<%= prefilled_id_type %>">
@@ -114,9 +115,9 @@
   <div class="mb-3">
     <%= f.input :id_type,
           required: true,
-          label: "Select an identification type",
-          collection: [["CIN", "cin"], ["Passport", "passport"]],
-          prompt: "Select ID Type",
+          label: t("citizen_portal.submission.id_upload.select_id_type_label"),
+          collection: [[t("citizen_portal.submission.id_upload.id_types.cin"), "cin"], [t("citizen_portal.submission.id_upload.id_types.passport"), "passport"]],
+          prompt: t("citizen_portal.submission.id_upload.select_id_type"),
           input_html: {
             id: "id_type_select",
             class: "form-select form-select-lg",
@@ -141,7 +142,7 @@
     <div class="col-12 col-md-6" data-controller="image-quality">
       <%= f.input :cin_front,
             as: :file,
-            label: "CIN Front",
+            label: t("citizen_portal.submission.id_upload.cin_front"),
             required: !submission.cin_front.attached?,
             input_html: {
               accept: "image/jpeg,image/png",
@@ -154,13 +155,13 @@
       <div data-image-quality-target="status"></div>
       <div data-image-quality-target="thumbnail"></div>
       <% if submission.persisted? && submission.cin_front.attached? %>
-        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.id_upload.uploaded") %></small>
       <% end %>
     </div>
     <div class="col-12 col-md-6" data-controller="image-quality">
       <%= f.input :cin_back,
             as: :file,
-            label: "CIN Back",
+            label: t("citizen_portal.submission.id_upload.cin_back"),
             required: !submission.cin_back.attached?,
             input_html: {
               accept: "image/jpeg,image/png",
@@ -173,7 +174,7 @@
       <div data-image-quality-target="status"></div>
       <div data-image-quality-target="thumbnail"></div>
       <% if submission.persisted? && submission.cin_back.attached? %>
-        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+        <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.id_upload.uploaded") %></small>
       <% end %>
     </div>
   </div>
@@ -192,7 +193,7 @@
   <div data-controller="image-quality">
     <%= f.input :passport,
           as: :file,
-          label: "Passport Photo Page",
+          label: t("citizen_portal.submission.id_upload.passport_page"),
           required: !submission.passport.attached?,
           input_html: {
             accept: "image/jpeg,image/png",
@@ -204,7 +205,7 @@
           label_html: { class: "form-label fw-semibold" } %>
     <div data-image-quality-target="status"></div>
     <% if submission.persisted? && submission.passport.attached? %>
-      <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i>Uploaded</small>
+      <small class="text-success d-block mt-1"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.id_upload.uploaded") %></small>
     <% end %>
   </div>
 
@@ -229,13 +230,13 @@
      class="mb-3">
   <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
       class="mb-3">
-    <i class="ri-file-text-line me-1"></i> Document Details
+    <i class="ri-file-text-line me-1"></i> <%= t("citizen_portal.submission.id_upload.document_details") %>
   </h6>
   <div class="row g-3">
     <div class="col-12 col-md-4">
       <%= f.input :document_number,
             required: true,
-            label: "NINU / Document Number",
+            label: t("citizen_portal.submission.id_upload.document_number"),
             placeholder: "Ex: 1234567890",
             input_html: {
               class: "form-control form-control-lg",
@@ -243,14 +244,14 @@
               maxlength: 20,
               autocomplete: "off"
             },
-            hint: "Enter your 10-digit NINU exactly as printed on your CIN.",
+            hint: t("citizen_portal.submission.id_upload.document_number_hint"),
             label_html: { class: "form-label fw-semibold", id: "document_number_label" } %>
     </div>
     <div class="col-12 col-md-4">
       <%= f.input :document_issue_date,
             as: :string,
             required: true,
-            label: "Issue Date",
+            label: t("citizen_portal.submission.id_upload.issue_date"),
             input_html: { class: "form-control form-control-lg", type: "date", max: Date.current.iso8601 },
             label_html: { class: "form-label fw-semibold" } %>
     </div>
@@ -258,7 +259,7 @@
       <%= f.input :document_expiry_date,
             as: :string,
             required: true,
-            label: "Expiry Date",
+            label: t("citizen_portal.submission.id_upload.expiry_date"),
             input_html: { class: "form-control form-control-lg", type: "date", min: Date.current.iso8601 },
             label_html: { class: "form-label fw-semibold" } %>
     </div>
@@ -279,13 +280,13 @@
       var val = idSelect ? idSelect.value : idValue;
 
       if (val === "cin") {
-        if (label) label.textContent = "NINU / CIN Number *";
+        if (label) label.textContent = "<%= j t("citizen_portal.submission.id_upload.cin_number_label") %> *";
         if (input) { input.placeholder = "Ex: 1234567890"; input.inputMode = "numeric"; input.maxLength = 10; input.style.textTransform = ""; }
-        if (hint) hint.textContent = "10-digit NINU printed on your CIN.";
+        if (hint) hint.textContent = "<%= j t("citizen_portal.submission.id_upload.cin_number_hint") %>";
       } else if (val === "passport") {
-        if (label) label.textContent = "Passport Number *";
+        if (label) label.textContent = "<%= j t("citizen_portal.submission.id_upload.passport_number_label") %> *";
         if (input) { input.placeholder = "Ex: AB123456"; input.inputMode = "text"; input.maxLength = 9; input.style.textTransform = "uppercase"; }
-        if (hint) hint.textContent = "6–9 alphanumeric characters";
+        if (hint) hint.textContent = "<%= j t("citizen_portal.submission.id_upload.passport_number_hint") %>";
       }
     }
 

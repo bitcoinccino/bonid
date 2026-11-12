@@ -9,7 +9,7 @@
 module Ajan
   class AjanMailer < VerifyemMailer
     default from: "ajan@verifyem.ht"
-    layout "verifyem_mailer"
+    layout "mailer" # shared Haitian-blue email style (layouts/mailer)
 
     def otp_login
       @user = params[:user]

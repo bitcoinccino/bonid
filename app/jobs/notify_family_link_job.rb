@@ -20,7 +20,7 @@ class NotifyFamilyLinkJob < ApplicationJob
 
     citizen = fm.user
     relative = fm.linked_user
-    relationship_label = fm.display_relationship
+    relationship_label = fm.display_relationship(locale: :ht)
 
     # Send notification to the linked person
     # (SMS, push, or in-app — depending on what's available)

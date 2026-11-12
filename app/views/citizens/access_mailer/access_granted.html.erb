@@ -1,0 +1,35 @@
+<% scopes = visible_consent_scopes(@grant.granted_scopes.presence || @grant.requested_scopes) %>
+<div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-size:20px; font-weight:700; color:#00209F; margin-bottom:12px;">
+  <%= t("mailers.access.granted.heading", partner_name: @partner.name) %>
+</div>
+<p style="margin:0 0 16px;"><%= t("mailers.access.greeting", name: @citizen.first_name) %></p>
+<p style="margin:0 0 16px;"><%= t("mailers.access.granted.body", partner_name: @partner.name) %></p>
+
+<% if scopes.any? %>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5FB; border-radius:10px; margin:0 0 16px;">
+    <tr><td style="padding:14px 18px;">
+      <div style="font-size:12px; font-weight:700; color:#00209F; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">
+        <%= t("mailers.access.granted.what_they_see", partner_name: @partner.name) %>
+      </div>
+      <% scopes.each do |scope| %>
+        <div style="font-size:14px; color:#1E293B; padding:2px 0;">✓ <%= consent_scope_label(scope) %></div>
+      <% end %>
+    </td></tr>
+  </table>
+<% end %>
+
+<% if @grant.expires_at %>
+  <p style="margin:0 0 16px;"><%= t("mailers.access.granted.ends_on", date: l(@grant.expires_at.to_date, format: :consent)) %></p>
+<% end %>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FEF3C7; border-radius:10px; margin:0 0 20px;">
+  <tr><td style="padding:12px 16px; font-size:13px; color:#78350F;">
+    <strong><%= t("mailers.access.not_you_title") %></strong> <%= t("mailers.access.granted.not_you_body", partner_name: @partner.name) %>
+  </td></tr>
+</table>
+
+<div style="text-align:center;">
+  <a href="<%= citizens_consents_url %>" style="display:inline-block; background:#00209F; color:#FFFFFF; text-decoration:none; font-weight:700; font-size:14px; padding:12px 22px; border-radius:8px;">
+    <%= t("mailers.access.manage_button") %>
+  </a>
+</div>

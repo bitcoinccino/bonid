@@ -20,6 +20,18 @@ export default class extends Controller {
     "confirmCheckbox"
   ]
 
+  // Localized copy from the page (citizen's portal language); each label
+  // falls back to English.
+  static values = { labels: Object }
+
+  _l(key, fallback) {
+    return (this.hasLabelsValue && this.labelsValue[key]) || fallback
+  }
+
+  _row(cls, key, fallback, valueHtml) {
+    return `<div class="${cls}"><strong>${this._esc(this._l(key, fallback))}:</strong> ${valueHtml}</div>`
+  }
+
   connect() {
     if (this.hasSubmitButtonTarget) {
       this.submitButtonTarget.disabled = true
@@ -76,7 +88,7 @@ export default class extends Controller {
       const rawIdType = this._selectedText(form, "identity_submission[id_type]") ||
                         this._fieldValue(form, "identity_submission[id_type]")
       // Map raw values to human-readable labels
-      const idTypeMap = { "cin": "CIN", "passport": "Passport" }
+      const idTypeMap = { "cin": "CIN", "passport": this._l("passport", "Passport") }
       const idType = idTypeMap[rawIdType.toLowerCase()] || rawIdType
 
       const cinFront = this._fileLabel(form, "identity_submission[cin_front]")
@@ -85,19 +97,15 @@ export default class extends Controller {
 
       let docsHtml = ""
       if (idType.toLowerCase().includes("cin")) {
-        docsHtml = `
-          <div class="col-sm-6"><strong>CIN Front:</strong> ${cinFront}</div>
-          <div class="col-sm-6"><strong>CIN Back:</strong> ${cinBack}</div>
-        `
+        docsHtml = this._row("col-sm-6", "cin_front", "CIN Front", cinFront) +
+                   this._row("col-sm-6", "cin_back", "CIN Back", cinBack)
       } else {
-        docsHtml = `
-          <div class="col-sm-6"><strong>Passport:</strong> ${passport}</div>
-        `
+        docsHtml = this._row("col-sm-6", "passport", "Passport", passport)
       }
 
       this.reviewIdTarget.innerHTML = `
         <div class="row g-2" style="font-size:0.82rem;">
-          <div class="col-12"><strong>ID Type:</strong> ${this._esc(idType) || "—"}</div>
+          ${this._row("col-12", "id_type", "ID Type", this._esc(idType) || "—")}
           ${docsHtml}
         </div>
       `
@@ -115,15 +123,15 @@ export default class extends Controller {
       const livenessPassed = livenessController?.dataset?.livenessDetectorPassedValue === "true"
 
       const passed = hasSelfie || livenessPassed
-      const statusText = passed ? "Verified" : "Not completed"
+      const statusText = passed ? this._l("verified", "Verified") : this._l("not_completed", "Not completed")
       const statusClass = passed ? "text-success" : "text-danger"
       const statusIcon = passed ? "checkbox-circle" : "close-circle"
 
       this.reviewSelfieTarget.innerHTML = `
         <div style="font-size:0.82rem;">
-          <strong>Face Liveness:</strong>
+          <strong>${this._esc(this._l("face_liveness", "Face Liveness"))}:</strong>
           <span class="${statusClass}">
-            <i class="ri-${statusIcon}-line me-1"></i>${statusText}
+            <i class="ri-${statusIcon}-line me-1"></i>${this._esc(statusText)}
           </span>
         </div>
       `
@@ -131,14 +139,17 @@ export default class extends Controller {
 
     // ── 3. Supporting Document ──
     if (this.hasReviewSupportingTarget) {
+      // Prefer the picker's visible (localized) label over the stored value.
+      const pickerDisplay = form.querySelector("[data-proof-picker-target='display']")
+      const pickedValue = this._fieldValue(form, "identity_submission[additional_proof_type]")
       const docType = this._selectedText(form, "identity_submission[additional_proof_type]") ||
-                      this._fieldValue(form, "identity_submission[additional_proof_type]")
+                      (pickedValue && pickerDisplay ? pickerDisplay.textContent.trim() : pickedValue)
       const docFile = this._fileLabel(form, "identity_submission[additional_proof]")
 
       this.reviewSupportingTarget.innerHTML = `
         <div class="row g-2" style="font-size:0.82rem;">
-          <div class="col-sm-6"><strong>Document Type:</strong> ${this._esc(docType) || "—"}</div>
-          <div class="col-sm-6"><strong>File:</strong> ${docFile}</div>
+          ${this._row("col-sm-6", "document_type", "Document Type", this._esc(docType) || "—")}
+          ${this._row("col-sm-6", "file", "File", docFile)}
         </div>
       `
     }
@@ -152,16 +163,16 @@ export default class extends Controller {
 
       let sigStatus
       if (hasDrawn) {
-        sigStatus = '<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Drawn on canvas</span>'
-      } else if (sigFile !== "Not uploaded") {
+        sigStatus = `<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>${this._esc(this._l("drawn", "Drawn on canvas"))}</span>`
+      } else if (sigFile !== this._notUploaded()) {
         sigStatus = `<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>${sigFile}</span>`
       } else {
-        sigStatus = '<span class="text-danger"><i class="ri-close-circle-line me-1"></i>Not provided</span>'
+        sigStatus = `<span class="text-danger"><i class="ri-close-circle-line me-1"></i>${this._esc(this._l("not_provided", "Not provided"))}</span>`
       }
 
       this.reviewSignatureTarget.innerHTML = `
         <div style="font-size:0.82rem;">
-          <strong>Signature:</strong> ${sigStatus}
+          <strong>${this._esc(this._l("signature", "Signature"))}:</strong> ${sigStatus}
         </div>
       `
     }
@@ -202,9 +213,13 @@ export default class extends Controller {
     if (input) {
       const container = input.closest(".col-md-6, .mb-3")
       const uploaded = container?.querySelector(".text-success")
-      if (uploaded) return '<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Previously uploaded</span>'
+      if (uploaded) return `<span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>${this._esc(this._l("previously_uploaded", "Previously uploaded"))}</span>`
     }
-    return "Not uploaded"
+    return this._notUploaded()
+  }
+
+  _notUploaded() {
+    return this._esc(this._l("not_uploaded", "Not uploaded"))
   }
 
   _esc(str) {
