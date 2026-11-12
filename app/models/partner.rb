@@ -108,8 +108,11 @@ class Partner < ApplicationRecord
             acceptance: { accept: [ true, "1" ], message: "must be accepted" },
             on: :create
 
-  # Webhook URL must be HTTPS (when provided)
-  validates :webhook_url, format: { with: %r{\Ahttps://\S+\z}, message: "must be HTTPS" }, allow_blank: true
+  # Webhook URL must be HTTPS (when provided). Outside production, plain
+  # http:// is also allowed for localhost so local partner apps (e.g. Zellus
+  # on :3000) can receive webhooks during development.
+  LOCAL_WEBHOOK_URL = %r{\Ahttp://(localhost|127\.0\.0\.1|\[::1\]|[\w.-]+\.(localhost|test))(:\d+)?(/\S*)?\z}
+  validate :validate_webhook_url_scheme, if: -> { webhook_url.present? }
 
   # OAuth validations
   validate :validate_redirect_uri_format, if: -> { redirect_uris.present? }
@@ -129,6 +132,15 @@ class Partner < ApplicationRecord
   # When a partner is approved, mark its originating waitlist lead converted.
   after_save :mark_waitlist_lead_converted, if: :saved_change_to_status?
   before_create :generate_email_verification_token
+
+  # As soon as a partner can receive webhooks (URL or secret set/changed, or
+  # newly verified), send any consent events they missed — e.g. revocations
+  # that happened before they configured a webhook URL.
+  after_commit :flush_webhook_backlog,
+               if: -> {
+                 (saved_change_to_webhook_url? || saved_change_to_webhook_secret? || saved_change_to_verified_at?) &&
+                   webhook_enabled?
+               }
 
   # ============================================================
   # EMAIL VERIFICATION
@@ -212,8 +224,19 @@ class Partner < ApplicationRecord
   # ============================================================
 
   # Whether this partner can receive webhook notifications
+  # A partner can only receive webhooks once it has a URL, a signing secret
+  # (partners reject unsigned payloads), and is verified.
   def webhook_enabled?
-    webhook_url.present? && verified?
+    webhook_url.present? && webhook_secret.present? && verified?
+  end
+
+  # Why webhooks are held for this partner (nil when they can be delivered).
+  def webhook_blocker
+    return "no_webhook_url"       if webhook_url.blank?
+    return "no_webhook_secret"    if webhook_secret.blank?
+    return "partner_not_verified" unless verified?
+
+    nil
   end
 
   # HMAC-SHA256 signature for webhook payloads (using dedicated webhook_secret)
@@ -575,6 +598,20 @@ class Partner < ApplicationRecord
   end
 
   private
+
+  def validate_webhook_url_scheme
+    url = webhook_url.to_s.strip
+    return if url.match?(%r{\Ahttps://\S+\z})
+    return if !Rails.env.production? && url.match?(LOCAL_WEBHOOK_URL)
+
+    errors.add(:webhook_url, "must be HTTPS")
+  end
+
+  def flush_webhook_backlog
+    PartnerWebhookBacklogJob.perform_later(id)
+  rescue => e
+    Rails.logger.error("[Partner] Could not queue webhook backlog for partner #{id}: #{e.message}")
+  end
 
   # Tie the lead lifecycle to the partner: once approved, the originating
   # waitlist signup (if any) is marked converted. Idempotent.
