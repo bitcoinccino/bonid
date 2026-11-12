@@ -19,6 +19,13 @@ class BonidNotifier
     12.hours        # attempt 10
   ].freeze
 
+  # Partner#webhook_blocker codes → human text for audit logs.
+  UNDELIVERABLE_REASONS = {
+    "no_webhook_url"       => "no webhook URL",
+    "no_webhook_secret"    => "no webhook signing secret",
+    "partner_not_verified" => "partner not verified"
+  }.freeze
+
   class << self
     # ===========================================================
     # Generic partner webhook (existing ApiWebhookEvent-based)
@@ -62,12 +69,21 @@ class BonidNotifier
     # ===========================================================
     # Consent lifecycle webhook (revoked, restored, approved, bonid.changed)
     # ===========================================================
-    def notify_consent_change(consent_grant, event_type, attempt: 1)
-      partner = consent_grant.partner
-      return unless partner&.webhook_enabled?
+    #
+    # Every call leaves an ApiWebhookEvent behind — never a silent skip. When
+    # the partner can't receive webhooks yet (no URL / not verified) the event
+    # is stored as "undeliverable" and PartnerWebhookBacklogJob sends it once
+    # the partner becomes reachable. Pass `webhook_event:` to re-use an
+    # existing record (retries, backlog redelivery) instead of creating one.
+    def notify_consent_change(consent_grant, event_type, attempt: 1, webhook_event: nil)
+      partner = consent_grant&.partner
+      return unless partner
 
       citizen = consent_grant.citizen
-      return unless citizen&.bonid.present?
+      unless citizen&.bonid.present?
+        Rails.logger.warn("[BonidNotifier] #{event_type} for consent #{consent_grant.id} not sent: citizen has no BonID")
+        return
+      end
 
       payload = {
         event:        event_type,
@@ -97,6 +113,38 @@ class BonidNotifier
         }
       end
 
+      # Partner can't receive webhooks yet — keep the event so it is delivered
+      # as soon as they configure a URL (see Partner#flush_webhook_backlog).
+      unless partner.webhook_enabled?
+        reason = partner.webhook_blocker
+        attrs = {
+          status:  "undeliverable",
+          payload: payload.merge(undeliverable_reason: reason, consent_id: consent_grant.id)
+        }
+        if webhook_event
+          webhook_event.update!(attrs)
+        else
+          webhook_event = ApiWebhookEvent.create!(
+            attrs.merge(partner: partner, event_type: event_type, bonid: citizen.bonid,
+                        retry_attempts: 0, direction: "outbound")
+          )
+        end
+
+        Rails.logger.warn("[BonidNotifier] #{event_type} for #{partner.name} held as undeliverable (#{reason}) — event ##{webhook_event.id}")
+
+        if event_type == "consent.revoked"
+          PartnerAuditLog.create!(
+            partner:  partner,
+            event:    "consent_revoked_undeliverable",
+            details:  "Citizen revoked consent but #{partner.name} can't receive webhooks yet " \
+                      "(#{UNDELIVERABLE_REASONS.fetch(reason, reason)}). " \
+                      "The revocation will be sent automatically once that is fixed.",
+            metadata: { webhook_event_id: webhook_event.id, consent_id: consent_grant.id, reason: reason }
+          )
+        end
+        return webhook_event
+      end
+
       payload_json = payload.to_json
       signature = partner.sign_webhook_payload(payload_json)
 
@@ -107,16 +155,22 @@ class BonidNotifier
         "X-BonID-Timestamp" => Time.current.to_i.to_s
       }
 
-      # Create webhook event record for audit
-      webhook_event = ApiWebhookEvent.create!(
-        partner:        partner,
-        event_type:     event_type,
-        bonid:          citizen.bonid,
-        payload:        payload,
-        retry_attempts: [ attempt - 1, 0 ].max,
-        direction:      "outbound",
-        status:         "pending"
-      )
+      # One audit record per logical event — retries and backlog redelivery
+      # update it instead of creating duplicates (which the sweeper would
+      # otherwise pick up again).
+      if webhook_event
+        webhook_event.update!(payload: payload, retry_attempts: [ attempt - 1, 0 ].max, status: "pending")
+      else
+        webhook_event = ApiWebhookEvent.create!(
+          partner:        partner,
+          event_type:     event_type,
+          bonid:          citizen.bonid,
+          payload:        payload,
+          retry_attempts: [ attempt - 1, 0 ].max,
+          direction:      "outbound",
+          status:         "pending"
+        )
+      end
 
       response = send_request(URI(partner.webhook_url), payload_json, headers)
 
@@ -214,12 +268,22 @@ class BonidNotifier
       # hex HMAC-SHA256 of the raw body with the partner's webhook secret.
       body = payload.to_json
       signature = consent.partner&.sign_webhook_payload(body)
-      if signature
-        headers["X-BonID-Signature"] = signature
-        headers["X-BonID-Timestamp"] = Time.current.to_i.to_s
-      else
-        Rails.logger.warn("[BonidNotifier] Partner #{consent.partner_id} has no webhook secret; transaction consent callback sent unsigned")
+      unless signature
+        # Never send unsigned — partners reject them, and an unsigned callback
+        # is indistinguishable from a forged one. Retrying won't help.
+        Rails.logger.error("[BonidNotifier] Partner #{consent.partner_id} has no webhook secret; transaction consent callback NOT sent")
+        if consent.partner
+          PartnerAuditLog.create!(
+            partner:  consent.partner,
+            event:    "transaction_callback_unsigned_blocked",
+            details:  "Transaction consent callback not sent: partner has no webhook signing secret.",
+            metadata: { transaction_consent_id: consent.id }
+          )
+        end
+        return
       end
+      headers["X-BonID-Signature"] = signature
+      headers["X-BonID-Timestamp"] = Time.current.to_i.to_s
 
       response = send_request(uri, body, headers)
 

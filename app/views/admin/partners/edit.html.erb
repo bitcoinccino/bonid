@@ -68,6 +68,14 @@
     <%= f.label :webhook_url, "Webhook URL (HTTPS)", class: "form-label" %>
     <%= f.url_field :webhook_url, class: "form-control", placeholder: "https://partner.com/bonid_webhook" %>
     <div class="form-text">BonID will POST consent events (revoked, restored, bonid changed) to this URL.</div>
+    <% if @partner.persisted? && (blocker = @partner.webhook_blocker).in?(%w[no_webhook_url no_webhook_secret]) %>
+      <% held = PartnerWebhookBacklogJob.backlog_for(@partner).count %>
+      <div class="alert alert-warning small py-2 px-3 mt-2 mb-0">
+        <%= blocker == "no_webhook_url" ? "No webhook URL" : "No webhook signing secret (partner creates it in Settings)" %>
+        — this partner isn't told when citizens revoke consent.
+        <% if held.positive? %><strong><%= held %> undelivered <%= "event".pluralize(held) %></strong> will be sent once a URL is saved.<% end %>
+      </div>
+    <% end %>
   </div>
 
   <!-- Admin User -->

@@ -44,15 +44,17 @@ RSpec.describe BonidNotifier, ".notify_transaction_consent signing" do
     expect(sent[:headers]["X-BonID-Event"]).to eq("transaction_consent.denied")
   end
 
-  it "sends unsigned (and logs) when the partner has no webhook secret" do
+  it "does not send (and logs + audits) when the partner has no webhook secret" do
     partner.webhook_secret = nil
-    sent_headers = nil
-    allow(described_class).to receive(:send_request) { |_u, _b, h| sent_headers = h; ok }
-    allow(Rails.logger).to receive(:warn)
+    allow(described_class).to receive(:send_request)
+    allow(Rails.logger).to receive(:error)
+    allow(PartnerAuditLog).to receive(:create!)
 
     described_class.notify_transaction_consent(consent)
 
-    expect(sent_headers).not_to have_key("X-BonID-Signature")
-    expect(Rails.logger).to have_received(:warn).with(/no webhook secret/)
+    expect(described_class).not_to have_received(:send_request)
+    expect(Rails.logger).to have_received(:error).with(/no webhook secret/)
+    expect(PartnerAuditLog).to have_received(:create!)
+      .with(hash_including(event: "transaction_callback_unsigned_blocked"))
   end
 end

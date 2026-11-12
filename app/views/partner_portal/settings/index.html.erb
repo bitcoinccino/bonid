@@ -57,6 +57,20 @@
                 <label class="form-label small fw-semibold">Webhook URL</label>
                 <%= f.url_field :webhook_url, class: "form-control form-control-sm rounded-3", placeholder: "https://your-app.com/webhooks/bonid" %>
                 <div class="form-text">We'll send POST requests here for scan events and consent updates</div>
+                <% if (blocker = @partner.webhook_blocker).in?(%w[no_webhook_url no_webhook_secret]) %>
+                  <% held = PartnerWebhookBacklogJob.backlog_for(@partner).count %>
+                  <div class="alert alert-warning small py-2 px-3 mt-2 mb-0 rounded-3">
+                    <i class="ri-alert-line me-1"></i>
+                    <% if blocker == "no_webhook_url" %>
+                      Without a webhook URL, you won't know when a citizen revokes access.
+                    <% else %>
+                      Webhooks are paused until you <a href="#webhook-secret" class="alert-link">create a signing secret</a> below.
+                    <% end %>
+                    <% if held.positive? %>
+                      <strong><%= held %> <%= "update".pluralize(held) %> waiting</strong> — sent automatically once this is fixed.
+                    <% end %>
+                  </div>
+                <% end %>
               </div>
             </div>
           </div>
@@ -101,6 +115,40 @@
           <%= f.submit "Save Changes", class: "btn btn-haitian-blue rounded-pill px-4 py-2 fw-semibold" %>
         </div>
       <% end %>
+
+      <%# Webhook signing secret — separate from the main form (button_to renders its own form) %>
+      <div id="webhook-secret" class="card border-0 shadow-sm rounded-4 mt-4">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+          <h6 class="fw-bold text-haitian-blue mb-0">
+            <i class="ri-key-2-line me-2"></i>Webhook Signing Secret
+          </h6>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <p class="small text-muted mb-3">
+            Every webhook includes an <code>X-BonID-Signature</code> header: a hex HMAC-SHA256 of the raw
+            request body, made with this secret. Check it in your app before trusting a webhook.
+          </p>
+
+          <% if @partner.webhook_secret.present? %>
+            <details class="mb-3">
+              <summary class="small fw-semibold" style="cursor: pointer;">Show secret</summary>
+              <code class="d-block mt-2 p-2 bg-light rounded-3 text-break user-select-all"><%= @partner.webhook_secret %></code>
+            </details>
+            <%= button_to "Create new secret", regenerate_webhook_secret_partner_portal_settings_path,
+                  method: :post,
+                  class: "btn btn-sm btn-outline-danger rounded-pill px-3",
+                  form: { data: { turbo_confirm: "Create a new secret? The current one stops working right away, so update your app too." } } %>
+          <% else %>
+            <div class="alert alert-warning small py-2 px-3 rounded-3">
+              <i class="ri-alert-line me-1"></i>
+              No signing secret yet. BonID won't send webhooks until you create one.
+            </div>
+            <%= button_to "Create secret", regenerate_webhook_secret_partner_portal_settings_path,
+                  method: :post,
+                  class: "btn btn-sm btn-haitian-blue rounded-pill px-3" %>
+          <% end %>
+        </div>
+      </div>
 
     </div>
   </div>

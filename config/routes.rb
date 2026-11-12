@@ -802,7 +802,9 @@ end
 
     resources :access_logs, only: [ :index ]
     resources :partner_audit_logs, only: [ :index, :show ]
-    resources :settings, only: [ :index, :update ]
+    resources :settings, only: [ :index, :update ] do
+      post :regenerate_webhook_secret, on: :collection
+    end
     resources :metrics,     only: [ :show ]
 
     # Default partner features

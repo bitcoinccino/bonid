@@ -34,6 +34,12 @@ production:
     queue: billing
     schedule: every 15 minutes
 
+  # Re-send consent webhooks partners never received (no URL yet, lost retries)
+  webhook_backlog_sweep:
+    class: WebhookBacklogSweepJob
+    queue: webhooks
+    schedule: every 30 minutes
+
 development:
   # More frequent checks in development for testing
   overdue_review_check:
@@ -58,6 +64,12 @@ development:
     class: MoncashReconciliationJob
     queue: default
     schedule: every 5 minutes
+
+  # Consent webhook backlog sweep
+  webhook_backlog_sweep:
+    class: WebhookBacklogSweepJob
+    queue: webhooks
+    schedule: every 10 minutes
 
 # Example configurations (commented out):
 #   periodic_cleanup:

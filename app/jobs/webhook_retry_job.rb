@@ -10,7 +10,7 @@ class WebhookRetryJob < ApplicationJob
     # Route consent lifecycle events to the consent-specific notifier
     if event.event_type.start_with?("consent.") || event.event_type == "bonid.changed"
       consent = ConsentGrant.find_by(partner: partner, id: event.payload["consent_id"])
-      BonidNotifier.notify_consent_change(consent, event.event_type, attempt: attempt) if consent
+      BonidNotifier.notify_consent_change(consent, event.event_type, attempt: attempt, webhook_event: event) if consent
     else
       BonidNotifier.notify_partner(partner, event, attempt: attempt)
     end

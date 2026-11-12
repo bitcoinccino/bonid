@@ -124,9 +124,16 @@ RSpec.describe Partner, type: :model do
   # ── Webhook ─────────────────────────────────────────────────
   describe "webhook" do
     describe "#webhook_enabled?" do
-      it "returns true when URL and verified" do
-        partner = build(:partner, webhook_url: "https://example.com/hook", verified_at: Time.current)
+      it "returns true when URL, signing secret and verified" do
+        partner = build(:partner, webhook_url: "https://example.com/hook", webhook_secret: SecureRandom.hex(32),
+                                  verified_at: Time.current)
         expect(partner.webhook_enabled?).to be true
+      end
+
+      it "returns false without a signing secret (never send unsigned)" do
+        partner = build(:partner, webhook_url: "https://example.com/hook", webhook_secret: nil, verified_at: Time.current)
+        expect(partner.webhook_enabled?).to be false
+        expect(partner.webhook_blocker).to eq("no_webhook_secret")
       end
 
       it "returns false without URL" do
