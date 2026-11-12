@@ -16,33 +16,32 @@
   <div class="mb-4">
     <h6 style="font-family: 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 600; color: var(--primary);"
         class="mb-2">
-      <i class="ri-home-4-line me-1"></i> Prèv Adrès (Peyi Rezidans)
+      <i class="ri-home-4-line me-1"></i> <%= t("citizen_portal.submission.proof.diaspora_title") %>
     </h6>
     <p class="text-muted mb-3" style="font-size: 0.78rem; line-height: 1.45;">
-      Telechaje yon dokiman ki montre non ou ak adrès kote ou ap viv la
-      (pa plis pase 3 mwa).
+      <%= t("citizen_portal.submission.proof.diaspora_desc") %>
     </p>
 
     <div class="row g-3">
       <div class="col-12 col-md-6">
         <%= f.input :diaspora_proof_type,
-              label: "Ki kalite prèv adrès?",
+              label: t("citizen_portal.submission.proof.diaspora_type"),
               collection: [
-                ["Utility Bill (Elektrik, Gaz, Dlo)", "utility_bill"],
-                ["Phone Bill (Fakti Telefòn)", "phone_bill"],
-                ["Bank Statement (Relve Bank)", "bank_statement"],
-                ["Rent Agreement / Lease (Kontra Lwaye)", "rent_agreement"],
-                ["Government Letter (Lèt Gouvènman)", "government_letter"],
-                ["Lòt / Other", "other"]
+                [t("citizen_portal.submission.proof.diaspora_types.utility_bill"), "utility_bill"],
+                [t("citizen_portal.submission.proof.diaspora_types.phone_bill"), "phone_bill"],
+                [t("citizen_portal.submission.proof.diaspora_types.bank_statement"), "bank_statement"],
+                [t("citizen_portal.submission.proof.diaspora_types.rent_agreement"), "rent_agreement"],
+                [t("citizen_portal.submission.proof.diaspora_types.government_letter"), "government_letter"],
+                [t("citizen_portal.submission.proof.diaspora_types.other"), "other"]
               ],
-              prompt: "Chwazi kalite dokiman",
+              prompt: t("citizen_portal.submission.id_upload.residence_type_prompt"),
               input_html: { class: "form-select form-select-lg" },
               label_html: { class: "form-label fw-semibold" } %>
       </div>
       <div class="col-12 col-md-6">
         <%= f.input :diaspora_proof_of_address,
               as: :file,
-              label: "Telechaje prèv adrès ou",
+              label: t("citizen_portal.submission.proof.upload_proof"),
               input_html: {
                 accept: "image/*,application/pdf",
                 capture: "environment",
@@ -64,27 +63,27 @@
     slip, and remittances are often a household's only address proof. %>
 <%
   proof_options = [
-    { group: "Bòdwo / Recurring Bills (≤3 mwa)",
+    { group: t("citizen_portal.submission.proof.groups.bills"),
       icon: "ri-file-list-3-line",
       items: [
-        { value: "DINEPA Bill",   label: "DINEPA (Dlo)",        sub: "Bòdwo dlo",       icon: "ri-drop-line" },
-        { value: "EDH Bill",      label: "EDH (Elektrik)",      sub: "Bòdwo elektrik",   icon: "ri-flashlight-line" },
-        { value: "Digicel Bill",  label: "Digicel postpaid",     sub: "Fakti telefòn",    icon: "ri-smartphone-line" },
-        { value: "Natcom Bill",   label: "Natcom postpaid",      sub: "Fakti telefòn",    icon: "ri-smartphone-line" },
-        { value: "Internet Bill", label: "Fakti Entènèt",        sub: "ACN, Access, e.lt.", icon: "ri-wifi-line" }
+        { value: "DINEPA Bill",   label: t("citizen_portal.submission.proof.items.dinepa"), sub: t("citizen_portal.submission.proof.items.dinepa_sub"),       icon: "ri-drop-line" },
+        { value: "EDH Bill",      label: t("citizen_portal.submission.proof.items.edh"), sub: t("citizen_portal.submission.proof.items.edh_sub"),   icon: "ri-flashlight-line" },
+        { value: "Digicel Bill",  label: t("citizen_portal.submission.proof.items.digicel"), sub: t("citizen_portal.submission.proof.items.phone_bill_sub"),    icon: "ri-smartphone-line" },
+        { value: "Natcom Bill",   label: t("citizen_portal.submission.proof.items.natcom"), sub: t("citizen_portal.submission.proof.items.phone_bill_sub"),    icon: "ri-smartphone-line" },
+        { value: "Internet Bill", label: t("citizen_portal.submission.proof.items.internet"), sub: t("citizen_portal.submission.proof.items.internet_sub"), icon: "ri-wifi-line" }
       ] },
-    { group: "Lojman / Housing",
+    { group: t("citizen_portal.submission.proof.groups.housing"),
       icon: "ri-home-2-line",
       items: [
-        { value: "Lease Agreement",      label: "Kontra Lokasyon",       sub: "Lease / rental, notarye",      icon: "ri-home-2-line" },
-        { value: "Property Tax Receipt", label: "Resi Taks Foncye (DGI)", sub: "DGI property tax",             icon: "ri-government-line" }
+        { value: "Lease Agreement",      label: t("citizen_portal.submission.proof.items.lease"), sub: t("citizen_portal.submission.proof.items.lease_sub"),      icon: "ri-home-2-line" },
+        { value: "Property Tax Receipt", label: t("citizen_portal.submission.proof.items.property_tax"), sub: t("citizen_portal.submission.proof.items.property_tax_sub"),             icon: "ri-government-line" }
       ] },
-    { group: "Finansye / Financial",
+    { group: t("citizen_portal.submission.proof.groups.financial"),
       icon: "ri-bank-line",
       items: [
-        { value: "Bank Statement", label: "Relve Bank", sub: "Bank statement (≤3 mwa)", icon: "ri-bank-line" }
+        { value: "Bank Statement", label: t("citizen_portal.submission.proof.items.bank_statement"), sub: t("citizen_portal.submission.proof.items.bank_statement_sub"), icon: "ri-bank-line" }
       ] },
-    { group: "Transfè / Remittance Receipts (≤3 mwa)",
+    { group: t("citizen_portal.submission.proof.groups.remittance"),
       icon: "ri-exchange-funds-line",
       items: [
         { value: "Western Union", label: "Western Union",            icon: "ri-exchange-funds-line" },
@@ -93,15 +92,15 @@
         { value: "Sendwave",      label: "Sendwave",                  icon: "ri-exchange-funds-line" },
         { value: "CAM",           label: "CAM (Caribbean Air Mail)", icon: "ri-exchange-funds-line" }
       ] },
-    { group: "Gouvènman / Government",
+    { group: t("citizen_portal.submission.proof.groups.government"),
       icon: "ri-mail-send-line",
       items: [
-        { value: "Government Letter", label: "Lèt gouvènman", sub: "Voye nan adrès ou", icon: "ri-mail-send-line" }
+        { value: "Government Letter", label: t("citizen_portal.submission.proof.items.government_letter"), sub: t("citizen_portal.submission.proof.items.government_letter_sub"), icon: "ri-mail-send-line" }
       ] },
-    { group: "Lòt / Other",
+    { group: t("citizen_portal.submission.proof.groups.other"),
       icon: "ri-file-line",
       items: [
-        { value: "Other", label: "Lòt", sub: "Yon lòt dokiman ki montre adrès ou", icon: "ri-file-line" }
+        { value: "Other", label: t("citizen_portal.submission.proof.items.other"), sub: t("citizen_portal.submission.proof.items.other_sub"), icon: "ri-file-line" }
       ] }
   ]
 
@@ -112,7 +111,7 @@
 <div class="mb-3" data-controller="proof-picker">
   <label class="form-label fw-semibold mb-2"
          for="proofPickerTrigger">
-    Chwazi yon dokiman ki montre adrès ou
+    <%= t("citizen_portal.submission.proof.picker_label") %>
   </label>
 
   <%= f.hidden_field :additional_proof_type,
@@ -130,7 +129,7 @@
        data-proof-picker-target="icon"></i>
     <span class="<%= current_item ? 'text-dark fw-semibold' : 'text-muted' %>"
           data-proof-picker-target="display">
-      <%= current_item ? current_item[:label] : "Chwazi yon kalite dokiman…" %>
+      <%= current_item ? current_item[:label] : t("citizen_portal.submission.proof.picker_placeholder") %>
     </span>
     <i class="ri-arrow-down-s-line ms-auto text-muted"></i>
   </button>
@@ -138,7 +137,7 @@
   <div class="d-flex align-items-start mt-2 p-3 rounded-3"
        style="background: #FEF3C7; border: 1px solid #FBBF24; color: #92400E; font-size: 0.82rem; line-height: 1.5;">
     <i class="ri-alert-line me-2 mt-1 flex-shrink-0" style="color: #D97706; font-size: 1rem;"></i>
-    <span>Dokiman an dwe orijinal, otantik, epi montre <strong>non ou</strong> ak <strong>adrès aktyèl ou</strong>. Bòdwo ak resi transfè dwe gen mwens pase 3 mwa. Dokiman fo oswa ki chanje yo pral rejte.</span>
+    <span><%= t("citizen_portal.submission.proof.warning_html") %></span>
   </div>
 
   <%# ── Modal (lives inside the controller scope so click→pick reaches it). ── %>
@@ -147,9 +146,9 @@
       <div class="modal-content" style="border-radius: 1rem; border: 0;">
         <div class="modal-header" style="border-bottom: 1px solid #E5E7EB;">
           <h5 class="modal-title fw-bold" id="proofPickerModalLabel" style="font-size: 1rem;">
-            Chwazi yon dokiman
+            <%= t("citizen_portal.submission.proof.modal_title") %>
           </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fèmen"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= t("citizen_portal.common.close") %>"></button>
         </div>
         <div class="modal-body p-3" style="background: #F8FAFC;">
 
@@ -209,7 +208,7 @@
   <%= f.input :additional_proof,
         as: :file,
         required: true,
-        label: "Telechaje dokiman an",
+        label: t("citizen_portal.submission.id_upload.upload_document"),
         input_html: {
           accept: "image/*,application/pdf",
           capture: "environment",

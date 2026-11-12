@@ -5,21 +5,20 @@
 
     <%# Wizard-style section head: bold title + subdued desc %>
     <div class="ballot-section-head mb-4">
-      <h2 class="ballot-section-title">Review Your Profile</h2>
+      <h2 class="ballot-section-title"><%= t("citizen_portal.profile.review.title") %></h2>
       <p class="ballot-section-desc mb-0">
-        Please review all information below before saving. Use the
-        <strong>Edit</strong> buttons to make changes.
+        <%= t("citizen_portal.profile.review.desc_html") %>
       </p>
     </div>
 
     <%# ── Profile Photo ── %>
     <div class="position-relative text-center mb-2">
       <h6 class="review-section-title review-section-title-center d-inline-flex align-items-center mb-0">
-        <i class="ri-camera-line me-1"></i>Profile Photo
+        <i class="ri-camera-line me-1"></i><%= t("citizen_portal.profile.review.photo_section") %>
       </h6>
       <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn position-absolute top-0 end-0"
               data-action="click->wizard#goToStep" data-step="1">
-        <i class="ri-edit-line me-1"></i>Edit
+        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
     <div data-profile-review-target="reviewPhoto" class="mb-4 review-data text-center">
@@ -31,9 +30,9 @@
           so the citizen can re-attach if needed. %>
       <% if @citizen.photo.attached? && @citizen.photo.blob&.persisted? %>
         <%= image_tag url_for(@citizen.photo), class: "review-photo-img d-block mx-auto mb-2" %>
-        <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Photo uploaded</span>
+        <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.profile.review.photo_uploaded") %></span>
       <% else %>
-        <span class="text-danger"><i class="ri-close-circle-line me-1"></i>Not uploaded</span>
+        <span class="text-danger"><i class="ri-close-circle-line me-1"></i><%= t("citizen_portal.profile.review.not_uploaded") %></span>
       <% end %>
     </div>
 
@@ -42,19 +41,19 @@
     <%# ── Personal Information ── %>
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="review-section-title">
-        <i class="ri-user-3-line me-1"></i>Personal Information
+        <i class="ri-user-3-line me-1"></i><%= t("citizen_portal.profile.review.personal_section") %>
       </h6>
       <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn"
               data-action="click->wizard#goToStep" data-step="2">
-        <i class="ri-edit-line me-1"></i>Edit
+        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
     <div data-profile-review-target="reviewPersonal" class="row g-2 mb-4 review-data">
       <% full_name = [@citizen.prefix, @citizen.first_name, @citizen.middle_name, @citizen.last_name, @citizen.suffix].compact_blank.join(" ") %>
-      <div class="col-sm-6"><strong>Full Name:</strong> <%= full_name.presence || "—" %></div>
-      <div class="col-sm-6"><strong>Sex:</strong> <%= @citizen.sex&.titleize || "—" %></div>
-      <div class="col-sm-6"><strong>Date of Birth:</strong> <%= @citizen.dob&.strftime("%B %d, %Y") || "—" %></div>
-      <div class="col-sm-6"><strong>Nationality:</strong> <%= @citizen.nationality.presence || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.full_name") %>:</strong> <%= full_name.presence || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.sex") %>:</strong> <%= @citizen.sex.present? ? t("citizen_portal.profile.sexes.#{@citizen.sex}", default: @citizen.sex.titleize) : "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.dob") %>:</strong> <%= @citizen.dob ? l(@citizen.dob, format: :long) : "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.nationality") %>:</strong> <%= @citizen.nationality.presence || "—" %></div>
       <%
         raw_phone = @citizen.phone.to_s.gsub(/\D/, "")
         local = raw_phone.sub(/^509/, "")
@@ -66,12 +65,12 @@
                   else nil end
       %>
       <div class="col-sm-6">
-        <strong>Phone:</strong> <%= @citizen.phone.presence || "—" %>
+        <strong><%= t("citizen_portal.profile.review.phone") %>:</strong> <%= @citizen.phone.presence || "—" %>
         <% if carrier %>
           <span class="badge bg-light text-dark border ms-1"><%= carrier %></span>
         <% end %>
       </div>
-      <div class="col-sm-6"><strong>Marital Status:</strong> <%= @citizen.marital_status&.titleize || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.marital_status") %>:</strong> <%= @citizen.marital_status.present? ? t("citizen_portal.profile.marital_statuses.#{@citizen.marital_status}", default: @citizen.marital_status.titleize) : "—" %></div>
     </div>
 
     <hr class="my-3">
@@ -79,24 +78,24 @@
     <%# ── Identification ── %>
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="review-section-title">
-        <i class="ri-id-card-line me-1"></i>Identification Information
+        <i class="ri-id-card-line me-1"></i><%= t("citizen_portal.profile.review.id_section") %>
       </h6>
       <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn"
               data-action="click->wizard#goToStep" data-step="3">
-        <i class="ri-edit-line me-1"></i>Edit
+        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
     <div data-profile-review-target="reviewIdentification" class="row g-2 mb-4 review-data">
-      <div class="col-sm-6"><strong>ID Type:</strong> <%= @citizen.id_type&.titleize || "—" %></div>
-      <div class="col-sm-6"><strong>ID Number:</strong> <%= @citizen.id_number.presence || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.id_type") %>:</strong> <%= @citizen.id_type&.titleize || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.id_number") %>:</strong> <%= @citizen.id_number.presence || "—" %></div>
       <% if @citizen.ninu.present? %>
-        <div class="col-sm-6"><strong>NINU:</strong> <%= @citizen.ninu %></div>
+        <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.ninu") %>:</strong> <%= @citizen.ninu %></div>
       <% end %>
       <% birth_place = [@citizen.birth_commune&.name, @citizen.birth_department&.name].compact_blank.join(", ") %>
-      <div class="col-sm-6"><strong>Place of Birth:</strong> <%= birth_place.presence || "—" %></div>
-      <div class="col-sm-6"><strong>Issued:</strong> <%= @citizen.id_issued_on&.strftime("%B %d, %Y") || "—" %></div>
-      <div class="col-sm-6"><strong>Expires:</strong> <%= @citizen.id_expires_on&.strftime("%B %d, %Y") || "—" %></div>
-      <div class="col-sm-6"><strong>Issuer:</strong> <%= @citizen.document_issuer&.titleize || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.birth_place") %>:</strong> <%= birth_place.presence || "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.issued") %>:</strong> <%= @citizen.id_issued_on ? l(@citizen.id_issued_on, format: :long) : "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.expires") %>:</strong> <%= @citizen.id_expires_on ? l(@citizen.id_expires_on, format: :long) : "—" %></div>
+      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.issuer") %>:</strong> <%= @citizen.document_issuer&.titleize || "—" %></div>
     </div>
 
     <hr class="my-3">
@@ -104,11 +103,11 @@
     <%# ── Address ── %>
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="review-section-title">
-        <i class="ri-home-4-line me-1"></i>Address Information
+        <i class="ri-home-4-line me-1"></i><%= t("citizen_portal.profile.review.address_section") %>
       </h6>
       <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn"
               data-action="click->wizard#goToStep" data-step="4">
-        <i class="ri-edit-line me-1"></i>Edit
+        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
     <% addr = @citizen.address %>

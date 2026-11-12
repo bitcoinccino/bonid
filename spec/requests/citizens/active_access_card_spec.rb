@@ -3,7 +3,9 @@
 require "rails_helper"
 
 RSpec.describe "Aksè aktif card", type: :request do
-  let(:citizen) { create(:user, :with_address, :identity_verified) }
+  # These examples assert the English copy; the portal renders in the
+  # citizen's saved language (Kreyòl by default).
+  let(:citizen) { create(:user, :with_address, :identity_verified, preferred_locale: "en") }
   let(:partner) { create(:partner, :approved, name: "Zèllus", sector: "fintech") }
   let!(:grant) do
     ConsentGrant.create!(
@@ -36,7 +38,7 @@ RSpec.describe "Aksè aktif card", type: :request do
   it "puts Remove access at the bottom of the card with a clear confirmation, not in a menu" do
     get "/citizens/consents"
     expect(response.body).to include("Remove access")
-    expect(response.body).to include("Remove Zèllus's access?")
+    expect(CGI.unescapeHTML(response.body)).to include("Remove Zèllus's access?")
     expect(response.body).to include("delete the information they already have within 30 days")
     expect(response.body).not_to include("consent-kebab-btn")
   end

@@ -27,7 +27,8 @@ RSpec.describe "Konsantman tabs", type: :request do
 
   it "uses the right empty message on the active access page" do
     get "/citizens/consents"
-    expect(response.body).to include("No partner has access to your data")
+    # Portal renders in the citizen's saved language (Kreyòl by default).
+    expect(response.body).to include(I18n.t("transaction_consents.access_page.empty_title", locale: :ht))
     expect(response.body).not_to include("No Active Requests")
   end
 

@@ -102,13 +102,17 @@ class FamilyMember < ApplicationRecord
     [first_name, middle_name, last_name].compact_blank.join(" ")
   end
 
-  def display_relationship
+  # Relationship label in the given locale (defaults to the current one —
+  # the citizen's portal language on portal pages). Kreyòl-only copy such
+  # as the family-link email passes locale: :ht explicitly.
+  def display_relationship(locale: I18n.locale)
+    scope = "citizen_portal.modals.family"
     case relationship
-    when "mother" then "Manman"
-    when "father" then "Papa"
+    when "mother" then I18n.t("#{scope}.mother", locale: locale)
+    when "father" then I18n.t("#{scope}.father", locale: locale)
     when "guardian"
-      guardian_type.present? ? GUARDIAN_TYPE_LABELS[guardian_type] : "Gadyen"
-    when "legal_representative" then "Reprezantan Legal"
+      guardian_type.present? ? GUARDIAN_TYPE_LABELS[guardian_type] : I18n.t("#{scope}.guardian", locale: locale)
+    when "legal_representative" then I18n.t("#{scope}.legal_representative", locale: locale)
     end
   end
 

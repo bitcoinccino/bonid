@@ -10,13 +10,13 @@
               data-bs-toggle="offcanvas"
               data-bs-target="#sidebarOffcanvas"
               aria-controls="sidebarOffcanvas"
-              aria-label="Toggle sidebar">
+              aria-label="<%= t("citizen_portal.nav.toggle_sidebar") %>">
         <i class="ri-menu-line ri-xl"></i>
       </button>
 
       <% if current_citizen %>
         <span class="d-none d-md-inline" style="font-size: 0.82rem; color: rgba(255,255,255,0.7);">
-          Byenveni, <strong style="color: #fff;"><%= current_citizen.first_name || "Sitwayen" %></strong>
+          <%= t("citizen_portal.topbar.welcome") %>, <strong style="color: #fff;"><%= current_citizen.first_name || t("citizen_portal.topbar.citizen_fallback") %></strong>
         </span>
       <% end %>
     </div>
@@ -203,13 +203,13 @@
           <%= link_to citizens_services_path,
                       class: "citizen-topbar-link #{'citizen-topbar-link--active' if nav_path_active?(citizens_services_path)}" do %>
             <i class="ri-apps-2-line"></i>
-            <span>Sèvis</span>
+            <span><%= t("citizen_portal.nav.services") %></span>
           <% end %>
 
           <%= link_to citizens_service_applications_path,
                       class: "citizen-topbar-link #{'citizen-topbar-link--active' if nav_path_active?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
             <i class="ri-file-list-3-line"></i>
-            <span>Aplikasyon Mwen</span>
+            <span><%= t("citizen_portal.nav.my_applications") %></span>
             <% draft_count = current_citizen&.service_applications&.drafts&.count || 0 %>
             <% if draft_count > 0 %>
               <span class="citizen-topbar-badge"><%= draft_count %></span>
@@ -254,17 +254,17 @@
               style="border: 1px solid rgba(0,32,159,0.12); border-radius: 0.75rem;">
             <li>
               <%= link_to citizens_dashboard_path, class: "dropdown-item" do %>
-                <i class="ri-dashboard-line me-2"></i> Dashboard
+                <i class="ri-dashboard-line me-2"></i> <%= t("citizen_portal.nav.dashboard") %>
               <% end %>
             </li>
             <li>
               <%= link_to edit_citizens_profile_path, class: "dropdown-item" do %>
-                <i class="ri-user-line me-2"></i> Profile
+                <i class="ri-user-line me-2"></i> <%= t("citizen_portal.topbar.profile") %>
               <% end %>
             </li>
             <li>
               <%= link_to citizens_settings_path, class: "dropdown-item" do %>
-                <i class="ri-settings-3-line me-2"></i> Paramèt
+                <i class="ri-settings-3-line me-2"></i> <%= t("citizen_portal.topbar.settings") %>
               <% end %>
             </li>
             <li><hr class="dropdown-divider"></li>
@@ -273,7 +273,7 @@
                   method: :delete,
                   class: "dropdown-item text-danger",
                   data: { turbo: false } do %>
-                <i class="ri-logout-box-r-line me-2"></i> Log Out
+                <i class="ri-logout-box-r-line me-2"></i> <%= t("citizen_portal.nav.sign_out") %>
               <% end %>
             </li>
           </ul>

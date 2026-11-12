@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Citizens::NameChangeMailer < ApplicationMailer
-  layout "mailer_citizen"
+  layout "mailer" # shared Haitian-blue email style (layouts/mailer)
 
   def reverification_required
     @user = params[:user]

@@ -22,13 +22,16 @@ module Citizens
       fm.confirm_link!(ip: request.remote_ip)
       fm.update!(verification_status: :verified)
 
-      # Real-time update on the citizen's dashboard
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "citizen_#{fm.user_id}_family",
-        target: "family-member-#{fm.id}",
-        partial: "citizens/dashboard/family_member_item",
-        locals: { fm: fm }
-      )
+      # Real-time update on the citizen's dashboard — rendered in *their*
+      # portal language, not the confirming visitor's.
+      I18n.with_locale(fm.user.portal_locale) do
+        Turbo::StreamsChannel.broadcast_replace_to(
+          "citizen_#{fm.user_id}_family",
+          target: "family-member-#{fm.id}",
+          partial: "citizens/dashboard/family_member_item",
+          locals: { fm: fm }
+        )
+      end
 
       flash[:success] = "Mèsi! Ou konfime relasyon fanmi ak #{fm.user.first_name} #{fm.user.last_name}."
       redirect_to root_path

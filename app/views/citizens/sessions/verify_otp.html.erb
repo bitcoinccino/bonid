@@ -7,21 +7,19 @@
     <!-- INTRO -->
     <div class="text-center mb-4 mb-lg-5">
       <h2 class="display-5 fw-bold mb-3 font-heading">
-        Check your inbox
+        <%= t("citizen_portal.auth.verify.left_title") %>
       </h2>
       <p class="lead opacity-90 mx-auto max-w-text">
-        A 6-digit code was sent to
-        <strong><%= params[:email] || current_citizen&.email || "your email" %></strong>.
-        Enter it on the right to continue.
+        <%= t("citizen_portal.auth.verify.left_lead_html", email: params[:email] || current_citizen&.email || t("citizen_portal.auth.verify.your_email")) %>
       </p>
     </div>
 
     <!-- TIPS -->
     <div class="row g-4 justify-content-center mb-4 mb-lg-5">
       <% [
-        { icon: "ri-spam-2-line",   title: "Check spam",      desc: "Sometimes codes land in your junk folder." },
-        { icon: "ri-time-line",     title: "Expires in 10m",  desc: "Request a new one if it is already expired." },
-        { icon: "ri-refresh-line",  title: "Resend anytime",  desc: "Use the resend link if you don't see it." }
+        { icon: "ri-spam-2-line",   title: t("citizen_portal.auth.verify.check_spam"), desc: t("citizen_portal.auth.verify.check_spam_desc") },
+        { icon: "ri-time-line",     title: t("citizen_portal.auth.login.expires_10m"), desc: t("citizen_portal.auth.verify.expired_request_new") },
+        { icon: "ri-refresh-line",  title: t("citizen_portal.auth.verify.resend_anytime"), desc: t("citizen_portal.auth.verify.resend_anytime_desc") }
       ].each do |item| %>
         <div class="col-12 col-md-4 text-center">
           <i class="<%= item[:icon] %> ri-2x text-haitian-cyan mb-2"></i>
@@ -33,7 +31,7 @@
 
     <!-- FOOTER NOTE -->
     <p class="small opacity-75 fst-italic text-center">
-      Each code is single use and expires after 10 minutes for your security.
+      <%= t("citizen_portal.auth.verify.single_use") %>
     </p>
 
   </div>
@@ -74,7 +72,7 @@
           <%= @partner.name %>
         </div>
         <div style="font-size: 0.72rem; color: #64748b;">
-          uses BonID to verify your identity
+          <%= t("citizen_portal.auth.partner_uses_bonid") %>
         </div>
       </div>
     </div>
@@ -101,7 +99,7 @@
     <%= hidden_field_tag :email,        params[:email] %>
 
     <div class="mb-3">
-      <%= f.label :otp, "One-Time Code", class: "form-label" %>
+      <%= f.label :otp, t("citizen_portal.auth.verify.code_label"), class: "form-label" %>
       <%= f.text_field :otp,
             required: true,
             autofocus: true,
@@ -112,40 +110,39 @@
             placeholder: "• • • • • •",
             class: "form-control text-center fw-bold font-monospace",
             style: "letter-spacing: 0.5em; font-size: 1.75rem;",
-            aria: { label: "6 digit verification code" },
+            aria: { label: t("citizen_portal.auth.verify.code_aria") },
             id: "otp-input" %>
 
       <div class="d-flex justify-content-between align-items-center mt-2">
         <small class="text-muted">
-          <i class="ri-time-line me-1"></i>Expires in
+          <i class="ri-time-line me-1"></i><%= t("citizen_portal.auth.verify.expires_in") %>
           <span id="otp-timer" class="fw-semibold">10:00</span>
         </small>
         <small class="text-success d-none" id="otp-success">
-          <i class="ri-check-line me-1"></i>Looks good!
+          <i class="ri-check-line me-1"></i><%= t("citizen_portal.auth.verify.looks_good") %>
         </small>
       </div>
     </div>
 
-    <%= f.submit "Verify & Continue",
+    <%= f.submit t("citizen_portal.auth.verify.submit"),
           class: "btn btn-haitian-primary w-100 mt-2",
           id: "verify-button",
-          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Verifying…' } %>
+          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>'.html_safe + t("citizen_portal.auth.verify.verifying") } %>
 
     <div class="trust-badge">
       <i class="ri-shield-check-line"></i>
-      <span>Secure &amp; encrypted</span>
+      <span><%= t("citizen_portal.auth.secure") %></span>
     </div>
 
     <div class="auth-help-link">
-      Didn't get a code? Check your spam folder or
-      <a href="#" onclick="document.getElementById('resend-button')?.click(); return false;">resend it</a>.
+      <%= t("citizen_portal.auth.verify.no_code_html", link: content_tag(:a, t("citizen_portal.auth.verify.resend_it"), href: "#", onclick: "document.getElementById('resend-button')?.click(); return false;")) %>
     </div>
   <% end %>
 
   <%# Resend %>
   <div class="text-center mt-3 mb-2">
     <div id="resend-container">
-      <%= button_to "Resend code",
+      <%= button_to t("citizen_portal.auth.verify.resend_code"),
             citizens_resend_otp_path(
               email: params[:email],
               signup: params[:signup],
@@ -154,24 +151,23 @@
             method: :post,
             id: "resend-button",
             class: "btn btn-link fw-semibold text-primary text-decoration-none p-0 small",
-            data: { disable_with: "Sending…", turbo: false } %>
+            data: { disable_with: t("citizen_portal.auth.verify.sending"), turbo: false } %>
     </div>
     <p class="small text-muted d-none" id="resend-cooldown">
-      <i class="ri-time-line me-1"></i>Wait
-      <span id="cooldown-timer" class="fw-semibold">60</span>s before requesting a new code
+      <i class="ri-time-line me-1"></i><%= t("citizen_portal.auth.verify.wait_html", seconds: content_tag(:span, "60", id: "cooldown-timer", class: "fw-semibold")) %>
     </p>
   </div>
 
   <%# Divider %>
   <div class="login-divider my-4">
-    <span>or</span>
+    <span><%= t("citizen_portal.auth.or") %></span>
   </div>
 
   <%# Back %>
   <div>
     <%= link_to login_path(partner_slug: params[:partner_slug]),
           class: "btn btn-ghost-haitian w-100" do %>
-      <i class="ri-arrow-left-line me-2"></i><%= params[:signup] == "true" ? "Try a different email" : "Back to login" %>
+      <i class="ri-arrow-left-line me-2"></i><%= params[:signup] == "true" ? t("citizen_portal.auth.verify.different_email") : t("citizen_portal.auth.verify.back_to_login") %>
     <% end %>
   </div>
 </div>
@@ -194,15 +190,15 @@
 
       if (expirySeconds <= 0) {
         clearInterval(expiryTimer);
-        timerEl.textContent = 'Expired';
+        timerEl.textContent = '<%= j t("citizen_portal.auth.verify.expired") %>';
         timerEl.classList.replace('text-warning', 'text-danger');
         verifyBtn.disabled = true;
-        verifyBtn.textContent = 'Code Expired';
+        verifyBtn.textContent = '<%= j t("citizen_portal.auth.verify.code_expired_btn") %>';
         otpInput.disabled = true;
 
         const div = document.createElement('div');
         div.className = 'alert alert-danger mb-3';
-        div.innerHTML = '<i class="ri-error-warning-line me-2"></i><strong>Code expired.</strong> Please request a new one below.';
+        div.innerHTML = '<i class="ri-error-warning-line me-2"></i><%= j t("citizen_portal.auth.verify.code_expired_alert_html") %>';
         const flash = document.getElementById('otp-flash');
         flash.innerHTML = '';
         flash.appendChild(div);

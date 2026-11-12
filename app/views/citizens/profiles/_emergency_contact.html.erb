@@ -13,24 +13,25 @@
       <div class="col-md-6">
         <%= ec_form.input :bonid,
               input_html: {
-                placeholder: "Enter BonID to autofill",
+                placeholder: t("citizen_portal.modals.emergency.bonid_placeholder"),
                 class: "form-control rounded-3",
                 "data-emergency-contacts-target": "bonid",
                 "data-action": "blur->emergency-contacts#fetchBonid"
               },
-              label: "BonID (optional)",
+              label: t("citizen_portal.modals.emergency.bonid_optional"),
               label_html: { class: "form-label fw-semibold" } %>
         <small class="text-muted fst-italic">
-          Enter a BonID to auto-fill verified contact info.
+          <%= t("citizen_portal.modals.emergency.bonid_hint") %>
         </small>
       </div>
 
       <!-- Name -->
       <div class="col-md-6">
         <%= ec_form.input :name,
+              label: t("citizen_portal.modals.emergency.name"),
               input_html: {
                 class: "form-control rounded-3",
-                placeholder: "Full Name",
+                placeholder: t("citizen_portal.modals.emergency.full_name"),
                 "data-emergency-contacts-target": "name"
               },
               label_html: { class: "form-label fw-semibold" } %>
@@ -39,9 +40,10 @@
       <!-- Phone -->
       <div class="col-md-6">
         <%= ec_form.input :phone,
+              label: t("citizen_portal.modals.emergency.phone"),
               input_html: {
                 class: "form-control rounded-3",
-                placeholder: "Phone",
+                placeholder: t("citizen_portal.modals.emergency.phone"),
                 "data-emergency-contacts-target": "phone"
               },
               label_html: { class: "form-label fw-semibold" } %>
@@ -50,9 +52,10 @@
       <!-- Email -->
       <div class="col-md-6">
         <%= ec_form.input :email,
+              label: t("citizen_portal.modals.emergency.email"),
               input_html: {
                 class: "form-control rounded-3",
-                placeholder: "Email",
+                placeholder: t("citizen_portal.modals.emergency.email"),
                 "data-emergency-contacts-target": "email"
               },
               label_html: { class: "form-label fw-semibold" } %>
@@ -61,8 +64,9 @@
       <!-- Relation -->
       <div class="col-md-6">
         <%= ec_form.input :relation,
-              collection: EmergencyContact::RELATIONS,
-              prompt: "Select relation",
+              collection: EmergencyContact::RELATIONS.map { |rel| [t("citizen_portal.relations.#{rel.downcase}", default: rel), rel] },
+              prompt: t("citizen_portal.modals.emergency.select_relation"),
+              label: t("citizen_portal.modals.emergency.relation"),
               input_html: { class: "form-select rounded-3" },
               label_html: { class: "form-label fw-semibold" } %>
       </div>
@@ -70,9 +74,10 @@
       <!-- Address -->
       <div class="col-md-6">
         <%= ec_form.input :address,
+              label: t("citizen_portal.modals.emergency.address"),
               input_html: {
                 class: "form-control rounded-3",
-                placeholder: "Address",
+                placeholder: t("citizen_portal.modals.emergency.address"),
                 "data-emergency-contacts-target": "address"
               },
               label_html: { class: "form-label fw-semibold" } %>
@@ -86,7 +91,7 @@
         <button type="button"
                 class="btn btn-sm btn-outline-danger rounded-pill px-3"
                 data-action="click->emergency-contacts#remove">
-          <i class="ri-delete-bin-line me-1"></i> Remove
+          <i class="ri-delete-bin-line me-1"></i> <%= t("citizen_portal.modals.emergency.remove") %>
         </button>
       </div>
     </div>
@@ -109,10 +114,10 @@
         <div>
           <h6 class="mb-0 fw-bold"><%= contact.name %></h6>
           <small class="text-muted">
-            <%= contact.relation&.titleize %>
+            <%= contact.relation.present? ? t("citizen_portal.relations.#{contact.relation.downcase}", default: contact.relation.titleize) : "" %>
             <% if has_bonid %>
               <span class="badge bg-success-subtle text-success ms-2">
-                <i class="ri-verified-badge-fill me-1"></i>Verified BonID
+                <i class="ri-verified-badge-fill me-1"></i><%= t("citizen_portal.modals.emergency.verified_bonid") %>
               </span>
             <% end %>
           </small>
@@ -145,7 +150,7 @@
         <button type="button"
                 class="btn btn-sm btn-outline-danger rounded-pill px-3"
                 data-action="click->emergency-contacts#remove">
-          <i class="ri-delete-bin-line me-1"></i> Remove
+          <i class="ri-delete-bin-line me-1"></i> <%= t("citizen_portal.modals.emergency.remove") %>
         </button>
       </div>
     </div>

@@ -100,7 +100,7 @@ RSpec.describe "Citizen device alerts & session revocation", type: :request do
       flagged = citizen.known_devices.order(:created_at).last
 
       post citizens_session_revocation_path, params: { token: token }
-      expect(response.body).to include("You're signed out everywhere")
+      expect(CGI.unescapeHTML(response.body)).to include("You're signed out everywhere")
 
       expect(signed_in?(laptop)).to be(false)
       expect(signed_in?(phone)).to be(false)

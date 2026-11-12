@@ -3,99 +3,98 @@
 <div class="alert alert-info alert-dismissible d-flex align-items-start mb-4 rounded-3 compact-info-banner" role="alert">
   <i class="ri-shield-check-line me-2 mt-1"></i>
   <span>
-    <strong>Your physical information is encrypted and secure.</strong>
-    This data is used only for <strong>biometric and visual identity validation</strong>.
+    <%= t("citizen_portal.profile.physical.banner_html") %>
   </span>
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<%= t("citizen_portal.common.close") %>"></button>
 </div>
 
 <%# Physical Attributes %>
 <div class="row g-4">
   <%# Height %>
   <div class="col-md-6">
-    <%= f.label :height_cm, "Height (cm)", class: "form-label" %>
+    <%= f.label :height_cm, t("citizen_portal.profile.physical.height_cm"), class: "form-label" %>
     <%= f.number_field :height_cm,
           class: "form-control",
-          placeholder: "e.g. 175" %>
-    <small class="text-muted">Enter your height in centimeters (cm).</small>
+          placeholder: t("citizen_portal.profile.physical.height_placeholder") %>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.height_hint") %></small>
   </div>
 
   <%# Weight %>
   <div class="col-md-6">
-    <%= f.label :weight_kg, "Weight (kg)", class: "form-label" %>
+    <%= f.label :weight_kg, t("citizen_portal.profile.physical.weight_kg"), class: "form-label" %>
     <%= f.number_field :weight_kg,
           class: "form-control",
-          placeholder: "e.g. 70" %>
-    <small class="text-muted">Enter your current weight in kilograms (kg).</small>
+          placeholder: t("citizen_portal.profile.physical.weight_placeholder") %>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.weight_hint") %></small>
   </div>
 
   <%# Eye Color %>
   <div class="col-md-6">
-    <%= f.label :eye_color, "Eye Color", class: "form-label" %>
+    <%= f.label :eye_color, t("citizen_portal.profile.physical.eye_color"), class: "form-label" %>
     <%= f.select :eye_color,
-          PhysicalProfile.eye_colors.keys.map { |c| [c.titleize, c] },
-          { include_blank: "Select eye color" },
+          PhysicalProfile.eye_colors.keys.map { |opt| [t("citizen_portal.profile.physical.options.eye_color.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_eye_color") },
           class: "form-select" %>
-    <small class="text-muted">Select your natural eye color.</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.eye_color_hint") %></small>
   </div>
 
   <%# Hair Color %>
   <div class="col-md-6">
-    <%= f.label :hair_color, "Hair Color", class: "form-label" %>
+    <%= f.label :hair_color, t("citizen_portal.profile.physical.hair_color"), class: "form-label" %>
     <%= f.select :hair_color,
-          PhysicalProfile.hair_colors.keys.map { |c| [c.titleize, c] },
-          { include_blank: "Select hair color" },
+          PhysicalProfile.hair_colors.keys.map { |opt| [t("citizen_portal.profile.physical.options.hair_color.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_hair_color") },
           class: "form-select" %>
-    <small class="text-muted">Select your current hair color.</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.hair_color_hint") %></small>
   </div>
 
   <%# Race %>
   <div class="col-md-6">
-    <%= f.label :race, "Race", class: "form-label" %>
+    <%= f.label :race, t("citizen_portal.profile.physical.race"), class: "form-label" %>
     <%= f.select :race,
-          PhysicalProfile.races.keys.map { |r| [r.titleize, r] },
-          { include_blank: "Select race" },
+          PhysicalProfile.races.keys.map { |opt| [t("citizen_portal.profile.physical.options.race.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_race") },
           class: "form-select" %>
-    <small class="text-muted">Choose the race or ethnicity that best describes you.</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.race_hint") %></small>
   </div>
 
   <%# Body Type %>
   <div class="col-md-6">
-    <%= f.label :body_type, "Body Type", class: "form-label" %>
+    <%= f.label :body_type, t("citizen_portal.profile.physical.body_type"), class: "form-label" %>
     <%= f.select :body_type,
-          PhysicalProfile.body_types.keys.map { |b| [b.titleize, b] },
-          { include_blank: "Select body type" },
+          PhysicalProfile.body_types.keys.map { |opt| [t("citizen_portal.profile.physical.options.body_type.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_body_type") },
           class: "form-select" %>
-    <small class="text-muted">Choose the body type that best matches your build.</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.body_type_hint") %></small>
   </div>
 
   <%# Skin Tone %>
   <div class="col-md-6">
-    <%= f.label :skin_tone, "Skin Tone", class: "form-label" %>
+    <%= f.label :skin_tone, t("citizen_portal.profile.physical.skin_tone"), class: "form-label" %>
     <%= f.select :skin_tone,
-          PhysicalProfile.skin_tones.keys.map { |s| [s.titleize, s] },
-          { include_blank: "Select skin tone" },
+          PhysicalProfile.skin_tones.keys.map { |opt| [t("citizen_portal.profile.physical.options.skin_tone.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_skin_tone") },
           class: "form-select" %>
-    <small class="text-muted">Select your natural skin tone.</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.skin_tone_hint") %></small>
   </div>
 
   <%# Facial Hair %>
   <div class="col-md-6">
-    <%= f.label :facial_hair, "Facial Hair", class: "form-label" %>
+    <%= f.label :facial_hair, t("citizen_portal.profile.physical.facial_hair"), class: "form-label" %>
     <%= f.select :facial_hair,
-          PhysicalProfile.facial_hairs.keys.map { |f| [f.titleize, f] },
-          { include_blank: "Select facial hair" },
+          PhysicalProfile.facial_hairs.keys.map { |opt| [t("citizen_portal.profile.physical.options.facial_hair.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_facial_hair") },
           class: "form-select" %>
-    <small class="text-muted">Select the facial hair style you currently have (if any).</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.facial_hair_hint") %></small>
   </div>
 
   <%# Handedness %>
   <div class="col-md-6">
-    <%= f.label :handedness, "Handedness", class: "form-label" %>
+    <%= f.label :handedness, t("citizen_portal.profile.physical.handedness"), class: "form-label" %>
     <%= f.select :handedness,
-          PhysicalProfile.handednesses.keys.map { |h| [h.titleize, h] },
-          { include_blank: "Select handedness" },
+          PhysicalProfile.handednesses.keys.map { |opt| [t("citizen_portal.profile.physical.options.handedness.#{opt}", default: opt.titleize), opt] },
+          { include_blank: t("citizen_portal.profile.physical.select_handedness") },
           class: "form-select" %>
-    <small class="text-muted">Indicate whether you're left-handed, right-handed, or ambidextrous.</small>
+    <small class="text-muted"><%= t("citizen_portal.profile.physical.handedness_hint") %></small>
   </div>
 </div>

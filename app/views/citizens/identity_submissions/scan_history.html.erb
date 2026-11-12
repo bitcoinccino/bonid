@@ -3,10 +3,10 @@
   <%# ── Page Header (wizard style — matches Anrejistre / Kalandriye / Aktivite) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-shield-keyhole-line me-2"></i>Security & Scan History
+      <i class="ri-shield-keyhole-line me-2"></i><%= t("citizen_portal.submission.scan_history.title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
-      Monitor every time your digital identity is accessed or verified.
+      <%= t("citizen_portal.submission.scan_history.subtitle") %>
     </p>
   </div>
 
@@ -29,7 +29,7 @@
           </div>
           <div class="scan-history-card-header-right">
             <span class="scan-history-card-header-count"><%= logs.count %></span>
-            <span class="scan-history-card-header-label">scans</span>
+            <span class="scan-history-card-header-label"><%= t("citizen_portal.submission.scan_history.scans") %></span>
           </div>
         </div>
 
@@ -54,21 +54,21 @@
               </div>
               <div class="scan-log-body">
                 <div class="scan-log-title">
-                  <%= scan.organization.presence || "Verification Point" %>
+                  <%= scan.organization.presence || t("citizen_portal.submission.scan_history.verification_point") %>
                   <% if index.zero? %>
-                    <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.55rem; vertical-align: middle;">NEW</span>
+                    <span class="badge bg-primary rounded-pill ms-1" style="font-size: 0.55rem; vertical-align: middle;"><%= t("citizen_portal.submission.scan_history.new") %></span>
                   <% end %>
                 </div>
                 <div class="scan-log-meta">
                   <% if location.present? %>
                     <i class="ri-map-pin-2-line me-1"></i><%= location %>
                   <% end %>
-                  <span class="badge bg-<%= source_color %> rounded-pill ms-1" style="font-size: 0.58rem; font-weight: 600;"><%= scan.source&.humanize || "Scan" %></span>
+                  <span class="badge bg-<%= source_color %> rounded-pill ms-1" style="font-size: 0.58rem; font-weight: 600;"><%= scan.source.present? ? t("citizen_portal.submission.scan_history.sources.#{scan.source}", default: scan.source.humanize) : t("citizen_portal.submission.scan_history.scan") %></span>
                 </div>
               </div>
               <div class="scan-log-time">
-                <div class="scan-log-time-hour"><%= scan.scanned_at.strftime("%I:%M %p") %></div>
-                <div class="scan-log-time-date"><%= scan.scanned_at.strftime("%b %d, %Y") %></div>
+                <div class="scan-log-time-hour"><%= l(scan.scanned_at, format: "%H:%M") %></div>
+                <div class="scan-log-time-date"><%= l(scan.scanned_at.to_date, format: :long) %></div>
               </div>
             </li>
           <% end %>
@@ -80,8 +80,8 @@
     <div class="scan-history-card">
       <div class="scan-empty">
         <i class="ri-radar-line scan-empty-icon"></i>
-        <h5 class="fw-bold">No activity detected</h5>
-        <p class="text-muted mb-0" style="font-size: 0.82rem;">Your BonID activity will appear here in real-time.</p>
+        <h5 class="fw-bold"><%= t("citizen_portal.submission.scan_history.empty_title") %></h5>
+        <p class="text-muted mb-0" style="font-size: 0.82rem;"><%= t("citizen_portal.submission.scan_history.empty_body") %></p>
       </div>
     </div>
   <% end %>

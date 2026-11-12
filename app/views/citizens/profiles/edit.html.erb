@@ -12,10 +12,17 @@
         field needs to change as they work through the wizard. %>
     <%= render "citizens/dashboard/legacy_cin_alert" %>
 
+  <%# Labels the review step's JS uses when it redraws the summary — must
+      match the server-rendered labels in _review_section. %>
+  <% review_labels = %w[full_name sex dob nationality phone marital_status id_type id_number ninu
+                        birth_place issued expires issuer photo_preview new_photo photo_uploaded date_format]
+                       .index_with { |k| t("citizen_portal.profile.review.#{k}") } %>
   <%= simple_form_for @citizen, as: :user,
         url: citizens_profile_path, method: :patch,
         html: { class: "profile-form", data: {
           turbo: false,
+          profile_review_labels_value: review_labels.to_json,
+          profile_review_months_value: I18n.t("date.month_names").map(&:to_s).to_json,
           controller: "wizard profile-review wizard-persistence",
           wizard_current_step_value: "1",
           wizard_persistence_key_value: "profile-edit",
@@ -26,11 +33,11 @@
     <div class="mb-4">
       <div class="d-flex justify-content-between align-items-center mb-2" style="max-width: 600px; margin: 0 auto;">
         <% profile_steps = [
-          { icon: "ri-camera-line", label: "Photo" },
-          { icon: "ri-user-3-line", label: "Personnel" },
-          { icon: "ri-id-card-line", label: "Identité" },
-          { icon: "ri-home-4-line", label: "Adresse" },
-          { icon: "ri-checkbox-circle-line", label: "Révision" }
+          { icon: "ri-camera-line", label: t("citizen_portal.profile.steps.photo") },
+          { icon: "ri-user-3-line", label: t("citizen_portal.profile.steps.personal") },
+          { icon: "ri-id-card-line", label: t("citizen_portal.profile.steps.identity") },
+          { icon: "ri-home-4-line", label: t("citizen_portal.profile.steps.address") },
+          { icon: "ri-checkbox-circle-line", label: t("citizen_portal.profile.steps.review") }
         ] %>
         <% profile_steps.each_with_index do |step, i| %>
           <div data-wizard-target="stepIndicator" class="text-center" style="flex: 1;">
@@ -58,10 +65,10 @@
           the citizen moves past the first wizard panel. %>
       <div class="ballot-head text-center">
         <h1 class="ballot-title">
-          <i class="ri-user-settings-line me-2"></i>Get Verified
+          <i class="ri-user-settings-line me-2"></i><%= t("citizen_portal.profile.title") %>
         </h1>
         <p class="ballot-subtitle mb-0">
-          Complete the sections below to create your official BonID profile.
+          <%= t("citizen_portal.profile.subtitle") %>
         </p>
       </div>
 
@@ -70,7 +77,7 @@
         <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                 style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
-          Continue <i class="ri-arrow-right-line ms-1"></i>
+          <%= t("citizen_portal.profile.continue") %> <i class="ri-arrow-right-line ms-1"></i>
         </button>
       </div>
     </div>
@@ -81,12 +88,12 @@
       <div class="d-flex justify-content-between">
         <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
                 data-action="click->wizard#previous">
-          <i class="ri-arrow-left-line me-1"></i> Back
+          <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
         </button>
         <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                 style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
-          Continue <i class="ri-arrow-right-line ms-1"></i>
+          <%= t("citizen_portal.profile.continue") %> <i class="ri-arrow-right-line ms-1"></i>
         </button>
       </div>
     </div>
@@ -97,12 +104,12 @@
       <div class="d-flex justify-content-between">
         <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
                 data-action="click->wizard#previous">
-          <i class="ri-arrow-left-line me-1"></i> Back
+          <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
         </button>
         <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                 style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
-          Continue <i class="ri-arrow-right-line ms-1"></i>
+          <%= t("citizen_portal.profile.continue") %> <i class="ri-arrow-right-line ms-1"></i>
         </button>
       </div>
     </div>
@@ -113,12 +120,12 @@
       <div class="d-flex justify-content-between">
         <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
                 data-action="click->wizard#previous">
-          <i class="ri-arrow-left-line me-1"></i> Back
+          <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
         </button>
         <button type="button" class="btn btn-primary fw-semibold px-4 py-2"
                 style="font-size: 0.85rem;"
                 data-action="click->wizard#next">
-          Review <i class="ri-arrow-right-line ms-1"></i>
+          <%= t("citizen_portal.profile.review") %> <i class="ri-arrow-right-line ms-1"></i>
         </button>
       </div>
     </div>
@@ -129,19 +136,19 @@
       <div class="d-flex justify-content-between align-items-center">
         <button type="button" class="btn btn-outline-secondary fw-semibold px-4 py-2" style="font-size: 0.85rem;"
                 data-action="click->wizard#previous">
-          <i class="ri-arrow-left-line me-1"></i> Back
+          <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.profile.back") %>
         </button>
-        <%= f.submit "Save & Continue",
+        <%= f.submit t("citizen_portal.profile.save_continue"),
             class: "btn btn-primary fw-semibold py-2 px-4",
             style: "font-size: 0.85rem;",
-            data: { disable_with: "Saving..." } %>
+            data: { disable_with: t("citizen_portal.profile.saving") } %>
       </div>
     </div>
 
   <% end %>
 
   <div class="mt-4 text-center small text-muted">
-    <i class="ri-lock-2-fill text-success me-2"></i>Encrypted • Haiti Government Compliant
+    <i class="ri-lock-2-fill text-success me-2"></i><%= t("citizen_portal.profile.encrypted_footer") %>
   </div>
   </div>
 </div>

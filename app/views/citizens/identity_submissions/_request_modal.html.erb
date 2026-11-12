@@ -7,9 +7,9 @@
         <!-- Header -->
         <div class="modal-header header-bg text-white py-2 px-3">
           <h5 class="modal-title fw-bold mb-0 fs-6 d-flex align-items-center gap-2">
-            <i class="ri-refresh-line"></i> Request New BonID
+            <i class="ri-refresh-line"></i> <%= t("citizen_portal.submission.request.title") %>
           </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="<%= t("citizen_portal.common.close") %>"></button>
         </div>
 
         <!-- Body -->
@@ -18,7 +18,7 @@
           <!-- Info Alert -->
           <div class="alert alert-info rounded-3 mb-3 small animate__animated animate__fadeIn">
             <i class="ri-information-line me-2"></i>
-            Select a reason for requesting a new BonID. Your existing BonID will be revoked once the new one is approved.
+            <%= t("citizen_portal.submission.request.intro") %>
           </div>
 
           <!-- Form -->
@@ -28,12 +28,12 @@
                         html: { class: "needs-validation", novalidate: true } do |f| %>
 
             <div class="mb-2">
-              <%= f.label :reason, "Reason for Request", class: "form-label fw-semibold small" %>
+              <%= f.label :reason, t("citizen_portal.submission.request.reason"), class: "form-label fw-semibold small" %>
               <%= f.select :reason, [
-                    ["Name change", "name_change"],
-                    ["BonID expired", "expired"]
+                    [t("citizen_portal.submission.request.reasons.name_change"), "name_change"],
+                    [t("citizen_portal.submission.request.reasons.expired"), "expired"]
                   ],
-                  { prompt: "Select a reason" },
+                  { prompt: t("citizen_portal.submission.request.select_reason") },
                   class: "form-select rounded-3",
                   required: true,
                   id: "bonid_request_reason" %>
@@ -41,9 +41,9 @@
 
             <!-- Buttons -->
             <div class="d-flex gap-2 mt-3">
-              <%= f.submit "Submit Request", class: "btn btn-primary w-100 fw-semibold pulse-glow" %>
+              <%= f.submit t("citizen_portal.submission.request.submit"), class: "btn btn-primary w-100 fw-semibold pulse-glow" %>
               <button type="button" class="btn btn-outline-secondary w-100 fw-semibold" data-bs-dismiss="modal">
-                Cancel
+                <%= t("citizen_portal.common.cancel") %>
               </button>
             </div>
 
@@ -52,12 +52,11 @@
           <!-- Warnings (toggle based on selected reason) -->
           <div class="alert alert-warning small mt-3 rounded-3" id="modal-warning-expired">
             <i class="ri-time-line me-2"></i>
-            Your current BonID will be revoked and a new one issued with a fresh expiry date.
+            <%= t("citizen_portal.submission.request.warning_expired") %>
           </div>
           <div class="alert alert-info small mt-3 rounded-3 d-none" id="modal-warning-name-change">
             <i class="ri-user-line me-2"></i>
-            <strong>Name change:</strong> You will need to re-submit your updated ID documents.
-            Your current BonID will be revoked once your new submission is approved.
+            <%= t("citizen_portal.submission.request.warning_name_change_html") %>
           </div>
 
           <script>

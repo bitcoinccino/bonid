@@ -6,19 +6,19 @@
     <!-- INTRO -->
     <div class="text-center mb-4 mb-lg-5">
       <h2 class="display-5 fw-bold mb-3 font-heading">
-        One-Time Login
+        <%= t("citizen_portal.auth.login.left_title") %>
       </h2>
       <p class="lead opacity-90 mx-auto max-w-text">
-        No password needed. We'll send a secure 6 digit code straight to your inbox.
+        <%= t("citizen_portal.auth.login.left_lead") %>
       </p>
     </div>
 
     <!-- BENEFITS -->
     <div class="row g-4 justify-content-center mb-4 mb-lg-5">
       <% [
-        { icon: "ri-lock-unlock-line",  title: "No password",    desc: "Log in without ever typing a password." },
-        { icon: "ri-time-line",         title: "Expires in 10m", desc: "Each code is single use and time limited." },
-        { icon: "ri-mail-check-line",   title: "Sent to you",    desc: "Code arrives in your inbox within seconds." }
+        { icon: "ri-lock-unlock-line",  title: t("citizen_portal.auth.login.no_password"),    desc: t("citizen_portal.auth.login.no_password_desc") },
+        { icon: "ri-time-line",         title: t("citizen_portal.auth.login.expires_10m"), desc: t("citizen_portal.auth.login.expires_10m_desc") },
+        { icon: "ri-mail-check-line",   title: t("citizen_portal.auth.login.sent_to_you"),    desc: t("citizen_portal.auth.login.sent_to_you_desc") }
       ].each do |item| %>
         <div class="col-12 col-md-4 text-center">
           <i class="<%= item[:icon] %> ri-2x text-haitian-cyan mb-2"></i>
@@ -30,7 +30,7 @@
 
     <!-- FOOTER NOTE -->
     <p class="small opacity-75 fst-italic text-center">
-      BonID is a private digital identity service, not a government ID.
+      <%= t("citizen_portal.auth.login.not_gov_id") %>
     </p>
 
   </div>
@@ -71,17 +71,18 @@
           <%= @partner.name %>
         </div>
         <div style="font-size: 0.72rem; color: #64748b;">
-          uses BonID to verify your identity
+          <%= t("citizen_portal.auth.partner_uses_bonid") %>
         </div>
       </div>
     </div>
   <% end %>
 
-  <%# Icon badge %>
-  <div class="text-center mb-4">
-    <div class="auth-icon-badge">
-      <i class="ri-mail-send-line"></i>
+  <%# Brand header %>
+  <div class="auth-brand text-center mb-4">
+    <div class="auth-icon-badge mb-3" aria-hidden="true">
+      <i class="ri-fingerprint-line"></i>
     </div>
+    <h1 class="auth-brand-title"><%= t("citizen_portal.auth.login.title") %></h1>
   </div>
 
   <%# Flash rendered by citizen_auth layout %>
@@ -102,40 +103,40 @@
             autofocus: true,
             required: true,
             autocomplete: "email",
-            placeholder: "Enter your email",
+            placeholder: t("citizen_portal.auth.login.email_placeholder"),
             class: "form-control" %>
-      <%= f.label :email, "Email Address" %>
+      <%= f.label :email, t("citizen_portal.auth.login.email_label") %>
     </div>
 
-    <%= f.submit "Send One-Time Code",
+    <%= f.submit t("citizen_portal.auth.login.send_code"),
           class: "btn btn-haitian-primary w-100 mt-2",
           id: "send-code-button",
-          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Sending…' } %>
+          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>'.html_safe + t("citizen_portal.auth.login.sending_html") } %>
 
     <div class="trust-badge">
       <i class="ri-shield-check-line"></i>
-      <span>Secure &amp; encrypted</span>
+      <span><%= t("citizen_portal.auth.secure") %></span>
     </div>
 
     <div class="auth-privacy-note">
-      <i class="ri-lock-line"></i>We'll never share your email with third parties.
+      <i class="ri-lock-line"></i><%= t("citizen_portal.auth.login.never_share") %>
     </div>
   <% end %>
 
   <%# Divider %>
   <div class="login-divider my-4">
-    <span>or</span>
+    <span><%= t("citizen_portal.auth.or") %></span>
   </div>
 
   <%# Create account %>
   <div class="mb-3">
     <%= link_to signup_path(from_partner: params[:from_partner] || params[:partner_slug]),
           class: "btn btn-ghost-haitian w-100" do %>
-      <i class="ri-user-add-line me-2"></i>Create a BonID account
+      <i class="ri-user-add-line me-2"></i><%= t("citizen_portal.auth.login.create_account") %>
     <% end %>
   </div>
 
   <div class="auth-help-link">
-    <a href="mailto:support@bonid.ht">Need help?</a>
+    <a href="mailto:support@bonid.ht"><%= t("citizen_portal.auth.need_help") %></a>
   </div>
 </div>

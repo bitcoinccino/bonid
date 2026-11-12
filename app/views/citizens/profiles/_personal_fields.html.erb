@@ -6,11 +6,9 @@
 
     <%# Wizard-style section head: bold title + subdued desc %>
     <div class="ballot-section-head mb-4">
-      <h2 class="ballot-section-title">Personal Information</h2>
+      <h2 class="ballot-section-title"><%= t("citizen_portal.profile.personal.title") %></h2>
       <p class="ballot-section-desc mb-0">
-        All personal data is <strong>encrypted at rest and in transit</strong>.
-        Only approved Haitian institutions can verify you. They never see your
-        full file without consent.
+        <%= t("citizen_portal.profile.personal.desc_html") %>
       </p>
     </div>
 
@@ -18,8 +16,8 @@
       <div class="alert alert-warning d-flex align-items-center small mb-4 rounded-3">
         <i class="ri-lock-line me-2"></i>
         <span>
-          Your name, sex, date of birth, and nationality are locked because your identity has been verified.
-          <%= link_to "Request a name change", new_citizens_name_change_request_path, class: "citizen-link-alert ms-1" %>
+          <%= t("citizen_portal.profile.personal.locked_notice") %>
+          <%= link_to t("citizen_portal.profile.personal.request_name_change"), new_citizens_name_change_request_path, class: "citizen-link-alert ms-1" %>
         </span>
       </div>
     <% end %>
@@ -29,66 +27,72 @@
       <div class="col-6 col-md-6">
         <%= f.input :prefix,
           collection: User::PREFIXES,
-          include_blank: "Prefix",
+          include_blank: t("citizen_portal.profile.personal.prefix"),
+          label: t("citizen_portal.profile.personal.prefix"),
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
-        <small class="text-muted">Optional. e.g., Mr, Ms, Dr, Me</small>
+        <small class="text-muted"><%= t("citizen_portal.profile.personal.prefix_hint") %></small>
       </div>
 
       <%# Suffix — always editable (honorific, not on gov ID) %>
       <div class="col-6 col-md-6">
         <%= f.input :suffix,
           collection: User::SUFFIXES,
-          include_blank: "Suffix",
+          include_blank: t("citizen_portal.profile.personal.suffix"),
+          label: t("citizen_portal.profile.personal.suffix"),
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
-        <small class="text-muted">e.g., Jr, Sr, II</small>
+        <small class="text-muted"><%= t("citizen_portal.profile.personal.suffix_hint") %></small>
       </div>
 
       <%# First Name (Required) — LOCKED when verified %>
       <div class="col-12 col-md-4">
         <%= f.input :first_name, required: true,
           disabled: locked,
+          label: t("citizen_portal.profile.personal.first_name"),
           input_html: {
-            placeholder: "e.g. Marie",
+            placeholder: t("citizen_portal.profile.personal.first_name_placeholder"),
             class: "form-control #{'bg-light' if locked}",
             autocomplete: "given-name"
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "As it appears on your national ID card (CIN/NIF)" %></small>
+        <small class="text-muted"><%= locked ? t("citizen_portal.profile.locked_hint") : t("citizen_portal.profile.personal.first_name_hint") %></small>
       </div>
 
       <%# Middle Name (Optional) — LOCKED when verified %>
       <div class="col-12 col-md-4">
         <%= f.input :middle_name,
           disabled: locked,
+          label: t("citizen_portal.profile.personal.middle_name"),
           input_html: {
-            placeholder: "e.g. Claudette (optional)",
+            placeholder: t("citizen_portal.profile.personal.middle_name_placeholder"),
             class: "form-control #{'bg-light' if locked}",
             autocomplete: "additional-name"
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "Leave blank if you have none" %></small>
+        <small class="text-muted"><%= locked ? t("citizen_portal.profile.locked_hint") : t("citizen_portal.profile.personal.middle_name_hint") %></small>
       </div>
 
       <%# Last Name (Required) — LOCKED when verified %>
       <div class="col-12 col-md-4">
         <%= f.input :last_name, required: true,
           disabled: locked,
+          label: t("citizen_portal.profile.personal.last_name"),
           input_html: {
-            placeholder: "e.g. Pierre",
+            placeholder: t("citizen_portal.profile.personal.last_name_placeholder"),
             class: "form-control #{'bg-light' if locked}",
             autocomplete: "family-name"
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "Your family name / surname" %></small>
+        <small class="text-muted"><%= locked ? t("citizen_portal.profile.locked_hint") : t("citizen_portal.profile.personal.last_name_hint") %></small>
       </div>
 
       <%# Sex — LOCKED when verified %>
       <div class="col-6 col-md-4">
         <%= f.input :sex,
-          collection: User.sexes.keys.map { |k| [k.titleize, k] },
-          include_blank: "Select Sex",
+          collection: User.sexes.keys.map { |k| [t("citizen_portal.profile.sexes.#{k}", default: k.titleize), k] },
+          include_blank: t("citizen_portal.profile.personal.select_sex"),
+          label: t("citizen_portal.profile.personal.sex"),
           disabled: locked,
           input_html: {
             class: "form-select #{'bg-light' if locked}",
@@ -104,23 +108,24 @@
       <div class="col-6 col-md-4">
         <%= f.input :nationality,
           disabled: locked,
+          label: t("citizen_portal.profile.personal.nationality"),
           input_html: {
             class: "form-control bg-light",
             readonly: true,
             data: locked ? {} : { id_switcher_target: "nationality" }
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= locked ? "Locked. Verified identity" : "Auto-filled from Sex selection" %></small>
+        <small class="text-muted"><%= locked ? t("citizen_portal.profile.locked_hint") : t("citizen_portal.profile.personal.nationality_hint") %></small>
       </div>
 
       <%# Date of Birth — LOCKED when verified %>
       <div class="col-12 col-md-4">
-        <label class="form-label">Date of birth</label>
+        <label class="form-label"><%= t("citizen_portal.profile.personal.dob") %></label>
         <% if locked %>
           <input type="text" class="form-control bg-light"
                  value="<%= @citizen.dob&.strftime('%d / %m / %Y') %>"
                  disabled readonly />
-          <small class="text-muted">Locked. Verified identity</small>
+          <small class="text-muted"><%= t("citizen_portal.profile.locked_hint") %></small>
         <% else %>
           <input type="date"
                  name="user[dob]"
@@ -129,13 +134,13 @@
                  value="<%= @citizen.dob&.strftime('%Y-%m-%d') %>"
                  min="1920-01-01"
                  max="<%= (Date.today - 18.years).strftime('%Y-%m-%d') %>" />
-          <small class="text-muted">You must be 18+ to register</small>
+          <small class="text-muted"><%= t("citizen_portal.profile.personal.dob_hint") %></small>
         <% end %>
       </div>
 
       <%# Phone Number — always editable, Haiti +509 locked %>
       <div class="col-12 col-md-6">
-        <label class="form-label">Phone</label>
+        <label class="form-label"><%= t("citizen_portal.profile.personal.phone") %></label>
         <%
           raw_phone = @citizen.phone.to_s
           local_phone = raw_phone.sub(/^\+?509\s*/, '')
@@ -155,14 +160,15 @@
                  value="<%= local_phone %>"
                  data-country-code="+509" />
         </div>
-        <small class="text-muted">Used for 2FA and verification alerts</small>
+        <small class="text-muted"><%= t("citizen_portal.profile.personal.phone_hint") %></small>
       </div>
 
       <%# Marital Status — always editable %>
       <div class="col-12 col-md-6">
         <%= f.input :marital_status,
-          collection: User.marital_statuses.keys.map { |k| [k.titleize, k] },
-          include_blank: "Select Status",
+          collection: User.marital_statuses.keys.map { |k| [t("citizen_portal.profile.marital_statuses.#{k}", default: k.titleize), k] },
+          include_blank: t("citizen_portal.profile.personal.select_status"),
+          label: t("citizen_portal.profile.personal.marital_status"),
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
       </div>
@@ -172,8 +178,7 @@
     <div class="enroll-helpful-tip mt-4">
       <i class="ri-lock-2-fill"></i>
       <div>
-        <strong>Encrypted • Audited • Haiti Government Compliant.</strong>
-        Your data is never sold. Only verified institutions can confirm your identity.
+        <%= t("citizen_portal.profile.personal.privacy_html") %>
       </div>
     </div>
   </div>

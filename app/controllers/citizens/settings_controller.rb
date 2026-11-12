@@ -2,17 +2,17 @@
 
 # Citizens::SettingsController
 # ============================
-# Three-section settings page reachable from the topbar profile dropdown:
-#   * Security        — change email; 2FA is a "coming soon" disabled card
-#   * Language        — preferred_locale in %w[ht fr]
-#   * Notifications   — notification_channel in %w[email phone]
+# Settings page reachable from the topbar profile dropdown, laid out as
+# two groups of rows:
+#   * Sekirite   — change email, 2FA ("coming soon", inert), known devices
+#   * Preferans  — notification_channel in %w[email phone], preferred_locale
+#                  in User::CITIZEN_LOCALES (the whole portal renders in it)
 #
-# All updates flow through a single PATCH so the form can submit any
-# combination of changes in one round-trip. 2FA is intentionally inert at
-# this stage — the markup advertises the capability without backing it.
+# Each row's control submits its own PATCH to #update (auto-submit), which
+# accepts any combination of fields.
 module Citizens
   class SettingsController < BaseController
-    SUPPORTED_LOCALES = %w[ht fr].freeze
+    SUPPORTED_LOCALES = User::CITIZEN_LOCALES
     # SMS is shelved until the SMS gateway lands — view disables it with a
     # K AP VINI badge, controller refuses it server-side as belt-and-braces.
     NOTIFICATION_CHANNELS = %w[email].freeze
@@ -42,7 +42,7 @@ module Citizens
     def sign_out_other_devices
       version = current_citizen.revoke_all_citizen_sessions!
       warden.session(:citizen)["session_version"] = version
-      redirect_to citizens_settings_path, notice: "Tout lòt aparèy yo dekonekte."
+      redirect_to citizens_settings_path, notice: t("citizen_portal.settings.flash.devices_signed_out")
     end
 
     def update
@@ -52,6 +52,14 @@ module Citizens
       # don't get blocked behind an unverified email change.
       simple_attrs = collect_simple_attrs
       apply_simple_attrs!(simple_attrs)
+
+      # A language change takes effect on this response already, so the
+      # confirmation flash reads in the language the citizen just picked.
+      if simple_attrs[:preferred_locale]
+        I18n.locale    = @citizen.portal_locale
+        session[:lang] = I18n.locale.to_s
+        @_url_options  = nil # rebuild memoized url_options so redirects carry the new lang=
+      end
 
       # Email change goes through a 6-digit code sent to the NEW address.
       requested_email = params.dig(:user, :email).to_s.strip.downcase
@@ -63,9 +71,9 @@ module Citizens
 
       # No email change in flight — honor the simple-attrs result.
       if simple_attrs.any?
-        redirect_to citizens_settings_path, notice: "Paramèt yo sove."
+        redirect_to citizens_settings_path, notice: t("citizen_portal.settings.flash.saved")
       else
-        redirect_to citizens_settings_path, notice: "Pa gen chanjman."
+        redirect_to citizens_settings_path, notice: t("citizen_portal.settings.flash.no_changes")
       end
     end
 
@@ -103,7 +111,7 @@ module Citizens
     # schema change.
     def handle_email_change(new_email, code)
       if User.where.not(id: @citizen.id).exists?(email: new_email)
-        flash.now[:alert] = "Yon lòt kont itilize deja imel sa a."
+        flash.now[:alert] = t("citizen_portal.settings.flash.email_in_use")
         @email_change_pending = false
         return render :edit, status: :unprocessable_entity
       end
@@ -129,20 +137,20 @@ module Citizens
         rescue StandardError => e
           Rails.logger.error "[Settings] Email-change mail failed for user=#{@citizen.id}: #{e.class} - #{e.message}"
           Rails.cache.delete(cache_key)
-          flash.now[:alert] = "Pa kapab voye kòd verifikasyon an. Eseye ankò nan kèk minit."
+          flash.now[:alert] = t("citizen_portal.settings.flash.send_failed")
           @email_change_pending = false
           return render :edit, status: :unprocessable_entity
         end
 
         @email_change_pending = true
         @pending_new_email    = new_email
-        flash.now[:notice] = "Nou voye yon kòd nan #{new_email}. Antre l anba a pou konfime chanjman an."
+        flash.now[:notice] = t("citizen_portal.settings.flash.code_sent", email: new_email)
         return render :edit, status: :ok
       end
 
       # Phase 2 — verify the code.
       if pending.blank? || pending[:new_email] != new_email
-        flash.now[:alert] = "Kòd la ekspire oswa li pa pou imel sa a. Mande yon nouvo kòd."
+        flash.now[:alert] = t("citizen_portal.settings.flash.code_expired")
         @email_change_pending = true
         @pending_new_email    = new_email
         return render :edit, status: :unprocessable_entity
@@ -150,7 +158,7 @@ module Citizens
 
       if pending[:attempts].to_i >= EMAIL_CHANGE_MAX_ATTEMPTS
         Rails.cache.delete(cache_key)
-        flash.now[:alert] = "Twòp esè. Mande yon nouvo kòd."
+        flash.now[:alert] = t("citizen_portal.settings.flash.too_many_attempts")
         @email_change_pending = false
         return render :edit, status: :unprocessable_entity
       end
@@ -158,7 +166,7 @@ module Citizens
       if pending[:code].to_s != code
         pending[:attempts] = pending[:attempts].to_i + 1
         Rails.cache.write(cache_key, pending, expires_in: EMAIL_CHANGE_CACHE_TTL)
-        flash.now[:alert] = "Kòd la pa kòrèk. Eseye ankò."
+        flash.now[:alert] = t("citizen_portal.settings.flash.code_wrong")
         @email_change_pending = true
         @pending_new_email    = new_email
         return render :edit, status: :unprocessable_entity
@@ -166,9 +174,9 @@ module Citizens
 
       if @citizen.update(email: new_email)
         Rails.cache.delete(cache_key)
-        redirect_to citizens_settings_path, notice: "Imel ou chanje. Pwochen koneksyon, sèvi ak #{new_email}."
+        redirect_to citizens_settings_path, notice: t("citizen_portal.settings.flash.email_changed", email: new_email)
       else
-        flash.now[:alert] = @citizen.errors.full_messages.to_sentence.presence || "Pa kapab sove imel la."
+        flash.now[:alert] = @citizen.errors.full_messages.to_sentence.presence || t("citizen_portal.settings.flash.email_save_failed")
         @email_change_pending = true
         @pending_new_email    = new_email
         render :edit, status: :unprocessable_entity

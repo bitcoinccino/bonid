@@ -13,6 +13,10 @@ require "rails_helper"
 RSpec.describe CitizenActivityEvent do
   include ActiveSupport::Testing::TimeHelpers
 
+  # Copy is localized; these examples pin the Kreyòl wording (the default
+  # citizen portal language).
+  around { |ex| I18n.with_locale(:ht) { ex.run } }
+
   let(:now) { Time.zone.local(2026, 4, 16, 14, 32) }
 
   # ------------------------------------------------------------
@@ -150,16 +154,16 @@ RSpec.describe CitizenActivityEvent do
       ev = described_class.from_qr_scan(scan_log)
       expect(ev.icon).to eq("ri-qr-scan-2-line")
       expect(ev.title).to include("Bank Popilè")
-      expect(ev.title).to include("QR")
+      expect(ev.title).to include("eskane kòd QR ou")
       expect(ev.title).to include("Pòtoprens")
     end
 
     it "uses the keyboard icon and '(manyèl)' title when the scan was entered manually" do
       log = scan_log(qr_scan: qr_scan_record(manual: true))
       ev = described_class.from_qr_scan(log)
-      expect(ev.icon).to eq("ri-keyboard-box-line")
-      expect(ev.title).to include("(manyèl)")
-      expect(ev.title).not_to include("(QR)")
+      expect(ev.icon).to eq("ri-search-line")
+      expect(ev.title).to include("chèche BonID ou")
+      expect(ev.title).not_to include("QR")
     end
 
     it "falls back to partner.name when organization is blank" do
@@ -191,16 +195,16 @@ RSpec.describe CitizenActivityEvent do
         events = described_class.events_from_consent_grant(consent_grant)
         expect(events.size).to eq(1)
         ev = events.first
-        expect(ev.icon).to eq("ri-shield-check-line")
+        expect(ev.icon).to eq("ri-lock-unlock-line")
         expect(ev.title).to include("Zellus")
-        expect(ev.title).to start_with("Ou bay")
+        expect(ev.title).to start_with("Ou kite")
       end
 
       it "switches title + icon per status" do
         {
-          "revoked" => { icon: "ri-forbid-2-line",   phrase: "Ou revoke aksè" },
-          "pending" => { icon: "ri-time-line",       phrase: "mande aksè" },
-          "expired" => { icon: "ri-history-line",    phrase: "ekspire" }
+          "revoked" => { icon: "ri-lock-line",           phrase: "Ou retire aksè" },
+          "pending" => { icon: "ri-hourglass-line",      phrase: "mande pou l wè" },
+          "expired" => { icon: "ri-calendar-close-line", phrase: "fini" }
         }.each do |status, expected|
           ev = described_class.events_from_consent_grant(consent_grant(status: status)).first
           expect(ev.icon).to eq(expected[:icon]), "wrong icon for #{status}"
@@ -211,7 +215,7 @@ RSpec.describe CitizenActivityEvent do
       it "shows granted scopes (truncated) in the subtitle" do
         cg = consent_grant(granted_scopes: %w[identity address phone email])
         ev = described_class.events_from_consent_grant(cg).first
-        expect(ev.subtitle).to start_with("Aksè:")
+        expect(ev.subtitle).to start_with("Sa l ka wè:")
         expect(ev.subtitle).to end_with("…") # > 3 scopes triggers the ellipsis
       end
 
@@ -251,9 +255,9 @@ RSpec.describe CitizenActivityEvent do
         expect(events.size).to eq(3)
         expect(events.map(&:timestamp).map(&:to_s)).to eq(events.map(&:timestamp).sort.map(&:to_s))
         expect(events.map(&:title)).to eq([
-          "Ou bay Zellus aksè a done ou yo",
-          "Ou revoke aksè pou Zellus",
-          "Ou bay Zellus aksè a done ou yo"
+          "Ou kite Zellus wè enfòmasyon ou",
+          "Ou retire aksè Zellus",
+          "Ou kite Zellus wè enfòmasyon ou"
         ])
       end
 
@@ -283,17 +287,17 @@ RSpec.describe CitizenActivityEvent do
   describe ".from_transaction_consent" do
     it "shows the approved-amount title with formatted amount + partner" do
       ev = described_class.from_transaction_consent(transaction_consent)
-      expect(ev.icon).to eq("ri-exchange-funds-line")
+      expect(ev.icon).to eq("ri-checkbox-circle-line")
       expect(ev.title).to include("MonCash")
       expect(ev.title).to include("5,000 HTG")
-      expect(ev.title).to start_with("Ou apwouve")
+      expect(ev.title).to start_with("Ou di wi")
     end
 
-    it "uses 'Ou refize' for denied and 'mande' for pending" do
+    it "uses 'Ou refize' for denied and 'mande otorizasyon' for pending" do
       denied  = described_class.from_transaction_consent(transaction_consent(status: "denied"))
       pending = described_class.from_transaction_consent(transaction_consent(status: "pending"))
       expect(denied.title).to start_with("Ou refize")
-      expect(pending.title).to include("mande")
+      expect(pending.title).to include("mande otorizasyon ou")
     end
 
     it "omits the currency when amount is blank/zero" do
@@ -363,7 +367,7 @@ RSpec.describe CitizenActivityEvent do
   describe ".from_session" do
     it "uses the regular login title + icon for familiar devices" do
       ev = described_class.from_session(citizen_session, new_device: false)
-      expect(ev.icon).to eq("ri-login-box-line")
+      expect(ev.icon).to eq("ri-login-circle-line")
       expect(ev.title).to eq("Ou konekte sou BonID ou")
       expect(ev.status_color).to eq("secondary")
     end
@@ -371,7 +375,7 @@ RSpec.describe CitizenActivityEvent do
     it "uses an alert title + icon + warning color for a new device" do
       ev = described_class.from_session(citizen_session, new_device: true)
       expect(ev.icon).to eq("ri-alert-line")
-      expect(ev.title).to include("Nouvo aparèy")
+      expect(ev.title).to include("nouvo aparèy")
       expect(ev.status_color).to eq("warning")
     end
 
@@ -394,7 +398,7 @@ RSpec.describe CitizenActivityEvent do
       cs = citizen_session
       allow(cs).to receive(:new_device?).and_return(true)
       ev = described_class.from_session(cs) # no keyword
-      expect(ev.title).to include("Nouvo aparèy")
+      expect(ev.title).to include("nouvo aparèy")
     end
   end
 

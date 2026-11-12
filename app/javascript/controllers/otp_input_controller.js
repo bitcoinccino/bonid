@@ -25,7 +25,11 @@ export default class extends Controller {
   static values = {
     length:             { type: Number, default: 6 },
     expiresAt:          { type: Number, default: 0 },   // unix seconds, optional
-    resendAfterSeconds: { type: Number, default: 60 }
+    resendAfterSeconds: { type: Number, default: 60 },
+    // Countdown copy — overridable so the view can pass the citizen's
+    // language. "%{time}" is replaced with m:ss.
+    expiresInText:      { type: String, default: "Kòd la ap ekspire nan %{time}" },
+    expiredText:        { type: String, default: "Kòd la ekspire." }
   }
 
   connect() {
@@ -131,7 +135,7 @@ export default class extends Controller {
     const tick = () => {
       const remaining = this.expiresAtValue - Math.floor(Date.now() / 1000)
       if (remaining <= 0) {
-        this.timerTarget.textContent = "Kòd la ekspire."
+        this.timerTarget.textContent = this.expiredTextValue
         this.timerTarget.classList.remove("text-bg-light", "text-bg-warning")
         this.timerTarget.classList.add("text-bg-danger")
         clearInterval(this._timerInt)
@@ -145,7 +149,7 @@ export default class extends Controller {
       const m = Math.floor(remaining / 60)
       const s = remaining % 60
       this.timerTarget.textContent =
-        `Kòd la ap ekspire nan ${m}:${s.toString().padStart(2, "0")}`
+        this.expiresInTextValue.replace("%{time}", `${m}:${s.toString().padStart(2, "0")}`)
     }
     tick()
     this._timerInt = setInterval(tick, 1000)

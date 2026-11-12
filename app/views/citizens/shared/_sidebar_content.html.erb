@@ -4,13 +4,13 @@
 <ul class="nav flex-column sidebar-nav">
 
   <%# ── OPERASYON ────────────────────────────── %>
-  <li class="sidebar-section-label">Operasyon</li>
+  <li class="sidebar-section-label"><%= t("citizen_portal.nav.operations") %></li>
 
   <li class="nav-item">
     <%= link_to citizens_dashboard_path,
                 class: "nav-link #{'active' if nav_path_active?(citizens_dashboard_path) || nav_path_active?(citizens_root_path, exact: true)}" do %>
       <i class="ri-dashboard-line"></i>
-      <span>Dashboard</span>
+      <span><%= t("citizen_portal.nav.dashboard") %></span>
     <% end %>
   </li>
 
@@ -20,7 +20,7 @@
     <%= link_to citizens_transaction_consents_path,
                 class: "nav-link #{'active' if nav_path_active?(citizens_transaction_consents_path) || nav_path_active?(citizens_consents_path)}" do %>
       <i class="ri-shield-check-line"></i>
-      <span>Konsantman</span>
+      <span><%= t("citizen_portal.nav.consents") %></span>
       <% pending_consents = current_citizen&.transaction_consents&.active&.count.to_i %>
       <% if pending_consents > 0 %>
         <span class="badge bg-warning text-dark ms-auto"><%= pending_consents %></span>
@@ -32,7 +32,7 @@
     <%= link_to citizens_activity_path,
                 class: "nav-link #{'active' if nav_path_active?(citizens_activity_path)}" do %>
       <i class="ri-pulse-line"></i>
-      <span>Aktivite</span>
+      <span><%= t("citizen_portal.nav.activity") %></span>
     <% end %>
   </li>
 
@@ -45,7 +45,7 @@
     <%= link_to citizens_services_path,
                 class: "nav-link #{'active' if nav_path_active?(citizens_services_path)}" do %>
       <i class="ri-apps-2-line"></i>
-      <span>Sèvis</span>
+      <span><%= t("citizen_portal.nav.services") %></span>
     <% end %>
   </li>
 
@@ -53,7 +53,7 @@
     <%= link_to citizens_service_applications_path,
                 class: "nav-link #{'active' if nav_path_active?(citizens_service_applications_path) || request.path.include?('/apply/')}" do %>
       <i class="ri-file-list-3-line"></i>
-      <span>Aplikasyon Mwen</span>
+      <span><%= t("citizen_portal.nav.my_applications") %></span>
       <% draft_count = current_citizen&.service_applications&.drafts&.count || 0 %>
       <% if draft_count > 0 %>
         <span class="badge bg-warning text-dark ms-auto"><%= draft_count %></span>
@@ -67,7 +67,7 @@
       (draft → open → closed → certified) by CitizenElectionSidebarPresenter.
       The "Vote" link carries a live day-countdown so every login reinforces
       the election date. %>
-  <li class="sidebar-section-label">Eleksyon</li>
+  <li class="sidebar-section-label"><%= t("citizen_portal.nav.election") %></li>
 
   <% CitizenElectionSidebarPresenter.for_today.links.each do |link| %>
     <li class="nav-item">
@@ -83,14 +83,14 @@
   <% end %>
 
   <%# ── SIPÒ ────────────────────────────── %>
-  <li class="sidebar-section-label">Sipò</li>
+  <li class="sidebar-section-label"><%= t("citizen_portal.nav.support_section") %></li>
 
   <% if idpol_extras_enabled? %>
     <li class="nav-item">
       <%= link_to citizens_officer_complaints_path,
                   class: "nav-link #{'active' if nav_path_active?(citizens_officer_complaints_path)}" do %>
         <i class="ri-file-shield-2-line"></i>
-        <span>Plent</span>
+        <span><%= t("citizen_portal.nav.complaints") %></span>
       <% end %>
     </li>
   <% end %>
@@ -99,7 +99,7 @@
     <%= link_to citizens_support_path,
                 class: "nav-link #{'active' if nav_path_active?(citizens_support_path)}" do %>
       <i class="ri-customer-service-2-line"></i>
-      <span>Sipò</span>
+      <span><%= t("citizen_portal.nav.support") %></span>
     <% end %>
   </li>
 </ul>
@@ -111,6 +111,6 @@
                 class: "logout-btn",
                 data: { turbo: false } do %>
     <i class="ri-logout-box-r-line"></i>
-    <span>Dekonekte</span>
+    <span><%= t("citizen_portal.nav.sign_out") %></span>
   <% end %>
 </div>

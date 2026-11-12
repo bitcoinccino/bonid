@@ -22,7 +22,7 @@
             data-bs-auto-close="outside"
             data-bs-display="static"
             aria-expanded="false"
-            aria-label="Notifikasyon (<%= total %>)">
+            aria-label="<%= t("citizen_portal.bell.aria", count: total) %>">
       <i class="ri-notification-3-line fs-4"></i>
       <% if total.positive? %>
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
@@ -45,10 +45,10 @@
       <%# Header row %>
       <li class="px-3 py-2 d-flex justify-content-between align-items-center"
           style="background: #F8FAFC; border-bottom: 1px solid #E5E7EB;">
-        <strong style="font-size: 0.85rem; color: var(--primary);">Notifikasyon</strong>
+        <strong style="font-size: 0.85rem; color: var(--primary);"><%= t("citizen_portal.bell.title") %></strong>
         <% if total.positive? %>
           <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-            <%= total %> nouvo
+            <%= t("citizen_portal.bell.new_count", count: total) %>
           </span>
         <% end %>
       </li>
@@ -57,7 +57,7 @@
       <% if events.empty? %>
         <li class="px-3 py-4 text-center text-muted" style="font-size: 0.78rem;">
           <i class="ri-notification-off-line ri-lg d-block mb-2 opacity-50"></i>
-          Pa gen aktivite resan
+          <%= t("citizen_portal.bell.empty") %>
         </li>
       <% else %>
         <% events.each do |ev| %>
@@ -69,7 +69,7 @@
               <%# Unread dot — blue marker on the left of new items %>
               <span class="flex-shrink-0 mt-1" style="width: 8px; display: inline-flex; justify-content: center;">
                 <% if unread %>
-                  <span aria-label="Pa li ankò" title="Pa li ankò"
+                  <span aria-label="<%= t("citizen_portal.bell.unread") %>" title="<%= t("citizen_portal.bell.unread") %>"
                         style="display: inline-block; width: 8px; height: 8px; border-radius: 50%;
                                background: #DC2626; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);"></span>
                 <% end %>
@@ -84,7 +84,7 @@
                 <div class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">
                   <%= ev.timestamp_label %>
                   <% if unread %>
-                    <span class="ms-1 fw-bold" style="color: #DC2626;">· Nouvo</span>
+                    <span class="ms-1 fw-bold" style="color: #DC2626;">· <%= t("citizen_portal.bell.new_tag") %></span>
                   <% end %>
                 </div>
               </div>
@@ -98,7 +98,7 @@
         <%= link_to citizens_activity_path,
                     class: "dropdown-item text-center fw-semibold py-2",
                     style: "font-size: 0.78rem; color: var(--primary); background: #F8FAFC;" do %>
-          Wè tout aktivite <i class="ri-arrow-right-line ms-1"></i>
+          <%= t("citizen_portal.bell.see_all") %> <i class="ri-arrow-right-line ms-1"></i>
         <% end %>
       </li>
     </ul>

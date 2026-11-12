@@ -4,22 +4,21 @@
      bottom of the card (not hidden in a menu) and asks for confirmation in a
      page dialog that explains what happens. The col-* wrapper is in the index. %>
 <% partner = grant.partner %>
-<% status_text = { "approved" => "Has access", "pending" => "Waiting for you",
-                   "revoked" => "Access removed", "expired" => "Access ended" }[grant.status] || grant.status.humanize %>
+<% status_text = %w[approved pending revoked expired].include?(grant.status.to_s) ? t("citizen_portal.consents.statuses.#{grant.status}") : grant.status.humanize %>
 <% theme = grant.status_theme %>
 <% modal_id = "remove-access-#{grant.id}" %>
 
 <%# ── Hidden action forms ── %>
 <% if grant.pending? %>
   <%= form_with url: citizens_consents_path, method: :post, id: "approve-form-#{grant.id}",
-                data: { turbo_confirm: "Let #{partner.name} see this information?" }, style: "display:none" do %>
+                data: { turbo_confirm: t("citizen_portal.consents.confirm_allow", partner: partner.name) }, style: "display:none" do %>
     <input type="hidden" name="consent_grant[partner_id]" value="<%= grant.partner_id %>">
     <% Array(grant.requested_scopes).each do |scope| %>
       <input type="hidden" name="consent_grant[requested_scopes][]" value="<%= scope %>">
     <% end %>
   <% end %>
   <%= form_with url: citizens_consent_path(grant), method: :delete, id: "deny-form-#{grant.id}",
-                data: { turbo_confirm: "Say no to #{partner.name}?" }, style: "display:none" do %>
+                data: { turbo_confirm: t("citizen_portal.consents.confirm_deny", partner: partner.name) }, style: "display:none" do %>
   <% end %>
 <% elsif grant.approved? %>
   <%# Submitted from the confirmation dialog below %>
@@ -46,7 +45,7 @@
     </div>
     <div class="mt-2 mb-1">
       <span class="small text-muted">
-        <i class="ri-building-4-line me-1"></i><%= partner.sector&.titleize || "Verified partner" %>
+        <i class="ri-building-4-line me-1"></i><%= partner.sector&.titleize || t("citizen_portal.consents.verified_partner") %>
       </span>
     </div>
   </div>
@@ -57,7 +56,7 @@
     <%# What they can see %>
     <div class="mb-3">
       <div class="small fw-bold text-muted mb-2">
-        <%= grant.approved? ? "What #{partner.name} can see" : (grant.pending? ? "What #{partner.name} is asking to see" : "What #{partner.name} could see") %>
+        <%= t(grant.approved? ? "citizen_portal.consents.can_see" : (grant.pending? ? "citizen_portal.consents.asking_to_see" : "citizen_portal.consents.could_see"), partner: partner.name) %>
       </div>
       <% scopes = visible_consent_scopes(grant.granted_scopes.presence || grant.requested_scopes) %>
       <% if scopes.any? %>
@@ -67,7 +66,7 @@
           <% end %>
         </ul>
       <% else %>
-        <span class="small text-muted">Only that you have a verified BonID</span>
+        <span class="small text-muted"><%= t("citizen_portal.consents.only_verified") %></span>
       <% end %>
     </div>
 
@@ -75,10 +74,9 @@
     <div class="consent-metrics rounded-3 p-3 mb-3 small">
       <% if grant.last_accessed_at %>
         <i class="ri-eye-line me-1"></i>
-        Last looked at your information <strong><%= time_ago_in_words(grant.last_accessed_at) %> ago</strong>
-        · <strong><%= pluralize(grant.access_count.to_i, "time") %></strong> in total
+        <%= t("citizen_portal.consents.last_looked_html", ago: time_ago_in_words(grant.last_accessed_at), times: t("citizen_portal.consents.times", count: grant.access_count.to_i)) %>
       <% else %>
-        <i class="ri-eye-off-line me-1"></i> Hasn't looked at your information yet
+        <i class="ri-eye-off-line me-1"></i> <%= t("citizen_portal.consents.not_looked") %>
       <% end %>
     </div>
 
@@ -86,7 +84,7 @@
     <% if grant.approved? && grant.expires_at.present? %>
       <div class="alert <%= grant.expires_at < 3.days.from_now ? 'alert-warning' : 'alert-light' %> py-2 px-3 small border-0 rounded-3 d-flex align-items-center mb-0">
         <i class="ri-calendar-event-line me-2 flex-shrink-0"></i>
-        Access ends on <%= grant.expires_at.strftime("%b %-d, %Y") %>
+        <%= t("citizen_portal.consents.access_ends", date: l(grant.expires_at.to_date, format: :consent)) %>
       </div>
     <% end %>
   </div>
@@ -97,26 +95,26 @@
       <div class="d-grid gap-2">
         <button type="button" class="btn btn-primary fw-bold py-2 rounded-3"
                 onclick="document.getElementById('approve-form-<%= grant.id %>').requestSubmit(); return false;">
-          <i class="ri-check-line me-1"></i>Allow
+          <i class="ri-check-line me-1"></i><%= t("citizen_portal.consents.allow") %>
         </button>
         <button type="button" class="btn btn-outline-danger btn-sm border-0"
                 onclick="document.getElementById('deny-form-<%= grant.id %>').requestSubmit(); return false;">
-          <i class="ri-close-line me-1"></i>Don't allow
+          <i class="ri-close-line me-1"></i><%= t("citizen_portal.consents.dont_allow") %>
         </button>
       </div>
     <% elsif grant.approved? %>
       <button type="button" class="btn btn-outline-danger w-100 rounded-3 py-2 fw-semibold"
               data-bs-toggle="modal" data-bs-target="#<%= modal_id %>">
-        <i class="ri-forbid-2-line me-2"></i>Remove access
+        <i class="ri-forbid-2-line me-2"></i><%= t("citizen_portal.consents.remove_access") %>
       </button>
     <% elsif grant.revoked? %>
       <div class="text-center small text-muted py-1">
         <i class="ri-information-line me-1"></i>
-        You removed access<%= " on #{grant.revoked_at.strftime('%b %-d, %Y')}" if grant.revoked_at %>
+        <%= grant.revoked_at ? t("citizen_portal.consents.you_removed_on", date: l(grant.revoked_at.to_date, format: :consent)) : t("citizen_portal.consents.you_removed") %>
       </div>
     <% elsif grant.expired? %>
       <div class="text-center small text-muted py-1">
-        <i class="ri-information-line me-1"></i>Access ended<%= " on #{grant.expires_at.strftime('%b %-d, %Y')}" if grant.expires_at %>
+        <i class="ri-information-line me-1"></i><%= grant.expires_at ? t("citizen_portal.consents.access_ended_on", date: l(grant.expires_at.to_date, format: :consent)) : t("citizen_portal.consents.access_ended") %>
       </div>
     <% end %>
   </div>
@@ -129,18 +127,18 @@
       <div class="modal-content rounded-4 border-0">
         <div class="modal-body p-4 text-center">
           <div class="remove-access-icon mx-auto mb-3"><i class="ri-forbid-2-line"></i></div>
-          <h5 class="fw-bold mb-3" id="<%= modal_id %>-title">Remove <%= partner.name %>'s access?</h5>
+          <h5 class="fw-bold mb-3" id="<%= modal_id %>-title"><%= t("citizen_portal.consents.remove_title", partner: partner.name) %></h5>
           <ul class="text-start small text-muted remove-access-points mb-4">
-            <li><%= partner.name %> will <strong>stop seeing your information right away</strong>.</li>
-            <li>They must <strong>delete the information they already have within 30 days</strong>.</li>
-            <li>You can give access again later if you change your mind.</li>
+            <li><%= t("citizen_portal.consents.remove_point1_html", partner: partner.name) %></li>
+            <li><%= t("citizen_portal.consents.remove_point2_html") %></li>
+            <li><%= t("citizen_portal.consents.remove_point3") %></li>
           </ul>
           <div class="d-grid gap-2">
             <button type="button" class="btn btn-danger fw-semibold rounded-3 py-2" data-bs-dismiss="modal"
                     onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit();">
-              Yes, remove access
+              <%= t("citizen_portal.consents.yes_remove") %>
             </button>
-            <button type="button" class="btn btn-light rounded-3 py-2" data-bs-dismiss="modal">Keep access</button>
+            <button type="button" class="btn btn-light rounded-3 py-2" data-bs-dismiss="modal"><%= t("citizen_portal.consents.keep_access") %></button>
           </div>
         </div>
       </div>
