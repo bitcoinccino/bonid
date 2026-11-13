@@ -27,9 +27,9 @@ RSpec.describe "Election registration page — registered state", type: :request
     expect(response.body).to include('class="voter-id-card__copy"')
   end
 
-  it "shows the election name only once (hero, not the page subtitle)" do
+  it "shows the election name only once and describes the page in the subtitle" do
     expect(response.body.scan(CGI.escapeHTML(election.title)).size).to eq(1)
-    expect(response.body).not_to include('class="ballot-subtitle')
+    expect(response.body).to include(CGI.escapeHTML(I18n.t("citizen_portal.election.enrollment.registered_subtitle", locale: :fr)))
   end
 
   it "groups venue info under Where & when, with admin details collapsed" do
