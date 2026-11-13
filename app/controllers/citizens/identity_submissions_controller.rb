@@ -507,7 +507,7 @@ end
     def liveness_session
       # Server-side rate limiting: 5 attempts per 3 minutes
       if FaceLivenessService.rate_limited?(current_citizen.id)
-        render json: { error: "Too many attempts. Please wait a few minutes before trying again." }, status: :too_many_requests
+        render json: { error: t("alerts.liveness.too_many_attempts") }, status: :too_many_requests
         return
       end
 
@@ -543,7 +543,7 @@ end
       else
         # Raw AWS error stays in the log; citizens get a plain message.
         Rails.logger.error "[LivenessSession] Failed: #{result[:error]}"
-        render json: { error: "Verifikasyon figi a pa disponib kounye a. Tanpri eseye ankò pita." },
+        render json: { error: t("alerts.liveness.unavailable") },
                status: :service_unavailable
       end
     end
@@ -560,12 +560,12 @@ end
       sid = params[:session_id]
 
       unless session[:liveness_session_id] == sid
-        render json: { error: "Invalid session" }, status: :forbidden and return
+        render json: { error: t("alerts.liveness.invalid_session") }, status: :forbidden and return
       end
 
       # AWS sessions expire after 3 minutes
       if Time.current.to_i - session[:liveness_created_at].to_i > 180
-        render json: { error: "Session expired" }, status: :gone and return
+        render json: { error: t("alerts.liveness.session_expired") }, status: :gone and return
       end
 
       # Enqueue background job — returns immediately
@@ -584,7 +584,7 @@ end
       sid = params[:session_id]
 
       unless session[:liveness_session_id] == sid
-        render json: { error: "Invalid session" }, status: :forbidden and return
+        render json: { error: t("alerts.liveness.invalid_session") }, status: :forbidden and return
       end
 
       cached = Rails.cache.read("liveness_result:#{sid}")
@@ -646,7 +646,7 @@ end
     # ------------------------------------------------------------
     def manual_selfie
       unless params[:selfie].present?
-        render json: { error: "No selfie provided." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.no_selfie_provided") }, status: :unprocessable_entity and return
       end
 
       blob = ActiveStorage::Blob.create_and_upload!(
@@ -673,7 +673,7 @@ end
       render json: { blob_signed_id: blob.signed_id, manual_selfie: true }
     rescue => e
       Rails.logger.error "[ManualSelfie] Upload failed: #{e.class} - #{e.message}"
-      render json: { error: "Upload failed. Please try again." }, status: :service_unavailable
+      render json: { error: t("alerts.liveness.upload_failed") }, status: :service_unavailable
     end
 
     # ------------------------------------------------------------
@@ -686,17 +686,17 @@ end
       id_photo = params[:id_photo]
 
       unless selfie_signed_id.present?
-        render json: { error: "No selfie found. Please complete the liveness check first." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.no_selfie_found") }, status: :unprocessable_entity and return
       end
 
       unless id_photo.present?
-        render json: { error: "No ID photo provided." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.no_id_photo") }, status: :unprocessable_entity and return
       end
 
       # Resolve selfie blob from signed ID
       selfie_blob = ActiveStorage::Blob.find_signed(selfie_signed_id)
       unless selfie_blob
-        render json: { error: "Selfie image not found." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.selfie_missing") }, status: :unprocessable_entity and return
       end
 
       # Download both images (with ghost file resilience for selfie blob)
@@ -704,7 +704,7 @@ end
       id_photo_bytes = id_photo.read
 
       unless selfie_bytes.present? && id_photo_bytes.present?
-        render json: { error: "Failed to read images." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.read_failed") }, status: :unprocessable_entity and return
       end
 
       # Call AWS Rekognition compare_faces
@@ -791,7 +791,7 @@ end
         }
       rescue StandardError => e
         Rails.logger.error "[FaceCompare] Error: #{e.class} - #{e.message}"
-        render json: { error: "Face comparison temporarily unavailable." }, status: :service_unavailable
+        render json: { error: t("alerts.liveness.compare_unavailable") }, status: :service_unavailable
       end
     end
 

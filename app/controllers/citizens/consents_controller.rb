@@ -39,10 +39,10 @@ module Citizens
         ConsentWebhookJob.perform_later(consent.id, "consent.restored") rescue nil
 
         redirect_to citizens_consents_path,
-                    notice: "✅ Access granted to #{consent.partner&.name || 'Partner'}."
+                    notice: t("alerts.consents.granted", partner: consent.partner&.name || "Partner")
       else
         redirect_to citizens_consents_path,
-                    alert: "⚠️ Could not grant access. Please try again."
+                    alert: t("alerts.consents.grant_failed")
       end
     end
 
@@ -67,19 +67,19 @@ module Citizens
       ConsentWebhookJob.perform_later(@consent.id, "consent.revoked") rescue nil
 
       @consent_grants = @citizen.consent_grants.includes(partner: { logo_attachment: :blob }).order(created_at: :desc)
-      flash.now[:notice] = "#{@consent.partner.name} can no longer see your information."
+      flash.now[:notice] = t("alerts.consents.revoked", partner: @consent.partner.name)
 
       respond_to do |format|
         format.turbo_stream
-        format.html { redirect_to citizens_consents_path, notice: "Access removed." }
+        format.html { redirect_to citizens_consents_path, notice: t("alerts.consents.removed") }
       end
     rescue => e
       Rails.logger.error("Consent revocation failed: #{e.message}\n#{e.backtrace.join("\n")}")
-      flash.now[:alert] = "We couldn't remove access. Please try again."
+      flash.now[:alert] = t("alerts.consents.revoke_failed")
       @consent_grants = @citizen.consent_grants.includes(partner: { logo_attachment: :blob }).order(created_at: :desc)
       respond_to do |format|
         format.turbo_stream
-        format.html { redirect_to citizens_consents_path, alert: "We couldn't remove access. Please try again." }
+        format.html { redirect_to citizens_consents_path, alert: t("alerts.consents.revoke_failed") }
       end
     end
 
@@ -100,7 +100,7 @@ module Citizens
     def set_consent
       @consent = @citizen.consent_grants.find(params[:id])
     rescue ActiveRecord::RecordNotFound
-      redirect_to citizens_consents_path, alert: "Consent record not found."
+      redirect_to citizens_consents_path, alert: t("alerts.consents.not_found")
     end
 
     def consent_params

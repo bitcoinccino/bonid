@@ -538,19 +538,19 @@ class VisitorSubmission < ApplicationRecord
   def passport_not_expired
     return if passport_expiry_date.blank?
 
-    errors.add(:passport_expiry_date, "must be in the future") if passport_expiry_date <= Date.current
+    errors.add(:passport_expiry_date, I18n.t("alerts.validation.visitor.passport_expired")) if passport_expiry_date <= Date.current
   end
 
   def required_documents_present
-    errors.add(:selfie, "is required") unless selfie.attached?
-    errors.add(:passport_photo, "is required") unless passport_photo.attached?
+    errors.add(:selfie, I18n.t("alerts.validation.visitor.required")) unless selfie.attached?
+    errors.add(:passport_photo, I18n.t("alerts.validation.visitor.required")) unless passport_photo.attached?
   end
 
   def document_content_types
     allowed = self.class::DOC_TYPES
 
-    errors.add(:selfie, "invalid type") if selfie.attached? && !allowed.include?(selfie.content_type)
-    errors.add(:passport_photo, "invalid type") if passport_photo.attached? && !allowed.include?(passport_photo.content_type)
+    errors.add(:selfie, I18n.t("alerts.validation.visitor.invalid_type")) if selfie.attached? && !allowed.include?(selfie.content_type)
+    errors.add(:passport_photo, I18n.t("alerts.validation.visitor.invalid_type")) if passport_photo.attached? && !allowed.include?(passport_photo.content_type)
   end
 
   def sync_country_code

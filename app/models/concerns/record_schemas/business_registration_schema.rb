@@ -73,18 +73,18 @@ module RecordSchemas
       s1_missing << "raison_sociale (3)"           unless general["raison_sociale"].present?
       s1_missing << "date_creation (5)"             unless general["date_creation"].present?
       s1_missing << "secteur_activite_primaire (14)" unless general["secteur_activite_primaire"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{s1_missing.join(', ')} (Section 1)") if s1_missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: s1_missing.join(", "), section: "Section 1")) if s1_missing.any?
 
       if general["nif"].present? && !general["nif"].match?(/\A(\d{3}-\d{3}-\d{3}|NIF-HT-\d{9})\z/)
-        errors.add(:data, "NIF dwe nan foma XXX-XXX-XXX oswa NIF-HT-XXXXXXXXX")
+        errors.add(:data, I18n.t("alerts.dgi_form.nif_format"))
       end
 
       if general["date_creation"].present?
         begin
           dc = Date.parse(general["date_creation"])
-          errors.add(:data, "Dat kreyasyon dwe nan pase oswa jodi a") if dc > Date.current
+          errors.add(:data, I18n.t("alerts.dgi_form.creation_date_past")) if dc > Date.current
         rescue ArgumentError
-          errors.add(:data, "Dat kreyasyon pa valid")
+          errors.add(:data, I18n.t("alerts.dgi_form.creation_date_invalid"))
         end
       end
 
@@ -92,45 +92,45 @@ module RecordSchemas
         begin
           Date.parse(general["date_debut_operations"])
         rescue ArgumentError
-          errors.add(:data, "Dat komansman operasyon pa valid")
+          errors.add(:data, I18n.t("alerts.dgi_form.start_date_invalid"))
         end
       end
 
       if general["nombre_employes"].present?
-        errors.add(:data, "Kantite anplwaye dwe yon nimewo pozitif") unless general["nombre_employes"].to_i >= 0
+        errors.add(:data, I18n.t("alerts.dgi_form.employees_positive")) unless general["nombre_employes"].to_i >= 0
       end
 
       if general["chiffre_affaires"].present?
-        errors.add(:data, "Chif afe dwe yon nimewo valid") unless general["chiffre_affaires"].to_s.match?(/\A\d+(\.\d+)?\z/)
+        errors.add(:data, I18n.t("alerts.dgi_form.revenue_number")) unless general["chiffre_affaires"].to_s.match?(/\A\d+(\.\d+)?\z/)
       end
 
       # Section 2 — Le Proprietaire
       s2_missing = []
       s2_missing << "prenom_proprietaire (17)" unless proprietaire["prenom"].present?
       s2_missing << "nom_proprietaire (18)"    unless proprietaire["nom"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{s2_missing.join(', ')} (Section 2)") if s2_missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: s2_missing.join(", "), section: "Section 2")) if s2_missing.any?
 
       if proprietaire["nif"].present? && !proprietaire["nif"].match?(/\A(\d{3}-\d{3}-\d{3}|NIF-HT-\d{9})\z/)
-        errors.add(:data, "NIF pwopriyete dwe nan foma XXX-XXX-XXX oswa NIF-HT-XXXXXXXXX")
+        errors.add(:data, I18n.t("alerts.dgi_form.owner_nif_format"))
       end
 
       if proprietaire["nif_directeur"].present? && !proprietaire["nif_directeur"].match?(/\A(\d{3}-\d{3}-\d{3}|NIF-HT-\d{9})\z/)
-        errors.add(:data, "NIF direkte dwe nan foma XXX-XXX-XXX oswa NIF-HT-XXXXXXXXX")
+        errors.add(:data, I18n.t("alerts.dgi_form.director_nif_format"))
       end
 
       # Section 3 — Contact
-      errors.add(:data, "Telefon mobil obligatwa (22, Section 3)") unless contact["telephone_mobile"].present?
-      errors.add(:data, "Adrès imel prensipal obligatwa (25, Section 3)") unless contact["email_primaire"].present?
+      errors.add(:data, I18n.t("alerts.dgi_form.mobile_required")) unless contact["telephone_mobile"].present?
+      errors.add(:data, I18n.t("alerts.dgi_form.email_required")) unless contact["email_primaire"].present?
 
       # Section 4 — Adresse
       s4_missing = []
       s4_missing << "departement (29a)" unless adresse["departement"].present?
       s4_missing << "commune (29b)"     unless adresse["commune"].present?
       s4_missing << "adresse (29e)"     unless adresse["adresse"].present?
-      errors.add(:data, "Chan adrès obligatwa ki manke: #{s4_missing.join(', ')} (Section 4)") if s4_missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_address_fields_in", fields: s4_missing.join(", "), section: "Section 4")) if s4_missing.any?
 
       if adresse["departement"].present? && !DEPARTEMENTS_HAITI.include?(adresse["departement"])
-        errors.add(:data, "Depatman pa valid")
+        errors.add(:data, I18n.t("alerts.dgi_form.department_invalid"))
       end
 
       # Section 4 — Etablissements (optional, up to 5)
@@ -140,8 +140,8 @@ module RecordSchemas
           if etab["adresse"].blank? && etab["nom_commercial"].blank?
             next # skip empty entries
           end
-          errors.add(:data, "Etablisman #{idx + 1}: adrès obligatwa") if etab["adresse"].blank?
-          errors.add(:data, "Etablisman #{idx + 1}: depatman obligatwa") if etab["departement"].blank?
+          errors.add(:data, I18n.t("alerts.dgi_form.establishment_address", n: idx + 1)) if etab["adresse"].blank?
+          errors.add(:data, I18n.t("alerts.dgi_form.establishment_department", n: idx + 1)) if etab["departement"].blank?
         end
       end
     end

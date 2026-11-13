@@ -36,7 +36,7 @@ module Citizens
         details = params.dig(:contestation, :details).to_s.strip
 
         if subject.blank? || details.blank?
-          flash.now[:alert] = "Tit ak detay obligatwa."
+          flash.now[:alert] = t("alerts.election.contest_required")
           render :new, status: :unprocessable_entity and return
         end
 
@@ -57,7 +57,7 @@ module Citizens
 
         if dispute.save
           redirect_to election_public_candidates_path(election_id: @candidate.election_id),
-                      notice: "Kontestasyon w depoze. Referans: #{dispute.reference_code}."
+                      notice: t("alerts.election.contest_filed", reference: dispute.reference_code)
         else
           flash.now[:alert] = dispute.errors.full_messages.to_sentence
           render :new, status: :unprocessable_entity

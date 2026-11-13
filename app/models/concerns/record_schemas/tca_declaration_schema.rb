@@ -27,21 +27,21 @@ module RecordSchemas
       calcul  = data["calcul_tca"] || {}
 
       # Periode
-      errors.add(:data, "Ane fiskal obligatwa") if periode["annee_fiscale"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_required")) if periode["annee_fiscale"].blank?
       if periode["annee_fiscale"].present? && !periode["annee_fiscale"].match?(/\A\d{4}-\d{4}\z/)
-        errors.add(:data, "Ane fiskal dwe nan foma YYYY-YYYY")
+        errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_format"))
       end
-      errors.add(:data, "Mwa deklarasyon obligatwa") if periode["mois_declaration"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.month_required")) if periode["mois_declaration"].blank?
       if periode["mois_declaration"].present? && !(1..12).include?(periode["mois_declaration"].to_i)
-        errors.add(:data, "Mwa deklarasyon dwe ant 1 ak 12")
+        errors.add(:data, I18n.t("alerts.dgi_form.month_range"))
       end
 
       if periode["type_declaration"].present?
         unless %w[originale rectificative].include?(periode["type_declaration"])
-          errors.add(:data, "Tip deklarasyon dwe 'originale' oswa 'rectificative'")
+          errors.add(:data, I18n.t("alerts.dgi_form.declaration_type_values"))
         end
       else
-        errors.add(:data, "Tip deklarasyon obligatwa")
+        errors.add(:data, I18n.t("alerts.dgi_form.declaration_type_required"))
       end
 
       # Identification
@@ -50,19 +50,19 @@ module RecordSchemas
       missing << "nif"            unless ident["nif"].present?
       missing << "adresse"        unless ident["adresse"].present?
       missing << "ville"          unless ident["ville"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{missing.join(', ')}") if missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields", fields: missing.join(", "))) if missing.any?
 
       if ident["nif"].present? && !ident["nif"].match?(/\A(\d{3}-\d{3}-\d{3}|NIF-HT-\d{9})\z/)
-        errors.add(:data, "NIF dwe nan foma XXX-XXX-XXX oswa NIF-HT-XXXXXXXXX")
+        errors.add(:data, I18n.t("alerts.dgi_form.nif_format"))
       end
 
       # Calcul — chiffre_affaires_brut required
-      errors.add(:data, "Chif afe brit obligatwa") if calcul["chiffre_affaires_brut"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.gross_revenue_required")) if calcul["chiffre_affaires_brut"].blank?
 
       %w[chiffre_affaires_brut ventes_exonerees ventes_exportation achats_locaux_tca achats_importation_tca tca_retenu_source interets_retard amende].each do |field|
         val = calcul[field]
         next if val.blank?
-        errors.add(:data, "#{field} dwe yon nimewo valid") unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+        errors.add(:data, I18n.t("alerts.dgi_form.number_invalid", field: field)) unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
       end
     end
 

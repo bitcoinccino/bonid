@@ -21,12 +21,12 @@ module DocumentValidations
     passport_valid = passport.attached?
 
     unless cin_valid || passport_valid
-      errors.add(:base, "You must upload both CIN Front and Back OR a Passport.")
+      errors.add(:base, I18n.t("alerts.validation.documents.cin_or_passport"))
     end
   end
 
   def validate_selfie
-    errors.add(:selfie, "must be attached.") unless selfie.attached?
+    errors.add(:selfie, I18n.t("alerts.validation.visitor.required")) unless selfie.attached?
   end
 
   def validate_supporting_documents
@@ -38,7 +38,7 @@ module DocumentValidations
     ]
 
     unless support_docs.any?(&:attached?)
-      errors.add(:base, "You must upload at least one supporting document.")
+      errors.add(:base, I18n.t("alerts.validation.documents.supporting_required"))
     end
   end
 end

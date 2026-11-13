@@ -102,9 +102,11 @@ RSpec.describe VoterEligibilityRecord, type: :model do
   end
 
   describe "#ineligibility_label" do
-    it "returns Kreyòl label" do
+    it "returns the label in the current language" do
       record = build(:voter_eligibility_record, ineligibility_reason: "underage")
-      expect(record.ineligibility_label).to eq("Mwens ke 18 an")
+      I18n.with_locale(:ht) { expect(record.ineligibility_label).to eq("Mwens ke 18 an") }
+      I18n.with_locale(:fr) { expect(record.ineligibility_label).to eq("Moins de 18 ans") }
+      I18n.with_locale(:en) { expect(record.ineligibility_label).to eq("Under 18") }
     end
   end
 

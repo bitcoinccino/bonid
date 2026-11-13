@@ -45,7 +45,7 @@ module Citizens
       if result.success?
         @certificate = result.certificate
         redirect_to certificate_citizens_officer_complaint_path(@complaint.uuid),
-                    notice: "Plainte soumise avec succès. Référence: #{@complaint.certificate_reference}"
+                    notice: t("alerts.complaints.submitted", reference: @complaint.certificate_reference)
       else
         load_form_data
         flash.now[:alert] = result.errors.join(", ")
@@ -60,7 +60,7 @@ module Citizens
       suffix = params[:q].to_s.strip.gsub(/\D/, "") # digits only
 
       if suffix.length < 6
-        return render json: { success: false, error: "Entrez au moins 6 chiffres." }, status: :bad_request
+        return render json: { success: false, error: t("alerts.complaints.min_digits") }, status: :bad_request
       end
 
       # 1. Try citizen BonID suffix — matches trailing digits after stripping dashes
@@ -79,7 +79,7 @@ module Citizens
         if user.bonid == current_citizen.bonid
           return render json: {
             success: false,
-            error: "Vous ne pouvez pas vous citer vous-même comme témoin."
+            error: t("alerts.complaints.self_witness")
           }, status: :unprocessable_entity
         end
 
@@ -106,7 +106,7 @@ module Citizens
         if visitor.bonid == current_citizen.bonid
           return render json: {
             success: false,
-            error: "Vous ne pouvez pas vous citer vous-même comme témoin."
+            error: t("alerts.complaints.self_witness")
           }, status: :unprocessable_entity
         end
 
@@ -124,12 +124,12 @@ module Citizens
 
       render json: {
         success: false,
-        error: "Aucun BonID ou BonTouris vérifié trouvé pour ce numéro."
+        error: t("alerts.complaints.no_match")
       }, status: :not_found
 
     rescue => e
       Rails.logger.error("[OfficerComplaintsController] fetch_witness failed: #{e.class} — #{e.message}")
-      render json: { success: false, error: "Erreur serveur. Veuillez réessayer." }, status: :internal_server_error
+      render json: { success: false, error: t("alerts.complaints.server_error") }, status: :internal_server_error
     end
 
     # GET /citizens/officer_complaints/:uuid
@@ -157,7 +157,7 @@ module Citizens
                     status: :moved_permanently
       else
         redirect_to citizens_officer_complaints_path,
-                    alert: "Plainte introuvable ou accès refusé."
+                    alert: t("alerts.complaints.not_found")
       end
     end
 
@@ -173,7 +173,7 @@ module Citizens
         .find_by!(uuid: params[:uuid])
     rescue ActiveRecord::RecordNotFound
       redirect_to citizens_officer_complaints_path,
-                  alert: "Plainte introuvable ou accès refusé." and return
+                  alert: t("alerts.complaints.not_found") and return
     end
 
     def prefill_complainant_info(complaint)

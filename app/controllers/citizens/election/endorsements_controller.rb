@@ -35,7 +35,7 @@ module Citizens
 
         if endorsement.save
           redirect_to election_public_candidates_path(election_id: @candidate.election_id),
-                      notice: "Mèsi — endòsman w konte pou #{@candidate.full_name}."
+                      notice: t("alerts.election.endorsed", name: @candidate.full_name)
         else
           redirect_with_alert(endorsement.errors.full_messages.to_sentence.presence || "Pa ka endose.")
         end
@@ -51,7 +51,7 @@ module Citizens
         if endorsement && accepting_endorsements?
           endorsement.destroy
           redirect_to election_public_candidates_path(election_id: @candidate.election_id),
-                      notice: "Endòsman w retire."
+                      notice: t("alerts.election.endorsement_removed")
         else
           redirect_with_alert("Pa ka retire endòsman an.")
         end

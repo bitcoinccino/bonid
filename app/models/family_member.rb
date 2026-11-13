@@ -203,7 +203,7 @@ class FamilyMember < ApplicationRecord
 
   def cannot_link_self
     if linked_user_id.present? && linked_user_id == user_id
-      errors.add(:linked_user_id, "Ou pa ka ajoute tèt ou kòm fanmi")
+      errors.add(:linked_user_id, I18n.t("alerts.validation.family.self"))
     end
   end
 
@@ -213,9 +213,9 @@ class FamilyMember < ApplicationRecord
     is_male = %w[m male].include?(sex)
     is_female = %w[f female].include?(sex)
     if mother? && is_male
-      errors.add(:linked_bonid, "#{linked_user.first_name} se gason. Ou pa ka mete li kòm Manman.")
+      errors.add(:linked_bonid, I18n.t("alerts.validation.family.male_as_mother", name: linked_user.first_name))
     elsif father? && is_female
-      errors.add(:linked_bonid, "#{linked_user.first_name} se fi. Ou pa ka mete li kòm Papa.")
+      errors.add(:linked_bonid, I18n.t("alerts.validation.family.female_as_father", name: linked_user.first_name))
     end
   end
 
@@ -223,7 +223,7 @@ class FamilyMember < ApplicationRecord
     return if linked_user_id.blank?
     denied_id = metadata&.dig("denied_user_id")
     if denied_id.present? && denied_id.to_i == linked_user_id
-      errors.add(:linked_bonid, "Moun sa a deja refize relasyon sa a. Ou pa ka voye demann ankò.")
+      errors.add(:linked_bonid, I18n.t("alerts.validation.family.declined"))
     end
   end
 
@@ -232,14 +232,14 @@ class FamilyMember < ApplicationRecord
     own_bonid = user.bonid.to_s.gsub("-", "").upcase
     input_bonid = linked_bonid.to_s.gsub("-", "").upcase
     if own_bonid.present? && (input_bonid == own_bonid || own_bonid.end_with?(input_bonid))
-      errors.add(:linked_bonid, "Ou pa ka ajoute tèt ou kòm fanmi")
+      errors.add(:linked_bonid, I18n.t("alerts.validation.family.self"))
     end
   end
 
   def linked_user_must_exist
     found = find_user_by_bonid_or_suffix(linked_bonid)
     unless found
-      errors.add(:linked_bonid, "BonID pa jwenn pou '#{linked_bonid}'")
+      errors.add(:linked_bonid, I18n.t("alerts.validation.family.not_found", bonid: linked_bonid))
     end
   end
 

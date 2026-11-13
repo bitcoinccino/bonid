@@ -54,23 +54,23 @@ module RecordSchemas
       calcul  = data["calcul_taxe"] || {}
 
       # Section I
-      errors.add(:data, "Ane fiskal obligatwa (Section I)") if periode["annee_fiscale"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_required_s1")) if periode["annee_fiscale"].blank?
 
       if periode["annee_fiscale"].present? && !periode["annee_fiscale"].match?(/\A\d{4}-\d{4}\z/)
-        errors.add(:data, "Ane fiskal dwe nan foma YYYY-YYYY")
+        errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_format"))
       end
 
       if periode["mois_depot"].present? && !(1..12).include?(periode["mois_depot"].to_i)
-        errors.add(:data, "Mwa depo dwe ant 1 ak 12")
+        errors.add(:data, I18n.t("alerts.dgi_form.filing_month_range"))
       end
 
       # Section II
       if periode["type_declaration"].present?
         unless DECLARATION_TYPES.include?(periode["type_declaration"])
-          errors.add(:data, "Tip deklarasyon dwe 'originale' oswa 'rectificative'")
+          errors.add(:data, I18n.t("alerts.dgi_form.declaration_type_values"))
         end
       else
-        errors.add(:data, "Tip deklarasyon obligatwa (Section II)")
+        errors.add(:data, I18n.t("alerts.dgi_form.declaration_type_required_s2"))
       end
 
       # Section III
@@ -79,23 +79,23 @@ module RecordSchemas
       missing << "nif"            unless ident["nif"].present?
       missing << "adresse"        unless ident["adresse"].present?
       missing << "ville"          unless ident["ville"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{missing.join(', ')} (Section III)") if missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: missing.join(", "), section: "Section III")) if missing.any?
 
       if ident["nif"].present? && !ident["nif"].match?(/\A(\d{3}-\d{3}-\d{3}|NIF-HT-\d{9})\z/)
-        errors.add(:data, "NIF dwe nan foma XXX-XXX-XXX oswa NIF-HT-XXXXXXXXX")
+        errors.add(:data, I18n.t("alerts.dgi_form.nif_format"))
       end
 
       if ident["code_secteur"].present? && !SECTEUR_ACTIVITE.key?(ident["code_secteur"].upcase)
-        errors.add(:data, "Kod sekte aktivite pa valid")
+        errors.add(:data, I18n.t("alerts.dgi_form.sector_code"))
       end
 
       # Section IV
-      errors.add(:data, "Pati fiks obligatwa (Liy 1, Section IV)") if calcul["partie_fixe"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.fixed_part_required")) if calcul["partie_fixe"].blank?
 
       %w[partie_fixe chiffre_affaires masse_salariale impot_deja_paye exoneration cip interets_retard amende total].each do |field|
         val = calcul[field]
         next if val.blank?
-        errors.add(:data, "#{field} dwe yon nimewo valid") unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+        errors.add(:data, I18n.t("alerts.dgi_form.number_invalid", field: field)) unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
       end
     end
 
