@@ -54,16 +54,48 @@
     <div class="wallet-stack-container">
       <%# BonID Card - Always visible, can be pushed back %>
       <div class="wallet-card-wrapper active" data-wallet-stack-target="card" data-card="bonid">
+        <%# ⋮ menu sits on the wrapper (not inside .bonid-wallet-card, which
+            clips with overflow:hidden) so the dropdown can hang below the card. %>
+        <div class="dropdown wallet-card-menu">
+          <button type="button" class="wallet-menu-btn"
+                  data-bs-toggle="dropdown" aria-expanded="false"
+                  aria-label="<%= t("citizen_portal.dashboard.more_actions") %>">
+            <i class="ri-more-fill"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end wallet-menu">
+            <li>
+              <button type="button" class="dropdown-item"
+                      data-bs-toggle="modal" data-bs-target="#qrCodeModal_<%= submission.id %>">
+                <i class="ri-qr-code-line"></i>
+                <span><%= t("citizen_portal.dashboard.view_qr") %></span>
+              </button>
+            </li>
+            <li>
+              <%= link_to verified_profile_citizens_identity_submission_path(submission.public_token),
+                          class: "dropdown-item" do %>
+                <i class="ri-award-line"></i>
+                <span>
+                  <%= t("citizen_portal.dashboard.view_certificate") %>
+                  <small class="wallet-menu-hint"><%= t("citizen_portal.dashboard.certificate_hint") %></small>
+                </span>
+              <% end %>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <span class="dropdown-item disabled" aria-disabled="true">
+                <i class="ri-apple-fill"></i>
+                <span><%= t("citizen_portal.dashboard.add_apple_wallet") %></span>
+                <span class="wallet-menu-soon"><%= t("citizen_portal.dashboard.coming_soon") %></span>
+              </span>
+            </li>
+          </ul>
+        </div>
+
         <div class="bonid-wallet-card">
           <div class="wallet-card-header">
             <div class="wallet-brand">
               <i class="ri-shield-check-fill"></i>
               <span>BonID</span>
-            </div>
-            <div class="wallet-status">
-              <span class="status-badge active">
-                <i class="ri-checkbox-circle-fill"></i> <%= t("citizen_portal.dashboard.active") %>
-              </span>
             </div>
           </div>
 
@@ -93,6 +125,9 @@
                 <% masked_bonid = current_citizen.bonid %>
               <% end %>
               <p class="wallet-bonid"><%= masked_bonid %></p>
+              <span class="wallet-status-pill">
+                <span class="status-dot" aria-hidden="true"></span><%= t("citizen_portal.dashboard.active") %>
+              </span>
             </div>
           </div>
 
@@ -102,17 +137,6 @@
               <%= image_tag submission.signature, alt: t("citizen_portal.dashboard.signature"), class: "signature-image" %>
             </div>
           <% end %>
-
-          <%# QR Code Button - Opens Modal %>
-          <div class="wallet-qr-action">
-            <button type="button"
-                    class="view-qr-btn"
-                    data-bs-toggle="modal"
-                    data-bs-target="#qrCodeModal_<%= submission.id %>">
-              <i class="ri-qr-code-line"></i>
-              <span><%= t("citizen_portal.dashboard.view_qr") %></span>
-            </button>
-          </div>
 
           <div class="wallet-card-footer">
             <div class="footer-item">
@@ -447,13 +471,6 @@
 
     <%# Preview of the PUBLIC verification page — exactly what anyone sees
         after scanning the wallet QR (photo, name, status, masked BonID). %>
-    <div class="certificate-action">
-      <%= link_to verified_profile_citizens_identity_submission_path(submission.public_token),
-                  class: "certificate-btn" do %>
-        <i class="ri-award-line"></i> <%= t("citizen_portal.dashboard.view_certificate") %>
-      <% end %>
-      <p class="small text-muted mt-2 mb-0"><%= t("citizen_portal.dashboard.certificate_hint") %></p>
-    </div>
 
   <% elsif (pending = @submissions.find(&:status_pending?)) %>
     <%# ========== PENDING VERIFICATION ========== %>

@@ -411,27 +411,119 @@
   }
 }
 
-.wallet-status {
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.75rem;
+// "Active" status — under the name, next to the masked BonID
+.wallet-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(40, 167, 69, 0.25);
+  border: 1px solid rgba(40, 167, 69, 0.4);
+  color: #7dff9e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px rgba(125, 255, 158, 0.18);
+  }
+}
+
+// ⋮ menu — positioned on .wallet-card-wrapper over the card header
+.wallet-card-menu {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 5;
+}
+
+// Hide the menu when another profile card is in front
+.wallet-card-wrapper:not(.active) .wallet-card-menu {
+  display: none;
+}
+
+.wallet-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 1.4rem;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+
+  &:hover,
+  &:focus-visible,
+  &[aria-expanded="true"] {
+    opacity: 1;
+    outline: none;
+  }
+}
+
+.wallet-menu {
+  min-width: 15rem;
+  padding: 0.4rem;
+  border: 1px solid #e9ecef;
+  border-radius: 0.85rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+
+  .dropdown-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.6rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #0f172a;
+    white-space: normal;
+
+    > i {
+      font-size: 1.1rem;
+      line-height: 1.2;
+      color: var(--haitian-blue, #00209F);
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: #f1f5ff;
+    }
+
+    &.disabled {
+      color: #94a3b8;
+      > i { color: #94a3b8; }
+    }
+  }
+
+  .wallet-menu-hint {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: #64748b;
+  }
+
+  .wallet-menu-soon {
+    margin-left: auto;
+    align-self: center;
+    padding: 0.1rem 0.45rem;
     border-radius: 999px;
-    font-size: 0.75rem;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &.active {
-      background: rgba(40, 167, 69, 0.25);
-      color: #7dff9e;
-      border: 1px solid rgba(40, 167, 69, 0.4);
-    }
-
-    i {
-      font-size: 0.85rem;
-    }
+    letter-spacing: 0.4px;
   }
 }
 
@@ -491,11 +583,13 @@
 
   .wallet-bonid {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.9rem;
+    // Never wrap at the hyphens; shrink a little in narrow columns instead.
+    font-size: clamp(0.72rem, 0.6rem + 0.6vw, 0.9rem);
     font-weight: 500;
     color: rgba(255, 255, 255, 0.75);
     margin: 0;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
   }
 }
 
@@ -691,41 +785,6 @@
     letter-spacing: 0.3px;
   }
 }
-
-// ==========================================================
-// CERTIFICATE ACTION BUTTON
-// ==========================================================
-.certificate-action {
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.certificate-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #ffffff;
-  border: 1px solid #e9ecef;
-  border-radius: 999px;
-  color: var(--haitian-blue, #00209F);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--haitian-blue, #00209F);
-    border-color: var(--haitian-blue, #00209F);
-    color: #ffffff;
-  }
-
-  i {
-    font-size: 1.1rem;
-  }
-}
-
 
 // ==========================================================
 // PENDING VERIFICATION STATE
