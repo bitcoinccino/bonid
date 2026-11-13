@@ -2,78 +2,121 @@
     wallet QR or opening a shared link. No login. Shows only what's needed to
     confirm identity: photo, name, status, masked BonID, dates.
     Deliberately NOT shown: date of birth, address, full BonID (its P####
-    segment is the last 4 CIN digits), signature, internal codes. %>
+    segment is the last 4 CIN digits), signature, internal codes.
+    Styled like the dashboard's BonID wallet card. %>
+<% content_for :hide_public_header, true %>
 <%
   status = @verification_status
   user   = @submission.user
   show_person = %i[valid expired].include?(status)
 
-  # Same mask as the wallet card: initials + last 6 characters (lookup suffix),
-  # e.g. DL-****-*-**-697C56.
-  bonid_stripped = user&.bonid.to_s.delete("-")
-  masked_bonid = bonid_stripped.length >= 8 ? "#{bonid_stripped[0..1]}-****-*-**-#{bonid_stripped.last(6)}" : "****"
+  # Same mask as the wallet card and QR pop-up, e.g. DL-****-*-**-697C56.
+  masked_bonid = citizen_masked_bonid(user&.bonid)
 
-  fmt = ->(t) { t&.strftime("%d/%m/%Y") }
-
-  photo =
-    if @submission.selfie.attached?
-      @submission.selfie.variant(resize_to_fill: [ 220, 220 ])
-    elsif user&.photo&.attached?
-      user.photo
-    end
+  # Only the verified selfie (liveness-checked, matched to the ID, approved).
+  # Never the profile photo: citizens can change it any time, so showing it
+  # here would let someone pass the face check with another person's picture.
+  photo = @submission.selfie.variant(resize_to_fill: [ 220, 220 ]) if @submission.selfie.attached?
 
   badge_icon = { valid: "ri-checkbox-circle-fill", expired: "ri-time-line",
                  suspended: "ri-forbid-2-line", not_valid: "ri-close-circle-fill" }[status]
+
+  # Back: previous page when there is one (JS), else the citizen's dashboard
+  # or the BonID homepage for someone who scanned the QR.
+  back_fallback = citizen_signed_in? ? citizens_dashboard_path : root_path
 %>
 
 <div class="pv-wrap">
-  <div class="pv-card pv-card--<%= status %>">
+  <a href="<%= back_fallback %>" class="pv-back"
+     onclick="if (window.history.length > 1) { window.history.back(); return false; }"
+     aria-label="<%= t("main.public_verify.back") %>">
+    <i class="ri-arrow-left-line" aria-hidden="true"></i>
+    <span><%= t("main.public_verify.back") %></span>
+  </a>
 
-    <div class="pv-status">
-      <i class="<%= badge_icon %>" aria-hidden="true"></i>
-      <span><%= t("main.public_verify.badge.#{status}") %></span>
+  <div class="pv-card pv-card--<%= status %>">
+    <div class="pv-card-header">
+      <div class="pv-brand">
+        <i class="ri-shield-check-fill" aria-hidden="true"></i>
+        <span>BonID</span>
+      </div>
+      <span class="pv-status">
+        <i class="<%= badge_icon %>" aria-hidden="true"></i>
+        <%= t("main.public_verify.badge.#{status}") %>
+      </span>
     </div>
 
     <% if show_person %>
       <div class="pv-person">
-        <% if photo %>
+        <% if photo && status == :valid %>
+          <%# Tap to enlarge for a face check. Capped at 320px: this page is
+              public, so never serve a high-resolution biometric image. %>
+          <button type="button" class="pv-photo-btn"
+                  aria-label="<%= t("main.public_verify.enlarge_photo") %>"
+                  onclick="document.getElementById('pv-photo-dialog').showModal()">
+            <%= image_tag photo, class: "pv-photo", alt: t("main.public_verify.photo_alt") %>
+            <span class="pv-photo-zoom" aria-hidden="true"><i class="ri-zoom-in-line"></i></span>
+          </button>
+        <% elsif photo %>
           <%= image_tag photo, class: "pv-photo", alt: t("main.public_verify.photo_alt") %>
         <% else %>
-          <div class="pv-photo pv-photo--empty"><i class="ri-user-3-fill"></i></div>
+          <div class="pv-photo pv-photo--empty" role="img" aria-label="<%= t("main.public_verify.no_photo") %>">
+            <i class="ri-user-unfollow-line" aria-hidden="true"></i>
+          </div>
         <% end %>
-
-        <h1 class="pv-name"><%= [ user.first_name, user.last_name ].compact.join(" ") %></h1>
-        <p class="pv-bonid">BonID <span><%= masked_bonid %></span></p>
+        <div class="pv-info">
+          <h1 class="pv-name"><%= [ user.first_name, user.last_name ].compact.join(" ") %></h1>
+          <p class="pv-bonid"><%= masked_bonid %></p>
+        </div>
       </div>
 
-      <p class="pv-message"><%= t("main.public_verify.message.#{status}", date: fmt.(@submission.expires_at)) %></p>
+      <p class="pv-message"><%= t("main.public_verify.message.#{status}", date: @submission.expires_at ? card_date(@submission.expires_at) : "—") %></p>
 
-      <dl class="pv-dates">
-        <div>
-          <dt><%= t("main.public_verify.verified_on") %></dt>
-          <dd><%= fmt.(@submission.verified_at) || "—" %></dd>
+      <div class="pv-footer">
+        <div class="pv-footer-item">
+          <span class="pv-footer-label"><%= t("main.public_verify.verified_on") %></span>
+          <span class="pv-footer-value"><%= @submission.verified_at ? card_date(@submission.verified_at) : "—" %></span>
         </div>
-        <div>
-          <dt><%= t(status == :expired ? "main.public_verify.expired_on" : "main.public_verify.valid_until") %></dt>
-          <dd><%= fmt.(@submission.expires_at) || "—" %></dd>
+        <div class="pv-footer-item">
+          <span class="pv-footer-label"><%= t(status == :expired ? "main.public_verify.expired_on" : "main.public_verify.valid_until") %></span>
+          <span class="pv-footer-value"><%= @submission.expires_at ? card_date(@submission.expires_at) : "—" %></span>
         </div>
-      </dl>
-
-      <% if status == :valid %>
-        <div class="pv-tip">
-          <i class="ri-eye-line" aria-hidden="true"></i>
-          <span><%= t("main.public_verify.photo_check") %></span>
-        </div>
-      <% end %>
+      </div>
     <% else %>
-      <p class="pv-message"><%= t("main.public_verify.message.#{status}") %></p>
+      <p class="pv-message pv-message--solo"><%= t("main.public_verify.message.#{status}") %></p>
     <% end %>
-
-    <p class="pv-meta">
-      <%= t("main.public_verify.checked_at", time: Time.current.strftime("%d/%m/%Y %H:%M")) %>
-    </p>
   </div>
 
+  <% if status == :valid && photo %>
+    <%# Enlarged selfie. Native <dialog>: Escape closes it; tapping the
+        backdrop (the dialog element itself) or ✕ closes it too. %>
+    <dialog id="pv-photo-dialog" class="pv-photo-dialog"
+            onclick="if (event.target === this) this.close()">
+      <form method="dialog" class="pv-photo-dialog-inner" oncontextmenu="return false;">
+        <button class="pv-photo-dialog-close" aria-label="<%= t("citizen_portal.common.close") %>">
+          <i class="ri-close-line" aria-hidden="true"></i>
+        </button>
+        <%= image_tag @submission.selfie.variant(resize_to_fill: [ 320, 320 ]),
+                      class: "pv-photo-large", alt: t("main.public_verify.photo_alt"),
+                      loading: "lazy", draggable: "false" %>
+        <p class="pv-photo-dialog-name"><%= [ user.first_name, user.last_name ].compact.join(" ") %></p>
+      </form>
+    </dialog>
+
+    <div class="pv-tip">
+      <i class="ri-eye-line" aria-hidden="true"></i>
+      <span><%= t("main.public_verify.photo_check") %></span>
+    </div>
+  <% elsif show_person && photo.nil? %>
+    <div class="pv-tip pv-tip--warn">
+      <i class="ri-error-warning-line" aria-hidden="true"></i>
+      <span><%= t("main.public_verify.no_photo_check") %></span>
+    </div>
+  <% end %>
+
+  <p class="pv-meta">
+    <%= t("main.public_verify.checked_at", time: Time.current.strftime("%d/%m/%Y %H:%M")) %>
+  </p>
   <p class="pv-privacy">
     <i class="ri-lock-line" aria-hidden="true"></i>
     <%= t("main.public_verify.privacy_note") %>
@@ -81,49 +124,123 @@
 </div>
 
 <style>
-  .pv-wrap { max-width: 440px; margin: 2rem auto; padding: 0 16px; font-family: 'Inter', sans-serif; }
+  /* Mirrors the dashboard BonID wallet card (citizens/pages/_dashboard.scss) */
+  .pv-wrap {
+    --pv-card-bg: linear-gradient(135deg, #00209F 0%, #001a7a 100%);
+    --pv-radius: 1.25rem;
+    --pv-shadow: 0 8px 24px rgba(0, 32, 159, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08);
+    max-width: 440px; margin: 0.5rem auto 1rem; padding: 0 16px; font-family: 'Inter', sans-serif;
+  }
+
+  .pv-back {
+    display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+    color: #00209F; font-weight: 600; font-size: 0.9rem; text-decoration: none;
+  }
+  .pv-back i { font-size: 1.2rem; }
+  .pv-back:hover { text-decoration: underline; }
+
   .pv-card {
-    background: #fff; border-radius: 20px; padding: 28px 24px 22px; text-align: center;
-    border: 1px solid #E2E8F0; box-shadow: 0 14px 40px rgba(0, 32, 159, 0.10);
-    border-top: 6px solid var(--pv-accent);
+    position: relative; overflow: hidden; color: #fff;
+    background: var(--pv-card-bg); border-radius: var(--pv-radius); box-shadow: var(--pv-shadow);
   }
-  .pv-card--valid     { --pv-accent: #15803D; --pv-soft: #DCFCE7; }
-  .pv-card--expired   { --pv-accent: #B45309; --pv-soft: #FEF3C7; }
+  .pv-card::before {
+    content: ''; position: absolute; inset: 0 0 50% 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+  }
   .pv-card--suspended,
-  .pv-card--not_valid { --pv-accent: #B91C1C; --pv-soft: #FEE2E2; }
+  .pv-card--not_valid { --pv-card-bg: linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%); }
 
+  .pv-card-header {
+    position: relative; display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 1.5rem 0.75rem;
+  }
+  .pv-brand { display: flex; align-items: center; gap: 0.5rem; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.1rem; }
+  .pv-brand i { font-size: 1.4rem; color: #FFD700; }
+
+  /* Status pill — same look as the dashboard's "Active" pill */
   .pv-status {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 8px 18px; border-radius: 999px;
-    background: var(--pv-soft); color: var(--pv-accent);
-    font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.1rem;
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.25rem 0.65rem; border-radius: 999px;
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+    background: rgba(40, 167, 69, 0.25); color: #7dff9e; border: 1px solid rgba(40, 167, 69, 0.4);
   }
-  .pv-status i { font-size: 1.4rem; }
+  .pv-status i { font-size: 0.85rem; }
+  .pv-card--expired .pv-status { background: rgba(245, 158, 11, 0.25); color: #FCD34D; border-color: rgba(245, 158, 11, 0.45); }
+  .pv-card--suspended .pv-status,
+  .pv-card--not_valid .pv-status { background: rgba(255, 255, 255, 0.18); color: #fff; border-color: rgba(255, 255, 255, 0.35); }
 
-  .pv-person { margin-top: 22px; }
+  .pv-person { position: relative; display: flex; align-items: center; gap: 1.25rem; padding: 0.5rem 1.5rem 0.25rem; }
   .pv-photo {
-    width: 140px; height: 140px; border-radius: 50%; object-fit: cover; object-position: center top;
-    border: 4px solid #fff; box-shadow: 0 0 0 3px var(--pv-accent); display: block; margin: 0 auto;
+    flex-shrink: 0; width: 96px; height: 96px; border-radius: 50%;
+    object-fit: cover; object-position: center top;
+    border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
-  .pv-photo--empty { display: flex; align-items: center; justify-content: center; background: #F1F5F9; color: #94A3B8; font-size: 3rem; }
-  .pv-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.5rem; color: #0F172A; margin: 16px 0 4px; }
-  .pv-bonid { color: #64748B; font-size: 0.9rem; margin: 0; }
-  .pv-bonid span { font-family: ui-monospace, monospace; color: #00209F; font-weight: 600; letter-spacing: 0.04em; }
+  .pv-photo-btn {
+    position: relative; flex-shrink: 0; padding: 0; border: 0; background: none;
+    border-radius: 50%; cursor: zoom-in;
+  }
+  .pv-photo-btn:focus-visible { outline: 3px solid #FFD700; outline-offset: 3px; }
+  .pv-photo-zoom {
+    position: absolute; right: 2px; bottom: 2px; width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff; color: #00209F; font-size: 0.95rem; box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
 
-  .pv-message { color: #334155; margin: 18px 0 0; line-height: 1.5; }
+  /* The global reset (* { margin: 0 }) strips <dialog>'s built-in
+     margin:auto centering — restore it so the photo opens mid-screen. */
+  .pv-photo-dialog {
+    position: fixed; inset: 0; margin: auto;
+    width: fit-content; height: fit-content;
+    border: 0; padding: 0; background: transparent;
+    max-width: calc(100vw - 32px); max-height: calc(100vh - 32px);
+  }
+  .pv-photo-dialog::backdrop { background: rgba(15, 23, 42, 0.8); }
+  .pv-photo-dialog-inner {
+    position: relative; margin: 0; padding: 16px 16px 14px; background: #fff;
+    border-radius: 1.25rem; text-align: center;
+  }
+  .pv-photo-large {
+    display: block; width: min(320px, calc(100vw - 64px)); height: auto; aspect-ratio: 1;
+    object-fit: cover; object-position: center top; border-radius: 1rem;
+    user-select: none; -webkit-user-drag: none; pointer-events: none;
+  }
+  .pv-photo-dialog-name { margin: 10px 0 0; font-family: 'Montserrat', sans-serif; font-weight: 700; color: #0F172A; }
+  .pv-photo-dialog-close {
+    position: absolute; top: 22px; right: 22px; z-index: 1; width: 34px; height: 34px;
+    border: 0; border-radius: 50%; background: rgba(15, 23, 42, 0.6); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer;
+  }
 
-  .pv-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0 0; }
-  .pv-dates div { background: #F8FAFC; border-radius: 12px; padding: 10px; }
-  .pv-dates dt { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748B; font-weight: 600; }
-  .pv-dates dd { margin: 2px 0 0; font-weight: 700; color: #0F172A; }
+  .pv-photo--empty { display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); font-size: 2.5rem; }
+  .pv-info { min-width: 0; }
+  .pv-name { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.35rem; line-height: 1.2; margin: 0 0 0.25rem; color: #fff; }
+  .pv-bonid {
+    margin: 0; white-space: nowrap; letter-spacing: 0.3px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: clamp(0.72rem, 0.6rem + 0.6vw, 0.9rem); color: rgba(255, 255, 255, 0.75);
+  }
+
+  .pv-message { position: relative; margin: 0.9rem 1.5rem 1.1rem; font-size: 0.9rem; line-height: 1.5; color: rgba(255, 255, 255, 0.88); }
+  .pv-message--solo { margin: 0.5rem 1.5rem 1.5rem; }
+
+  .pv-footer { position: relative; display: flex; justify-content: space-between; padding: 1rem 1.5rem; background: rgba(0, 0, 0, 0.15); }
+  .pv-footer-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .pv-footer-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.6); }
+  .pv-footer-value { font-size: 0.9rem; font-weight: 600; color: #fff; margin-top: 0.15rem; }
 
   .pv-tip {
-    display: flex; gap: 8px; align-items: flex-start; text-align: left;
-    margin-top: 16px; padding: 10px 12px; border-radius: 10px;
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-top: 14px; padding: 10px 12px; border-radius: 10px;
     background: #EFF6FF; color: #1E3A8A; font-size: 0.85rem;
   }
   .pv-tip i { font-size: 1.05rem; line-height: 1.3; }
+  .pv-tip--warn { background: #FEF3C7; color: #92400E; }
 
-  .pv-meta { margin: 18px 0 0; font-size: 0.75rem; color: #94A3B8; }
-  .pv-privacy { text-align: center; color: #64748B; font-size: 0.8rem; margin: 14px 8px 0; }
+  .pv-meta { text-align: center; margin: 14px 0 0; font-size: 0.75rem; color: #94A3B8; }
+  .pv-privacy { text-align: center; color: #64748B; font-size: 0.8rem; margin: 6px 8px 0; }
+
+  @media (max-width: 420px) {
+    .pv-person { flex-direction: column; text-align: center; }
+    .pv-message { text-align: center; }
+  }
 </style>
