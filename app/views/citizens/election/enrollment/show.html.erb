@@ -9,17 +9,17 @@
     <h1 class="ballot-title">
       <i class="ri-user-voice-line me-2"></i><%= t("citizen_portal.election.enrollment.title") %>
     </h1>
-    <%# Registered voters see the election name in the hero card below —
-        don't repeat it here. %>
-    <% unless @state == :registered %>
-      <p class="ballot-subtitle mb-0">
-        <% if @election %>
-          <%= @election.title %>
-        <% else %>
-          <%= t("citizen_portal.election.enrollment.subtitle") %>
-        <% end %>
-      </p>
-    <% end %>
+    <%# Registered voters see the election name in the hero card below, so
+        the header describes the page instead of repeating it. %>
+    <p class="ballot-subtitle mb-0">
+      <% if @state == :registered %>
+        <%= t("citizen_portal.election.enrollment.registered_subtitle") %>
+      <% elsif @election %>
+        <%= @election.title %>
+      <% else %>
+        <%= t("citizen_portal.election.enrollment.subtitle") %>
+      <% end %>
+    </p>
   </div>
 
   <div class="row justify-content-center">
