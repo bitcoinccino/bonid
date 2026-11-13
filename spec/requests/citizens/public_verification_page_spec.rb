@@ -52,11 +52,23 @@ RSpec.describe "Public BonID verification page", type: :request do
     end
   end
 
+  describe "photo" do
+    let(:png) { Rack::Test::UploadedFile.new(StringIO.new(Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")), "image/png", original_filename: "p.png") }
+  
+    it "never falls back to the editable profile photo" do
+      submission.selfie.purge if submission.selfie.attached?
+      citizen.photo.attach(io: StringIO.new(png.read), filename: "profile.png", content_type: "image/png")
+      visit_page
+      expect(response.body).not_to include("profile.png")
+      expect(response.body).to include("No verified photo on file")
+    end
+  end
+  
   it "shows Expired with the date, still with name for the person checking" do
     submission.update_columns(expires_at: Date.new(2026, 1, 5).to_time)
     visit_page
     expect(response.body).to include("Expired")
-    expect(response.body).to include("05/01/2026")
+    expect(response.body).to include("Jan 5, 2026") # card_date, same as the wallet card
     expect(response.body).to include("Davidson Louis")
   end
 
