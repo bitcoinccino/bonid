@@ -15,11 +15,11 @@
         <i class="ri-verified-badge-line me-2"></i><%= t("main.partners.title") %>
       </h1>
       <p class="text-white-50 mx-auto mb-3" style="max-width: 600px; font-size: 0.92rem; line-height: 1.6;">
-        <%= t("main.partners.subtitle") %>
+        <%= citizen_signed_in? ? t("main.partners.subtitle_signed_in") : t("main.partners.subtitle") %>
       </p>
-      <% if @partners.any? %>
+      <% if @total_count.positive? %>
         <span class="badge rounded-pill bg-white text-primary px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-          <%= t("main.partners.available", count: @partners.size) %>
+          <%= t("main.partners.available", count: @total_count) %>
         </span>
       <% end %>
     </div>
@@ -37,28 +37,64 @@
           </div>
         </div>
 
-        <div class="d-none d-md-block border-start ps-2" style="min-width: 160px;">
-          <%= f.select :sector,
-            grouped_options_for_select(translated_sector_filter_groups, params[:sector]),
-            { prompt: t("main.partners.all_sectors") },
-            class: "form-select form-select-sm border-0 shadow-none bg-transparent", onchange: "this.form.submit()" %>
-        </div>
+        <%= hidden_field_tag :group, @group if @group %>
 
         <%= f.submit t("main.partners.filter"), class: "btn btn-primary btn-sm rounded-pill px-4 py-2 fw-bold" %>
       <% end %>
     </div>
   </div>
 
-  <%# ── Partners Grid ── %>
+  <%# ── Sector chips: biggest groups first; past CHIP_LIMIT the rest sit
+      behind a "+ N" chip so a long sector list never turns into a wall.
+      The picked chip always stays visible. ── %>
+  <% if @all_sections.size > 1 %>
+    <% chip_limit = 6
+       chips = @all_sections.sort_by.with_index { |(_, list), i| [ -list.size, i ] }
+       hidden_count = chips.each_with_index.count { |(slug, _), i| i >= chip_limit && slug != @group } %>
+    <nav class="partners-chips container" aria-label="<%= t("main.partners.all_sectors") %>">
+      <%= link_to partners_path(search: params[:search].presence),
+            class: "partners-chip#{' is-active' unless @group}",
+            aria: { current: (@group ? nil : "page") } do %>
+        <%= t("main.partners.all_sectors") %> <span class="partners-chip__count"><%= @total_count %></span>
+      <% end %>
+      <% chips.each_with_index do |(slug, list), i| %>
+        <% extra = i >= chip_limit && slug != @group %>
+        <%= link_to partners_path(group: slug, search: params[:search].presence),
+              class: "partners-chip#{' is-active' if @group == slug}#{' is-extra' if extra}",
+              aria: { current: (@group == slug ? "page" : nil) } do %>
+          <i class="<%= partner_directory_group_icon(slug) %>"></i>
+          <%= partner_directory_group_label(slug) %>
+          <span class="partners-chip__count"><%= list.size %></span>
+        <% end %>
+      <% end %>
+      <% if hidden_count.positive? %>
+        <button type="button" class="partners-chip partners-chip--more"
+                onclick="this.closest('.partners-chips').classList.add('is-expanded'); this.remove();">
+          <i class="ri-add-line"></i> <%= t("main.partners.more_sectors", count: hidden_count) %>
+        </button>
+      <% end %>
+    </nav>
+  <% end %>
+
+  <%# ── Partners, one section per sector group ── %>
   <section class="container pb-5 pt-2">
+    <% @sections.each do |slug, list| %>
+    <div class="partners-section">
+    <% if slug %>
+      <h2 class="partners-section__title">
+        <i class="<%= partner_directory_group_icon(slug) %>"></i>
+        <%= partner_directory_group_label(slug) %>
+        <span class="partners-section__count"><%= list.size %></span>
+      </h2>
+    <% end %>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-      <% @partners.each do |partner| %>
+      <% list.each do |partner| %>
         <div class="col">
           <div class="card partner-card h-100 border rounded-3">
 
             <%# Logo + Name Row %>
             <div class="card-body d-flex flex-column p-4">
-              <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="d-flex align-items-center gap-3 mb-2">
                 <div class="partner-logo-sm rounded-circle d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0">
                   <% if partner.logo.attached? %>
                     <% if partner.logo.content_type.in?(%w[image/jpeg image/png image/gif image/webp]) && partner.logo.variable? %>
@@ -80,30 +116,44 @@
                   </h6>
                   <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill mt-1" style="font-size: 0.7rem;">
                     <i class="<%= sector_icon(partner.sector) %> me-1"></i>
-                    <%= sector_group_label(partner.sector) %>
+                    <%= sector_label_translated(partner.sector) %>
                   </span>
                 </div>
               </div>
 
-              <%# Benefits (first 2) %>
-              <div class="mb-3 flex-grow-1">
-                <% (partner_benefits(partner.sector) || []).first(5).each do |benefit| %>
-                  <div class="d-flex align-items-start mb-2">
-                    <i class="ri-checkbox-circle-line text-success me-2 mt-1" style="font-size: 0.8rem;"></i>
-                    <span class="text-muted" style="font-size: 0.8rem; line-height: 1.4;"><%= benefit %></span>
-                  </div>
-                <% end %>
+              <%# The everyday problem here, then how BonID solves it. %>
+              <% ps = partner_problem_solution(partner.sector) %>
+              <div class="partner-ps flex-grow-1 mb-3">
+                <p class="partner-ps__problem">
+                  <i class="ri-error-warning-line" aria-hidden="true"></i>
+                  <span><span class="visually-hidden"><%= t("main.partners.problem_label") %> </span><%= ps[:problem] %></span>
+                </p>
+                <p class="partner-ps__solution">
+                  <i class="ri-checkbox-circle-fill" aria-hidden="true"></i>
+                  <span><%= ps[:solution] %></span>
+                </p>
               </div>
 
-              <%# CTA %>
-              <div class="mt-auto">
+              <%# Main action: register through this partner (or go home when
+                  already signed in). Secondary: "Sign in with BonID" opens the
+                  partner's own site, only when it has a live BonID sign-in. %>
+              <div class="mt-auto d-grid gap-2">
                 <% if citizen_signed_in? %>
-                  <%= link_to citizens_dashboard_path, class: "btn btn-primary rounded-pill fw-semibold w-100 py-2" do %>
-                    <i class="ri-dashboard-line me-1"></i> <%= t("main.partners.go_to_dashboard") %>
+                  <%= link_to citizens_dashboard_path, class: "btn btn-primary rounded-pill fw-semibold py-2" do %>
+                    <i class="ri-home-5-line me-1"></i> <%= t("main.partners.go_to_dashboard") %>
                   <% end %>
                 <% else %>
-                  <%= link_to signup_path(partner: partner.slug), class: "btn btn-primary rounded-pill fw-semibold w-100 py-2" do %>
-                    <i class="ri-shield-check-line me-1"></i> <%= t("main.partners.get_verified") %>
+                  <%= link_to signup_path(partner: partner.slug), class: "btn btn-primary rounded-pill fw-semibold py-2" do %>
+                    <%= t("main.partners.get_verified") %> <i class="ri-arrow-right-line ms-1"></i>
+                  <% end %>
+                <% end %>
+
+                <% if (site = partner_bonid_sign_in_url(partner)) %>
+                  <%= link_to site, class: "btn partner-signin-link rounded-pill fw-semibold py-2",
+                        target: "_blank", rel: "noopener noreferrer",
+                        title: t("main.partners.sign_in_tooltip", name: partner.name) do %>
+                    <i class="ri-login-circle-line me-1"></i> <%= t("main.partners.sign_in_badge") %>
+                    <i class="ri-arrow-right-up-line ms-1"></i>
                   <% end %>
                 <% end %>
               </div>
@@ -113,8 +163,10 @@
         </div>
       <% end %>
     </div>
+    </div>
+    <% end %>
 
-    <% if @partners.empty? %>
+    <% if @sections.empty? %>
       <div class="text-center text-muted mt-5 py-5">
         <div class="bg-white p-4 rounded-circle shadow-sm d-inline-block mb-3">
           <i class="ri-building-2-line display-4 text-secondary"></i>

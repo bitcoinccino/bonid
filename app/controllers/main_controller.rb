@@ -27,12 +27,37 @@ class MainController < ApplicationController
 
 
   def partners
-    @partners = Partner.where.not(verified_at: nil).order(:name)
-    Rails.logger.info "Verified partners: #{@partners.map { |p| [ p.id, p.name, p.verified_at, p.sector ] }}"
+    # "bonid-central" is the internal fallback partner for public sign-ups
+    # (see IdentitySubmissionsController#set_partner); it is not a real
+    # institution, so it stays out of the public directory.
+    @partners = Partner.where.not(verified_at: nil)
+                       .where.not(slug: "bonid-central")
+                       .includes(:oauth_application, logo_attachment: :blob)
+                       .order(:name)
 
-    @partners = @partners.where("name ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+    if params[:search].present?
+      @partners = @partners.where("name ILIKE ?", "%#{Partner.sanitize_sql_like(params[:search].to_s.strip)}%")
+    end
     @partners = @partners.where(sector: params[:sector]) if params[:sector].present?
+
+    # Sector-group chips: counts come from every match (so the chips don't
+    # vanish once one is picked); the selected chip narrows the sections.
+    @all_sections = helpers.partner_directory_sections(@partners.to_a)
+    @group        = params[:group].presence_in(@all_sections.map(&:first))
+    @sections     = @group ? @all_sections.select { |slug, _| slug == @group } : @all_sections
+    @total_count  = @all_sections.sum { |_, list| list.size }
+
+    # Section headings only help once the list is long; with a handful of
+    # partners each heading holds one or two cards and the grid looks broken.
+    # Short lists (or a single picked group) render as one even grid by name.
+    unless @sections.size > 1 && @total_count > GROUPED_DIRECTORY_MIN
+      @sections = [ [ nil, @sections.flat_map(&:last).sort_by { |p| p.name.downcase } ] ]
+      @sections = [] if @sections.first.last.empty?
+    end
   end
+
+  # Partner count above which /partners shows one heading per sector group.
+  GROUPED_DIRECTORY_MIN = 12
 
   def required_documents; end
   def terms; end
