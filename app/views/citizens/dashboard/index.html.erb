@@ -118,15 +118,8 @@
               <h2 class="wallet-name">
                 <%= [current_citizen.first_name, current_citizen.last_name].compact.join(" ") %>
               </h2>
-              <%# Mask BonID: show initials + mask middle + show lookup suffix (last 6 stripped chars) %>
-              <% bonid_stripped = current_citizen.bonid.to_s.gsub("-", "") %>
-              <% if bonid_stripped.length >= 8 %>
-                <% lookup_suffix = bonid_stripped.last(6) %>
-                <% masked_bonid = "#{bonid_stripped[0..1]}-****-*-**-#{lookup_suffix}" %>
-              <% else %>
-                <% masked_bonid = current_citizen.bonid %>
-              <% end %>
-              <p class="wallet-bonid"><%= masked_bonid %></p>
+              <%# Masked BonID: initials + lookup code (same on QR pop-up and public page) %>
+              <p class="wallet-bonid"><%= citizen_masked_bonid(current_citizen.bonid) %></p>
               <span class="wallet-status-pill">
                 <span class="status-dot" aria-hidden="true"></span><%= t("citizen_portal.dashboard.active") %>
               </span>

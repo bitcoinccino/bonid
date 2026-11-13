@@ -350,6 +350,17 @@ module ApplicationHelper
     "#{masked_local}@#{domain}"
   end
 
+  # Citizen-facing masked BonID — same on the wallet card, QR pop-up and
+  # public verification page: initials + masked middle + the 6-char lookup
+  # code agents type (BonidLookupService suffix lookup).
+  #   "DL-1990-M-OU-P8697C56" → "DL-****-*-**-697C56"
+  def citizen_masked_bonid(bonid)
+    stripped = bonid.to_s.delete("-")
+    return "****" if stripped.length < 8
+
+    "#{stripped[0..1]}-****-*-**-#{stripped.last(6)}"
+  end
+
   # Masks a BonID: "JM-1968-M-OUEST-P2334-697280" → "MB••••••••697280"
   def mask_bonid(bonid)
     return "—" if bonid.blank?
