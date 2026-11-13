@@ -92,13 +92,13 @@
   <%# ── FAQ Accordion List ── %>
   <div class="faq-list">
     <% @faq_categories.each do |cat| %>
-      <% cat[:questions].each_with_index do |qkey, idx| %>
+      <% cat[:questions].each do |qkey| %>
         <% item = @faq_items[qkey.to_sym] %>
         <% next unless item %>
+        <%# All questions start closed; the citizen opens what they need. %>
         <details class="faq-item"
                  data-faq-target="faqItem"
-                 data-category="<%= cat[:key] %>"
-                 <%= 'open' if cat[:key] == "getting_started" && idx.zero? %>>
+                 data-category="<%= cat[:key] %>">
           <summary class="faq-question">
             <span class="faq-question-text"><%= item[:q].html_safe %></span>
             <i class="ri-arrow-down-s-line faq-chevron"></i>
@@ -122,18 +122,20 @@
       <h5 class="faq-contact-title"><%= t("citizens.support.contact_title") %></h5>
       <p class="faq-contact-subtitle"><%= t("citizens.support.contact_subtitle") %></p>
 
+      <%# WhatsApp + email only. The WhatsApp number comes from
+          SUPPORT_WHATSAPP_NUMBER (digits, with country code, e.g. 509XXXXXXXX);
+          the button stays hidden until a real number is set. %>
+      <% whatsapp = ENV["SUPPORT_WHATSAPP_NUMBER"].to_s.gsub(/\D/, "") %>
       <div class="faq-contact-channels">
-        <a href="sms:+50940000000" class="faq-contact-btn">
-          <i class="ri-message-2-line"></i>
-          <span><%= t("citizens.support.contact_sms") %></span>
-        </a>
-        <a href="https://wa.me/50940000000" class="faq-contact-btn" target="_blank" rel="noopener">
-          <i class="ri-whatsapp-line"></i>
-          <span><%= t("citizens.support.contact_whatsapp") %></span>
-        </a>
-        <a href="tel:+50940000000" class="faq-contact-btn">
-          <i class="ri-phone-line"></i>
-          <span><%= t("citizens.support.contact_phone") %></span>
+        <% if whatsapp.present? %>
+          <a href="https://wa.me/<%= whatsapp %>" class="faq-contact-btn" target="_blank" rel="noopener">
+            <i class="ri-whatsapp-line"></i>
+            <span><%= t("citizens.support.contact_whatsapp") %></span>
+          </a>
+        <% end %>
+        <a href="mailto:support@bonid.ht" class="faq-contact-btn">
+          <i class="ri-mail-line"></i>
+          <span><%= t("citizens.support.contact_email") %></span>
         </a>
       </div>
     </div>
