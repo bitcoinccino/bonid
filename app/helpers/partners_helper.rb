@@ -134,10 +134,10 @@ module PartnersHelper
   end
 
   # Maps every supported sector value to the i18n key group that holds
-  # its benefit bullets. Update here when adding a new sector value.
+  # its problem / solution text. Update here when adding a new sector value.
   PARTNER_BENEFIT_GROUPS = {
     # banking
-    "banking" => "banking", "fintech" => "banking", "commercial_bank" => "banking",
+    "banking" => "banking", "fintech" => "default", "commercial_bank" => "banking",
     "microfinance" => "banking", "credit_union" => "banking", "money_transfer" => "banking",
     # mobile wallet & crypto
     "mobile_wallet" => "mobile_wallet", "payment_processor" => "mobile_wallet",
@@ -183,14 +183,86 @@ module PartnersHelper
     "cryptocurrency" => "cryptocurrency"
   }.freeze
 
-  def partner_benefits(sector)
+  # The everyday problem Haitians face at this kind of partner, and how
+  # BonID solves it (main.partners.uses.<group>.problem / .solution).
+  # Falls back to the default pair for a sector with no entry yet.
+  def partner_problem_solution(sector)
     group = PARTNER_BENEFIT_GROUPS[sector.to_s.downcase] || "default"
-    bullets = I18n.t("main.partners.benefits.#{group}", default: nil)
+    group = "default" unless I18n.exists?("main.partners.uses.#{group}.problem")
+    {
+      problem:  I18n.t("main.partners.uses.#{group}.problem"),
+      solution: I18n.t("main.partners.uses.#{group}.solution")
+    }
+  end
 
-    # Fall back to the default group if the translation key is missing
-    # (e.g. a new sector added before its YAML entry).
-    bullets = I18n.t("main.partners.benefits.default", default: []) if bullets.blank?
+  # Link for the card's "Sign in with BonID" button: the partner's website,
+  # shown only when the partner has a real BonID sign-in on its own app
+  # (an OAuth app with a redirect URI to its site). Every approved partner
+  # gets an OAuth app automatically, so the app existing is not enough, and
+  # the out-of-band URI is for manual/testing use. Returns nil otherwise.
+  def partner_bonid_sign_in_url(partner)
+    redirect = partner.oauth_application&.redirect_uri.to_s.strip
+    return unless redirect.start_with?("https://", "http://")
 
-    Array(bullets)
+    site = partner.website.to_s.strip
+    return if site.blank?
+
+    site = "https://#{site}" unless site.match?(%r{\Ahttps?://}i)
+    uri = URI.parse(site)
+    uri.host.present? ? uri.to_s : nil
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  # ------------------------------------------------------------
+  # Public partner directory (/partners): sections by sector group
+  # ------------------------------------------------------------
+  # Older partners carry generic sector values that are not listed in
+  # PartnerSectorConstants::SECTORS; map them to the group they belong to.
+  LEGACY_SECTOR_GROUPS = {
+    "banking" => "Finance", "law_enforcement" => "Law Enforcement", "border_control" => "Law Enforcement",
+    "government" => "Government", "local_governance" => "Government", "customs_service" => "Government",
+    "electoral_systems" => "Government", "embassy_services" => "Diplomacy",
+    "healthcare" => "Healthcare", "public_health_campaigns" => "Healthcare", "education" => "Education",
+    "telecommunications" => "Telecom", "utilities" => "Energy & Utilities", "insurance" => "Insurance",
+    "tourism" => "Tourism & Hospitality", "ngos" => "NGO & International",
+    "community_organizations" => "NGO & International", "legal" => "Legal"
+  }.freeze
+
+  DIRECTORY_GROUP_ICONS = {
+    "finance" => "ri-bank-line", "fintech_mobile_money" => "ri-smartphone-line",
+    "law_enforcement" => "ri-shield-star-line", "government" => "ri-government-line",
+    "diplomacy" => "ri-global-line", "healthcare" => "ri-hospital-line",
+    "education" => "ri-graduation-cap-line", "telecom" => "ri-signal-tower-line",
+    "insurance" => "ri-umbrella-line", "tourism_hospitality" => "ri-hotel-line",
+    "ngo_international" => "ri-hand-heart-line", "real_estate" => "ri-home-3-line",
+    "legal" => "ri-scales-3-line", "logistics_transport" => "ri-truck-line",
+    "gaming_lottery" => "ri-coupon-line", "energy_utilities" => "ri-flashlight-line",
+    "culture_media" => "ri-film-line", "agriculture_environment" => "ri-plant-line",
+    "professional_services" => "ri-briefcase-line"
+  }.freeze
+
+  # Group slug ("finance", "government", ... or "other") for a sector value.
+  def partner_directory_group(sector)
+    key = sector.to_s.downcase
+    group = PartnerSectorConstants::SECTORS.find { |_g, values| values.include?(key) }&.first ||
+            LEGACY_SECTOR_GROUPS[key]
+    group ? group.parameterize(separator: "_") : "other"
+  end
+
+  def partner_directory_group_label(slug)
+    I18n.t("main.partners.sector_groups.#{slug}", default: slug.humanize)
+  end
+
+  def partner_directory_group_icon(slug)
+    DIRECTORY_GROUP_ICONS.fetch(slug, "ri-building-2-line")
+  end
+
+  # [[slug, [partners...]], ...] in the canonical group order, "other" last,
+  # empty groups left out. Partners keep their incoming (name) order.
+  def partner_directory_sections(partners)
+    by_group = partners.group_by { |p| partner_directory_group(p.sector) }
+    order = PartnerSectorConstants::SECTORS.keys.map { |g| g.parameterize(separator: "_") } + [ "other" ]
+    order.filter_map { |slug| [ slug, by_group[slug] ] if by_group[slug].present? }
   end
 end
