@@ -12,6 +12,16 @@ module Citizens
 
     DEFAULT_WINDOW_DAYS = 30
 
+    # POST /citizens/notifications/seen — called when the citizen opens the
+    # topbar bell. Clears the unread count; the open popover keeps its
+    # highlights for this view (the browser removes only the badges).
+    # No broadcast here: replacing the bell frame would close the popover
+    # the citizen is reading. Other tabs catch up on their next page load.
+    def mark_seen
+      current_citizen.update_columns(notifications_seen_at: Time.current)
+      head :no_content
+    end
+
     def index
       # Stamp first so the topbar bell renders with the new `seen_at` and
       # the badge clears on this same response. Update the in-memory record

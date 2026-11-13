@@ -15,7 +15,10 @@
   <% events  = counter.recent_events(limit: 5) %>
   <% seen_at = current_citizen.notifications_seen_at || Time.at(0) %>
 
-  <div class="dropdown">
+  <%# alert-bell: opening the dropdown marks everything seen (badge clears) %>
+  <div class="dropdown"
+       data-controller="alert-bell"
+       data-alert-bell-url-value="<%= citizens_notifications_seen_path %>">
     <button type="button"
             class="btn btn-link p-0 text-white text-decoration-none position-relative"
             data-bs-toggle="dropdown"
@@ -25,7 +28,8 @@
             aria-label="<%= t("citizen_portal.bell.aria", count: total) %>">
       <i class="ri-notification-3-line fs-4"></i>
       <% if total.positive? %>
-        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small"
+              data-alert-bell-target="badge">
           <%= total > 99 ? "99+" : total %>
         </span>
       <% end %>
@@ -47,7 +51,8 @@
           style="background: #F8FAFC; border-bottom: 1px solid #E5E7EB;">
         <strong style="font-size: 0.85rem; color: var(--primary);"><%= t("citizen_portal.bell.title") %></strong>
         <% if total.positive? %>
-          <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+          <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem;"
+                data-alert-bell-target="badge">
             <%= t("citizen_portal.bell.new_count", count: total) %>
           </span>
         <% end %>
