@@ -1,4 +1,9 @@
 module ApplicationHelper
+  # Short date for cards with a capitalized month in every language:
+  # "Nov 11, 2026" / "11 Nov. 2026" / "11 Nov 2026".
+  def card_date(date)
+    l(date.to_date, format: :card).gsub(/\p{L}+/) { |word| word.capitalize }
+  end
   # Whether the paused BonTouris feature is enabled. Used to hide nav links
   # to gated staff pages. Mirrors the controller guard (BontourisPausable).
   def bontouris_enabled?
@@ -19,6 +24,24 @@ module ApplicationHelper
   # Mirrors the controller guard (CitizenServicesPausable).
   def citizen_services_enabled?
     CitizenServicesPausable.enabled?
+  end
+
+  # Profile cards (health bank emergency family social physical) enabled to
+  # show behind the BonID card, in stack order. Empty for v1 launch.
+  # Set with WALLET_PROFILE_CARDS — see WalletProfileCardsPausable.
+  def wallet_profile_cards
+    @wallet_profile_cards ||= WalletProfileCardsPausable.enabled_cards
+  end
+
+  def wallet_profile_card_enabled?(card)
+    wallet_profile_cards.include?(card.to_s)
+  end
+
+  # Peek position for an enabled card in the stack: each card shows a 16px
+  # strip above the one in front of it. Returned as CSS custom properties.
+  def wallet_stack_style(card)
+    index = wallet_profile_cards.index(card.to_s) || 0
+    "--stack-top: #{16 * (wallet_profile_cards.size - 1 - index)}px; --stack-z: #{46 - index};"
   end
 
   # Whether the paused IDPol/law-enforcement Tier-3 extras are enabled

@@ -37,9 +37,7 @@
 .wallet-stack-container {
   position: relative;
   margin-bottom: 2rem;
-  // Reserve space for stacked cards peeking from top
-  // Must be >= health card's top (80px) so the red card peeks above BonID
-  padding-top: 96px;
+  // padding-top is set inline: 16px per enabled profile card (see view)
 }
 
 // Card wrapper for positioning - all cards stack with top edges peeking
@@ -98,31 +96,11 @@
     }
   }
 
-  // Stack positions - cards peek from TOP, each one higher
-  // First card (health) is closest to BonID, last card (physical) is at very top
-  &.stacked[data-card="health"] {
-    z-index: 46;
-    top: 80px;
-  }
-  &.stacked[data-card="bank"] {
-    z-index: 45;
-    top: 64px;
-  }
-  &.stacked[data-card="emergency"] {
-    z-index: 44;
-    top: 48px;
-  }
-  &.stacked[data-card="family"] {
-    z-index: 43;
-    top: 32px;
-  }
-  &.stacked[data-card="social"] {
-    z-index: 42;
-    top: 16px;
-  }
-  &.stacked[data-card="physical"] {
-    z-index: 41;
-    top: 0px;
+  // Stack positions — set per card from the view (wallet_stack_style), so
+  // only enabled cards stack and each peeks 16px above the one in front.
+  &.stacked {
+    top: var(--stack-top, 0px);
+    z-index: var(--stack-z, 41);
   }
 
   // Pushed back (BonID when viewing another card)
@@ -471,7 +449,10 @@
 }
 
 .wallet-menu {
-  min-width: 15rem;
+  // Explicit width: the menu is anchored to a 36px button, so without this
+  // its width is computed from that tiny box. Cap it to the viewport on phones.
+  width: min(17.5rem, calc(100vw - 2rem));
+  min-width: 0;
   padding: 0.4rem;
   border: 1px solid #e9ecef;
   border-radius: 0.85rem;
@@ -487,8 +468,16 @@
     font-weight: 500;
     color: #0f172a;
     white-space: normal;
+    overflow-wrap: anywhere;
+
+    // Label (+ hint) takes the remaining width and wraps inside it
+    > span:not(.wallet-menu-soon) {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
 
     > i {
+      flex-shrink: 0;
       font-size: 1.1rem;
       line-height: 1.2;
       color: var(--haitian-blue, #00209F);
@@ -514,8 +503,10 @@
   }
 
   .wallet-menu-soon {
+    flex-shrink: 0;
     margin-left: auto;
     align-self: center;
+    white-space: nowrap;
     padding: 0.1rem 0.45rem;
     border-radius: 999px;
     background: #f1f5f9;

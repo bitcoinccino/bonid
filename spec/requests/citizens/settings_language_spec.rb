@@ -65,11 +65,34 @@ RSpec.describe "Citizen settings — language", type: :request do
     end
 
     it "renders the dashboard edit pop-ups in #{locale}" do
+      allow(WalletProfileCardsPausable).to receive(:enabled_cards).and_return(WalletProfileCardsPausable::CARDS)
       citizen.update!(preferred_locale: locale)
       get citizens_dashboard_path
       %w[health.blood_type physical.eye_color social.add_platform bank.account_type].each do |key|
         expect(response.body).to include(CGI.escapeHTML(I18n.t("citizen_portal.profile.#{key}", locale: locale)))
       end
+    end
+  end
+
+  describe "wallet profile cards switch" do
+    it "hides the profile cards and their pop-ups by default (v1)" do
+      get citizens_dashboard_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include('id="healthModal"')
+      expect(response.body).not_to include('data-card="health"')
+    end
+
+    it "shows them when enabled in WALLET_PROFILE_CARDS" do
+      allow(WalletProfileCardsPausable).to receive(:enabled_cards).and_return(WalletProfileCardsPausable::CARDS)
+      get citizens_dashboard_path
+      expect(response.body).to include('id="healthModal"')
+    end
+
+    it "shows only the cards that are enabled" do
+      allow(WalletProfileCardsPausable).to receive(:enabled_cards).and_return(%w[emergency])
+      get citizens_dashboard_path
+      expect(response.body).to include('id="emergencyModal"')
+      expect(response.body).not_to include('id="healthModal"')
     end
   end
 

@@ -51,7 +51,9 @@
       profile_cards = [has_health, has_bank, has_emergency, has_social, has_physical].count(true)
     %>
 
-    <div class="wallet-stack-container">
+    <%# Only the cards enabled in WALLET_PROFILE_CARDS show behind BonID;
+        reserve a 16px peek strip per card above it. %>
+    <div class="wallet-stack-container" style="padding-top: <%= 16 * wallet_profile_cards.size %>px;">
       <%# BonID Card - Always visible, can be pushed back %>
       <div class="wallet-card-wrapper active" data-wallet-stack-target="card" data-card="bonid">
         <%# ⋮ menu sits on the wrapper (not inside .bonid-wallet-card, which
@@ -141,18 +143,20 @@
           <div class="wallet-card-footer">
             <div class="footer-item">
               <span class="footer-label"><%= t("citizen_portal.dashboard.issued") %></span>
-              <span class="footer-value"><%= l(submission.updated_at.to_date, format: :long) %></span>
+              <span class="footer-value"><%= card_date(submission.updated_at) %></span>
             </div>
             <div class="footer-item">
               <span class="footer-label"><%= t("citizen_portal.dashboard.expires") %></span>
-              <span class="footer-value"><%= submission.expires_at ? l(submission.expires_at.to_date, format: :long) : t("citizen_portal.dashboard.not_available") %></span>
+              <span class="footer-value"><%= submission.expires_at ? card_date(submission.expires_at) : t("citizen_portal.dashboard.not_available") %></span>
             </div>
           </div>
         </div>
       </div>
 
+      <%# Profile cards behind BonID — each shown only if listed in WALLET_PROFILE_CARDS %>
       <%# Health Card - Always show (with empty state if no profile) %>
-        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="health">
+        <% if wallet_profile_card_enabled?("health") %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="health" style="<%= wallet_stack_style("health") %>">
           <div class="profile-detail-card health-card">
             <div class="detail-card-header">
               <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
@@ -205,9 +209,11 @@
           </div>
           <div class="stack-tab health-bg" data-action="click->wallet-stack#showCard" data-card-type="health"></div>
         </div>
+        <% end %>
 
       <%# Bank Card - Always show (with empty state if no profiles) %>
-        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="bank">
+        <% if wallet_profile_card_enabled?("bank") %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="bank" style="<%= wallet_stack_style("bank") %>">
           <div class="profile-detail-card bank-card">
             <div class="detail-card-header">
               <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
@@ -289,9 +295,11 @@
           </div>
           <div class="stack-tab bank-bg" data-action="click->wallet-stack#showCard" data-card-type="bank"></div>
         </div>
+        <% end %>
 
       <%# Emergency Card - Always show (with empty state if no contacts) %>
-        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="emergency">
+        <% if wallet_profile_card_enabled?("emergency") %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="emergency" style="<%= wallet_stack_style("emergency") %>">
           <div class="profile-detail-card emergency-card">
             <div class="detail-card-header">
               <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
@@ -340,10 +348,12 @@
           </div>
           <div class="stack-tab emergency-bg" data-action="click->wallet-stack#showCard" data-card-type="emergency"></div>
         </div>
+        <% end %>
 
       <%# Family Card - Optional (parents, guardians) %>
         <% valid_family = current_citizen.family_members.select { |fm| fm.first_name.present? } %>
-        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="family">
+        <% if wallet_profile_card_enabled?("family") %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="family" style="<%= wallet_stack_style("family") %>">
           <div class="profile-detail-card family-card">
             <div class="detail-card-header">
               <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
@@ -376,9 +386,11 @@
           </div>
           <div class="stack-tab family-bg" data-action="click->wallet-stack#showCard" data-card-type="family"></div>
         </div>
+        <% end %>
 
       <%# Social Card - Always show (with empty state if no handles) %>
-        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="social">
+        <% if wallet_profile_card_enabled?("social") %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="social" style="<%= wallet_stack_style("social") %>">
           <div class="profile-detail-card social-card">
             <div class="detail-card-header">
               <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
@@ -418,9 +430,11 @@
           </div>
           <div class="stack-tab social-bg" data-action="click->wallet-stack#showCard" data-card-type="social"></div>
         </div>
+        <% end %>
 
       <%# Physical Card - Always show (with empty state if no profile) %>
-        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="physical">
+        <% if wallet_profile_card_enabled?("physical") %>
+        <div class="wallet-card-wrapper stacked" data-wallet-stack-target="card" data-card="physical" style="<%= wallet_stack_style("physical") %>">
           <div class="profile-detail-card physical-card">
             <div class="detail-card-header">
               <button type="button" class="back-btn" data-action="click->wallet-stack#showBonid">
@@ -467,6 +481,7 @@
           </div>
           <div class="stack-tab physical-bg" data-action="click->wallet-stack#showCard" data-card-type="physical"></div>
         </div>
+        <% end %>
     </div>
 
     <%# Preview of the PUBLIC verification page — exactly what anyone sees
@@ -635,13 +650,13 @@
     <%= render "citizens/identity_submissions/qrcode_modal", submission: @approved_submission %>
   <% end %>
 
-  <%# Profile Modals %>
-  <%= render "citizens/dashboard/health_modal" %>
-  <%= render "citizens/dashboard/physical_modal" %>
-  <%= render "citizens/dashboard/family_modal" %>
-  <%= render "citizens/dashboard/emergency_contacts_modal" %>
-  <%= render "citizens/dashboard/bank_profiles_modal" %>
-  <%= render "citizens/dashboard/social_handles_modal" %>
+  <%# Profile Modals — only for cards enabled in WALLET_PROFILE_CARDS %>
+  <%= render "citizens/dashboard/health_modal"             if wallet_profile_card_enabled?("health") %>
+  <%= render "citizens/dashboard/physical_modal"           if wallet_profile_card_enabled?("physical") %>
+  <%= render "citizens/dashboard/family_modal"             if wallet_profile_card_enabled?("family") %>
+  <%= render "citizens/dashboard/emergency_contacts_modal" if wallet_profile_card_enabled?("emergency") %>
+  <%= render "citizens/dashboard/bank_profiles_modal"      if wallet_profile_card_enabled?("bank") %>
+  <%= render "citizens/dashboard/social_handles_modal"     if wallet_profile_card_enabled?("social") %>
   <% if @approved_submission.present? %>
     <%= render "citizens/identity_submissions/request_modal",
                 profile_complete: @profile_complete,
