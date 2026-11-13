@@ -1771,94 +1771,76 @@ body.enroll-success-active { overflow: hidden; }
 // Palette: navy (#00209F), soft blue (#EFF6FF / #DBEAFE), gold (#EDB95E / #F59E0B).
 // =============================================================================
 
-// ── 1. Unified Status Header ─────────────────────────────────────────
-.voter-status-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.1rem 1.25rem;
-  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
-  border: 1px solid #BFDBFE;
-  border-radius: 1rem;
-
-  &__icon {
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: #fff;
-    color: #16A34A;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    box-shadow: 0 1px 3px rgba(0, 32, 159, 0.08);
-  }
-
-  &__body { flex: 1; min-width: 0; }
-
-  &__title-row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem 0.75rem;
-    margin-bottom: 0.2rem;
-  }
-
-  &__title {
-    margin: 0;
-    color: #0F172A;
-    font-weight: 700;
-    font-size: 1.05rem;
-  }
-
-  &__badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    background: #FEF3C7;
-    color: #B45309;
-    border: 1px solid #FCD34D;
-    border-radius: 1rem;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    cursor: help;
-
-    i { font-size: 0.85rem; }
-  }
-
-  &__sub {
-    margin: 0;
-    color: #475569;
-    font-size: 0.82rem;
-  }
-}
-
-// ── 2. High-Visibility Identification Card ──────────────────────────
-.voter-id-card {
+// ── 1. Hero: election + status + voter number + date ────────────────
+.voter-hero {
   background: #fff;
   border: 1px solid #E2E8F0;
   border-radius: 1rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1.1rem 1.25rem 1.25rem;
   box-shadow: 0 4px 16px rgba(0, 32, 159, 0.06);
 
-  &__header {
+  &__top {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
-    margin-bottom: 0.5rem;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    padding-bottom: 0.85rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  &__election {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0F172A;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: #DCFCE7;
+    color: #15803D;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    i { font-size: 0.95rem; }
   }
 
   &__label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
     font-size: 0.7rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #64748B;
-    font-weight: 700;
   }
 
+  &__date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding: 0.6rem 0.8rem;
+    background: #EFF6FF;
+    border-radius: 0.6rem;
+    color: #1E3A8A;
+    font-size: 0.88rem;
+
+    i { font-size: 1.1rem; color: #00209F; }
+    strong { color: #00209F; }
+  }
+}
+
+// Voter number pieces (used inside .voter-hero)
+.voter-id-card {
   &__verified {
     display: inline-flex;
     align-items: center;
@@ -1869,6 +1851,8 @@ body.enroll-success-active { overflow: hidden; }
     border-radius: 1rem;
     font-size: 0.7rem;
     font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
 
     i { font-size: 0.85rem; }
   }
@@ -1909,44 +1893,9 @@ body.enroll-success-active { overflow: hidden; }
     &.is-copied::before { content: "\f00c"; }
   }
 
-  &__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px solid #F1F5F9;
-    font-size: 0.78rem;
-    color: #64748B;
-
-    i { margin-right: 3px; }
-  }
-
-  &__channel {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 1rem;
-    font-weight: 600;
-    font-size: 0.72rem;
-
-    &--online    { background: #DBEAFE; color: #1D4ED8; }
-    &--inperson  { background: #F1F5F9; color: #475569; }
-  }
 }
 
-// ── 3. Two-Column Information Grid ──────────────────────────────────
-.voter-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-}
-
+// ── 2. Where & when card ─────────────────────────────────────────────
 .voter-info-card {
   background: #fff;
   border: 1px solid #E2E8F0;
@@ -2011,27 +1960,6 @@ body.enroll-success-active { overflow: hidden; }
     font-weight: 700;
 
     &:hover { color: #0033CC; text-decoration: underline; }
-  }
-}
-
-.voter-info-bv {
-  text-align: center;
-  padding: 0.5rem 0 0.85rem;
-  border-bottom: 1px solid #F1F5F9;
-  margin-bottom: 0.5rem;
-
-  &__num {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #00209F;
-    letter-spacing: -0.01em;
-  }
-
-  &__center {
-    font-size: 0.85rem;
-    color: #475569;
-    font-weight: 600;
-    margin-top: 2px;
   }
 }
 
@@ -2200,4 +2128,128 @@ body.enroll-success-active { overflow: hidden; }
       }
     }
   }
+}
+
+// ── 2b. Where & when — venue, hours, short address ──────────────────
+.voter-where {
+  &__venue {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__center {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #0F172A;
+    line-height: 1.3;
+  }
+
+  &__bv {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    background: #00209F;
+    color: #fff;
+    border-radius: 0.5rem;
+    font-weight: 800;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  &__line {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.45rem 0;
+    font-size: 0.88rem;
+    color: #1E293B;
+    line-height: 1.45;
+
+    > i { flex-shrink: 0; margin-top: 2px; font-size: 1rem; color: #00209F; }
+    strong { color: #0F172A; }
+  }
+
+  &__muted { color: #64748B; font-weight: 400; }
+}
+
+// Collapsible drawers (administrative details, registration history)
+.voter-details {
+  margin-top: 0.75rem;
+  border-top: 1px solid #F1F5F9;
+
+  > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 0 0.35rem;
+    list-style: none;
+    cursor: pointer;
+    color: #00209F;
+    font-weight: 600;
+    font-size: 0.82rem;
+
+    &::-webkit-details-marker { display: none; }
+    &::after {
+      content: "\ea4e"; // ri-arrow-down-s-line
+      font-family: 'remixicon';
+      font-size: 1.1rem;
+      transition: transform 0.2s ease;
+    }
+  }
+
+  &[open] > summary::after { transform: rotate(180deg); }
+
+  &--history {
+    margin: 0;
+    padding: 0 1.25rem 0.75rem;
+  }
+}
+
+// Compact QR block
+.voter-verify-card__body--compact {
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+
+  .voter-verify-card__qr img { width: 104px; height: 104px; }
+  .voter-verify-card__desc { margin-bottom: 0.6rem; color: #334155; }
+}
+
+// Registration history timeline
+.voter-timeline {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+
+  li {
+    position: relative;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+
+    & + li::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: -0.55rem;
+      height: 0.9rem;
+      border-left: 2px solid #E2E8F0;
+    }
+  }
+
+  &__dot {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    margin-top: 5px;
+    border-radius: 50%;
+    background: #16A34A;
+
+    &--warn { background: #F59E0B; }
+  }
+
+  &__title { font-size: 0.85rem; font-weight: 600; color: #1E293B; }
+  &__time  { font-size: 0.75rem; color: #64748B; margin-top: 1px; }
 }

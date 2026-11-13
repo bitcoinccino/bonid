@@ -9,13 +9,17 @@
     <h1 class="ballot-title">
       <i class="ri-user-voice-line me-2"></i><%= t("citizen_portal.election.enrollment.title") %>
     </h1>
-    <p class="ballot-subtitle mb-0">
-      <% if @election %>
-        <%= @election.title %>
-      <% else %>
-        <%= t("citizen_portal.election.enrollment.subtitle") %>
-      <% end %>
-    </p>
+    <%# Registered voters see the election name in the hero card below —
+        don't repeat it here. %>
+    <% unless @state == :registered %>
+      <p class="ballot-subtitle mb-0">
+        <% if @election %>
+          <%= @election.title %>
+        <% else %>
+          <%= t("citizen_portal.election.enrollment.subtitle") %>
+        <% end %>
+      </p>
+    <% end %>
   </div>
 
   <div class="row justify-content-center">
@@ -107,45 +111,19 @@
           </script>
         <% end %>
 
-        <%# ── 1. Unified Status Header ─────────────────────────────────
-            Soft-blue background bundles the success state + CEP context
-            into one glanceable area. Postponement is a small orange
-            pill instead of a competing standalone banner. %>
-        <div class="voter-status-header mb-4">
-          <div class="voter-status-header__icon">
-            <i class="ri-checkbox-circle-fill"></i>
+        <%# ── 1. Hero: election + status + voter number + date ─────────
+            Everything a voter needs to confirm in two seconds. Channel,
+            timestamps and the CEP notice live in the history below. %>
+        <div class="voter-hero mb-3">
+          <div class="voter-hero__top">
+            <span class="voter-hero__election"><%= @election.title %></span>
+            <span class="voter-hero__status">
+              <i class="ri-checkbox-circle-fill"></i><%= t("citizen_portal.election.enrollment.registered_title") %>
+            </span>
           </div>
-          <div class="voter-status-header__body">
-            <div class="voter-status-header__title-row">
-              <h5 class="voter-status-header__title"><%= t("citizen_portal.election.enrollment.registered_title") %></h5>
-              <% unless cookies[:cep_postponement_banner_dismissed] == "1" %>
-                <span class="voter-status-header__badge"
-                      title="<%= t("citizen_portal.election.enrollment.postponed_tooltip") %>">
-                  <i class="ri-megaphone-line"></i>
-                  <%= t("citizen_portal.election.enrollment.postponed_badge") %>
-                </span>
-              <% end %>
-            </div>
-            <p class="voter-status-header__sub">
-              <% if @record.registered_by_partner_id.present? %>
-                <%= t("citizen_portal.election.enrollment.registered_by", name: @record.registered_by_partner&.name.presence || t("citizen_portal.election.enrollment.cep_consulate")) %>
-              <% else %>
-                <%= t("citizen_portal.election.enrollment.registered_online") %>
-              <% end %>
-              <% if @record.registered_at.present? %>
-                — <%= l(@record.registered_at, format: "%d %B %Y, %H:%M") %>
-              <% end %>
-            </p>
-          </div>
-        </div>
 
-        <%# ── 2. High-Visibility Identification Card ───────────────────
-            The voter reference is the most important data point — gets
-            its own white floating card with bold navy display + copy +
-            verified badge. %>
-        <div class="voter-id-card mb-4">
-          <div class="voter-id-card__header">
-            <span class="voter-id-card__label"><%= t("citizen_portal.election.enrollment.voter_number") %></span>
+          <div class="voter-hero__label">
+            <%= t("citizen_portal.election.enrollment.voter_number") %>
             <span class="voter-id-card__verified">
               <i class="ri-verified-badge-fill"></i><%= t("citizen_portal.election.enrollment.verified") %>
             </span>
@@ -159,35 +137,124 @@
               <i class="ri-file-copy-line"></i>
             </button>
           </div>
-          <div class="voter-id-card__meta">
-            <span><i class="ri-calendar-line"></i> <%= l(@record.registered_at, format: "%d %B %Y, %H:%M") if @record.registered_at %></span>
-            <% if @record.preferred_channel == "online" %>
-              <span class="voter-id-card__channel voter-id-card__channel--online">
-                <i class="ri-smartphone-line"></i> <%= t("citizen_portal.election.enrollment.online") %>
+
+          <% if !@election.open? && @election.election_date %>
+            <div class="voter-hero__date">
+              <i class="ri-calendar-event-line"></i>
+              <span>
+                <%= t("citizen_portal.election.enrollment.voting_starts") %>
+                <strong><%= l(@election.election_date, format: :long) %></strong>
               </span>
-            <% else %>
-              <span class="voter-id-card__channel voter-id-card__channel--inperson">
-                <i class="ri-archive-drawer-line"></i> <%= t("citizen_portal.election.enrollment.in_person") %>
-              </span>
-            <% end %>
-          </div>
+            </div>
+          <% end %>
         </div>
 
-        <%# ── 3. Two-Column Information Grid ───────────────────────────
-            Location card + Voting Center card side-by-side on desktop,
-            stacked on mobile. Easier to scan than one long table. %>
-        <div class="voter-info-grid mb-4">
-
-          <%# ── Location card ── %>
-          <div class="voter-info-card">
-            <div class="voter-info-card__head">
-              <i class="ri-map-pin-2-line voter-info-card__head-icon"></i>
-              <span><%= t("citizen_portal.election.enrollment.location") %></span>
-              <% if @record.diaspora? %>
-                <span class="badge bg-info-subtle text-info ms-auto"><%= t("citizen_portal.election.enrollment.diaspora") %></span>
+        <%# Voting-day CTA — honors the citizen's declared channel preference.
+            Someone who enrolled as in-person must go to their assigned BV;
+            we don't surface the online path to them even on an open election. %>
+        <% if @election.open? %>
+          <div class="mb-3">
+            <% if @record.preferred_channel == "online" && @election.allows_online_voting %>
+              <%= link_to citizens_election_vote_path, class: "election-btn-primary w-100" do %>
+                <i class="ri-checkbox-circle-line"></i> <%= t("citizen_portal.election.enrollment.go_vote") %>
               <% end %>
-            </div>
-            <div class="voter-info-card__body">
+            <% else %>
+              <div class="election-in-person-cta">
+                <div class="election-in-person-cta__icon">
+                  <i class="ri-map-pin-line"></i>
+                </div>
+                <div>
+                  <div class="election-in-person-cta__title"><%= t("citizen_portal.election.enrollment.in_person_title") %></div>
+                  <div class="election-in-person-cta__desc">
+                    <%= t("citizen_portal.election.enrollment.in_person_go") %>
+                    <% if @record.polling_station&.polling_center&.name.present? %>
+                      (<strong><%= @record.polling_station.polling_center.name %></strong>)
+                    <% end %>
+                    <%= t("citizen_portal.election.enrollment.in_person_bring_id") %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# ── 2. Where & when to vote ───────────────────────────────────
+            Venue + BV + hours + short address up front; the administrative
+            hierarchy (department → section) is collapsed for poll workers. %>
+        <div class="voter-info-card voter-where-card mb-3">
+          <div class="voter-info-card__head">
+            <i class="ri-map-pin-2-line voter-info-card__head-icon"></i>
+            <span><%= t("citizen_portal.election.enrollment.where_when") %></span>
+            <% if @record.diaspora? %>
+              <span class="badge bg-info-subtle text-info ms-auto"><%= t("citizen_portal.election.enrollment.diaspora") %></span>
+            <% end %>
+          </div>
+          <div class="voter-info-card__body">
+            <% if @record.polling_station.present? %>
+              <% station = @record.polling_station %>
+              <% center  = station.polling_center %>
+              <%
+                addr_lines = center.formatted_haiti_display.to_s.split("\n").map(&:strip).reject(&:blank?)
+                addr_lines -= [ center.communal_section&.name, "HAITI" ] unless center.diaspora?
+                maps_query = ([ center.name ] + addr_lines).join(", ")
+              %>
+
+              <div class="voter-where__venue">
+                <div class="voter-where__center"><%= center.name %></div>
+                <span class="voter-where__bv">BV #<%= station.bv_number %></span>
+              </div>
+
+              <% if center.contact_hours.present? %>
+                <% hours_value = center.contact_hours.sub(/\A\s*Jou\s+eleksyon(?:\s+an)?\s*[:\-–—]?\s*/i, "").strip %>
+                <div class="voter-where__line">
+                  <i class="ri-time-line"></i>
+                  <span>
+                    <strong><%= hours_value.presence || center.contact_hours %></strong>
+                    <span class="voter-where__muted">· <%= t("citizen_portal.election.enrollment.election_day_only") %></span>
+                  </span>
+                </div>
+              <% end %>
+
+              <% if addr_lines.any? %>
+                <div class="voter-where__line">
+                  <i class="ri-map-pin-line"></i>
+                  <span>
+                    <%= safe_join(addr_lines, tag.br) %>
+                    <br>
+                    <%= link_to "https://www.google.com/maps/search/?api=1&query=#{ERB::Util.url_encode(maps_query)}",
+                                class: "voter-info-row__link", target: "_blank", rel: "noopener" do %>
+                      <i class="ri-external-link-line"></i> <%= t("citizen_portal.election.enrollment.open_in_maps") %>
+                    <% end %>
+                  </span>
+                </div>
+              <% end %>
+
+              <% if center.contact_phone.present? %>
+                <div class="voter-where__line">
+                  <i class="ri-phone-line"></i>
+                  <%= link_to center.contact_phone, "tel:#{center.contact_phone.gsub(/[^\d+]/, "")}",
+                              class: "voter-info-row__link" %>
+                </div>
+              <% end %>
+
+              <% if @record.preferred_channel == "online" && !@election.allows_online_voting %>
+                <div class="voter-info-warn">
+                  <i class="ri-alert-line"></i>
+                  <%= t("citizen_portal.election.enrollment.online_unavailable") %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="voter-info-pending">
+                <i class="ri-time-line"></i>
+                <div>
+                  <div class="voter-info-pending__title"><%= t("citizen_portal.election.enrollment.not_assigned") %></div>
+                  <div class="voter-info-pending__desc"><%= t("citizen_portal.election.enrollment.assigning_soon") %></div>
+                </div>
+              </div>
+            <% end %>
+
+            <details class="voter-details">
+              <summary><%= t("citizen_portal.election.enrollment.admin_details") %></summary>
               <div class="voter-info-row">
                 <span class="voter-info-row__key"><%= t("citizen_portal.election.enrollment.department") %></span>
                 <span class="voter-info-row__val"><%= geo[:department] %></span>
@@ -216,107 +283,11 @@
                   <span class="voter-info-row__val"><%= @record.constituency_name %></span>
                 </div>
               <% end %>
-            </div>
-          </div>
-
-          <%# ── Voting Center card ── %>
-          <div class="voter-info-card">
-            <div class="voter-info-card__head">
-              <i class="ri-government-line voter-info-card__head-icon"></i>
-              <span><%= t("citizen_portal.election.enrollment.polling_station") %></span>
-            </div>
-            <div class="voter-info-card__body">
-              <% if @record.polling_station.present? %>
-                <% station = @record.polling_station %>
-                <% center  = station.polling_center %>
-                <div class="voter-info-bv">
-                  <div class="voter-info-bv__num">BV #<%= station.bv_number %></div>
-                  <div class="voter-info-bv__center"><%= center.name %></div>
-                </div>
-                <% if center.formatted_haiti_display.present? %>
-                  <div class="voter-info-row">
-                    <span class="voter-info-row__key">
-                      <i class="ri-map-pin-line me-1"></i><%= t("citizen_portal.election.enrollment.address") %>
-                    </span>
-                    <span class="voter-info-row__val">
-                      <%= simple_format(center.formatted_haiti_display, {}, wrapper_tag: "span") %>
-                    </span>
-                  </div>
-                <% end %>
-                <% if center.contact_phone.present? %>
-                  <div class="voter-info-row">
-                    <span class="voter-info-row__key">
-                      <i class="ri-phone-line me-1"></i><%= t("citizen_portal.election.enrollment.phone") %>
-                    </span>
-                    <span class="voter-info-row__val">
-                      <%= link_to center.contact_phone, "tel:#{center.contact_phone}",
-                                  class: "voter-info-row__link" %>
-                    </span>
-                  </div>
-                <% end %>
-                <% if center.contact_hours.present? %>
-                  <% hours_value = center.contact_hours.sub(/\A\s*Jou\s+eleksyon(?:\s+an)?\s*[:\-–—]?\s*/i, "").strip %>
-                  <div class="voter-info-row">
-                    <span class="voter-info-row__key">
-                      <i class="ri-time-line me-1"></i><%= t("citizen_portal.election.enrollment.voting_hours") %>
-                    </span>
-                    <span class="voter-info-row__val">
-                      <%= hours_value.presence || center.contact_hours %>
-                      <div class="voter-info-row__sub"><%= t("citizen_portal.election.enrollment.election_day_only") %></div>
-                    </span>
-                  </div>
-                <% end %>
-                <% if @record.preferred_channel == "online" && !@election.allows_online_voting %>
-                  <div class="voter-info-warn">
-                    <i class="ri-alert-line"></i>
-                    <%= t("citizen_portal.election.enrollment.online_unavailable") %>
-                  </div>
-                <% end %>
-              <% else %>
-                <div class="voter-info-pending">
-                  <i class="ri-time-line"></i>
-                  <div>
-                    <div class="voter-info-pending__title"><%= t("citizen_portal.election.enrollment.not_assigned") %></div>
-                    <div class="voter-info-pending__desc"><%= t("citizen_portal.election.enrollment.assigning_soon") %></div>
-                  </div>
-                </div>
-              <% end %>
-            </div>
+            </details>
           </div>
         </div>
 
-        <%# ── 5. Security & Verification card ──────────────────────────
-            Dedicated container with light border so the QR feels official,
-            not like an afterthought. Encodes the verify-receipt URL. %>
-        <% verify_url = @record.receipt_qr_url(host: request.host_with_port, protocol: request.protocol.sub("://", "")) %>
-        <% qr_svg_b64 = QrCodeGenerator.generate_base64_svg(url: verify_url) %>
-        <div class="voter-verify-card mb-4">
-          <div class="voter-verify-card__head">
-            <i class="ri-shield-check-line"></i>
-            <span><%= t("citizen_portal.election.enrollment.security_title") %></span>
-          </div>
-          <div class="voter-verify-card__body">
-            <div class="voter-verify-card__qr">
-              <img src="data:image/svg+xml;base64,<%= qr_svg_b64 %>"
-                   alt="<%= t("citizen_portal.election.enrollment.qr_alt") %>">
-            </div>
-            <div class="voter-verify-card__copy">
-              <div class="voter-verify-card__title"><%= t("citizen_portal.election.enrollment.receipt_verifiable") %></div>
-              <p class="voter-verify-card__desc">
-                <%= t("citizen_portal.election.enrollment.receipt_desc") %>
-              </p>
-              <%= link_to election_verify_receipt_path(d: Base64.urlsafe_encode64(@record.receipt_qr_payload.to_json, padding: false)),
-                          class: "voter-verify-card__btn",
-                          target: "_blank", rel: "noopener" do %>
-                <i class="ri-external-link-line"></i> <%= t("citizen_portal.election.enrollment.check_now") %>
-              <% end %>
-            </div>
-          </div>
-        </div>
-
-        <%# ── 4. Interactive Action Bar ────────────────────────────────
-            Filled navy primary (Download) + outlined ghost (Print) so the
-            user knows which action is primary at a glance. %>
+        <%# ── 3. Receipt actions — save before losing signal on election day %>
         <div class="voter-action-bar mb-3">
           <%= link_to citizens_election_receipt_download_path(format: :pdf),
                       class: "voter-action-bar__btn voter-action-bar__btn--primary" do %>
@@ -329,6 +300,59 @@
             <i class="ri-printer-line"></i>
             <span><%= t("citizen_portal.election.enrollment.print_receipt") %></span>
           <% end %>
+        </div>
+
+        <%# ── 4. Security & verification: compact QR + registration history %>
+        <% verify_url = @record.receipt_qr_url(host: request.host_with_port, protocol: request.protocol.sub("://", "")) %>
+        <% qr_svg_b64 = QrCodeGenerator.generate_base64_svg(url: verify_url) %>
+        <div class="voter-verify-card mb-4">
+          <div class="voter-verify-card__head">
+            <i class="ri-shield-check-line"></i>
+            <span><%= t("citizen_portal.election.enrollment.security_title") %></span>
+          </div>
+          <div class="voter-verify-card__body voter-verify-card__body--compact">
+            <div class="voter-verify-card__qr">
+              <img src="data:image/svg+xml;base64,<%= qr_svg_b64 %>"
+                   alt="<%= t("citizen_portal.election.enrollment.qr_alt") %>">
+            </div>
+            <div class="voter-verify-card__copy">
+              <p class="voter-verify-card__desc"><%= t("citizen_portal.election.enrollment.scan_to_confirm") %></p>
+              <%= link_to election_verify_receipt_path(d: Base64.urlsafe_encode64(@record.receipt_qr_payload.to_json, padding: false)),
+                          class: "voter-verify-card__btn",
+                          target: "_blank", rel: "noopener" do %>
+                <i class="ri-external-link-line"></i> <%= t("citizen_portal.election.enrollment.check_now") %>
+              <% end %>
+            </div>
+          </div>
+
+          <details class="voter-details voter-details--history">
+            <summary><%= t("citizen_portal.election.enrollment.history") %></summary>
+            <ol class="voter-timeline">
+              <li>
+                <span class="voter-timeline__dot"></span>
+                <div>
+                  <div class="voter-timeline__title">
+                    <% if @record.registered_by_partner_id.present? %>
+                      <%= t("citizen_portal.election.enrollment.registered_by", name: @record.registered_by_partner&.name.presence || t("citizen_portal.election.enrollment.cep_consulate")) %>
+                    <% else %>
+                      <%= t("citizen_portal.election.enrollment.registered_online") %>
+                    <% end %>
+                    · <%= t(@record.preferred_channel == "online" ? "citizen_portal.election.enrollment.online" : "citizen_portal.election.enrollment.in_person") %>
+                  </div>
+                  <% if @record.registered_at.present? %>
+                    <div class="voter-timeline__time"><%= l(@record.registered_at, format: "%d %B %Y, %H:%M") %></div>
+                  <% end %>
+                </div>
+              </li>
+              <li>
+                <span class="voter-timeline__dot voter-timeline__dot--warn"></span>
+                <div>
+                  <div class="voter-timeline__title"><%= t("citizen_portal.election.enrollment.postponed_badge") %></div>
+                  <div class="voter-timeline__time"><%= t("citizen_portal.election.enrollment.postponed_tooltip") %></div>
+                </div>
+              </li>
+            </ol>
+          </details>
         </div>
 
         <%# Lightweight copy-to-clipboard for the voter reference. %>
@@ -348,43 +372,6 @@
             });
           })();
         </script>
-
-        <%# Voting-day CTA — honors the citizen's declared channel preference.
-            Someone who enrolled as in-person must go to their assigned BV;
-            we don't surface the online path to them even on an open election. %>
-        <% if @election.open? %>
-          <% if @record.preferred_channel == "online" && @election.allows_online_voting %>
-            <%= link_to citizens_election_vote_path, class: "election-btn-primary w-100" do %>
-              <i class="ri-checkbox-circle-line"></i> <%= t("citizen_portal.election.enrollment.go_vote") %>
-            <% end %>
-          <% else %>
-            <%# In-person preference OR online not allowed for this election —
-                point them at the BV details shown above instead of the online flow. %>
-            <div class="election-in-person-cta">
-              <div class="election-in-person-cta__icon">
-                <i class="ri-map-pin-line"></i>
-              </div>
-              <div>
-                <div class="election-in-person-cta__title"><%= t("citizen_portal.election.enrollment.in_person_title") %></div>
-                <div class="election-in-person-cta__desc">
-                  <%= t("citizen_portal.election.enrollment.in_person_go") %>
-                  <% if @record.polling_station&.polling_center&.name.present? %>
-                    (<strong><%= @record.polling_station.polling_center.name %></strong>)
-                  <% end %>
-                  <%= t("citizen_portal.election.enrollment.in_person_bring_id") %>
-                </div>
-              </div>
-            </div>
-          <% end %>
-        <% else %>
-          <div class="text-center text-muted small">
-            <i class="ri-time-line me-1"></i>
-            <%= t("citizen_portal.election.enrollment.voting_starts") %>
-            <% if @election.election_date %>
-              <strong><%= l(@election.election_date, format: :long) %></strong>
-            <% end %>
-          </div>
-        <% end %>
 
       <% when :registrable_digital %>
         <%# ─── CAN ENROLL ONLINE ─── %>
