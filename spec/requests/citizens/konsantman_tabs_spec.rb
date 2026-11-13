@@ -49,7 +49,7 @@ RSpec.describe "Citizen sidebar highlighting", type: :request do
   end
 
   {
-    "/citizens/dashboard" => "Dashboard",
+    "/citizens/dashboard" => "Akèy", # citizen_portal.nav.dashboard (ht)
     "/citizens/activity" => "Aktivite",
     "/citizens/transaction_consents" => "Konsantman",
     "/citizens/consents" => "Konsantman"
