@@ -30,7 +30,7 @@ module Citizens
                           "path=#{request.path}, session_keys=#{session.keys.join(',')}"
         sign_out(:citizen)
         redirect_to login_path,
-                    alert: "Log in as or sign up as a citizen."
+                    alert: t("alerts.access.citizen_only")
       end
     end
 

@@ -239,10 +239,19 @@ module Citizens
 
       # No greeting on a partner login: the citizen lands on the consent
       # screen mid-handoff, where "Welcome back!" makes no sense.
+      # Switch to the citizen's saved language now, so the flash below and
+      # the redirect URL (default_url_options adds ?lang=) match the portal
+      # they're about to land on (Citizens::BaseController#apply_citizen_locale).
+      # Partner hand-offs keep the language the citizen is reading.
+      if partner_slug.blank?
+        I18n.locale    = user.portal_locale
+        session[:lang] = user.portal_locale
+      end
+
       notice =
         if partner_slug.present? then nil
-        elsif params[:signup] == "true" then "Welcome! Please complete your profile."
-        else "Welcome back!"
+        elsif params[:signup] == "true" then t("alerts.sign_in.welcome_new")
+        else t("alerts.sign_in.welcome_back")
         end
 
       redirect_to after_sign_in_path_for(user), notice: notice

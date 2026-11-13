@@ -75,7 +75,7 @@ module Citizens
     # ============================================================
     def resubmit
       unless @record.status == "rejected"
-        return redirect_to citizens_dgi_path(@record), alert: "Sèlman fòm rejte ka re-soumèt."
+        return redirect_to citizens_dgi_path(@record), alert: t("alerts.dgi.only_rejected_resubmit")
       end
 
       @form_type  = @record.record_type
@@ -103,7 +103,7 @@ module Citizens
     # ============================================================
     def update_resubmit
       unless @record.status == "rejected"
-        return redirect_to citizens_dgi_path(@record), alert: "Sèlman fòm rejte ka re-soumèt."
+        return redirect_to citizens_dgi_path(@record), alert: t("alerts.dgi.only_rejected_resubmit")
       end
 
       @form_type = @record.record_type
@@ -155,7 +155,7 @@ module Citizens
       Bongouv::DgiMailer.filing_confirmation(@record).deliver_later
 
       redirect_to citizens_dgi_path(@record),
-                  notice: "Deklarasyon #{@record.data['declaration_number']} re-soumèt avèk siksè. Ap tann revizyon DGI."
+                  notice: t("alerts.dgi.resubmitted", number: @record.data["declaration_number"])
     end
 
     # ============================================================
@@ -164,7 +164,7 @@ module Citizens
     def new
       @form_type = params[:form_type]
       unless FORM_TYPES.include?(@form_type)
-        return redirect_to citizens_dgi_index_path, alert: "Tip fòm pa valid."
+        return redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.invalid_form_type")
       end
 
       @form_label = FORM_LABELS[@form_type]
@@ -226,7 +226,7 @@ module Citizens
     def create
       @form_type = params[:form_type]
       unless FORM_TYPES.include?(@form_type)
-        return redirect_to citizens_dgi_index_path, alert: "Tip fòm pa valid."
+        return redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.invalid_form_type")
       end
 
       # Delete existing draft — the final submission replaces it
@@ -260,10 +260,10 @@ module Citizens
         if needs_payment?(record)
           payment = create_payment_for(record, params[:payment_method])
           redirect_to citizens_dgi_payment_path(payment),
-                      notice: "Deklarasyon kreye. Tanpri peye pou kontinye."
+                      notice: t("alerts.dgi.created_pay")
         else
           redirect_to citizens_dgi_path(record),
-                      notice: "Deklarasyon #{record.data['declaration_number']} soumèt avèk siksè. Ap tann revizyon DGI."
+                      notice: t("alerts.dgi.submitted", number: record.data["declaration_number"])
         end
       else
         flash[:alert] = record.errors.full_messages.join(", ")
@@ -284,7 +284,7 @@ module Citizens
     def find_record
       @record = @citizen.verification_records.where(record_type: FORM_TYPES).find(params[:id])
     rescue ActiveRecord::RecordNotFound
-      redirect_to citizens_dgi_index_path, alert: "Deklarasyon pa jwenn."
+      redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.not_found")
     end
 
     # ============================================================

@@ -28,7 +28,7 @@ module RecordSchemas
       missing = []
       missing << "nom"         unless fermier["nom"].present?
       missing << "demeurant_a" unless fermier["demeurant_a"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{missing.join(', ')} (Fèmye)") if missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: missing.join(", "), section: I18n.t("alerts.dgi_form.sections.tenant"))) if missing.any?
 
       # Propriete
       prop_missing = []
@@ -37,29 +37,29 @@ module RecordSchemas
       prop_missing << "commune"           unless propriete["commune"].present?
       prop_missing << "departement"       unless propriete["departement"].present?
       prop_missing << "exercice"          unless propriete["exercice"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{prop_missing.join(', ')} (Pwopriyete)") if prop_missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: prop_missing.join(", "), section: I18n.t("alerts.dgi_form.sections.property"))) if prop_missing.any?
 
       if propriete["departement"].present?
         unless RecordSchemas::NifRegistrationSchema::DEPARTEMENTS_HAITI.include?(propriete["departement"])
-          errors.add(:data, "Depatman pa valid")
+          errors.add(:data, I18n.t("alerts.dgi_form.department_invalid"))
         end
       end
 
       if propriete["exercice"].present? && !propriete["exercice"].match?(/\A\d{4}-\d{4}\z/)
-        errors.add(:data, "Egzèsis dwe nan foma YYYY-YYYY")
+        errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_format"))
       end
 
       # Calcul
-      errors.add(:data, "Dwa anyèl obligatwa (Kalkil Taks)") if calcul["droit_annuel"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.annual_fee_required")) if calcul["droit_annuel"].blank?
 
       %w[droit_annuel surtaxe dtp solidarite total].each do |field|
         val = calcul[field]
         next if val.blank?
-        errors.add(:data, "#{field} dwe yon nimewo valid") unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+        errors.add(:data, I18n.t("alerts.dgi_form.number_invalid", field: field)) unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
       end
 
       if calcul["droit_annuel"].present? && calcul["droit_annuel"].to_f < 0
-        errors.add(:data, "Dwa anyèl pa ka negatif")
+        errors.add(:data, I18n.t("alerts.dgi_form.annual_fee_negative"))
       end
     end
 

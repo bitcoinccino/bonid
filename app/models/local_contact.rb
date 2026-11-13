@@ -75,7 +75,7 @@ class LocalContact < ApplicationRecord
        will_save_change_to_email? ||
        will_save_change_to_phone_country_code?
 
-      errors.add(:base, "Verified contact cannot be modified")
+      errors.add(:base, I18n.t("alerts.validation.local_contact.verified_locked"))
       throw :abort
     end
   end

@@ -108,7 +108,7 @@ module Citizens
               locals: { record: @record }
             )
           end
-          format.html { redirect_to citizens_verification_records_path, notice: "Record created successfully." }
+          format.html { redirect_to citizens_verification_records_path, notice: t("alerts.records.created") }
         end
       else
         respond_to do |format|
@@ -138,7 +138,7 @@ module Citizens
       if @record.update(verification_record_params)
         respond_to do |format|
           format.turbo_stream
-          format.html { redirect_to citizens_verification_records_path, notice: "Record updated successfully." }
+          format.html { redirect_to citizens_verification_records_path, notice: t("alerts.records.updated") }
         end
       else
         respond_to do |format|
@@ -152,7 +152,7 @@ module Citizens
     def destroy
       @record.destroy
       respond_to do |format|
-        format.html { redirect_to citizens_verification_records_path, notice: "Record deleted successfully." }
+        format.html { redirect_to citizens_verification_records_path, notice: t("alerts.records.deleted") }
         format.turbo_stream
       end
     end

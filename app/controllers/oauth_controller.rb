@@ -65,7 +65,7 @@ class OauthController < ApplicationController
       unless current_citizen.identity_submissions.approved.exists?
         cleanup_pending_consent
         return redirect_to citizens_identity_submissions_path,
-                           alert: "Please verify your BonID before sharing data with partners."
+                           alert: t("alerts.oauth.verify_before_sharing")
       end
 
       # ✅ If already has an ACTIVE grant that covers requested scopes,
@@ -108,13 +108,13 @@ class OauthController < ApplicationController
     pending_data = retrieve_pending_consent
     unless pending_data
       return redirect_to root_path,
-                         alert: "Consent session expired. Please try again from your partner."
+                         alert: t("alerts.oauth.session_expired")
     end
 
     if session_expired?(pending_data)
       cleanup_pending_consent
       return redirect_to root_path,
-                         alert: "Consent session expired. Please try again from your partner."
+                         alert: t("alerts.oauth.session_expired")
     end
 
     @partner = Partner.find_by(id: pending_data[:partner_id])
@@ -675,7 +675,7 @@ class OauthController < ApplicationController
 
   def ensure_verified_bonid!
     unless current_citizen&.identity_submissions&.approved&.exists?
-      flash[:alert] = "You must verify your BonID before authorizing access."
+      flash[:alert] = t("alerts.oauth.verify_before_authorizing")
       redirect_to citizens_identity_submissions_path
     end
   end

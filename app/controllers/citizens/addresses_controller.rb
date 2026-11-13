@@ -6,7 +6,7 @@ module Citizens
       @address = current_citizen.addresses.new(address_params)
       if @address.save
         redirect_to request.referer || citizens_verification_records_path,
-                    notice: "✅ Address added successfully."
+                    notice: t("alerts.addresses.added")
       else
         flash.now[:alert] = @address.errors.full_messages.to_sentence
         render partial: "citizens/profiles/address_fields",

@@ -41,7 +41,7 @@ module Citizens
 
         unless @election
           redirect_to citizens_election_enrollment_path,
-                      alert: "Pa gen eleksyon aktif."
+                      alert: t("alerts.election.no_active")
           return
         end
 
@@ -53,7 +53,7 @@ module Citizens
         return if @record&.eligible?
 
         redirect_to citizens_election_enrollment_path,
-                    alert: "Ou pa ko anrejistre pou eleksyon sa a."
+                    alert: t("alerts.election.not_registered")
       end
 
       # Returns freshly-rendered or cached PDF bytes. When the ActiveStorage

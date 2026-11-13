@@ -56,23 +56,23 @@ module RecordSchemas
       missing << "prenom"          unless personne["prenom"].present?
       missing << "date_naissance"  unless personne["date_naissance"].present?
       missing << "lieu_naissance"  unless personne["lieu_naissance"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{missing.join(', ')} (Idantifikasyon)") if missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: missing.join(", "), section: I18n.t("alerts.dgi_form.sections.identification"))) if missing.any?
 
       if personne["sexe"].present? && !%w[M F].include?(personne["sexe"])
-        errors.add(:data, "Seks dwe 'M' oswa 'F'")
+        errors.add(:data, I18n.t("alerts.dgi_form.sex"))
       end
 
       if personne["etat_civil"].present? && !ETATS_CIVILS.key?(personne["etat_civil"])
-        errors.add(:data, "Eta sivil pa valid")
+        errors.add(:data, I18n.t("alerts.dgi_form.civil_status"))
       end
 
       if personne["date_naissance"].present?
         begin
           dob = Date.parse(personne["date_naissance"])
-          errors.add(:data, "Dat nesans dwe nan pase") if dob > Date.current
-          errors.add(:data, "Dat nesans pa reyalis") if dob < Date.new(1900, 1, 1)
+          errors.add(:data, I18n.t("alerts.dgi_form.dob_past")) if dob > Date.current
+          errors.add(:data, I18n.t("alerts.dgi_form.dob_unrealistic")) if dob < Date.new(1900, 1, 1)
         rescue ArgumentError
-          errors.add(:data, "Dat nesans pa valid")
+          errors.add(:data, I18n.t("alerts.dgi_form.dob_invalid"))
         end
       end
 
@@ -82,16 +82,16 @@ module RecordSchemas
       addr_missing << "commune"     unless adresse["commune"].present?
       addr_missing << "departement" unless adresse["departement"].present?
       addr_missing << "telephone"   unless adresse["telephone"].present?
-      errors.add(:data, "Chan adrès obligatwa ki manke: #{addr_missing.join(', ')}") if addr_missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_address_fields", fields: addr_missing.join(", "))) if addr_missing.any?
 
       if adresse["departement"].present? && !DEPARTEMENTS_HAITI.include?(adresse["departement"])
-        errors.add(:data, "Depatman pa valid. Dwe youn nan: #{DEPARTEMENTS_HAITI.join(', ')}")
+        errors.add(:data, I18n.t("alerts.dgi_form.department_one_of", list: DEPARTEMENTS_HAITI.join(", ")))
       end
 
       # Activite
       activite = data["activite"] || {}
       if activite["type_activite"].present? && !TYPES_ACTIVITE.key?(activite["type_activite"])
-        errors.add(:data, "Tip aktivite pa valid")
+        errors.add(:data, I18n.t("alerts.dgi_form.activity_type"))
       end
     end
 

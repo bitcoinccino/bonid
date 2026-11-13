@@ -22,7 +22,7 @@ RSpec.describe "BonID Identity Verification Flow", type: :model do
     # === Step 4: Only one active submission — a plain new one is blocked ===
     blocked = build(:identity_submission, user: user, partner: partner, status: :pending)
     expect(blocked).not_to be_valid
-    expect(blocked.errors[:base]).to include("User already has an active identity submission.")
+    expect(blocked.errors[:base]).to include(I18n.t("alerts.validation.identity.active_exists"))
 
     # === Step 5: Reissue (e.g. lost ID) bypasses the single-active check ===
     reissue = build(:identity_submission, user: user, partner: partner, submission_type: :reissue, status: :pending, reason: "Lost ID")

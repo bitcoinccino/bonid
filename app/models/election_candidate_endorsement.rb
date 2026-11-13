@@ -42,6 +42,6 @@ class ElectionCandidateEndorsement < ApplicationRecord
 
   def bonid_or_cin_required
     return if bonid.present? || cin_number.present?
-    errors.add(:base, "BonID oswa CIN obligatwa")
+    errors.add(:base, I18n.t("alerts.validation.endorsement.id_required"))
   end
 end

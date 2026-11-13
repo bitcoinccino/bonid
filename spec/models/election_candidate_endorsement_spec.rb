@@ -47,7 +47,7 @@ RSpec.describe ElectionCandidateEndorsement, type: :model do
     it "rejects a row with neither bonid nor cin_number" do
       record = described_class.new(election_candidate: candidate, election: election, source: "csv")
       expect(record).not_to be_valid
-      expect(record.errors[:base]).to include(a_string_matching(/BonID oswa CIN/))
+      expect(record.errors[:base]).to include(I18n.t("alerts.validation.endorsement.id_required"))
     end
   end
 

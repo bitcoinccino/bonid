@@ -30,7 +30,7 @@ module Citizens
       def create
         unless @election
           redirect_to citizens_election_enrollment_path,
-                      alert: "Pa gen eleksyon aktif."
+                      alert: t("alerts.election.no_active")
           return
         end
 
@@ -64,17 +64,18 @@ module Citizens
 
           flash[:just_registered] = true
           redirect_to citizens_election_enrollment_path,
-                      notice: "Ou anrejistre avèk siksè pou eleksyon sa a."
+                      notice: t("alerts.election.enrolled")
         else
           redirect_to citizens_election_enrollment_path,
-                      alert: "Nou pa t ka enskri ou: #{@record.ineligibility_label}"
+                      alert: t("alerts.election.not_enrolled", reason: @record.ineligibility_label)
         end
-      rescue VoterEligibilityRecord::DigitalEnrollmentNotAllowedError => e
+      rescue VoterEligibilityRecord::DigitalEnrollmentNotAllowedError
         redirect_to citizens_election_offices_path,
-                    alert: "#{e.message} Ale nan yon biwo BonID pou enskri an pèsòn."
+                    alert: t("alerts.election.online_not_allowed")
       rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.warn("[Enrollment] Registration failed: #{e.message}")
         redirect_to citizens_election_enrollment_path,
-                    alert: "Erè pandan enskripsyon: #{e.message}"
+                    alert: t("alerts.election.enroll_failed")
       end
 
       private

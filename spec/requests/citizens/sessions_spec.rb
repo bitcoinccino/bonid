@@ -31,7 +31,7 @@ RSpec.describe "Citizens::Sessions", type: :request do
     it "rejects an unknown email" do
       post login_path, params: { citizen: { email: "nobody@example.com" } }
       expect(response).to redirect_to(%r{/login})
-      expect(flash[:alert]).to eq("No account found with that email or BonID.")
+      expect(flash[:alert]).to eq(I18n.t("citizen_portal.auth.flash.no_account", locale: :en))
     end
 
     it "signs the citizen in with a valid code" do
@@ -44,13 +44,15 @@ RSpec.describe "Citizens::Sessions", type: :request do
       expect(controller.current_citizen).to eq(citizen)
     end
 
-    it "greets a direct login with Welcome back!" do
+    it "greets a direct login in the citizen's saved language, not the login page's" do
+      citizen.update_columns(preferred_locale: "fr")
       allow_any_instance_of(CitizenOtpService).to receive(:verify!).and_return(true)
 
-      post login_path, params: { citizen: { email: citizen.email } }
+      post login_path, params: { citizen: { email: citizen.email }, lang: "en" }
       post citizens_verify_otp_path, params: { otp: "123456" }
 
-      expect(flash[:notice]).to eq("Welcome back!")
+      expect(flash[:notice]).to eq(I18n.t("alerts.sign_in.welcome_back", locale: :fr))
+      expect(response.location).to include("lang=fr")
     end
 
     it "does not greet a login that came from a partner" do
@@ -59,7 +61,8 @@ RSpec.describe "Citizens::Sessions", type: :request do
       post login_path, params: { citizen: { email: citizen.email }, partner_slug: "zellus" }
       post citizens_verify_otp_path, params: { otp: "123456" }
 
-      expect(flash[:notice]).not_to eq("Welcome back!")
+      welcomes = %i[en fr ht].map { |l| I18n.t("alerts.sign_in.welcome_back", locale: l) }
+      expect(welcomes).not_to include(flash[:notice])
     end
 
     it "rejects an invalid code" do
@@ -69,7 +72,7 @@ RSpec.describe "Citizens::Sessions", type: :request do
       post citizens_verify_otp_path, params: { otp: "000000" }
 
       expect(response).to have_http_status(:unprocessable_entity)
-      expect(response.body).to include("Invalid or expired code")
+      expect(response.body).to include(I18n.t("citizen_portal.auth.flash.invalid_code", locale: :en))
     end
   end
 

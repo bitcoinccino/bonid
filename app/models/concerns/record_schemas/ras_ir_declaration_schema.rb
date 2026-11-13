@@ -70,22 +70,22 @@ module RecordSchemas
       calcul  = data["calcul_ras"] || {}
 
       # Section I — Periode d'imposition
-      errors.add(:data, "Ane fiskal obligatwa (Section I)") if periode["annee_fiscale"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_required_s1")) if periode["annee_fiscale"].blank?
       if periode["annee_fiscale"].present? && !periode["annee_fiscale"].match?(/\A\d{4}-\d{4}\z/)
-        errors.add(:data, "Ane fiskal dwe nan foma YYYY-YYYY")
+        errors.add(:data, I18n.t("alerts.dgi_form.fiscal_year_format"))
       end
-      errors.add(:data, "Mwa deklarasyon obligatwa (Section I)") if periode["mois_declaration"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.month_required_s1")) if periode["mois_declaration"].blank?
       if periode["mois_declaration"].present? && !(1..12).include?(periode["mois_declaration"].to_i)
-        errors.add(:data, "Mwa deklarasyon dwe ant 1 ak 12")
+        errors.add(:data, I18n.t("alerts.dgi_form.month_range"))
       end
 
       # Section II — Type de declaration
       if periode["type_declaration"].present?
         unless %w[originale rectificative].include?(periode["type_declaration"])
-          errors.add(:data, "Tip deklarasyon dwe 'originale' oswa 'rectificative'")
+          errors.add(:data, I18n.t("alerts.dgi_form.declaration_type_values"))
         end
       else
-        errors.add(:data, "Tip deklarasyon obligatwa (Section II)")
+        errors.add(:data, I18n.t("alerts.dgi_form.declaration_type_required_s2"))
       end
 
       # Section III — Identification
@@ -94,18 +94,18 @@ module RecordSchemas
       missing << "nif"            unless ident["nif"].present?
       missing << "adresse"        unless ident["adresse"].present?
       missing << "ville"          unless ident["ville"].present?
-      errors.add(:data, "Chan obligatwa ki manke: #{missing.join(', ')} (Section III)") if missing.any?
+      errors.add(:data, I18n.t("alerts.dgi_form.missing_fields_in", fields: missing.join(", "), section: "Section III")) if missing.any?
 
       if ident["nif"].present? && !ident["nif"].match?(/\A(\d{3}-\d{3}-\d{3}|NIF-HT-\d{9})\z/)
-        errors.add(:data, "NIF dwe nan foma XXX-XXX-XXX oswa NIF-HT-XXXXXXXXX")
+        errors.add(:data, I18n.t("alerts.dgi_form.nif_format"))
       end
 
       if ident["code_secteur"].present? && !SECTEUR_ACTIVITE_RAS.key?(ident["code_secteur"].upcase)
-        errors.add(:data, "Kod sekte aktivite pa valid")
+        errors.add(:data, I18n.t("alerts.dgi_form.sector_code"))
       end
 
       # Section IV — Calcul (Line 1 required minimum)
-      errors.add(:data, "Salè total mansyel obligatwa (Liy 1, Section IV)") if calcul["salaires_montant"].blank?
+      errors.add(:data, I18n.t("alerts.dgi_form.salary_total_required")) if calcul["salaires_montant"].blank?
 
       # Numeric validation for all calculation fields
       numeric_fields = %w[
@@ -117,15 +117,15 @@ module RecordSchemas
       numeric_fields.each do |field|
         val = calcul[field]
         next if val.blank?
-        errors.add(:data, "#{field} dwe yon nimewo valid") unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
+        errors.add(:data, I18n.t("alerts.dgi_form.number_invalid", field: field)) unless val.to_s.match?(/\A-?\d+(\.\d+)?\z/)
       end
 
       # Employee list validation
       employes = data["employes"]
       if employes.is_a?(Array)
         employes.each_with_index do |emp, idx|
-          errors.add(:data, "Anplwaye #{idx + 1}: non obligatwa") if emp["nom_employe"].blank?
-          errors.add(:data, "Anplwaye #{idx + 1}: salè brit obligatwa") if emp["salaire_brut"].blank?
+          errors.add(:data, I18n.t("alerts.dgi_form.employee_name", n: idx + 1)) if emp["nom_employe"].blank?
+          errors.add(:data, I18n.t("alerts.dgi_form.employee_gross", n: idx + 1)) if emp["salaire_brut"].blank?
         end
       end
     end

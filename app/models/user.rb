@@ -515,7 +515,7 @@ alias name full_name
     if id_type.to_s == "cin"
       errors.add(:id_number, CinNumberValidator::CIN_ERROR)
     else
-      errors.add(:id_number, "Nimewo paspò pa valid. Dwe gen 6 a 9 karaktè (lèt oswa chif).")
+      errors.add(:id_number, I18n.t("alerts.validation.user.passport_number"))
     end
   end
 

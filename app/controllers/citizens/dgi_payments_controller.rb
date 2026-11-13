@@ -17,7 +17,7 @@ module Citizens
     # ============================================================
     def show
       @record = @payment.verification_record
-      redirect_to citizens_dgi_path(@record), notice: "Peman deja konplete." if @payment.completed?
+      redirect_to citizens_dgi_path(@record), notice: t("alerts.dgi.payment_already_done") if @payment.completed?
     end
 
     # ============================================================
@@ -26,7 +26,7 @@ module Citizens
     def pay
       method = params[:payment_method]
       unless DgiPayment::PAYMENT_METHODS.include?(method)
-        return redirect_to citizens_dgi_payment_path(@payment), alert: "Metòd peman pa valid."
+        return redirect_to citizens_dgi_payment_path(@payment), alert: t("alerts.dgi.invalid_method")
       end
 
       @payment.update!(payment_method: method, status: "pending")
@@ -42,7 +42,8 @@ module Citizens
                       notice: payment_instructions(method)
         end
       rescue DgiPaymentService::PaymentError => e
-        redirect_to citizens_dgi_payment_path(@payment), alert: "Erè peman: #{e.message}"
+        Rails.logger.warn("[DGI] Payment error: #{e.message}")
+        redirect_to citizens_dgi_payment_path(@payment), alert: t("alerts.dgi.payment_failed")
       end
     end
 
@@ -52,7 +53,7 @@ module Citizens
     def moncash_callback
       order_id = params[:orderId] || params[:order_id]
       unless order_id.present?
-        return redirect_to citizens_dgi_index_path, alert: "Peman pa valid."
+        return redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.invalid_payment")
       end
 
       service = DgiPaymentService.new
@@ -60,13 +61,14 @@ module Citizens
 
       if result[:success]
         redirect_to citizens_dgi_payment_receipt_path(result[:payment]),
-                    notice: "Peman konplete avèk siksè!"
+                    notice: t("alerts.dgi.payment_success")
       else
         redirect_to citizens_dgi_payment_path(result[:payment]),
-                    alert: "Peman pa konfime. Tanpri eseye ankò."
+                    alert: t("alerts.dgi.payment_unconfirmed")
       end
     rescue DgiPaymentService::PaymentError => e
-      redirect_to citizens_dgi_index_path, alert: "Erè verifikasyon peman: #{e.message}"
+      Rails.logger.warn("[DGI] Payment verification error: #{e.message}")
+      redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.payment_check_failed")
     end
 
     # ============================================================
@@ -77,7 +79,7 @@ module Citizens
       order_id       = params[:order_id]
 
       unless checkout_token.present? && order_id.present?
-        return redirect_to citizens_dgi_index_path, alert: "Peman pa valid."
+        return redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.invalid_payment")
       end
 
       service = DgiPaymentService.new
@@ -85,13 +87,14 @@ module Citizens
 
       if result[:success]
         redirect_to receipt_citizens_dgi_payment_path(result[:payment]),
-                    notice: "Peman Zellus konplete avèk siksè!"
+                    notice: t("alerts.dgi.zellus_success")
       else
         redirect_to citizens_dgi_payment_path(result[:payment]),
-                    alert: "Peman Zellus pa konfime. Tanpri eseye ankò."
+                    alert: t("alerts.dgi.zellus_unconfirmed")
       end
     rescue DgiPaymentService::PaymentError => e
-      redirect_to citizens_dgi_index_path, alert: "Erè verifikasyon peman Zellus: #{e.message}"
+      Rails.logger.warn("[DGI] Zellus payment verification error: #{e.message}")
+      redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.zellus_check_failed")
     end
 
     # ============================================================
@@ -99,7 +102,7 @@ module Citizens
     # ============================================================
     def receipt
       unless @payment.completed?
-        return redirect_to citizens_dgi_payment_path(@payment), alert: "Peman poko konplete."
+        return redirect_to citizens_dgi_payment_path(@payment), alert: t("alerts.dgi.payment_pending")
       end
       @record = @payment.verification_record
       # Load reviewing agent (if record was reviewed by a partner agent)
@@ -126,7 +129,7 @@ module Citizens
     def find_payment
       @payment = DgiPayment.for_user(@citizen).find_by!(order_id: params[:order_id])
     rescue ActiveRecord::RecordNotFound
-      redirect_to citizens_dgi_index_path, alert: "Peman pa jwenn."
+      redirect_to citizens_dgi_index_path, alert: t("alerts.dgi.payment_not_found")
     end
 
     def set_immersive

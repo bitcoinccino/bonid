@@ -217,7 +217,7 @@ class ApplicationController < ActionController::Base
     if request.path.start_with?("/officers") && current_role == :citizen
       sign_out current_resource
       redirect_to root_path,
-                  alert: "🚫 Access restricted to verified officers."
+                  alert: t("alerts.access.officers_only")
     end
   end
 
@@ -253,7 +253,7 @@ class ApplicationController < ActionController::Base
 
     sign_out(current_resource)
     redirect_to new_partner_admin_session_path,
-                alert: "🚫 Your BonID access has been suspended."
+                alert: t("alerts.access.account_suspended")
   end
 end
 
