@@ -932,3 +932,354 @@ body.citizen-app .complaint-form-wrapper .form-select + small.text-muted::before
   font-size: 0.85rem;
   line-height: 1.45;
 }
+
+/* ==========================================================
+   Personal info form: grouped fields, lock icon in locked boxes
+   ========================================================== */
+
+/* One calm note instead of a "Locked" hint under every field */
+.pf-lock-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  background: rgba(0, 32, 159, 0.05);
+  border: 1px solid rgba(0, 32, 159, 0.12);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #334155;
+
+  > i {
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+    font-size: 1rem;
+    color: #00209F;
+  }
+}
+
+/* "Changer de nom ›": plain blue action link, never underlined */
+.pf-lock-note__link,
+.pf-lock-note__link:hover,
+.pf-lock-note__link:focus,
+.pf-lock-note__link:visited {
+  text-decoration: none !important;
+}
+
+.pf-lock-note__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  margin-left: 0.25rem;
+  font-weight: 600;
+  color: #00209F;
+  white-space: nowrap;
+
+  &:hover { color: #001a80; }
+  i { font-size: 1rem; line-height: 1; }
+}
+
+/* Small uppercase heading above each group of fields */
+.pf-group-title {
+  margin: 0 0 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+/* Locked (verified) fields: grey box with a lock icon on the right.
+   On selects the lock replaces the dropdown caret. */
+$pf-lock-svg: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M19 10h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1h1V9a7 7 0 1 1 14 0v1zm-2 0V9A5 5 0 0 0 7 9v1h10zm-6 4v4h2v-4h-2z'/%3E%3C/svg%3E";
+
+.pf-locked {
+  .form-control:disabled,
+  .form-select:disabled {
+    background-color: #f1f5f9;
+    background-image: url($pf-lock-svg);
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 15px 15px;
+    padding-right: 2.5rem;
+    color: #334155;
+    opacity: 1;
+    cursor: not-allowed;
+  }
+}
+
+/* +509 prefix with an image flag (emoji flags show "HT" on Windows) */
+.pf-phone-prefix {
+  gap: 0.4rem;
+  font-weight: 600;
+  color: #334155;
+  background: #f8fafc;
+}
+
+.pf-phone-flag {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+/* Keep long text inside the boxes on phones: placeholders, selected
+   options and values cut off with "…" instead of running under the
+   dropdown arrow / lock icon or past the edge. */
+.profile-form {
+  .form-control,
+  .form-select {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .form-control::placeholder {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .form-select { padding-right: 2.25rem; }
+
+  .input-group > .form-control { min-width: 0; }
+
+  .form-text,
+  small.text-muted { display: block; overflow-wrap: anywhere; }
+}
+
+/* Day / month / year date pickers (simple_form date selects): share the
+   row evenly and shrink on phones instead of pushing past the edge. */
+.profile-form .d-flex.flex-row:has(> .form-select) {
+  gap: 0.5rem;
+
+  > .form-select {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0 !important;
+  }
+}
+
+/* ── Review step: small label above each value ── */
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem 1.5rem;
+
+  @media (min-width: 576px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.review-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.review-value {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #0f172a;
+  overflow-wrap: anywhere;
+
+  &.is-empty { color: #94a3b8; font-weight: 400; font-style: italic; }
+}
+
+.review-empty { color: #94a3b8; font-style: italic; }
+
+.review-data-address { line-height: 1.6; overflow-wrap: anywhere; }
+
+/* Same rhythm in every wizard step: the grid gutter (g-3 / g-md-4) is the
+   only space between fields. simple_form wraps each input in .mb-3 and
+   hints sat below that margin, so steps with hints (ID, address) looked
+   looser than the personal step. */
+.profile-form .row > [class*="col-"] {
+  > .mb-3,
+  > div > .mb-3 { margin-bottom: 0 !important; }
+
+  > small.text-muted,
+  > .form-text {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+}
+
+/* Retour / Continuer row under each wizard step: icon + text on one line,
+   never squeezed; on phones the two buttons share the row evenly. */
+.profile-wizard-nav {
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    min-height: 44px;
+
+    i { margin: 0 !important; line-height: 1; }
+  }
+
+  @media (max-width: 576px) {
+    .btn {
+      flex: 1 1 0;
+      min-width: 0;
+      padding-left: 0.75rem !important;
+      padding-right: 0.75rem !important;
+    }
+
+    /* single "Continuer" on the first step: full width */
+    &.justify-content-end .btn { flex-basis: 100%; }
+  }
+}
+
+/* Address cascade: a dropdown that is waiting for its options */
+.profile-form .form-select.is-loading {
+  color: #64748b;
+  font-style: italic;
+  background-color: #f8fafc;
+  cursor: progress;
+}
+
+/* ── Review step: section header = title on the left, "Modifier" on the
+   right, same for every section (photo included) ── */
+.review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.review-head__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #00209F;
+
+  i { font-size: 1.05rem; flex-shrink: 0; }
+}
+
+.review-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid rgba(0, 32, 159, 0.3);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #00209F;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  i { font-size: 0.9rem; }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(0, 32, 159, 0.06);
+    border-color: #00209F;
+    outline: none;
+  }
+}
+
+.review-divider {
+  margin: 1.25rem 0;
+  border-color: #e2e8f0;
+  opacity: 1;
+}
+
+/* Long labels ("Enregistrer et continuer") wrap neatly instead of
+   spilling out of a half-width button on phones. */
+@media (max-width: 576px) {
+  .profile-wizard-nav .btn {
+    white-space: normal;
+    line-height: 1.2;
+    text-align: center;
+  }
+}
+
+/* ── Verification review (identity submission, step 5): reuses the profile
+   review head/grid above; these are the extra pieces. ── */
+.review-block {
+  padding: 1rem 1.1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #ffffff;
+
+  & + .review-block { margin-top: 0.85rem; }
+}
+
+.review-todo {
+  color: #94a3b8;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.review-reused {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #198754;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.review-note {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.review-confirm {
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(0, 32, 159, 0.04);
+  border: 1px solid rgba(0, 32, 159, 0.12);
+
+  .form-check-label {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #334155;
+  }
+}
+
+/* Small hint under a field: rules, not alarms */
+.sub-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #64748b;
+
+  i { flex-shrink: 0; margin-top: 0.1rem; color: #94a3b8; }
+}

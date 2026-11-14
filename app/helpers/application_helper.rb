@@ -4,6 +4,23 @@ module ApplicationHelper
   def card_date(date)
     l(date.to_date, format: :card).gsub(/\p{L}+/) { |word| word.capitalize }
   end
+
+  # Month names for date selects, capitalized in every language
+  # ("Janvier", "Janvye"); index 0 stays nil as Rails expects.
+  def capitalized_month_names
+    I18n.t("date.month_names").map { |m| m&.capitalize }
+  end
+
+  # Long date with the month capitalized: "4 Janvier 2023", "4 Janvye 2023".
+  def long_date(date)
+    return if date.blank?
+
+    text = l(date.to_date, format: :long)
+    I18n.t("date.month_names").compact.sort_by { |m| -m.length }.each do |month|
+      text = text.sub(/(?<!\p{L})#{Regexp.escape(month)}(?!\p{L})/i) { month.capitalize }
+    end
+    text
+  end
   # Whether the paused BonTouris feature is enabled. Used to hide nav links
   # to gated staff pages. Mirrors the controller guard (BontourisPausable).
   def bontouris_enabled?
@@ -354,11 +371,29 @@ module ApplicationHelper
   # public verification page: initials + masked middle + the 6-char lookup
   # code agents type (BonidLookupService suffix lookup).
   #   "DL-1990-M-OU-P8697C56" → "DL-****-*-**-697C56"
+  # One review cell on the profile wizard's last step: small label above
+  # the value. profile_review_controller.js builds the same markup.
+  def review_item(key, value, empty_text, extra: nil)
+    tag.div(class: "review-item", data: { review_key: key }) do
+      safe_join([
+        tag.span(t("citizen_portal.profile.review.#{key}"), class: "review-label"),
+        tag.span(class: "review-value#{' is-empty' if value.blank?}") { safe_join([ value.presence || empty_text, extra ].compact, " ") }
+      ])
+    end
+  end
+
   def citizen_masked_bonid(bonid)
     stripped = bonid.to_s.delete("-")
     return "****" if stripped.length < 8
 
     "#{stripped[0..1]}-****-*-**-#{stripped.last(6)}"
+  end
+
+  # The last 6 characters of a BonID: the lookup code a partner can type
+  # when the QR can't be scanned (same suffix TeamInvitationService uses).
+  def citizen_bonid_code(bonid)
+    stripped = bonid.to_s.delete("-").upcase
+    stripped.length < 8 ? nil : stripped.last(6)
   end
 
   # Masks a BonID: "JM-1968-M-OUEST-P2334-697280" → "MB••••••••697280"

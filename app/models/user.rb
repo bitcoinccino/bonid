@@ -119,6 +119,13 @@ class User < ApplicationRecord
   # match the validator that the IdentitySubmission flow already enforces.
   validate :id_number_format_when_changed
 
+  # Profile wizard only (the controller sets this flag): a passport needs a
+  # 10-digit NINU. Kept out of other saves so existing passport holders
+  # without a NINU aren't blocked from unrelated updates (settings, cards).
+  attr_accessor :enforce_passport_ninu
+  before_validation :use_ninu_as_passport_number, if: :enforce_passport_ninu
+  validate :ninu_required_for_passport, if: :enforce_passport_ninu
+
   validates :partner, presence: true, if: :partner_admin?
   validate  :branch_belongs_to_partner, if: -> { partner_branch.present? && partner.present? }
 
@@ -504,6 +511,29 @@ alias name full_name
   # IdentitySubmission flow expects (10-digit NINU for CIN; 6–9 alphanumeric
   # for Passport). Skipped when the value is unchanged so legacy rows don't
   # break other profile updates.
+  # Passport holders give only their NINU on the profile wizard; store it as
+  # the ID number too so BonID generation (last 4 digits), profile_complete?
+  # and the presence checks keep working.
+  def use_ninu_as_passport_number
+    return unless id_type.to_s == "passport"
+
+    digits = ninu.to_s.gsub(/\D/, "")
+    self.id_number = digits if digits.length == 10
+  end
+
+  def ninu_required_for_passport
+    return unless id_type.to_s == "passport"
+
+    digits = ninu.to_s.gsub(/\D/, "")
+    if digits.blank?
+      errors.add(:ninu, I18n.t("alerts.validation.user.ninu_required"))
+    elsif digits.length != 10
+      errors.add(:ninu, I18n.t("alerts.validation.user.ninu_format"))
+    else
+      self.ninu = digits
+    end
+  end
+
   def id_number_format_when_changed
     return unless id_number_changed?
     return if id_number.blank?

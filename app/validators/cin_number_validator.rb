@@ -32,7 +32,9 @@ class CinNumberValidator
     when "cin"
       cleaned.match?(NINU_FORMAT) || cleaned.match?(CIN_CARD_FORMAT)
     when "passport"
-      cleaned.match?(PASSPORT_FORMAT)
+      # Passports are now registered with the holder's NINU (DIE requires it);
+      # older records carry the passport's own number.
+      cleaned.match?(NINU_FORMAT) || cleaned.match?(PASSPORT_FORMAT)
     else
       true # Other ID types: no format validation yet
     end

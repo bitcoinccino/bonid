@@ -1,6 +1,7 @@
 <%# Address Information Section — chrome matches the Anrejistre wizard
     (.ballot-section / .ballot-section-head). %>
-<div class="ballot-section card border-0 shadow-sm mb-4" data-controller="address">
+<div class="ballot-section card border-0 shadow-sm mb-4" data-controller="address"
+     data-address-loading-value="<%= t("citizen_portal.profile.address.loading") %>">
   <div class="card-body p-4">
 
     <%# Wizard-style section head: bold title + subdued desc %>
@@ -11,14 +12,8 @@
       </p>
     </div>
 
-    <%# Spinner + Error placeholders %>
-    <div data-address-target="spinner" class="text-center mb-3 d-none">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden"><%= t("citizen_portal.profile.address.loading") %></span>
-      </div>
-      <p class="small text-muted mt-2 mb-0"><%= t("citizen_portal.profile.address.loading_data") %></p>
-    </div>
-
+    <%# Loading shows inside each dropdown ("Chargement…"), so no spinner
+        block here: it pushed the whole form down mid-selection. %>
     <div data-address-target="error"
          class="alert alert-danger small d-none text-center">
       <i class="ri-alert-line me-1"></i>
@@ -52,9 +47,12 @@
       </div>
 
       <%# Haiti cascade fields %>
-      <div id="haiti_address_fields" class="row g-4">
+      <%# One field per row on every screen, from the largest area to the
+          smallest (each dropdown fills once the one above is chosen), then
+          street and postal code. %>
+      <div id="haiti_address_fields" class="row g-3 g-md-4">
         <%# Department %>
-        <div class="col-md-6">
+        <div class="col-12">
           <%= a.input :department_id,
             collection: @departments.map { |d| [d.name, d.id] },
             prompt: t("citizen_portal.profile.address.select_department"),
@@ -69,11 +67,10 @@
               id: "address_department_id"
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted"><%= t("citizen_portal.profile.address.department_hint") %></small>
         </div>
 
         <%# Arrondissement %>
-        <div class="col-md-6">
+        <div class="col-12">
           <%= a.input :arrondissement_id,
             collection: [],
             prompt: t("citizen_portal.profile.address.select_arrondissement"),
@@ -88,11 +85,10 @@
               disabled: true
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted"><%= t("citizen_portal.profile.address.arrondissement_hint") %></small>
         </div>
 
         <%# Commune %>
-        <div class="col-md-6">
+        <div class="col-12">
           <%= a.input :commune_id,
             collection: [],
             prompt: t("citizen_portal.profile.address.select_commune"),
@@ -107,11 +103,10 @@
               disabled: true
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted"><%= t("citizen_portal.profile.address.commune_hint") %></small>
         </div>
 
         <%# Section Communale %>
-        <div class="col-md-6">
+        <div class="col-12">
           <%= a.input :communal_section_id,
             collection: [],
             prompt: t("citizen_portal.profile.address.select_section"),
@@ -126,11 +121,20 @@
               disabled: true
             },
             label_html: { class: "form-label" } %>
-          <small class="text-muted"><%= t("citizen_portal.profile.address.section_hint") %></small>
         </div>
 
+        <%# Street Address %>
+        <div class="col-12">
+          <%= a.input :street_address,
+            label: t("citizen_portal.profile.address.street"),
+            input_html: {
+              class: "form-control",
+              placeholder: t("citizen_portal.profile.address.street_placeholder")
+            },
+            label_html: { class: "form-label" } %>
+        </div>
         <%# Postal Code %>
-        <div class="col-md-6">
+        <div class="col-12">
           <%= a.input :postal_code,
             label: t("citizen_portal.profile.address.postal_code"),
             input_html: {
@@ -141,18 +145,9 @@
               value: a.object.postal_code
             },
             label_html: { class: "form-label" } %>
+          <small class="text-muted"><%= t("citizen_portal.profile.address.postal_code_hint") %></small>
         </div>
 
-        <%# Street Address %>
-        <div class="col-md-6">
-          <%= a.input :street_address,
-            label: t("citizen_portal.profile.address.street"),
-            input_html: {
-              class: "form-control",
-              placeholder: t("citizen_portal.profile.address.street_placeholder")
-            },
-            label_html: { class: "form-label" } %>
-        </div>
       </div>
 
     <% end %>

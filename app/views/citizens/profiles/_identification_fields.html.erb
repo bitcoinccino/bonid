@@ -12,12 +12,14 @@
       </p>
     </div>
 
-    <div class="row g-4">
+    <%# ── 1. The document ── Phones: one field per row. Desktop: pairs. %>
+    <h3 class="pf-group-title"><%= t("citizen_portal.profile.id.group_document") %></h3>
+    <div class="row g-3 g-md-4 mb-4">
       <%# Type %>
-      <div class="col-md-6">
+      <div class="col-12 col-md-6">
         <%= f.input :id_type,
           label: t("citizen_portal.profile.id.type"),
-          collection: IdentitySubmission::ID_TYPES.map { |k, v| [v.upcase, k] },
+          collection: IdentitySubmission::ID_TYPES.keys.map { |k| [t("citizen_portal.profile.id.type_#{k}"), k] },
           include_blank: t("citizen_portal.profile.id.select_type"),
           input_html: {
             class: "form-select",
@@ -27,39 +29,59 @@
             }
           },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= t("citizen_portal.profile.id.type_hint_html") %></small>
       </div>
 
-      <%# Number %>
-      <div class="col-md-6">
+      <%# Number — example + placeholder follow the selected type only
+          (id_switcher#toggleFields swaps them). %>
+      <% id_kind = f.object.id_type.to_s.presence_in(%w[cin passport]) %>
+      <% examples = { "cin" => "T1K2N8697", "passport" => "R10772334" } %>
+      <%# Passports use the NINU only, so this field is hidden for them. %>
+      <div class="col-12 col-md-6" data-id-switcher-target="idNumberField"
+           style="<%= 'display:none;' if id_kind == 'passport' %>">
         <%= f.input :id_number,
-          label: t("citizen_portal.profile.id.number"),
+          label: (id_kind ? t("citizen_portal.profile.id.number_#{id_kind}") : t("citizen_portal.profile.id.number")),
           input_html: {
             class: "form-control",
-            placeholder: t("citizen_portal.profile.id.number_placeholder"),
+            placeholder: (examples[id_kind] if id_kind),
             data: {
               id_switcher_target: "idNumber",
-              action: "input->id-switcher#formatIdNumber"
+              action: "input->id-switcher#formatIdNumber",
+              placeholder_cin: examples["cin"],
+              placeholder_passport: examples["passport"]
             }
           },
-          label_html: { class: "form-label" } %>
-        <small class="text-muted">
-          <%= t("citizen_portal.profile.id.number_hint_html") %>
+          label_html: {
+            class: "form-label",
+            data: {
+              id_switcher_target: "idNumberLabel",
+              label_none: t("citizen_portal.profile.id.number"),
+              label_cin: t("citizen_portal.profile.id.number_cin"),
+              label_passport: t("citizen_portal.profile.id.number_passport")
+            }
+          } %>
+        <small class="text-muted" data-id-switcher-target="idNumberHint"
+               data-hint-cin="<%= t("citizen_portal.profile.id.number_example_cin") %>"
+               data-hint-passport="<%= t("citizen_portal.profile.id.number_example_passport") %>"
+               data-hint-none="<%= t("citizen_portal.profile.id.number_pick_type") %>">
+          <%= id_kind ? t("citizen_portal.profile.id.number_example_#{id_kind}").html_safe : t("citizen_portal.profile.id.number_pick_type") %>
         </small>
       </div>
 
-      <%# NINU — REQUIRED FOR PASSPORT %>
-      <div class="col-md-6"
+      <%# NINU — passports only; takes the slot of the hidden Numéro field %>
+      <div class="col-12 col-md-6"
            data-id-switcher-target="ninu"
            style="<%= f.object.id_type == 'passport' ? '' : 'display:none;' %>">
         <%= f.input :ninu,
           label: t("citizen_portal.profile.id.ninu"),
+          required: f.object.id_type == "passport",
           input_html: {
             class: "form-control",
             placeholder: "0123456789",
             maxlength: 10,
             inputmode: "numeric",
-            data: { action: "input->id-switcher#formatNinu" }
+            pattern: "[0-9]{10}",
+            required: f.object.id_type == "passport",
+            data: { action: "input->id-switcher#formatNinu", id_switcher_target: "ninuInput" }
           },
           label_html: { class: "form-label" } %>
         <small class="text-muted">
@@ -67,76 +89,72 @@
         </small>
       </div>
 
-      <%# Place of Birth %>
-      <div class="col-12" data-controller="birth-address">
-        <div class="row g-4">
-          <div class="col-md-6">
-            <%= f.input :birth_department_id,
-              collection: Department.order(:name).map { |d| [d.name, d.id] },
-              include_blank: t("citizen_portal.profile.id.select_department"),
-              label: t("citizen_portal.profile.id.birth_department"),
-              input_html: {
-                class: "form-select",
-                data: {
-                  action: "change->birth-address#loadCommunes",
-                  birth_address_target: "department"
-                }
-              },
-              label_html: { class: "form-label" } %>
-            <small class="text-muted"><%= t("citizen_portal.profile.id.birth_department_hint") %></small>
-          </div>
-
-          <div class="col-md-6">
-            <%= f.input :birth_commune_id,
-              collection: f.object.birth_department_id.present? ?
-                Commune.where(department_id: f.object.birth_department_id).order(:name).map { |c| [c.name, c.id] } : [],
-              include_blank: t("citizen_portal.profile.id.select_department_first"),
-              label: t("citizen_portal.profile.id.birth_commune"),
-              input_html: {
-                class: "form-select",
-                data: { birth_address_target: "commune" }
-              },
-              label_html: { class: "form-label" } %>
-            <small class="text-muted"><%= t("citizen_portal.profile.id.birth_commune_hint") %></small>
-          </div>
-        </div>
-      </div>
-
       <%# Issued %>
-      <div class="col-md-6">
+      <div class="col-12 col-md-6">
         <%= f.input :id_issued_on, as: :date,
           label: t("citizen_portal.profile.id.issued"),
           start_year: 2000,
           end_year: Date.current.year,
           order: [:day, :month, :year],
+          use_month_names: capitalized_month_names,
           prompt: { day: t("citizen_portal.profile.date.day"), month: t("citizen_portal.profile.date.month"), year: t("citizen_portal.profile.date.year") },
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= t("citizen_portal.profile.id.issued_hint") %></small>
       </div>
 
       <%# Expired %>
-      <div class="col-md-6">
+      <div class="col-12 col-md-6">
         <%= f.input :id_expires_on, as: :date,
           label: t("citizen_portal.profile.id.expires"),
           start_year: Date.current.year,
           end_year: Date.current.year + 20,
           order: [:day, :month, :year],
+          use_month_names: capitalized_month_names,
           prompt: { day: t("citizen_portal.profile.date.day"), month: t("citizen_portal.profile.date.month"), year: t("citizen_portal.profile.date.year") },
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= t("citizen_portal.profile.id.expires_hint") %></small>
       </div>
 
-      <%# Issuer %>
-      <div class="col-md-6">
+      <%# Issuer — full width: it's the last field of the group %>
+      <div class="col-12">
         <%= f.input :document_issuer,
           label: t("citizen_portal.profile.id.issuer"),
           collection: DocumentIssuers::LIST,
           include_blank: t("citizen_portal.profile.id.select_issuer"),
           input_html: { class: "form-select" },
           label_html: { class: "form-label" } %>
-        <small class="text-muted"><%= t("citizen_portal.profile.id.issuer_hint") %></small>
+      </div>
+    </div>
+
+    <%# ── 2. Place of birth (department → commune cascade) ── %>
+    <h3 class="pf-group-title"><%= t("citizen_portal.profile.id.group_birth") %></h3>
+    <div class="row g-3 g-md-4" data-controller="birth-address">
+      <div class="col-12 col-md-6">
+        <%= f.input :birth_department_id,
+          collection: Department.order(:name).map { |d| [d.name, d.id] },
+          include_blank: t("citizen_portal.profile.id.select_department"),
+          label: t("citizen_portal.profile.id.birth_department"),
+          input_html: {
+            class: "form-select",
+            data: {
+              action: "change->birth-address#loadCommunes",
+              birth_address_target: "department"
+            }
+          },
+          label_html: { class: "form-label" } %>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <%= f.input :birth_commune_id,
+          collection: f.object.birth_department_id.present? ?
+            Commune.where(department_id: f.object.birth_department_id).order(:name).map { |c| [c.name, c.id] } : [],
+          include_blank: t("citizen_portal.profile.id.select_department_first"),
+          label: t("citizen_portal.profile.id.birth_commune"),
+          input_html: {
+            class: "form-select",
+            data: { birth_address_target: "commune" }
+          },
+          label_html: { class: "form-label" } %>
       </div>
     </div>
 

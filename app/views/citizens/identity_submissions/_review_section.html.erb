@@ -1,152 +1,94 @@
-<%# STEP 4 — Review & Confirm %>
-<%# Server renders fallback content; JS overwrites with live form data when available %>
+<%# STEP 5 — Review & Confirm.
+    Same layout as the profile review: section title + "Modifier" on one
+    line, then label-over-value cells. Sections follow the wizard order
+    (1 ID, 2 proof of address, 3 face, 4 signature) and each "Modifier"
+    jumps to its own step. The server renders a fallback; JS
+    (submission_review_controller) refreshes it from the live form. %>
 
 <% id_type_label = { "cin" => "CIN", "passport" => t("citizen_portal.submission.review.passport") }[submission.id_type.to_s] || submission.id_type.to_s.titleize %>
-
-<%# ── Section 1: Government ID ── %>
-<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
-      <i class="ri-id-card-line me-1"></i><%= t("citizen_portal.submission.review.gov_id") %>
-    </h6>
-    <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
-            data-action="click->wizard#goToStep" data-step="1">
-      <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
-    </button>
+<% uploaded = capture do %><span class="text-success"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.review.uploaded") %></span><% end %>
+<% todo = ->(key) { tag.span(t("citizen_portal.submission.review.#{key}"), class: "review-todo") } %>
+<% cell = ->(label_key, value_html) do %>
+  <div class="review-item">
+    <span class="review-label"><%= t("citizen_portal.submission.review.#{label_key}") %></span>
+    <span class="review-value"><%= value_html %></span>
   </div>
-  <div data-submission-review-target="reviewId" style="color: #344054;">
-    <%# Server-side fallback (JS overwrites on normal flow) %>
-    <div class="row g-2" style="font-size:0.82rem;">
-      <div class="col-12"><strong><%= t("citizen_portal.submission.review.id_type") %>:</strong> <%= id_type_label.presence || "—" %></div>
-      <% if submission.id_type.to_s == "cin" %>
-        <div class="col-sm-6"><strong><%= t("citizen_portal.submission.review.cin_front") %>:</strong>
-          <% if submission.persisted? && submission.cin_front.attached? %>
-            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.review.uploaded") %></span>
-          <% else %>
-            <span class="text-muted"><%= t("citizen_portal.submission.review.select_file_step1") %></span>
-          <% end %>
-        </div>
-        <div class="col-sm-6"><strong><%= t("citizen_portal.submission.review.cin_back") %>:</strong>
-          <% if submission.persisted? && submission.cin_back.attached? %>
-            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.review.uploaded") %></span>
-          <% else %>
-            <span class="text-muted"><%= t("citizen_portal.submission.review.select_file_step1") %></span>
-          <% end %>
-        </div>
-      <% else %>
-        <div class="col-sm-6"><strong><%= t("citizen_portal.submission.review.passport") %>:</strong>
-          <% if submission.persisted? && submission.passport.attached? %>
-            <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.review.uploaded") %></span>
-          <% else %>
-            <span class="text-muted"><%= t("citizen_portal.submission.review.select_file_step1") %></span>
-          <% end %>
-        </div>
-      <% end %>
-    </div>
+<% end %>
+<% edit_btn = ->(step) do %>
+  <button type="button" class="review-edit" data-action="click->wizard#goToStep" data-step="<%= step %>">
+    <i class="ri-pencil-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.edit") %>
+  </button>
+<% end %>
+<% reused_pill = ->(key) { tag.span(class: "review-reused") { safe_join([ tag.i(class: "ri-checkbox-circle-line", "aria-hidden": true), t("citizen_portal.submission.review.#{key}") ]) } } %>
+
+<%# ── 1. Government ID ── %>
+<div class="review-block">
+  <div class="review-head">
+    <h3 class="review-head__title"><i class="ri-id-card-line" aria-hidden="true"></i><%= t("citizen_portal.submission.review.gov_id") %></h3>
+    <%= edit_btn.(1) %>
+  </div>
+  <div data-submission-review-target="reviewId" class="review-grid">
+    <%= cell.("id_type", id_type_label.presence || todo.("select_file_step1")) %>
+    <% if submission.id_type.to_s == "cin" %>
+      <%= cell.("cin_front", submission.persisted? && submission.cin_front.attached? ? uploaded : todo.("select_file_step1")) %>
+      <%= cell.("cin_back",  submission.persisted? && submission.cin_back.attached?  ? uploaded : todo.("select_file_step1")) %>
+    <% else %>
+      <%= cell.("passport", submission.persisted? && submission.passport.attached? ? uploaded : todo.("select_file_step1")) %>
+    <% end %>
   </div>
 </div>
 
-<%# ── Section 2: Live Selfie ── %>
-<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
-      <i class="ri-shield-check-line me-1"></i><%= t("citizen_portal.submission.review.face_section") %>
-    </h6>
+<%# ── 2. Proof of address ── %>
+<div class="review-block">
+  <div class="review-head">
+    <h3 class="review-head__title"><i class="ri-folder-3-line" aria-hidden="true"></i><%= t("citizen_portal.submission.review.supporting_section") %></h3>
+    <%= edit_btn.(2) %>
+  </div>
+  <div data-submission-review-target="reviewSupporting" class="review-grid">
+    <%= cell.("document_type", todo.("select_in_step2")) %>
+    <%= cell.("file", todo.("select_in_step2")) %>
+  </div>
+</div>
+
+<%# ── 3. Face check ── %>
+<div class="review-block">
+  <div class="review-head">
+    <h3 class="review-head__title"><i class="ri-shield-check-line" aria-hidden="true"></i><%= t("citizen_portal.submission.review.face_section") %></h3>
+    <%= @skip_liveness ? reused_pill.("verified_reused") : edit_btn.(3) %>
+  </div>
+  <div data-submission-review-target="reviewSelfie" class="review-grid">
     <% if @skip_liveness %>
-      <span class="badge rounded-pill px-3 py-1" style="background: #e8f5e9; color: #198754; font-size: 0.72rem; font-weight: 600;">
-        <i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.review.verified_reused") %>
-      </span>
+      <p class="review-note mb-0" data-reused="true"><%= t("citizen_portal.submission.review.face_carried") %></p>
     <% else %>
-      <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
-              data-action="click->wizard#goToStep" data-step="2">
-        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
-      </button>
-    <% end %>
-  </div>
-  <div data-submission-review-target="reviewSelfie" style="color: #344054;">
-    <% if @skip_liveness %>
-      <p class="mb-0 small text-muted" data-reused="true">
-        <i class="ri-information-line me-1"></i>
-        <%= t("citizen_portal.submission.review.face_carried") %>
-      </p>
-    <% else %>
-      <%# Server-side fallback %>
-      <div style="font-size:0.82rem;">
-        <strong><%= t("citizen_portal.submission.review.face_liveness") %>:</strong>
-        <span class="text-muted"><i class="ri-information-line me-1"></i><%= t("citizen_portal.submission.review.complete_in_step2") %></span>
-      </div>
+      <%= cell.("face_liveness", todo.("complete_in_step3")) %>
     <% end %>
   </div>
 </div>
 
-<%# ── Section 3: Supporting Document ── %>
-<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
-      <i class="ri-folder-3-line me-1"></i><%= t("citizen_portal.submission.review.supporting_section") %>
-    </h6>
-    <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
-            data-action="click->wizard#goToStep" data-step="1">
-      <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
-    </button>
+<%# ── 4. Signature ── %>
+<div class="review-block">
+  <div class="review-head">
+    <h3 class="review-head__title"><i class="ri-ball-pen-line" aria-hidden="true"></i><%= t("citizen_portal.submission.review.signature") %></h3>
+    <%= @skip_signature ? reused_pill.("on_file_reused") : edit_btn.(4) %>
   </div>
-  <div data-submission-review-target="reviewSupporting" style="color: #344054;">
-    <%# Server-side fallback %>
-    <div class="row g-2" style="font-size:0.82rem;">
-      <div class="col-sm-6"><strong><%= t("citizen_portal.submission.review.document_type") %>:</strong> <span class="text-muted"><%= t("citizen_portal.submission.review.select_in_step1") %></span></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.submission.review.file") %>:</strong> <span class="text-muted"><%= t("citizen_portal.submission.review.select_file_step1") %></span></div>
-    </div>
-  </div>
-</div>
-
-<%# ── Section 4: Signature ── %>
-<div class="mb-3 p-3 rounded-3" style="border: 1px solid #e4e7ec;">
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h6 style="font-size: 0.82rem; font-weight: 600; color: var(--primary); margin: 0;">
-      <i class="ri-ball-pen-line me-1"></i><%= t("citizen_portal.submission.review.signature") %>
-    </h6>
+  <div data-submission-review-target="reviewSignature" class="review-grid">
     <% if @skip_signature %>
-      <span class="badge rounded-pill px-3 py-1" style="background: #e8f5e9; color: #198754; font-size: 0.72rem; font-weight: 600;">
-        <i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.submission.review.on_file_reused") %>
-      </span>
+      <p class="review-note mb-0" data-reused="true"><%= t("citizen_portal.submission.review.signature_carried") %></p>
     <% else %>
-      <button type="button" class="btn btn-sm btn-outline-primary" style="font-size: 0.72rem;"
-              data-action="click->wizard#goToStep" data-step="3">
-        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
-      </button>
-    <% end %>
-  </div>
-  <div data-submission-review-target="reviewSignature" style="color: #344054;">
-    <% if @skip_signature %>
-      <p class="mb-0 small text-muted" data-reused="true">
-        <i class="ri-information-line me-1"></i>
-        <%= t("citizen_portal.submission.review.signature_carried") %>
-      </p>
-    <% else %>
-      <%# Server-side fallback %>
-      <div style="font-size:0.82rem;">
-        <strong><%= t("citizen_portal.submission.review.signature") %>:</strong>
-        <span class="text-muted"><i class="ri-information-line me-1"></i><%= t("citizen_portal.submission.review.provide_in_step3") %></span>
-      </div>
+      <%= cell.("signature", todo.("provide_in_step4")) %>
     <% end %>
   </div>
 </div>
 
-<%# ── Confirmation Checkbox ── %>
-<div class="mt-4 p-3 rounded-3" style="background: #f8f9fc; border: 1px solid #e4e7ec;">
-  <div class="d-flex gap-3 align-items-start">
-    <i class="ri-shield-check-line flex-shrink-0" style="font-size: 1.3rem; color: var(--primary); margin-top: 2px;"></i>
-    <div>
-      <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="submission_confirmation"
-               data-submission-review-target="confirmCheckbox"
-               data-action="change->submission-review#toggleSubmit"
-               required>
-        <label class="form-check-label" for="submission_confirmation"
-               style="font-size: 0.78rem; color: #344054; line-height: 1.6;">
-          <%= t("citizen_portal.submission.review.confirm_html") %>
-        </label>
-      </div>
-    </div>
+<%# ── Confirmation ── %>
+<div class="review-confirm">
+  <div class="form-check mb-0">
+    <input type="checkbox" class="form-check-input" id="submission_confirmation"
+           data-submission-review-target="confirmCheckbox"
+           data-action="change->submission-review#toggleSubmit"
+           required>
+    <label class="form-check-label" for="submission_confirmation">
+      <%= t("citizen_portal.submission.review.confirm_html") %>
+    </label>
   </div>
 </div>

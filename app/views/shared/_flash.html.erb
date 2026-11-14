@@ -1,33 +1,34 @@
-<%# Flash Messages — Fixed top-center floating toasts %>
-<%# `enskri_error` is shown inline in the signup wizard's own banner — skip it here. %>
+<%# Flash Messages — floating toasts, top center.
+    Compact pill that sizes to its text, soft tint per type, thin timer bar.
+    Success/info close after 5s, errors after 8s; hovering pauses the timer.
+    `enskri_error` is shown inline in the signup wizard's own banner — skip it here. %>
 <% messages = flash.select { |k, v| v.is_a?(String) && v.present? && k.to_s != "enskri_error" } %>
 <% if messages.any? %>
   <div class="bonid-toast-stack">
     <% messages.each do |type, message| %>
-      <% css_class = {
-           notice: "success",
-           alert:  "danger",
-           error:  "danger"
-         }[type.to_sym] || "info" %>
+      <% kind = { notice: "success", alert: "danger", error: "danger", warning: "warning" }[type.to_sym] || "info" %>
+      <% icon = {
+           "success" => "ri-checkbox-circle-fill",
+           "danger"  => "ri-error-warning-fill",
+           "warning" => "ri-alert-fill",
+           "info"    => "ri-information-fill"
+         }[kind] %>
+      <% urgent = kind.in?(%w[danger warning]) %>
 
-      <% icon = case type.to_sym
-        when :notice then "ri-checkbox-circle-fill"
-        when :alert  then "ri-error-warning-fill"
-        when :error  then "ri-close-circle-fill"
-        else "ri-information-fill"
-      end %>
-
-      <div class="bonid-toast bonid-toast-<%= css_class %>" role="alert" data-controller="flash">
-        <div class="bonid-toast-icon">
-          <i class="<%= icon %>"></i>
-        </div>
-        <div class="bonid-toast-content">
-          <%= message %>
-        </div>
-        <button type="button" class="bonid-toast-close" aria-label="Close"
+      <div class="bonid-toast bonid-toast-<%= kind %>"
+           role="<%= urgent ? "alert" : "status" %>"
+           aria-live="<%= urgent ? "assertive" : "polite" %>"
+           data-controller="flash"
+           data-flash-delay-value="<%= urgent ? 8000 : 5000 %>"
+           data-action="mouseenter->flash#pause mouseleave->flash#resume focusin->flash#pause focusout->flash#resume">
+        <span class="bonid-toast-icon" aria-hidden="true"><i class="<%= icon %>"></i></span>
+        <span class="bonid-toast-content"><%= message %></span>
+        <button type="button" class="bonid-toast-close"
+                aria-label="<%= t("citizen_portal.common.close", default: "Close") %>"
                 data-action="click->flash#dismiss">
-          <i class="ri-close-line"></i>
+          <i class="ri-close-line" aria-hidden="true"></i>
         </button>
+        <span class="bonid-toast-timer" data-flash-target="timer" aria-hidden="true"></span>
       </div>
     <% end %>
   </div>

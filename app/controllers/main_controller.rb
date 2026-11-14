@@ -70,9 +70,9 @@ class MainController < ApplicationController
     if partner_slug.blank?
       if Rails.application.config.allow_public_signup
         session[:bonid_partner_id] = nil
-        redirect_to signup_path, notice: "Starting public BonID registration."
+        redirect_to signup_path, notice: t("alerts.partner_start.public_signup")
       else
-        redirect_to partners_path, alert: "ℹ️ Please choose a verified partner to begin."
+        redirect_to partners_path, alert: t("alerts.partner_start.choose_partner")
       end
       return
     end
@@ -80,13 +80,13 @@ class MainController < ApplicationController
     # Find partner
     partner = Partner.find_by(slug: partner_slug)
     unless partner
-      redirect_to partners_path, alert: "🚫 Partner not found."
+      redirect_to partners_path, alert: t("alerts.partner_start.not_found")
       return
     end
 
     # Unverified partner
     unless partner.verified_at.present?
-      redirect_to partners_path, alert: "🚫 This partner is not yet verified."
+      redirect_to partners_path, alert: t("alerts.partner_start.not_verified")
       return
     end
 

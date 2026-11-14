@@ -95,6 +95,19 @@
             <% end %>
           </div>
 
+          <%# Phones: one dropdown instead of six wrapping tabs. It drives the
+              same tab buttons, so the code, caption and copy target stay in sync. %>
+          <div class="dev-tab-select-wrap">
+            <label for="dev-tab-select" class="visually-hidden"><%= t("main.developers.choose_example") %></label>
+            <select id="dev-tab-select" class="dev-tab-select"
+                    onchange="var b=this.closest('.dev-code-card').querySelector('.dev-tab[aria-controls=&quot;api-'+this.value+'&quot;]'); if(b) b.click();">
+              <% tabs.each_with_index do |tab, i| %>
+                <option value="<%= tab[:id] %>" <%= "selected" if i.zero? %>><%= t("main.developers.tabs.#{tab[:id]}.label") %></option>
+              <% end %>
+            </select>
+            <i class="ri-arrow-down-s-line" aria-hidden="true"></i>
+          </div>
+
           <%# Plain-language summary of what the selected call does %>
           <p class="dev-tab-caption mb-0" aria-live="polite">
             <i class="ri-information-line" aria-hidden="true"></i>
@@ -309,6 +322,9 @@
     });
     btn.classList.add('is-active');
     btn.setAttribute('aria-selected', 'true');
+
+    var select = btn.closest('.dev-code-card').querySelector('.dev-tab-select');
+    if (select) select.value = tab;
   }
 
   document.addEventListener("click", async (e) => {

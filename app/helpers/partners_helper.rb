@@ -137,7 +137,7 @@ module PartnersHelper
   # its problem / solution text. Update here when adding a new sector value.
   PARTNER_BENEFIT_GROUPS = {
     # banking
-    "banking" => "banking", "fintech" => "default", "commercial_bank" => "banking",
+    "banking" => "banking", "fintech" => "mobile_wallet", "commercial_bank" => "banking",
     "microfinance" => "banking", "credit_union" => "banking", "money_transfer" => "banking",
     # mobile wallet & crypto
     "mobile_wallet" => "mobile_wallet", "payment_processor" => "mobile_wallet",
@@ -160,7 +160,7 @@ module PartnersHelper
     # government
     "government" => "government", "local_governance" => "government", "onaca" => "government",
     "archives_nationales" => "government", "mairie" => "government", "municipality" => "government",
-    "ministry" => "government", "customs" => "government", "immigration" => "government",
+    "ministry" => "government", "customs" => "government", "immigration" => "immigration",
     # telecoms
     "telecommunications" => "telecommunications", "mobile_carrier" => "telecommunications",
     "isp" => "telecommunications", "cable_provider" => "telecommunications",

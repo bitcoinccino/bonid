@@ -113,9 +113,14 @@ export default class extends Controller {
 
       if (idType || idNumber) {
         const t = this.reviewIdentificationTarget
-        let html = this._row(t, "id_type", "ID Type", idType) +
-                   this._row(t, "id_number", "ID Number", idNumber)
-        if (ninu) html += this._row(t, "ninu", "NINU", ninu)
+        const isPassport = this._val(el, "user[id_type]") === "passport"
+        let html = this._row(t, "id_type", "ID Type", idType)
+        // Passports are registered with the NINU only.
+        if (isPassport) html += this._row(t, "ninu", "NINU", ninu)
+        else {
+          html += this._row(t, "id_number", "ID Number", idNumber)
+          if (ninu) html += this._row(t, "ninu", "NINU", ninu)
+        }
         html += [
           this._row(t, "birth_place", "Place of Birth", birthPlace),
           this._row(t, "issued", "Issued", issued),
@@ -143,7 +148,7 @@ export default class extends Controller {
         }
         lines.push(this._esc(country.toUpperCase()))
 
-        this.reviewAddressTarget.innerHTML = `<p class="mb-0" style="white-space: pre-line; line-height: 1.6;">${lines.join("\n")}</p>`
+        this.reviewAddressTarget.innerHTML = `<p class="mb-0 review-data-address">${lines.join("<br>")}</p>`
       }
     }
   }
@@ -186,10 +191,14 @@ export default class extends Controller {
       .replace("{month}", month).replace("{day}", parseInt(d, 10)).replace("{year}", y)
   }
 
-  // One "<strong>Label:</strong> value" review cell. `extra` is trusted HTML.
+  // One review cell: small label above the value (same markup as the
+  // review_item helper). `extra` is trusted HTML.
   _row(target, key, fallback, formValue, extra = "") {
     const label = this._l(key, fallback)
-    return `<div class="col-sm-6"><strong>${this._esc(label)}:</strong> ${this._resolve(target, label, formValue)} ${extra}</div>`
+    const value = this._resolve(target, key, formValue)
+    const empty = value === null
+    const shown = empty ? this._esc(this._l("empty", "Not provided")) : value
+    return `<div class="review-item" data-review-key="${key}"><span class="review-label">${this._esc(label)}</span><span class="review-value${empty ? " is-empty" : ""}">${shown} ${extra}</span></div>`
   }
 
   _carrier(phone) {
@@ -210,35 +219,21 @@ export default class extends Controller {
     return div.innerHTML
   }
 
-  // For each <div class="col-sm-6"><strong>Label:</strong> Value</div> row
-  // already in `target`, return the text after the matching <strong> label.
-  // Used as a fallback when the form doesn't expose the value (locked fields).
-  _existingValue(target, label) {
+  // Value the server already rendered for this key (handles locked fields
+  // the form can't round-trip, e.g. the verified DOB has no input name).
+  _existingValue(target, key) {
     if (!target) return ""
-    const cells = target.querySelectorAll(".col-sm-6")
-    for (const cell of cells) {
-      const strong = cell.querySelector("strong")
-      if (!strong) continue
-      const cellLabel = strong.textContent.trim().replace(/:$/, "")
-      if (cellLabel !== label) continue
-      // Sum up text content after the <strong>, trimming the em-dash placeholder.
-      let text = ""
-      let node = strong.nextSibling
-      while (node) {
-        text += node.textContent || ""
-        node = node.nextSibling
-      }
-      const trimmed = text.trim()
-      return trimmed === "—" ? "" : trimmed
-    }
-    return ""
+    const cell = target.querySelector(`.review-item[data-review-key="${key}"] .review-value`)
+    if (!cell || cell.classList.contains("is-empty")) return ""
+    const clone = cell.cloneNode(true)
+    clone.querySelectorAll(".badge").forEach(b => b.remove())
+    return clone.textContent.trim()
   }
 
-  // Choose form value if present, else fall back to whatever was already
-  // server-rendered for this label, else the em-dash placeholder.
-  _resolve(target, label, formValue) {
+  // Form value first, then what the server rendered, else null (empty).
+  _resolve(target, key, formValue) {
     if (formValue) return this._esc(formValue)
-    const existing = this._existingValue(target, label)
-    return existing ? this._esc(existing) : "—"
+    const existing = this._existingValue(target, key)
+    return existing ? this._esc(existing) : null
   }
 }
