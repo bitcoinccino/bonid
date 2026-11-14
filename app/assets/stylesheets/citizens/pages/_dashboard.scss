@@ -1559,3 +1559,124 @@
     }
   }
 }
+
+/* ── Get started: vertical stepper (done → current → next) ── */
+.gs-stepper {
+  list-style: none;
+  max-width: 44rem;
+  margin: 0 auto 1.5rem;
+  padding: 0;
+}
+
+.gs-step {
+  position: relative;
+  display: flex;
+  gap: 0.9rem;
+  padding-bottom: 1rem;
+
+  /* connector line between markers */
+  &:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 2.25rem;
+    bottom: 0.25rem;
+    width: 2px;
+    transform: translateX(-50%);
+    background: #e2e8f0;
+  }
+
+  &.is-done:not(:last-child)::before { background: #10B981; }
+}
+
+.gs-step__marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+
+  i { font-size: 1.05rem; }
+}
+
+.gs-step__body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+
+.gs-step__title {
+  margin: 0 0 0.15rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gs-step__desc {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.gs-step__tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #00209F;
+
+  span { color: #64748b; font-weight: 400; }
+}
+
+/* Done: one quiet line with a green check */
+.gs-step.is-done {
+  .gs-step__marker { color: #fff; background: #10B981; border-color: #10B981; }
+  .gs-step__title { font-size: 0.92rem; color: #334155; }
+}
+
+/* Current: open card with the checklist and the button */
+.gs-step.is-current {
+  .gs-step__marker {
+    color: #fff;
+    background: #00209F;
+    border-color: #00209F;
+    box-shadow: 0 0 0 4px rgba(0, 32, 159, 0.12);
+  }
+
+  .gs-step__body {
+    padding: 1rem 1.1rem 1.1rem;
+    border: 1px solid rgba(0, 32, 159, 0.15);
+    border-radius: 0.9rem;
+    background: #ffffff;
+    box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.18);
+  }
+
+  .gs-step__desc { margin-bottom: 0.35rem; }
+}
+
+/* Next: a short preview */
+.gs-step.is-next {
+  .gs-step__title { color: #475569; }
+}
+
+.gs-step__cta.election-btn-primary {
+  margin-top: 0.9rem;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+
+  @media (min-width: 576px) { width: auto; padding: 0.8rem 2rem; }
+}

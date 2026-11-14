@@ -556,11 +556,15 @@
       <div class="row justify-content-center">
         <div class="col-12 col-xl-11">
 
-        <%# Three steps — each lists only what the citizen needs for that step. %>
+        <%# Three steps as a vertical stepper (not a carousel): the whole path
+            stays visible. Finished steps shrink to one line, the current step
+            is open with its checklist and button, the next step is a preview.
+            This view only shows before any request is sent, so the current
+            step is 1 (profile) or 2 (documents). %>
         <%
           docs = [
-            { icon: "ri-id-card-line",   label: t("citizen_portal.dashboard.get_started.doc_id_label"), detail: t("citizen_portal.dashboard.get_started.doc_id_detail") },
-            { icon: "ri-camera-line",    label: t("citizen_portal.dashboard.get_started.selfie_label"), detail: t("citizen_portal.dashboard.get_started.selfie_detail") }
+            { icon: "ri-id-card-line",    label: t("citizen_portal.dashboard.get_started.doc_id_label"), detail: t("citizen_portal.dashboard.get_started.doc_id_detail") },
+            { icon: "ri-smartphone-line", label: t("citizen_portal.dashboard.get_started.selfie_label"), detail: t("citizen_portal.dashboard.get_started.selfie_detail") }
           ]
           if @is_diaspora
             docs << { icon: "ri-bank-card-line", label: t("citizen_portal.dashboard.get_started.res_id_label"), detail: t("citizen_portal.dashboard.get_started.res_id_detail") }
@@ -569,41 +573,45 @@
             docs << { icon: "ri-file-text-line", label: t("citizen_portal.dashboard.get_started.address_label"), detail: t("citizen_portal.dashboard.get_started.address_detail") }
           end
 
+          profile_done = current_citizen.profile_complete?
+          current = profile_done ? 2 : 1
           steps = [
-            (if current_citizen.profile_complete?
-               { num: "1", title: t("citizen_portal.dashboard.get_started.step1_title"), desc: t("citizen_portal.dashboard.get_started.step1_done"), items: [], done: true }
-             else
-               { num: "1", title: t("citizen_portal.dashboard.get_started.step1_title"), desc: t("citizen_portal.dashboard.get_started.step1_desc"), items: [] }
-             end),
-            { num: "2", title: t("citizen_portal.dashboard.get_started.step2_title"), desc: t("citizen_portal.dashboard.get_started.step2_desc"),           items: docs },
-            { num: "3", title: t("citizen_portal.dashboard.get_started.step3_title"), desc: t("citizen_portal.dashboard.get_started.step3_desc"), items: [] }
+            { num: 1, title: t("citizen_portal.dashboard.get_started.step1_title"),
+              desc: (profile_done ? t("citizen_portal.dashboard.get_started.step1_done") : t("citizen_portal.dashboard.get_started.step1_desc")),
+              cta: { path: edit_citizens_profile_path, icon: "ri-edit-line" } },
+            { num: 2, title: t("citizen_portal.dashboard.get_started.step2_title"),
+              desc: t("citizen_portal.dashboard.get_started.step2_desc"), items: docs,
+              cta: { path: new_citizens_identity_submission_path, icon: "ri-send-plane-line" } },
+            { num: 3, title: t("citizen_portal.dashboard.get_started.step3_title"),
+              desc: t("citizen_portal.dashboard.get_started.step3_desc") }
           ]
         %>
-        <div class="row g-3 mb-4">
-          <% steps.each do |s| %>
-            <div class="col-md-4">
-              <div class="ballot-section card border-0 shadow-sm h-100">
-                <div class="card-body p-4">
-                  <div class="d-flex align-items-center gap-2 mb-2">
-                    <% if s[:done] %>
-                      <div class="gs-step-num" style="background:#10B981;color:#fff;" aria-label="<%= t("citizen_portal.dashboard.get_started.done") %>"><i class="ri-check-line"></i></div>
-                    <% else %>
-                      <div class="gs-step-num"><%= s[:num] %></div>
-                    <% end %>
-                    <h2 class="ballot-section-title mb-0" style="font-size: 1.05rem;"><%= s[:title] %></h2>
-                  </div>
-                  <p class="ballot-section-desc mb-2"><%= s[:desc] %></p>
+        <ol class="gs-stepper">
+          <% steps.each do |st| %>
+            <% state = st[:num] < current ? "done" : (st[:num] == current ? "current" : "next") %>
+            <li class="gs-step is-<%= state %>" <%= 'aria-current="step"'.html_safe if state == "current" %>>
+              <div class="gs-step__marker" aria-hidden="true">
+                <% if state == "done" %><i class="ri-check-line"></i><% else %><%= st[:num] %><% end %>
+              </div>
 
-                  <% if s[:num] == "2" && @is_diaspora %>
-                    <span style="font-size: 0.72rem; font-weight: 600; color: #00209F;">
-                      <i class="ri-global-line me-1"></i> <%= t("citizen_portal.dashboard.get_started.diaspora_application") %>
+              <div class="gs-step__body">
+                <h2 class="gs-step__title">
+                  <%= st[:title] %>
+                  <% if state == "done" %><span class="visually-hidden">(<%= t("citizen_portal.dashboard.get_started.done") %>)</span><% end %>
+                </h2>
+                <p class="gs-step__desc"><%= st[:desc] %></p>
+
+                <% if state == "current" %>
+                  <% if st[:num] == 2 && @is_diaspora %>
+                    <p class="gs-step__tag">
+                      <i class="ri-global-line" aria-hidden="true"></i> <%= t("citizen_portal.dashboard.get_started.diaspora_application") %>
                       <% if @residence_country && @residence_country != "HT" %>
-                        <span style="color: #64748B; font-weight: 400;">(<%= ISO3166::Country[@residence_country]&.translations&.dig(I18n.locale.to_s == "ht" ? "fr" : I18n.locale.to_s) || @residence_country %>)</span>
+                        <span>(<%= ISO3166::Country[@residence_country]&.translations&.dig(I18n.locale.to_s == "ht" ? "fr" : I18n.locale.to_s) || @residence_country %>)</span>
                       <% end %>
-                    </span>
+                    </p>
                   <% end %>
 
-                  <% s[:items].each do |req| %>
+                  <% Array(st[:items]).each do |req| %>
                     <div class="gs-row">
                       <div class="gs-row-icon"><i class="<%= req[:icon] %>"></i></div>
                       <div class="gs-row-text">
@@ -612,26 +620,17 @@
                       </div>
                     </div>
                   <% end %>
-                </div>
-              </div>
-            </div>
-          <% end %>
-        </div>
 
-        <%# Primary CTA — after the three steps. %>
-        <div class="text-center mb-4">
-          <% if current_citizen.profile_complete? %>
-            <%= link_to new_citizens_identity_submission_path,
-                        class: "election-btn-primary" do %>
-              <i class="ri-send-plane-line me-1"></i> <%= t("citizen_portal.dashboard.get_started.start") %>
-            <% end %>
-          <% else %>
-            <%= link_to edit_citizens_profile_path,
-                        class: "election-btn-primary" do %>
-              <i class="ri-edit-line me-1"></i> <%= t("citizen_portal.dashboard.get_started.start") %>
-            <% end %>
+                  <% if st[:cta] %>
+                    <%= link_to st[:cta][:path], class: "election-btn-primary gs-step__cta" do %>
+                      <i class="<%= st[:cta][:icon] %>" aria-hidden="true"></i> <%= t("citizen_portal.dashboard.get_started.start") %>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            </li>
           <% end %>
-        </div>
+        </ol>
 
         </div><%# /col-xl-11 %>
       </div><%# /row justify-content-center %>
