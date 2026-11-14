@@ -7,6 +7,16 @@ export default class extends Controller {
     "spinner", "error"
   ];
 
+  // Optional: text shown inside a dropdown while its options load
+  // (data-address-loading-value). Falls back to "…".
+  static values = { loading: String };
+
+  initialize() {
+    // One counter per level: a slow response for an older choice must never
+    // overwrite the options for the newer one (fast changes on mobile).
+    this._seq = { arr: 0, com: 0, sec: 0, postal: 0 };
+  }
+
   async connect() {
     console.log("📍 AddressController connected");
 
@@ -128,99 +138,51 @@ export default class extends Controller {
     const slugMap = JSON.parse(event.target.dataset.slugMapValue || "{}");
     const slug = slugMap[departmentId];
 
-    if (!silent) this._startLoading();
+    // A real choice by the citizen: forget the saved downstream picks so the
+    // old arrondissement/commune/section can't snap back into place.
+    if (!silent) this._forgetSaved(this.arrondissementTarget, this.communeTarget, this.sectionTarget);
+
     this._clear(this.arrondissementTarget);
     this._clear(this.communeTarget);
     this._clear(this.sectionTarget);
     this._clearPostal();
-    this._disableAllExcept(this.arrondissementTarget);
+    this._disableAllExcept();
 
     if (!slug) {
-      if (!silent) this._endLoading();
-      console.warn("No slug for department:", departmentId);
+      if (departmentId) console.warn("No slug for department:", departmentId);
       return;
     }
 
-    try {
-      const response = await fetch(`/departments/${slug}/arrondissements`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (!data || data.length === 0) console.warn("Empty arrondissements for slug:", slug);
-      this._populate(this.arrondissementTarget, data);
-      this.arrondissementTarget.disabled = false;
-    } catch (error) {
-      console.error("Failed to load arrondissements:", error);
-      if (!silent) this._showError();
-    } finally {
-      if (!silent) this._endLoading();
-    }
+    await this._fetchInto("arr", this.arrondissementTarget,
+      `/departments/${slug}/arrondissements`, silent);
   }
 
   // Load communes from arrondissement (4-level cascade)
   async loadCommunes(event, silent = false) {
     const id = event.target.value;
 
-    if (!silent) this._startLoading();
+    if (!silent) this._forgetSaved(this.communeTarget, this.sectionTarget);
     this._clear(this.communeTarget);
     this._clear(this.sectionTarget);
     this._clearPostal();
-    this._disableAllExcept(this.communeTarget);
 
-    if (!id) {
-      if (!silent) this._endLoading();
-      return;
-    }
+    if (!id) return;
 
-    try {
-      const response = await fetch(`/arrondissements/${id}/communes`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (!data || data.length === 0) console.warn("Empty communes for arrondissement:", id);
-      this._populate(this.communeTarget, data);
-      this.communeTarget.disabled = false;
-    } catch (error) {
-      console.error("Failed to load communes:", error);
-      if (!silent) this._showError();
-    } finally {
-      if (!silent) this._endLoading();
-    }
+    await this._fetchInto("com", this.communeTarget, `/arrondissements/${id}/communes`, silent);
   }
 
   // Load communes directly from department (3-level cascade, skips arrondissement)
   async loadCommunesFromDepartment(event, silent = false) {
     const departmentId = event.target.value;
 
-    if (!silent) this._startLoading();
-    if (this.hasCommuneTarget) {
-      this._clear(this.communeTarget);
-      this.communeTarget.disabled = true;
-    }
-    if (this.hasSectionTarget) {
-      this._clear(this.sectionTarget);
-      this.sectionTarget.disabled = true;
-    }
+    if (!silent && this.hasCommuneTarget) this._forgetSaved(this.communeTarget, this.hasSectionTarget ? this.sectionTarget : null);
+    if (this.hasCommuneTarget) this._clear(this.communeTarget);
+    if (this.hasSectionTarget) this._clear(this.sectionTarget);
     this._clearPostal();
 
-    if (!departmentId) {
-      if (!silent) this._endLoading();
-      return;
-    }
+    if (!departmentId || !this.hasCommuneTarget) return;
 
-    try {
-      const response = await fetch(`/departments/${departmentId}/communes`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (!data || data.length === 0) console.warn("Empty communes for department:", departmentId);
-      if (this.hasCommuneTarget) {
-        this._populate(this.communeTarget, data);
-        this.communeTarget.disabled = false;
-      }
-    } catch (error) {
-      console.error("Failed to load communes from department:", error);
-      if (!silent) this._showError();
-    } finally {
-      if (!silent) this._endLoading();
-    }
+    await this._fetchInto("com", this.communeTarget, `/departments/${departmentId}/communes`, silent);
   }
 
   // Load sections from commune (alias for loadCommunalSections for consistency)
@@ -231,57 +193,31 @@ export default class extends Controller {
   async loadCommunalSections(event, silent = false) {
     const id = event.target.value;
 
-    if (!silent) this._startLoading();
-    if (this.hasSectionTarget) {
-      this._clear(this.sectionTarget);
-      this.sectionTarget.disabled = true;
-    }
+    if (!silent && this.hasSectionTarget) this._forgetSaved(this.sectionTarget);
+    if (this.hasSectionTarget) this._clear(this.sectionTarget);
     this._clearPostal();
 
-    if (!id) {
-      if (!silent) this._endLoading();
-      return;
-    }
+    if (!id || !this.hasSectionTarget) return;
 
-    try {
-      const response = await fetch(`/communes/${id}/communal_sections`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      if (!data || data.length === 0) console.warn("Empty sections for commune:", id);
-      if (this.hasSectionTarget) {
-        this._populate(this.sectionTarget, data);
-        this.sectionTarget.disabled = false;
-      }
-    } catch (error) {
-      console.error("Failed to load communal sections:", error);
-      if (!silent) this._showError();
-    } finally {
-      if (!silent) this._endLoading();
-    }
+    await this._fetchInto("sec", this.sectionTarget, `/communes/${id}/communal_sections`, silent);
   }
 
   async loadPostalCode(event, silent = false) {
-    // Skip if no postal code target
-    if (!this.hasPostalCodeTarget) {
-      console.log("ℹ️ No postal code target found - skipping postal code load");
-      return;
-    }
+    if (!this.hasPostalCodeTarget) return;
 
     const id = event.target.value;
+    const seq = ++this._seq.postal;
+    this._clearPostal();
+    if (!id) return;
 
     if (!silent) this._startLoading();
-    this._clearPostal();
-
-    if (!id) {
-      if (!silent) this._endLoading();
-      return;
-    }
-
     try {
       const response = await fetch(`/communal_sections/${id}/postal_code`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      this.postalCodeTarget.value = data.postal_code || "HT0000";
+      if (seq !== this._seq.postal) return; // a newer section was picked
+      // Leave it empty rather than inventing a code when none is on file.
+      this.postalCodeTarget.value = data.postal_code || "";
     } catch (error) {
       console.error("Failed to load postal code:", error);
       if (!silent) this._showError();
@@ -296,6 +232,55 @@ export default class extends Controller {
   }
 
   // === Helpers ===
+
+  // Fetch options for one level into `target`, guarded against stale
+  // responses. While loading, the dropdown itself says "Chargement…" (no
+  // layout jump). When the list has a single choice, pick it and continue
+  // the cascade automatically.
+  async _fetchInto(level, target, url, silent) {
+    if (!target) return;
+    const seq = ++this._seq[level];
+    this._hideError();
+    this._showLoadingIn(target);
+    if (!silent) this._startLoading();
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      if (seq !== this._seq[level]) return; // a newer choice took over
+      if (!data || data.length === 0) console.warn("Empty options for", url);
+
+      this._populate(target, data || []);
+      target.disabled = false;
+
+      if (!silent && data && data.length === 1 && !target.value) {
+        target.value = String(data[0].id);
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    } catch (error) {
+      if (seq !== this._seq[level]) return;
+      console.error("Failed to load", url, error);
+      this._clear(target);
+      if (!silent) this._showError();
+    } finally {
+      target.classList.remove("is-loading");
+      if (!silent) this._endLoading();
+    }
+  }
+
+  _showLoadingIn(target) {
+    const text = (this.hasLoadingValue && this.loadingValue) || "…";
+    target.innerHTML = `<option value="">${text}</option>`;
+    target.disabled = true;
+    target.classList.add("is-loading");
+  }
+
+  // Drop the server-saved selection so it isn't re-applied after the
+  // citizen changes a parent level.
+  _forgetSaved(...targets) {
+    targets.forEach(t => { if (t) delete t.dataset.selected; });
+  }
   _populate(target, items) {
     const currentValue = target.dataset.selected;
     target.innerHTML = `<option value="">${target.dataset.prompt || "Please select"}</option>`;

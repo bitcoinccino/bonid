@@ -12,13 +12,10 @@
     </div>
 
     <%# ── Profile Photo ── %>
-    <div class="position-relative text-center mb-2">
-      <h6 class="review-section-title review-section-title-center d-inline-flex align-items-center mb-0">
-        <i class="ri-camera-line me-1"></i><%= t("citizen_portal.profile.review.photo_section") %>
-      </h6>
-      <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn position-absolute top-0 end-0"
-              data-action="click->wizard#goToStep" data-step="1">
-        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
+    <div class="review-head">
+      <h3 class="review-head__title"><i class="ri-camera-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.photo_section") %></h3>
+      <button type="button" class="review-edit" data-action="click->wizard#goToStep" data-step="1">
+        <i class="ri-pencil-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
     <div data-profile-review-target="reviewPhoto" class="mb-4 review-data text-center">
@@ -36,24 +33,20 @@
       <% end %>
     </div>
 
-    <hr class="my-3">
+    <hr class="review-divider">
 
     <%# ── Personal Information ── %>
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="review-section-title">
-        <i class="ri-user-3-line me-1"></i><%= t("citizen_portal.profile.review.personal_section") %>
-      </h6>
-      <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn"
-              data-action="click->wizard#goToStep" data-step="2">
-        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
+    <div class="review-head">
+      <h3 class="review-head__title"><i class="ri-user-3-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.personal_section") %></h3>
+      <button type="button" class="review-edit" data-action="click->wizard#goToStep" data-step="2">
+        <i class="ri-pencil-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
-    <div data-profile-review-target="reviewPersonal" class="row g-2 mb-4 review-data">
+    <%# Label above value; one column on phones, two from tablet up.
+        profile_review_controller.js rebuilds these with the same markup. %>
+    <% empty = t("citizen_portal.profile.review.empty") %>
+    <div data-profile-review-target="reviewPersonal" class="review-grid mb-4 review-data">
       <% full_name = [@citizen.prefix, @citizen.first_name, @citizen.middle_name, @citizen.last_name, @citizen.suffix].compact_blank.join(" ") %>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.full_name") %>:</strong> <%= full_name.presence || "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.sex") %>:</strong> <%= @citizen.sex.present? ? t("citizen_portal.profile.sexes.#{@citizen.sex}", default: @citizen.sex.titleize) : "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.dob") %>:</strong> <%= @citizen.dob ? l(@citizen.dob, format: :long) : "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.nationality") %>:</strong> <%= @citizen.nationality.presence || "—" %></div>
       <%
         raw_phone = @citizen.phone.to_s.gsub(/\D/, "")
         local = raw_phone.sub(/^509/, "")
@@ -64,50 +57,50 @@
                   elsif digicel.include?(prefix) then "Digicel"
                   else nil end
       %>
-      <div class="col-sm-6">
-        <strong><%= t("citizen_portal.profile.review.phone") %>:</strong> <%= @citizen.phone.presence || "—" %>
-        <% if carrier %>
-          <span class="badge bg-light text-dark border ms-1"><%= carrier %></span>
-        <% end %>
-      </div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.marital_status") %>:</strong> <%= @citizen.marital_status.present? ? t("citizen_portal.profile.marital_statuses.#{@citizen.marital_status}", default: @citizen.marital_status.titleize) : "—" %></div>
+      <%= review_item "full_name", full_name, empty %>
+      <%= review_item "sex", (@citizen.sex.present? ? t("citizen_portal.profile.sexes.#{@citizen.sex}", default: @citizen.sex.titleize) : nil), empty %>
+      <%= review_item "dob", (@citizen.dob ? long_date(@citizen.dob) : nil), empty %>
+      <%= review_item "nationality", @citizen.nationality, empty %>
+      <%= review_item "phone", @citizen.phone, empty,
+            extra: (carrier ? tag.span(carrier, class: "badge bg-light text-dark border ms-1") : nil) %>
+      <%= review_item "marital_status", (@citizen.marital_status.present? ? t("citizen_portal.profile.marital_statuses.#{@citizen.marital_status}", default: @citizen.marital_status.titleize) : nil), empty %>
     </div>
 
-    <hr class="my-3">
+    <hr class="review-divider">
 
     <%# ── Identification ── %>
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="review-section-title">
-        <i class="ri-id-card-line me-1"></i><%= t("citizen_portal.profile.review.id_section") %>
-      </h6>
-      <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn"
-              data-action="click->wizard#goToStep" data-step="3">
-        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
+    <div class="review-head">
+      <h3 class="review-head__title"><i class="ri-id-card-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.id_section") %></h3>
+      <button type="button" class="review-edit" data-action="click->wizard#goToStep" data-step="3">
+        <i class="ri-pencil-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
-    <div data-profile-review-target="reviewIdentification" class="row g-2 mb-4 review-data">
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.id_type") %>:</strong> <%= @citizen.id_type&.titleize || "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.id_number") %>:</strong> <%= @citizen.id_number.presence || "—" %></div>
-      <% if @citizen.ninu.present? %>
-        <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.ninu") %>:</strong> <%= @citizen.ninu %></div>
-      <% end %>
+    <div data-profile-review-target="reviewIdentification" class="review-grid mb-4 review-data">
+      <% id_type_label = IdentitySubmission::ID_TYPES[@citizen.id_type&.to_sym] ? @citizen.id_type.upcase : @citizen.id_type&.titleize %>
       <% birth_place = [@citizen.birth_commune&.name, @citizen.birth_department&.name].compact_blank.join(", ") %>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.birth_place") %>:</strong> <%= birth_place.presence || "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.issued") %>:</strong> <%= @citizen.id_issued_on ? l(@citizen.id_issued_on, format: :long) : "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.expires") %>:</strong> <%= @citizen.id_expires_on ? l(@citizen.id_expires_on, format: :long) : "—" %></div>
-      <div class="col-sm-6"><strong><%= t("citizen_portal.profile.review.issuer") %>:</strong> <%= @citizen.document_issuer&.titleize || "—" %></div>
+      <% passport = @citizen.id_type.to_s == "passport" %>
+      <%= review_item "id_type", id_type_label, empty %>
+      <% if passport %>
+        <%= review_item "ninu", @citizen.ninu, empty %>
+      <% else %>
+        <%= review_item "id_number", @citizen.id_number, empty %>
+      <% end %>
+      <%= review_item "issued", (@citizen.id_issued_on ? long_date(@citizen.id_issued_on) : nil), empty %>
+      <%= review_item "expires", (@citizen.id_expires_on ? long_date(@citizen.id_expires_on) : nil), empty %>
+      <%= review_item "issuer", @citizen.document_issuer&.titleize, empty %>
+      <% if !passport && @citizen.ninu.present? %>
+        <%= review_item "ninu", @citizen.ninu, empty %>
+      <% end %>
+      <%= review_item "birth_place", birth_place, empty %>
     </div>
 
-    <hr class="my-3">
+    <hr class="review-divider">
 
     <%# ── Address ── %>
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="review-section-title">
-        <i class="ri-home-4-line me-1"></i><%= t("citizen_portal.profile.review.address_section") %>
-      </h6>
-      <button type="button" class="btn btn-sm btn-outline-primary review-edit-btn"
-              data-action="click->wizard#goToStep" data-step="4">
-        <i class="ri-edit-line me-1"></i><%= t("citizen_portal.profile.review.edit") %>
+    <div class="review-head">
+      <h3 class="review-head__title"><i class="ri-home-4-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.address_section") %></h3>
+      <button type="button" class="review-edit" data-action="click->wizard#goToStep" data-step="4">
+        <i class="ri-pencil-line" aria-hidden="true"></i><%= t("citizen_portal.profile.review.edit") %>
       </button>
     </div>
     <% addr = @citizen.address %>
@@ -115,7 +108,7 @@
       <% if addr.present? %>
         <p class="mb-0 review-data-address"><%= addr.formatted_haiti_display %></p>
       <% else %>
-        <span class="text-muted">—</span>
+        <span class="review-empty"><%= t("citizen_portal.profile.review.empty") %></span>
       <% end %>
     </div>
 

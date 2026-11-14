@@ -13,7 +13,13 @@ export default class extends Controller {
     "passportField",
     "countrySelect",
     "diasporaFields",
-    "diasporaProofFields"
+    "diasporaProofFields",
+    "idNumber",
+    "idNumberHint",
+    "ninu",
+    "ninuInput",
+    "idNumberLabel",
+    "idNumberField"
   ]
 
   connect() {
@@ -21,6 +27,81 @@ export default class extends Controller {
     this.toggleCinField()
     this.toggle()  // <-- IMPORTANT: ensures ID selection works on load
     this.toggleDiaspora() // Handle diaspora fields on load
+    this.toggleFields()   // Profile ID step: NINU, number label + example
+  }
+
+  // -----------------------------
+  // PROFILE ID STEP
+  // Show NINU only for passports, and the number example/placeholder
+  // for the selected type only.
+  // -----------------------------
+  toggleFields(event) {
+    if (!this.hasIdTypeTarget) return
+    const type = this.idTypeTarget.value
+
+    // "Numéro de CIN" / "Numéro du passeport" so it's never confused with NINU.
+    if (this.hasIdNumberLabelTarget) {
+      const d = this.idNumberLabelTarget.dataset
+      const text = type === "cin" ? d.labelCin : type === "passport" ? d.labelPassport : d.labelNone
+      // Keep simple_form's required marker (<abbr>) if present.
+      const abbr = this.idNumberLabelTarget.querySelector("abbr")
+      this.idNumberLabelTarget.textContent = text + " "
+      if (abbr) this.idNumberLabelTarget.appendChild(abbr)
+    }
+
+    // When the citizen switches type, drop a number that can't belong to the
+    // new document (e.g. a 10-digit CIN number left in place for a passport).
+    // Only on a real change, never on page load, so saved data is untouched.
+    if (event && this.hasIdNumberTarget) {
+      const v = this.idNumberTarget.value.replace(/[^A-Za-z0-9]/g, "")
+      const fits = type === "cin" ? (/^\d{10}$/.test(v) || /^[A-Za-z0-9]{9}$/.test(v))
+                 : type === "passport" ? /^[A-Za-z0-9]{6,9}$/.test(v) : true
+      if (v && !fits) this.idNumberTarget.value = ""
+    }
+
+    if (this.hasNinuTarget)
+      this.ninuTarget.style.display = type === "passport" ? "" : "none"
+
+    // Passports: NINU only. The ID number field is hidden (the server stores
+    // the NINU as the ID number) and must not stay required while hidden.
+    if (this.hasIdNumberFieldTarget)
+      this.idNumberFieldTarget.style.display = type === "passport" ? "none" : ""
+    if (this.hasIdNumberTarget)
+      this.idNumberTarget.required = type === "cin"
+
+    // NINU is required only while Passport is selected; never leave a
+    // hidden field required (the browser would block the submit).
+    if (this.hasNinuInputTarget) {
+      this.ninuInputTarget.required = type === "passport"
+    }
+
+    if (this.hasIdNumberTarget) {
+      const ph = type === "cin" ? this.idNumberTarget.dataset.placeholderCin
+               : type === "passport" ? this.idNumberTarget.dataset.placeholderPassport : ""
+      this.idNumberTarget.placeholder = ph || ""
+    }
+
+    if (this.hasIdNumberHintTarget) {
+      const d = this.idNumberHintTarget.dataset
+      // Translated strings from our own locale files (may contain <strong>).
+      this.idNumberHintTarget.innerHTML =
+        type === "cin" ? d.hintCin : type === "passport" ? d.hintPassport : d.hintNone
+    }
+  }
+
+  // Uppercase letters and digits only (CIN: T1K2N8697, passport: R10772334)
+  formatIdNumber() {
+    if (!this.hasIdNumberTarget) return
+    const el = this.idNumberTarget
+    const cleaned = el.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase()
+    if (cleaned !== el.value) el.value = cleaned
+  }
+
+  // NINU: digits only, 10 max
+  formatNinu(event) {
+    const el = event.target
+    const cleaned = el.value.replace(/\D/g, "").slice(0, 10)
+    if (cleaned !== el.value) el.value = cleaned
   }
 
   // -----------------------------

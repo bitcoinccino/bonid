@@ -24,6 +24,7 @@ module Citizens
 
       was_incomplete = !@citizen.profile_complete?
 
+      @citizen.enforce_passport_ninu = true
       if @citizen.update(user_params)
         if @citizen.bonid.blank? && @citizen.profile_complete?
           @citizen.generate_bonid!

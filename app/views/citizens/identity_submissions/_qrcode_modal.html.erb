@@ -26,8 +26,6 @@
         <%# Header Section %>
         <div class="qr-modal-header">
           <h4 class="qr-modal-title"><%= t("citizen_portal.submission.qr.title") %></h4>
-          <%# Same mask as the wallet card (initials + lookup code) %>
-          <p class="qr-modal-bonid"><%= citizen_masked_bonid(submission.user.bonid) %></p>
         </div>
 
         <%# Local Alerts %>
@@ -52,6 +50,15 @@
               <% end %>
             </div>
           </div>
+
+          <%# Lookup code (last 6 of the BonID): the partner can type it if
+              the QR won't scan. Never the full BonID (its P#### is from the CIN). %>
+          <% if (code = citizen_bonid_code(submission.user.bonid)) %>
+            <div class="qr-modal-code-text">
+              <span class="qr-modal-code-label"><%= t("citizen_portal.submission.qr.code_label") %></span>
+              <span class="qr-modal-code-value"><%= code %></span>
+            </div>
+          <% end %>
         </div>
 
         <%# Status Badge %>

@@ -28,8 +28,10 @@ export default class extends Controller {
     return (this.hasLabelsValue && this.labelsValue[key]) || fallback
   }
 
-  _row(cls, key, fallback, valueHtml) {
-    return `<div class="${cls}"><strong>${this._esc(this._l(key, fallback))}:</strong> ${valueHtml}</div>`
+  // One review cell (same markup as _review_section.html.erb): small label
+  // above the value. `valueHtml` is trusted (already escaped).
+  _row(_cls, key, fallback, valueHtml) {
+    return `<div class="review-item"><span class="review-label">${this._esc(this._l(key, fallback))}</span><span class="review-value">${valueHtml}</span></div>`
   }
 
   connect() {
@@ -103,12 +105,8 @@ export default class extends Controller {
         docsHtml = this._row("col-sm-6", "passport", "Passport", passport)
       }
 
-      this.reviewIdTarget.innerHTML = `
-        <div class="row g-2" style="font-size:0.82rem;">
-          ${this._row("col-12", "id_type", "ID Type", this._esc(idType) || "—")}
-          ${docsHtml}
-        </div>
-      `
+      this.reviewIdTarget.innerHTML =
+        this._row("", "id_type", "ID Type", this._esc(idType) || this._todo()) + docsHtml
     }
 
     // ── 2. Face Liveness Check ──
@@ -127,14 +125,8 @@ export default class extends Controller {
       const statusClass = passed ? "text-success" : "text-danger"
       const statusIcon = passed ? "checkbox-circle" : "close-circle"
 
-      this.reviewSelfieTarget.innerHTML = `
-        <div style="font-size:0.82rem;">
-          <strong>${this._esc(this._l("face_liveness", "Face Liveness"))}:</strong>
-          <span class="${statusClass}">
-            <i class="ri-${statusIcon}-line me-1"></i>${this._esc(statusText)}
-          </span>
-        </div>
-      `
+      this.reviewSelfieTarget.innerHTML = this._row("", "face_liveness", "Face check",
+        `<span class="${statusClass}"><i class="ri-${statusIcon}-line me-1"></i>${this._esc(statusText)}</span>`)
     }
 
     // ── 3. Supporting Document ──
@@ -146,12 +138,9 @@ export default class extends Controller {
                       (pickedValue && pickerDisplay ? pickerDisplay.textContent.trim() : pickedValue)
       const docFile = this._fileLabel(form, "identity_submission[additional_proof]")
 
-      this.reviewSupportingTarget.innerHTML = `
-        <div class="row g-2" style="font-size:0.82rem;">
-          ${this._row("col-sm-6", "document_type", "Document Type", this._esc(docType) || "—")}
-          ${this._row("col-sm-6", "file", "File", docFile)}
-        </div>
-      `
+      this.reviewSupportingTarget.innerHTML =
+        this._row("", "document_type", "Document type", this._esc(docType) || this._todo()) +
+        this._row("", "file", "File", docFile)
     }
 
     // ── 4. Signature ──
@@ -170,11 +159,7 @@ export default class extends Controller {
         sigStatus = `<span class="text-danger"><i class="ri-close-circle-line me-1"></i>${this._esc(this._l("not_provided", "Not provided"))}</span>`
       }
 
-      this.reviewSignatureTarget.innerHTML = `
-        <div style="font-size:0.82rem;">
-          <strong>${this._esc(this._l("signature", "Signature"))}:</strong> ${sigStatus}
-        </div>
-      `
+      this.reviewSignatureTarget.innerHTML = this._row("", "signature", "Signature", sigStatus)
     }
   }
 
@@ -220,6 +205,10 @@ export default class extends Controller {
 
   _notUploaded() {
     return this._esc(this._l("not_uploaded", "Not uploaded"))
+  }
+
+  _todo() {
+    return `<span class="review-todo">${this._esc(this._l("not_provided", "Not provided"))}</span>`
   }
 
   _esc(str) {
