@@ -3,8 +3,15 @@ module Citizens
   class NameChangeRequestsController < BaseController
     before_action :ensure_verified
 
+    # New values start as the current ones, so fixing one letter is one edit.
     def new
-      @name_change_request = current_citizen.name_change_requests.build
+      @name_change_request = current_citizen.name_change_requests.build(
+        new_first_name:  current_citizen.first_name,
+        new_middle_name: current_citizen.middle_name,
+        new_last_name:   current_citizen.last_name,
+        new_dob:         current_citizen.dob
+      )
+      @name_change_request.change_fields = []
     end
 
     def create
@@ -31,8 +38,9 @@ module Citizens
 
     def request_params
       params.require(:name_change_request).permit(
-        :new_first_name, :new_middle_name, :new_last_name,
-        :reason, :other_reason, :supporting_document
+        :new_first_name, :new_middle_name, :new_last_name, :new_dob,
+        :reason, :other_reason, :supporting_document,
+        change_fields: []
       )
     end
   end

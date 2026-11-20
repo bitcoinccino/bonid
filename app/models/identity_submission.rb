@@ -114,6 +114,29 @@ class IdentitySubmission < ApplicationRecord
   after_commit :generate_secure_qr_if_approved, if: -> { saved_change_to_status? && status_approved? }
   after_commit :copy_selfie_to_user_photo, if: -> { saved_change_to_status? && status_approved? }
   after_commit :index_face_in_collection,  if: -> { saved_change_to_status? && status_approved? }
+  # A reviewer-approved name / date-of-birth correction is only written to
+  # the user once their re-verification (reissue) with the new document is
+  # approved. Runs for admin and reviewer approvals alike.
+  # Flag it on save: a later callback saves the record again in the same
+  # transaction, so saved_change_to_status? is already false by after_commit.
+  after_save   :flag_pending_correction
+  after_commit :apply_pending_correction, if: -> { @apply_correction }
+
+  # A reviewer-approved correction (name / date of birth) is written to the
+  # user once their re-verification (reissue) is approved.
+  def flag_pending_correction
+    @apply_correction ||= saved_change_to_status? && status_approved? && submission_type_reissue?
+  end
+
+  def apply_pending_correction
+    @apply_correction = false
+    request = user&.name_change_requests&.awaiting_application&.order(updated_at: :desc)&.first
+    return unless request
+
+    request.apply_name_change!
+  rescue => e
+    Rails.logger.error "[IdentitySubmission] Applying correction ##{request&.id} failed for user ##{user_id}: #{e.message}"
+  end
 
 
   # === VIRTUAL ATTRIBUTES ===================================================
@@ -318,6 +341,8 @@ def generate_secure_qr_payload
     bonid: user.bonid,
     expires_at: expires_at || calculated_expires_at
   )
+
+
 end
 
 

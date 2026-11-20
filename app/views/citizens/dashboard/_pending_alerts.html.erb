@@ -6,7 +6,7 @@
 <% has_pending_name_change = false %>
 <% if pending_name_change.present? %>
   <% has_reissue = current_citizen.identity_submissions.where(submission_type: :reissue).where("created_at > ?", pending_name_change.updated_at).exists? %>
-  <% name_applied = current_citizen.first_name == pending_name_change.new_first_name && current_citizen.last_name == pending_name_change.new_last_name %>
+  <% name_applied = pending_name_change.applied_at.present? %>
   <% has_pending_name_change = !has_reissue && !name_applied %>
   <% if has_pending_name_change %>
     <div class="dashboard-alert dashboard-alert--warning mb-3">

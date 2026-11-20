@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_10_000000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_14_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1171,6 +1171,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_10_000000) do
     t.datetime "reviewed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "old_dob"
+    t.date "new_dob"
+    t.datetime "applied_at"
     t.index ["reviewed_by_id"], name: "index_name_change_requests_on_reviewed_by_id"
     t.index ["status"], name: "index_name_change_requests_on_status"
     t.index ["user_id"], name: "index_name_change_requests_on_user_id"

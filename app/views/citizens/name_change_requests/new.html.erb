@@ -1,142 +1,130 @@
-<%# app/views/citizens/name_change_requests/new.html.erb %>
+<%# app/views/citizens/name_change_requests/new.html.erb
+    Correction request: the citizen ticks what to correct (names, date of
+    birth), then sees only those fields as "current → new" (pre-filled with
+    the current value), then gives a reason and a document. Header chrome
+    matches the Anrejistre wizard (.ballot-wrap / .ballot-head). %>
+<% req = @name_change_request %>
+<% ticked = Array(req.change_fields).map(&:to_s) %>
+<% fields = [
+     { key: "first_name",  label: t("citizen_portal.name_change.first_name"),  current: current_citizen.first_name,  ph: t("citizen_portal.name_change.ph_first"),  autocomplete: "given-name" },
+     { key: "middle_name", label: t("citizen_portal.name_change.middle_name"), current: current_citizen.middle_name, ph: t("citizen_portal.name_change.ph_middle"), autocomplete: "additional-name" },
+     { key: "last_name",   label: t("citizen_portal.name_change.last_name"),   current: current_citizen.last_name,   ph: t("citizen_portal.name_change.ph_last"),   autocomplete: "family-name" },
+     { key: "dob",         label: t("citizen_portal.name_change.dob"),         current: (current_citizen.dob ? long_date(current_citizen.dob) : nil) }
+   ] %>
 
-<%# Header chrome matches the Anrejistre wizard (.ballot-wrap / .ballot-head)
-    so the name-change flow reads as part of the same citizen wizard. %>
 <div class="ballot-wrap px-0" style="padding-bottom: 0;">
 
-  <%# ── Page Header (wizard style) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
       <i class="ri-edit-line me-2"></i><%= t("citizen_portal.name_change.title") %>
     </h1>
-    <p class="ballot-subtitle mb-0">
-      <%= t("citizen_portal.name_change.subtitle") %>
-    </p>
+    <p class="ballot-subtitle mb-0"><%= t("citizen_portal.name_change.subtitle") %></p>
   </div>
 
   <div class="complaint-form-wrapper">
-    <%= simple_form_for @name_change_request,
+    <%= simple_form_for req,
           url: citizens_name_change_requests_path,
-          html: { class: "profile-form", multipart: true, data: { turbo: false } } do |f| %>
+          html: { class: "profile-form", multipart: true, data: { turbo: false, controller: "correction-picker" } } do |f| %>
 
-      <%# Current Name (read-only) %>
+      <% if req.errors[:base].any? %>
+        <div class="pf-lock-note mb-3" role="alert">
+          <i class="ri-error-warning-line" aria-hidden="true"></i>
+          <span><%= req.errors[:base].to_sentence %></span>
+        </div>
+      <% end %>
+
+      <%# ── 1. What to correct ── %>
       <div class="ballot-section card border-0 shadow-sm mb-4">
         <div class="card-body p-4">
-
-          <div class="ballot-section-head mb-4">
-            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.current_name") %></h2>
-            <p class="ballot-section-desc mb-0">
-              <%= t("citizen_portal.name_change.current_name_desc") %>
-            </p>
+          <div class="ballot-section-head mb-3">
+            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.what_title") %></h2>
+            <p class="ballot-section-desc mb-0"><%= t("citizen_portal.name_change.what_desc") %></p>
           </div>
 
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label text-muted small"><%= t("citizen_portal.name_change.first_name") %></label>
-              <div class="form-control bg-light"><%= current_citizen.first_name %></div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label text-muted small"><%= t("citizen_portal.name_change.middle_name") %></label>
-              <div class="form-control bg-light"><%= current_citizen.middle_name.presence || "—" %></div>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label text-muted small"><%= t("citizen_portal.name_change.last_name") %></label>
-              <div class="form-control bg-light"><%= current_citizen.last_name %></div>
-            </div>
+          <div class="correction-choices">
+            <% fields.each do |fld| %>
+              <label class="correction-choice">
+                <input type="checkbox" name="name_change_request[change_fields][]" value="<%= fld[:key] %>"
+                       <%= "checked" if ticked.include?(fld[:key]) %>
+                       data-correction-picker-target="choice"
+                       data-action="change->correction-picker#toggle">
+                <span class="correction-choice__box" aria-hidden="true"><i class="ri-check-line"></i></span>
+                <span class="correction-choice__text">
+                  <span class="correction-choice__label"><%= fld[:label] %></span>
+                  <span class="correction-choice__current"><%= fld[:current].presence || t("citizen_portal.profile.review.empty") %></span>
+                </span>
+              </label>
+            <% end %>
           </div>
         </div>
       </div>
 
-      <%# New Name %>
-      <div class="ballot-section card border-0 shadow-sm mb-4">
+      <%# ── 2. Current → new, only for ticked fields ── %>
+      <div class="ballot-section card border-0 shadow-sm mb-4" data-correction-picker-target="changes"
+           style="<%= 'display:none;' if ticked.empty? %>">
         <div class="card-body p-4">
-
-          <div class="ballot-section-head mb-4">
-            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.new_name") %></h2>
-            <p class="ballot-section-desc mb-0">
-              <%= t("citizen_portal.name_change.new_name_desc") %>
-            </p>
+          <div class="ballot-section-head mb-3">
+            <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.changes_title") %></h2>
+            <p class="ballot-section-desc mb-0"><%= t("citizen_portal.name_change.changes_desc") %></p>
           </div>
 
-          <div class="row g-3">
-            <div class="col-md-4">
-              <%= f.input :new_first_name, required: true,
-                input_html: {
-                  placeholder: t("citizen_portal.name_change.ph_first"),
-                  class: "form-control",
-                  autocomplete: "given-name"
-                },
-                label: t("citizen_portal.name_change.first_name"),
-                label_html: { class: "form-label" } %>
+          <% fields.each do |fld| %>
+            <div class="correction-row" data-correction-picker-target="row" data-field="<%= fld[:key] %>"
+                 style="<%= 'display:none;' unless ticked.include?(fld[:key]) %>">
+              <div class="correction-row__current">
+                <span class="review-label"><%= fld[:label] %> · <%= t("citizen_portal.name_change.current") %></span>
+                <span class="review-value"><%= fld[:current].presence || t("citizen_portal.profile.review.empty") %></span>
+              </div>
+              <i class="ri-arrow-right-line correction-row__arrow" aria-hidden="true"></i>
+              <div class="correction-row__new">
+                <% if fld[:key] == "dob" %>
+                  <%= f.input :new_dob, as: :date, html5: true,
+                        label: "#{fld[:label]} · #{t('citizen_portal.name_change.new')}",
+                        input_html: { class: "form-control", max: 18.years.ago.to_date.iso8601, min: "1900-01-01" },
+                        label_html: { class: "form-label" } %>
+                <% else %>
+                  <%= f.input "new_#{fld[:key]}",
+                        label: "#{fld[:label]} · #{t('citizen_portal.name_change.new')}",
+                        input_html: { class: "form-control", placeholder: fld[:ph], autocomplete: fld[:autocomplete] },
+                        label_html: { class: "form-label" } %>
+                <% end %>
+              </div>
             </div>
-            <div class="col-md-4">
-              <%= f.input :new_middle_name,
-                input_html: {
-                  placeholder: t("citizen_portal.name_change.ph_middle"),
-                  class: "form-control",
-                  autocomplete: "additional-name"
-                },
-                label: t("citizen_portal.name_change.middle_name"),
-                label_html: { class: "form-label" } %>
-            </div>
-            <div class="col-md-4">
-              <%= f.input :new_last_name, required: true,
-                input_html: {
-                  placeholder: t("citizen_portal.name_change.ph_last"),
-                  class: "form-control",
-                  autocomplete: "family-name"
-                },
-                label: t("citizen_portal.name_change.last_name"),
-                label_html: { class: "form-label" } %>
-            </div>
-          </div>
+          <% end %>
         </div>
       </div>
 
-      <%# Reason & Document %>
+      <%# ── 3. Reason & document ── %>
       <div class="ballot-section card border-0 shadow-sm mb-4" data-controller="name-change-reason">
         <div class="card-body p-4">
-
-          <div class="ballot-section-head mb-4">
+          <div class="ballot-section-head mb-3">
             <h2 class="ballot-section-title"><%= t("citizen_portal.name_change.reason_title") %></h2>
-            <p class="ballot-section-desc mb-0">
-              <%= t("citizen_portal.name_change.reason_desc") %>
-            </p>
+            <p class="ballot-section-desc mb-0"><%= t("citizen_portal.name_change.reason_desc") %></p>
           </div>
 
           <div class="row g-3">
-            <div class="col-md-6">
+            <div class="col-12 col-md-6">
               <%= f.input :reason, required: true,
                 collection: NameChangeRequest::REASONS.map { |k, v| [t("citizen_portal.name_change.reasons.#{k}", default: v), k] },
                 include_blank: t("citizen_portal.name_change.select_reason"),
                 input_html: {
                   class: "form-select",
-                  data: {
-                    name_change_reason_target: "reason",
-                    action: "change->name-change-reason#toggle"
-                  }
+                  data: { name_change_reason_target: "reason", action: "change->name-change-reason#toggle" }
                 },
                 label: t("citizen_portal.name_change.reason_label"),
                 label_html: { class: "form-label" } %>
             </div>
 
-            <div class="col-md-6" data-name-change-reason-target="otherField" style="display: none;">
+            <div class="col-12 col-md-6" data-name-change-reason-target="otherField" style="<%= 'display: none;' unless req.reason == 'other' %>">
               <%= f.input :other_reason,
-                input_html: {
-                  placeholder: t("citizen_portal.name_change.other_placeholder"),
-                  class: "form-control",
-                  rows: 2
-                },
+                input_html: { placeholder: t("citizen_portal.name_change.other_placeholder"), class: "form-control", rows: 2 },
                 label: t("citizen_portal.name_change.other_reason"),
                 label_html: { class: "form-label" } %>
             </div>
 
             <div class="col-12">
               <%= f.input :supporting_document, as: :file, required: true,
-                input_html: {
-                  class: "form-control",
-                  accept: ".pdf,.jpg,.jpeg,.png"
-                },
+                input_html: { class: "form-control", accept: ".pdf,.jpg,.jpeg,.png" },
                 label: t("citizen_portal.name_change.supporting_document"),
                 label_html: { class: "form-label" },
                 hint: t("citizen_portal.name_change.supporting_hint") %>
@@ -145,26 +133,20 @@
         </div>
       </div>
 
-      <%# Privacy Notice — highlighted using the wizard's tip-box idiom %>
-      <div class="enroll-helpful-tip mb-4">
-        <i class="ri-shield-check-line"></i>
-        <div>
-          <%= t("citizen_portal.name_change.secure_html") %>
-        </div>
-      </div>
+      <p class="sub-hint mb-4">
+        <i class="ri-shield-check-line" aria-hidden="true"></i>
+        <span><%= t("citizen_portal.name_change.next_steps") %></span>
+      </p>
 
-      <%# Submit %>
-      <div class="d-flex justify-content-between align-items-center">
-        <%= link_to edit_citizens_profile_path,
-              class: "btn btn-outline-secondary fw-semibold px-4 py-2",
-              style: "font-size: 0.85rem;" do %>
+      <div class="d-flex justify-content-between align-items-center profile-wizard-nav">
+        <%= link_to edit_citizens_profile_path, class: "btn btn-outline-secondary fw-semibold px-4 py-2", style: "font-size: 0.85rem;" do %>
           <i class="ri-arrow-left-line me-1"></i> <%= t("citizen_portal.common.cancel") %>
         <% end %>
 
         <%= f.submit t("citizen_portal.name_change.submit"),
             class: "btn btn-primary fw-semibold px-4 py-2",
             style: "font-size: 0.85rem;",
-            data: { disable_with: t("citizen_portal.submission.submitting") } %>
+            data: { disable_with: t("citizen_portal.submission.submitting"), correction_picker_target: "submit" } %>
       </div>
     <% end %>
 
