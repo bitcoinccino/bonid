@@ -31,7 +31,7 @@ module Citizens
       current_citizen.update_columns(notifications_seen_at: Time.current)
       Citizens::AlertBroadcastJob.perform_later(current_citizen.id)
 
-      @tab      = TABS.include?(params[:tab]) ? params[:tab] : "all"
+      @tab      = available_tabs.include?(params[:tab]) ? params[:tab] : "all"
       @filter   = CATEGORIES.include?(params[:filter]) ? params[:filter] : "all"
       @from, @to = normalized_date_range
       @counts   = activity_counts
@@ -63,6 +63,15 @@ module Citizens
     # is "Administratif", the Koneksyon pill reads 0, not the total
     # session count — because sessions are Sekirite, not Administratif).
     # ------------------------------------------------------------
+    # "applications" (Demandes) only shows while partner services are on
+    # (CitizenServicesPausable / CITIZEN_SERVICES_ENABLED). While they're
+    # paused, its rows (service applications, election oaths) still show
+    # under "all".
+    def available_tabs
+      CitizenServicesPausable.enabled? ? TABS : TABS - %w[applications]
+    end
+    helper_method :available_tabs
+
     def activity_counts
       allow = ->(cat) { @filter == "all" || @filter == cat.to_s }
 

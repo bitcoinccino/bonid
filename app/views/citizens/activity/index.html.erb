@@ -79,7 +79,7 @@
         { key: "transactions", label: t("citizen_portal.activity.tabs.transactions"), icon: "ri-exchange-funds-line", count: @counts[:transactions] },
         { key: "applications", label: t("citizen_portal.activity.tabs.applications"), icon: "ri-file-list-3-line", count: @counts[:applications] },
         { key: "sessions",     label: t("citizen_portal.activity.tabs.sessions"),     icon: "ri-login-box-line", count: @counts[:sessions] }
-      ] %>
+      ].select { |tab_item| available_tabs.include?(tab_item[:key]) } %>
 
       <% unless export_mode %>
         <div class="activity-tabs mb-3" role="tablist">
@@ -240,6 +240,12 @@
   .activity-filter-pill--active {
     background: var(--primary);
     color: #fff !important;
+  }
+  /* Keep the selected pill blue on hover (the plain :hover above is more
+     specific and would turn it light grey under white text). */
+  .activity-filter-pill--active:hover {
+    background: var(--primary);
+    filter: brightness(1.08);
   }
 
   /* Export button is a subtle ghost button pushed to the right of row 1.
