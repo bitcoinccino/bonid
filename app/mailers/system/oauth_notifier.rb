@@ -2,7 +2,7 @@
 module System
   class OauthNotifier < VerifyemMailer
     default from: "noreply@verifyem.ht",
-            reply_to: "support@bonid.ht"
+            reply_to: "support@verifyem.ht"
 
     # 🚀 Sent to citizen when a partner requests consent
     def consent_requested(consent_grant)

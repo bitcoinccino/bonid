@@ -1,75 +1,69 @@
 <%# app/views/citizens/identity_submissions/_qrcode_modal.html.erb %>
-<%# Modern QR Code Modal - Clean, centered design %>
+<%# "Voir QRcode" pop-up. Shaped like the BonID wallet card on the dashboard
+    (same blue card, radius and footer strip); qr-modal sizes it to the
+    card's exact width and height when it opens. %>
 
 <div class="modal fade bonid-qr-modal"
      id="qrCodeModal_<%= submission.id %>"
      tabindex="-1"
      aria-hidden="true"
+     aria-labelledby="<%= dom_id(submission, :qr_title) %>"
      data-controller="qr-modal qr-rotator"
+     data-qr-modal-match-selector-value=".wallet-card-wrapper[data-card='bonid'] .bonid-wallet-card"
      data-qr-rotator-interval-value="60000"
      data-qr-rotator-expired-value="<%= submission.qr_expired? %>">
 
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content qr-modal-content">
+    <div class="modal-content qr-modal-content" data-qr-modal-target="card">
 
-      <%# Close Button - Floating %>
-      <button type="button"
-              class="qr-modal-close"
-              data-bs-dismiss="modal"
-              aria-label="<%= t("citizen_portal.common.close") %>">
-        <i class="ri-close-line"></i>
-      </button>
+      <%# Header — mirrors .wallet-card-header %>
+      <div class="qr-modal-header">
+        <h4 class="qr-modal-title" id="<%= dom_id(submission, :qr_title) %>">
+          <i class="ri-shield-check-fill"></i><%= t("citizen_portal.submission.qr.title") %>
+        </h4>
+        <button type="button"
+                class="qr-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="<%= t("citizen_portal.common.close") %>">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
 
-      <%# Modal Body %>
+      <%# Refresh notice floats over the card so it never changes its height %>
+      <div id="<%= dom_id(submission, :qr_notice) %>"></div>
+
+      <%# Body — QR on a white panel (needed for scanning) + lookup code %>
       <div class="qr-modal-body">
+        <div id="<%= dom_id(submission, :qr_wrapper) %>" class="qr-code-wrapper">
+          <%= image_tag("data:image/png;base64,#{submission.qr_for(:citizen)}",
+                        id: dom_id(submission, :qr_rotating_image),
+                        class: "qr-code-image",
+                        alt: t("citizen_portal.submission.qr.alt")) %>
 
-        <%# Header Section %>
-        <div class="qr-modal-header">
-          <h4 class="qr-modal-title"><%= t("citizen_portal.submission.qr.title") %></h4>
-        </div>
-
-        <%# Local Alerts %>
-        <div id="<%= dom_id(submission, :qr_notice) %>"></div>
-
-        <%# QR Code Section %>
-        <div class="qr-modal-code">
-          <div id="<%= dom_id(submission, :qr_wrapper) %>" class="qr-code-wrapper">
-            <%= image_tag("data:image/png;base64,#{submission.qr_for(:citizen)}",
-                          id: dom_id(submission, :qr_rotating_image),
-                          class: "qr-code-image",
-                          alt: t("citizen_portal.submission.qr.alt")) %>
-
-            <%# Photo Overlay %>
-            <div class="qr-photo-overlay">
-              <% if submission.user.photo.attached? %>
-                <%= image_tag url_for(submission.user.photo),
-                              class: "qr-photo",
-                              style: "width: 56px; height: 56px; object-fit: cover; object-position: center top;" %>
-              <% else %>
-                <%= image_tag "haiti_flag.png", class: "qr-photo" %>
-              <% end %>
-            </div>
+          <div class="qr-photo-overlay">
+            <% if submission.user.photo.attached? %>
+              <%= image_tag url_for(submission.user.photo),
+                            class: "qr-photo",
+                            style: "width: 44px; height: 44px; object-fit: cover; object-position: center top;" %>
+            <% else %>
+              <%= image_tag "haiti_flag.png", class: "qr-photo" %>
+            <% end %>
           </div>
-
-          <%# Lookup code (last 6 of the BonID): the partner can type it if
-              the QR won't scan. Never the full BonID (its P#### is from the CIN). %>
-          <% if (code = citizen_bonid_code(submission.user.bonid)) %>
-            <div class="qr-modal-code-text">
-              <span class="qr-modal-code-label"><%= t("citizen_portal.submission.qr.code_label") %></span>
-              <span class="qr-modal-code-value"><%= code %></span>
-            </div>
-          <% end %>
         </div>
 
-        <%# Status Badge %>
-        <div class="qr-modal-status">
-          <span class="status-badge-active">
-            <i class="ri-checkbox-circle-fill"></i>
-            <%= t("citizen_portal.submission.qr.verified_active") %>
-          </span>
-        </div>
+        <%# Lookup code (last 6 of the BonID): the partner can type it if
+            the QR won't scan. Never the full BonID (its P#### is from the CIN). %>
+        <% if (code = citizen_bonid_code(submission.user.bonid)) %>
+          <div class="qr-modal-code-text">
+            <span class="qr-modal-code-label"><%= t("citizen_portal.submission.qr.code_label") %></span>
+            <span class="qr-modal-code-value"><%= code %></span>
+          </div>
+        <% end %>
+      </div>
 
-        <%# Countdown Timer - 60 seconds matches qr-rotator interval %>
+      <%# Footer — mirrors .wallet-card-footer: countdown left, refresh right %>
+      <div class="qr-modal-footer">
+        <%# 60 seconds matches the qr-rotator interval %>
         <div class="qr-modal-countdown"
              data-controller="qr-countdown"
              data-qr-countdown-interval-value="60">
@@ -77,13 +71,6 @@
           <span class="countdown-timer" data-qr-countdown-target="display">1:00</span>
         </div>
 
-        <%# Info Section %>
-        <div class="qr-modal-info">
-          <i class="ri-information-line"></i>
-          <p><%= t("citizen_portal.submission.qr.rotates_note") %></p>
-        </div>
-
-        <%# Refresh Button %>
         <%= form_with url: refresh_qr_citizens_identity_submission_path(submission.public_token),
                       method: :post,
                       data: {
@@ -94,18 +81,16 @@
                         action: "turbo:submit-start->qr-refresh#start turbo:submit-end->qr-refresh#finish"
                       },
                       class: "qr-refresh-form" do %>
-
           <button type="submit"
                   class="qr-refresh-btn"
                   data-qr-refresh-target="submit">
-            <span data-qr-refresh-target="spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+            <span data-qr-refresh-target="spinner" class="spinner-border spinner-border-sm d-none me-1"></span>
             <i class="ri-refresh-line" data-qr-refresh-target="icon"></i>
             <span data-qr-refresh-target="label"><%= t("citizen_portal.submission.qr.refresh_now") %></span>
           </button>
-
         <% end %>
-
       </div>
+
     </div>
   </div>
 </div>

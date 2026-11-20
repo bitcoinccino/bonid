@@ -9,10 +9,14 @@ module Citizens
       @otp  = params[:otp]
       @email_product = "bonid"
 
-      mail(
-        to: @user.email,
-        subject: "BonID: Kòd Koneksyon Ou"
-      )
+      # Sent in the language the citizen is using on the login page,
+      # falling back to their saved portal language (Paramèt → Lang).
+      requested = params[:locale].to_s
+      locale = User::CITIZEN_LOCALES.include?(requested) ? requested : @user.portal_locale
+
+      I18n.with_locale(locale) do
+        mail(to: @user.email, subject: t("mailers.otp_login.subject"))
+      end
     end
 
     # Sign-in from a browser this citizen hasn't used before.

@@ -120,14 +120,23 @@ module Citizens
                            alert: t("citizen_portal.auth.flash.session_expired")
       end
 
-      CitizenOtpService.new(user).generate!(fingerprint: request_fingerprint)
-      flash.now[:notice] = t("citizen_portal.auth.flash.new_code_sent")
+      # Always redirect back to the GET verify page (POST/redirect/GET) so a
+      # browser refresh never re-submits the resend and mails another code.
+      back_to_verify = citizens_verify_otp_path(
+        partner_slug: partner_slug,
+        email: user.email,
+        signup: params[:signup].presence || "false"
+      )
 
-      render :verify_otp, locals: { partner_slug: partner_slug, signup: params[:signup], email: user.email }
-    rescue => e
-      Rails.logger.error("OTP resend failed: #{e.message}")
-      flash.now[:alert] = t("citizen_portal.auth.flash.resend_failed")
-      render :verify_otp, locals: { partner_slug: partner_slug, signup: params[:signup], email: user.email }
+      begin
+        CitizenOtpService.new(user).generate!(fingerprint: request_fingerprint)
+        redirect_to back_to_verify, notice: t("citizen_portal.auth.flash.new_code_sent")
+      rescue CitizenOtpService::CooldownError
+        redirect_to back_to_verify, alert: t("citizen_portal.auth.flash.resend_wait")
+      rescue => e
+        Rails.logger.error("OTP resend failed: #{e.message}")
+        redirect_to back_to_verify, alert: t("citizen_portal.auth.flash.resend_failed")
+      end
     end
 
     # =========================================================

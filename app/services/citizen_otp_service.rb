@@ -7,6 +7,10 @@ class CitizenOtpService
   MAX_ATTEMPTS = 5
   COOLDOWN     = 30.seconds
 
+  # Raised when a new code is requested before COOLDOWN has passed.
+  # Subclasses StandardError so existing `rescue => e` callers still catch it.
+  class CooldownError < StandardError; end
+
   def initialize(user)
     # Normalize type
     if user.is_a?(CitizenProfile)
@@ -52,7 +56,7 @@ class CitizenOtpService
     )
 
     # 📩 Send email if user has one
-    mailer.with(user: @user, otp: raw_otp).public_send(mailer_action).deliver_later if @user.email.present?
+    mailer.with(user: @user, otp: raw_otp, locale: I18n.locale.to_s).public_send(mailer_action).deliver_later if @user.email.present?
 
     raw_otp
   end
@@ -94,7 +98,7 @@ class CitizenOtpService
   def enforce_cooldown!
     last = @citizen_profile.citizen_sessions.order(created_at: :desc).first
     if last && last.created_at > COOLDOWN.ago
-      raise StandardError, "Please wait a few seconds before requesting another code."
+      raise CooldownError, "Please wait a few seconds before requesting another code."
     end
   end
 

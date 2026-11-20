@@ -12,7 +12,7 @@ Geocoder.configure(
   cache_prefix: "geocoder:",
   cache_options: { expires_in: 30.days },
   http_headers: {
-    "User-Agent" => "BonID/1.0 (support@bonid.ht)"
+    "User-Agent" => "BonID/1.0 (support@verifyem.ht)"
   }
 )
 

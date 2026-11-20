@@ -118,16 +118,13 @@
           <i class="ri-time-line me-1"></i><%= t("citizen_portal.auth.verify.expires_in") %>
           <span id="otp-timer" class="fw-semibold">10:00</span>
         </small>
-        <small class="text-success d-none" id="otp-success">
-          <i class="ri-check-line me-1"></i><%= t("citizen_portal.auth.verify.looks_good") %>
-        </small>
       </div>
     </div>
 
     <%= f.submit t("citizen_portal.auth.verify.submit"),
           class: "btn btn-haitian-primary w-100 mt-2",
           id: "verify-button",
-          data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>'.html_safe + t("citizen_portal.auth.verify.verifying") } %>
+          data: { processing_label: t("citizen_portal.auth.verify.verifying") } %>
 
     <div class="trust-badge">
       <i class="ri-shield-check-line"></i>
@@ -135,7 +132,7 @@
     </div>
 
     <div class="auth-help-link">
-      <%= t("citizen_portal.auth.verify.no_code_html", link: content_tag(:a, t("citizen_portal.auth.verify.resend_it"), href: "#", onclick: "document.getElementById('resend-button')?.click(); return false;")) %>
+      <%= t("citizen_portal.auth.verify.no_code_html") %>
     </div>
   <% end %>
 
@@ -208,16 +205,14 @@
     // ── Input formatting ──────────────────────────────────────────
     otpInput.addEventListener('input', (e) => {
       e.target.value = e.target.value.replace(/\D/g, '');
-      const ok = e.target.value.length === 6;
-      document.getElementById('otp-success')?.classList.toggle('d-none', !ok);
-      if (ok) verifyBtn.focus();
+      if (e.target.value.length === 6) verifyBtn.focus();
     });
 
     otpInput.addEventListener('paste', (e) => {
       e.preventDefault();
       const nums = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').substring(0, 6);
       otpInput.value = nums;
-      if (nums.length === 6) document.getElementById('otp-success')?.classList.remove('d-none');
+      if (nums.length === 6) verifyBtn.focus();
     });
 
     // ── Resend cooldown ───────────────────────────────────────────

@@ -120,6 +120,7 @@ Turbo.config.forms.confirm = (message) => {
 // submissions. Prevents double-clicks in low-bandwidth environments (Haiti).
 // Skips buttons already managed by a Stimulus form-handler controller.
 // Opt out per-button with data-no-processing="true".
+// Override the label per-button with data-processing-label="…" (translated).
 ;(() => {
   const ATTR_ORIGINAL = "_bonid_original_html"
 
@@ -132,16 +133,18 @@ Turbo.config.forms.confirm = (message) => {
     const form = submitter.closest("form")
     if (form?.dataset.controller?.match(/form-handler|qr-refresh/)) return
 
+    const label = submitter.dataset.processingLabel || "Processing\u2026"
+
     // Store original content and disable
     if (submitter.tagName === "INPUT") {
       submitter._bonid_original_value = submitter.value
       submitter.disabled = true
-      submitter.value = "Processing\u2026"
+      submitter.value = label
     } else {
       submitter[ATTR_ORIGINAL] = submitter.innerHTML
       submitter.disabled = true
       submitter.innerHTML =
-        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing\u2026'
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + label
     }
   })
 
