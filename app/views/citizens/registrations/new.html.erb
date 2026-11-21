@@ -5,13 +5,9 @@
 
     <!-- INTRO -->
     <div class="text-center mb-4 mb-lg-5">
-      <h2 class="display-5 fw-bold mb-3 font-heading">
+      <h2 class="display-5 fw-bold mb-0 font-heading">
         <%= t("citizen_portal.auth.signup.left_title") %>
       </h2>
-
-      <p class="lead opacity-90 mx-auto max-w-text">
-        <%= t("citizen_portal.auth.signup.left_lead") %>
-      </p>
     </div>
 
     <!-- CAROUSEL -->
@@ -21,7 +17,7 @@
          data-bs-interval="9000">
 
       <div class="carousel-indicators position-static justify-content-center mb-3">
-        <% 5.times do |i| %>
+        <% 3.times do |i| %>
           <button type="button"
                   data-bs-target="#bonidCarousel"
                   data-bs-slide-to="<%= i %>"
@@ -33,11 +29,9 @@
       <div class="carousel-inner">
 
         <% [
-          { icon: "ri-bank-line",        title: t("citizen_portal.auth.signup.slides.institutions.title"), desc: t("citizen_portal.auth.signup.slides.institutions.desc") },
           { icon: "ri-qr-code-line",     title: t("citizen_portal.auth.signup.slides.qr.title"),           desc: t("citizen_portal.auth.signup.slides.qr.desc") },
           { icon: "ri-eye-line",         title: t("citizen_portal.auth.signup.slides.visibility.title"),   desc: t("citizen_portal.auth.signup.slides.visibility.desc") },
-          { icon: "ri-lock-2-line",      title: t("citizen_portal.auth.signup.slides.privacy.title"),      desc: t("citizen_portal.auth.signup.slides.privacy.desc") },
-          { icon: "ri-global-line",      title: t("citizen_portal.auth.signup.slides.haiti.title"),        desc: t("citizen_portal.auth.signup.slides.haiti.desc") }
+          { icon: "ri-lock-2-line",      title: t("citizen_portal.auth.signup.slides.privacy.title"),      desc: t("citizen_portal.auth.signup.slides.privacy.desc") }
         ].each_with_index do |slide, i| %>
           <div class="carousel-item <%= i.zero? ? 'active' : '' %> text-center px-3">
             <i class="<%= slide[:icon] %> ri-4x text-haitian-cyan mb-3"></i>
@@ -88,22 +82,9 @@
   <% if params[:partner].present? %>
     <% partner = Partner.find_by(slug: params[:partner]) %>
     <% if partner %>
-      <div class="text-center mb-4 pb-4" style="border-bottom: 1px solid rgba(0,32,159,0.10);">
-        <% if partner.logo.attached? %>
-          <%= image_tag url_for(partner.logo),
-                alt: partner.name,
-                style: "max-height: 64px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto;" %>
-        <% else %>
-          <div style="width: 64px; height: 64px; background: rgba(0,32,159,0.08); border-radius: 50%;
-                      display: flex; align-items: center; justify-content: center; margin: 0 auto;
-                      border: 2px solid rgba(0,32,159,0.12);">
-            <i class="ri-building-line" style="font-size: 1.5rem; color: var(--primary);"></i>
-          </div>
-        <% end %>
-        <div class="small text-muted mt-2">
-          <%= t("citizen_portal.auth.signup.via_html", partner: partner.name) %>
-        </div>
-      </div>
+      <%= render "citizens/shared/partner_cobrand", partner: partner,
+                 caption: t("citizen_portal.auth.signup.via_html", partner: partner.name),
+                 show_name: false %>
     <% end %>
   <% else %>
     <%# Icon badge — only shown when no partner %>
