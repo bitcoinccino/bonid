@@ -118,4 +118,42 @@ RSpec.describe "Public partner directory", type: :request do
       expect(response.body).to include("CEP Test", "Banque Test")
     end
   end
+
+  describe "long list: problem/solution once per sector, capped cards" do
+    let(:bank_problem) { CGI.escapeHTML(I18n.t("main.partners.uses.banking.problem", locale: :fr)) }
+
+    before do
+      stub_const("MainController::GROUPED_DIRECTORY_MIN", 1)
+      8.times { |i| create(:partner, name: "Banque #{i}", sector: "banking", verified_at: 1.day.ago) }
+      create(:partner, name: "CEP Test", sector: "cep", verified_at: 1.day.ago)
+    end
+
+    it "shows the sector's problem/solution once, not on every card" do
+      get partners_path(lang: "fr")
+      expect(response.body.scan(bank_problem).size).to eq(1)
+      expect(response.body).to include("partner-ps--section")
+    end
+
+    it "shows 6 cards per sector and a link to see the rest" do
+      get partners_path(lang: "fr")
+      finance = response.body[/partners-section__title.*?Finance.*?(?=partners-section__title|\z)/m]
+      expect(finance.scan('class="card partner-card').size).to eq(6)
+      expect(response.body).to include("/partners?group=finance")
+      expect(response.body).to include("Voir les 3 autres")
+    end
+
+    it "shows every partner of a picked sector, with its text once" do
+      get partners_path(lang: "fr", group: "finance")
+      expect(response.body.scan('class="card partner-card').size).to eq(9)
+      expect(response.body.scan(bank_problem).size).to eq(1)
+      expect(response.body).not_to include("Voir les")
+    end
+  end
+
+  it "keeps the problem/solution on each card in a short list" do
+    create(:partner, name: "Banque Deux", sector: "banking", verified_at: 1.day.ago)
+    get partners_path(lang: "fr")
+    problem = CGI.escapeHTML(I18n.t("main.partners.uses.banking.problem", locale: :fr))
+    expect(response.body.scan(problem).size).to eq(2)
+  end
 end

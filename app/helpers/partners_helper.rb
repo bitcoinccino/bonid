@@ -187,12 +187,29 @@ module PartnersHelper
   # BonID solves it (main.partners.uses.<group>.problem / .solution).
   # Falls back to the default pair for a sector with no entry yet.
   def partner_problem_solution(sector)
+    partner_problem_solution_for_group(partner_benefit_group(sector))
+  end
+
+  # Copy group (main.partners.uses.<group>) for a sector, "default" if none.
+  def partner_benefit_group(sector)
     group = PARTNER_BENEFIT_GROUPS[sector.to_s.downcase] || "default"
-    group = "default" unless I18n.exists?("main.partners.uses.#{group}.problem")
+    I18n.exists?("main.partners.uses.#{group}.problem") ? group : "default"
+  end
+
+  def partner_problem_solution_for_group(group)
     {
       problem:  I18n.t("main.partners.uses.#{group}.problem"),
       solution: I18n.t("main.partners.uses.#{group}.solution")
     }
+  end
+
+  # Problem/solution pairs for a directory section, once each: a heading
+  # like "Finance" can hold banks and crypto apps, which have different
+  # copy. Most common first.
+  def partner_section_problem_solutions(partners)
+    partners.map { |p| partner_benefit_group(p.sector) }
+            .tally.sort_by { |_g, n| -n }
+            .map { |g, _| partner_problem_solution_for_group(g) }
   end
 
   # Link for the card's "Sign in with BonID" button: the partner's website,

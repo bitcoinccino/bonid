@@ -86,9 +86,24 @@
         <%= partner_directory_group_label(slug) %>
         <span class="partners-section__count"><%= list.size %></span>
       </h2>
+
+      <%# The sector's problem/solution, once — not repeated on every card. %>
+      <% partner_section_problem_solutions(list).each do |ps| %>
+        <div class="partner-ps partner-ps--section">
+          <div class="partner-ps__problem">
+            <span class="partner-ps__label"><i class="ri-error-warning-line" aria-hidden="true"></i><%= t("main.partners.problem_label") %></span>
+            <p><%= ps[:problem] %></p>
+          </div>
+          <div class="partner-ps__solution">
+            <span class="partner-ps__label"><i class="ri-checkbox-circle-fill" aria-hidden="true"></i><%= t("main.partners.solution_label") %></span>
+            <p><%= ps[:solution] %></p>
+          </div>
+        </div>
+      <% end %>
     <% end %>
+    <% shown = @section_cap ? list.first(@section_cap) : list %>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-      <% list.each do |partner| %>
+      <% shown.each do |partner| %>
         <div class="col">
           <div class="card partner-card h-100 border rounded-3">
 
@@ -121,7 +136,9 @@
                 </div>
               </div>
 
-              <%# The everyday problem here, then how BonID solves it. %>
+              <%# The everyday problem here, then how BonID solves it — on the
+                  card only in the short, ungrouped list (sections show it once). %>
+              <% if slug.nil? %>
               <% ps = partner_problem_solution(partner.sector) %>
               <div class="partner-ps flex-grow-1 mb-3">
                 <div class="partner-ps__problem">
@@ -133,6 +150,9 @@
                   <p><%= ps[:solution] %></p>
                 </div>
               </div>
+              <% else %>
+                <div class="flex-grow-1 mb-3"></div>
+              <% end %>
 
               <%# Main action: register through this partner (or go home when
                   already signed in). Secondary: "Sign in with BonID" opens the
@@ -163,6 +183,14 @@
         </div>
       <% end %>
     </div>
+    <% if slug && list.size > shown.size %>
+      <div class="partners-section__more">
+        <%= link_to partners_path(group: slug, search: params[:search].presence), class: "partners-section__more-link" do %>
+          <%= t("main.partners.see_more", count: list.size - shown.size, sector: partner_directory_group_label(slug)) %>
+          <i class="ri-arrow-right-line" aria-hidden="true"></i>
+        <% end %>
+      </div>
+    <% end %>
     </div>
     <% end %>
 

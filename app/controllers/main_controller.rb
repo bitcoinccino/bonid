@@ -49,15 +49,24 @@ class MainController < ApplicationController
 
     # Section headings only help once the list is long; with a handful of
     # partners each heading holds one or two cards and the grid looks broken.
-    # Short lists (or a single picked group) render as one even grid by name.
-    unless @sections.size > 1 && @total_count > GROUPED_DIRECTORY_MIN
+    # Short lists render as one even grid by name, with the problem/solution
+    # on each card. Grouped (long list, or one picked sector chip): each
+    # sector shows its problem/solution once under the heading.
+    @grouped = @group.present? || (@sections.size > 1 && @total_count > GROUPED_DIRECTORY_MIN)
+    unless @grouped
       @sections = [ [ nil, @sections.flat_map(&:last).sort_by { |p| p.name.downcase } ] ]
       @sections = [] if @sections.first.last.empty?
     end
+
+    # In the full grouped list each sector shows its first few cards and a
+    # "see N more" link to that sector; a picked sector shows everyone.
+    @section_cap = (@grouped && @group.blank?) ? SECTION_CARD_CAP : nil
   end
 
   # Partner count above which /partners shows one heading per sector group.
   GROUPED_DIRECTORY_MIN = 12
+  # Cards per sector in the full grouped list.
+  SECTION_CARD_CAP = 6
 
   def required_documents; end
   def terms; end
