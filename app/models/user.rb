@@ -55,6 +55,7 @@ class User < ApplicationRecord
   has_many :service_applications, foreign_key: :citizen_id, dependent: :destroy
   has_many :dgi_payments, dependent: :destroy
   has_many :consent_grants,    foreign_key: :citizen_id, dependent: :destroy
+  has_many :notification_reads, dependent: :delete_all
   has_many :transaction_consents, foreign_key: :citizen_id, dependent: :destroy
   has_many :bonid_aliases, dependent: :destroy
 

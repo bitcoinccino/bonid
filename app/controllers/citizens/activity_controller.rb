@@ -12,25 +12,33 @@ module Citizens
 
     DEFAULT_WINDOW_DAYS = 30
 
-    # POST /citizens/notifications/seen — called when the citizen opens the
-    # topbar bell. Clears the unread count; the open popover keeps its
-    # highlights for this view (the browser removes only the badges).
-    # No broadcast here: replacing the bell frame would close the popover
-    # the citizen is reading. Other tabs catch up on their next page load.
+    # POST /citizens/notifications/seen — "Mark all as read" in the bell.
+    # Moves the cutoff forward so every current notification is read.
     def mark_seen
       current_citizen.update_columns(notifications_seen_at: Time.current)
-      head :no_content
+      Citizens::AlertBroadcastJob.perform_later(current_citizen.id) # other tabs
+
+      respond_to do |format|
+        format.html { redirect_back fallback_location: citizens_dashboard_path }
+        format.any  { head :no_content }
+      end
+    end
+
+    # POST /citizens/notifications/open?key=… — the citizen clicked one
+    # notification: mark just that one read, then go where it points.
+    # The destination comes from the key (never from a URL parameter).
+    def open_notification
+      key = params[:key].to_s
+      return redirect_to(citizens_activity_path) unless key.match?(NotificationRead::KEY_FORMAT)
+
+      NotificationRead.mark!(current_citizen, key)
+      Citizens::AlertBroadcastJob.perform_later(current_citizen.id) # other tabs
+      redirect_to notification_destination(key)
     end
 
     def index
-      # Stamp first so the topbar bell renders with the new `seen_at` and
-      # the badge clears on this same response. Update the in-memory record
-      # via update_columns (skips callbacks/touch) and `current_citizen`
-      # reflects the new value because update_columns mutates the loaded
-      # attributes — no reload needed.
-      current_citizen.update_columns(notifications_seen_at: Time.current)
-      Citizens::AlertBroadcastJob.perform_later(current_citizen.id)
-
+      # Viewing Activité no longer marks notifications read: each one stays
+      # unread until it's opened or "Mark all as read" is pressed.
       @tab      = available_tabs.include?(params[:tab]) ? params[:tab] : "all"
       @filter   = CATEGORIES.include?(params[:filter]) ? params[:filter] : "all"
       @from, @to = normalized_date_range
@@ -71,6 +79,19 @@ module Citizens
       CitizenServicesPausable.enabled? ? TABS : TABS - %w[applications]
     end
     helper_method :available_tabs
+
+    def notification_destination(key)
+      kind, id = key.split(":", 3)
+      case kind
+      when "scan"    then scan_history_citizens_identity_submissions_path
+      when "consent" then citizens_consents_path
+      when "txn"     then citizens_transaction_consents_path
+      when "app"
+        app = CitizenServicesPausable.enabled? && current_citizen.service_applications.find_by(id: id)
+        app ? citizens_service_application_path(app) : citizens_activity_path
+      else citizens_activity_path
+      end
+    end
 
     def activity_counts
       allow = ->(cat) { @filter == "all" || @filter == cat.to_s }

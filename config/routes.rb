@@ -571,8 +571,9 @@ end
     # ✅ Unified Activity Feed (Aktivite) — consolidates scans, consents,
     # transaction consents, and service applications into one timeline.
     get "activity", to: "activity#index", as: :activity
-    # Opening the bell marks notifications as seen (clears the badge).
+    # Bell: "Mark all as read", and open one notification (marks it read).
     post "notifications/seen", to: "activity#mark_seen", as: :notifications_seen
+    post "notifications/open", to: "activity#open_notification", as: :notification_open
 
     resource  :profile, only: [ :new, :create, :show, :edit, :update ]
     resources :verification_records

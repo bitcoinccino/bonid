@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_14_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_20_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -1177,6 +1177,15 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_14_120000) do
     t.index ["reviewed_by_id"], name: "index_name_change_requests_on_reviewed_by_id"
     t.index ["status"], name: "index_name_change_requests_on_status"
     t.index ["user_id"], name: "index_name_change_requests_on_user_id"
+  end
+
+  create_table "notification_reads", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "key", limit: 100, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "key"], name: "index_notification_reads_on_user_id_and_key", unique: true
+    t.index ["user_id"], name: "index_notification_reads_on_user_id"
   end
 
   create_table "o_auth_access_tokens", force: :cascade do |t|
@@ -2583,6 +2592,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_14_120000) do
   add_foreign_key "local_contacts", "visitor_submissions"
   add_foreign_key "name_change_requests", "admin_users", column: "reviewed_by_id"
   add_foreign_key "name_change_requests", "users"
+  add_foreign_key "notification_reads", "users"
   add_foreign_key "o_auth_access_tokens", "partners"
   add_foreign_key "o_auth_access_tokens", "users", column: "citizen_id"
   add_foreign_key "oauth_applications", "partners"

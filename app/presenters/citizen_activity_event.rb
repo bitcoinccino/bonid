@@ -59,6 +59,43 @@ class CitizenActivityEvent
   end
 
   # ------------------------------------------------------------
+  # Notification bell (Citizens::AlertCounter)
+  # ------------------------------------------------------------
+  # Only things other people (or the system) did ring the bell. The
+  # citizen's own actions — granting or removing access, answering a
+  # transaction, sending an application, signing the election oath —
+  # stay in the Activité feed but are never "unread".
+  def notifiable?
+    case @kind
+    when :scan        then true
+    when :consent     then %w[pending expired].include?(consent_status) && !%w[granted revoked].include?(consent_action)
+    when :transaction then %w[pending expired].include?(@source_record.status.to_s)
+    when :application then %w[under_review approved rejected].include?(@source_record.status.to_s)
+    else false
+    end
+  end
+
+  # Stable id for NotificationRead. Consent and application keys include
+  # the step, so a later change (e.g. access expiring) is a new notification.
+  def notification_key
+    id = @source_record.id
+    case @kind
+    when :scan        then "scan:#{id}"
+    when :consent     then "consent:#{id}:#{@timestamp.to_i}"
+    when :transaction then "txn:#{id}"
+    when :application then "app:#{id}:#{@source_record.status}"
+    end
+  end
+
+  def consent_status
+    (@event_data && @event_data[:status]).presence || @source_record.status.to_s
+  end
+
+  def consent_action
+    @event_data && @event_data[:action].to_s
+  end
+
+  # ------------------------------------------------------------
   # Detail rows for the expandable panel on each activity row.
   # Returns an array of [label, value] pairs. Blank values are dropped.
   # ------------------------------------------------------------
