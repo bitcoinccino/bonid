@@ -34,6 +34,7 @@
               bullets = [
                 { key: "fast",     icon: "ri-flashlight-line" },
                 { key: "secure",   icon: "ri-shield-keyhole-line" },
+                { key: "scopes",   icon: "ri-checkbox-multiple-line" },
                 { key: "json",     icon: "ri-database-2-line" },
                 { key: "liveness", icon: "ri-body-scan-line" },
                 { key: "risk",     icon: "ri-bar-chart-box-line" },
@@ -74,11 +75,13 @@
             <% tabs = [
               { id: "identity", icon: "ri-user-search-line" },
               { id: "consent",  icon: "ri-shield-check-line" },
-              { id: "crime",    icon: "ri-alarm-warning-line" },
+              ({ id: "crime",   icon: "ri-alarm-warning-line" } if idpol_extras_enabled?),
               { id: "qr",       icon: "ri-qr-scan-2-line" },
               { id: "webhook",  icon: "ri-link" },
-              { id: "vote",     icon: "ri-checkbox-circle-line" }
-            ] %>
+              ({ id: "vote",    icon: "ri-checkbox-circle-line" } if bonvote_enabled?)
+            ].compact %>
+            <%# Paused for v1: Background check (IDPOL_EXTRAS_ENABLED) and
+                Voter check (BONVOTE_ENABLED) are left out until launched. %>
             <% tabs.each_with_index do |tab, i| %>
               <button
                 type="button"
@@ -168,6 +171,7 @@
   <span style="color: #86efac;">"message"</span>: <span style="color: #86efac;">"Consent request sent. Awaiting approval."</span>
 }</code></pre>
 
+          <% if idpol_extras_enabled? %>
           <%# Crime Status %>
           <pre id="api-crime" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #7dd3fc;">GET</span> /api/v1/crime_status/<span style="color: #86efac;">NB-1988-M-OU-P0815-C4R</span>
 <span style="color: #94a3b8;">Headers:</span> X-Partner-Api-Key + Authorization: Bearer TOKEN
@@ -212,6 +216,7 @@
   <span style="color: #86efac;">"partner"</span>: <span style="color: #86efac;">"Police Nationale d'Haiti"</span>,
   <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-11-10T14:30:00Z"</span>
 }</code></pre>
+          <% end %>
 
           <%# QR Scan %>
           <pre id="api-qr" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #7dd3fc;">POST</span> /api/v1/qr_scan
@@ -265,6 +270,7 @@
 <span style="color: #94a3b8;">// expected = HMAC-SHA256(raw_body, your_webhook_secret)</span>
 <span style="color: #94a3b8;">// compare with the X-BonID-Signature header</span></code></pre>
 
+          <% if bonvote_enabled? %>
           <%# BonVote — Election %>
           <pre id="api-vote" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #94a3b8;">// 1. Check that a voter is eligible</span>
 <span style="color: #7dd3fc;">GET</span> /api/v1/election/<span style="color: #86efac;">2026-presidential-round1</span>/eligibility
@@ -292,6 +298,7 @@
   <span style="color: #86efac;">"election_id"</span>: <span style="color: #86efac;">"2026-presidential-round1"</span>,
   <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-11-29T15:42:10Z"</span>
 }</code></pre>
+          <% end %>
 
         </div>
       </div>
