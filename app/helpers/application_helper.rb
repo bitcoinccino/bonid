@@ -27,6 +27,14 @@ module ApplicationHelper
     BontourisPausable.enabled?
   end
 
+  # Whether BonVote appears in the navbar product menu. Paused for v1: left
+  # out of the menu entirely. Only the nav link is gated; /election/verify
+  # and receipt verify stay public.
+  # To re-enable, set BONVOTE_ENABLED=true.
+  def bonvote_enabled?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch("BONVOTE_ENABLED", false))
+  end
+
   # True when the current page is at or under `path`. Route helpers append
   # ?lang=…, so a plain request.path.start_with?(some_path) never matched and
   # nav links never highlighted. Compares paths only.

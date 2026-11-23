@@ -3,7 +3,6 @@
 module NavbarHelper
   def product_groups
     new_badge  = { badge: t("main.navbar.new_badge"),    badge_class: "navbar-badge-new" }
-    soon_badge = { badge: t("main.navbar.coming_badge"), badge_class: "navbar-badge-soon" }
 
     [
       {
@@ -28,24 +27,27 @@ module NavbarHelper
             path: new_officer_session_path,
             **new_badge
           },
-          {
-            name: "BonVote",
-            description: t("main.navbar.bonvote_desc"),
-            icon: "ri-checkbox-circle-line",
-            path: "/election/verify",
-            **soon_badge
-          },
-          {
-            name: "BonTouris",
-            description: t("main.navbar.bontouris_desc"),
-            icon: "ri-suitcase-3-line",
-            path: new_public_visitor_path,
-            # Paused for v1 (BONTOURIS_ENABLED): shown but not clickable,
-            # badged "coming soon", until the flag is turned on.
-            disabled: !bontouris_enabled?,
-            **(bontouris_enabled? ? new_badge : soon_badge)
-          }
-        ]
+          # Paused for v1: BonVote and BonTouris are left out of the menu
+          # entirely until BONVOTE_ENABLED / BONTOURIS_ENABLED are turned on.
+          (if bonvote_enabled?
+            {
+              name: "BonVote",
+              description: t("main.navbar.bonvote_desc"),
+              icon: "ri-checkbox-circle-line",
+              path: "/election/verify",
+              **new_badge
+            }
+          end),
+          (if bontouris_enabled?
+            {
+              name: "BonTouris",
+              description: t("main.navbar.bontouris_desc"),
+              icon: "ri-suitcase-3-line",
+              path: new_public_visitor_path,
+              **new_badge
+            }
+          end)
+        ].compact
       },
       {
         label_key: "main.navbar.developers",

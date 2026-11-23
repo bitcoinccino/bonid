@@ -35,6 +35,8 @@ module Citizens
       ]
 
       @faq_items = t("main.faq.items")
+      # BonTouris is paused for v1: hide its FAQ (q2) until BONTOURIS_ENABLED.
+      @faq_items = @faq_items.except(:q2) unless BontourisPausable.enabled?
 
       # Top 3 trending questions (most commonly accessed)
       @trending_keys = %w[q5 q7 q12]
