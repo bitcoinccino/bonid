@@ -227,19 +227,58 @@ module Api
         render json: payload, status: status
       end
 
+      # ── Scope → identity fields (ALLOW-LIST) ─────────────────────────
+      # The ONLY identity keys a partner can ever receive. A key that is not
+      # listed here is never sent — so a field added to build_citizen_result
+      # or build_tourist_result stays hidden until it is mapped to a scope.
+      # qr_code is deliberately in no scope: it is never sent to partners.
+      ALWAYS_IDENTITY_FIELDS = %i[bonid masked_bonid id_type verification].freeze
+
+      ADDRESS_FIELDS = %i[
+        address department commune street_address locality
+        communal_section arrondissement postal_code country
+        accommodation
+      ].freeze
+
+      SCOPE_IDENTITY_FIELDS = {
+        "profile"            => %i[first_name middle_name last_name full_name date_of_birth age
+                                   sex nationality photo_url
+                                   country_code passport_number passport_expiry visa_type
+                                   entry_date stay_duration_days],
+        "email"              => %i[email],
+        "phone"              => %i[phone],
+        "address"            => ADDRESS_FIELDS,
+        "health"             => %i[blood_type organ_donor allergies chronic_conditions medications],
+        "physical"           => %i[height weight eye_color hair_color hair_style body_type skin_tone
+                                   race facial_hair handedness],
+        "identity:verify"    => %i[photo_url biometrics biometric_verification],
+        "tax"                => %i[nif matricule_fiscale tax_id],
+        "civil"              => %i[place_of_birth family_members birth_certificate_ref],
+        "emergency_contacts" => %i[emergency_contacts],
+        "social"             => %i[social_handles]
+      }.freeze
+
+      # identity:details = every mapped field (still never qr_code).
+      ALL_SCOPED_IDENTITY_FIELDS = SCOPE_IDENTITY_FIELDS.values.flatten.uniq.freeze
+
+      def allowed_identity_fields(scopes)
+        scopes = Array(scopes).map(&:to_s)
+        scoped = scopes.include?("identity:details") ? ALL_SCOPED_IDENTITY_FIELDS : scopes.flat_map { |sc| SCOPE_IDENTITY_FIELDS.fetch(sc, []) }
+        (ALWAYS_IDENTITY_FIELDS + scoped).uniq
+      end
+
+      # Keep only the identity keys the scopes allow.
+      def apply_identity_allow_list!(identity, scopes)
+        allowed = allowed_identity_fields(scopes)
+        identity.keep_if { |k, _| allowed.include?(k.to_sym) }
+      end
+
       # ── Transaction-Type Implicit Scopes ──────────────────────────
       # Certain transaction types REQUIRE specific data to function.
       # These scopes are auto-injected regardless of what the partner
       # explicitly requested — the transaction type itself justifies
       # the data need.
       # ────────────────────────────────────────────────────────────────
-      # Every identity key the "address" scope unlocks. Both scope filters
-      # strip these when "address" is not granted — add new address keys here.
-      ADDRESS_FIELDS = %i[
-        address department commune street_address locality
-        communal_section arrondissement postal_code country
-      ].freeze
-
       TRANSACTION_TYPE_IMPLICIT_SCOPES = {
         # Embassy visa processing needs biometrics for facial match
         "visa_processing"    => %w[identity:verify profile],
@@ -259,8 +298,7 @@ module Api
       }.freeze
 
       # ── Double-Lock: Consent Scope Filtering ────────────────────
-      # Returns ONLY the data the citizen consented to.
-      # Photo is guarded under "profile" or "identity:verify" scope.
+      # Returns ONLY the data the citizen consented to (allow-list).
       # Transaction-type implicit scopes are auto-injected.
       # ───────────────────────────────────────────────────────────────
       def filter_response_by_consent_scopes(payload, consent_scopes)
@@ -275,67 +313,7 @@ module Api
         identity = payload[:identity]
         return payload unless identity.is_a?(Hash)
 
-        # Full access scope — skip filtering
-        return payload if scopes.include?("identity:details")
-
-        # Profile: name, DOB, sex, nationality, photo
-        unless scopes.include?("profile")
-          %i[first_name middle_name last_name full_name
-             date_of_birth age sex nationality].each { |k| identity.delete(k) }
-          # Photo is ONLY available with "profile" or "identity:verify"
-          identity.delete(:photo_url) unless scopes.include?("identity:verify")
-        end
-
-        # Email
-        identity.delete(:email) unless scopes.include?("email")
-
-        # Phone
-        identity.delete(:phone) unless scopes.include?("phone")
-
-        # Address
-        unless scopes.include?("address")
-          ADDRESS_FIELDS.each { |k| identity.delete(k) }
-        end
-
-        # Health (blood type, organ donor, allergies, conditions, medications)
-        unless scopes.include?("health")
-          %i[blood_type organ_donor allergies chronic_conditions medications].each { |k| identity.delete(k) }
-        end
-
-        # Physical traits
-        unless scopes.include?("physical")
-          %i[height weight eye_color hair_color hair_style body_type skin_tone
-             race facial_hair handedness].each { |k| identity.delete(k) }
-        end
-
-        # Biometrics: both blocks only with identity:verify
-        unless scopes.include?("identity:verify")
-          identity.delete(:biometrics)
-          identity.delete(:biometric_verification)
-        end
-
-        # Tax data (NIF / Matricule Fiscale) — future field
-        unless scopes.include?("tax")
-          %i[nif matricule_fiscale tax_id].each { |k| identity.delete(k) }
-        end
-
-        # Civil registry data (family members, place of birth)
-        unless scopes.include?("civil")
-          %i[family_members place_of_birth birth_certificate_ref].each { |k| identity.delete(k) }
-        end
-
-        # Emergency contacts
-        unless scopes.include?("emergency_contacts")
-          identity.delete(:emergency_contacts)
-        end
-
-        # Social handles
-        unless scopes.include?("social")
-          identity.delete(:social_handles)
-        end
-
-        # QR code: never included in consent-gated responses
-        identity.delete(:qr_code)
+        apply_identity_allow_list!(identity, scopes)
 
         payload[:granted_scopes] = scopes
         payload[:consent_token] = @consent.consent_token
@@ -363,60 +341,18 @@ module Api
         payload
       end
 
-      # ── Scope-Based Response Filtering ─────────────────────────────
-      # Strips identity fields that the Bearer token doesn't have
-      # scope access to. API-key-only requests (no OAuth token) get
-      # full access — scope restrictions apply only to OAuth tokens.
+      # ── OAuth Scope Filtering ──────────────────────────────────────
+      # Bearer-token callers get only the fields their token's scopes allow
+      # (same allow-list as consent). Only called when @oauth_token exists.
       # ───────────────────────────────────────────────────────────────
       def filter_response_by_scopes(payload)
-        # API-key auth = full access (no token, no filtering)
-        return payload if @oauth_token.nil?
+        return strip_pii(payload) if @oauth_token.nil?
 
         scopes   = Array(@oauth_token.scopes).map(&:to_s)
         identity = payload[:identity]
         return payload unless identity.is_a?(Hash)
 
-        # Profile scope: name, DOB, sex, nationality, photo
-        unless scopes.include?("profile")
-          %i[first_name middle_name last_name full_name
-             date_of_birth age sex nationality photo_url].each { |k| identity.delete(k) }
-        end
-
-        # Email scope
-        unless scopes.include?("email")
-          identity.delete(:email)
-        end
-
-        # Phone scope
-        unless scopes.include?("phone")
-          identity.delete(:phone)
-        end
-
-        # Address scope
-        unless scopes.include?("address")
-          ADDRESS_FIELDS.each { |k| identity.delete(k) }
-        end
-
-        # Health scope
-        unless scopes.include?("health")
-          %i[blood_type organ_donor allergies chronic_conditions medications].each { |k| identity.delete(k) }
-        end
-
-        # Physical scope
-        unless scopes.include?("physical")
-          %i[height weight eye_color hair_color hair_style body_type skin_tone
-             race facial_hair handedness].each { |k| identity.delete(k) }
-        end
-
-        # Emergency contacts scope
-        unless scopes.include?("emergency_contacts")
-          identity.delete(:emergency_contacts)
-        end
-
-        # Social handles scope
-        unless scopes.include?("social")
-          identity.delete(:social_handles)
-        end
+        apply_identity_allow_list!(identity, scopes)
 
         # Include granted scopes in response for transparency
         payload[:granted_scopes] = scopes
