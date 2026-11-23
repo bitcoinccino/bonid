@@ -74,6 +74,7 @@
           <div class="dev-tabs" role="tablist">
             <% tabs = [
               { id: "identity", icon: "ri-user-search-line" },
+              { id: "profile",  icon: "ri-profile-line" },
               { id: "consent",  icon: "ri-shield-check-line" },
               ({ id: "crime",   icon: "ri-alarm-warning-line" } if idpol_extras_enabled?),
               { id: "qr",       icon: "ri-qr-scan-2-line" },
@@ -144,6 +145,79 @@
   },
   <span style="color: #86efac;">"partner"</span>: <span style="color: #86efac;">"Zellus"</span>,
   <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-03-23T23:30:37-04:00"</span>
+}</code></pre>
+
+          <%# BonID Profile — consent-gated identity details. Fields mirror
+              Api::V1::IdentityController#build_citizen_result after
+              filter_response_by_consent_scopes with profile + address +
+              identity:verify. Health, physical, tax, civil, social and
+              emergency contacts are only returned if the citizen approved them. %>
+          <pre id="api-profile" class="dev-code-block mb-0 flex-grow-1" style="display: none;"><code><span style="color: #7dd3fc;">GET</span> /api/v1/identity/<span style="color: #86efac;">{bonid}</span>?consent_token=<span style="color: #86efac;">{consent_token}</span>
+<span style="color: #94a3b8;">Headers:</span> X-Partner-Api-Key: YOUR_KEY
+
+<span style="color: #94a3b8;">Response:</span> <span style="color: #7dd3fc;">200 OK</span>
+{
+  <span style="color: #86efac;">"status"</span>: <span style="color: #86efac;">"success"</span>,
+  <span style="color: #86efac;">"bonid"</span>: <span style="color: #86efac;">"BZ-1970-M-ND-P2334-0B6"</span>,
+  <span style="color: #86efac;">"id_type"</span>: <span style="color: #86efac;">"citizen"</span>,
+  <span style="color: #86efac;">"verified"</span>: <span style="color: #7dd3fc;">true</span>,
+  <span style="color: #86efac;">"identity"</span>: {
+    <span style="color: #86efac;">"bonid"</span>: <span style="color: #86efac;">"BZ-1970-M-ND-P2334-0B6"</span>,
+    <span style="color: #86efac;">"masked_bonid"</span>: <span style="color: #86efac;">"MB•••••••••3340B6"</span>,
+    <span style="color: #86efac;">"id_type"</span>: <span style="color: #86efac;">"BonID"</span>,
+    <span style="color: #86efac;">"first_name"</span>: <span style="color: #86efac;">"Jean-Pierre"</span>,
+    <span style="color: #86efac;">"middle_name"</span>: <span style="color: #7dd3fc;">null</span>,
+    <span style="color: #86efac;">"last_name"</span>: <span style="color: #86efac;">"Louis"</span>,
+    <span style="color: #86efac;">"full_name"</span>: <span style="color: #86efac;">"Jean-Pierre Louis"</span>,
+    <span style="color: #86efac;">"date_of_birth"</span>: <span style="color: #86efac;">"1970-06-14"</span>,
+    <span style="color: #86efac;">"age"</span>: <span style="color: #7dd3fc;">56</span>,
+    <span style="color: #86efac;">"sex"</span>: <span style="color: #86efac;">"M"</span>,
+    <span style="color: #86efac;">"nationality"</span>: <span style="color: #86efac;">"Haitian"</span>,
+    <span style="color: #86efac;">"address"</span>: <span style="color: #86efac;">"Rue 15, HT1110, CAP-HAÏTIEN, NORD, HAITI"</span>,
+    <span style="color: #86efac;">"department"</span>: <span style="color: #86efac;">"Nord"</span>,
+    <span style="color: #86efac;">"commune"</span>: <span style="color: #86efac;">"Cap-Haïtien"</span>,
+    <span style="color: #86efac;">"street_address"</span>: <span style="color: #86efac;">"Rue 15"</span>,
+    <span style="color: #86efac;">"locality"</span>: <span style="color: #7dd3fc;">null</span>,
+    <span style="color: #86efac;">"communal_section"</span>: <span style="color: #86efac;">"3e Section Bas du Cap"</span>,
+    <span style="color: #86efac;">"arrondissement"</span>: <span style="color: #86efac;">"Cap-Haïtien"</span>,
+    <span style="color: #86efac;">"postal_code"</span>: <span style="color: #86efac;">"HT1110"</span>,
+    <span style="color: #86efac;">"country"</span>: <span style="color: #86efac;">"Haiti"</span>,
+    <span style="color: #86efac;">"verification"</span>: {
+      <span style="color: #86efac;">"verified"</span>: <span style="color: #7dd3fc;">true</span>,
+      <span style="color: #86efac;">"verified_at"</span>: <span style="color: #86efac;">"2026-03-08T15:30:00Z"</span>,
+      <span style="color: #86efac;">"expires_at"</span>: <span style="color: #86efac;">"2036-03-08T15:30:00Z"</span>,
+      <span style="color: #86efac;">"submission_type"</span>: <span style="color: #86efac;">"initial"</span>,
+      <span style="color: #86efac;">"document_type"</span>: <span style="color: #86efac;">"cin"</span>,
+      <span style="color: #86efac;">"reference"</span>: <span style="color: #86efac;">"7c9e6679-7425-40de-944b-e07fc1f90ae7"</span>
+    },
+    <span style="color: #86efac;">"biometric_verification"</span>: {
+      <span style="color: #86efac;">"liveness_passed"</span>: <span style="color: #7dd3fc;">true</span>,
+      <span style="color: #86efac;">"liveness_confidence"</span>: <span style="color: #7dd3fc;">98.4</span>,
+      <span style="color: #86efac;">"face_matched"</span>: <span style="color: #7dd3fc;">true</span>,
+      <span style="color: #86efac;">"face_similarity"</span>: <span style="color: #7dd3fc;">96.1</span>,
+      <span style="color: #86efac;">"compared_against"</span>: <span style="color: #86efac;">"cin_front"</span>,
+      <span style="color: #86efac;">"threshold"</span>: <span style="color: #7dd3fc;">80.0</span>,
+      <span style="color: #86efac;">"verified_at"</span>: <span style="color: #86efac;">"2026-03-08T15:12:44Z"</span>
+    },
+    <span style="color: #86efac;">"biometrics"</span>: {
+      <span style="color: #86efac;">"liveness_confidence"</span>: <span style="color: #7dd3fc;">98.4</span>,
+      <span style="color: #86efac;">"face_match_similarity"</span>: <span style="color: #7dd3fc;">96.1</span>,
+      <span style="color: #86efac;">"face_match_threshold"</span>: <span style="color: #7dd3fc;">80.0</span>,
+      <span style="color: #86efac;">"audit_status"</span>: <span style="color: #86efac;">"passed"</span>,
+      <span style="color: #86efac;">"challenge_type"</span>: <span style="color: #86efac;">"FaceMovementAndLightChallenge"</span>,
+      <span style="color: #86efac;">"verified_with_review"</span>: <span style="color: #7dd3fc;">false</span>,
+      <span style="color: #86efac;">"biometrics_reused"</span>: <span style="color: #7dd3fc;">false</span>,
+      <span style="color: #86efac;">"liveness_checked_at"</span>: <span style="color: #86efac;">"2026-03-08T15:12:30Z"</span>,
+      <span style="color: #86efac;">"face_matched_at"</span>: <span style="color: #86efac;">"2026-03-08T15:12:44Z"</span>
+    },
+    <span style="color: #86efac;">"photo_url"</span>: <span style="color: #86efac;">"https://…/selfie.jpg"</span>
+  },
+  <span style="color: #86efac;">"partner"</span>: <span style="color: #86efac;">"Zellus"</span>,
+  <span style="color: #86efac;">"timestamp"</span>: <span style="color: #86efac;">"2026-03-23T23:31:02-04:00"</span>,
+  <span style="color: #86efac;">"api_version"</span>: <span style="color: #86efac;">"1.1.0"</span>,
+  <span style="color: #86efac;">"granted_scopes"</span>: [<span style="color: #86efac;">"profile"</span>, <span style="color: #86efac;">"address"</span>, <span style="color: #86efac;">"identity:verify"</span>],
+  <span style="color: #86efac;">"consent_token"</span>: <span style="color: #86efac;">"81f81ef7b9f5339085b7..."</span>,
+  <span style="color: #86efac;">"consent_expires_at"</span>: <span style="color: #86efac;">"2026-03-24T00:30:40Z"</span>
 }</code></pre>
 
           <%# Transaction Consent %>
@@ -310,7 +384,7 @@
 
 <script>
   function showApiTab(tab, btn) {
-    ['identity', 'consent', 'crime', 'qr', 'webhook', 'vote'].forEach(function(t) {
+    ['identity', 'profile', 'consent', 'crime', 'qr', 'webhook', 'vote'].forEach(function(t) {
       var el = document.getElementById('api-' + t);
       if (el) el.style.display = 'none';
     });
