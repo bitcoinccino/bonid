@@ -23,6 +23,13 @@ RSpec.describe "Api::V1::Verifications", type: :request, real_auth: true do
         expect(json_response["citizen"]).to include("first_name", "last_name")
         expect(response.headers["X-RateLimit-Limit"]).to be_present
       end
+
+      it "returns a per-verification reference and never the reviewer's name" do
+        post "/api/v1/verify_identity", params: { bonid: user.bonid }.to_json, headers: headers
+        verification = json_response["verification"]
+        expect(verification["reference"]).to eq(user.verified_identity_submission.uuid)
+        expect(verification).not_to have_key("verified_by")
+      end
     end
 
     context "when BonID exists but is not verified" do

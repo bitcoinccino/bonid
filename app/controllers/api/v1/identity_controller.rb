@@ -233,6 +233,13 @@ module Api
       # explicitly requested — the transaction type itself justifies
       # the data need.
       # ────────────────────────────────────────────────────────────────
+      # Every identity key the "address" scope unlocks. Both scope filters
+      # strip these when "address" is not granted — add new address keys here.
+      ADDRESS_FIELDS = %i[
+        address department commune street_address locality
+        communal_section arrondissement postal_code country
+      ].freeze
+
       TRANSACTION_TYPE_IMPLICIT_SCOPES = {
         # Embassy visa processing needs biometrics for facial match
         "visa_processing"    => %w[identity:verify profile],
@@ -287,7 +294,7 @@ module Api
 
         # Address
         unless scopes.include?("address")
-          %i[address department commune].each { |k| identity.delete(k) }
+          ADDRESS_FIELDS.each { |k| identity.delete(k) }
         end
 
         # Health (blood type, organ donor, allergies, conditions, medications)
@@ -301,9 +308,10 @@ module Api
              race facial_hair handedness].each { |k| identity.delete(k) }
         end
 
-        # Biometrics: only with identity:verify
+        # Biometrics: both blocks only with identity:verify
         unless scopes.include?("identity:verify")
           identity.delete(:biometrics)
+          identity.delete(:biometric_verification)
         end
 
         # Tax data (NIF / Matricule Fiscale) — future field
@@ -386,7 +394,7 @@ module Api
 
         # Address scope
         unless scopes.include?("address")
-          %i[address department commune].each { |k| identity.delete(k) }
+          ADDRESS_FIELDS.each { |k| identity.delete(k) }
         end
 
         # Health scope
@@ -520,6 +528,15 @@ module Api
             address: user.full_address,
             department: user.address&.department&.name,
             commune: user.address&.commune&.name,
+            # Structured address parts (same fields the citizen fills on
+            # their profile). Guarded by the "address" scope — see
+            # ADDRESS_FIELDS in both scope filters.
+            street_address: user.address&.street_address,
+            locality: user.address&.locality,
+            communal_section: user.address&.communal_section&.name,
+            arrondissement: (user.address&.arrondissement || user.address&.commune&.arrondissement)&.name,
+            postal_code: user.address&.postal_code,
+            country: user.address&.country.presence || (user.address && "Haiti"),
             # Health (HealthProfile)
             blood_type: user.health_profile&.blood_type,
             organ_donor: user.health_profile&.organ_donor,
@@ -563,10 +580,12 @@ module Api
             verification: {
               verified: true,
               verified_at: submission.updated_at&.iso8601,
-              verified_by: submission.reviewer&.full_name,
               expires_at: submission.expires_at&.iso8601,
               submission_type: submission.submission_type,
-              document_type: submission.id_type
+              document_type: submission.id_type,
+              # Dispute reference for this verification only (submission UUID).
+              # Never the reviewer: BonID support maps it to the reviewer internally.
+              reference: submission.uuid
             },
             biometric_verification: build_biometric_verification(submission),
             biometrics: build_biometrics_block(submission),

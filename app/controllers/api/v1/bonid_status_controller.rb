@@ -48,7 +48,7 @@ module Api
           },
           verification: {
             verified_on: safe_time(submission.updated_at),
-            verified_by: submission.reviewer&.full_name,
+            reference:   submission.uuid, # dispute reference; never the reviewer
             qr_url:      submission.qr_png_base64.present? ?
                            "data:image/png;base64,#{submission.qr_png_base64}" : nil,
             photo_url:   photo_url

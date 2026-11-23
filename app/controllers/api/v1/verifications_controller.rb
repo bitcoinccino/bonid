@@ -74,7 +74,7 @@ module Api
           },
           verification: {
             verified_on: verified.updated_at&.iso8601,
-            verified_by: verified.reviewer&.full_name,
+            reference:   verified.uuid, # dispute reference; never the reviewer
             qr_type:     qr_type,
             qr_url:      (qr_b64.present? ? "data:image/png;base64,#{qr_b64}" : nil),
             photo_url:   photo_url

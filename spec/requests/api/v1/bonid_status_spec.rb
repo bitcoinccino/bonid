@@ -20,6 +20,13 @@ RSpec.describe "Api::V1::BonidStatus", type: :request, real_auth: true do
         expect(json["bonid"]).to eq(user.bonid)
         expect(json["status"]).to eq("verified")
       end
+
+      it "returns a per-verification reference and never the reviewer's name" do
+        get "/api/v1/bonid_status", params: { bonid: user.bonid }, headers: headers
+        verification = JSON.parse(response.body)["verification"]
+        expect(verification["reference"]).to eq(submission.uuid)
+        expect(verification).not_to have_key("verified_by")
+      end
     end
 
     context "when BonID does not exist" do
