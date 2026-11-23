@@ -113,4 +113,32 @@ RSpec.describe "Api::V1::Identity with consent_token", type: :request, real_auth
       expect(identity["biometric_verification"]).to include("liveness_passed" => true, "face_matched" => true)
     end
   end
+
+  context "contact scopes" do
+    before { citizen.update_columns(email: "jp.louis@example.com", phone: "+50937000000") }
+
+    it "returns email and phone when the citizen approved those scopes" do
+      fetch(approved_consent("account_opening", scopes: %w[profile email phone]))
+      expect(response).to have_http_status(:ok)
+
+      identity = JSON.parse(response.body)["identity"]
+      expect(identity).to include("email" => "jp.louis@example.com", "phone" => "+50937000000")
+    end
+
+    it "returns only the contact field that was approved" do
+      fetch(approved_consent("account_opening", scopes: %w[profile email]))
+
+      identity = JSON.parse(response.body)["identity"]
+      expect(identity["email"]).to eq("jp.louis@example.com")
+      expect(identity).not_to have_key("phone")
+    end
+
+    it "returns neither without the email or phone scopes" do
+      fetch(approved_consent("account_opening", scopes: %w[profile]))
+
+      identity = JSON.parse(response.body)["identity"]
+      expect(identity).not_to have_key("email")
+      expect(identity).not_to have_key("phone")
+    end
+  end
 end

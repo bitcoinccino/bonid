@@ -525,6 +525,9 @@ module Api
             age: user.age,
             sex: user.sex,
             nationality: user.nationality || "Haitian",
+            # Contact — guarded by the "email" / "phone" scopes in both filters
+            email: user.email.presence,
+            phone: user.phone.presence,
             address: user.full_address,
             department: user.address&.department&.name,
             commune: user.address&.commune&.name,
@@ -616,6 +619,9 @@ module Api
             age: visitor.dob.present? ? ((Date.current - visitor.dob.to_date) / 365.25).to_i : nil,
             sex: visitor.sex,
             nationality: visitor.nationality,
+            # Contact — guarded by the "email" / "phone" scopes in both filters
+            email: visitor.email.presence,
+            phone: visitor.phone.presence,
             country_code: visitor.residence_country || extract_country_code(visitor.bonid),
             passport_number: mask_passport(visitor.passport_number),
             passport_expiry: visitor.passport_expiry_date&.iso8601,
