@@ -27,6 +27,14 @@ RSpec.describe "Api::V1::BonidStatus", type: :request, real_auth: true do
         expect(verification["reference"]).to eq(submission.uuid)
         expect(verification).not_to have_key("verified_by")
       end
+
+      it "returns no personal data, photo or QR without consent" do
+        get "/api/v1/bonid_status", params: { bonid: user.bonid }, headers: headers
+        json = JSON.parse(response.body)
+        expect(json).not_to have_key("citizen")
+        expect(json["access_level"]).to eq("verification_only")
+        expect(json["verification"].keys).to contain_exactly("verified_on", "expires_at", "reference")
+      end
     end
 
     context "when BonID does not exist" do
