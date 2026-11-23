@@ -78,6 +78,28 @@ class Partner < ApplicationRecord
     crime:full
   ].freeze
 
+  # Default scopes a partner may request when no explicit allowed_scopes are
+  # set. Least privilege: crime:* is for law-enforcement partners only, and
+  # health/physical (paused profile cards) are never granted by default.
+  # Setting allowed_scopes on a partner overrides these defaults.
+  BASE_PARTNER_SCOPES = %w[
+    openid
+    profile
+    email
+    phone
+    address
+    identity:verify
+    identity:details
+    verifications:verify_identity
+  ].freeze
+
+  LAW_ENFORCEMENT_SCOPES = %w[
+    crime:status
+    crime:reports
+    crime:certificate
+    crime:full
+  ].freeze
+
   # API scope descriptions for documentation
   API_SCOPES_DESCRIPTION = {
     # Identity verification scopes
@@ -276,13 +298,19 @@ class Partner < ApplicationRecord
 
   # Check if a scope is allowed for this partner
   def scope_allowed?(scope)
-    return true if allowed_scopes.blank? # No restrictions
-    allowed_scopes.include?(scope.to_s)
+    effective_allowed_scopes.include?(scope.to_s)
   end
 
-  # Get effective allowed scopes (with fallback to all valid scopes)
+  # Explicit allowed_scopes win; otherwise the sector default.
   def effective_allowed_scopes
-    allowed_scopes.presence || VALID_OAUTH_SCOPES
+    allowed_scopes.presence || default_scopes_for_sector
+  end
+
+  # Sector default: base scopes for everyone, plus crime:* for law enforcement.
+  def default_scopes_for_sector
+    return BASE_PARTNER_SCOPES + LAW_ENFORCEMENT_SCOPES if sector.to_s == "law_enforcement"
+
+    BASE_PARTNER_SCOPES
   end
 
   # Validate and filter requested scopes

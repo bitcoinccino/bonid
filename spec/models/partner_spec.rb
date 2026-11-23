@@ -191,15 +191,40 @@ RSpec.describe Partner, type: :model do
     end
 
     describe "#scope_allowed?" do
-      it "allows all scopes when no restrictions" do
-        partner = build(:partner, allowed_scopes: nil)
+      it "allows base scopes by default but not crime or health scopes" do
+        partner = build(:partner, allowed_scopes: nil, sector: "banking")
         expect(partner.scope_allowed?("identity:verify")).to be true
+        expect(partner.scope_allowed?("identity:details")).to be true
+        expect(partner.scope_allowed?("crime:status")).to be false
+        expect(partner.scope_allowed?("crime:full")).to be false
+        expect(partner.scope_allowed?("health")).to be false
+        expect(partner.scope_allowed?("physical")).to be false
+      end
+
+      it "adds crime scopes by default for law-enforcement partners" do
+        partner = build(:partner, allowed_scopes: nil, sector: "law_enforcement")
+        expect(partner.scope_allowed?("identity:verify")).to be true
+        expect(partner.scope_allowed?("crime:status")).to be true
+        expect(partner.scope_allowed?("crime:full")).to be true
+        expect(partner.scope_allowed?("health")).to be false
       end
 
       it "checks against allowed scopes" do
         partner = build(:partner, allowed_scopes: [ "identity:verify" ])
         expect(partner.scope_allowed?("identity:verify")).to be true
         expect(partner.scope_allowed?("crime:full")).to be false
+      end
+    end
+
+    describe "#filter_scopes" do
+      it "drops crime scopes a non-law-enforcement partner asks for" do
+        partner = build(:partner, allowed_scopes: nil, sector: "banking")
+        expect(partner.filter_scopes(%w[openid profile crime:full])).to eq(%w[openid profile])
+      end
+
+      it "keeps crime scopes for a law-enforcement partner" do
+        partner = build(:partner, allowed_scopes: nil, sector: "law_enforcement")
+        expect(partner.filter_scopes(%w[openid crime:status])).to eq(%w[openid crime:status])
       end
     end
   end
