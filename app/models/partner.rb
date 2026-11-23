@@ -76,6 +76,8 @@ class Partner < ApplicationRecord
     crime:reports
     crime:certificate
     crime:full
+    fiscal_receipts:read
+    fiscal_receipts:consume
   ].freeze
 
   # Default scopes a partner may request when no explicit allowed_scopes are
@@ -94,6 +96,8 @@ class Partner < ApplicationRecord
     verifications:verify_identity
   ].freeze
 
+  # fiscal_receipts:* are never a default for any sector: they read payer
+  # data and can burn a citizen's DGI receipt. Explicit allowed_scopes only.
   LAW_ENFORCEMENT_SCOPES = %w[
     crime:status
     crime:reports
@@ -148,7 +152,6 @@ class Partner < ApplicationRecord
   # ============================================================
   before_validation :set_slug, on: %i[create update]
   before_validation :set_sector_from_department, on: %i[create update]
-  before_validation :set_default_oauth_scopes, on: :create
   before_validation :set_default_transaction_types, on: :create
   before_validation :ensure_default_redirect_uri, if: -> { redirect_uris.present? }
   before_create :generate_api_key_pair, if: -> { api_key_digest.blank? }
@@ -703,10 +706,6 @@ class Partner < ApplicationRecord
 
     invalid_scopes = allowed_scopes - VALID_OAUTH_SCOPES
     errors.add(:allowed_scopes, "contains invalid scopes: #{invalid_scopes.join(', ')}") if invalid_scopes.any?
-  end
-
-  def set_default_oauth_scopes
-    self.allowed_scopes ||= VALID_OAUTH_SCOPES
   end
 
   def set_default_transaction_types
