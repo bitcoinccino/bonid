@@ -81,7 +81,9 @@ class Partner < ApplicationRecord
   # Default scopes a partner may request when no explicit allowed_scopes are
   # set. Least privilege: crime:* is for law-enforcement partners only, and
   # health/physical (paused profile cards) are never granted by default.
-  # Setting allowed_scopes on a partner overrides these defaults.
+  # identity:details is NOT a default either: it skips consent filtering and
+  # returns everything (health, physical, tax, social...). Grant it only
+  # explicitly via allowed_scopes. Setting allowed_scopes overrides these.
   BASE_PARTNER_SCOPES = %w[
     openid
     profile
@@ -89,7 +91,6 @@ class Partner < ApplicationRecord
     phone
     address
     identity:verify
-    identity:details
     verifications:verify_identity
   ].freeze
 
@@ -104,7 +105,7 @@ class Partner < ApplicationRecord
   API_SCOPES_DESCRIPTION = {
     # Identity verification scopes
     "identity:verify" => "Verify BonID/BonTouris and check verification status",
-    "identity:details" => "Access full identity details (name, DOB, address, photo)",
+    "identity:details" => "Access ALL BonID data, unfiltered (incl. health, physical, tax, social). Explicit grant only.",
 
     # Crime status scopes
     "crime:status" => "Check crime involvement status for BonID/BonTouris holders",

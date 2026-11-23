@@ -194,7 +194,7 @@ RSpec.describe Partner, type: :model do
       it "allows base scopes by default but not crime or health scopes" do
         partner = build(:partner, allowed_scopes: nil, sector: "banking")
         expect(partner.scope_allowed?("identity:verify")).to be true
-        expect(partner.scope_allowed?("identity:details")).to be true
+        expect(partner.scope_allowed?("identity:details")).to be false
         expect(partner.scope_allowed?("crime:status")).to be false
         expect(partner.scope_allowed?("crime:full")).to be false
         expect(partner.scope_allowed?("health")).to be false
@@ -206,6 +206,7 @@ RSpec.describe Partner, type: :model do
         expect(partner.scope_allowed?("identity:verify")).to be true
         expect(partner.scope_allowed?("crime:status")).to be true
         expect(partner.scope_allowed?("crime:full")).to be true
+        expect(partner.scope_allowed?("identity:details")).to be false
         expect(partner.scope_allowed?("health")).to be false
       end
 
@@ -217,6 +218,14 @@ RSpec.describe Partner, type: :model do
     end
 
     describe "#filter_scopes" do
+      it "drops identity:details unless explicitly allowed" do
+        partner = build(:partner, allowed_scopes: nil, sector: "banking")
+        expect(partner.filter_scopes(%w[openid identity:details])).to eq(%w[openid])
+
+        explicit = build(:partner, allowed_scopes: %w[openid identity:details])
+        expect(explicit.filter_scopes(%w[openid identity:details])).to eq(%w[openid identity:details])
+      end
+
       it "drops crime scopes a non-law-enforcement partner asks for" do
         partner = build(:partner, allowed_scopes: nil, sector: "banking")
         expect(partner.filter_scopes(%w[openid profile crime:full])).to eq(%w[openid profile])
