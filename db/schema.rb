@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_20_030000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_26_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -305,8 +305,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_20_030000) do
     t.bigint "department_id", null: false
     t.boolean "launched", default: false, null: false
     t.datetime "launched_at"
+    t.string "invite_prefix", limit: 4
     t.index ["arrondissement_id"], name: "index_communes_on_arrondissement_id"
     t.index ["department_id"], name: "index_communes_on_department_id"
+    t.index ["invite_prefix"], name: "index_communes_on_invite_prefix", unique: true
     t.index ["name"], name: "index_communes_on_name"
   end
 

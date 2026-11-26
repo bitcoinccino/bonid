@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
+# Waitlist emails. Links use the route helpers + the environment's
+# default_url_options (never a hard-coded domain), and carry the green light
+# that opens /signup: ?commune=<code> or ?invite=<code>.
 class WaitlistMailer < VerifyemMailer
   def confirmation(signup)
     @signup = signup
-    @share_url = "https://bonid.ht/enskri?ref=#{signup.referral_code}"
+    @share_url = enskri_url(ref: signup.referral_code)
     @commune_name = signup.commune&.name
     @commune_count = signup.commune_id ? WaitlistSignup.where(commune_id: signup.commune_id).count : 0
 
@@ -13,12 +16,11 @@ class WaitlistMailer < VerifyemMailer
     )
   end
 
-  # Sent when an admin launches the signup's commune. No invite code needed —
-  # the launched gate lets them register directly.
+  # Sent to everyone still waiting when an admin launches their commune.
   def commune_launched(signup)
     @signup = signup
     @commune_name = signup.commune&.name || "Haiti"
-    @register_url = "https://bonid.ht/users/sign_up"
+    @register_url = signup_url(commune: signup.commune&.code)
 
     mail(
       to: signup.email,
@@ -26,11 +28,12 @@ class WaitlistMailer < VerifyemMailer
     )
   end
 
+  # Sent when an admin invites one person (or a batch) from the waitlist.
   def invitation(signup, invite_code)
     @signup = signup
     @invite_code = invite_code
     @commune_name = signup.commune&.name || "Haiti"
-    @register_url = "https://bonid.ht/users/sign_up?invite=#{invite_code.code}"
+    @register_url = signup_url(invite: invite_code.code)
 
     mail(
       to: signup.email,

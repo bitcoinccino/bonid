@@ -84,10 +84,11 @@ module Admin
 
     private
 
+    # One-person code (DEL-7KQ2XA) that opens /signup?invite=… directly
     def generate_invite_code(signup)
       InviteCode.create!(
         commune_id: signup.commune_id,
-        code_type: "community",
+        code_type: "personal",
         max_uses: 1,
         expires_at: 30.days.from_now,
         note: "Waitlist invite for #{signup.email}"

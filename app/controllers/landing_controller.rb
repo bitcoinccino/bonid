@@ -28,18 +28,14 @@ class LandingController < ApplicationController
 
     @waitlist_signup = WaitlistSignup.new(waitlist_params)
 
-    # Check invite code if provided
+    # Check invite code if provided. It is redeemed on /signup once the
+    # account exists, not here.
     if params[:waitlist_signup][:invite_code_used].present?
-      code = InviteCode.find_by(code: params[:waitlist_signup][:invite_code_used].upcase.strip)
-      unless code&.valid_for_use?
-        return render_enskri_error(t_landing("invalid_invite_code"))
-      end
+      code = InviteCode.find_available(params[:waitlist_signup][:invite_code_used])
+      return render_enskri_error(t_landing("invalid_invite_code")) unless code
     end
 
     if @waitlist_signup.save
-      # Redeem invite code if used
-      code&.redeem! if code.present?
-
       # Organizations don't roll out by commune — hand them off to the partner
       # application pipeline (vetting/approval) instead of the geographic gate.
       if @waitlist_signup.signup_type == "business"
@@ -59,17 +55,20 @@ class LandingController < ApplicationController
 
       # Check if commune is launched or has valid invite code
       if @waitlist_signup.commune&.launched? || code.present?
-        enskri_redirect(new_user_registration_path, t_landing("account_ready"))
+        enskri_redirect(account_signup_path(@waitlist_signup, code), t_landing("account_ready"))
       else
         enskri_redirect(enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: @lang))
       end
     else
       # Surface the validation error (e.g. duplicate email) in place on the
       # wizard — modal stays open, the user's input is preserved.
-      render_enskri_error(
-        @waitlist_signup.errors.map(&:message).uniq.to_sentence.presence ||
-        t_landing("waitlist_error")
-      )
+      message =
+        if @waitlist_signup.errors.of_kind?(:email, :taken)
+          t_landing("email_taken")
+        else
+          @waitlist_signup.errors.map(&:message).uniq.to_sentence.presence || t_landing("waitlist_error")
+        end
+      render_enskri_error(message)
     end
   end
 
@@ -109,6 +108,17 @@ class LandingController < ApplicationController
   end
 
   private
+
+  # Where an individual goes once they may create an account: /signup
+  # carrying the green light that let them in (their invite code, or their
+  # launched commune).
+  def account_signup_path(signup, code)
+    if code
+      signup_path(lang: @lang, invite: code.code)
+    else
+      signup_path(lang: @lang, commune: signup.commune.code)
+    end
+  end
 
   # Error response for a failed signup. JSON for the wizard's in-place fetch
   # (modal stays open, no reload); HTML redirect + flash as a no-JS fallback.
@@ -153,15 +163,17 @@ class LandingController < ApplicationController
         "partner_next" => "Ann konfigire òganizasyon ou — ranpli aplikasyon patnè a.",
         "waitlist_success" => "Mesi! Nou pral kontakte ou le nou lanse nan zon ou.",
         "waitlist_error" => "Gen yon erè. Tanpri tcheke enfòmasyon ou yo epi eseye ankò.",
-        "too_fast" => "Tanpri rete yon ti moman epi eseye anko."
+        "too_fast" => "Tanpri rete yon ti moman epi eseye ankò.",
+        "email_taken" => "Imèl sa a enskri deja."
       },
       "fr" => {
-        "invalid_invite_code" => "Ce code d'invitation n'est pas valide ou a expire.",
-        "account_ready" => "Vous pouvez creer votre compte maintenant!",
-        "partner_next" => "Configurons votre organisation — completez votre demande de partenaire.",
-        "waitlist_success" => "Merci! Nous vous contacterons lors du lancement dans votre zone.",
-        "waitlist_error" => "Une erreur s'est produite. Veuillez verifier vos informations et reessayer.",
-        "too_fast" => "Veuillez patienter un moment et reessayer."
+        "invalid_invite_code" => "Ce code d'invitation n'est pas valide ou a expiré.",
+        "account_ready" => "Vous pouvez créer votre compte maintenant !",
+        "partner_next" => "Configurons votre organisation — complétez votre demande de partenaire.",
+        "waitlist_success" => "Merci ! Nous vous contacterons lors du lancement dans votre zone.",
+        "waitlist_error" => "Une erreur s'est produite. Veuillez vérifier vos informations et réessayer.",
+        "too_fast" => "Veuillez patienter un moment et réessayer.",
+        "email_taken" => "Cet e-mail est déjà inscrit."
       }
     }
     translations[@lang][key] || key

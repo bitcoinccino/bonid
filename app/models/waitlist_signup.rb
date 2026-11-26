@@ -34,6 +34,16 @@ class WaitlistSignup < ApplicationRecord
     update!(status: "converted", converted_at: Time.current)
   end
 
+  # Called when a citizen account is created: any waitlist entry with the
+  # same email becomes "converted" (admin metrics stay accurate without
+  # manual updates). Also the hook for crediting referrals later.
+  def self.convert_for!(email)
+    normalized = email.to_s.downcase.strip
+    return 0 if normalized.blank?
+    where(email: normalized).where.not(status: "converted")
+                            .update_all(status: "converted", converted_at: Time.current, updated_at: Time.current)
+  end
+
   def commune_launched?
     commune&.launched?
   end
