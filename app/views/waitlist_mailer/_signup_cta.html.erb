@@ -1,0 +1,37 @@
+<%# Shared body of the "you can sign up now" waitlist emails (launch +
+    invite): greeting, message, button, optional invite code, what BonID
+    is, help. Copy: mailers.waitlist_common.* plus the caller's own keys. %>
+<% w = ->(key, **opts) { t("mailers.waitlist_common.#{key}", **opts) } %>
+
+<h2 style="color: #00209F; font-family: 'Montserrat', Arial, sans-serif; margin: 0 0 16px;"><%= heading %></h2>
+
+<% if @signup.first_name.present? %>
+  <p style="margin: 0 0 12px;"><%= w.(:greeting, name: @signup.first_name) %></p>
+<% end %>
+
+<p style="margin: 0 0 16px;"><%= body %></p>
+
+<div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+  <% if local_assigns[:ready].present? %>
+    <p style="color: #4B5563; font-size: 13px; margin: 0 0 14px;"><%= ready %></p>
+  <% end %>
+  <a href="<%= @register_url %>"
+     style="display: inline-block; background: #00209F; color: #fff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-family: 'Montserrat', Arial, sans-serif; font-size: 16px;">
+    <%= w.(:create) %>
+  </a>
+  <% if local_assigns[:code_label].present? %>
+    <p style="font-size: 13px; color: #4B5563; margin: 14px 0 0;">
+      <%= code_label %> <strong style="font-family: monospace; letter-spacing: 1px; color: #111827;"><%= @invite_code.code %></strong>
+    </p>
+  <% end %>
+</div>
+
+<p style="font-size: 14px; line-height: 1.6; color: #374151; margin: 0 0 16px;">
+  <strong><%= w.(:what_is_title) %></strong> <%= w.(:what_is_body) %>
+</p>
+
+<p style="font-size: 13px; color: #4B5563; margin: 0 0 16px;">
+  <%= w.(:help) %> <a href="mailto:support@verifyem.ht" style="color: #00209F;">support@verifyem.ht</a>.
+</p>
+
+<p style="margin: 20px 0 0; color: #475467;"><%= w.(:signoff) %></p>

@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   get  "/enskri/confirmation", to: "landing#confirmation", as: :enskri_confirmation
   get  "/enskri/arrondissements", to: "landing#arrondissements"
   get  "/enskri/communes",        to: "landing#communes"
+  get  "/enskri/us_cities",       to: "landing#us_cities"
 
   # One-time secret portal (OAuth credentials)
   get "/secrets/:token", to: "one_time_secrets#show", as: :one_time_secret

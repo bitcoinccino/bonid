@@ -27,6 +27,7 @@ class LandingController < ApplicationController
     end
 
     @waitlist_signup = WaitlistSignup.new(waitlist_params)
+    @waitlist_signup.locale = I18n.locale.to_s # emails go out in this language
 
     # Check invite code if provided. It is redeemed on /signup once the
     # account exists, not here.
@@ -57,7 +58,8 @@ class LandingController < ApplicationController
       if @waitlist_signup.commune&.launched? || code.present?
         enskri_redirect(account_signup_path(@waitlist_signup, code), t_landing("account_ready"))
       else
-        enskri_redirect(enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: @lang))
+        # Full locale (en/fr/ht): the confirmation page is translated in all three
+        enskri_redirect(enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: I18n.locale))
       end
     else
       # Surface the validation error (e.g. duplicate email) in place on the
@@ -76,9 +78,11 @@ class LandingController < ApplicationController
     @signup = WaitlistSignup.find_by(referral_code: params[:ref])
     return redirect_to enskri_path unless @signup
 
-    @lang = params[:lang] == "fr" ? "fr" : "ht"
-    @share_url = "#{request.base_url}/enskri?ref=#{@signup.referral_code}"
-    @commune_count = @signup.commune.display_signups if @signup.commune
+    # Rendered in the visitor's locale (en/fr/ht via set_locale)
+    @share_url = enskri_url(ref: @signup.referral_code, lang: nil)
+    @commune = @signup.commune
+    @commune_count = @commune ? @commune.display_signups : WaitlistSignup.count
+    @masked_email = mask_email(@signup.email)
 
     # Standalone full-screen success page — render without the marketing chrome.
     render layout: "blank"
@@ -88,6 +92,13 @@ class LandingController < ApplicationController
   def arrondissements
     arr = Arrondissement.where(department_id: params[:department_id]).order(:name)
     render json: arr.map { |a| { id: a.id, name: a.name } }
+  end
+
+  # AJAX: city suggestions for a US state (curated first, then every Census
+  # place). Static data, so browsers may cache it.
+  def us_cities
+    expires_in 1.day, public: true
+    render json: DiasporaLocations.cities_for(params[:state]).to_json
   end
 
   # AJAX: return communes for a department (or arrondissement)
@@ -108,6 +119,15 @@ class LandingController < ApplicationController
   end
 
   private
+
+  # r***d@yahoo.com — enough for the person to recognize their address
+  def mask_email(email)
+    local, domain = email.to_s.split("@", 2)
+    return email if domain.blank?
+
+    masked = local.length <= 2 ? "#{local[0]}***" : "#{local[0]}***#{local[-1]}"
+    "#{masked}@#{domain}"
+  end
 
   # Where an individual goes once they may create an account: /signup
   # carrying the green light that let them in (their invite code, or their
@@ -150,7 +170,7 @@ class LandingController < ApplicationController
     params.require(:waitlist_signup).permit(
       :first_name, :last_name, :email, :phone, :signup_type,
       :commune_id, :sector, :organization_name, :invite_code_used,
-      :diaspora, :country_of_residence,
+      :diaspora, :country_of_residence, :residence_state, :residence_city,
       :rank, :unit_type, :unit_name
     )
   end

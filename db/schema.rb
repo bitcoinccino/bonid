@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_26_150000) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_26_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -2494,6 +2494,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_26_150000) do
     t.string "rank"
     t.string "unit_type"
     t.string "unit_name"
+    t.string "residence_state", limit: 3
+    t.string "residence_city", limit: 80
+    t.string "locale", limit: 5
     t.index ["commune_id"], name: "index_waitlist_signups_on_commune_id"
     t.index ["email"], name: "index_waitlist_signups_on_email", unique: true
     t.index ["referral_code"], name: "index_waitlist_signups_on_referral_code", unique: true

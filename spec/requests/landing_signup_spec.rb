@@ -43,11 +43,66 @@ RSpec.describe "Waitlist sign-up (/enskri)", type: :request do
     expect(body["ok"]).to be(false)
   end
 
+  it "remembers the language the person signed up in" do
+    post_signup({}, lang: "en")
+    expect(WaitlistSignup.find_by(email: "jean@example.com").locale).to eq("en")
+  end
+
+  it "saves a US diaspora signup's state and city" do
+    post_signup({ commune_id: nil, diaspora: "1", country_of_residence: "US",
+                  residence_state: "FL", residence_city: "Miami" })
+    expect(JSON.parse(response.body)["ok"]).to be(true)
+    signup = WaitlistSignup.find_by(email: "jean@example.com")
+    expect([signup.residence_state, signup.residence_city]).to eq(["FL", "Miami"])
+  end
+
+  it "shows the State and City fields in the form" do
+    get enskri_path(lang: "fr")
+    body = CGI.unescapeHTML(response.body)
+    expect(body).to include('id="modal_us_state"', "Florida", 'list="modal-us-city-list"', "Tapez le nom de votre ville")
+  end
+
+  it "returns a state's city suggestions" do
+    get "/enskri/us_cities", params: { state: "FL" }
+    cities = JSON.parse(response.body)
+    expect(cities.first).to eq("Miami")
+    expect(cities).to include("Hialeah")
+    expect(response.headers["Cache-Control"]).to include("public")
+  end
+
   it "reports a duplicate email in the visitor's language" do
     post_signup
     post_signup
     body = JSON.parse(response.body)
     expect(body["ok"]).to be(false)
     expect(body["error"]).to eq("Cet e-mail est déjà inscrit.")
+  end
+
+  describe "confirmation page" do
+    let(:signup) do
+      WaitlistSignup.create!(first_name: "Rose", email: "rosalind@yahoo.com", signup_type: "citizen", commune: commune)
+    end
+
+    {
+      "ht" => ["Ou sou lis la!", "Pataje sou WhatsApp", "Kopye lyen"],
+      "fr" => ["Vous êtes inscrit !", "Partager sur WhatsApp", "Copier le lien"],
+      "en" => ["You're on the list!", "Share on WhatsApp", "Copy link"]
+    }.each do |lang, (title, whatsapp, copy)|
+      it "renders in #{lang} only" do
+        get enskri_confirmation_path(ref: signup.referral_code, lang: lang)
+        body = CGI.unescapeHTML(response.body)
+        expect(body).to include(title, whatsapp, copy)
+        expect(body).to include("r***d@yahoo.com")
+        expect(body).to include("/enskri?ref=#{signup.referral_code}")
+        others = %w[ht fr en] - [lang]
+        titles = { "ht" => "Ou sou lis la!", "fr" => "Vous êtes inscrit !", "en" => "You're on the list!" }
+        others.each { |o| expect(body).not_to include(titles[o]) }
+      end
+    end
+
+    it "sends the visitor to the confirmation page in their language" do
+      post_signup({}, lang: "en")
+      expect(JSON.parse(response.body)["redirect"]).to include("/enskri/confirmation", "lang=en")
+    end
   end
 end

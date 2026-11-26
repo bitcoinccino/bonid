@@ -17,6 +17,7 @@
      data-error-email="<%= t('main.signup_form.error_email') %>"
      data-error-org="<%= t('main.signup_form.error_org') %>"
      data-error-sector="<%= t('main.signup_form.error_sector') %>"
+     data-error-state="<%= t('main.signup_form.error_state') %>"
      data-bonid-available="<%= t('main.signup_form.bonid_available') %>"
      data-coming-soon="<%= t('main.signup_form.coming_soon') %>"
      data-active-label="<%= t('main.signup_form.active') %>"
@@ -163,7 +164,28 @@
               %>
               <%= f.select :country_of_residence, d_all_countries,
                   { prompt: t("main.signup_form.choose_country") },
-                  { class: "form-select enskri-input", id: "modal_diaspora_country", disabled: true } %>
+                  { class: "form-select enskri-input", id: "modal_diaspora_country", disabled: true,
+                    onchange: "modalCountryChange(this.value)" } %>
+            </div>
+
+            <%# United States: State → City (curated cities for the largest
+                Haitian communities, free text everywhere else) %>
+            <div id="modal-us-fields" style="display: none;">
+              <div class="mb-3">
+                <label class="form-label fw-semibold enskri-label" for="modal_us_state"><%= t("main.signup_form.state") %></label>
+                <%= f.select :residence_state, DiasporaLocations.state_options,
+                    { prompt: t("main.signup_form.choose_state") },
+                    { class: "form-select enskri-input", id: "modal_us_state", disabled: true,
+                      onchange: "modalStateChange(this.value)" } %>
+              </div>
+              <div class="mb-3" id="modal-us-city-wrap" style="display: none;">
+                <label class="form-label fw-semibold enskri-label" for="modal_us_city"><%= t("main.signup_form.city") %></label>
+                <%# Type-to-search over the state's cities; any typed city is accepted %>
+                <input type="text" name="waitlist_signup[residence_city]" id="modal_us_city"
+                       list="modal-us-city-list" class="form-control enskri-input" maxlength="80"
+                       autocomplete="off" placeholder="<%= t("main.signup_form.city_placeholder") %>" disabled>
+                <datalist id="modal-us-city-list"></datalist>
+              </div>
             </div>
           </div>
 
@@ -295,6 +317,10 @@
     var em = document.getElementById('modal_email').value.trim();
     if (!em || !em.includes('@')) { enskriShowError(modalData.errorEmail); return false; }
 
+    if (document.getElementById('modal_diaspora').value === '1' &&
+        document.getElementById('modal_diaspora_country').value === 'US' &&
+        !document.getElementById('modal_us_state').value) { enskriShowError(modalData.errorState); return false; }
+
     if (document.getElementById('modal_signup_type').value === 'business') {
       if (!document.getElementById('modal_org_name').value.trim()) { enskriShowError(modalData.errorOrg); return false; }
       if (!document.getElementById('modal_sector').value) { enskriShowError(modalData.errorSector); return false; }
@@ -383,6 +409,7 @@
       var countrySelect = document.getElementById('modal_diaspora_country');
       countrySelect.value = '';
       countrySelect.disabled = true;
+      modalCountryChange('');
     } else {
       btnA.classList.add('enskri-toggle-active');
       btnH.classList.remove('enskri-toggle-active');
@@ -397,6 +424,45 @@
       document.getElementById('modal-commune-status').innerHTML = '';
     }
     enskriUpdateSocialProof();
+  }
+
+  /* ── Abroad: United States State → City ── */
+  function modalCountryChange(code) {
+    var isUS = code === 'US';
+    var state = document.getElementById('modal_us_state');
+    document.getElementById('modal-us-fields').style.display = isUS ? '' : 'none';
+    state.disabled = !isUS;
+    if (!isUS) state.value = '';
+    modalStateChange(state.value);
+  }
+
+  // Loads the state's cities into the datalist (curated diaspora cities
+  // first, then every Census place). The field still takes any city typed.
+  function modalStateChange(stateCode) {
+    var wrap = document.getElementById('modal-us-city-wrap');
+    var input = document.getElementById('modal_us_city');
+    var list = document.getElementById('modal-us-city-list');
+
+    input.value = '';
+    list.innerHTML = '';
+    wrap.style.display = stateCode ? '' : 'none';
+    input.disabled = !stateCode;
+    if (!stateCode) return;
+
+    fetch('/enskri/us_cities?state=' + encodeURIComponent(stateCode))
+      .then(function(r) { return r.json(); })
+      .then(function(cities) {
+        // Ignore a late answer for a state the visitor already changed
+        if (document.getElementById('modal_us_state').value !== stateCode) return;
+        var frag = document.createDocumentFragment();
+        cities.forEach(function(name) {
+          var opt = document.createElement('option');
+          opt.value = name;
+          frag.appendChild(opt);
+        });
+        list.appendChild(frag);
+      })
+      .catch(function() { /* suggestions are optional; typing still works */ });
   }
 
   /* ── Commune AJAX ── */
