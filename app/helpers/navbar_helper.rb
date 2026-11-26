@@ -3,6 +3,7 @@
 module NavbarHelper
   def product_groups
     new_badge  = { badge: t("main.navbar.new_badge"),    badge_class: "navbar-badge-new" }
+    soon_badge = { badge: t("main.navbar.coming_badge"), badge_class: "navbar-badge-soon" }
 
     [
       {
@@ -27,7 +28,7 @@ module NavbarHelper
             path: new_officer_session_path,
             # Shown but not clickable for v1 (the dropdown renders disabled items as a span).
             disabled: true,
-            **new_badge
+            **soon_badge
           },
           # Paused for v1: BonVote and BonTouris are left out of the menu
           # entirely until BONVOTE_ENABLED / BONTOURIS_ENABLED are turned on.

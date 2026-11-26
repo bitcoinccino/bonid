@@ -1,0 +1,135 @@
+<%# Cookie Policy — lists only what BonID actually stores. Keep in sync with:
+    session store (_bonid_session), Citizens::DeviceRecognition (bonid_device),
+    pending_consent (sessions/registrations/oauth controllers), Devise
+    rememberable (staff), the two dismissible banners, and the
+    cookie_consent_controller (localStorage + optional analytics). %>
+<% analytics = ENV["GA_MEASUREMENT_ID"].present? %>
+<div class="terms-page container py-5">
+  <div class="mx-auto" style="max-width: 800px;">
+
+    <header class="mb-5 text-center">
+      <h1 class="terms-title font-orbitron text-haitian-blue mb-3">Cookie Policy</h1>
+      <p class="text-muted lead mx-auto" style="max-width: 640px;">
+        What BonID stores in your browser, why, and how long it stays.
+      </p>
+    </header>
+
+    <div class="terms-content">
+
+      <section class="mb-5">
+        <h3 class="terms-heading">1. What cookies are</h3>
+        <p>
+          Cookies are small files a website saves in your browser. BonID uses them mainly to keep
+          you signed in and to protect your account. We do not use advertising cookies, and we
+          never sell what they contain.
+        </p>
+      </section>
+
+      <section class="mb-5">
+        <h3 class="terms-heading">2. Essential cookies</h3>
+        <p>BonID cannot work without these, so they do not need your consent.</p>
+        <div class="table-responsive">
+          <table class="table table-sm align-top small">
+            <thead><tr><th>Name</th><th>Purpose</th><th>Duration</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>_bonid_session</code></td>
+                <td>Keeps you signed in, remembers your language and protects forms against forgery.</td>
+                <td>Until you close the browser</td>
+              </tr>
+              <tr>
+                <td><code>bonid_device</code></td>
+                <td>Recognizes devices you have signed in from, so we can alert you when a new device signs in to your account. Encrypted.</td>
+                <td>Until you sign out of that device in Settings or clear your cookies</td>
+              </tr>
+              <tr>
+                <td><code>pending_consent</code></td>
+                <td>Holds a partner's access request while you sign in, so you can approve or refuse it afterward. Encrypted.</td>
+                <td>30 minutes, deleted once you answer</td>
+              </tr>
+              <tr>
+                <td><code>remember_*_token</code></td>
+                <td>Staff portals only: keeps you signed in when you tick "Remember me".</td>
+                <td>2 weeks</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mb-5">
+        <h3 class="terms-heading">3. Preference cookies</h3>
+        <p>These remember small choices so we don't ask again.</p>
+        <div class="table-responsive">
+          <table class="table table-sm align-top small">
+            <thead><tr><th>Name</th><th>Purpose</th><th>Duration</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>legacy_cin_alert_dismissed</code></td>
+                <td>Hides the old-CIN notice on your dashboard after you close it.</td>
+                <td>7 days</td>
+              </tr>
+              <tr>
+                <td><code>cep_postponement_banner_dismissed</code></td>
+                <td>Hides the election postponement notice after you close it.</td>
+                <td>30 days</td>
+              </tr>
+              <tr>
+                <td><code>cookieConsent</code> (browser storage)</td>
+                <td>Remembers your choice in the cookie banner.</td>
+                <td>Until you change it or clear your browser data</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="mb-5">
+        <h3 class="terms-heading">4. Analytics cookies</h3>
+        <% if analytics %>
+          <p>
+            Only if you allow them in the cookie banner, Google Analytics sets the cookies below to
+            measure how BonID is used. If you don't allow them, nothing is loaded.
+          </p>
+          <div class="table-responsive">
+            <table class="table table-sm align-top small">
+              <thead><tr><th>Name</th><th>Purpose</th><th>Duration</th></tr></thead>
+              <tbody>
+                <tr><td><code>_ga</code>, <code>_ga_*</code></td><td>Counts visits and pages viewed (Google Analytics).</td><td>Up to 2 years</td></tr>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p>
+            BonID does not currently use analytics cookies. If we add them, they will only run after
+            you agree in the cookie banner, and we will list them here first.
+          </p>
+        <% end %>
+      </section>
+
+      <section class="mb-5">
+        <h3 class="terms-heading">5. Managing your choices</h3>
+        <p>
+          You can change your cookie choices at any time:
+          <a href="#" data-cookie-settings class="text-primary fw-semibold">open cookie settings</a>.
+          You can also delete cookies from your browser settings; if you delete essential ones,
+          you will be signed out and your devices will be treated as new.
+        </p>
+      </section>
+
+      <section class="mb-4">
+        <h3 class="terms-heading">6. Contact us</h3>
+        <p>
+          Questions about cookies or your data:
+          <a href="mailto:support@verifyem.ht" class="text-primary fw-semibold">support@verifyem.ht</a>.
+          See also our <%= link_to "Privacy Policy", privacy_path, class: "text-primary fw-semibold" %>.
+        </p>
+      </section>
+
+    </div>
+
+    <p class="text-muted small text-center mt-5">
+      Last updated: November 25, 2026
+    </p>
+  </div>
+</div>

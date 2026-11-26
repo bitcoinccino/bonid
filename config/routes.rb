@@ -46,6 +46,7 @@ Rails.application.routes.draw do
   get "/privacy.pdf", to: "pdfs#privacy", as: :privacy_pdf
   get "/terms",       to: "main#terms",   as: :terms
   get "/privacy",     to: "main#privacy", as: :privacy
+  get "/cookies",     to: "main#cookie_policy", as: :cookie_policy
 
   # ===========================================================================
   # PUBLIC API DOCS & VERSION

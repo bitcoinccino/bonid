@@ -71,6 +71,7 @@ class MainController < ApplicationController
   def required_documents; end
   def terms; end
   def privacy; end
+  def cookie_policy; end
 
   def start
     partner_slug = params[:partner]

@@ -1,3 +1,8 @@
+<%# Cookie banner. Lists only what BonID actually uses (see main/cookie_policy):
+    - No analytics configured → essential-only notice with a single "Got it".
+    - GA_MEASUREMENT_ID set → adds the analytics choice (off by default)
+      and Accept all / Save / Reject. Analytics loads only after consent. %>
+<% analytics = ENV["GA_MEASUREMENT_ID"].present? %>
 <div data-controller="cookie-consent"
      data-cookie-consent-target="banner"
      class="cookie-banner shadow-lg"
@@ -14,70 +19,54 @@
       </h5>
 
       <p class="cookie-body mb-3">
-        <%= t("main.cookie_banner.body", default: "BonID uses cookies to keep the platform secure, remember your preferences, and improve your experience. We never sell your data. You can customize your choices below.") %>
+        <% if analytics %>
+          <%= t("main.cookie_banner.body") %>
+        <% else %>
+          <%= t("main.cookie_banner.body_essential_only") %>
+        <% end %>
+        <%= link_to t("main.cookie_banner.learn_more"), cookie_policy_path, class: "fw-semibold" %>
       </p>
 
-      <!-- Preferences -->
-      <div class="cookie-options mb-3">
-        <div class="form-check cookie-option">
-          <input class="form-check-input" type="checkbox" checked disabled id="cookie-essential">
-          <label class="form-check-label" for="cookie-essential">
-            <strong><%= t("main.cookie_banner.essential.label", default: "Essential cookies") %></strong>
-            <span class="cookie-option-tag"><%= t("main.cookie_banner.required", default: "required") %></span>
-            <span class="cookie-option-desc">
-              <%= t("main.cookie_banner.essential.desc", default: "Authentication, security, session management. BonID cannot function without these.") %>
-            </span>
-          </label>
-        </div>
+      <% if analytics %>
+        <div class="cookie-options mb-3">
+          <div class="form-check cookie-option">
+            <input class="form-check-input" type="checkbox" checked disabled id="cookie-essential">
+            <label class="form-check-label" for="cookie-essential">
+              <strong><%= t("main.cookie_banner.essential.label") %></strong>
+              <span class="cookie-option-tag"><%= t("main.cookie_banner.required") %></span>
+              <span class="cookie-option-desc"><%= t("main.cookie_banner.essential.desc") %></span>
+            </label>
+          </div>
 
-        <div class="form-check cookie-option">
-          <input data-cookie-consent-target="analytics"
-                class="form-check-input"
-                type="checkbox"
-                id="cookie-analytics">
-          <label class="form-check-label" for="cookie-analytics">
-            <strong><%= t("main.cookie_banner.analytics.label", default: "Analytics cookies") %></strong>
-            <span class="cookie-option-desc">
-              <%= t("main.cookie_banner.analytics.desc", default: "Help us understand how users interact with BonID so we can improve the platform. No personal data is shared.") %>
-            </span>
-          </label>
+          <div class="form-check cookie-option">
+            <input data-cookie-consent-target="analytics" class="form-check-input" type="checkbox" id="cookie-analytics">
+            <label class="form-check-label" for="cookie-analytics">
+              <strong><%= t("main.cookie_banner.analytics.label") %></strong>
+              <span class="cookie-option-desc"><%= t("main.cookie_banner.analytics.desc") %></span>
+            </label>
+          </div>
         </div>
-
-        <div class="form-check cookie-option">
-          <input data-cookie-consent-target="marketing"
-                class="form-check-input"
-                type="checkbox"
-                id="cookie-marketing">
-          <label class="form-check-label" for="cookie-marketing">
-            <strong><%= t("main.cookie_banner.marketing.label", default: "Marketing cookies") %></strong>
-            <span class="cookie-option-desc">
-              <%= t("main.cookie_banner.marketing.desc", default: "Used to deliver relevant updates about BonID launches and features. You can opt out at any time.") %>
-            </span>
-          </label>
-        </div>
-      </div>
+      <% end %>
     </div>
 
-    <!-- Buttons -->
     <div class="cookie-actions">
-      <button class="cookie-btn cookie-btn-accept"
-              type="button"
-              data-action="cookie-consent#acceptAll">
-        <i class="ri-check-line"></i>
-        <%= t("main.cookie_banner.accept_all", default: "Accept all") %>
-      </button>
-
-      <button class="cookie-btn cookie-btn-save"
-              type="button"
-              data-action="cookie-consent#savePreferences">
-        <%= t("main.cookie_banner.save_preferences", default: "Save preferences") %>
-      </button>
-
-      <button class="cookie-btn cookie-btn-reject"
-              type="button"
-              data-action="cookie-consent#rejectNonEssential">
-        <%= t("main.cookie_banner.reject_non_essential", default: "Reject non-essential") %>
-      </button>
+      <% if analytics %>
+        <button class="cookie-btn cookie-btn-accept" type="button" data-action="cookie-consent#acceptAll">
+          <i class="ri-check-line"></i>
+          <%= t("main.cookie_banner.accept_all") %>
+        </button>
+        <button class="cookie-btn cookie-btn-save" type="button" data-action="cookie-consent#savePreferences">
+          <%= t("main.cookie_banner.save_preferences") %>
+        </button>
+        <button class="cookie-btn cookie-btn-reject" type="button" data-action="cookie-consent#rejectNonEssential">
+          <%= t("main.cookie_banner.reject_non_essential") %>
+        </button>
+      <% else %>
+        <button class="cookie-btn cookie-btn-accept" type="button" data-action="cookie-consent#rejectNonEssential">
+          <i class="ri-check-line"></i>
+          <%= t("main.cookie_banner.ok") %>
+        </button>
+      <% end %>
     </div>
 
   </div>
