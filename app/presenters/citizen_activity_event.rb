@@ -16,7 +16,7 @@
 class CitizenActivityEvent
   include ActionView::Helpers::NumberHelper
 
-  KINDS = %i[scan consent transaction application session oath].freeze
+  KINDS = %i[scan consent transaction application session oath device].freeze
 
   # Category groupings used by the Phase 3 filter pills.
   # - security       → things that touched your identity (who scanned, who logged in)
@@ -25,6 +25,7 @@ class CitizenActivityEvent
   CATEGORY_BY_KIND = {
     scan:         :security,
     session:      :security,
+    device:       :security,
     transaction:  :financial,
     consent:      :administrative,
     application:  :administrative,
@@ -68,6 +69,7 @@ class CitizenActivityEvent
   def notifiable?
     case @kind
     when :scan        then true
+    when :device      then true
     when :consent     then %w[pending expired].include?(consent_status) && !%w[granted revoked].include?(consent_action)
     when :transaction then %w[pending expired].include?(@source_record.status.to_s)
     when :application then %w[under_review approved rejected].include?(@source_record.status.to_s)
@@ -81,6 +83,7 @@ class CitizenActivityEvent
     id = @source_record.id
     case @kind
     when :scan        then "scan:#{id}"
+    when :device      then "device:#{id}"
     when :consent     then "consent:#{id}:#{@timestamp.to_i}"
     when :transaction then "txn:#{id}"
     when :application then "app:#{id}:#{@source_record.status}"
@@ -143,7 +146,7 @@ class CitizenActivityEvent
     log = @source_record
     qr  = log.qr_scan
     [
-      [ tr("rows.partner"),    log.organization.presence || log.partner&.name ],
+      [ tr("rows.partner"),    log.short_organization || log.partner&.name ],
       [ tr("rows.sector"),     log.partner&.sector&.humanize ],
       [ tr("rows.method"),     qr&.manual ? tr("rows.method_manual") : tr("rows.method_qr") ],
       [ tr("rows.commune"),    qr&.city.presence || log.city.presence ],
@@ -304,7 +307,7 @@ class CitizenActivityEvent
   # ------------------------------------------------------------
 
   def self.from_qr_scan(log)
-    org        = log.organization.presence || log.partner&.name.presence || tr("a_partner_capitalized")
+    org        = log.short_organization || log.partner&.name.presence || tr("a_partner_capitalized")
     qr_scan    = log.qr_scan
     commune    = qr_scan&.city.presence || log.city.presence
     department = qr_scan&.department&.name.presence
@@ -323,7 +326,7 @@ class CitizenActivityEvent
       subtitle:      nil,
       status:        nil,
       status_color:  nil,
-      deep_link:     Rails.application.routes.url_helpers.scan_history_citizens_identity_submissions_path
+      deep_link:     Rails.application.routes.url_helpers.citizens_activity_path(tab: "scans")
     )
   end
 
@@ -532,6 +535,23 @@ class CitizenActivityEvent
       status:        nil,
       status_color:  new_device ? "warning" : "secondary",
       deep_link:     nil
+    )
+  end
+
+  # New-browser sign-in (KnownDevice), the same event that sends the
+  # "new device" email (Citizens::DeviceRecognition). Bell-only — the
+  # Activité feed already shows logins via CitizenSession.
+  def self.from_known_device(kd)
+    new(
+      kind:          :device,
+      source_record: kd,
+      timestamp:     kd.created_at,
+      icon:          "ri-alert-line",
+      title:         tr("session.new_device"),
+      subtitle:      [ kd.label, kd.location ].compact.join(" · ").presence,
+      status:        nil,
+      status_color:  "warning",
+      deep_link:     Rails.application.routes.url_helpers.citizens_settings_path(anchor: "settings-security-title")
     )
   end
 

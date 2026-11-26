@@ -13,7 +13,9 @@
 # doesn't change anything.
 #
 # CitizenSession is excluded — own-device logins would ring on every
-# visit; new-device logins get their own email and show in Activité.
+# visit. New-browser sign-ins ring via KnownDevice instead (the same
+# record that sends the "new device" email), skipping the citizen's
+# first-ever device, which never gets an email either.
 module Citizens
   class AlertCounter
     LAW_ENFORCEMENT_SECTORS = %w[law_enforcement pnh].freeze
@@ -46,7 +48,7 @@ module Citizens
     private
 
     def notifications
-      @notifications ||= (scan_events + consent_events + transaction_events + application_events)
+      @notifications ||= (scan_events + consent_events + transaction_events + application_events + device_events)
         .select(&:notifiable?)
         .sort_by { |e| e.timestamp || Time.at(0) }
         .reverse
@@ -100,6 +102,18 @@ module Citizens
         .order(updated_at: :desc)
         .limit(PER_SOURCE)
         .map { |a| CitizenActivityEvent.from_service_application(a) }
+    end
+
+    # Every browser after the first one — mirrors DeviceRecognition, which
+    # records the first device silently and emails on each new one after.
+    def device_events
+      first_id = citizen.known_devices.order(:created_at, :id).pick(:id)
+      citizen.known_devices
+        .where("created_at >= ?", window_start)
+        .where.not(id: first_id)
+        .order(created_at: :desc)
+        .limit(PER_SOURCE)
+        .map { |d| CitizenActivityEvent.from_known_device(d) }
     end
 
     def scan_logs_scope

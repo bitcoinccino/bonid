@@ -83,9 +83,10 @@ module Citizens
     def notification_destination(key)
       kind, id = key.split(":", 3)
       case kind
-      when "scan"    then scan_history_citizens_identity_submissions_path
+      when "scan"    then citizens_activity_path(tab: "scans")
       when "consent" then citizens_consents_path
       when "txn"     then citizens_transaction_consents_path
+      when "device"  then citizens_settings_path(anchor: "settings-security-title")
       when "app"
         app = CitizenServicesPausable.enabled? && current_citizen.service_applications.find_by(id: id)
         app ? citizens_service_application_path(app) : citizens_activity_path

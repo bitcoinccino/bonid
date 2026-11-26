@@ -491,11 +491,10 @@ end
     # ------------------------------------------------------------
     # GET /citizens/identity_submissions/scan_history
     # ------------------------------------------------------------
+    # Retired: Activité's Scans tab replaces it (and, unlike this page,
+    # hides law-enforcement scans). Kept as a redirect for old links.
     def scan_history
-      @submissions = current_citizen.identity_submissions
-                                    .includes(:qr_scan_logs)
-                                    .order(created_at: :desc)
-                                    .page(params[:page]).per(10)
+      redirect_to citizens_activity_path(tab: "scans"), status: :moved_permanently
     end
 
     def support_faq; end

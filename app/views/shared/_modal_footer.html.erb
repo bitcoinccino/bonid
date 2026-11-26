@@ -1,0 +1,34 @@
+<%# Shared modal footer — Cancel (filled grey) left, action right.
+
+    Locals (all optional):
+      cancel_label    — defaults to "Annuler" in the citizen's language
+      confirm_label   — omit for a close-only modal (only Cancel renders)
+      confirm_variant — :primary (default) or :destructive (red)
+      form            — the form builder; the action renders as its submit
+      confirm_data    — extra data-* for the action button
+
+    Loading: the global submit handler (application.js) disables both
+    buttons and shows a spinner while the form submits.
+    Gating: wrap the form in data-controller="modal-form" to keep the
+    action disabled until the form has changed and is valid. %>
+<%
+  cancel_label    = local_assigns[:cancel_label].presence || t("citizen_portal.common.cancel")
+  confirm_label   = local_assigns[:confirm_label]
+  variant_class   = local_assigns[:confirm_variant].to_s == "destructive" ? "btn-modal-destructive" : "btn-primary"
+  confirm_data    = (local_assigns[:confirm_data] || {}).merge(modal_form_target: "submit")
+  form            = local_assigns[:form]
+%>
+<div class="modal-footer bonid-modal-footer">
+  <button type="button" class="btn btn-modal-cancel" data-bs-dismiss="modal" data-modal-cancel>
+    <%= cancel_label %>
+  </button>
+  <% if confirm_label.present? %>
+    <% if form %>
+      <%= form.submit confirm_label, class: "btn #{variant_class}", data: confirm_data %>
+    <% else %>
+      <button type="submit" class="btn <%= variant_class %>" <%= tag.attributes(data: confirm_data) %>>
+        <%= confirm_label %>
+      </button>
+    <% end %>
+  <% end %>
+</div>

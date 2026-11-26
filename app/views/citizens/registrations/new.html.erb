@@ -45,32 +45,26 @@
       </div>
     </div>
 
-    <!-- REQUIREMENTS -->
-    <div class="text-center mt-4">
-      <h5 class="fw-bold mb-3"><%= t("citizen_portal.auth.signup.need_title") %></h5>
+    <!-- REQUIREMENTS — compact 2×2 grid + one-line disclaimer -->
+    <div class="auth-req">
+      <h3 class="auth-req__title font-heading"><%= t("citizen_portal.auth.signup.need_title") %></h3>
 
-      <div class="row g-3 justify-content-center mb-4">
+      <ul class="auth-req__grid">
         <% [
-          ["ri-id-card-line",   t("citizen_portal.auth.signup.need.id")],
+          ["ri-id-card-line",    t("citizen_portal.auth.signup.need.id")],
           ["ri-smartphone-line", t("citizen_portal.auth.signup.need.selfie")],
-          ["ri-file-text-line", t("citizen_portal.auth.signup.need.doc")],
-          ["ri-mail-line",      t("citizen_portal.auth.signup.need.email")]
+          ["ri-file-text-line",  t("citizen_portal.auth.signup.need.doc")],
+          ["ri-mail-line",       t("citizen_portal.auth.signup.need.email")]
         ].each do |icon, label| %>
-          <div class="col-6 col-md-3">
-            <div class="text-center">
-              <div class="req-icon-wrap">
-                <i class="<%= icon %>"></i>
-              </div>
-              <div class="small fw-medium"><%= label %></div>
-            </div>
-          </div>
+          <li class="auth-req__item">
+            <i class="<%= icon %>" aria-hidden="true"></i><span><%= label %></span>
+          </li>
         <% end %>
-      </div>
-
-      <p class="small opacity-75 fst-italic">
-        <%= t("citizen_portal.auth.login.not_gov_id") %>
-      </p>
+      </ul>
     </div>
+
+    <!-- DISCLAIMER — pinned to the bottom of the panel -->
+    <p class="auth-req__note"><i class="ri-information-line" aria-hidden="true"></i><span><%= t("citizen_portal.auth.login.not_gov_id") %></span></p>
 
   </div>
 <% end %>
@@ -128,7 +122,7 @@
                         html: {
                           class: "needs-validation",
                           novalidate: true,
-                          data: { turbo: false },
+                          data: { turbo: false, controller: "modal-form", modal_form_require_change_value: false },
                           id: "registration-form"
                         }) do |f| %>
 
@@ -139,6 +133,7 @@
               autofocus: true,
               autocomplete: "email",
               required: true,
+              inputmode: "email",
               placeholder: t("citizen_portal.auth.signup.email_placeholder"),
               class: "form-control" %>
         <%= f.label :email, t("citizen_portal.auth.login.email_label") %>
@@ -147,7 +142,7 @@
       <%= f.button :submit, t("citizen_portal.auth.signup.create"),
             class: "btn btn-haitian-primary w-100 mt-2",
             id: "submit-button",
-            data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>'.html_safe + t("citizen_portal.auth.signup.creating") } %>
+            data: { processing_label: t("citizen_portal.auth.signup.creating"), modal_form_target: "submit" } %>
 
       <div class="trust-badge">
         <i class="ri-shield-check-line"></i>

@@ -25,6 +25,8 @@ module NavbarHelper
             description: t("main.navbar.idpol_desc"),
             icon: "ri-shield-user-line",
             path: new_officer_session_path,
+            # Shown but not clickable for v1 (the dropdown renders disabled items as a span).
+            disabled: true,
             **new_badge
           },
           # Paused for v1: BonVote and BonTouris are left out of the menu

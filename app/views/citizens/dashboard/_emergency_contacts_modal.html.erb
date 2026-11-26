@@ -1,6 +1,6 @@
-<div class="modal fade" id="emergencyModal" tabindex="-1" aria-labelledby="emergencyModalLabel" aria-hidden="true">
+<div class="modal fade" id="emergencyModal" data-modal-portal tabindex="-1" aria-labelledby="emergencyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
+    <div class="modal-content" data-controller="modal-form">
       <%= simple_form_for current_citizen,
             as: :user,
             url: citizens_profile_path,
@@ -41,7 +41,7 @@
 
           <%# Template for adding new contacts %>
           <template data-emergency-contacts-target="template">
-            <div class="border rounded-3 p-3 mb-4 bg-light nested-fields" data-new-record="true">
+            <div class="border rounded-3 p-3 mb-4 bg-light nested-fields" data-new-record="true" data-modal-form-group>
               <div class="row g-3 align-items-end">
                 <div class="col-md-6">
                   <label class="form-label fw-semibold"><%= t("citizen_portal.modals.emergency.bonid_optional") %></label>
@@ -59,7 +59,8 @@
                          name="user[emergency_contacts_attributes][NEW_RECORD][name]"
                          class="form-control rounded-3"
                          placeholder="<%= t("citizen_portal.modals.emergency.full_name") %>"
-                         data-emergency-contacts-target="name" />
+                         data-emergency-contacts-target="name"
+                         data-modal-form-required />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label fw-semibold"><%= t("citizen_portal.modals.emergency.phone") %></label>
@@ -114,17 +115,7 @@
             </button>
           </div>
         </div>
-        <div class="modal-footer" style="border-top: 1px solid #e4e7ec;">
-          <button type="button"
-                  class="btn btn-outline-secondary fw-semibold px-4 py-2"
-                  style="font-size: 0.85rem; border-radius: 0.5rem;"
-                  data-bs-dismiss="modal">
-            <%= t("citizen_portal.common.cancel") %>
-          </button>
-          <%= f.submit t("citizen_portal.common.save"),
-                class: "btn btn-primary fw-semibold px-4 py-2",
-                style: "font-size: 0.85rem; border-radius: 0.5rem;" %>
-        </div>
+        <%= render "shared/modal_footer", form: f, confirm_label: t("citizen_portal.common.save") %>
       <% end %>
     </div>
   </div>

@@ -47,6 +47,8 @@ module Citizens
 
     def update
       @citizen = current_citizen
+      # handle_email_change re-renders :edit, which lists known devices.
+      load_known_devices
 
       # Apply non-email attrs immediately so locale/notification changes
       # don't get blocked behind an unverified email change.
@@ -67,6 +69,12 @@ module Citizens
 
       if requested_email.present? && requested_email != @citizen.email.to_s.downcase
         return handle_email_change(requested_email, code)
+      end
+
+      # Typed their current address into the change-email modal — say so
+      # in the modal rather than a generic "No changes".
+      if requested_email.present? && simple_attrs.empty?
+        return reopen_email_modal_with_error(t("citizen_portal.settings.flash.same_email"), requested_email)
       end
 
       # No email change in flight — honor the simple-attrs result.
@@ -111,9 +119,7 @@ module Citizens
     # schema change.
     def handle_email_change(new_email, code)
       if User.where.not(id: @citizen.id).exists?(email: new_email)
-        flash.now[:alert] = t("citizen_portal.settings.flash.email_in_use")
-        @email_change_pending = false
-        return render :edit, status: :unprocessable_entity
+        return reopen_email_modal_with_error(t("citizen_portal.settings.flash.email_in_use"), new_email)
       end
 
       cache_key = email_change_cache_key
@@ -181,6 +187,17 @@ module Citizens
         @pending_new_email    = new_email
         render :edit, status: :unprocessable_entity
       end
+    end
+
+    # Re-render Settings with the change-email modal open in Phase 1,
+    # the error shown inside it (the page flash sits behind the backdrop)
+    # and the typed address kept in the field.
+    def reopen_email_modal_with_error(message, typed_email)
+      @email_change_pending = false
+      @email_modal_error    = message
+      @requested_email      = typed_email
+      flash.now[:reopen_email_modal] = true
+      render :edit, status: :unprocessable_entity
     end
 
     def load_pending_email_change_state

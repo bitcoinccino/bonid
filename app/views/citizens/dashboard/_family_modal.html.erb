@@ -1,6 +1,6 @@
-<div class="modal fade" id="familyModal" tabindex="-1" aria-labelledby="familyModalLabel" aria-hidden="true">
+<div class="modal fade" id="familyModal" data-modal-portal tabindex="-1" aria-labelledby="familyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down">
-    <div class="modal-content">
+    <div class="modal-content" data-controller="modal-form">
       <%= simple_form_for current_citizen,
             as: :user,
             url: citizens_profile_path,
@@ -37,7 +37,7 @@
                 </button>
               </h2>
               <div id="motherSection" class="accordion-collapse collapse show" data-bs-parent="#familyAccordion">
-                <div class="accordion-body px-2 pt-2 pb-3 family-section">
+                <div class="accordion-body px-2 pt-2 pb-3 family-section" data-modal-form-group>
                   <%= f.fields_for :family_members, [mother] do |fm| %>
                     <%= fm.hidden_field :relationship, value: "mother" %>
                     <%= fm.hidden_field :id if fm.object.persisted? %>
@@ -81,7 +81,7 @@
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.first_name") %></label>
                         <%= fm.input :first_name, label: false, placeholder: "Marie",
-                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name" } } %>
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name", modal_form_required: true } } %>
                       </div>
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.middle_name") %></label>
@@ -91,7 +91,7 @@
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.last_name") %></label>
                         <%= fm.input :last_name, label: false, placeholder: "Louis",
-                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name" } } %>
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name", modal_form_required: true } } %>
                       </div>
                     </div>
 
@@ -142,7 +142,7 @@
                 </button>
               </h2>
               <div id="fatherSection" class="accordion-collapse collapse" data-bs-parent="#familyAccordion">
-                <div class="accordion-body px-2 pt-2 pb-3 family-section">
+                <div class="accordion-body px-2 pt-2 pb-3 family-section" data-modal-form-group>
                   <%= f.fields_for :family_members, [father] do |fm| %>
                     <%= fm.hidden_field :relationship, value: "father" %>
                     <%= fm.hidden_field :id if fm.object.persisted? %>
@@ -182,7 +182,7 @@
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.first_name") %></label>
                         <%= fm.input :first_name, label: false, placeholder: "Jean",
-                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name" } } %>
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name", modal_form_required: true } } %>
                       </div>
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.middle_name") %></label>
@@ -192,7 +192,7 @@
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.last_name") %></label>
                         <%= fm.input :last_name, label: false, placeholder: "Louis",
-                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name" } } %>
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name", modal_form_required: true } } %>
                       </div>
                     </div>
 
@@ -242,7 +242,7 @@
                 </button>
               </h2>
               <div id="guardianSection" class="accordion-collapse collapse" data-bs-parent="#familyAccordion">
-                <div class="accordion-body px-2 pt-2 pb-3 family-section">
+                <div class="accordion-body px-2 pt-2 pb-3 family-section" data-modal-form-group>
                   <%= f.fields_for :family_members, [guardian] do |fm| %>
                     <%= fm.hidden_field :relationship, value: "guardian" %>
                     <%= fm.hidden_field :id if fm.object.persisted? %>
@@ -290,7 +290,7 @@
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.first_name") %></label>
                         <%= fm.input :first_name, label: false, placeholder: "Tante Marie",
-                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name" } } %>
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "first_name", modal_form_required: true } } %>
                       </div>
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.middle_name") %></label>
@@ -300,7 +300,7 @@
                       <div class="col-4">
                         <label class="form-label small fw-semibold mb-1"><%= t("citizen_portal.modals.family.last_name") %></label>
                         <%= fm.input :last_name, label: false,
-                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name" } } %>
+                            input_html: { class: "form-control form-control-sm rounded-3", data: { field: "last_name", modal_form_required: true } } %>
                       </div>
                     </div>
                   <% end %>
@@ -310,17 +310,7 @@
 
           </div>
         </div>
-        <div class="modal-footer" style="border-top: 1px solid #e4e7ec;">
-          <button type="button"
-                  class="btn btn-outline-secondary fw-semibold px-4 py-2"
-                  style="font-size: 0.85rem; border-radius: 0.5rem;"
-                  data-bs-dismiss="modal">
-            <%= t("citizen_portal.common.cancel") %>
-          </button>
-          <%= f.submit t("citizen_portal.common.save"),
-                class: "btn btn-primary fw-semibold px-4 py-2",
-                style: "font-size: 0.85rem; border-radius: 0.5rem;" %>
-        </div>
+        <%= render "shared/modal_footer", form: f, confirm_label: t("citizen_portal.common.save") %>
       <% end %>
     </div>
   </div>

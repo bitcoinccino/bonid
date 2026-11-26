@@ -6,6 +6,9 @@ class KnownDevice < ApplicationRecord
 
   validates :token_digest, presence: true, uniqueness: { scope: :user_id }
 
+  # Refresh the citizen's bell in their other open tabs (Citizens::AlertCounter).
+  after_create_commit -> { Citizens::AlertBroadcastJob.perform_later(user_id) }
+
   def self.digest(token) = Digest::SHA256.hexdigest(token.to_s)
 
   # Friendly "Chrome on Android" label for the alert email. Intentionally rough.

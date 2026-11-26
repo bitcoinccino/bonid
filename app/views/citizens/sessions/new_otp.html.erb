@@ -63,13 +63,14 @@
                 method: :post,
                 scope: :citizen,
                 local: true,
-                html: { data: { turbo: false }, id: "otp-request-form" } do |f| %>
+                html: { data: { turbo: false, controller: "modal-form", modal_form_require_change_value: false }, id: "otp-request-form" } do |f| %>
 
     <%= hidden_field_tag :partner_slug, params[:from_partner] || params[:partner_slug] %>
 
     <div class="form-floating mb-3">
-      <%= f.text_field :email,
+      <%= f.email_field :email,
             autofocus: true,
+            inputmode: "email",
             required: true,
             autocomplete: "email",
             placeholder: t("citizen_portal.auth.login.email_placeholder"),
@@ -80,7 +81,7 @@
     <%= f.submit t("citizen_portal.auth.login.send_code"),
           class: "btn btn-haitian-primary w-100 mt-2",
           id: "send-code-button",
-          data: { processing_label: t("citizen_portal.auth.login.sending_html") } %>
+          data: { processing_label: t("citizen_portal.auth.login.sending_html"), modal_form_target: "submit" } %>
 
     <div class="trust-badge">
       <i class="ri-shield-check-line"></i>

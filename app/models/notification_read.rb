@@ -2,7 +2,7 @@
 
 # A citizen opened one bell notification (see Citizens::AlertCounter).
 class NotificationRead < ApplicationRecord
-  KEY_FORMAT = /\A(scan|consent|txn|app):[A-Za-z0-9_:]+\z/
+  KEY_FORMAT = /\A(scan|consent|txn|app|device):[A-Za-z0-9_:]+\z/
 
   belongs_to :user
 

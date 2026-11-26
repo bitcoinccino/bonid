@@ -18,7 +18,7 @@
     <% end %>
   <% end %>
   <%= form_with url: citizens_consent_path(grant), method: :delete, id: "deny-form-#{grant.id}",
-                data: { turbo_confirm: t("citizen_portal.consents.confirm_deny", partner: partner.name) }, style: "display:none" do %>
+                data: { turbo_confirm: t("citizen_portal.consents.confirm_deny", partner: partner.name), confirm_variant: "destructive" }, style: "display:none" do %>
   <% end %>
 <% elsif grant.approved? %>
   <%# Submitted from the confirmation dialog below %>
@@ -122,7 +122,7 @@
 
 <%# ── Confirmation dialog (page dialog, not a browser pop-up) ── %>
 <% if grant.approved? %>
-  <div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>-title" aria-hidden="true">
+  <div class="modal fade" id="<%= modal_id %>" data-modal-portal tabindex="-1" aria-labelledby="<%= modal_id %>-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content rounded-4 border-0">
         <div class="modal-body p-4 text-center">
@@ -133,12 +133,13 @@
             <li><%= t("citizen_portal.consents.remove_point2_html") %></li>
             <li><%= t("citizen_portal.consents.remove_point3") %></li>
           </ul>
-          <div class="d-grid gap-2">
-            <button type="button" class="btn btn-danger fw-semibold rounded-3 py-2" data-bs-dismiss="modal"
+          <%# Same order as shared/_modal_footer: keep (grey) left, remove (red) right. %>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-modal-cancel fw-semibold rounded-3 py-2 flex-fill" data-bs-dismiss="modal"><%= t("citizen_portal.consents.keep_access") %></button>
+            <button type="button" class="btn btn-modal-destructive fw-semibold rounded-3 py-2 flex-fill" data-bs-dismiss="modal"
                     onclick="document.getElementById('revoke-form-<%= grant.id %>').requestSubmit();">
               <%= t("citizen_portal.consents.yes_remove") %>
             </button>
-            <button type="button" class="btn btn-light rounded-3 py-2" data-bs-dismiss="modal"><%= t("citizen_portal.consents.keep_access") %></button>
           </div>
         </div>
       </div>

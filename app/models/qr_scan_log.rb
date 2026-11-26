@@ -24,7 +24,7 @@ class QrScanLog < ApplicationRecord
   end
 
   # === Delegations for location (pulls from qr_scan)
-  delegate :city, :region, :country, :organization, to: :qr_scan, allow_nil: true
+  delegate :city, :region, :country, :organization, :short_organization, to: :qr_scan, allow_nil: true
 
   # === Helpers
   def partner_name

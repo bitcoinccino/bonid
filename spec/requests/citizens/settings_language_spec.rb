@@ -112,11 +112,10 @@ RSpec.describe "Citizen settings — language", type: :request do
         end
       end
 
-      it "renders scan history in #{locale}" do
+      it "redirects the retired scan history page to Activité's Scans tab (#{locale})" do
         citizen.update!(preferred_locale: locale)
         get scan_history_citizens_identity_submissions_path
-        expect(response).to have_http_status(:ok)
-        expect(response.body).to include(CGI.escapeHTML(I18n.t("citizen_portal.submission.scan_history.title", locale: locale)))
+        expect(response).to redirect_to(citizens_activity_path(tab: "scans"))
       end
     end
   end
