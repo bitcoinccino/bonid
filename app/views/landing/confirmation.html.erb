@@ -42,9 +42,15 @@
         </p>
       <% end %>
       <p style="color: #065F46; font-size: 14px; margin: 0;">
-        <%= @commune ? c.(:nudge) : c.(:nudge_general) %>
+        <%= @commune ? c.(:nudge, commune: commune_name) : c.(:nudge_general) %>
       </p>
     </div>
+
+    <% if @referrals_count.positive? %>
+      <p style="color: #00209F; font-size: 15px; font-weight: 700; margin: 0 0 14px;">
+        <i class="ri-user-heart-line" aria-hidden="true"></i> <%= c.(:referrals, count: @referrals_count) %>
+      </p>
+    <% end %>
 
     <%# Primary: WhatsApp %>
     <a href="https://wa.me/?text=<%= ERB::Util.url_encode(share_text) %>"

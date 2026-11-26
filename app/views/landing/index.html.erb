@@ -21,7 +21,8 @@
      data-bonid-available="<%= t('main.signup_form.bonid_available') %>"
      data-coming-soon="<%= t('main.signup_form.coming_soon') %>"
      data-active-label="<%= t('main.signup_form.active') %>"
-     data-choose="<%= t('main.signup_form.choose') %>">
+     data-choose="<%= t('main.signup_form.choose') %>"
+     data-auto-open="<%= @referrer ? "1" : "0" %>">
   <div class="modal-dialog modal-dialog-centered" style="max-width: 640px;">
     <div class="modal-content" style="border: none; border-radius: 16px; overflow: hidden;">
 
@@ -43,8 +44,17 @@
         <% end %>
         <%= render "landing/enskri_error", message: flash[:enskri_error] %>
 
+        <%# Arrived through someone's share link %>
+        <% if @referrer %>
+          <div style="display: flex; align-items: center; gap: 8px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; font-size: 14px; font-weight: 600;">
+            <i class="ri-user-heart-line" style="font-size: 18px;" aria-hidden="true"></i>
+            <span><%= @referrer.first_name.present? ? t("main.signup_form.invited_by", name: @referrer.first_name) : t("main.signup_form.invited_by_friend") %></span>
+          </div>
+        <% end %>
+
         <%= form_with model: @waitlist_signup, url: enskri_signup_path(lang: params[:lang]), id: "enskri-form", data: { turbo: false } do |f| %>
           <%= f.hidden_field :signup_type, id: "modal_signup_type", value: "citizen" %>
+          <%= f.hidden_field :referred_by_code %>
 
           <%# Honeypot: hidden from humans, bots fill it %>
           <div style="position: absolute; left: -9999px;" aria-hidden="true">
@@ -504,7 +514,8 @@
   document.addEventListener('DOMContentLoaded', function() {
     enskriUpdateSocialProof();
 
-    if (window.location.hash === '#enskri' || document.querySelector('#enskriModal .alert-danger')) {
+    if (window.location.hash === '#enskri' || modalData.autoOpen === '1' ||
+        document.querySelector('#enskriModal .alert-danger')) {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
     }
 

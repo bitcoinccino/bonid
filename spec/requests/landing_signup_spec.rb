@@ -43,6 +43,30 @@ RSpec.describe "Waitlist sign-up (/enskri)", type: :request do
     expect(body["ok"]).to be(false)
   end
 
+  describe "share link (?ref=)" do
+    let!(:ambassador) { WaitlistSignup.create!(email: "rose@example.com", first_name: "Rose", signup_type: "citizen") }
+
+    it "opens the form with an 'invited by' banner and carries the code" do
+      get enskri_path(ref: ambassador.referral_code, lang: "ht")
+      body = CGI.unescapeHTML(response.body)
+      expect(body).to include("Envite pa Rose", 'data-auto-open="1"', %(value="#{ambassador.referral_code}"))
+    end
+
+    it "ignores an unknown code" do
+      get enskri_path(ref: "XX-NOPE00")
+      expect(response.body).to include('data-auto-open="0"')
+      expect(response.body).not_to include("Invited by")
+    end
+
+    it "credits the referrer and shows the count on their confirmation page" do
+      post_signup({ referred_by_code: ambassador.referral_code })
+      expect(WaitlistSignup.find_by(email: "jean@example.com").referrer).to eq(ambassador)
+
+      get enskri_confirmation_path(ref: ambassador.referral_code, lang: "fr")
+      expect(CGI.unescapeHTML(response.body)).to include("1 personne s'est inscrite avec votre lien")
+    end
+  end
+
   it "remembers the language the person signed up in" do
     post_signup({}, lang: "en")
     expect(WaitlistSignup.find_by(email: "jean@example.com").locale).to eq("en")

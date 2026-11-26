@@ -6,6 +6,9 @@ class LandingController < ApplicationController
 
   def index
     @waitlist_signup = WaitlistSignup.new
+    # Share link (/enskri?ref=CODE): open the form with "Invited by <name>"
+    @referrer = WaitlistSignup.find_by_referral_code(params[:ref]) if params[:ref].present?
+    @waitlist_signup.referred_by_code = @referrer&.referral_code
     @departments = Department.order(:name)
     @total_signups = WaitlistSignup.count
     @launched_communes = Commune.where(launched: true).pluck(:name)
@@ -83,6 +86,7 @@ class LandingController < ApplicationController
     @commune = @signup.commune
     @commune_count = @commune ? @commune.display_signups : WaitlistSignup.count
     @masked_email = mask_email(@signup.email)
+    @referrals_count = @signup.referrals.count
 
     # Standalone full-screen success page — render without the marketing chrome.
     render layout: "blank"
@@ -170,7 +174,7 @@ class LandingController < ApplicationController
     params.require(:waitlist_signup).permit(
       :first_name, :last_name, :email, :phone, :signup_type,
       :commune_id, :sector, :organization_name, :invite_code_used,
-      :diaspora, :country_of_residence, :residence_state, :residence_city,
+      :diaspora, :country_of_residence, :residence_state, :residence_city, :referred_by_code,
       :rank, :unit_type, :unit_name
     )
   end

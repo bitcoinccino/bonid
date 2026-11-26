@@ -5,6 +5,13 @@ class WaitlistSignup < ApplicationRecord
   # Set when an "Organization" lead becomes a partner application.
   has_one :partner, dependent: :nullify
 
+  # Referrals: people who signed up through this person's share link
+  # (/enskri?ref=<referral_code>).
+  belongs_to :referrer, class_name: "WaitlistSignup", foreign_key: :referred_by_code,
+                        primary_key: :referral_code, optional: true, inverse_of: :referrals
+  has_many :referrals, class_name: "WaitlistSignup", foreign_key: :referred_by_code,
+                       primary_key: :referral_code, inverse_of: :referrer, dependent: :nullify
+
   validates :email, presence: true
   validates :email, uniqueness: { case_sensitive: false, message: "Imèl sa enskri deja" }
   validates :signup_type, inclusion: { in: %w[citizen business] }
@@ -18,7 +25,7 @@ class WaitlistSignup < ApplicationRecord
   validates :sector, presence: true, if: -> { signup_type == "business" }
 
   before_create :generate_referral_code
-  before_validation :normalize_email, :normalize_residence
+  before_validation :normalize_email, :normalize_residence, :normalize_referrer
 
   # US state/city (diaspora): state is a known code; city is free text
   # (picked from the suggestions or typed).
@@ -32,6 +39,20 @@ class WaitlistSignup < ApplicationRecord
   scope :invited, -> { where(status: "invited") }
   scope :converted, -> { where(status: "converted") }
   scope :by_commune, ->(commune_id) { where(commune_id: commune_id) }
+
+  REFERRALS_COUNT_SQL = "(SELECT COUNT(*) FROM waitlist_signups refs " \
+                        "WHERE refs.referred_by_code = waitlist_signups.referral_code)"
+
+  # Adds a referrals_count attribute (admin list, sorting)
+  scope :with_referrals_count, -> { select("waitlist_signups.*, #{REFERRALS_COUNT_SQL} AS referrals_count") }
+  scope :min_referrals, ->(n) { where("#{REFERRALS_COUNT_SQL} >= ?", n) }
+  scope :top_referrers_first, -> { order(Arel.sql("#{REFERRALS_COUNT_SQL} DESC"), created_at: :asc) }
+
+  # Signup a share link points at (nil for an unknown code)
+  def self.find_by_referral_code(code)
+    normalized = code.to_s.upcase.strip
+    normalized.present? ? find_by(referral_code: normalized) : nil
+  end
 
   # "Miami, Florida" (nil outside the US state/city path)
   def residence_place
@@ -74,6 +95,18 @@ class WaitlistSignup < ApplicationRecord
 
   def normalize_email
     self.email = email&.downcase&.strip
+  end
+
+  # Keep a referral only when the code belongs to someone else on the list;
+  # an unknown or own code is dropped quietly (it never blocks a signup).
+  def normalize_referrer
+    return unless will_save_change_to_referred_by_code?
+    return self.referred_by_code = nil if referred_by_code.blank?
+
+    referrer = self.class.find_by_referral_code(referred_by_code)
+    self.referred_by_code =
+      if referrer && referrer.email != email && referrer.id != id then referrer.referral_code
+      end
   end
 
   # State/city only make sense for a US diaspora signup
