@@ -372,3 +372,72 @@ a.navbar-brand.font-orbitron:hover,
   font-weight: 800;
   letter-spacing: .06em;
 }
+
+/****************************************/
+/*  "How to know it's really BonID" strip */
+/****************************************/
+/* First row of the fixed navbar: full width, edge to edge (cancels the
+   navbar padding). navbar-expand-lg turns wrapping off on desktop, so
+   turn it back on and keep the logo row on its own full-width line. */
+.bonid-navbar.has-trust-banner {
+  flex-wrap: wrap !important;
+
+  > .container-fluid { flex: 1 1 100%; }
+}
+
+.bonid-navbar .trust-banner {
+  flex: 0 0 calc(100% + 2rem);
+  margin: -0.9rem -1rem 0.9rem;
+  background: var(--haitian-blue, #00209F);
+  color: #fff;
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+
+    &::-webkit-details-marker { display: none; }
+    &:hover span { text-decoration: underline; }
+    &:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+  }
+
+  .trust-banner__chevron { transition: transform 0.15s ease; }
+  &[open] .trust-banner__chevron { transform: rotate(180deg); }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 6px 24px 14px;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.92);
+
+    i { font-size: 1rem; margin-top: 1px; color: #fff; }
+    strong { color: #fff; }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .bonid-navbar .trust-banner ul { grid-template-columns: 1fr; padding: 4px 16px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bonid-navbar .trust-banner .trust-banner__chevron { transition: none; }
+}
