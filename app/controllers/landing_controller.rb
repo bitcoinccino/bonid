@@ -12,11 +12,11 @@ class LandingController < ApplicationController
     @departments = Department.order(:name)
     @total_signups = WaitlistSignup.count
     @launched_communes = Commune.where(launched: true).pluck(:name)
-    @lang = params[:lang] == "fr" ? "fr" : "ht"
+    @lang = I18n.locale.to_s # en/fr/ht, from set_locale
   end
 
   def signup
-    @lang = params[:lang] == "fr" ? "fr" : "ht"
+    @lang = I18n.locale.to_s # en/fr/ht, from set_locale
 
     # Bot prevention: honeypot + timestamp. Silently no-op for the honeypot;
     # surface a friendly message for the too-fast case — both in-place so the
@@ -182,6 +182,15 @@ class LandingController < ApplicationController
 
   def t_landing(key)
     translations = {
+      "en" => {
+        "invalid_invite_code" => "This invite code is invalid or has expired.",
+        "account_ready" => "You can create your account now!",
+        "partner_next" => "Let's set up your organization — complete the partner application.",
+        "waitlist_success" => "Thank you! We'll reach out when we launch in your area.",
+        "waitlist_error" => "Something went wrong. Please check your information and try again.",
+        "too_fast" => "Please wait a moment and try again.",
+        "email_taken" => "This email is already registered."
+      },
       "ht" => {
         "invalid_invite_code" => "Kod envitasyon sa a pa valab oswa ekspire.",
         "account_ready" => "Ou ka kreye kont ou kounye a!",
@@ -201,6 +210,6 @@ class LandingController < ApplicationController
         "email_taken" => "Cet e-mail est déjà inscrit."
       }
     }
-    translations[@lang][key] || key
+    translations.fetch(@lang, translations["en"])[key] || key
   end
 end

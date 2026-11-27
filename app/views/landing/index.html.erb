@@ -41,7 +41,7 @@
       </div>
 
       <%# Modal Body %>
-      <div class="modal-body" style="padding: 24px; background: #fff; overflow-y: auto;">
+      <div class="modal-body" style="padding: 24px; background: #F3F4F6; overflow-y: auto;">
 
         <% if flash[:success] %>
           <div class="alert alert-success"><i class="ri-check-line me-1"></i><%= flash[:success] %></div>
@@ -69,7 +69,7 @@
 
           <%# ── Account type ── %>
           <%# Toggle: Citizen / Business %>
-          <div style="display: flex; background: #f1f5f9; border-radius: 50px; padding: 4px; margin-bottom: 24px;">
+          <div style="display: flex; background: #E5E7EB; border-radius: 50px; padding: 4px; margin-bottom: 24px;">
             <button type="button" id="modal-btn-citizen" onclick="modalSetType('citizen')"
                     class="enskri-toggle-btn enskri-toggle-active">
               <i class="ri-user-line me-1"></i> <%= t("main.signup_form.citizen") %>
@@ -134,7 +134,7 @@
           <%# Residence toggle: "I currently live in" Haiti / Abroad (sets diaspora) %>
           <div class="mb-3">
             <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.country_label") %></label>
-            <div style="display: flex; background: #f1f5f9; border-radius: 8px; padding: 4px;">
+            <div style="display: flex; background: #E5E7EB; border-radius: 50px; padding: 4px;">
               <button type="button" id="loc-btn-haiti" onclick="modalSetLocation('haiti')"
                       class="enskri-toggle-btn enskri-toggle-active">
                 <i class="ri-map-pin-line me-1"></i> <%= t("main.signup_form.live_haiti") %>
@@ -306,6 +306,11 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(0,32,159,0.4); }
     50% { box-shadow: 0 0 0 8px rgba(0,32,159,0); }
   }
+  .enskri-btn-submit.enskri-btn-incomplete {
+    background: #9CA3AF; color: #fff; opacity: 1;
+    animation: none; transform: none; box-shadow: none;
+  }
+  .enskri-field-error { color: #B91C1C; font-size: 12px; font-weight: 500; margin-top: 4px; }
   .enskri-error {
     background: #FEF2F2; color: #991B1B;
     border: 1px solid #FECACA; border-radius: 8px;
@@ -341,36 +346,74 @@
   var countrySectors = <%= PartnerSectorConstants::COUNTRY_REQUIRED_SECTORS.to_json.html_safe %>;
   var modalData = document.getElementById('enskriModal').dataset;
 
-  /* ── Validation (runs on submit) ── */
+  /* ── Validation (live; submit enabled only when complete) ── */
   function enskriShowError(msg) {
     var errDiv = document.getElementById('enskri-form-error');
     errDiv.querySelector('span').textContent = msg || '';
     errDiv.style.display = msg ? 'block' : 'none';
   }
 
-  function enskriValidate() {
-    enskriShowError(null);
-    var em = document.getElementById('modal_email').value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { enskriShowError(modalData.errorEmail); return false; }
+  // Every missing/invalid field at once: [{ id: field to mark, msg }]
+  function enskriErrors() {
+    var errs = [];
+    var val = function(id) { return document.getElementById(id).value.trim(); };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('modal_email'))) errs.push({ id: 'modal_email', msg: modalData.errorEmail });
 
-    var isBusiness = document.getElementById('modal_signup_type').value === 'business';
-    if (isBusiness) {
-      var sector = document.getElementById('modal_sector').value;
-      if (!document.getElementById('modal_org_name').value.trim()) { enskriShowError(modalData.errorOrg); return false; }
-      if (!sector) { enskriShowError(modalData.errorSector); return false; }
-      if (countrySectors.includes(sector) && !document.getElementById('modal_sector_country').value) { enskriShowError(modalData.errorCountry); return false; }
-      if (sector === 'pnh' && (!document.getElementById('modal_unit_type').value || !document.getElementById('modal_unit_name').value)) { enskriShowError(modalData.errorUnit); return false; }
-      return true;
+    if (val('modal_signup_type') === 'business') {
+      var sector = val('modal_sector');
+      if (!val('modal_org_name')) errs.push({ id: 'modal_org_name', msg: modalData.errorOrg });
+      if (!sector) errs.push({ id: 'modal_sector', msg: modalData.errorSector });
+      if (countrySectors.includes(sector) && !val('modal_sector_country')) errs.push({ id: 'modal_sector_country', msg: modalData.errorCountry });
+      if (sector === 'pnh' && !(val('modal_unit_type') && val('modal_unit_name'))) {
+        errs.push({ id: val('modal_unit_type') ? 'modal_unit_name' : 'modal_unit_type', msg: modalData.errorUnit });
+      }
+      return errs;
     }
 
     // Individuals: where they live
-    if (document.getElementById('modal_diaspora').value === '1') {
-      if (!document.getElementById('modal_us_state').value) { enskriShowError(modalData.errorState); return false; }
-      if (!document.getElementById('modal_us_city').value.trim()) { enskriShowError(modalData.errorCity); return false; }
-    } else if (!document.getElementById('modal_commune').value) {
-      enskriShowError(modalData.errorCommune); return false;
+    if (val('modal_diaspora') === '1') {
+      if (!val('modal_us_state')) errs.push({ id: 'modal_us_state', msg: modalData.errorState });
+      else if (!val('modal_us_city')) errs.push({ id: 'modal_us_city', msg: modalData.errorCity });
+    } else if (!val('modal_commune')) {
+      errs.push({ id: val('modal_dept') ? 'modal_commune' : 'modal_dept', msg: modalData.errorCommune });
     }
-    return true;
+    return errs;
+  }
+
+  // Fields the visitor has left (or all of them after a submit attempt) show
+  // their error; untouched ones stay quiet. Submit is enabled only when
+  // nothing is missing.
+  var enskriTouched = {};
+  var enskriSubmitTried = false;
+
+  function enskriRefresh() {
+    var errs = enskriErrors();
+    var form = document.getElementById('enskri-form');
+    form.querySelectorAll('.is-invalid').forEach(function(el) { el.classList.remove('is-invalid'); });
+    form.querySelectorAll('.enskri-field-error').forEach(function(el) { el.remove(); });
+    errs.forEach(function(e) {
+      if (!enskriSubmitTried && !enskriTouched[e.id]) return;
+      var el = document.getElementById(e.id);
+      el.classList.add('is-invalid');
+      var msg = document.createElement('div');
+      msg.className = 'enskri-field-error';
+      msg.textContent = e.msg;
+      (el.closest('.col-md-6, .mb-3') || el.parentNode).appendChild(msg);
+    });
+    // Looks disabled but stays clickable: a click on it shows every missing
+    // field instead of doing nothing.
+    var btn = form.querySelector('.enskri-btn-submit');
+    btn.classList.toggle('enskri-btn-incomplete', errs.length > 0);
+    btn.setAttribute('aria-disabled', errs.length > 0 ? 'true' : 'false');
+    return errs;
+  }
+
+  function enskriValidate() {
+    enskriShowError(null);
+    enskriSubmitTried = true;
+    var errs = enskriRefresh();
+    if (errs.length) document.getElementById(errs[0].id).focus();
+    return errs.length === 0;
   }
 
   /* ── Social proof line ── */
@@ -552,6 +595,7 @@
   function cityPick(name) {
     document.getElementById('modal_us_city').value = name;
     cityHideSuggest();
+    enskriRefresh();
   }
 
   function cityMove(step) {
@@ -622,6 +666,18 @@
   /* ── Modal open triggers ── */
   document.addEventListener('DOMContentLoaded', function() {
     enskriUpdateSocialProof();
+
+    // Re-check on every edit and toggle; mark a field touched once left
+    var liveForm = document.getElementById('enskri-form');
+    ['input', 'change', 'click', 'keyup'].forEach(function(evt) {
+      liveForm.addEventListener(evt, function() { setTimeout(enskriRefresh, 0); });
+    });
+    liveForm.addEventListener('focusout', function(e) {
+      if (e.target.id) enskriTouched[e.target.id] = true;
+      setTimeout(enskriRefresh, 0);
+    });
+    enskriRefresh();
+    document.getElementById('enskriModal').addEventListener('shown.bs.modal', enskriRefresh);
 
     if (window.location.hash === '#enskri' || modalData.autoOpen === '1' ||
         document.querySelector('#enskriModal .alert-danger')) {
