@@ -1,49 +1,25 @@
-# app/mailers/citizens/identity_submission_mailer.rb
+# frozen_string_literal: true
+
+# Verification and reset decisions, in the citizen's language.
 module Citizens
   class IdentitySubmissionMailer < Citizens::BaseMailer
     default from: "bonid@verifyem.ht"
-    layout "mailer"
 
+    def submission_received_email(submission) = notify(submission, :received)
+    def approved_email(submission)            = notify(submission, :approved)
+    def rejected_email(submission)            = notify(submission, :rejected)
+    def reset_requested_email(submission)     = notify(submission, :reset_requested)
+    def reset_approved_email(submission)      = notify(submission, :reset_approved)
+    def reset_rejected_email(submission)      = notify(submission, :reset_rejected)
 
-     # --- New addition ---
-     def submission_received_email(submission)
+    private
+
+    def notify(submission, kind)
       @submission = submission
       @citizen = submission.user
-      @email_product = "bonid"
-      mail(
-        to: @citizen.email,
-        subject: "BonID: Nou resevwa soumisyon verifikasyon ou"
-      )
-    end
-
-    def approved_email(submission)
-      @submission = submission
-      @email_product = "bonid"
-      mail(to: submission.user.email, subject: "BonID: Verifikasyon ou apwouve!")
-    end
-
-    def rejected_email(submission)
-      @submission = submission
-      @email_product = "bonid"
-      mail(to: submission.user.email, subject: "BonID: Soumisyon ou pa apwouve")
-    end
-
-    def reset_requested_email(submission)
-      @submission = submission
-      @email_product = "bonid"
-      mail(to: submission.user.email, subject: "BonID: Demann reyinisyalizasyon resevwa")
-    end
-
-    def reset_approved_email(submission)
-      @submission = submission
-      @email_product = "bonid"
-      mail(to: submission.user.email, subject: "BonID: Reyinisyalizasyon apwouve")
-    end
-
-    def reset_rejected_email(submission)
-      @submission = submission
-      @email_product = "bonid"
-      mail(to: submission.user.email, subject: "BonID: Reyinisyalizasyon pa apwouve")
+      with_citizen_locale(@citizen) do
+        mail(to: @citizen.email, subject: t("mailers.identity_submission.#{kind}.subject"))
+      end
     end
   end
 end

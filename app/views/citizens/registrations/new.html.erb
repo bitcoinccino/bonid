@@ -139,6 +139,19 @@
         <%= f.label :email, t("citizen_portal.auth.login.email_label") %>
       </div>
 
+      <%# Emails go out in the language this page is in (saved as the
+          account's language, see RegistrationsController#build_resource);
+          "Change" opens the globe menu at the top right. %>
+      <p class="auth-email-language">
+        <i class="ri-mail-line" aria-hidden="true"></i>
+        <span><%= t("citizen_portal.auth.signup.email_language", language: { "ht" => "Kreyòl", "fr" => "français", "en" => "English" }.fetch(I18n.locale.to_s, "Kreyòl")) %></span>
+        <span aria-hidden="true">·</span>
+        <button type="button" class="auth-email-language__change"
+                data-controller="open-dropdown"
+                data-open-dropdown-toggle-value=".auth-lang-toggle"
+                data-action="open-dropdown#open"><%= t("citizen_portal.auth.signup.email_language_change") %></button>
+      </p>
+
       <%= f.button :submit, t("citizen_portal.auth.signup.create"),
             class: "btn btn-haitian-primary w-100 mt-2",
             id: "submit-button",

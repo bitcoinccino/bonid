@@ -1,34 +1,35 @@
-<%# Plain-English scan alert on the shared Haitian-blue layout (layouts/mailer). %>
+<%# Scan alert on the shared Haitian-blue layout (layouts/mailer), in the
+    citizen's language (mailers.qr_scan.*). %>
 <%
   who =
-    if @officer then "#{@officer.full_name.presence || 'A police officer'} (police)"
+    if @officer then t("mailers.qr_scan.who_police", name: @officer.full_name.presence || t("mailers.qr_scan.police_default"))
     elsif @partner then @partner.name
-    else "Someone using a phone camera"
+    else t("mailers.qr_scan.who_camera")
     end
   place = [ @scan_log.city.presence, @scan_log.country.presence ].compact.join(", ").presence
 %>
 <div style="font-family:'Montserrat','Inter',Arial,sans-serif; font-size:20px; font-weight:700; color:#00209F; margin-bottom:12px;">
-  Your BonID was checked
+  <%= t("mailers.qr_scan.heading") %>
 </div>
-<p style="margin:0 0 16px;">Hi <%= @user.first_name.presence || @user.full_name %>,</p>
-<p style="margin:0 0 16px;">Someone just checked your BonID to confirm who you are.</p>
+<p style="margin:0 0 16px;"><%= t("mailers.citizen_common.greeting", name: @user.first_name.presence || @user.full_name) %></p>
+<p style="margin:0 0 16px;"><%= t("mailers.qr_scan.body") %></p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F5FB; border-radius:10px; margin:0 0 16px;">
   <tr><td style="padding:14px 18px; font-size:14px; color:#1E293B; line-height:1.9;">
-    <strong>Who:</strong> <%= who %><br>
-    <strong>When:</strong> <%= @scan_log.scanned_at.strftime("%b %-d, %Y at %-I:%M %p") %><br>
-    <% if place %><strong>Where:</strong> about <%= place %><% end %>
+    <strong><%= t("mailers.qr_scan.who") %></strong> <%= who %><br>
+    <strong><%= t("mailers.qr_scan.when") %></strong> <%= I18n.l(@scan_log.scanned_at, format: t("mailers.qr_scan.time_format")) %><br>
+    <% if place %><strong><%= t("mailers.qr_scan.where") %></strong> <%= t("mailers.qr_scan.where_value", place: place) %><% end %>
   </td></tr>
 </table>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FEF3C7; border-radius:10px; margin:0 0 20px;">
   <tr><td style="padding:12px 16px; font-size:13px; color:#78350F;">
-    <strong>Wasn't you?</strong> Someone may have a photo of your QR code. Contact support@verifyem.ht right away.
+    <strong><%= t("mailers.qr_scan.not_you_title") %></strong> <%= t("mailers.qr_scan.not_you") %>
   </td></tr>
 </table>
 
 <div style="text-align:center;">
   <a href="<%= citizens_activity_url %>" style="display:inline-block; background:#00209F; color:#FFFFFF; text-decoration:none; font-weight:700; font-size:14px; padding:12px 22px; border-radius:8px;">
-    See your activity
+    <%= t("mailers.qr_scan.button") %>
   </a>
 </div>

@@ -1,13 +1,14 @@
-Your BonID was checked
+<% place = [ @scan_log.city.presence, @scan_log.country.presence ].compact.join(", ").presence -%>
+<%= t("mailers.qr_scan.heading") %>
 
-Hi <%= @user.first_name.presence || @user.full_name %>,
+<%= t("mailers.citizen_common.greeting", name: @user.first_name.presence || @user.full_name) %>
 
-Someone just checked your BonID to confirm who you are.
+<%= t("mailers.qr_scan.body") %>
 
-Who: <%= @officer ? "#{@officer.full_name.presence || 'A police officer'} (police)" : (@partner&.name || "Someone using a phone camera") %>
-When: <%= @scan_log.scanned_at.strftime("%b %-d, %Y at %-I:%M %p") %>
-<% place = [ @scan_log.city.presence, @scan_log.country.presence ].compact.join(", ").presence %><% if place %>Where: about <%= place %>
+<%= t("mailers.qr_scan.who") %> <%= @officer ? t("mailers.qr_scan.who_police", name: @officer.full_name.presence || t("mailers.qr_scan.police_default")) : (@partner&.name || t("mailers.qr_scan.who_camera")) %>
+<%= t("mailers.qr_scan.when") %> <%= I18n.l(@scan_log.scanned_at, format: t("mailers.qr_scan.time_format")) %>
+<% if place %><%= t("mailers.qr_scan.where") %> <%= t("mailers.qr_scan.where_value", place: place) %>
 <% end %>
-Wasn't you? Someone may have a photo of your QR code. Contact support@verifyem.ht right away.
+<%= t("mailers.qr_scan.not_you_title") %> <%= t("mailers.qr_scan.not_you") %>
 
-See your activity: <%= citizens_activity_url %>
+<%= t("mailers.qr_scan.button") %>: <%= citizens_activity_url %>

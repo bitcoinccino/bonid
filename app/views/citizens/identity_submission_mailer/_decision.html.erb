@@ -1,0 +1,32 @@
+<%# Shared body for the verification / reset decision emails. Copy lives in
+    mailers.identity_submission.<kind> (citizen_mailers.*.yml); the email is
+    rendered in the citizen's language (Citizens::BaseMailer). %>
+<% s = ->(key, **opts) { t("mailers.identity_submission.#{kind}.#{key}", **opts) } %>
+<% color = { received: "var(--haitian-blue)", reset_requested: "var(--haitian-blue)",
+             approved: "var(--palm-green)", reset_approved: "var(--palm-green)",
+             rejected: "var(--danger-red)", reset_rejected: "var(--danger-red)" }[kind] %>
+<% bg = { approved: "#f5fff9", reset_approved: "#f5fff9", rejected: "#fff5f5", reset_rejected: "#fff5f5" }.fetch(kind, "#f8f9ff") %>
+<% content_for :title, s.(:subject) %>
+
+<h2 style="color: <%= color %>; font-weight: 700;"><%= s.(:heading) %></h2>
+
+<div class="status-card" style="border-left-color: <%= color %>; background: <%= bg %>;">
+  <strong><%= t("mailers.citizen_common.status") %></strong> <%= s.(:status) %><br>
+  <%= s.(:status_note) %>
+</div>
+
+<p><%= t("mailers.citizen_common.greeting_html", name: @submission.user.first_name) %></p>
+
+<p><%= s.(:body) %></p>
+
+<p>
+  <a href="<%= citizens_identity_submissions_url %>" class="button"><%= s.(:button) %></a>
+</p>
+
+<% if %i[rejected reset_rejected].include?(kind) %>
+  <p><%= t("mailers.citizen_common.support_html") %></p>
+<% else %>
+  <p><%= s.(:closing) %></p>
+<% end %>
+
+<p><%= t("mailers.citizen_common.signoff") %></p>

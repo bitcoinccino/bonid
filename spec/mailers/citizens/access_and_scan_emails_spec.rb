@@ -103,7 +103,8 @@ RSpec.describe "Citizen access & scan emails", type: :mailer do
 end
 
 RSpec.describe "Wallet QR scan email", type: :request do
-  let(:citizen) { create(:user, :with_address, first_name: "Davidson", last_name: "Louis") }
+  # The alert goes out in the citizen's language; this one reads English.
+  let(:citizen) { create(:user, :with_address, first_name: "Davidson", last_name: "Louis", preferred_locale: "en") }
   let!(:submission) { create(:identity_submission, :approved, user: citizen) }
 
   it "emails the citizen when someone scans their wallet QR with a phone" do

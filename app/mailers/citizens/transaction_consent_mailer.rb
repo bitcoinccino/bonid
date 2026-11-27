@@ -13,10 +13,12 @@ module Citizens
       @partner = @consent.partner
       @email_product = "bonid"
       @email_badge = "TRANSACTION"
-      mail(
-        to: @citizen.email,
-        subject: t("mailers.transaction_consent.consent_request.subject", partner_name: @partner.name)
-      )
+      with_citizen_locale(@citizen) do
+        mail(
+          to: @citizen.email,
+          subject: t("mailers.transaction_consent.consent_request.subject", partner_name: @partner.name)
+        )
+      end
     end
 
     def consent_approved
@@ -25,10 +27,12 @@ module Citizens
       @partner = @consent.partner
       @email_product = "bonid"
       @email_badge = "TRANSACTION"
-      mail(
-        to: @citizen.email,
-        subject: t("mailers.transaction_consent.consent_approved.subject", partner_name: @partner.name)
-      )
+      with_citizen_locale(@citizen) do
+        mail(
+          to: @citizen.email,
+          subject: t("mailers.transaction_consent.consent_approved.subject", partner_name: @partner.name)
+        )
+      end
     end
 
     def consent_denied
@@ -37,10 +41,12 @@ module Citizens
       @partner = @consent.partner
       @email_product = "bonid"
       @email_badge = "TRANSACTION"
-      mail(
-        to: @citizen.email,
-        subject: t("mailers.transaction_consent.consent_denied.subject", partner_name: @partner.name)
-      )
+      with_citizen_locale(@citizen) do
+        mail(
+          to: @citizen.email,
+          subject: t("mailers.transaction_consent.consent_denied.subject", partner_name: @partner.name)
+        )
+      end
     end
 
     def consent_reminder
@@ -50,10 +56,12 @@ module Citizens
       @partner = @consent.partner
       @email_product = "bonid"
       @email_badge = "TRANSACTION"
-      mail(
-        to: @citizen.email,
-        subject: t("mailers.transaction_consent.consent_reminder.subject", partner_name: @partner.name)
-      )
+      with_citizen_locale(@citizen) do
+        mail(
+          to: @citizen.email,
+          subject: t("mailers.transaction_consent.consent_reminder.subject", partner_name: @partner.name)
+        )
+      end
     end
   end
 end

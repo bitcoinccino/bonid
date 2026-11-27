@@ -3,7 +3,6 @@
 module Citizens
   class QrScanMailer < Citizens::BaseMailer
     default from: "bonid@verifyem.ht"
-    layout "mailer" # shared Haitian-blue email style
 
     # scan_log is a QrScanLog record (AUDIT source of truth)
     def scan_alert(scan_log)
@@ -13,10 +12,10 @@ module Citizens
       @partner    = scan_log.partner
       @officer    = scan_log.officer
 
-      mail(
-        to: @user.email,
-        subject: "BonID: Your BonID was checked on #{scan_log.scanned_at.strftime('%b %-d, %Y')}"
-      )
+      with_citizen_locale(@user) do
+        date = I18n.l(scan_log.scanned_at, format: t("mailers.qr_scan.date_format"))
+        mail(to: @user.email, subject: t("mailers.qr_scan.subject", date: date))
+      end
     end
   end
 end

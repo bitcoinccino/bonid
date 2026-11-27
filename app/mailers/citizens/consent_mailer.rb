@@ -8,7 +8,9 @@ module Citizens
       @citizen = @grant.citizen
       @partner = @grant.partner
       @email_product = "bonid"
-      mail(to: @citizen.email, subject: t("mailers.consent.request_notification.subject", partner_name: @partner.name))
+      with_citizen_locale(@citizen) do
+        mail(to: @citizen.email, subject: t("mailers.consent.request_notification.subject", partner_name: @partner.name))
+      end
     end
 
     def approval_confirmation
@@ -16,7 +18,9 @@ module Citizens
       @citizen = @grant.citizen
       @partner = @grant.partner
       @email_product = "bonid"
-      mail(to: @citizen.email, subject: t("mailers.consent.approval_confirmation.subject", partner_name: @partner.name))
+      with_citizen_locale(@citizen) do
+        mail(to: @citizen.email, subject: t("mailers.consent.approval_confirmation.subject", partner_name: @partner.name))
+      end
     end
 
     def denial_notification
@@ -24,7 +28,9 @@ module Citizens
       @citizen = @grant.citizen
       @partner = @grant.partner
       @email_product = "bonid"
-      mail(to: @citizen.email, subject: t("mailers.consent.denial_notification.subject", partner_name: @partner.name))
+      with_citizen_locale(@citizen) do
+        mail(to: @citizen.email, subject: t("mailers.consent.denial_notification.subject", partner_name: @partner.name))
+      end
     end
   end
 end

@@ -16,6 +16,7 @@ const registerControllers = () => {
   register("confirmation", () => import("./confirmation_controller"))
   register("cookie-consent", () => import("./cookie_consent_controller"))
   register("global-loading", () => import("./global_loading_controller"))
+  register("open-dropdown", () => import("./open_dropdown_controller"))
 
   // ───────── Forms ─────────
   register("form-handler", () => import("./form_handler_controller"))

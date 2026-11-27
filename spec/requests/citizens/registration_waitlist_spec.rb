@@ -22,6 +22,21 @@ RSpec.describe "Citizen sign-up gate (/signup)", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
+    it "says which language emails will be in, with a link to change it" do
+      commune.update!(launched: true)
+      get signup_path(commune: "HT0112", lang: "fr")
+      expect(response.body).to include("Nous vous écrirons en français", "Modifier")
+      get signup_path(commune: "HT0112", lang: "en")
+      expect(response.body).to include("We&#39;ll email you in English")
+    end
+
+    it "saves the sign-up page's language as the account language (emails use it)" do
+      commune.update!(launched: true)
+      get signup_path(commune: "HT0112", lang: "fr")
+      user = register(commune: "HT0112")
+      expect(user.preferred_locale).to eq("fr")
+    end
+
     it "opens for an available invite code, typed loosely" do
       InviteCode.create!(code: "DEL-7KQ2XA", code_type: "personal")
       get signup_path(invite: "del7kq2xa")
