@@ -39,7 +39,7 @@ class LandingController < ApplicationController
       return render_enskri_error(t_landing("invalid_invite_code")) unless code
     end
 
-    if @waitlist_signup.save
+    if @waitlist_signup.save(context: :signup_form) # every form field required
       # Organizations don't roll out by commune — hand them off to the partner
       # application pipeline (vetting/approval) instead of the geographic gate.
       if @waitlist_signup.signup_type == "business"
@@ -71,7 +71,8 @@ class LandingController < ApplicationController
         if @waitlist_signup.errors.of_kind?(:email, :taken)
           t_landing("email_taken")
         else
-          @waitlist_signup.errors.map(&:message).uniq.to_sentence.presence || t_landing("waitlist_error")
+          # One problem at a time, like the form's own check
+          @waitlist_signup.errors.map(&:message).first.presence || t_landing("waitlist_error")
         end
       render_enskri_error(message)
     end

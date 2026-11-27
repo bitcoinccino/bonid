@@ -8,6 +8,10 @@
 module DiasporaLocations
   STATE_COUNTRY = "US"
 
+  # Countries a citizen can pick under "Abroad" right now. Add codes here
+  # to open more countries (the form and validation follow this list).
+  SIGNUP_COUNTRIES = %w[US].freeze
+
   PRIORITY_STATES = %w[FL NY MA NJ GA IL PA MD].freeze
 
   CITIES = {
@@ -62,11 +66,20 @@ module DiasporaLocations
                   .freeze
   end
 
-  # [[name, code], ...]: priority states, a disabled divider, then the rest A→Z
-  def self.state_options
-    priority = PRIORITY_STATES.map { |code| [states[code], code] }
-    rest = states.except(*PRIORITY_STATES).map { |code, name| [name, code] }.sort_by(&:first)
-    priority + [["───", "", { disabled: true }]] + rest
+  # Two groups for the State dropdown: priority states, then the rest A→Z
+  def self.state_groups
+    {
+      priority: PRIORITY_STATES.map { |code| [states[code], code] },
+      other: states.except(*PRIORITY_STATES).map { |code, name| [name, code] }.sort_by(&:first)
+    }
+  end
+
+  # [[localized name, code], ...] for the "Abroad" country dropdown
+  def self.country_options
+    SIGNUP_COUNTRIES.map do |code|
+      country = ISO3166::Country[code]
+      [I18n.t("main.signup_form.country_names.#{code}", default: country.common_name || country.name), code]
+    end
   end
 
   def self.state_name(code) = states[code.to_s.upcase]

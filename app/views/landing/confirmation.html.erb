@@ -8,7 +8,7 @@
 <%# Same palette as the sign-up form people arrive from: Haitian-blue
     backdrop, content on a white card. %>
 <section style="min-height: 100vh; background: #00209F; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; box-sizing: border-box;">
-  <div style="max-width: 480px; width: 100%; text-align: center; background: #fff; border-radius: 20px; padding: 32px 24px; box-sizing: border-box; box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);">
+  <div style="max-width: 480px; width: 100%; text-align: center; background: #fff; border-radius: 20px; padding: 32px 24px; box-sizing: border-box;">
 
     <%# Success icon + title %>
     <div style="width: 72px; height: 72px; border-radius: 50%; background: #ECFDF5; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
@@ -52,37 +52,31 @@
       </p>
     <% end %>
 
-    <%# Primary: WhatsApp %>
-    <a href="https://wa.me/?text=<%= ERB::Util.url_encode(share_text) %>"
-       target="_blank" rel="noopener"
-       style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box; background: #25D366; color: #fff; padding: 15px 20px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 16px; font-family: 'Montserrat', sans-serif; margin-bottom: 14px;">
-      <i class="ri-whatsapp-line" style="font-size: 22px;" aria-hidden="true"></i> <%= c.(:whatsapp) %>
-    </a>
-
-    <%# Link + copy %>
-    <label for="share-link" style="display: block; text-align: left; color: #6B7280; font-size: 12px; margin: 0 0 6px;"><%= c.(:link_label) %></label>
-    <div style="display: flex; gap: 8px; margin-bottom: 14px;">
-      <input id="share-link" type="text" readonly value="<%= @share_url %>"
-             style="flex: 1; min-width: 0; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; color: #374151; font-size: 13px; font-family: monospace;"
-             onclick="this.select()">
-      <button type="button" id="copy-btn"
-              data-label="<%= c.(:copy) %>" data-copied="<%= c.(:copied) %>"
-              style="flex-shrink: 0; background: #00209F; color: #fff; border: none; padding: 0 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; white-space: nowrap;">
-        <i class="ri-file-copy-line" aria-hidden="true"></i> <span><%= c.(:copy) %></span>
+    <%# One Share button; its menu offers copy / WhatsApp / message / X %>
+    <div class="share-wrap" style="position: relative; margin-bottom: 28px;">
+      <button type="button" id="share-btn" aria-haspopup="true" aria-expanded="false" aria-controls="share-menu"
+              style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: #00209F; color: #fff; border: none; padding: 15px 20px; border-radius: 12px; font-weight: 700; font-size: 16px; font-family: 'Montserrat', sans-serif; cursor: pointer;">
+        <i class="ri-share-forward-line" style="font-size: 20px;" aria-hidden="true"></i> <%= c.(:share) %>
       </button>
-    </div>
 
-    <%# Secondary shares %>
-    <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 28px;">
-      <a href="sms:?&body=<%= ERB::Util.url_encode(share_text) %>"
-         style="display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #D1D5DB; color: #374151; padding: 9px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 13px;">
-        <i class="ri-message-2-line" aria-hidden="true"></i> SMS
-      </a>
-      <a href="https://twitter.com/intent/tweet?text=<%= ERB::Util.url_encode(share_text) %>"
-         target="_blank" rel="noopener"
-         style="display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #D1D5DB; color: #374151; padding: 9px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 13px;">
-        <i class="ri-twitter-x-line" aria-hidden="true"></i> X
-      </a>
+      <div id="share-menu" role="menu" hidden
+           style="position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 10; background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 6px; text-align: left; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.10);">
+        <button type="button" role="menuitem" class="share-item" id="share-copy"
+                data-url="<%= @share_url %>" data-label="<%= c.(:copy) %>" data-copied="<%= c.(:copied) %>">
+          <i class="ri-file-copy-line" style="color: #00209F;" aria-hidden="true"></i> <span><%= c.(:copy) %></span>
+        </button>
+        <a role="menuitem" class="share-item" target="_blank" rel="noopener"
+           href="https://wa.me/?text=<%= ERB::Util.url_encode(share_text) %>">
+          <i class="ri-whatsapp-line" style="color: #25D366;" aria-hidden="true"></i> WhatsApp
+        </a>
+        <a role="menuitem" class="share-item" href="sms:?&body=<%= ERB::Util.url_encode(share_text) %>">
+          <i class="ri-message-2-line" style="color: #6366f1;" aria-hidden="true"></i> <%= c.(:message) %>
+        </a>
+        <a role="menuitem" class="share-item" target="_blank" rel="noopener"
+           href="https://twitter.com/intent/tweet?text=<%= ERB::Util.url_encode(share_text) %>">
+          <i class="ri-twitter-x-line" style="color: #111827;" aria-hidden="true"></i> X (Twitter)
+        </a>
+      </div>
     </div>
 
     <%# What happens next %>
@@ -105,28 +99,58 @@
   <% end %>
 </section>
 
+<style>
+  .share-item {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 12px 14px; border: none; border-radius: 8px; background: none;
+    color: #111827; font-size: 15px; font-weight: 600; text-decoration: none; cursor: pointer;
+  }
+  .share-item i { font-size: 20px; }
+  .share-item:hover, .share-item:focus-visible { background: #EEF2FF; color: #00209F; outline: none; }
+</style>
+
 <script>
   (function () {
-    var btn = document.getElementById('copy-btn');
-    var input = document.getElementById('share-link');
-    if (!btn || !input) return;
-    var label = btn.querySelector('span');
+    var btn = document.getElementById('share-btn');
+    var menu = document.getElementById('share-menu');
+    var copy = document.getElementById('share-copy');
+    if (!btn || !menu) return;
 
-    function done() {
-      label.textContent = btn.dataset.copied;
-      btn.style.background = '#16a34a';
-      setTimeout(function () {
-        label.textContent = btn.dataset.label;
-        btn.style.background = '#00209F';
-      }, 2000);
+    function setOpen(open) {
+      menu.hidden = !open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) menu.querySelector('.share-item').focus();
     }
 
-    btn.addEventListener('click', function () {
+    btn.addEventListener('click', function () { setOpen(menu.hidden); });
+    document.addEventListener('click', function (e) {
+      if (!menu.hidden && !menu.contains(e.target) && e.target !== btn && !btn.contains(e.target)) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) { setOpen(false); btn.focus(); }
+    });
+    // Close after picking WhatsApp / Message / X
+    menu.querySelectorAll('a.share-item').forEach(function (a) {
+      a.addEventListener('click', function () { setOpen(false); });
+    });
+
+    // Copy link: shows "Copied!" briefly, keeps the menu open so it is seen
+    var label = copy.querySelector('span');
+    function copied() {
+      label.textContent = copy.dataset.copied;
+      setTimeout(function () { label.textContent = copy.dataset.label; setOpen(false); }, 1200);
+    }
+    copy.addEventListener('click', function () {
+      var url = copy.dataset.url;
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(input.value).then(done);
+        navigator.clipboard.writeText(url).then(copied);
       } else {
-        input.select();
-        try { document.execCommand('copy'); done(); } catch (e) {}
+        var ta = document.createElement('textarea');
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); copied(); } catch (e) {}
+        document.body.removeChild(ta);
       }
     });
   })();

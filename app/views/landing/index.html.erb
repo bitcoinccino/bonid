@@ -18,6 +18,10 @@
      data-error-org="<%= t('main.signup_form.error_org') %>"
      data-error-sector="<%= t('main.signup_form.error_sector') %>"
      data-error-state="<%= t('main.signup_form.error_state') %>"
+     data-error-city="<%= t('main.signup_form.error_city') %>"
+     data-error-commune="<%= t('main.signup_form.error_commune') %>"
+     data-error-country="<%= t('main.signup_form.error_country') %>"
+     data-error-unit="<%= t('main.signup_form.error_unit') %>"
      data-bonid-available="<%= t('main.signup_form.bonid_available') %>"
      data-coming-soon="<%= t('main.signup_form.coming_soon') %>"
      data-active-label="<%= t('main.signup_form.active') %>"
@@ -94,9 +98,11 @@
               <%
                 priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
                 other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - priority_countries
-                all_countries = priority_countries + [["---", ""]] + other_countries
               %>
-              <%= f.select :country_of_residence, all_countries, { prompt: t("main.signup_form.choose") },
+              <%= f.select :country_of_residence,
+                  grouped_options_for_select({ t("main.signup_form.country_group_priority") => priority_countries,
+                                               t("main.signup_form.country_group_other") => other_countries }),
+                  { prompt: t("main.signup_form.choose") },
                   { class: "form-select enskri-input", id: "modal_sector_country", disabled: true } %>
             </div>
 
@@ -163,19 +169,18 @@
             </div>
           </div>
 
-          <%# Abroad fields: Country picker %>
+          <%# Abroad fields: the United States is the only country open for
+              now (DiasporaLocations::SIGNUP_COUNTRIES), so it is shown as a
+              pill and posted from a hidden field (enabled only for Abroad). %>
           <div id="modal-abroad-fields" style="display: none;">
             <div class="mb-3">
-              <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.which_country") %></label>
-              <%
-                d_priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
-                d_other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - d_priority_countries
-                d_all_countries = d_priority_countries + [["---", ""]] + d_other_countries
-              %>
-              <%= f.select :country_of_residence, d_all_countries,
-                  { prompt: t("main.signup_form.choose_country") },
-                  { class: "form-select enskri-input", id: "modal_diaspora_country", disabled: true,
-                    onchange: "modalCountryChange(this.value)" } %>
+              <span class="form-label fw-semibold enskri-label d-block"><%= t("main.signup_form.country") %></span>
+              <% us_name = DiasporaLocations.country_options.to_h.invert["US"] %>
+              <span style="display: inline-flex; align-items: center; gap: 8px; background: #EEF2FF; border: 1px solid #C7D2FE; color: #00209F; border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px;">
+                <span aria-hidden="true">🇺🇸</span> <%= us_name %>
+              </span>
+              <%= f.hidden_field :country_of_residence, value: "US", id: "modal_diaspora_country", disabled: true %>
+              <p style="color: #6B7280; font-size: 12px; margin: 8px 0 0;"><%= t("main.signup_form.abroad_note") %></p>
             </div>
 
             <%# United States: State → City (curated cities for the largest
@@ -183,18 +188,25 @@
             <div id="modal-us-fields" style="display: none;">
               <div class="mb-3">
                 <label class="form-label fw-semibold enskri-label" for="modal_us_state"><%= t("main.signup_form.state") %></label>
-                <%= f.select :residence_state, DiasporaLocations.state_options,
+                <% state_groups = DiasporaLocations.state_groups %>
+                <%= f.select :residence_state,
+                    grouped_options_for_select({ t("main.signup_form.state_group_priority") => state_groups[:priority],
+                                                 t("main.signup_form.state_group_other") => state_groups[:other] }),
                     { prompt: t("main.signup_form.choose_state") },
                     { class: "form-select enskri-input", id: "modal_us_state", disabled: true,
                       onchange: "modalStateChange(this.value)" } %>
               </div>
               <div class="mb-3" id="modal-us-city-wrap" style="display: none;">
                 <label class="form-label fw-semibold enskri-label" for="modal_us_city"><%= t("main.signup_form.city") %></label>
-                <%# Type-to-search over the state's cities; any typed city is accepted %>
-                <input type="text" name="waitlist_signup[residence_city]" id="modal_us_city"
-                       list="modal-us-city-list" class="form-control enskri-input" maxlength="80"
-                       autocomplete="off" placeholder="<%= t("main.signup_form.city_placeholder") %>" disabled>
-                <datalist id="modal-us-city-list"></datalist>
+                <%# Type-to-search over the state's cities (own white list, not the
+                    browser's datalist); any typed city is accepted %>
+                <div style="position: relative;">
+                  <input type="text" name="waitlist_signup[residence_city]" id="modal_us_city"
+                         class="form-control enskri-input" maxlength="80" autocomplete="off"
+                         role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="modal-us-city-suggest"
+                         placeholder="<%= t("main.signup_form.city_placeholder") %>" disabled>
+                  <ul id="modal-us-city-suggest" role="listbox" class="enskri-suggest" hidden></ul>
+                </div>
               </div>
             </div>
           </div>
@@ -223,6 +235,20 @@
 
 <%# ═══════════ MODAL STYLES ═══════════ %>
 <style>
+  /* City suggestions under the City field (white, like the form) */
+  .enskri-suggest {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+    margin: 0; padding: 4px; list-style: none;
+    background: #fff; border: 1px solid #E2E8F0; border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    max-height: 240px; overflow-y: auto;
+  }
+  .enskri-suggest li {
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    color: #111827; font-size: 14px;
+  }
+  .enskri-suggest li[aria-selected="true"], .enskri-suggest li:hover { background: #EEF2FF; color: #00209F; }
+
   /* No background on the card itself: its white showed as a thin halo
      around the blue header's rounded corners. Header and body each carry
      their own background and corner radius instead. */
@@ -325,15 +351,24 @@
   function enskriValidate() {
     enskriShowError(null);
     var em = document.getElementById('modal_email').value.trim();
-    if (!em || !em.includes('@')) { enskriShowError(modalData.errorEmail); return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { enskriShowError(modalData.errorEmail); return false; }
 
-    if (document.getElementById('modal_diaspora').value === '1' &&
-        document.getElementById('modal_diaspora_country').value === 'US' &&
-        !document.getElementById('modal_us_state').value) { enskriShowError(modalData.errorState); return false; }
-
-    if (document.getElementById('modal_signup_type').value === 'business') {
+    var isBusiness = document.getElementById('modal_signup_type').value === 'business';
+    if (isBusiness) {
+      var sector = document.getElementById('modal_sector').value;
       if (!document.getElementById('modal_org_name').value.trim()) { enskriShowError(modalData.errorOrg); return false; }
-      if (!document.getElementById('modal_sector').value) { enskriShowError(modalData.errorSector); return false; }
+      if (!sector) { enskriShowError(modalData.errorSector); return false; }
+      if (countrySectors.includes(sector) && !document.getElementById('modal_sector_country').value) { enskriShowError(modalData.errorCountry); return false; }
+      if (sector === 'pnh' && (!document.getElementById('modal_unit_type').value || !document.getElementById('modal_unit_name').value)) { enskriShowError(modalData.errorUnit); return false; }
+      return true;
+    }
+
+    // Individuals: where they live
+    if (document.getElementById('modal_diaspora').value === '1') {
+      if (!document.getElementById('modal_us_state').value) { enskriShowError(modalData.errorState); return false; }
+      if (!document.getElementById('modal_us_city').value.trim()) { enskriShowError(modalData.errorCity); return false; }
+    } else if (!document.getElementById('modal_commune').value) {
+      enskriShowError(modalData.errorCommune); return false;
     }
     return true;
   }
@@ -416,9 +451,7 @@
       haitiFields.style.display = 'block';
       abroadFields.style.display = 'none';
       diasporaField.value = '0';
-      var countrySelect = document.getElementById('modal_diaspora_country');
-      countrySelect.value = '';
-      countrySelect.disabled = true;
+      document.getElementById('modal_diaspora_country').disabled = true;
       modalCountryChange('');
     } else {
       btnA.classList.add('enskri-toggle-active');
@@ -426,7 +459,9 @@
       haitiFields.style.display = 'none';
       abroadFields.style.display = 'block';
       diasporaField.value = '1';
-      document.getElementById('modal_diaspora_country').disabled = false;
+      var country = document.getElementById('modal_diaspora_country');
+      country.disabled = false;
+      modalCountryChange(country.value);
       document.getElementById('modal_dept').value = '';
       var commune = document.getElementById('modal_commune');
       commune.innerHTML = '<option value="">' + modalData.choose + '</option>';
@@ -446,15 +481,23 @@
     modalStateChange(state.value);
   }
 
-  // Loads the state's cities into the datalist (curated diaspora cities
-  // first, then every Census place). The field still takes any city typed.
+  // City suggestions: the state's cities (curated diaspora cities first,
+  // then every Census place) filtered as the visitor types. Any typed city
+  // is still accepted.
+  var usCityNames = [];
+  var usCityActive = -1;
+
+  function cityFold(str) {
+    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
   function modalStateChange(stateCode) {
     var wrap = document.getElementById('modal-us-city-wrap');
     var input = document.getElementById('modal_us_city');
-    var list = document.getElementById('modal-us-city-list');
 
     input.value = '';
-    list.innerHTML = '';
+    usCityNames = [];
+    cityHideSuggest();
     wrap.style.display = stateCode ? '' : 'none';
     input.disabled = !stateCode;
     if (!stateCode) return;
@@ -463,17 +506,83 @@
       .then(function(r) { return r.json(); })
       .then(function(cities) {
         // Ignore a late answer for a state the visitor already changed
-        if (document.getElementById('modal_us_state').value !== stateCode) return;
-        var frag = document.createDocumentFragment();
-        cities.forEach(function(name) {
-          var opt = document.createElement('option');
-          opt.value = name;
-          frag.appendChild(opt);
-        });
-        list.appendChild(frag);
+        if (document.getElementById('modal_us_state').value === stateCode) usCityNames = cities;
       })
       .catch(function() { /* suggestions are optional; typing still works */ });
   }
+
+  function cityShowSuggest() {
+    var input = document.getElementById('modal_us_city');
+    var list = document.getElementById('modal-us-city-suggest');
+    var q = cityFold(input.value);
+    var starts = [], contains = [];
+    for (var i = 0; i < usCityNames.length && starts.length < 8; i++) {
+      var name = cityFold(usCityNames[i]);
+      if (!q || name.indexOf(q) === 0) starts.push(usCityNames[i]);
+      else if (contains.length < 8 && name.indexOf(q) > 0) contains.push(usCityNames[i]);
+    }
+    var matches = starts.concat(contains).slice(0, 8);
+
+    list.innerHTML = '';
+    usCityActive = -1;
+    if (!matches.length || (matches.length === 1 && cityFold(matches[0]) === q)) { cityHideSuggest(); return; }
+    matches.forEach(function(name, idx) {
+      var li = document.createElement('li');
+      li.id = 'modal-us-city-opt-' + idx;
+      li.setAttribute('role', 'option');
+      li.textContent = name;
+      // mousedown fires before the input's blur, so the pick is not lost
+      li.addEventListener('mousedown', function(e) { e.preventDefault(); cityPick(name); });
+      list.appendChild(li);
+    });
+    list.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  function cityHideSuggest() {
+    var list = document.getElementById('modal-us-city-suggest');
+    var input = document.getElementById('modal_us_city');
+    list.hidden = true;
+    list.innerHTML = '';
+    usCityActive = -1;
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+  }
+
+  function cityPick(name) {
+    document.getElementById('modal_us_city').value = name;
+    cityHideSuggest();
+  }
+
+  function cityMove(step) {
+    var items = document.querySelectorAll('#modal-us-city-suggest li');
+    if (!items.length) return;
+    usCityActive = (usCityActive + step + items.length) % items.length;
+    items.forEach(function(li, idx) { li.setAttribute('aria-selected', idx === usCityActive ? 'true' : 'false'); });
+    items[usCityActive].scrollIntoView({ block: 'nearest' });
+    document.getElementById('modal_us_city').setAttribute('aria-activedescendant', items[usCityActive].id);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('modal_us_city');
+    if (!input) return;
+    input.addEventListener('input', cityShowSuggest);
+    input.addEventListener('focus', cityShowSuggest);
+    input.addEventListener('blur', cityHideSuggest);
+    input.addEventListener('keydown', function(e) {
+      var open = !document.getElementById('modal-us-city-suggest').hidden;
+      if (e.key === 'ArrowDown') { e.preventDefault(); open ? cityMove(1) : cityShowSuggest(); }
+      else if (e.key === 'ArrowUp' && open) { e.preventDefault(); cityMove(-1); }
+      else if (e.key === 'Enter' && open && usCityActive >= 0) {
+        e.preventDefault(); // pick the highlighted city, don't submit the form
+        cityPick(document.querySelectorAll('#modal-us-city-suggest li')[usCityActive].textContent);
+      } else if (e.key === 'Escape' && open) {
+        e.preventDefault();
+        e.stopPropagation(); // close the list, not the whole modal
+        cityHideSuggest();
+      }
+    });
+  });
 
   /* ── Commune AJAX ── */
   function modalLoadCommunes(deptId) {

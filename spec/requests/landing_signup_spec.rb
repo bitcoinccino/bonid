@@ -83,7 +83,15 @@ RSpec.describe "Waitlist sign-up (/enskri)", type: :request do
   it "shows the State and City fields in the form" do
     get enskri_path(lang: "fr")
     body = CGI.unescapeHTML(response.body)
-    expect(body).to include('id="modal_us_state"', "Florida", 'list="modal-us-city-list"', "Tapez le nom de votre ville")
+    expect(body).to include('id="modal_us_state"', "Florida", 'id="modal-us-city-suggest"', "Tapez le nom de votre ville")
+    expect(body).to include('<optgroup label="Les plus courants">', '<optgroup label="Autres États">')
+    expect(body).not_to include("<datalist")
+    # United States shown as a pill + hidden field, with the "more countries soon" note
+    expect(body).to match(/<input[^>]*id="modal_diaspora_country"[^>]*value="US"|<input[^>]*value="US"[^>]*id="modal_diaspora_country"/)
+    expect(body).to include("États-Unis", "Disponible en priorité aux États-Unis")
+    expect(body).not_to match(/<select[^>]*id="modal_diaspora_country"/)
+    selects = body.scan(/<select.*?<\/select>/m).join
+    expect(selects).not_to include("---", "───")
   end
 
   it "returns a state's city suggestions" do
@@ -92,6 +100,39 @@ RSpec.describe "Waitlist sign-up (/enskri)", type: :request do
     expect(cities.first).to eq("Miami")
     expect(cities).to include("Hialeah")
     expect(response.headers["Cache-Control"]).to include("public")
+  end
+
+  describe "required fields (server side)" do
+    def error_for(attrs, lang: "fr")
+      post_signup(attrs, lang: lang)
+      body = JSON.parse(response.body)
+      expect(body["ok"]).to be(false)
+      body["error"]
+    end
+
+    it "needs a commune for people in Haiti" do
+      expect(error_for({ commune_id: nil })).to eq("Veuillez choisir votre département et votre commune.")
+    end
+
+    it "needs a state and a city for people in the US" do
+      abroad = { commune_id: nil, diaspora: "1", country_of_residence: "US" }
+      expect(error_for(abroad.merge(residence_city: "Miami"))).to eq("Veuillez choisir votre État.")
+      expect(error_for(abroad.merge(residence_state: "FL"), lang: "ht")).to eq("Tanpri ekri vil ou.")
+    end
+
+    it "only accepts the United States abroad" do
+      post_signup({ commune_id: nil, diaspora: "1", country_of_residence: "CA", residence_state: "FL", residence_city: "Miami" })
+      expect(JSON.parse(response.body)["ok"]).to be(false)
+    end
+
+    it "rejects a malformed email" do
+      expect(error_for({ email: "jean@example" }, lang: "en")).to eq("Please enter a valid email address.")
+    end
+
+    it "needs the unit for PNH organizations" do
+      err = error_for({ signup_type: "business", organization_name: "PNH", sector: "pnh", commune_id: nil }, lang: "en")
+      expect(err).to eq("Please choose the unit type and unit name.")
+    end
   end
 
   it "reports a duplicate email in the visitor's language" do
@@ -108,9 +149,9 @@ RSpec.describe "Waitlist sign-up (/enskri)", type: :request do
     end
 
     {
-      "ht" => ["Ou sou lis la!", "Pataje sou WhatsApp", "Kopye lyen"],
-      "fr" => ["Vous êtes inscrit !", "Partager sur WhatsApp", "Copier le lien"],
-      "en" => ["You're on the list!", "Share on WhatsApp", "Copy link"]
+      "ht" => ["Ou sou lis la!", "Pataje lyen ou", "Kopye lyen"],
+      "fr" => ["Vous êtes inscrit !", "Partager mon lien", "Copier le lien"],
+      "en" => ["You're on the list!", "Share my link", "Copy link"]
     }.each do |lang, (title, whatsapp, copy)|
       it "renders in #{lang} only" do
         get enskri_confirmation_path(ref: signup.referral_code, lang: lang)
@@ -118,6 +159,9 @@ RSpec.describe "Waitlist sign-up (/enskri)", type: :request do
         expect(body).to include(title, whatsapp, copy)
         expect(body).to include("r***d@yahoo.com")
         expect(body).to include("/enskri?ref=#{signup.referral_code}")
+        # One Share button whose menu holds copy / WhatsApp / message / X
+        expect(body).to include('id="share-btn"', 'id="share-menu"', "wa.me/?text=", "sms:?&body=", "twitter.com/intent/tweet")
+        expect(body).not_to include('id="share-link"', "box-shadow: 0 24px 64px")
         others = %w[ht fr en] - [lang]
         titles = { "ht" => "Ou sou lis la!", "fr" => "Vous êtes inscrit !", "en" => "You're on the list!" }
         others.each { |o| expect(body).not_to include(titles[o]) }

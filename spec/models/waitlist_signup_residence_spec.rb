@@ -60,12 +60,17 @@ RSpec.describe WaitlistSignup, "US state and city" do
     end
   end
 
-  it "lists the priority states first, then a divider, then the rest A to Z" do
-    opts = DiasporaLocations.state_options
-    expect(opts.first(8).map(&:last)).to eq(%w[FL NY MA NJ GA IL PA MD])
-    expect(opts[8].last).to eq(disabled: true)
-    rest = opts[9..].map(&:first)
-    expect(rest).to eq(rest.sort)
-    expect(opts.size).to eq(8 + 1 + 43)
+  it "groups the priority states first, then the rest A to Z" do
+    groups = DiasporaLocations.state_groups
+    expect(groups[:priority].map(&:last)).to eq(%w[FL NY MA NJ GA IL PA MD])
+    expect(groups[:other].map(&:first)).to eq(groups[:other].map(&:first).sort)
+    expect(groups[:priority].size + groups[:other].size).to eq(51)
+  end
+
+  it "accepts only the countries open for signup for citizens abroad" do
+    expect(build(diaspora: true, country_of_residence: "CA")).not_to be_valid
+    expect(build(diaspora: true, country_of_residence: "US", residence_state: "FL")).to be_valid
+    expect(build(diaspora: true, country_of_residence: "CA", signup_type: "business",
+                 organization_name: "Org", sector: "banking")).to be_valid
   end
 end

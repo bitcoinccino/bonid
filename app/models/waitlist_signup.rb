@@ -16,21 +16,35 @@ class WaitlistSignup < ApplicationRecord
   validates :email, uniqueness: { case_sensitive: false, message: "Imèl sa enskri deja" }
   validates :signup_type, inclusion: { in: %w[citizen business] }
   validates :locale, inclusion: { in: %w[en fr ht] }, allow_nil: true
-
-  # Language for this person's emails (Kreyòl for older rows without one)
-  def email_locale
-    locale.presence || "ht"
-  end
-  validates :organization_name, presence: true, if: -> { signup_type == "business" }
-  validates :sector, presence: true, if: -> { signup_type == "business" }
-
-  before_create :generate_referral_code
-  before_validation :normalize_email, :normalize_residence, :normalize_referrer
+  validates :organization_name, presence: true, if: :business?
+  validates :sector, presence: true, if: :business?
 
   # US state/city (diaspora): state is a known code; city is free text
   # (picked from the suggestions or typed).
   validates :residence_state, inclusion: { in: ->(_) { DiasporaLocations.states.keys } }, allow_nil: true
   validates :residence_city, length: { maximum: 80 }, allow_nil: true
+  # Citizens abroad: only countries open for signup (organizations keep any
+  # country, it is their country of operation)
+  validates :country_of_residence, inclusion: { in: DiasporaLocations::SIGNUP_COUNTRIES },
+                                   on: %i[create signup_form], if: :citizen_abroad?
+
+  # Public waitlist form only (save(context: :signup_form)): every field the
+  # form shows must be filled. Messages follow the visitor's language.
+  with_options on: :signup_form do
+    # Same rule as the form's own check: something@domain.tld
+    validates :email, format: { with: /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/, message: ->(*) { I18n.t("main.signup_form.error_email") } }
+    validates :commune_id, presence: { message: ->(*) { I18n.t("main.signup_form.error_commune") } },
+                           if: -> { citizen? && !diaspora? }
+    validates :residence_state, presence: { message: ->(*) { I18n.t("main.signup_form.error_state") } }, if: :citizen_abroad?
+    validates :residence_city, presence: { message: ->(*) { I18n.t("main.signup_form.error_city") } }, if: :citizen_abroad?
+    validates :country_of_residence, presence: { message: ->(*) { I18n.t("main.signup_form.error_country") } },
+                                     if: -> { business? && PartnerSectorConstants::COUNTRY_REQUIRED_SECTORS.include?(sector) }
+    validates :unit_type, :unit_name, presence: { message: ->(*) { I18n.t("main.signup_form.error_unit") } },
+                                      if: -> { business? && sector == "pnh" }
+  end
+
+  before_create :generate_referral_code
+  before_validation :normalize_email, :normalize_residence, :normalize_referrer
 
   scope :citizens, -> { where(signup_type: "citizen") }
   scope :businesses, -> { where(signup_type: "business") }
@@ -59,6 +73,15 @@ class WaitlistSignup < ApplicationRecord
     state = DiasporaLocations.state_name(residence_state)
     [residence_city, state].compact_blank.join(", ").presence
   end
+
+  # Language for this person's emails (Kreyòl for older rows without one)
+  def email_locale
+    locale.presence || "ht"
+  end
+
+  def citizen? = signup_type == "citizen"
+  def business? = signup_type == "business"
+  def citizen_abroad? = citizen? && diaspora?
 
   def full_name
     "#{first_name} #{last_name}"
