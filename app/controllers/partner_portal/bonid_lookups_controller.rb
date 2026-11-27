@@ -99,8 +99,8 @@ module PartnerPortal
 
                 reset_failure_count
 
-                # Log the scan
-                result.submission.qr_scans.create!(
+                # Log the scan, and tell the citizen (bell + scan alert email)
+                scan = result.submission.qr_scans.create!(
                   identity_submission: result.submission,
                   partner: @current_partner,
                   verified_by: "Partner",
@@ -110,6 +110,7 @@ module PartnerPortal
                   user_agent: request.user_agent,
                   metadata: { via: token.present? ? "qr" : "manual", partner_id: @current_partner&.id }
                 )
+                QrScanLogger.log_existing!(scan, source: "partner_scan")
 
                 # Auto-check voter eligibility if an election is active
                 voter_record = auto_check_voter_eligibility(result.user)
@@ -208,8 +209,8 @@ module PartnerPortal
             return render_invalid(:insufficient_credits, "Kredi ou pa ase. Rechaje kont ou.", submission.bonid)
           end
 
-          # Confirmed — log the scan
-          submission.qr_scans.create!(
+          # Confirmed — log the scan, and tell the citizen (bell + email)
+          scan = submission.qr_scans.create!(
             identity_submission: submission,
             partner: @current_partner,
             verified_by: "Partner",
@@ -219,6 +220,7 @@ module PartnerPortal
             user_agent: request.user_agent,
             metadata: { via: "manual", suffix_lookup: true, confirmed_at: Time.current.iso8601 }
           )
+          QrScanLogger.log_existing!(scan, source: "partner_scan")
 
           reset_failure_count
 

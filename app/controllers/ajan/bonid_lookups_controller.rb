@@ -94,7 +94,7 @@ module Ajan
 
               reset_failure_count
 
-              result.submission.qr_scans.create!(
+              scan = result.submission.qr_scans.create!(
                 identity_submission: result.submission,
                 partner: current_partner,
                 verified_by: "Ajan",
@@ -108,6 +108,8 @@ module Ajan
                   agent_id: current_agent&.id
                 }
               )
+              # Tell the citizen (bell + scan alert email)
+              QrScanLogger.log_existing!(scan, source: "partner_scan")
 
               voter_record = auto_check_voter_eligibility(result.user)
 
@@ -186,7 +188,7 @@ module Ajan
             return render_invalid(:insufficient_credits, "Kredi patnè a pa ase.", submission.bonid)
           end
 
-          submission.qr_scans.create!(
+          scan = submission.qr_scans.create!(
             identity_submission: submission,
             partner: current_partner,
             verified_by: "Ajan",
@@ -201,6 +203,8 @@ module Ajan
               agent_id: current_agent&.id
             }
           )
+          # Tell the citizen (bell + scan alert email)
+          QrScanLogger.log_existing!(scan, source: "partner_scan")
 
           reset_failure_count
           voter_record = auto_check_voter_eligibility(submission.user)
