@@ -19,31 +19,41 @@
       </p>
     </div>
 
-    <div class="row g-4 align-items-stretch">
+    <%# One panel at a time: a sliding switch picks the feature list or the
+        code examples (was two side-by-side columns). %>
+    <div class="dev-switch-wrap">
+      <div class="dev-switch" role="tablist" aria-label="<%= t("main.developers.switch.aria") %>">
+        <span class="dev-switch-thumb" aria-hidden="true"></span>
+        <button type="button" role="tab" id="dev-switch-features" class="dev-switch-btn is-active"
+                aria-selected="true" aria-controls="dev-panel-features" onclick="showDevPanel('features')">
+          <i class="ri-sparkling-line" aria-hidden="true"></i> <%= t("main.developers.switch.features") %>
+        </button>
+        <button type="button" role="tab" id="dev-switch-code" class="dev-switch-btn"
+                aria-selected="false" aria-controls="dev-panel-code" onclick="showDevPanel('code')">
+          <i class="ri-code-s-slash-line" aria-hidden="true"></i> <%= t("main.developers.switch.code") %>
+        </button>
+      </div>
+    </div>
 
-      <!-- LEFT — Feature list card -->
-      <div class="col-lg-5 d-flex">
+    <div class="dev-panels">
+
+      <!-- Panel 1 — What you get -->
+      <div id="dev-panel-features" role="tabpanel" aria-labelledby="dev-switch-features" class="dev-panel">
         <div class="ballot-section card border-0 shadow-sm dev-info-card w-100">
           <div class="card-body p-4 p-lg-5 d-flex flex-column">
-
-            <h3 class="dev-info-title mb-4">
-              <%= t("main.developers.card.title") %>
-            </h3>
 
             <%
               bullets = [
                 { key: "fast",     icon: "ri-flashlight-line" },
                 { key: "secure",   icon: "ri-shield-keyhole-line" },
                 { key: "scopes",   icon: "ri-checkbox-multiple-line" },
-                { key: "json",     icon: "ri-database-2-line" },
                 { key: "liveness", icon: "ri-body-scan-line" },
-                { key: "risk",     icon: "ri-bar-chart-box-line" },
                 { key: "envs",     icon: "ri-rocket-2-line" },
                 { key: "stacks",   icon: "ri-code-s-slash-line" }
               ]
             %>
 
-            <div class="mb-4">
+            <div class="dev-feature-grid mb-4">
               <% bullets.each do |b| %>
                 <div class="gs-row">
                   <div class="gs-row-icon"><i class="<%= b[:icon] %>"></i></div>
@@ -55,7 +65,7 @@
               <% end %>
             </div>
 
-            <div class="mt-auto">
+            <div class="mt-auto text-center">
               <%= link_to t("main.developers.card.cta", default: "View API Docs"),
                     "/api-docs/index.html",
                     class: "election-btn-primary dev-info-cta",
@@ -66,8 +76,8 @@
         </div>
       </div>
 
-      <!-- RIGHT — Tabbed API code pane (intentionally dark) -->
-      <div class="col-lg-7 d-flex">
+      <!-- Panel 2 — Tabbed API code pane (intentionally dark) -->
+      <div id="dev-panel-code" role="tabpanel" aria-labelledby="dev-switch-code" class="dev-panel is-hidden" inert>
         <div class="dev-code-card w-100 d-flex flex-column">
 
           <%# Tabs %>
@@ -384,6 +394,19 @@
 </section>
 
 <script>
+  function showDevPanel(which) {
+    ['features', 'code'].forEach(function(p) {
+      var on = p === which;
+      var panel = document.getElementById('dev-panel-' + p);
+      panel.classList.toggle('is-hidden', !on);
+      panel.inert = !on; // out of tab order and screen readers while hidden
+      var b = document.getElementById('dev-switch-' + p);
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.querySelector('.dev-switch').classList.toggle('is-code', which === 'code');
+  }
+
   function showApiTab(tab, btn) {
     ['identity', 'profile', 'consent', 'crime', 'qr', 'webhook', 'vote'].forEach(function(t) {
       var el = document.getElementById('api-' + t);

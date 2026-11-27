@@ -156,15 +156,10 @@
   max-height: 30rem;
 }
 
-/* Desktop: the code pane takes the height of the left card, the same for
-   every tab, so switching tabs never stretches either column. */
+/* Desktop: one fixed height for every tab, so switching tabs never
+   makes the section jump. */
 @media (min-width: 992px) {
-  .dev-code-block {
-    flex: 1 1 0;
-    height: 0;
-    min-height: 22rem;
-    max-height: none;
-  }
+  .dev-code-block { height: 24rem; max-height: none; }
 }
 
 /* ── Copy button ── */
@@ -276,4 +271,76 @@
 
     option { color: #0F172A; background: #ffffff; }
   }
+}
+
+/* ── "What you get | See the code" sliding switch (one panel at a time) ── */
+.dev-switch-wrap { display: flex; justify-content: center; margin-bottom: 1.75rem; }
+
+.dev-switch {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 999px;
+  background: #E5E7EB;
+}
+
+.dev-switch-thumb {
+  position: absolute;
+  top: 4px; bottom: 4px; left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background: var(--haitian-blue, #00209F);
+  box-shadow: 0 4px 12px rgba(0, 32, 159, 0.25);
+  transition: transform 0.3s ease;
+}
+.dev-switch.is-code .dev-switch-thumb { transform: translateX(100%); }
+
+.dev-switch-btn {
+  position: relative; /* above the thumb */
+  z-index: 1;
+  border: 0;
+  background: none;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #475569;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+
+  &.is-active { color: #fff; }
+  &:focus-visible { outline: 2px solid var(--haitian-blue, #00209F); outline-offset: 3px; }
+}
+
+/* Both panels sit in the same grid cell, so the box is always the size of
+   the larger one: the two views match in width and height, and switching
+   never makes the page jump. The inactive one is invisible, not removed. */
+.dev-panels { display: grid; max-width: 960px; margin: 0 auto; }
+.dev-panel { grid-area: 1 / 1; display: flex; min-width: 0; }
+.dev-panel.is-hidden { visibility: hidden; pointer-events: none; }
+.dev-panel:not(.is-hidden) { animation: dev-panel-in 0.3s ease; }
+.dev-panel .dev-info-card .card-body { justify-content: center; }
+@keyframes dev-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Feature list: two columns on tablet/desktop, one on phones */
+.dev-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2rem;
+  row-gap: 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .dev-feature-grid { grid-template-columns: 1fr; }
+  .dev-switch-btn { padding: 9px 14px; font-size: 0.85rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dev-switch-thumb, .dev-switch-btn { transition: none; }
+  .dev-panel:not(.is-hidden) { animation: none; }
 }
