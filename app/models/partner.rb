@@ -76,13 +76,40 @@ class Partner < ApplicationRecord
     crime:reports
     crime:certificate
     crime:full
+    fiscal_receipts:read
+    fiscal_receipts:consume
+  ].freeze
+
+  # Default scopes a partner may request when no explicit allowed_scopes are
+  # set. Least privilege: crime:* is for law-enforcement partners only, and
+  # health/physical (paused profile cards) are never granted by default.
+  # identity:details is NOT a default either: it skips consent filtering and
+  # returns everything (health, physical, tax, social...). Grant it only
+  # explicitly via allowed_scopes. Setting allowed_scopes overrides these.
+  BASE_PARTNER_SCOPES = %w[
+    openid
+    profile
+    email
+    phone
+    address
+    identity:verify
+    verifications:verify_identity
+  ].freeze
+
+  # fiscal_receipts:* are never a default for any sector: they read payer
+  # data and can burn a citizen's DGI receipt. Explicit allowed_scopes only.
+  LAW_ENFORCEMENT_SCOPES = %w[
+    crime:status
+    crime:reports
+    crime:certificate
+    crime:full
   ].freeze
 
   # API scope descriptions for documentation
   API_SCOPES_DESCRIPTION = {
     # Identity verification scopes
     "identity:verify" => "Verify BonID/BonTouris and check verification status",
-    "identity:details" => "Access full identity details (name, DOB, address, photo)",
+    "identity:details" => "Access ALL BonID data, unfiltered (incl. health, physical, tax, social). Explicit grant only.",
 
     # Crime status scopes
     "crime:status" => "Check crime involvement status for BonID/BonTouris holders",
@@ -108,8 +135,11 @@ class Partner < ApplicationRecord
             acceptance: { accept: [ true, "1" ], message: "must be accepted" },
             on: :create
 
-  # Webhook URL must be HTTPS (when provided)
-  validates :webhook_url, format: { with: %r{\Ahttps://\S+\z}, message: "must be HTTPS" }, allow_blank: true
+  # Webhook URL must be HTTPS (when provided). Outside production, plain
+  # http:// is also allowed for localhost so local partner apps (e.g. Zellus
+  # on :3000) can receive webhooks during development.
+  LOCAL_WEBHOOK_URL = %r{\Ahttp://(localhost|127\.0\.0\.1|\[::1\]|[\w.-]+\.(localhost|test))(:\d+)?(/\S*)?\z}
+  validate :validate_webhook_url_scheme, if: -> { webhook_url.present? }
 
   # OAuth validations
   validate :validate_redirect_uri_format, if: -> { redirect_uris.present? }
@@ -122,13 +152,21 @@ class Partner < ApplicationRecord
   # ============================================================
   before_validation :set_slug, on: %i[create update]
   before_validation :set_sector_from_department, on: %i[create update]
-  before_validation :set_default_oauth_scopes, on: :create
   before_validation :set_default_transaction_types, on: :create
   before_validation :ensure_default_redirect_uri, if: -> { redirect_uris.present? }
   before_create :generate_api_key_pair, if: -> { api_key_digest.blank? }
   # When a partner is approved, mark its originating waitlist lead converted.
   after_save :mark_waitlist_lead_converted, if: :saved_change_to_status?
   before_create :generate_email_verification_token
+
+  # As soon as a partner can receive webhooks (URL or secret set/changed, or
+  # newly verified), send any consent events they missed — e.g. revocations
+  # that happened before they configured a webhook URL.
+  after_commit :flush_webhook_backlog,
+               if: -> {
+                 (saved_change_to_webhook_url? || saved_change_to_webhook_secret? || saved_change_to_verified_at?) &&
+                   webhook_enabled?
+               }
 
   # ============================================================
   # EMAIL VERIFICATION
@@ -212,8 +250,19 @@ class Partner < ApplicationRecord
   # ============================================================
 
   # Whether this partner can receive webhook notifications
+  # A partner can only receive webhooks once it has a URL, a signing secret
+  # (partners reject unsigned payloads), and is verified.
   def webhook_enabled?
-    webhook_url.present? && verified?
+    webhook_url.present? && webhook_secret.present? && verified?
+  end
+
+  # Why webhooks are held for this partner (nil when they can be delivered).
+  def webhook_blocker
+    return "no_webhook_url"       if webhook_url.blank?
+    return "no_webhook_secret"    if webhook_secret.blank?
+    return "partner_not_verified" unless verified?
+
+    nil
   end
 
   # HMAC-SHA256 signature for webhook payloads (using dedicated webhook_secret)
@@ -253,13 +302,19 @@ class Partner < ApplicationRecord
 
   # Check if a scope is allowed for this partner
   def scope_allowed?(scope)
-    return true if allowed_scopes.blank? # No restrictions
-    allowed_scopes.include?(scope.to_s)
+    effective_allowed_scopes.include?(scope.to_s)
   end
 
-  # Get effective allowed scopes (with fallback to all valid scopes)
+  # Explicit allowed_scopes win; otherwise the sector default.
   def effective_allowed_scopes
-    allowed_scopes.presence || VALID_OAUTH_SCOPES
+    allowed_scopes.presence || default_scopes_for_sector
+  end
+
+  # Sector default: base scopes for everyone, plus crime:* for law enforcement.
+  def default_scopes_for_sector
+    return BASE_PARTNER_SCOPES + LAW_ENFORCEMENT_SCOPES if sector.to_s == "law_enforcement"
+
+    BASE_PARTNER_SCOPES
   end
 
   # Validate and filter requested scopes
@@ -278,6 +333,13 @@ class Partner < ApplicationRecord
     types = allowed_transaction_types
     return true if types.blank?
     types.include?(type.to_s)
+  end
+
+  # Details this partner may ask a citizen for in a transaction consent,
+  # based on its sector (see TransactionConsent::DEFAULT_SCOPES_BY_SECTOR).
+  # Separate from allowed_scopes, which governs OAuth sign-in.
+  def allowed_consent_scopes
+    TransactionConsent.default_scopes_for_sector(sector)
   end
 
   def effective_allowed_transaction_types
@@ -569,6 +631,20 @@ class Partner < ApplicationRecord
 
   private
 
+  def validate_webhook_url_scheme
+    url = webhook_url.to_s.strip
+    return if url.match?(%r{\Ahttps://\S+\z})
+    return if !Rails.env.production? && url.match?(LOCAL_WEBHOOK_URL)
+
+    errors.add(:webhook_url, "must be HTTPS")
+  end
+
+  def flush_webhook_backlog
+    PartnerWebhookBacklogJob.perform_later(id)
+  rescue => e
+    Rails.logger.error("[Partner] Could not queue webhook backlog for partner #{id}: #{e.message}")
+  end
+
   # Tie the lead lifecycle to the partner: once approved, the originating
   # waitlist signup (if any) is marked converted. Idempotent.
   def mark_waitlist_lead_converted
@@ -630,10 +706,6 @@ class Partner < ApplicationRecord
 
     invalid_scopes = allowed_scopes - VALID_OAUTH_SCOPES
     errors.add(:allowed_scopes, "contains invalid scopes: #{invalid_scopes.join(', ')}") if invalid_scopes.any?
-  end
-
-  def set_default_oauth_scopes
-    self.allowed_scopes ||= VALID_OAUTH_SCOPES
   end
 
   def set_default_transaction_types

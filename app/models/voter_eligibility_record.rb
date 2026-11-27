@@ -356,7 +356,10 @@ class VoterEligibilityRecord < ApplicationRecord
   class AlreadyVotedError < StandardError; end
 
   def ineligibility_label
-    INELIGIBILITY_REASONS[ineligibility_reason] || ineligibility_reason
+    return nil if ineligibility_reason.blank?
+
+    I18n.t("alerts.election.ineligibility.#{ineligibility_reason}",
+           default: INELIGIBILITY_REASONS[ineligibility_reason] || ineligibility_reason)
   end
 
   # Human-readable voter reference — e.g. BVT-2026-K9F2-HQXR.

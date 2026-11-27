@@ -70,7 +70,7 @@ end
 
 # app/serializers/identity_submission_partner_view_serializer.rb
 class IdentitySubmissionPartnerViewSerializer < IdentitySubmissionBaseSerializer
-  fields :qr_public_url, :verified_by, :partner
+  fields :qr_public_url, :partner
 end
 
 # app/serializers/verified_identity_serializer.rb

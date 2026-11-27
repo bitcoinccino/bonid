@@ -6,10 +6,9 @@
 
     <%# Wizard-style section head: bold title + subdued desc %>
     <div class="ballot-section-head mb-4">
-      <h2 class="ballot-section-title">Profile Photo</h2>
+      <h2 class="ballot-section-title"><%= t("citizen_portal.profile.photo.title") %></h2>
       <p class="ballot-section-desc mb-0">
-        Your profile photo is part of your BonID verification. Please upload a
-        <strong>clear photo in passport style</strong> showing your full face.
+        <%= t("citizen_portal.profile.photo.desc_html") %>
       </p>
     </div>
 
@@ -37,24 +36,24 @@
         <% if photo_persisted %>
           <%= image_tag url_for(f.object.photo),
                 class: "photo-preview profile-photo-img",
-                alt: "Profile photo preview",
+                alt: t("citizen_portal.profile.photo.preview_alt"),
                 data: { form_handler_target: "imagePreview" } %>
         <% else %>
           <div class="photo-placeholder" data-form-handler-target="placeholder">
             <i class="ri-camera-line"></i>
           </div>
-          <%= image_tag "", class: "photo-preview d-none", alt: "Profile photo preview", data: { form_handler_target: "imagePreview" } %>
+          <%= image_tag "", class: "photo-preview d-none", alt: t("citizen_portal.profile.photo.preview_alt"), data: { form_handler_target: "imagePreview" } %>
         <% end %>
 
         <%# Hover Overlay %>
         <div class="photo-overlay">
           <i class="ri-upload-line"></i>
-          <span><%= f.object.photo.attached? ? "Change Photo" : "Upload Photo" %></span>
+          <span><%= f.object.photo.attached? ? t("citizen_portal.profile.photo.change") : t("citizen_portal.profile.photo.upload") %></span>
         </div>
       </label>
 
       <small class="d-block text-muted mt-3">
-        Upload a <strong>clear, front-facing photo</strong> (JPEG or PNG, max 5MB).
+        <%= t("citizen_portal.profile.photo.hint_html") %>
       </small>
     </div>
 
@@ -62,8 +61,7 @@
     <div class="enroll-helpful-tip">
       <i class="ri-lock-2-fill"></i>
       <div>
-        <strong>Your photo is encrypted</strong>
-        and used only for identity verification within BonID.
+        <%= t("citizen_portal.profile.photo.privacy_html") %>
       </div>
     </div>
   </div>

@@ -114,6 +114,29 @@ class IdentitySubmission < ApplicationRecord
   after_commit :generate_secure_qr_if_approved, if: -> { saved_change_to_status? && status_approved? }
   after_commit :copy_selfie_to_user_photo, if: -> { saved_change_to_status? && status_approved? }
   after_commit :index_face_in_collection,  if: -> { saved_change_to_status? && status_approved? }
+  # A reviewer-approved name / date-of-birth correction is only written to
+  # the user once their re-verification (reissue) with the new document is
+  # approved. Runs for admin and reviewer approvals alike.
+  # Flag it on save: a later callback saves the record again in the same
+  # transaction, so saved_change_to_status? is already false by after_commit.
+  after_save   :flag_pending_correction
+  after_commit :apply_pending_correction, if: -> { @apply_correction }
+
+  # A reviewer-approved correction (name / date of birth) is written to the
+  # user once their re-verification (reissue) is approved.
+  def flag_pending_correction
+    @apply_correction ||= saved_change_to_status? && status_approved? && submission_type_reissue?
+  end
+
+  def apply_pending_correction
+    @apply_correction = false
+    request = user&.name_change_requests&.awaiting_application&.order(updated_at: :desc)&.first
+    return unless request
+
+    request.apply_name_change!
+  rescue => e
+    Rails.logger.error "[IdentitySubmission] Applying correction ##{request&.id} failed for user ##{user_id}: #{e.message}"
+  end
 
 
   # === VIRTUAL ATTRIBUTES ===================================================
@@ -318,6 +341,8 @@ def generate_secure_qr_payload
     bonid: user.bonid,
     expires_at: expires_at || calculated_expires_at
   )
+
+
 end
 
 
@@ -563,16 +588,16 @@ end
     return if selfie.attached?
     # Allow if biometrics are being carried forward from a previous submission
     return if respond_to?(:skip_single_active_check) && metadata&.dig("liveness", "reused")
-    errors.add(:selfie, "Ou dwe fè verifikasyon figi (liveness) anvan ou soumèt.")
+    errors.add(:selfie, I18n.t("alerts.validation.identity.liveness_required"))
   end
 
   def id_document_must_be_attached
     case id_type.to_s
     when "cin"
-      errors.add(:cin_front, "Ou dwe telechaje DEVAN CIN ou.") unless cin_front.attached?
-      errors.add(:cin_back,  "Ou dwe telechaje DO CIN ou tou.") unless cin_back.attached?
+      errors.add(:cin_front, I18n.t("alerts.validation.identity.cin_front")) unless cin_front.attached?
+      errors.add(:cin_back,  I18n.t("alerts.validation.identity.cin_back")) unless cin_back.attached?
     when "passport"
-      errors.add(:passport, "Ou dwe telechaje paj foto paspò ou.") unless passport.attached?
+      errors.add(:passport, I18n.t("alerts.validation.identity.passport_photo")) unless passport.attached?
     end
   end
 
@@ -582,20 +607,20 @@ end
       when "cin"
         errors.add(:document_number, CinNumberValidator::CIN_ERROR)
       when "passport"
-        errors.add(:document_number, "Nimewo paspò pa valid. Dwe gen 6–9 karaktè.")
+        errors.add(:document_number, I18n.t("alerts.validation.identity.passport_number"))
       end
     end
   end
 
   def validate_document_not_expired
     if document_expiry_date < Date.current
-      errors.add(:document_expiry_date, "Dokiman ekspire. Ou pa ka itilize yon dokiman ki ekspire.")
+      errors.add(:document_expiry_date, I18n.t("alerts.validation.identity.document_expired"))
     end
   end
 
   def validate_document_issue_date
     if document_issue_date > Date.current
-      errors.add(:document_issue_date, "Dat emisyon pa ka nan lavni.")
+      errors.add(:document_issue_date, I18n.t("alerts.validation.identity.issue_date_future"))
     end
   end
 
@@ -609,13 +634,13 @@ end
     existing = existing.where.not(id: id) if persisted?
 
     if existing.exists?
-      errors.add(:document_number, "Nimewo dokiman sa a deja anrejistre ak yon lòt kont BonID.")
+      errors.add(:document_number, I18n.t("alerts.validation.identity.document_taken"))
     end
   end
 
   def validate_host_country_id_attached
     unless host_country_id.attached?
-      errors.add(:host_country_id, "Tanpri upload dokiman idantite peyi kote ou ap viv la.")
+      errors.add(:host_country_id, I18n.t("alerts.validation.identity.host_country_id"))
     end
   end
 
@@ -639,7 +664,7 @@ end
   def single_active_submission
     return unless user
     if user.identity_submissions.status_approved.exists?
-      errors.add(:base, "User already has an active identity submission.")
+      errors.add(:base, I18n.t("alerts.validation.identity.active_exists"))
     end
   end
 

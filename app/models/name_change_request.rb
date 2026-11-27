@@ -14,9 +14,23 @@ class NameChangeRequest < ApplicationRecord
     "other"       => "Other"
   }.freeze
 
+  # Fields a citizen can ask to correct (the form shows them as a checklist
+  # and only the ticked ones as "current → new").
+  FIELDS = %w[first_name middle_name last_name dob].freeze
+
+  # Set by the citizen form: which FIELDS were ticked. Unticked fields keep
+  # their current value, so the request only carries real changes.
+  attr_writer :change_fields
+
+  def change_fields
+    @change_fields || changed_fields
+  end
+
   # ── Validations ──────────────────────────────────────────────
   validates :old_first_name, :old_last_name, presence: true
   validates :new_first_name, :new_last_name, presence: true
+  validate  :something_changes, on: :create
+  validate  :new_dob_is_plausible, if: -> { new_dob.present? && new_dob != old_dob }
   validates :reason, presence: true, inclusion: { in: REASONS.keys }
   validates :other_reason, presence: true, if: -> { reason == "other" }
   validates :supporting_document, presence: true, on: :create
@@ -24,10 +38,14 @@ class NameChangeRequest < ApplicationRecord
 
   # ── Callbacks ────────────────────────────────────────────────
   before_validation :snapshot_old_name, on: :create
+  before_validation :keep_unticked_fields, on: :create
   after_save :require_reverification, if: -> { saved_change_to_status? && approved? }
 
   # ── Scopes ───────────────────────────────────────────────────
   scope :recent_first, -> { order(created_at: :desc) }
+  # Approved by a reviewer but not yet written to the user (that happens
+  # once the citizen's re-verification with the new document is approved).
+  scope :awaiting_application, -> { approved.where(applied_at: nil) }
 
   # ── Instance Methods ─────────────────────────────────────────
   def old_full_name
@@ -42,6 +60,19 @@ class NameChangeRequest < ApplicationRecord
     REASONS[reason] || reason&.titleize
   end
 
+  # FIELDS whose new value differs from the old one.
+  def changed_fields
+    FIELDS.select { |f| changes_field?(f) }
+  end
+
+  def changes_field?(field)
+    public_send("new_#{field}").presence != public_send("old_#{field}").presence
+  end
+
+  def changes_dob?
+    changes_field?("dob")
+  end
+
   private
 
   def snapshot_old_name
@@ -49,6 +80,31 @@ class NameChangeRequest < ApplicationRecord
     self.old_first_name  = user.first_name
     self.old_middle_name = user.middle_name
     self.old_last_name   = user.last_name
+    self.old_dob         = user.dob
+  end
+
+  # Unticked fields keep their current value (names are NOT NULL columns).
+  def keep_unticked_fields
+    return unless @change_fields
+
+    ticked = Array(@change_fields).map(&:to_s) & FIELDS
+    (FIELDS - ticked).each { |f| public_send("new_#{f}=", public_send("old_#{f}")) }
+  end
+
+  def something_changes
+    return if changed_fields.any?
+
+    errors.add(:base, I18n.t("citizen_portal.name_change.errors.nothing_changed"))
+  end
+
+  def new_dob_is_plausible
+    if new_dob > Date.current
+      errors.add(:new_dob, I18n.t("citizen_portal.name_change.errors.dob_future"))
+    elsif new_dob > 18.years.ago.to_date
+      errors.add(:new_dob, I18n.t("citizen_portal.name_change.errors.dob_adult"))
+    elsif new_dob < Date.new(1900, 1, 1)
+      errors.add(:new_dob, I18n.t("citizen_portal.name_change.errors.dob_too_old"))
+    end
   end
 
   # Admin approval does NOT apply the name change immediately.
@@ -85,19 +141,22 @@ class NameChangeRequest < ApplicationRecord
   def apply_name_change!
     old_bonid = user.bonid
 
-    # 1. Update the user's name
-    user.update_columns(
+    # 1. Update the user's name (and date of birth when corrected)
+    attrs = {
       first_name:  new_first_name,
       middle_name: new_middle_name,
       last_name:   new_last_name
-    )
+    }
+    attrs[:dob] = new_dob if changes_dob?
+    user.update_columns(attrs)
 
-    # 2. Regenerate BonID code (initials change with new name)
+    # 2. Regenerate BonID code (initials and birth year are part of it)
     user.reload
     new_bonid = user.generate_bonid!
 
     unless new_bonid.present?
       Rails.logger.error "[NameChangeRequest] BonID regeneration failed for user ##{user.id} — bonid unchanged: #{old_bonid}"
+      update_column(:applied_at, Time.current)
       return
     end
 
@@ -129,6 +188,10 @@ class NameChangeRequest < ApplicationRecord
     end
 
     # 5. Mark this request as fully applied
-    update_column(:applied_at, Time.current) if respond_to?(:applied_at)
+    update_column(:applied_at, Time.current)
   end
+
+  # Called by IdentitySubmission once the re-verification is approved, so it
+  # must be public (it sat under `private` and could never run).
+  public :apply_name_change!
 end

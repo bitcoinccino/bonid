@@ -7,8 +7,8 @@
 <%= render "main/developers" %>
 <%= render "main/faq" %>
 
-<%# ═══════════ SIGNUP MODAL — 3-STEP WIZARD ═══════════ %>
-<div class="modal fade" id="enskriModal" tabindex="-1" aria-labelledby="enskriModalLabel" aria-hidden="true"
+<%# ═══════════ SIGNUP MODAL (single step) ═══════════ %>
+<div class="modal fade" id="enskriModal" data-modal-portal tabindex="-1" aria-labelledby="enskriModalLabel" aria-hidden="true"
      data-total-signups="<%= @total_signups || 0 %>"
      data-social-proof="<%= t('main.signup_form.social_proof') %>"
      data-social-proof-first="<%= t('main.signup_form.social_proof_first') %>"
@@ -17,257 +17,214 @@
      data-error-email="<%= t('main.signup_form.error_email') %>"
      data-error-org="<%= t('main.signup_form.error_org') %>"
      data-error-sector="<%= t('main.signup_form.error_sector') %>"
-     data-citizen-label="<%= t('main.signup_form.citizen_label') %>"
-     data-business-label="<%= t('main.signup_form.business_label') %>"
-     data-diaspora-label="<%= t('main.signup_form.diaspora_label') %>"
+     data-error-state="<%= t('main.signup_form.error_state') %>"
+     data-error-city="<%= t('main.signup_form.error_city') %>"
+     data-error-commune="<%= t('main.signup_form.error_commune') %>"
+     data-error-country="<%= t('main.signup_form.error_country') %>"
+     data-error-unit="<%= t('main.signup_form.error_unit') %>"
      data-bonid-available="<%= t('main.signup_form.bonid_available') %>"
      data-coming-soon="<%= t('main.signup_form.coming_soon') %>"
      data-active-label="<%= t('main.signup_form.active') %>"
      data-choose="<%= t('main.signup_form.choose') %>"
-     data-haiti="<%= t('main.signup_form.haiti') %>">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down" style="max-width: 640px;">
+     data-auto-open="<%= @referrer ? "1" : "0" %>">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 640px;">
     <div class="modal-content" style="border: none; border-radius: 16px; overflow: hidden;">
 
       <%# Modal Header — Haitian Blue %>
-      <div style="background: #00209F; padding: 20px 28px 16px; color: #fff;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+      <div style="background: #00209F; padding: 20px 28px; color: #fff;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
           <div style="flex: 1; text-align: center;">
             <div id="enskriModalLabel" style="font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 800;"><%= t("main.signup_form.modal_title") %></div>
           </div>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 20px; top: 20px;"></button>
         </div>
-
-        <%# Progress Bar %>
-        <div class="enskri-progress">
-          <div class="enskri-step active" data-step="1">
-            <div class="enskri-step-circle">1</div>
-            <span class="enskri-step-label"><%= t("main.signup_form.step1_label") %></span>
-          </div>
-          <div class="enskri-step-line" id="enskri-line-1"></div>
-          <div class="enskri-step" data-step="2">
-            <div class="enskri-step-circle">2</div>
-            <span class="enskri-step-label"><%= t("main.signup_form.step2_label") %></span>
-          </div>
-          <div class="enskri-step-line" id="enskri-line-2"></div>
-          <div class="enskri-step" data-step="3">
-            <div class="enskri-step-circle">3</div>
-            <span class="enskri-step-label"><%= t("main.signup_form.step3_label") %></span>
-          </div>
-        </div>
       </div>
 
       <%# Modal Body %>
-      <div class="modal-body" style="padding: 24px; background: #fff; overflow-y: auto;">
+      <div class="modal-body" style="padding: 24px; background: #F3F4F6; overflow-y: auto;">
 
         <% if flash[:success] %>
           <div class="alert alert-success"><i class="ri-check-line me-1"></i><%= flash[:success] %></div>
         <% end %>
         <%= render "landing/enskri_error", message: flash[:enskri_error] %>
 
+        <%# Arrived through someone's share link %>
+        <% if @referrer %>
+          <div style="display: flex; align-items: center; gap: 8px; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; font-size: 14px; font-weight: 600;">
+            <i class="ri-user-heart-line" style="font-size: 18px;" aria-hidden="true"></i>
+            <span><%= @referrer.first_name.present? ? t("main.signup_form.invited_by", name: @referrer.first_name) : t("main.signup_form.invited_by_friend") %></span>
+          </div>
+        <% end %>
+
         <%= form_with model: @waitlist_signup, url: enskri_signup_path(lang: params[:lang]), id: "enskri-form", data: { turbo: false } do |f| %>
           <%= f.hidden_field :signup_type, id: "modal_signup_type", value: "citizen" %>
+          <%= f.hidden_field :referred_by_code %>
 
           <%# Honeypot: hidden from humans, bots fill it %>
           <div style="position: absolute; left: -9999px;" aria-hidden="true">
             <label for="website_url">Leave this empty</label>
             <input type="text" name="website_url" id="website_url" tabindex="-1" autocomplete="off">
           </div>
-          <input type="hidden" name="signup_ts" value="<%= Time.current.to_i %>"">
+          <input type="hidden" name="signup_ts" value="<%= Time.current.to_i %>">
 
-          <%# ══════ STEP 1: Info ══════ %>
-          <div class="enskri-wizard-step" id="wizard-step-1">
-
-            <%# Toggle: Citizen / Business %>
-            <div style="display: flex; background: #f1f5f9; border-radius: 50px; padding: 4px; margin-bottom: 24px;">
-              <button type="button" id="modal-btn-citizen" onclick="modalSetType('citizen')"
-                      class="enskri-toggle-btn enskri-toggle-active">
-                <i class="ri-user-line me-1"></i> <%= t("main.signup_form.citizen") %>
-              </button>
-              <button type="button" id="modal-btn-business" onclick="modalSetType('business')"
-                      class="enskri-toggle-btn">
-                <i class="ri-building-2-line me-1"></i> <%= t("main.signup_form.business") %>
-              </button>
-            </div>
-
-            <%# Business fields (hidden by default) %>
-            <div id="modal-business-fields" style="display: none;">
-              <div class="mb-3">
-                <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.org_name") %></label>
-                <%= f.text_field :organization_name, class: "form-control enskri-input", placeholder: t("main.signup_form.org_placeholder"), id: "modal_org_name" %>
-              </div>
-              <div class="mb-3">
-                <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.sector") %></label>
-                <%= f.select :sector,
-                    grouped_options_for_select(Partner.department_sectors.map { |g, items| [g, items] }),
-                    { prompt: t("main.signup_form.choose") },
-                    { class: "form-select enskri-input", id: "modal_sector", onchange: "modalSectorChange(this.value)" } %>
-              </div>
-              <div class="mb-3" id="modal-sector-country" style="display: none;">
-                <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.country") %></label>
-                <%
-                  priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
-                  other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - priority_countries
-                  all_countries = priority_countries + [["---", ""]] + other_countries
-                %>
-                <%= f.select :country_of_residence, all_countries, { prompt: t("main.signup_form.choose") },
-                    { class: "form-select enskri-input" } %>
-              </div>
-
-              <%# PNH fields (shown only when sector = pnh) %>
-              <div id="modal-pnh-fields" style="display: none;">
-                <div class="mb-3">
-                  <label class="form-label fw-semibold enskri-label">Inite / Unit Type</label>
-                  <%= f.select :unit_type,
-                      OfficerConstants::UNIT_OPTIONS.keys.map { |k| [k, k] },
-                      { prompt: t("main.signup_form.choose") },
-                      { class: "form-select enskri-input", id: "modal_unit_type", onchange: "modalLoadUnitNames(this.value)" } %>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label fw-semibold enskri-label">Non Inite / Unit Name</label>
-                  <select name="waitlist_signup[unit_name]" class="form-select enskri-input" id="modal_unit_name" disabled>
-                    <option value=""><%= t("main.signup_form.choose") %></option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <%# Email %>
-            <div class="mb-3">
-              <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.email") %></label>
-              <%= f.email_field :email, class: "form-control enskri-input", placeholder: "email@example.com", id: "modal_email" %>
-            </div>
-
-            <%# Validation error %>
-            <div id="step1-error" class="enskri-error" style="display: none;">
-              <i class="ri-error-warning-line me-1"></i> <span></span>
-            </div>
-
-            <%# Next %>
-            <button type="button" onclick="enskriNext(1)" class="btn w-100 fw-bold rounded-3 enskri-btn-primary">
-              <%= t("main.signup_form.continue") %> <i class="ri-arrow-right-line ms-1"></i>
+          <%# ── Account type ── %>
+          <%# Toggle: Citizen / Business %>
+          <div style="display: flex; background: #E5E7EB; border-radius: 50px; padding: 4px; margin-bottom: 24px;">
+            <button type="button" id="modal-btn-citizen" onclick="modalSetType('citizen')"
+                    class="enskri-toggle-btn enskri-toggle-active">
+              <i class="ri-user-line me-1"></i> <%= t("main.signup_form.citizen") %>
+            </button>
+            <button type="button" id="modal-btn-business" onclick="modalSetType('business')"
+                    class="enskri-toggle-btn">
+              <i class="ri-building-2-line me-1"></i> <%= t("main.signup_form.business") %>
             </button>
           </div>
 
-          <%# ══════ STEP 2: Location ══════ %>
-          <div class="enskri-wizard-step" id="wizard-step-2" style="display: none;">
-
-            <p class="text-muted mb-3" style="font-size: 14px;"><%= t("main.signup_form.where_are_you") %></p>
-
-            <%# Country Toggle: Haiti / Abroad %>
+          <%# Business fields (hidden by default) %>
+          <div id="modal-business-fields" style="display: none;">
             <div class="mb-3">
-              <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.country_label") %></label>
-              <div style="display: flex; background: #f1f5f9; border-radius: 8px; padding: 4px;">
-                <button type="button" id="loc-btn-haiti" onclick="modalSetLocation('haiti')"
-                        class="enskri-toggle-btn enskri-toggle-active">
-                  <i class="ri-map-pin-line me-1"></i> <%= t("main.signup_form.haiti") %>
-                </button>
-                <button type="button" id="loc-btn-abroad" onclick="modalSetLocation('abroad')"
-                        class="enskri-toggle-btn">
-                  <i class="ri-global-line me-1"></i> <%= t("main.signup_form.other_country") %>
-                </button>
-              </div>
-              <%= f.hidden_field :diaspora, id: "modal_diaspora", value: "0" %>
+              <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.org_name") %></label>
+              <%= f.text_field :organization_name, class: "form-control enskri-input", placeholder: t("main.signup_form.org_placeholder"), id: "modal_org_name" %>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.sector") %></label>
+              <%= f.select :sector,
+                  grouped_options_for_select(Partner.department_sectors.map { |g, items| [g, items] }),
+                  { prompt: t("main.signup_form.choose") },
+                  { class: "form-select enskri-input", id: "modal_sector", onchange: "modalSectorChange(this.value)" } %>
+            </div>
+            <div class="mb-3" id="modal-sector-country" style="display: none;">
+              <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.country") %></label>
+              <%
+                priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
+                other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - priority_countries
+              %>
+              <%= f.select :country_of_residence,
+                  grouped_options_for_select({ t("main.signup_form.country_group_priority") => priority_countries,
+                                               t("main.signup_form.country_group_other") => other_countries }),
+                  { prompt: t("main.signup_form.choose") },
+                  { class: "form-select enskri-input", id: "modal_sector_country", disabled: true } %>
             </div>
 
-            <%# Haiti fields: Department → Commune %>
-            <div id="modal-haiti-fields">
-              <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.department") %></label>
-                  <select class="form-select enskri-input" id="modal_dept" onchange="modalLoadCommunes(this.value)">
-                    <option value=""><%= t("main.signup_form.choose") %></option>
-                    <% @departments.each do |d| %>
-                      <option value="<%= d.id %>"><%= d.name %></option>
-                    <% end %>
-                  </select>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.commune") %></label>
-                  <select name="waitlist_signup[commune_id]" class="form-select enskri-input" id="modal_commune" disabled>
-                    <option value=""><%= t("main.signup_form.choose") %></option>
-                  </select>
-                  <div id="modal-commune-status" style="font-size: 12px; margin-top: 4px;"></div>
-                </div>
-              </div>
-            </div>
-
-            <%# Abroad fields: Country picker %>
-            <div id="modal-abroad-fields" style="display: none;">
+            <%# PNH fields (shown only when sector = pnh) %>
+            <div id="modal-pnh-fields" style="display: none;">
               <div class="mb-3">
-                <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.which_country") %></label>
-                <%
-                  d_priority_countries = HaitianDiplomaticMissions::PRIORITY_COUNTRY_CODES.filter_map { |code| c = ISO3166::Country[code]; [c&.common_name || c&.name, code] if c }
-                  d_other_countries = ISO3166::Country.all.map { |c| [c.common_name || c.name, c.alpha2] }.sort_by(&:first) - d_priority_countries
-                  d_all_countries = d_priority_countries + [["---", ""]] + d_other_countries
-                %>
-                <%= f.select :country_of_residence, d_all_countries,
-                    { prompt: t("main.signup_form.choose_country") },
-                    { class: "form-select enskri-input", id: "modal_diaspora_country" } %>
+                <label class="form-label fw-semibold enskri-label">Inite / Unit Type</label>
+                <%= f.select :unit_type,
+                    OfficerConstants::UNIT_OPTIONS.keys.map { |k| [k, k] },
+                    { prompt: t("main.signup_form.choose") },
+                    { class: "form-select enskri-input", id: "modal_unit_type", onchange: "modalLoadUnitNames(this.value)" } %>
               </div>
-            </div>
-
-            <%# Invite Code — collapsed by default %>
-            <div class="mb-3 text-center">
-              <a href="#" onclick="event.preventDefault(); document.getElementById('invite-code-field').style.display = document.getElementById('invite-code-field').style.display === 'none' ? 'block' : 'none';"
-                 style="font-size: 13px; color: #00209F; text-decoration: none; font-weight: 500;">
-                <i class="ri-coupon-line me-1"></i> <%= t("main.signup_form.invite_code_q") %>
-              </a>
-              <div id="invite-code-field" style="display: none; margin-top: 10px;">
-                <%= f.text_field :invite_code_used, class: "form-control enskri-input", placeholder: "Ex: BONID-A3F8B2", style: "text-transform: uppercase; text-align: center; letter-spacing: 2px; font-weight: 600;" %>
+              <div class="mb-3">
+                <label class="form-label fw-semibold enskri-label">Non Inite / Unit Name</label>
+                <select name="waitlist_signup[unit_name]" class="form-select enskri-input" id="modal_unit_name" disabled>
+                  <option value=""><%= t("main.signup_form.choose") %></option>
+                </select>
               </div>
-            </div>
-
-            <%# Nav %>
-            <div class="d-flex gap-3">
-              <button type="button" onclick="enskriBack(2)" class="btn fw-semibold rounded-3 enskri-btn-back" style="flex: 0 0 auto;">
-                <i class="ri-arrow-left-line me-1"></i> <%= t("main.signup_form.back") %>
-              </button>
-              <button type="button" onclick="enskriNext(2)" class="btn w-100 fw-bold rounded-3 enskri-btn-primary">
-                <%= t("main.signup_form.continue") %> <i class="ri-arrow-right-line ms-1"></i>
-              </button>
             </div>
           </div>
 
-          <%# ══════ STEP 3: Confirm ══════ %>
-          <div class="enskri-wizard-step" id="wizard-step-3" style="display: none;">
+          <%# Email %>
+          <div class="mb-3">
+            <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.email") %></label>
+            <%= f.email_field :email, class: "form-control enskri-input", placeholder: t("main.signup_form.email_placeholder"), id: "modal_email", autocomplete: "email" %>
+          </div>
 
-            <%# Summary Card %>
-            <div class="enskri-summary-card">
-              <div class="enskri-summary-icon">
-                <i class="ri-shield-check-line"></i>
-              </div>
-              <h5 style="font-weight: 700; margin-bottom: 16px; font-family: 'Montserrat', sans-serif;"><%= t("main.signup_form.confirm_title") %></h5>
-
-              <div class="enskri-summary-row">
-                <span class="enskri-summary-label"><%= t("main.signup_form.email_label") %></span>
-                <span class="enskri-summary-value" id="summary-email"></span>
-              </div>
-              <div class="enskri-summary-row" id="summary-location-row" style="display: none;">
-                <span class="enskri-summary-label"><%= t("main.signup_form.location_label") %></span>
-                <span class="enskri-summary-value" id="summary-location"></span>
-              </div>
-              <div class="enskri-summary-row" id="summary-type-row">
-                <span class="enskri-summary-label"><%= t("main.signup_form.type_label") %></span>
-                <span class="enskri-summary-value" id="summary-type"></span>
-              </div>
-            </div>
-
-            <%# Social Proof %>
-            <div class="enskri-social-proof">
-              <i class="ri-group-line" style="font-size: 20px; color: #166534;"></i>
-              <span id="enskri-social-text"></span>
-            </div>
-
-            <%# Nav %>
-            <div class="d-flex gap-3">
-              <button type="button" onclick="enskriBack(3)" class="btn fw-semibold rounded-3 enskri-btn-back" style="flex: 0 0 auto;">
-                <i class="ri-arrow-left-line me-1"></i> <%= t("main.signup_form.back") %>
+        <%# ── Location ── %>
+          <%# Residence toggle: "I currently live in" Haiti / Abroad (sets diaspora) %>
+          <div class="mb-3">
+            <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.country_label") %></label>
+            <div style="display: flex; background: #E5E7EB; border-radius: 50px; padding: 4px;">
+              <button type="button" id="loc-btn-haiti" onclick="modalSetLocation('haiti')"
+                      class="enskri-toggle-btn enskri-toggle-active">
+                <i class="ri-map-pin-line me-1"></i> <%= t("main.signup_form.live_haiti") %>
               </button>
-              <button type="submit" class="btn w-100 fw-bold rounded-3 enskri-btn-submit">
-                <%= t("main.signup_form.submit") %> <i class="ri-arrow-right-line ms-1"></i>
+              <button type="button" id="loc-btn-abroad" onclick="modalSetLocation('abroad')"
+                      class="enskri-toggle-btn">
+                <i class="ri-global-line me-1"></i> <%= t("main.signup_form.other_country") %>
               </button>
+            </div>
+            <%= f.hidden_field :diaspora, id: "modal_diaspora", value: "0" %>
+          </div>
+
+          <%# Haiti fields: Department, then Commune once a department is picked %>
+          <div id="modal-haiti-fields">
+            <div class="row g-3 mb-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.department") %></label>
+                <select class="form-select enskri-input" id="modal_dept" onchange="modalLoadCommunes(this.value)">
+                  <option value=""><%= t("main.signup_form.choose") %></option>
+                  <% @departments.each do |d| %>
+                    <option value="<%= d.id %>"><%= d.name %></option>
+                  <% end %>
+                </select>
+              </div>
+              <div class="col-12" id="modal-commune-wrap" style="display: none;">
+                <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.commune") %></label>
+                <select name="waitlist_signup[commune_id]" class="form-select enskri-input" id="modal_commune" disabled>
+                  <option value=""><%= t("main.signup_form.choose") %></option>
+                </select>
+                <div id="modal-commune-status" style="font-size: 12px; margin-top: 4px;"></div>
+              </div>
             </div>
           </div>
+
+          <%# Abroad fields: the United States is the only country open for
+              now (DiasporaLocations::SIGNUP_COUNTRIES), so it is shown as a
+              pill and posted from a hidden field (enabled only for Abroad). %>
+          <div id="modal-abroad-fields" style="display: none;">
+            <div class="mb-3">
+              <span class="form-label fw-semibold enskri-label d-block"><%= t("main.signup_form.country") %></span>
+              <% us_name = DiasporaLocations.country_options.to_h.invert["US"] %>
+              <span style="display: inline-flex; align-items: center; gap: 8px; background: #EEF2FF; border: 1px solid #C7D2FE; color: #00209F; border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: 14px;">
+                <span aria-hidden="true">🇺🇸</span> <%= us_name %>
+              </span>
+              <%= f.hidden_field :country_of_residence, value: "US", id: "modal_diaspora_country", disabled: true %>
+              <p style="color: #6B7280; font-size: 12px; margin: 8px 0 0;"><%= t("main.signup_form.abroad_note") %></p>
+            </div>
+
+            <%# United States: State → City (curated cities for the largest
+                Haitian communities, free text everywhere else) %>
+            <div id="modal-us-fields" style="display: none;">
+              <div class="mb-3">
+                <label class="form-label fw-semibold enskri-label" for="modal_us_state"><%= t("main.signup_form.state") %></label>
+                <% state_groups = DiasporaLocations.state_groups %>
+                <%= f.select :residence_state,
+                    grouped_options_for_select({ t("main.signup_form.state_group_priority") => state_groups[:priority],
+                                                 t("main.signup_form.state_group_other") => state_groups[:other] }),
+                    { prompt: t("main.signup_form.choose_state") },
+                    { class: "form-select enskri-input", id: "modal_us_state", disabled: true,
+                      onchange: "modalStateChange(this.value)" } %>
+              </div>
+              <div class="mb-3" id="modal-us-city-wrap" style="display: none;">
+                <label class="form-label fw-semibold enskri-label" for="modal_us_city"><%= t("main.signup_form.city") %></label>
+                <%# Type-to-search over the state's cities (own white list, not the
+                    browser's datalist); any typed city is accepted %>
+                <div style="position: relative;">
+                  <input type="text" name="waitlist_signup[residence_city]" id="modal_us_city"
+                         class="form-control enskri-input" maxlength="80" autocomplete="off"
+                         role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="modal-us-city-suggest"
+                         placeholder="<%= t("main.signup_form.city_placeholder") %>" disabled>
+                  <ul id="modal-us-city-suggest" role="listbox" class="enskri-suggest" hidden></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%# Social proof (updates when a commune is picked) %>
+          <div class="enskri-social-proof">
+            <i class="ri-group-line" style="font-size: 20px; color: #166534;"></i>
+            <span id="enskri-social-text"></span>
+          </div>
+
+          <%# Client-side validation error %>
+          <div id="enskri-form-error" class="enskri-error" role="alert" style="display: none;">
+            <i class="ri-error-warning-line me-1"></i> <span></span>
+          </div>
+
+          <button type="submit" class="btn w-100 fw-bold rounded-3 enskri-btn-submit">
+            <%= t("main.signup_form.submit") %> <i class="ri-arrow-right-line ms-1"></i>
+          </button>
 
         <% end %>
       </div>
@@ -276,51 +233,47 @@
   </div>
 </div>
 
-<%# ═══════════ WIZARD STYLES ═══════════ %>
+<%# ═══════════ MODAL STYLES ═══════════ %>
 <style>
-  #enskriModal .modal-content { overflow: hidden; }
-  .modal-backdrop.show { opacity: 0.85 !important; }
+  /* City suggestions under the City field (white, like the form) */
+  .enskri-suggest {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+    margin: 0; padding: 4px; list-style: none;
+    background: #fff; border: 1px solid #E2E8F0; border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    max-height: 240px; overflow-y: auto;
+  }
+  .enskri-suggest li {
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    color: #111827; font-size: 14px;
+  }
+  .enskri-suggest li[aria-selected="true"], .enskri-suggest li:hover { background: #EEF2FF; color: #00209F; }
+
+  /* No background on the card itself: its white showed as a thin halo
+     around the blue header's rounded corners. Header and body each carry
+     their own background and corner radius instead. */
+  #enskriModal .modal-content {
+    overflow: hidden;
+    background: transparent;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  }
+  #enskriModal .modal-content > :first-child { border-radius: 16px 16px 0 0; }
+  #enskriModal .modal-content > :last-child  { border-radius: 0 0 16px 16px; }
+  /* The hero behind is already dark, so plain dimming barely shows and the
+     modal looked like a layer on the page. Blur + tint make it read as a
+     modal. (Backdrop is appended to <body>, hence :has.) */
+  body:has(#enskriModal.show) > .modal-backdrop.show {
+    opacity: 1 !important;
+    background: rgba(8, 15, 40, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
   #enskriModal .modal-body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     max-height: calc(100vh - 180px);
     padding: 28px 36px !important;
   }
-  .enskri-progress {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0;
-  }
-  .enskri-step {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0.5;
-    transition: opacity 0.3s;
-  }
-  .enskri-step.active, .enskri-step.completed { opacity: 1; }
-  .enskri-step-circle {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700;
-    font-family: 'Montserrat', sans-serif;
-    transition: background 0.3s;
-  }
-  .enskri-step.active .enskri-step-circle { background: #fff; color: #00209F; }
-  .enskri-step.completed .enskri-step-circle { background: #1A936F; color: #fff; }
-  .enskri-step-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.8); }
-  .enskri-step.active .enskri-step-label { color: #fff; }
-  .enskri-step-line {
-    flex: 1; height: 2px;
-    background: rgba(255,255,255,0.2);
-    margin: 0 8px;
-    transition: background 0.3s;
-  }
-  .enskri-step-line.filled { background: #1A936F; }
   .enskri-input { min-height: 44px; font-size: 16px !important; border-radius: 8px !important; }
   .enskri-label { font-size: 13px; color: #374151; }
   .enskri-toggle-btn {
@@ -335,18 +288,6 @@
     border-color: #00209F !important;
     border-radius: 50px;
     box-shadow: none;
-  }
-  .enskri-btn-primary {
-    background: #00209F; color: #fff;
-    padding: 14px; font-size: 15px;
-    font-family: 'Montserrat', sans-serif;
-    min-height: 48px; transition: all 0.2s;
-    text-decoration: none !important;
-  }
-  .enskri-btn-primary:hover {
-    background: #001a80; color: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,32,159,0.3);
   }
   .enskri-btn-submit {
     background: #00209F; color: #fff;
@@ -365,36 +306,17 @@
     0%, 100% { box-shadow: 0 0 0 0 rgba(0,32,159,0.4); }
     50% { box-shadow: 0 0 0 8px rgba(0,32,159,0); }
   }
-  .enskri-btn-back {
-    background: #f1f5f9; color: #374151;
-    padding: 14px 20px; font-size: 14px;
-    min-height: 48px; text-decoration: none !important;
+  .enskri-btn-submit.enskri-btn-incomplete {
+    background: #9CA3AF; color: #fff; opacity: 1;
+    animation: none; transform: none; box-shadow: none;
   }
-  .enskri-btn-back:hover { background: #e2e8f0; color: #111827; }
+  .enskri-field-error { color: #B91C1C; font-size: 12px; font-weight: 500; margin-top: 4px; }
   .enskri-error {
     background: #FEF2F2; color: #991B1B;
     border: 1px solid #FECACA; border-radius: 8px;
     padding: 10px 14px; font-size: 13px;
     font-weight: 500; margin-bottom: 16px;
   }
-  .enskri-summary-card {
-    background: #f8fafc; border: 1px solid #e2e8f0;
-    border-radius: 12px; padding: 24px;
-    margin-bottom: 20px; text-align: center;
-  }
-  .enskri-summary-icon {
-    width: 48px; height: 48px; background: #EBF5FF;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 12px; font-size: 24px; color: #00209F;
-  }
-  .enskri-summary-row {
-    display: flex; justify-content: space-between;
-    padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px;
-  }
-  .enskri-summary-row:last-child { border-bottom: none; }
-  .enskri-summary-label { color: #6B7280; font-weight: 500; }
-  .enskri-summary-value { color: #111827; font-weight: 600; text-align: right; }
   .enskri-social-proof {
     display: flex; align-items: center; justify-content: center;
     gap: 10px; padding: 12px 16px;
@@ -412,111 +334,90 @@
   }
   .enskri-avatar:first-child { margin-left: 0; }
   @media (max-width: 576px) {
-    #enskriModal .modal-dialog { margin: 0; max-width: 100%; height: 100%; }
-    #enskriModal .modal-content { border-radius: 0; height: 100%; }
-    #enskriModal .modal-body { max-height: calc(100vh - 140px); }
-    .enskri-step-label { display: none; }
-    .enskri-progress { gap: 0; }
-    .enskri-step-line { margin: 0 12px; }
+    /* Phones: a card over the dimmed page (not full-screen white). */
+    #enskriModal { --bs-modal-margin: 12px; }
+    #enskriModal .modal-dialog { max-width: none !important; }
+    #enskriModal .modal-body { max-height: calc(100vh - 170px); }
   }
 </style>
 
-<%# ═══════════ JS — Wizard + Modal Logic ═══════════ %>
+<%# ═══════════ JS: Modal Logic ═══════════ %>
 <script>
   var countrySectors = <%= PartnerSectorConstants::COUNTRY_REQUIRED_SECTORS.to_json.html_safe %>;
-  var currentStep = 1;
   var modalData = document.getElementById('enskriModal').dataset;
 
-  /* ── Step Navigation ── */
-  function enskriGoTo(step) {
-    document.querySelectorAll('.enskri-wizard-step').forEach(function(el) { el.style.display = 'none'; });
-    document.getElementById('wizard-step-' + step).style.display = 'block';
-
-    document.querySelectorAll('.enskri-step').forEach(function(el) {
-      var s = parseInt(el.dataset.step);
-      el.classList.remove('active', 'completed');
-      if (s === step) el.classList.add('active');
-      else if (s < step) el.classList.add('completed');
-    });
-
-    document.getElementById('enskri-line-1').classList.toggle('filled', step > 1);
-    document.getElementById('enskri-line-2').classList.toggle('filled', step > 2);
-
-    document.querySelectorAll('.enskri-step.completed .enskri-step-circle').forEach(function(el) {
-      el.innerHTML = '<i class="ri-check-line" style="font-size:14px;"></i>';
-    });
-    document.querySelectorAll('.enskri-step:not(.completed) .enskri-step-circle').forEach(function(el) {
-      el.textContent = el.closest('.enskri-step').dataset.step;
-    });
-
-    if (step === 3) populateSummary();
-    currentStep = step;
-
-    var body = document.querySelector('#enskriModal .modal-body');
-    if (body) body.scrollTop = 0;
+  /* ── Validation (live; submit enabled only when complete) ── */
+  function enskriShowError(msg) {
+    var errDiv = document.getElementById('enskri-form-error');
+    errDiv.querySelector('span').textContent = msg || '';
+    errDiv.style.display = msg ? 'block' : 'none';
   }
 
-  function enskriNext(from) {
-    if (from === 1 && !validateStep1()) return;
-    enskriGoTo(from + 1);
-  }
+  // Every missing/invalid field at once: [{ id: field to mark, msg }]
+  function enskriErrors() {
+    var errs = [];
+    var val = function(id) { return document.getElementById(id).value.trim(); };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val('modal_email'))) errs.push({ id: 'modal_email', msg: modalData.errorEmail });
 
-  function enskriBack(from) {
-    enskriGoTo(from - 1);
-  }
-
-  /* ── Step 1 Validation ── */
-  function validateStep1() {
-    var errDiv = document.getElementById('step1-error');
-    var errSpan = errDiv.querySelector('span');
-    errDiv.style.display = 'none';
-
-    var em = document.getElementById('modal_email').value.trim();
-    if (!em || !em.includes('@')) {
-      errSpan.textContent = modalData.errorEmail;
-      errDiv.style.display = 'block';
-      return false;
-    }
-
-    var type = document.getElementById('modal_signup_type').value;
-    if (type === 'business') {
-      if (!document.getElementById('modal_org_name').value.trim()) {
-        errSpan.textContent = modalData.errorOrg;
-        errDiv.style.display = 'block';
-        return false;
+    if (val('modal_signup_type') === 'business') {
+      var sector = val('modal_sector');
+      if (!val('modal_org_name')) errs.push({ id: 'modal_org_name', msg: modalData.errorOrg });
+      if (!sector) errs.push({ id: 'modal_sector', msg: modalData.errorSector });
+      if (countrySectors.includes(sector) && !val('modal_sector_country')) errs.push({ id: 'modal_sector_country', msg: modalData.errorCountry });
+      if (sector === 'pnh' && !(val('modal_unit_type') && val('modal_unit_name'))) {
+        errs.push({ id: val('modal_unit_type') ? 'modal_unit_name' : 'modal_unit_type', msg: modalData.errorUnit });
       }
-      if (!document.getElementById('modal_sector').value) {
-        errSpan.textContent = modalData.errorSector;
-        errDiv.style.display = 'block';
-        return false;
-      }
+      return errs;
     }
-    return true;
+
+    // Individuals: where they live
+    if (val('modal_diaspora') === '1') {
+      if (!val('modal_us_state')) errs.push({ id: 'modal_us_state', msg: modalData.errorState });
+      else if (!val('modal_us_city')) errs.push({ id: 'modal_us_city', msg: modalData.errorCity });
+    } else if (!val('modal_commune')) {
+      errs.push({ id: val('modal_dept') ? 'modal_commune' : 'modal_dept', msg: modalData.errorCommune });
+    }
+    return errs;
   }
 
-  /* ── Summary (Step 3) ── */
-  function populateSummary() {
-    document.getElementById('summary-email').textContent = document.getElementById('modal_email').value.trim();
+  // Fields the visitor has left (or all of them after a submit attempt) show
+  // their error; untouched ones stay quiet. Submit is enabled only when
+  // nothing is missing.
+  var enskriTouched = {};
+  var enskriSubmitTried = false;
 
-    var locRow = document.getElementById('summary-location-row');
-    var isDiaspora = document.getElementById('modal_diaspora').value === '1';
-    if (isDiaspora) {
-      var countrySel = document.getElementById('modal_diaspora_country');
-      if (countrySel && countrySel.value) {
-        document.getElementById('summary-location').textContent = countrySel.options[countrySel.selectedIndex].textContent + ' (' + modalData.diasporaLabel + ')';
-        locRow.style.display = 'flex';
-      } else { locRow.style.display = 'none'; }
-    } else {
-      var communeSel = document.getElementById('modal_commune');
-      if (communeSel.value) {
-        document.getElementById('summary-location').textContent = communeSel.options[communeSel.selectedIndex].textContent + ', ' + modalData.haiti;
-        locRow.style.display = 'flex';
-      } else { locRow.style.display = 'none'; }
-    }
+  function enskriRefresh() {
+    var errs = enskriErrors();
+    var form = document.getElementById('enskri-form');
+    form.querySelectorAll('.is-invalid').forEach(function(el) { el.classList.remove('is-invalid'); });
+    form.querySelectorAll('.enskri-field-error').forEach(function(el) { el.remove(); });
+    errs.forEach(function(e) {
+      if (!enskriSubmitTried && !enskriTouched[e.id]) return;
+      var el = document.getElementById(e.id);
+      el.classList.add('is-invalid');
+      var msg = document.createElement('div');
+      msg.className = 'enskri-field-error';
+      msg.textContent = e.msg;
+      (el.closest('.col-12, .col-md-6, .mb-3') || el.parentNode).appendChild(msg);
+    });
+    // Looks disabled but stays clickable: a click on it shows every missing
+    // field instead of doing nothing.
+    var btn = form.querySelector('.enskri-btn-submit');
+    btn.classList.toggle('enskri-btn-incomplete', errs.length > 0);
+    btn.setAttribute('aria-disabled', errs.length > 0 ? 'true' : 'false');
+    return errs;
+  }
 
-    var type = document.getElementById('modal_signup_type').value;
-    document.getElementById('summary-type').textContent = type === 'citizen' ? modalData.citizenLabel : modalData.businessLabel;
+  function enskriValidate() {
+    enskriShowError(null);
+    enskriSubmitTried = true;
+    var errs = enskriRefresh();
+    if (errs.length) document.getElementById(errs[0].id).focus();
+    return errs.length === 0;
+  }
 
+  /* ── Social proof line ── */
+  function enskriUpdateSocialProof() {
     var text = document.getElementById('enskri-social-text');
     var communeSel = document.getElementById('modal_commune');
     var selectedOpt = communeSel.options[communeSel.selectedIndex];
@@ -543,12 +444,19 @@
     document.getElementById('modal-btn-citizen').classList.toggle('enskri-toggle-active', type === 'citizen');
     document.getElementById('modal-btn-business').classList.toggle('enskri-toggle-active', type === 'business');
     document.getElementById('modal-business-fields').style.display = type === 'business' ? 'block' : 'none';
+    var sector = document.getElementById('modal_sector');
+    if (type === 'citizen') sector.value = '';
+    modalSectorChange(sector.value);
   }
 
   var unitOptions = <%= OfficerConstants::UNIT_OPTIONS.to_json.html_safe %>;
 
   function modalSectorChange(val) {
-    document.getElementById('modal-sector-country').style.display = countrySectors.includes(val) ? 'block' : 'none';
+    // Both country pickers post country_of_residence; only the visible one
+    // may be enabled, or the hidden blank one overwrites the real answer.
+    var needsCountry = countrySectors.includes(val);
+    document.getElementById('modal-sector-country').style.display = needsCountry ? 'block' : 'none';
+    document.getElementById('modal_sector_country').disabled = !needsCountry;
     document.getElementById('modal-pnh-fields').style.display = val === 'pnh' ? 'block' : 'none';
     if (val !== 'pnh') {
       document.getElementById('modal_unit_type').value = '';
@@ -586,28 +494,150 @@
       haitiFields.style.display = 'block';
       abroadFields.style.display = 'none';
       diasporaField.value = '0';
-      var countrySelect = document.getElementById('modal_diaspora_country');
-      if (countrySelect) countrySelect.value = '';
+      document.getElementById('modal_diaspora_country').disabled = true;
+      modalCountryChange('');
     } else {
       btnA.classList.add('enskri-toggle-active');
       btnH.classList.remove('enskri-toggle-active');
       haitiFields.style.display = 'none';
       abroadFields.style.display = 'block';
       diasporaField.value = '1';
+      var country = document.getElementById('modal_diaspora_country');
+      country.disabled = false;
+      modalCountryChange(country.value);
       document.getElementById('modal_dept').value = '';
+      document.getElementById('modal-commune-wrap').style.display = 'none';
       var commune = document.getElementById('modal_commune');
       commune.innerHTML = '<option value="">' + modalData.choose + '</option>';
       commune.disabled = true;
       document.getElementById('modal-commune-status').innerHTML = '';
     }
+    enskriUpdateSocialProof();
   }
+
+  /* ── Abroad: United States State → City ── */
+  function modalCountryChange(code) {
+    var isUS = code === 'US';
+    var state = document.getElementById('modal_us_state');
+    document.getElementById('modal-us-fields').style.display = isUS ? '' : 'none';
+    state.disabled = !isUS;
+    if (!isUS) state.value = '';
+    modalStateChange(state.value);
+  }
+
+  // City suggestions: the state's cities (curated diaspora cities first,
+  // then every Census place) filtered as the visitor types. Any typed city
+  // is still accepted.
+  var usCityNames = [];
+  var usCityActive = -1;
+
+  function cityFold(str) {
+    return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  }
+
+  function modalStateChange(stateCode) {
+    var wrap = document.getElementById('modal-us-city-wrap');
+    var input = document.getElementById('modal_us_city');
+
+    input.value = '';
+    usCityNames = [];
+    cityHideSuggest();
+    wrap.style.display = stateCode ? '' : 'none';
+    input.disabled = !stateCode;
+    if (!stateCode) return;
+
+    fetch('/enskri/us_cities?state=' + encodeURIComponent(stateCode))
+      .then(function(r) { return r.json(); })
+      .then(function(cities) {
+        // Ignore a late answer for a state the visitor already changed
+        if (document.getElementById('modal_us_state').value === stateCode) usCityNames = cities;
+      })
+      .catch(function() { /* suggestions are optional; typing still works */ });
+  }
+
+  function cityShowSuggest() {
+    var input = document.getElementById('modal_us_city');
+    var list = document.getElementById('modal-us-city-suggest');
+    var q = cityFold(input.value);
+    var starts = [], contains = [];
+    for (var i = 0; i < usCityNames.length && starts.length < 8; i++) {
+      var name = cityFold(usCityNames[i]);
+      if (!q || name.indexOf(q) === 0) starts.push(usCityNames[i]);
+      else if (contains.length < 8 && name.indexOf(q) > 0) contains.push(usCityNames[i]);
+    }
+    var matches = starts.concat(contains).slice(0, 8);
+
+    list.innerHTML = '';
+    usCityActive = -1;
+    if (!matches.length || (matches.length === 1 && cityFold(matches[0]) === q)) { cityHideSuggest(); return; }
+    matches.forEach(function(name, idx) {
+      var li = document.createElement('li');
+      li.id = 'modal-us-city-opt-' + idx;
+      li.setAttribute('role', 'option');
+      li.textContent = name;
+      // mousedown fires before the input's blur, so the pick is not lost
+      li.addEventListener('mousedown', function(e) { e.preventDefault(); cityPick(name); });
+      list.appendChild(li);
+    });
+    list.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  function cityHideSuggest() {
+    var list = document.getElementById('modal-us-city-suggest');
+    var input = document.getElementById('modal_us_city');
+    list.hidden = true;
+    list.innerHTML = '';
+    usCityActive = -1;
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
+  }
+
+  function cityPick(name) {
+    document.getElementById('modal_us_city').value = name;
+    cityHideSuggest();
+    enskriRefresh();
+  }
+
+  function cityMove(step) {
+    var items = document.querySelectorAll('#modal-us-city-suggest li');
+    if (!items.length) return;
+    usCityActive = (usCityActive + step + items.length) % items.length;
+    items.forEach(function(li, idx) { li.setAttribute('aria-selected', idx === usCityActive ? 'true' : 'false'); });
+    items[usCityActive].scrollIntoView({ block: 'nearest' });
+    document.getElementById('modal_us_city').setAttribute('aria-activedescendant', items[usCityActive].id);
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('modal_us_city');
+    if (!input) return;
+    input.addEventListener('input', cityShowSuggest);
+    input.addEventListener('focus', cityShowSuggest);
+    input.addEventListener('blur', cityHideSuggest);
+    input.addEventListener('keydown', function(e) {
+      var open = !document.getElementById('modal-us-city-suggest').hidden;
+      if (e.key === 'ArrowDown') { e.preventDefault(); open ? cityMove(1) : cityShowSuggest(); }
+      else if (e.key === 'ArrowUp' && open) { e.preventDefault(); cityMove(-1); }
+      else if (e.key === 'Enter' && open && usCityActive >= 0) {
+        e.preventDefault(); // pick the highlighted city, don't submit the form
+        cityPick(document.querySelectorAll('#modal-us-city-suggest li')[usCityActive].textContent);
+      } else if (e.key === 'Escape' && open) {
+        e.preventDefault();
+        e.stopPropagation(); // close the list, not the whole modal
+        cityHideSuggest();
+      }
+    });
+  });
 
   /* ── Commune AJAX ── */
   function modalLoadCommunes(deptId) {
+    // Commune appears only once a department is chosen
+    document.getElementById('modal-commune-wrap').style.display = deptId ? '' : 'none';
     var sel = document.getElementById('modal_commune');
     sel.innerHTML = '<option value="">' + modalData.choose + '</option>';
     sel.disabled = true;
     document.getElementById('modal-commune-status').innerHTML = '';
+    enskriUpdateSocialProof();
     if (!deptId) return;
 
     fetch('/enskri/communes?department_id=' + deptId)
@@ -631,18 +661,39 @@
           } else if (opt && opt.value) {
             st.innerHTML = '<span style="color:#EDB95E;font-weight:600;"><i class="ri-time-line"></i> ' + modalData.comingSoon + '</span>';
           } else { st.innerHTML = ''; }
+          enskriUpdateSocialProof();
         };
       });
   }
 
   /* ── Modal open triggers ── */
   document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.hash === '#enskri' || document.querySelector('#enskriModal .alert-danger')) {
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
+    enskriUpdateSocialProof();
+
+    // Re-check on every edit and toggle; mark a field touched once left
+    var liveForm = document.getElementById('enskri-form');
+    ['input', 'change', 'click', 'keyup'].forEach(function(evt) {
+      liveForm.addEventListener(evt, function() { setTimeout(enskriRefresh, 0); });
+    });
+    liveForm.addEventListener('focusout', function(e) {
+      if (e.target.id) enskriTouched[e.target.id] = true;
+      setTimeout(enskriRefresh, 0);
+    });
+    enskriRefresh();
+    document.getElementById('enskriModal').addEventListener('shown.bs.modal', enskriRefresh);
+
+    if (window.location.hash === '#enskri' || modalData.autoOpen === '1' ||
+        document.querySelector('#enskriModal .alert-danger')) {
+      // Move it to <body> before showing (what the data-modal-portal hook
+      // does on turbo:load, which runs after this), so it opens where it
+      // will stay.
+      var modalEl = document.getElementById('enskriModal');
+      if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 
     document.getElementById('enskriModal').addEventListener('hidden.bs.modal', function() {
-      enskriGoTo(1);
+      enskriShowError(null);
       // Safety net: remove any stray backdrop / body lock Bootstrap left behind,
       // so the dimmed background can't linger after the modal closes.
       document.querySelectorAll('.modal-backdrop').forEach(function(el) { el.remove(); });
@@ -651,7 +702,7 @@
       document.body.style.removeProperty('padding-right');
     });
 
-    // Submit the wizard via fetch so validation errors render in place (modal
+    // Submit the form via fetch so validation errors render in place (modal
     // stays open, no reload). Falls back to a native submit on any failure.
     var enskriForm = document.getElementById('enskri-form');
     if (enskriForm) {
@@ -660,6 +711,7 @@
         // Stop the global-loading controller's native-submit handler from showing
         // its overlay — we handle this submission with fetch and never navigate.
         e.stopPropagation();
+        if (!enskriValidate()) return;
         var banner = document.getElementById('enskri-error-banner');
         fetch(enskriForm.action, {
           method: 'POST',
@@ -682,8 +734,9 @@
         });
       });
 
-      // Clear the server error as soon as the user starts fixing the form.
+      // Clear errors as soon as the user starts fixing the form.
       enskriForm.addEventListener('input', function() {
+        enskriShowError(null);
         var b = document.getElementById('enskri-error-banner');
         if (b) b.innerHTML = '';
       });

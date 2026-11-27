@@ -82,7 +82,7 @@ module Public
     # ============================================================
     def scan_passport
       unless params[:passport_image].present?
-        return render json: { success: false, error: "No image provided" }, status: :unprocessable_entity
+        return render json: { success: false, error: t("alerts.liveness.no_image") }, status: :unprocessable_entity
       end
 
       image_bytes = params[:passport_image].read
@@ -97,7 +97,7 @@ module Public
       visitor_key = request.session.id
 
       if FaceLivenessService.rate_limited?(visitor_key)
-        render json: { error: "Too many attempts. Please wait before trying again." }, status: :too_many_requests
+        render json: { error: t("alerts.liveness.too_many_attempts") }, status: :too_many_requests
         return
       end
 
@@ -128,13 +128,13 @@ module Public
       sid = params[:session_id]
 
       unless session[:liveness_session_id] == sid
-        render json: { error: "Invalid session" }, status: :forbidden
+        render json: { error: t("alerts.liveness.invalid_session") }, status: :forbidden
         return
       end
 
       # AWS liveness sessions expire after 3 minutes
       if Time.current.to_i - session[:liveness_created_at].to_i > 180
-        render json: { error: "Session expired" }, status: :gone
+        render json: { error: t("alerts.liveness.session_expired") }, status: :gone
         return
       end
 
@@ -147,7 +147,7 @@ module Public
       sid = params[:session_id]
 
       unless session[:liveness_session_id] == sid
-        render json: { error: "Invalid session" }, status: :forbidden
+        render json: { error: t("alerts.liveness.invalid_session") }, status: :forbidden
         return
       end
 
@@ -199,19 +199,19 @@ module Public
       id_photo = params[:id_photo]
 
       unless selfie_signed_id.present?
-        render json: { error: "No selfie found. Please complete the face verification first." }, status: :unprocessable_entity
+        render json: { error: t("alerts.liveness.no_selfie_found") }, status: :unprocessable_entity
         return
       end
 
       unless id_photo.present?
-        render json: { error: "No passport photo provided." }, status: :unprocessable_entity
+        render json: { error: t("alerts.liveness.no_passport_photo") }, status: :unprocessable_entity
         return
       end
 
       # Resolve selfie blob from signed ID
       selfie_blob = ActiveStorage::Blob.find_signed(selfie_signed_id)
       unless selfie_blob
-        render json: { error: "Selfie image not found." }, status: :unprocessable_entity
+        render json: { error: t("alerts.liveness.selfie_missing") }, status: :unprocessable_entity
         return
       end
 
@@ -220,7 +220,7 @@ module Public
       id_photo_bytes = id_photo.read
 
       unless selfie_bytes.present? && id_photo_bytes.present?
-        render json: { error: "Failed to read images." }, status: :unprocessable_entity
+        render json: { error: t("alerts.liveness.read_failed") }, status: :unprocessable_entity
         return
       end
 
@@ -255,13 +255,13 @@ module Public
         render json: { match: false, similarity: 0, message: "No valid face detected on the passport photo." }
       rescue StandardError => e
         Rails.logger.error "[VisitorsController#face_compare] Error: #{e.class} - #{e.message}"
-        render json: { error: "Face comparison temporarily unavailable." }, status: :service_unavailable
+        render json: { error: t("alerts.liveness.compare_unavailable") }, status: :service_unavailable
       end
     end
 
     def manual_selfie
       unless params[:selfie].present?
-        render json: { error: "No image provided" }, status: :unprocessable_entity
+        render json: { error: t("alerts.liveness.no_image") }, status: :unprocessable_entity
         return
       end
 

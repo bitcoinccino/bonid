@@ -6,14 +6,17 @@ class LandingController < ApplicationController
 
   def index
     @waitlist_signup = WaitlistSignup.new
+    # Share link (/enskri?ref=CODE): open the form with "Invited by <name>"
+    @referrer = WaitlistSignup.find_by_referral_code(params[:ref]) if params[:ref].present?
+    @waitlist_signup.referred_by_code = @referrer&.referral_code
     @departments = Department.order(:name)
     @total_signups = WaitlistSignup.count
     @launched_communes = Commune.where(launched: true).pluck(:name)
-    @lang = params[:lang] == "fr" ? "fr" : "ht"
+    @lang = I18n.locale.to_s # en/fr/ht, from set_locale
   end
 
   def signup
-    @lang = params[:lang] == "fr" ? "fr" : "ht"
+    @lang = I18n.locale.to_s # en/fr/ht, from set_locale
 
     # Bot prevention: honeypot + timestamp. Silently no-op for the honeypot;
     # surface a friendly message for the too-fast case — both in-place so the
@@ -27,19 +30,16 @@ class LandingController < ApplicationController
     end
 
     @waitlist_signup = WaitlistSignup.new(waitlist_params)
+    @waitlist_signup.locale = I18n.locale.to_s # emails go out in this language
 
-    # Check invite code if provided
+    # Check invite code if provided. It is redeemed on /signup once the
+    # account exists, not here.
     if params[:waitlist_signup][:invite_code_used].present?
-      code = InviteCode.find_by(code: params[:waitlist_signup][:invite_code_used].upcase.strip)
-      unless code&.valid_for_use?
-        return render_enskri_error(t_landing("invalid_invite_code"))
-      end
+      code = InviteCode.find_available(params[:waitlist_signup][:invite_code_used])
+      return render_enskri_error(t_landing("invalid_invite_code")) unless code
     end
 
-    if @waitlist_signup.save
-      # Redeem invite code if used
-      code&.redeem! if code.present?
-
+    if @waitlist_signup.save(context: :signup_form) # every form field required
       # Organizations don't roll out by commune — hand them off to the partner
       # application pipeline (vetting/approval) instead of the geographic gate.
       if @waitlist_signup.signup_type == "business"
@@ -59,17 +59,22 @@ class LandingController < ApplicationController
 
       # Check if commune is launched or has valid invite code
       if @waitlist_signup.commune&.launched? || code.present?
-        enskri_redirect(new_user_registration_path, t_landing("account_ready"))
+        enskri_redirect(account_signup_path(@waitlist_signup, code), t_landing("account_ready"))
       else
-        enskri_redirect(enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: @lang))
+        # Full locale (en/fr/ht): the confirmation page is translated in all three
+        enskri_redirect(enskri_confirmation_path(ref: @waitlist_signup.referral_code, lang: I18n.locale))
       end
     else
       # Surface the validation error (e.g. duplicate email) in place on the
       # wizard — modal stays open, the user's input is preserved.
-      render_enskri_error(
-        @waitlist_signup.errors.map(&:message).uniq.to_sentence.presence ||
-        t_landing("waitlist_error")
-      )
+      message =
+        if @waitlist_signup.errors.of_kind?(:email, :taken)
+          t_landing("email_taken")
+        else
+          # One problem at a time, like the form's own check
+          @waitlist_signup.errors.map(&:message).first.presence || t_landing("waitlist_error")
+        end
+      render_enskri_error(message)
     end
   end
 
@@ -77,9 +82,12 @@ class LandingController < ApplicationController
     @signup = WaitlistSignup.find_by(referral_code: params[:ref])
     return redirect_to enskri_path unless @signup
 
-    @lang = params[:lang] == "fr" ? "fr" : "ht"
-    @share_url = "#{request.base_url}/enskri?ref=#{@signup.referral_code}"
-    @commune_count = @signup.commune.display_signups if @signup.commune
+    # Rendered in the visitor's locale (en/fr/ht via set_locale)
+    @share_url = enskri_url(ref: @signup.referral_code, lang: nil)
+    @commune = @signup.commune
+    @commune_count = @commune ? @commune.display_signups : WaitlistSignup.count
+    @masked_email = mask_email(@signup.email)
+    @referrals_count = @signup.referrals.count
 
     # Standalone full-screen success page — render without the marketing chrome.
     render layout: "blank"
@@ -89,6 +97,13 @@ class LandingController < ApplicationController
   def arrondissements
     arr = Arrondissement.where(department_id: params[:department_id]).order(:name)
     render json: arr.map { |a| { id: a.id, name: a.name } }
+  end
+
+  # AJAX: city suggestions for a US state (curated first, then every Census
+  # place). Static data, so browsers may cache it.
+  def us_cities
+    expires_in 1.day, public: true
+    render json: DiasporaLocations.cities_for(params[:state]).to_json
   end
 
   # AJAX: return communes for a department (or arrondissement)
@@ -109,6 +124,26 @@ class LandingController < ApplicationController
   end
 
   private
+
+  # r***d@yahoo.com — enough for the person to recognize their address
+  def mask_email(email)
+    local, domain = email.to_s.split("@", 2)
+    return email if domain.blank?
+
+    masked = local.length <= 2 ? "#{local[0]}***" : "#{local[0]}***#{local[-1]}"
+    "#{masked}@#{domain}"
+  end
+
+  # Where an individual goes once they may create an account: /signup
+  # carrying the green light that let them in (their invite code, or their
+  # launched commune).
+  def account_signup_path(signup, code)
+    if code
+      signup_path(lang: @lang, invite: code.code)
+    else
+      signup_path(lang: @lang, commune: signup.commune.code)
+    end
+  end
 
   # Error response for a failed signup. JSON for the wizard's in-place fetch
   # (modal stays open, no reload); HTML redirect + flash as a no-JS fallback.
@@ -140,30 +175,41 @@ class LandingController < ApplicationController
     params.require(:waitlist_signup).permit(
       :first_name, :last_name, :email, :phone, :signup_type,
       :commune_id, :sector, :organization_name, :invite_code_used,
-      :diaspora, :country_of_residence,
+      :diaspora, :country_of_residence, :residence_state, :residence_city, :referred_by_code,
       :rank, :unit_type, :unit_name
     )
   end
 
   def t_landing(key)
     translations = {
+      "en" => {
+        "invalid_invite_code" => "This invite code is invalid or has expired.",
+        "account_ready" => "You can create your account now!",
+        "partner_next" => "Let's set up your organization — complete the partner application.",
+        "waitlist_success" => "Thank you! We'll reach out when we launch in your area.",
+        "waitlist_error" => "Something went wrong. Please check your information and try again.",
+        "too_fast" => "Please wait a moment and try again.",
+        "email_taken" => "This email is already registered."
+      },
       "ht" => {
         "invalid_invite_code" => "Kod envitasyon sa a pa valab oswa ekspire.",
         "account_ready" => "Ou ka kreye kont ou kounye a!",
         "partner_next" => "Ann konfigire òganizasyon ou — ranpli aplikasyon patnè a.",
         "waitlist_success" => "Mesi! Nou pral kontakte ou le nou lanse nan zon ou.",
         "waitlist_error" => "Gen yon erè. Tanpri tcheke enfòmasyon ou yo epi eseye ankò.",
-        "too_fast" => "Tanpri rete yon ti moman epi eseye anko."
+        "too_fast" => "Tanpri rete yon ti moman epi eseye ankò.",
+        "email_taken" => "Imèl sa a enskri deja."
       },
       "fr" => {
-        "invalid_invite_code" => "Ce code d'invitation n'est pas valide ou a expire.",
-        "account_ready" => "Vous pouvez creer votre compte maintenant!",
-        "partner_next" => "Configurons votre organisation — completez votre demande de partenaire.",
-        "waitlist_success" => "Merci! Nous vous contacterons lors du lancement dans votre zone.",
-        "waitlist_error" => "Une erreur s'est produite. Veuillez verifier vos informations et reessayer.",
-        "too_fast" => "Veuillez patienter un moment et reessayer."
+        "invalid_invite_code" => "Ce code d'invitation n'est pas valide ou a expiré.",
+        "account_ready" => "Vous pouvez créer votre compte maintenant !",
+        "partner_next" => "Configurons votre organisation — complétez votre demande de partenaire.",
+        "waitlist_success" => "Merci ! Nous vous contacterons lors du lancement dans votre zone.",
+        "waitlist_error" => "Une erreur s'est produite. Veuillez vérifier vos informations et réessayer.",
+        "too_fast" => "Veuillez patienter un moment et réessayer.",
+        "email_taken" => "Cet e-mail est déjà inscrit."
       }
     }
-    translations[@lang][key] || key
+    translations.fetch(@lang, translations["en"])[key] || key
   end
 end

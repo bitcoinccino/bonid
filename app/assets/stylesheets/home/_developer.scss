@@ -118,6 +118,27 @@
   background: rgba(255, 255, 255, 0.10);
 }
 
+/* ── Plain-language caption for the selected tab ── */
+.dev-tab-caption {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 26px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #E2E8F0;
+  background: rgba(125, 211, 252, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+  i {
+    color: #7dd3fc;
+    font-size: 15px;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+}
+
 /* ── Code blocks ── */
 .dev-code-block {
   padding: 22px 26px 56px; /* extra bottom padding so the copy-btn doesn't overlap text */
@@ -128,8 +149,17 @@
   color: #cbd5e1;
   background: transparent;
   border: none;
-  overflow-x: auto;
+  overflow: auto;
   white-space: pre;
+  /* Long examples ("Get BonID details" is ~70 lines) scroll inside the
+     pane instead of stretching the section. */
+  max-height: 30rem;
+}
+
+/* Desktop: one fixed height for every tab, so switching tabs never
+   makes the section jump. */
+@media (min-width: 992px) {
+  .dev-code-block { height: 24rem; max-height: none; }
 }
 
 /* ── Copy button ── */
@@ -167,4 +197,150 @@
   .dev-tabs { padding: 10px 10px 0; }
   .dev-tab  { padding: 7px 10px; font-size: 12px; }
   .dev-code-block { padding: 18px 18px 52px; font-size: 12px; }
+  .dev-tab-caption { padding: 10px 18px; font-size: 12.5px; }
+}
+
+/* ── "What you get" feature rows ──
+   .gs-row/.gs-row-icon are shared with the citizen dashboard (compact
+   30px tiles); enlarge them only inside this marketing card. */
+.dev-info-card {
+  .gs-row {
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.5rem 0;
+  }
+
+  .gs-row-icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    border-radius: 50%;
+    background: rgba(0, 32, 159, 0.08);
+
+    i { font-size: 1.3rem; }
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dev-info-card .gs-row-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+
+    i { font-size: 1.1rem; }
+  }
+}
+
+/* ── Code examples picker: tabs on tablet/desktop, a dropdown on phones ── */
+.dev-tab-select-wrap { display: none; }
+
+@media (max-width: 575.98px) {
+  .dev-tabs { display: none; }
+
+  .dev-tab-select-wrap {
+    display: block;
+    position: relative;
+    padding: 12px 14px 0;
+    background: rgba(0, 0, 0, 0.15);
+
+    i {
+      position: absolute;
+      right: 26px;
+      top: 50%;
+      transform: translateY(-25%);
+      color: rgba(255, 255, 255, 0.7);
+      pointer-events: none;
+      font-size: 1.1rem;
+    }
+  }
+
+  .dev-tab-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 10px 40px 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+
+    &:focus { outline: 2px solid rgba(125, 211, 252, 0.6); outline-offset: 1px; }
+
+    option { color: #0F172A; background: #ffffff; }
+  }
+}
+
+/* ── "What you get | See the code" sliding switch (one panel at a time) ── */
+.dev-switch-wrap { display: flex; justify-content: center; margin-bottom: 1.75rem; }
+
+.dev-switch {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 999px;
+  background: #E5E7EB;
+}
+
+.dev-switch-thumb {
+  position: absolute;
+  top: 4px; bottom: 4px; left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background: var(--haitian-blue, #00209F);
+  box-shadow: 0 4px 12px rgba(0, 32, 159, 0.25);
+  transition: transform 0.3s ease;
+}
+.dev-switch.is-code .dev-switch-thumb { transform: translateX(100%); }
+
+.dev-switch-btn {
+  position: relative; /* above the thumb */
+  z-index: 1;
+  border: 0;
+  background: none;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #475569;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+
+  &.is-active { color: #fff; }
+  &:focus-visible { outline: 2px solid var(--haitian-blue, #00209F); outline-offset: 3px; }
+}
+
+/* Both panels sit in the same grid cell, so the box is always the size of
+   the larger one: the two views match in width and height, and switching
+   never makes the page jump. The inactive one is invisible, not removed. */
+.dev-panels { display: grid; max-width: 960px; margin: 0 auto; }
+.dev-panel { grid-area: 1 / 1; display: flex; min-width: 0; }
+.dev-panel.is-hidden { visibility: hidden; pointer-events: none; }
+.dev-panel:not(.is-hidden) { animation: dev-panel-in 0.3s ease; }
+.dev-panel .dev-info-card .card-body { justify-content: center; }
+@keyframes dev-panel-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Feature list: two columns on tablet/desktop, one on phones */
+.dev-feature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 2rem;
+  row-gap: 0.5rem;
+}
+
+@media (max-width: 575.98px) {
+  .dev-feature-grid { grid-template-columns: 1fr; }
+  .dev-switch-btn { padding: 9px 14px; font-size: 0.85rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dev-switch-thumb, .dev-switch-btn { transition: none; }
+  .dev-panel:not(.is-hidden) { animation: none; }
 }

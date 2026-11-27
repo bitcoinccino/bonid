@@ -12,10 +12,10 @@ module Citizens
       @partner    = scan_log.partner
       @officer    = scan_log.officer
 
-      mail(
-        to: @user.email,
-        subject: "🔔 Your BonID was scanned on #{scan_log.scanned_at.strftime('%b %d, %Y')}"
-      )
+      with_citizen_locale(@user) do
+        date = I18n.l(scan_log.scanned_at, format: t("mailers.qr_scan.date_format"))
+        mail(to: @user.email, subject: t("mailers.qr_scan.subject", date: date))
+      end
     end
   end
 end

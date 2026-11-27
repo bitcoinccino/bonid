@@ -244,7 +244,7 @@ module Citizens
 
     # Block unverified citizens from approving/denying transactions
     def ensure_verified_bonid!
-      unless @citizen&.bonid_verified?
+      unless @citizen&.identity_currently_verified?
         respond_to do |format|
           format.turbo_stream do
             render turbo_stream: turbo_stream.update(
@@ -255,7 +255,7 @@ module Citizens
           end
           format.html do
             redirect_to citizens_identity_submissions_path,
-                        alert: "You must verify your BonID before approving or denying transactions."
+                        alert: t("alerts.transactions.verify_first")
           end
         end
       end
@@ -273,7 +273,7 @@ module Citizens
             html: helpers.content_tag(:div, "Transaction request not found.", class: "alert alert-danger border-0 rounded-3 small mb-3")
           )
         end
-        format.html { redirect_to citizens_transaction_consents_path, alert: "Transaction request not found." }
+        format.html { redirect_to citizens_transaction_consents_path, alert: t("alerts.transactions.not_found") }
       end
     end
 

@@ -1,19 +1,18 @@
 <%# Notification bell — wraps in a Turbo frame so AlertBroadcastJob can
-    replace just this fragment when a new event hits any of the five
-    sources tracked by Citizens::AlertCounter.
+    replace just this fragment when a new event hits any source tracked by
+    Citizens::AlertCounter.
 
-    The bell is a Bootstrap dropdown trigger; clicking opens an inline
-    popover with the latest 5 events (server-rendered via the same
-    CitizenActivityEvent presenter the Aktivite feed uses) plus a
-    "see all" link to the full Aktivite page. %>
-<%# `target: "_top"` so that clicks on links inside the popover do a full
-    page navigation instead of trying to load the consent / services page
-    into the bell frame (which would never resolve and the spinner loops). %>
+    Each notification stays unread (red dot, counted in the badge) until
+    the citizen opens it — unread items are small POST forms to
+    notifications/open, which marks that one read and redirects (a POST, so
+    hovering / Turbo prefetch never marks anything read). "Mark all as read"
+    moves the cutoff forward. Opening the bell changes nothing. %>
+<%# `target: "_top"` so clicks inside the popover navigate the whole page
+    instead of loading into the bell frame. %>
 <%= turbo_frame_tag "citizen_alert_bell", target: "_top" do %>
   <% counter = Citizens::AlertCounter.new(current_citizen) %>
   <% total   = counter.total %>
   <% events  = counter.recent_events(limit: 5) %>
-  <% seen_at = current_citizen.notifications_seen_at || Time.at(0) %>
 
   <div class="dropdown">
     <button type="button"
@@ -22,7 +21,7 @@
             data-bs-auto-close="outside"
             data-bs-display="static"
             aria-expanded="false"
-            aria-label="Notifikasyon (<%= total %>)">
+            aria-label="<%= t("citizen_portal.bell.aria", count: total) %>">
       <i class="ri-notification-3-line fs-4"></i>
       <% if total.positive? %>
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger small">
@@ -31,7 +30,7 @@
       <% end %>
     </button>
 
-    <%# Pinned to the top-right of the viewport (below the fixed topbar)
+  <%# Pinned to the top-right of the viewport (below the fixed topbar)
         instead of anchored to the bell's right edge. Otherwise the 340px
         panel extends leftward across the topbar and covers the greeting
         / avatar. data-bs-display="static" above disables Popper so these
@@ -45,10 +44,17 @@
       <%# Header row %>
       <li class="px-3 py-2 d-flex justify-content-between align-items-center"
           style="background: #F8FAFC; border-bottom: 1px solid #E5E7EB;">
-        <strong style="font-size: 0.85rem; color: var(--primary);">Notifikasyon</strong>
+        <strong style="font-size: 0.85rem; color: var(--primary);"><%= t("citizen_portal.bell.title") %></strong>
         <% if total.positive? %>
-          <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-            <%= total %> nouvo
+          <span class="d-inline-flex align-items-center gap-2">
+            <span class="badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+              <%= t("citizen_portal.bell.new_count", count: total) %>
+            </span>
+            <%= button_to t("citizen_portal.bell.mark_all_read"), citizens_notifications_seen_path,
+                          method: :post, form: { class: "d-inline" },
+                          data: { no_processing: "true" },
+                          class: "btn btn-link p-0 text-decoration-none fw-semibold",
+                          style: "font-size: 0.72rem; color: var(--primary);" %>
           </span>
         <% end %>
       </li>
@@ -57,37 +63,49 @@
       <% if events.empty? %>
         <li class="px-3 py-4 text-center text-muted" style="font-size: 0.78rem;">
           <i class="ri-notification-off-line ri-lg d-block mb-2 opacity-50"></i>
-          Pa gen aktivite resan
+          <%= t("citizen_portal.bell.empty") %>
         </li>
       <% else %>
         <% events.each do |ev| %>
-          <% unread = ev.timestamp.present? && ev.timestamp > seen_at %>
+          <% unread = counter.unread?(ev) %>
+          <% row_class = "dropdown-item d-flex gap-2 align-items-start py-2 px-3 text-start w-100 #{'bell-event--unread' if unread}" %>
+          <% row_style = "white-space: normal; border: 0; border-bottom: 1px solid #F1F5F9; #{'background: rgba(0, 32, 159, 0.06);' if unread}" %>
           <li>
-            <%= link_to (ev.deep_link.presence || citizens_activity_path),
-                        class: "dropdown-item d-flex gap-2 align-items-start py-2 px-3 #{'bell-event--unread' if unread}",
-                        style: "white-space: normal; border-bottom: 1px solid #F1F5F9; #{'background: rgba(0, 32, 159, 0.06);' if unread}" do %>
-              <%# Unread dot — blue marker on the left of new items %>
+            <% body = capture do %>
+              <%# Unread dot — red marker on the left of new items %>
               <span class="flex-shrink-0 mt-1" style="width: 8px; display: inline-flex; justify-content: center;">
                 <% if unread %>
-                  <span aria-label="Pa li ankò" title="Pa li ankò"
+                  <span aria-label="<%= t("citizen_portal.bell.unread") %>" title="<%= t("citizen_portal.bell.unread") %>"
                         style="display: inline-block; width: 8px; height: 8px; border-radius: 50%;
                                background: #DC2626; box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18);"></span>
                 <% end %>
               </span>
               <i class="<%= ev.icon %> flex-shrink-0 mt-1"
                  style="color: var(--primary); font-size: 1rem;"></i>
-              <div class="flex-grow-1" style="min-width: 0;">
-                <div class="text-dark text-truncate <%= 'fw-bold' if unread %> <%= 'fw-semibold' unless unread %>"
-                     style="font-size: 0.78rem; line-height: 1.25;">
+              <span class="flex-grow-1 d-block" style="min-width: 0;">
+                <span class="d-block text-dark text-truncate <%= unread ? 'fw-bold' : 'fw-semibold' %>"
+                      style="font-size: 0.78rem; line-height: 1.25;">
                   <%= ev.title %>
-                </div>
-                <div class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">
+                </span>
+                <span class="d-block text-muted" style="font-size: 0.7rem; margin-top: 2px;">
                   <%= ev.timestamp_label %>
                   <% if unread %>
-                    <span class="ms-1 fw-bold" style="color: #DC2626;">· Nouvo</span>
+                    <span class="ms-1 fw-bold" style="color: #DC2626;">· <%= t("citizen_portal.bell.new_tag") %></span>
                   <% end %>
-                </div>
-              </div>
+                </span>
+              </span>
+            <% end %>
+
+            <% if unread %>
+              <%= button_to citizens_notification_open_path(key: ev.notification_key),
+                            method: :post, class: row_class, style: row_style,
+                            form: { class: "m-0" }, data: { no_processing: "true" } do %>
+                <%= body %>
+              <% end %>
+            <% else %>
+              <%= link_to (ev.deep_link.presence || citizens_activity_path), class: row_class, style: row_style do %>
+                <%= body %>
+              <% end %>
             <% end %>
           </li>
         <% end %>
@@ -98,7 +116,7 @@
         <%= link_to citizens_activity_path,
                     class: "dropdown-item text-center fw-semibold py-2",
                     style: "font-size: 0.78rem; color: var(--primary); background: #F8FAFC;" do %>
-          Wè tout aktivite <i class="ri-arrow-right-line ms-1"></i>
+          <%= t("citizen_portal.bell.see_all") %> <i class="ri-arrow-right-line ms-1"></i>
         <% end %>
       </li>
     </ul>

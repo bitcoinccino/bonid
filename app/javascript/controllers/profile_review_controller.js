@@ -9,6 +9,16 @@ export default class extends Controller {
     "reviewAddress"
   ]
 
+  // Localized copy from the page (citizen's portal language). Each label
+  // falls back to English so the controller still works without them.
+  //   labels: { full_name: "Non konplè", ..., date_format: "{day} {month} {year}" }
+  //   months: ["", "janvye", ...]  (1-based, index 0 unused)
+  static values = { labels: Object, months: Array }
+
+  _l(key, fallback) {
+    return (this.hasLabelsValue && this.labelsValue[key]) || fallback
+  }
+
   connect() {
     // Listen for step changes on the same element
     this.element.addEventListener("wizard:stepChanged", this._onStep.bind(this))
@@ -43,15 +53,15 @@ export default class extends Controller {
         const url = URL.createObjectURL(file)
         this.reviewPhotoTarget.classList.add("text-center")
         this.reviewPhotoTarget.innerHTML = `
-          <img src="${url}" alt="Photo preview" class="d-block mx-auto mb-2" style="${imgStyle}">
-          <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>New photo selected</span>`
+          <img src="${url}" alt="${this._esc(this._l("photo_preview", "Photo preview"))}" class="d-block mx-auto mb-2" style="${imgStyle}">
+          <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>${this._esc(this._l("new_photo", "New photo selected"))}</span>`
       } else if (hasExisting) {
         const existingImg = el.querySelector("img.photo-preview:not(.d-none)")
         const src = existingImg ? existingImg.src : ""
         this.reviewPhotoTarget.classList.add("text-center")
         this.reviewPhotoTarget.innerHTML = `
-          ${src ? `<img src="${src}" alt="Photo preview" class="d-block mx-auto mb-2" style="${imgStyle}">` : ""}
-          <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>Photo uploaded</span>`
+          ${src ? `<img src="${src}" alt="${this._esc(this._l("photo_preview", "Photo preview"))}" class="d-block mx-auto mb-2" style="${imgStyle}">` : ""}
+          <span class="text-success"><i class="ri-checkbox-circle-line me-1"></i>${this._esc(this._l("photo_uploaded", "Photo uploaded"))}</span>`
       }
       // If neither, keep server-rendered default
     }
@@ -78,14 +88,14 @@ export default class extends Controller {
         // round-trip — e.g. the verified-state DOB <input type="text"> has no
         // name attribute, so its value never reaches the JS).
         const t = this.reviewPersonalTarget
-        this.reviewPersonalTarget.innerHTML = `
-          <div class="col-sm-6"><strong>Full Name:</strong> ${this._resolve(t, "Full Name", fullName)}</div>
-          <div class="col-sm-6"><strong>Sex:</strong> ${this._resolve(t, "Sex", sex)}</div>
-          <div class="col-sm-6"><strong>Date of Birth:</strong> ${this._resolve(t, "Date of Birth", dob)}</div>
-          <div class="col-sm-6"><strong>Nationality:</strong> ${this._resolve(t, "Nationality", nationality)}</div>
-          <div class="col-sm-6"><strong>Phone:</strong> ${this._resolve(t, "Phone", phone)} ${this._carrier(phone)}</div>
-          <div class="col-sm-6"><strong>Marital Status:</strong> ${this._resolve(t, "Marital Status", marital)}</div>
-        `
+        this.reviewPersonalTarget.innerHTML = [
+          this._row(t, "full_name", "Full Name", fullName),
+          this._row(t, "sex", "Sex", sex),
+          this._row(t, "dob", "Date of Birth", dob),
+          this._row(t, "nationality", "Nationality", nationality),
+          this._row(t, "phone", "Phone", phone, this._carrier(phone)),
+          this._row(t, "marital_status", "Marital Status", marital)
+        ].join("")
       }
     }
 
@@ -103,17 +113,20 @@ export default class extends Controller {
 
       if (idType || idNumber) {
         const t = this.reviewIdentificationTarget
-        let html = `
-          <div class="col-sm-6"><strong>ID Type:</strong> ${this._resolve(t, "ID Type", idType)}</div>
-          <div class="col-sm-6"><strong>ID Number:</strong> ${this._resolve(t, "ID Number", idNumber)}</div>
-        `
-        if (ninu) html += `<div class="col-sm-6"><strong>NINU:</strong> ${this._esc(ninu)}</div>`
-        html += `
-          <div class="col-sm-6"><strong>Place of Birth:</strong> ${this._resolve(t, "Place of Birth", birthPlace)}</div>
-          <div class="col-sm-6"><strong>Issued:</strong> ${this._resolve(t, "Issued", issued)}</div>
-          <div class="col-sm-6"><strong>Expires:</strong> ${this._resolve(t, "Expires", expires)}</div>
-          <div class="col-sm-6"><strong>Issuer:</strong> ${this._resolve(t, "Issuer", issuer)}</div>
-        `
+        const isPassport = this._val(el, "user[id_type]") === "passport"
+        let html = this._row(t, "id_type", "ID Type", idType)
+        // Passports are registered with the NINU only.
+        if (isPassport) html += this._row(t, "ninu", "NINU", ninu)
+        else {
+          html += this._row(t, "id_number", "ID Number", idNumber)
+          if (ninu) html += this._row(t, "ninu", "NINU", ninu)
+        }
+        html += [
+          this._row(t, "birth_place", "Place of Birth", birthPlace),
+          this._row(t, "issued", "Issued", issued),
+          this._row(t, "expires", "Expires", expires),
+          this._row(t, "issuer", "Issuer", issuer)
+        ].join("")
         this.reviewIdentificationTarget.innerHTML = html
       }
     }
@@ -135,7 +148,7 @@ export default class extends Controller {
         }
         lines.push(this._esc(country.toUpperCase()))
 
-        this.reviewAddressTarget.innerHTML = `<p class="mb-0" style="white-space: pre-line; line-height: 1.6;">${lines.join("\n")}</p>`
+        this.reviewAddressTarget.innerHTML = `<p class="mb-0 review-data-address">${lines.join("<br>")}</p>`
       }
     }
   }
@@ -158,9 +171,7 @@ export default class extends Controller {
     const val = this._val(root, name)
     if (val && val.includes("-")) {
       const [y, m, d] = val.split("-")
-      const months = ["", "January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"]
-      return `${months[parseInt(m, 10)] || m} ${parseInt(d, 10)}, ${y}`
+      return this._formatDate(y, m, d)
     }
     // Rails date selects fallback: user[id_issued_on(1i)]
     const base = name.replace(/\]$/, "")
@@ -168,9 +179,26 @@ export default class extends Controller {
     const m = this._val(root, `${base}(2i)]`)
     const d = this._val(root, `${base}(3i)]`)
     if (!y || !m || !d) return ""
-    const months = ["", "January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"]
-    return `${months[parseInt(m, 10)] || m} ${parseInt(d, 10)}, ${y}`
+    return this._formatDate(y, m, d)
+  }
+
+  _formatDate(y, m, d) {
+    const fallback = ["", "January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"]
+    const months = (this.hasMonthsValue && this.monthsValue.length === 13) ? this.monthsValue : fallback
+    const month = months[parseInt(m, 10)] || m
+    return this._l("date_format", "{month} {day}, {year}")
+      .replace("{month}", month).replace("{day}", parseInt(d, 10)).replace("{year}", y)
+  }
+
+  // One review cell: small label above the value (same markup as the
+  // review_item helper). `extra` is trusted HTML.
+  _row(target, key, fallback, formValue, extra = "") {
+    const label = this._l(key, fallback)
+    const value = this._resolve(target, key, formValue)
+    const empty = value === null
+    const shown = empty ? this._esc(this._l("empty", "Not provided")) : value
+    return `<div class="review-item" data-review-key="${key}"><span class="review-label">${this._esc(label)}</span><span class="review-value${empty ? " is-empty" : ""}">${shown} ${extra}</span></div>`
   }
 
   _carrier(phone) {
@@ -191,35 +219,21 @@ export default class extends Controller {
     return div.innerHTML
   }
 
-  // For each <div class="col-sm-6"><strong>Label:</strong> Value</div> row
-  // already in `target`, return the text after the matching <strong> label.
-  // Used as a fallback when the form doesn't expose the value (locked fields).
-  _existingValue(target, label) {
+  // Value the server already rendered for this key (handles locked fields
+  // the form can't round-trip, e.g. the verified DOB has no input name).
+  _existingValue(target, key) {
     if (!target) return ""
-    const cells = target.querySelectorAll(".col-sm-6")
-    for (const cell of cells) {
-      const strong = cell.querySelector("strong")
-      if (!strong) continue
-      const cellLabel = strong.textContent.trim().replace(/:$/, "")
-      if (cellLabel !== label) continue
-      // Sum up text content after the <strong>, trimming the em-dash placeholder.
-      let text = ""
-      let node = strong.nextSibling
-      while (node) {
-        text += node.textContent || ""
-        node = node.nextSibling
-      }
-      const trimmed = text.trim()
-      return trimmed === "—" ? "" : trimmed
-    }
-    return ""
+    const cell = target.querySelector(`.review-item[data-review-key="${key}"] .review-value`)
+    if (!cell || cell.classList.contains("is-empty")) return ""
+    const clone = cell.cloneNode(true)
+    clone.querySelectorAll(".badge").forEach(b => b.remove())
+    return clone.textContent.trim()
   }
 
-  // Choose form value if present, else fall back to whatever was already
-  // server-rendered for this label, else the em-dash placeholder.
-  _resolve(target, label, formValue) {
+  // Form value first, then what the server rendered, else null (empty).
+  _resolve(target, key, formValue) {
     if (formValue) return this._esc(formValue)
-    const existing = this._existingValue(target, label)
-    return existing ? this._esc(existing) : "—"
+    const existing = this._existingValue(target, key)
+    return existing ? this._esc(existing) : null
   }
 }

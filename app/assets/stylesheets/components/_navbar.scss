@@ -182,7 +182,7 @@ a.navbar-brand.font-orbitron:hover,
 .bonid-dropdown,
 .dropdown-menu.bonid-dropdown {
   min-width: 420px;
-  border-radius: 14px;
+  border-radius: 20px;
   padding: 0.75rem;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: #ffffff !important;
@@ -271,7 +271,7 @@ a.navbar-brand.font-orbitron:hover,
   padding: 0.75rem 0.9rem;
   font-family: "Inter", sans-serif;
   font-weight: 400;
-  border-radius: 12px;
+  border-radius: 999px; /* Google-style pill hover */
   color: var(--nav-text) !important;
   background: transparent !important;
   text-decoration: none !important;
@@ -319,25 +319,31 @@ a.navbar-brand.font-orbitron:hover,
 .dropdown-menu .navbar-badge-new {
   background: var(--haitian-blue, #00209F) !important;
   color: #ffffff !important;
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 3px 8px;
+  line-height: 1;
+  padding: 6px 11px;                     /* same size as the "soon" badge */
   border-radius: 999px;
   text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;                        /* never squeezed by a long description */
 }
 
 .bonid-navbar .dropdown-menu .navbar-badge-soon,
 .dropdown-menu .navbar-badge-soon {
   background: #F1F5F9 !important;       /* slate-100 */
   color: #64748B !important;             /* slate-500 */
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  padding: 3px 8px;
+  line-height: 1;
+  padding: 6px 11px;
   border-radius: 999px;
   text-transform: uppercase;
   border: 1px solid #E2E8F0;             /* slate-200 */
+  white-space: nowrap;
+  flex-shrink: 0;                        /* never squeezed by a long description */
 }
 
 .dropdown-item.disabled {
@@ -365,4 +371,73 @@ a.navbar-brand.font-orbitron:hover,
   line-height: 1;
   font-weight: 800;
   letter-spacing: .06em;
+}
+
+/****************************************/
+/*  "How to know it's really BonID" strip */
+/****************************************/
+/* First row of the fixed navbar: full width, edge to edge (cancels the
+   navbar padding). navbar-expand-lg turns wrapping off on desktop, so
+   turn it back on and keep the logo row on its own full-width line. */
+.bonid-navbar.has-trust-banner {
+  flex-wrap: wrap !important;
+
+  > .container-fluid { flex: 1 1 100%; }
+}
+
+.bonid-navbar .trust-banner {
+  flex: 0 0 calc(100% + 2rem);
+  margin: -0.9rem -1rem 0.9rem;
+  background: var(--haitian-blue, #00209F);
+  color: #fff;
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 16px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+
+    &::-webkit-details-marker { display: none; }
+    &:hover span { text-decoration: underline; }
+    &:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+  }
+
+  .trust-banner__chevron { transition: transform 0.15s ease; }
+  &[open] .trust-banner__chevron { transform: rotate(180deg); }
+
+  ul {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 28px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 6px 24px 14px;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.92);
+
+    i { font-size: 1rem; margin-top: 1px; color: #fff; }
+    strong { color: #fff; }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .bonid-navbar .trust-banner ul { grid-template-columns: 1fr; padding: 4px 16px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bonid-navbar .trust-banner .trust-banner__chevron { transition: none; }
 }

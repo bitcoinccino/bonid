@@ -55,7 +55,7 @@
             <div class="col-md-6">
               <div class="border rounded-3 p-3 bg-light">
                 <div class="text-muted small fw-semibold mb-2">
-                  <i class="ri-arrow-left-line me-1"></i>Current Name
+                  <i class="ri-arrow-left-line me-1"></i>Current details
                 </div>
                 <div class="mb-2">
                   <label class="text-muted small">First Name</label>
@@ -65,9 +65,13 @@
                   <label class="text-muted small">Middle Name</label>
                   <div class="fw-semibold"><%= @request.old_middle_name.presence || "—" %></div>
                 </div>
-                <div>
+                <div class="mb-2">
                   <label class="text-muted small">Last Name</label>
                   <div class="fw-semibold"><%= @request.old_last_name %></div>
+                </div>
+                <div>
+                  <label class="text-muted small">Date of Birth</label>
+                  <div class="fw-semibold"><%= @request.old_dob ? l(@request.old_dob, format: :long) : "—" %></div>
                 </div>
               </div>
             </div>
@@ -76,7 +80,7 @@
             <div class="col-md-6">
               <div class="border rounded-3 p-3 bg-white border-primary">
                 <div class="text-primary small fw-semibold mb-2">
-                  <i class="ri-arrow-right-line me-1"></i>Requested Name
+                  <i class="ri-arrow-right-line me-1"></i>Requested details
                 </div>
                 <div class="mb-2">
                   <label class="text-muted small">First Name</label>
@@ -96,13 +100,21 @@
                     <% end %>
                   </div>
                 </div>
-                <div>
+                <div class="mb-2">
                   <label class="text-muted small">Last Name</label>
                   <div class="fw-bold <%= @request.old_last_name != @request.new_last_name ? 'text-success' : '' %>">
                     <%= @request.new_last_name %>
                     <% if @request.old_last_name != @request.new_last_name %>
                       <i class="ri-arrow-right-s-fill text-success"></i>
                     <% end %>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-muted small">Date of Birth</label>
+                  <% dob_changed = @request.changes_dob? %>
+                  <div class="fw-bold <%= 'text-success' if dob_changed %>">
+                    <%= (@request.new_dob || @request.old_dob) ? l(@request.new_dob || @request.old_dob, format: :long) : "—" %>
+                    <% if dob_changed %><i class="ri-arrow-right-s-fill text-success"></i><% end %>
                   </div>
                 </div>
               </div>

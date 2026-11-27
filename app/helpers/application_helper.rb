@@ -1,8 +1,77 @@
 module ApplicationHelper
+  # Short date for cards with a capitalized month in every language:
+  # "Nov 11, 2026" / "11 Nov. 2026" / "11 Nov 2026".
+  def card_date(date)
+    l(date.to_date, format: :card).gsub(/\p{L}+/) { |word| word.capitalize }
+  end
+
+  # Month names for date selects, capitalized in every language
+  # ("Janvier", "Janvye"); index 0 stays nil as Rails expects.
+  def capitalized_month_names
+    I18n.t("date.month_names").map { |m| m&.capitalize }
+  end
+
+  # Long date with the month capitalized: "4 Janvier 2023", "4 Janvye 2023".
+  def long_date(date)
+    return if date.blank?
+
+    text = l(date.to_date, format: :long)
+    I18n.t("date.month_names").compact.sort_by { |m| -m.length }.each do |month|
+      text = text.sub(/(?<!\p{L})#{Regexp.escape(month)}(?!\p{L})/i) { month.capitalize }
+    end
+    text
+  end
   # Whether the paused BonTouris feature is enabled. Used to hide nav links
   # to gated staff pages. Mirrors the controller guard (BontourisPausable).
   def bontouris_enabled?
     BontourisPausable.enabled?
+  end
+
+  # IDPol in the public Products menu (off for v1: the site leads with BonID)
+  def idpol_enabled?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch("IDPOL_ENABLED", false))
+  end
+
+  # Whether BonVote appears in the navbar product menu. Paused for v1: left
+  # out of the menu entirely. Only the nav link is gated; /election/verify
+  # and receipt verify stay public.
+  # To re-enable, set BONVOTE_ENABLED=true.
+  def bonvote_enabled?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch("BONVOTE_ENABLED", false))
+  end
+
+  # True when the current page is at or under `path`. Route helpers append
+  # ?lang=…, so a plain request.path.start_with?(some_path) never matched and
+  # nav links never highlighted. Compares paths only.
+  # Pass exact: true for paths that prefix every page (e.g. /citizens).
+  def nav_path_active?(path, exact: false)
+    base = path.to_s.split("?").first
+    return request.path == base if exact
+    request.path == base || request.path.start_with?("#{base}/")
+  end
+
+  # Whether citizen Sèvis / Aplikasyon Mwen are enabled (paused for v1).
+  # Mirrors the controller guard (CitizenServicesPausable).
+  def citizen_services_enabled?
+    CitizenServicesPausable.enabled?
+  end
+
+  # Profile cards (health bank emergency family social physical) enabled to
+  # show behind the BonID card, in stack order. Empty for v1 launch.
+  # Set with WALLET_PROFILE_CARDS — see WalletProfileCardsPausable.
+  def wallet_profile_cards
+    @wallet_profile_cards ||= WalletProfileCardsPausable.enabled_cards
+  end
+
+  def wallet_profile_card_enabled?(card)
+    wallet_profile_cards.include?(card.to_s)
+  end
+
+  # Peek position for an enabled card in the stack: each card shows a 16px
+  # strip above the one in front of it. Returned as CSS custom properties.
+  def wallet_stack_style(card)
+    index = wallet_profile_cards.index(card.to_s) || 0
+    "--stack-top: #{16 * (wallet_profile_cards.size - 1 - index)}px; --stack-z: #{46 - index};"
   end
 
   # Whether the paused IDPol/law-enforcement Tier-3 extras are enabled
@@ -309,6 +378,35 @@ module ApplicationHelper
     end
 
     "#{masked_local}@#{domain}"
+  end
+
+  # Citizen-facing masked BonID — same on the wallet card, QR pop-up and
+  # public verification page: initials + masked middle + the 6-char lookup
+  # code agents type (BonidLookupService suffix lookup).
+  #   "DL-1990-M-OU-P8697C56" → "DL-****-*-**-697C56"
+  # One review cell on the profile wizard's last step: small label above
+  # the value. profile_review_controller.js builds the same markup.
+  def review_item(key, value, empty_text, extra: nil)
+    tag.div(class: "review-item", data: { review_key: key }) do
+      safe_join([
+        tag.span(t("citizen_portal.profile.review.#{key}"), class: "review-label"),
+        tag.span(class: "review-value#{' is-empty' if value.blank?}") { safe_join([ value.presence || empty_text, extra ].compact, " ") }
+      ])
+    end
+  end
+
+  def citizen_masked_bonid(bonid)
+    stripped = bonid.to_s.delete("-")
+    return "****" if stripped.length < 8
+
+    "#{stripped[0..1]}-****-*-**-#{stripped.last(6)}"
+  end
+
+  # The last 6 characters of a BonID: the lookup code a partner can type
+  # when the QR can't be scanned (same suffix TeamInvitationService uses).
+  def citizen_bonid_code(bonid)
+    stripped = bonid.to_s.delete("-").upcase
+    stripped.length < 8 ? nil : stripped.last(6)
   end
 
   # Masks a BonID: "JM-1968-M-OUEST-P2334-697280" → "MB••••••••697280"

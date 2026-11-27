@@ -1,18 +1,14 @@
-Hello <%= @user.full_name %>,
+<% place = [ @scan_log.city.presence, @scan_log.country.presence ].compact.join(", ").presence -%>
+<%= t("mailers.qr_scan.heading") %>
 
-Your BonID was scanned.
+<%= t("mailers.citizen_common.greeting", name: @user.first_name.presence || @user.full_name) %>
 
-Scanned At: <%= @scan_log.scanned_at.strftime("%B %d, %Y at %I:%M %p") %>
-IP Address: <%= @scan_log.ip_address %>
-City: <%= @scan_log.city.presence || "Unknown" %>
-Country: <%= @scan_log.country.presence || "Unknown" %>
-Organization: <%= @scan_log.organization.presence || "Unknown" %>
-Source: <%= @scan_log.source.humanize %>
+<%= t("mailers.qr_scan.body") %>
 
-View your verified certificate:
-<%= verified_profile_citizens_identity_submission_url(
-      @submission,
-      host: Rails.application.config.action_mailer.default_url_options[:host]
-    ) %>
+<%= t("mailers.qr_scan.who") %> <%= @officer ? t("mailers.qr_scan.who_police", name: @officer.full_name.presence || t("mailers.qr_scan.police_default")) : (@partner&.name || t("mailers.qr_scan.who_camera")) %>
+<%= t("mailers.qr_scan.when") %> <%= I18n.l(@scan_log.scanned_at, format: t("mailers.qr_scan.time_format")) %>
+<% if place %><%= t("mailers.qr_scan.where") %> <%= t("mailers.qr_scan.where_value", place: place) %>
+<% end %>
+<%= t("mailers.qr_scan.not_you_title") %> <%= t("mailers.qr_scan.not_you") %>
 
-⚠️ If this wasn’t you, contact BonID Support immediately.
+<%= t("mailers.qr_scan.button") %>: <%= citizens_activity_url %>

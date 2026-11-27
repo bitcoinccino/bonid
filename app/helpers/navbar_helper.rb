@@ -21,30 +21,39 @@ module NavbarHelper
       {
         label_key: "main.navbar.government",
         items: [
-          {
-            name: "IDPol",
-            description: t("main.navbar.idpol_desc"),
-            icon: "ri-shield-user-line",
-            path: new_officer_session_path,
-            **new_badge
-          },
-          {
-            name: "BonVote",
-            description: t("main.navbar.bonvote_desc"),
-            icon: "ri-checkbox-circle-line",
-            path: "/election/verify",
-            **soon_badge
-          },
-          {
-            name: "BonTouris",
-            description: t("main.navbar.bontouris_desc"),
-            icon: "ri-suitcase-3-line",
-            path: new_public_visitor_path,
-            # Paused for v1 (BONTOURIS_ENABLED): the page bounces back with
-            # the "coming soon" notice, so badge it to match.
-            **(bontouris_enabled? ? new_badge : soon_badge)
-          }
-        ]
+          # Paused for v1 (focus on BonID): IDPol, BonVote and BonTouris are
+          # left out of the menu entirely until IDPOL_ENABLED /
+          # BONVOTE_ENABLED / BONTOURIS_ENABLED are turned on.
+          (if idpol_enabled?
+            {
+              name: "IDPol",
+              description: t("main.navbar.idpol_desc"),
+              icon: "ri-shield-user-line",
+              path: new_officer_session_path,
+              # Shown but not clickable yet (the dropdown renders disabled items as a span).
+              disabled: true,
+              **soon_badge
+            }
+          end),
+          (if bonvote_enabled?
+            {
+              name: "BonVote",
+              description: t("main.navbar.bonvote_desc"),
+              icon: "ri-checkbox-circle-line",
+              path: "/election/verify",
+              **new_badge
+            }
+          end),
+          (if bontouris_enabled?
+            {
+              name: "BonTouris",
+              description: t("main.navbar.bontouris_desc"),
+              icon: "ri-suitcase-3-line",
+              path: new_public_visitor_path,
+              **new_badge
+            }
+          end)
+        ].compact
       },
       {
         label_key: "main.navbar.developers",
@@ -57,7 +66,7 @@ module NavbarHelper
           }
         ]
       }
-    ]
+    ].reject { |g| g[:items].empty? } # no heading over an empty group (BonGouv while paused)
   end
 
   # Keep backwards-compat for any other views that call core_products
@@ -67,12 +76,6 @@ module NavbarHelper
 
   def getting_started_links
     [
-      {
-        title: t("main.navbar.create_bonid"),
-        description: t("main.navbar.create_bonid_desc"),
-        icon: "ri-login-box-line",
-        path: login_path
-      },
       {
         title: t("main.navbar.become_partner"),
         description: t("main.navbar.become_partner_desc"),

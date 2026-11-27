@@ -5,26 +5,29 @@
   <%# ── Page Header (wizard style) ── %>
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-shield-keyhole-line me-2"></i>Partner Consents
+      <i class="ri-shield-keyhole-line me-2"></i><%= t("transaction_consents.access_page.title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
-      Control which partners can access your verified BonID data.
+      <%= t("transaction_consents.access_page.subtitle") %>
     </p>
   </div>
+
+  <%= render "citizens/shared/consent_tabs" %>
 
   <%# ── Empty state ── %>
   <% if @consent_grants.empty? %>
     <div class="text-center py-5 rounded-4 consent-empty-card">
       <div class="display-1 text-muted mb-4"><i class="ri-fingerprint-2-line"></i></div>
-      <h3 class="fw-bold">No Active Requests</h3>
-      <p class="text-muted">When a partner requests your data, it will securely appear here.</p>
+      <h3 class="fw-bold"><%= t("transaction_consents.access_page.empty_title") %></h3>
+      <p class="text-muted"><%= t("transaction_consents.access_page.empty_body") %></p>
     </div>
 
   <%# ── Cards ── %>
   <% else %>
     <div class="row g-4">
       <% @consent_grants.each do |grant| %>
-        <div class="col-xl-4 col-lg-6 col-12" id="<%= dom_id(grant) %>">
+        <%# 1 per row on phones, 2 from 768px (tablets/small laptops), 3 only on wide screens (≥1400px) so cards stay ≥ ~340px. %>
+        <div class="col-12 col-md-6 col-xxl-4" id="<%= dom_id(grant) %>">
           <%= render "citizens/consents/consent_grant_card", grant: grant %>
         </div>
       <% end %>

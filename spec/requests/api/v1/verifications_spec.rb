@@ -20,8 +20,21 @@ RSpec.describe "Api::V1::Verifications", type: :request, real_auth: true do
         post "/api/v1/verify_identity", params: { bonid: user.bonid }.to_json, headers: headers
         expect(response).to have_http_status(:ok)
         expect(json_response["status"]).to eq("verified")
-        expect(json_response["citizen"]).to include("first_name", "last_name")
+        expect(json_response["access_level"]).to eq("verification_only")
         expect(response.headers["X-RateLimit-Limit"]).to be_present
+      end
+
+      it "returns a per-verification reference and never the reviewer's name" do
+        post "/api/v1/verify_identity", params: { bonid: user.bonid }.to_json, headers: headers
+        verification = json_response["verification"]
+        expect(verification["reference"]).to eq(user.verified_identity_submission.uuid)
+        expect(verification).not_to have_key("verified_by")
+      end
+
+      it "returns no personal data, photo or QR without consent" do
+        post "/api/v1/verify_identity", params: { bonid: user.bonid }.to_json, headers: headers
+        expect(json_response).not_to have_key("citizen")
+        expect(json_response["verification"].keys).to contain_exactly("verified_on", "expires_at", "reference")
       end
     end
 

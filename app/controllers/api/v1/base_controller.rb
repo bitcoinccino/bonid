@@ -56,7 +56,6 @@ module Api
           return render_unauthorized("Invalid or expired access token") unless @oauth_token
 
           @partner = @oauth_token.partner
-          request.headers["X-BonID-Scopes"] = Array(@oauth_token.scopes).join(",")
 
           render_unauthorized("Inactive partner") unless @partner&.active? && @partner.verified_at.present?
         elsif api_key.present?
@@ -104,11 +103,8 @@ module Api
       # ✅ Scopes
       # ============================================================
       def enforce_scope!
+        # Scopes come only from the OAuth token — never from a request header.
         token_scopes = Array(@oauth_token&.scopes).map(&:to_s)
-
-        if token_scopes.blank?
-          token_scopes = request.headers["X-BonID-Scopes"].to_s.split(",").map(&:strip).reject(&:blank?)
-        end
 
         required = required_scope_for_request
         return if required.blank?

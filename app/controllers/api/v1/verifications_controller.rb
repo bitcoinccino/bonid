@@ -39,46 +39,19 @@ module Api
           return render json: { status: "not_verified", message: "No verified BonID found" }, status: :not_found
         end
 
-        # ✅ Choose QR source (PUBLIC first, then secure fallback)
-        # - qr_png_base64: citizen/public verification QR (URL-based)
-        # - secure_qr_png_base64: officer/admin secure payload QR
-        qr_b64, qr_type =
-          if verified.qr_png_base64.present?
-            [ verified.qr_png_base64, "public" ]
-          elsif verified.secure_qr_png_base64.present?
-            [ verified.secure_qr_png_base64, "secure" ]
-          else
-            [ nil, nil ]
-          end
-
-        # Photo URL
-        photo_url =
-          if verified.selfie.attached?
-            Rails.application.routes.url_helpers.rails_blob_url(
-              verified.selfie,
-              host: request.base_url
-            )
-          end
-
+        # Verification status only — no name, DOB, address, photo or QR
+        # (and never the secure officer QR). Personal data needs the
+        # citizen's consent via GET /api/v1/identity/:bonid?consent_token=...
         payload = {
           status: "verified",
           bonid: user.bonid,
-          citizen: {
-            first_name:  user.first_name,
-            last_name:   user.last_name,
-            dob:         user.dob&.iso8601,
-            sex:         user.sex,
-            age:         user.age,
-            address:     user.full_address,
-            nationality: user.nationality
-          },
           verification: {
             verified_on: verified.updated_at&.iso8601,
-            verified_by: verified.reviewer&.full_name,
-            qr_type:     qr_type,
-            qr_url:      (qr_b64.present? ? "data:image/png;base64,#{qr_b64}" : nil),
-            photo_url:   photo_url
-          }
+            expires_at:  verified.expires_at&.iso8601,
+            reference:   verified.uuid # dispute reference; never the reviewer
+          },
+          access_level: "verification_only",
+          hint: "Identity details require citizen consent: use GET /api/v1/identity/:bonid?consent_token=..."
         }
 
         render json: payload, status: :ok

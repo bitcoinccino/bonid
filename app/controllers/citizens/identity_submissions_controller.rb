@@ -35,7 +35,7 @@ module Citizens
       if current_citizen.identity_submissions.exists?(status: :approved) &&
          params[:resubmission_from].blank?
         redirect_to citizens_dashboard_path,
-                    notice: "You already have a verified BonID."
+                    notice: t("citizen_portal.submission.flash.already_verified")
         return
       end
 
@@ -67,7 +67,7 @@ module Citizens
                            "Resubmission pre-filled from your previous attempt. Update as needed."
           end
         else
-          redirect_to citizens_dashboard_path, alert: "⚠️ Invalid resubmission request."
+          redirect_to citizens_dashboard_path, alert: t("citizen_portal.submission.flash.invalid_resubmission")
           nil
         end
       else
@@ -106,24 +106,27 @@ module Citizens
     end
 
     #  Move this OUTSIDE new
+    # PUBLIC verification page — what anyone sees after scanning a citizen's
+    # wallet QR (via #verify) or opening a shared link. No login required, so
+    # it shows the minimum needed to answer "is this BonID real and valid?":
+    # photo, name, status, masked BonID, dates. Never DOB, address, the full
+    # BonID (its P#### segment is the last 4 CIN digits) or internal codes.
     def verified_profile
-      @submission = IdentitySubmission.find_by!(public_token: params[:public_token])
+      @submission = IdentitySubmission.find_by(public_token: params[:public_token])
+      return render(plain: "BonID not found.", status: :not_found) unless @submission
 
-      unless @submission.status_approved?
-        render plain: "This BonID has not been verified.", status: :forbidden
-        return
-      end
+      @verification_status =
+        if @submission.status_revoked?
+          :suspended
+        elsif !@submission.status_approved? || @submission.verified_at.blank?
+          :not_valid
+        elsif @submission.expires_at.present? && @submission.expires_at.past?
+          :expired
+        else
+          :valid
+        end
 
-      if @submission.expires_at.present? && @submission.expires_at < Time.current
-        render plain: "This BonID has expired.", status: :forbidden
-        return
-      end
-
-      @partner_name =
-        params[:partner].present? ?
-          Partner.find_by(slug: params[:partner])&.name :
-          nil
-
+      response.headers["X-Robots-Tag"] = "noindex, nofollow"
       render "citizens/identity_submissions/verified_profile", layout: "public"
     end
 
@@ -272,7 +275,7 @@ module Citizens
           DocumentOcrJob.perform_later(@identity_submission.id)
 
           redirect_to citizens_dashboard_path,
-                      notice: "✅ Verification submitted successfully. A confirmation email has been sent to your inbox."
+                      notice: t("citizen_portal.submission.flash.submitted")
         else
           flash.now[:alert] = @identity_submission.errors.full_messages.to_sentence
           # Preserve liveness so the retry doesn't re-bill Amazon Rekognition.
@@ -331,14 +334,14 @@ module Citizens
         end
 
         redirect_to citizens_identity_submission_path(@submission),
-                    notice: "✅ Your submission was updated successfully."
+                    notice: t("citizen_portal.submission.flash.updated")
       else
         flash.now[:alert] = @submission.errors.full_messages.to_sentence.presence || "⚠️ Failed to update submission."
         render :new, status: :unprocessable_entity
       end
     rescue => e
       Rails.logger.error "❌ [IdentitySubmission#update] Failed: #{e.class} - #{e.message}"
-      flash.now[:alert] = "⚠️ Invalid signature or missing attachments."
+      flash.now[:alert] = t("citizen_portal.submission.flash.invalid_attachments")
       render :new, status: :unprocessable_entity
     end
 
@@ -348,7 +351,7 @@ module Citizens
     def request_new
       reason = params[:reason].to_s
       unless reason.in?(%w[name_change expired])
-        return redirect_to citizens_dashboard_path, alert: "Invalid reason for request."
+        return redirect_to citizens_dashboard_path, alert: t("citizen_portal.submission.flash.invalid_reason")
       end
 
       previous = current_citizen.identity_submissions
@@ -357,13 +360,13 @@ module Citizens
 
       partner_id = previous&.partner_id || @partner&.id
       return redirect_back fallback_location: citizens_dashboard_path,
-                           alert: "Missing partner information." if partner_id.blank?
+                           alert: t("citizen_portal.submission.flash.missing_partner") if partner_id.blank?
 
       # Name change → citizen must re-upload updated ID documents via full form
       if reason == "name_change"
         previous&.update!(status: :revoked)
         redirect_to new_citizens_identity_submission_path(resubmission_from: previous&.public_token),
-                    notice: "Please re-submit your updated ID documents for the name change."
+                    notice: t("citizen_portal.submission.flash.resubmit_name_change")
         return
       end
 
@@ -381,7 +384,7 @@ module Citizens
       new_submission.build_address(current_citizen.address.attributes) if current_citizen.address
 
       if new_submission.save
-        redirect_to citizens_dashboard_path, notice: "New BonID request submitted successfully."
+        redirect_to citizens_dashboard_path, notice: t("citizen_portal.submission.flash.request_submitted")
       else
         redirect_to citizens_dashboard_path, alert: new_submission.errors.full_messages.to_sentence
       end
@@ -402,7 +405,7 @@ def refresh_qr
   if @submission.nil?
     respond_to do |format|
       format.turbo_stream do
-        flash.now[:alert] = "No active BonID found."
+        flash.now[:alert] = t("citizen_portal.submission.flash.no_active_bonid")
         render turbo_stream: turbo_stream.prepend(
           "flash_messages",
           partial: "shared/flash"
@@ -411,7 +414,7 @@ def refresh_qr
 
       format.html do
         redirect_to citizens_dashboard_path,
-                    alert: "No active BonID found."
+                    alert: t("citizen_portal.submission.flash.no_active_bonid")
       end
     end
     return
@@ -429,7 +432,7 @@ def refresh_qr
     format.turbo_stream  # @auto_refresh is used in the template
     format.html do
       redirect_to citizens_dashboard_path,
-                  notice: "BonID QR Code refreshed successfully."
+                  notice: t("citizen_portal.submission.flash.qr_refreshed")
     end
   end
 end
@@ -437,39 +440,38 @@ end
 
 
 def verify
-  token = params[:token].to_s
-  submission = IdentitySubmission.find_by(verification_token: token)
+  # The wallet QR (IdentitySubmission#public_verify_url) sends
+  # ?verification_token=…; accept the older ?token=… too. Reading only
+  # :token made every wallet QR scan fail with "Invalid … QR code".
+  token = (params[:verification_token].presence || params[:token]).to_s
+  submission = token.present? && IdentitySubmission.find_by(verification_token: token)
 
-  unless submission&.status_approved?
-    render plain: "⚠️ Invalid or expired BonID QR code.", status: :not_found
+  # Unknown code → error. Known but expired/suspended/unverified → still go
+  # to the public page, which tells the person scanning exactly why.
+  unless submission
+    render plain: "⚠️ Invalid BonID QR code.", status: :not_found
     return
   end
 
   # ------------------------------------------------------------
   # Detect verified partner (if any)
   # ------------------------------------------------------------
-  partner_name = nil
-
   partner_slug =
     params[:partner].presence ||
     request.referrer&.match(%r{/partners/([\w-]+)})&.captures&.first
 
+  partner = nil
   if partner_slug.present?
     partner = Partner.where(slug: partner_slug).where.not(verified_at: nil).first
-    partner_name = partner&.name
   end
 
   # ------------------------------------------------------------
-  # Log QR scan (non-blocking)
+  # Log QR scan (non-blocking). Goes through QrScanLogger like partner
+  # scans, so the citizen also gets the "your BonID was scanned" email
+  # when someone scans their wallet QR with a phone camera.
   # ------------------------------------------------------------
   begin
-    submission.qr_scan_logs.create!(
-      scanned_at: Time.current,
-      ip_address: request.remote_ip,
-      user_agent: request.user_agent,
-      referrer: request.referrer,
-      partner_name: partner_name
-    )
+    QrScanLogger.log!(submission: submission, request: request, source: "public_scan", partner: partner)
   rescue => e
     Rails.logger.warn("⚠️ QR scan log failed for token #{token}: #{e.message}")
   end
@@ -489,11 +491,10 @@ end
     # ------------------------------------------------------------
     # GET /citizens/identity_submissions/scan_history
     # ------------------------------------------------------------
+    # Retired: Activité's Scans tab replaces it (and, unlike this page,
+    # hides law-enforcement scans). Kept as a redirect for old links.
     def scan_history
-      @submissions = current_citizen.identity_submissions
-                                    .includes(:qr_scan_logs)
-                                    .order(created_at: :desc)
-                                    .page(params[:page]).per(10)
+      redirect_to citizens_activity_path(tab: "scans"), status: :moved_permanently
     end
 
     def support_faq; end
@@ -505,7 +506,7 @@ end
     def liveness_session
       # Server-side rate limiting: 5 attempts per 3 minutes
       if FaceLivenessService.rate_limited?(current_citizen.id)
-        render json: { error: "Too many attempts. Please wait a few minutes before trying again." }, status: :too_many_requests
+        render json: { error: t("alerts.liveness.too_many_attempts") }, status: :too_many_requests
         return
       end
 
@@ -541,7 +542,7 @@ end
       else
         # Raw AWS error stays in the log; citizens get a plain message.
         Rails.logger.error "[LivenessSession] Failed: #{result[:error]}"
-        render json: { error: "Verifikasyon figi a pa disponib kounye a. Tanpri eseye ankò pita." },
+        render json: { error: t("alerts.liveness.unavailable") },
                status: :service_unavailable
       end
     end
@@ -558,12 +559,12 @@ end
       sid = params[:session_id]
 
       unless session[:liveness_session_id] == sid
-        render json: { error: "Invalid session" }, status: :forbidden and return
+        render json: { error: t("alerts.liveness.invalid_session") }, status: :forbidden and return
       end
 
       # AWS sessions expire after 3 minutes
       if Time.current.to_i - session[:liveness_created_at].to_i > 180
-        render json: { error: "Session expired" }, status: :gone and return
+        render json: { error: t("alerts.liveness.session_expired") }, status: :gone and return
       end
 
       # Enqueue background job — returns immediately
@@ -582,7 +583,7 @@ end
       sid = params[:session_id]
 
       unless session[:liveness_session_id] == sid
-        render json: { error: "Invalid session" }, status: :forbidden and return
+        render json: { error: t("alerts.liveness.invalid_session") }, status: :forbidden and return
       end
 
       cached = Rails.cache.read("liveness_result:#{sid}")
@@ -644,7 +645,7 @@ end
     # ------------------------------------------------------------
     def manual_selfie
       unless params[:selfie].present?
-        render json: { error: "No selfie provided." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.no_selfie_provided") }, status: :unprocessable_entity and return
       end
 
       blob = ActiveStorage::Blob.create_and_upload!(
@@ -671,7 +672,7 @@ end
       render json: { blob_signed_id: blob.signed_id, manual_selfie: true }
     rescue => e
       Rails.logger.error "[ManualSelfie] Upload failed: #{e.class} - #{e.message}"
-      render json: { error: "Upload failed. Please try again." }, status: :service_unavailable
+      render json: { error: t("alerts.liveness.upload_failed") }, status: :service_unavailable
     end
 
     # ------------------------------------------------------------
@@ -684,17 +685,17 @@ end
       id_photo = params[:id_photo]
 
       unless selfie_signed_id.present?
-        render json: { error: "No selfie found. Please complete the liveness check first." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.no_selfie_found") }, status: :unprocessable_entity and return
       end
 
       unless id_photo.present?
-        render json: { error: "No ID photo provided." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.no_id_photo") }, status: :unprocessable_entity and return
       end
 
       # Resolve selfie blob from signed ID
       selfie_blob = ActiveStorage::Blob.find_signed(selfie_signed_id)
       unless selfie_blob
-        render json: { error: "Selfie image not found." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.selfie_missing") }, status: :unprocessable_entity and return
       end
 
       # Download both images (with ghost file resilience for selfie blob)
@@ -702,7 +703,7 @@ end
       id_photo_bytes = id_photo.read
 
       unless selfie_bytes.present? && id_photo_bytes.present?
-        render json: { error: "Failed to read images." }, status: :unprocessable_entity and return
+        render json: { error: t("alerts.liveness.read_failed") }, status: :unprocessable_entity and return
       end
 
       # Call AWS Rekognition compare_faces
@@ -789,7 +790,7 @@ end
         }
       rescue StandardError => e
         Rails.logger.error "[FaceCompare] Error: #{e.class} - #{e.message}"
-        render json: { error: "Face comparison temporarily unavailable." }, status: :service_unavailable
+        render json: { error: t("alerts.liveness.compare_unavailable") }, status: :service_unavailable
       end
     end
 
@@ -959,7 +960,7 @@ end
     def set_partner
       if session[:bonid_partner_id].present?
         @partner = Partner.find_by(id: session[:bonid_partner_id])
-        redirect_to(partners_path, alert: "⚠️ Partner not verified.") and return unless @partner&.verified_at.present?
+        redirect_to(partners_path, alert: t("citizen_portal.submission.flash.partner_not_verified")) and return unless @partner&.verified_at.present?
       else
         @partner = Partner.find_by(slug: "bonid-central")
         unless @partner
@@ -982,14 +983,14 @@ end
         Rails.logger.warn(
           "⚠️ [set_submission] Submission NOT found for user=#{current_citizen.id}, public_token=#{params[:public_token]}"
         )
-        redirect_to citizens_dashboard_path, alert: "⚠️ Submission not found."
+        redirect_to citizens_dashboard_path, alert: t("citizen_portal.submission.flash.not_found")
       end
     end
 
     # Authorize edits (e.g., only pending/rejected)
     def authorize_submission_edit
       unless @submission.status_pending? || @submission.status_rejected?
-        redirect_to citizens_identity_submission_path(@submission), alert: "⚠️ This submission cannot be edited."
+        redirect_to citizens_identity_submission_path(@submission), alert: t("citizen_portal.submission.flash.cannot_edit")
       end
     end
 
@@ -1011,7 +1012,7 @@ end
     def ensure_profile_complete!
       unless current_citizen&.profile_complete?
         redirect_to edit_citizens_profile_path,
-                    alert: "To submit your identity for verification, please complete your profile first."
+                    alert: t("citizen_portal.submission.flash.complete_profile_first")
       end
     end
 

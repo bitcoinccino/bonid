@@ -1,0 +1,33 @@
+<%# Konsantman has two sides, shown as tabs on both pages:
+    - Demann (Requests): one-time transaction approvals → transaction_consents
+    - Aksè aktif (Active access): partners with ongoing "Sign in with BonID"
+      access the citizen can revoke → consents %>
+<%# Compare paths without the ?lang=… query that route helpers append. %>
+<% on_access = nav_path_active?(citizens_consents_path) %>
+<div class="consent-section-tabs" role="tablist">
+  <%= link_to citizens_transaction_consents_path,
+              class: "consent-section-tab #{'is-active' unless on_access}",
+              role: "tab", "aria-selected": !on_access do %>
+    <i class="ri-exchange-funds-line"></i><span><%= t("transaction_consents.section_tabs.requests") %></span>
+  <% end %>
+  <%= link_to citizens_consents_path,
+              class: "consent-section-tab #{'is-active' if on_access}",
+              role: "tab", "aria-selected": on_access do %>
+    <i class="ri-shield-keyhole-line"></i><span><%= t("transaction_consents.section_tabs.access") %></span>
+  <% end %>
+</div>
+
+<style>
+  .consent-section-tabs {
+    display: flex; justify-content: center; gap: 6px;
+    margin: 0 auto 1.25rem; padding: 4px; width: fit-content; max-width: 100%;
+    background: #F1F5F9; border-radius: 999px;
+  }
+  .consent-section-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; border-radius: 999px;
+    font-weight: 600; font-size: 0.9rem; color: #475569; text-decoration: none; white-space: nowrap;
+  }
+  .consent-section-tab:hover { color: var(--primary, #00209F); }
+  .consent-section-tab.is-active { background: #fff; color: var(--primary, #00209F); box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12); }
+</style>

@@ -55,6 +55,7 @@ class User < ApplicationRecord
   has_many :service_applications, foreign_key: :citizen_id, dependent: :destroy
   has_many :dgi_payments, dependent: :destroy
   has_many :consent_grants,    foreign_key: :citizen_id, dependent: :destroy
+  has_many :notification_reads, dependent: :delete_all
   has_many :transaction_consents, foreign_key: :citizen_id, dependent: :destroy
   has_many :bonid_aliases, dependent: :destroy
 
@@ -119,8 +120,27 @@ class User < ApplicationRecord
   # match the validator that the IdentitySubmission flow already enforces.
   validate :id_number_format_when_changed
 
+  # Profile wizard only (the controller sets this flag): a passport needs a
+  # 10-digit NINU. Kept out of other saves so existing passport holders
+  # without a NINU aren't blocked from unrelated updates (settings, cards).
+  attr_accessor :enforce_passport_ninu
+  before_validation :use_ninu_as_passport_number, if: :enforce_passport_ninu
+  validate :ninu_required_for_passport, if: :enforce_passport_ninu
+
   validates :partner, presence: true, if: :partner_admin?
   validate  :branch_belongs_to_partner, if: -> { partner_branch.present? && partner.present? }
+
+  # === Citizen portal language ===
+  # Languages a citizen can pick under Paramèt → Lang. Kreyòl is the default
+  # (matches the preferred_locale column default).
+  CITIZEN_LOCALES = %w[ht fr en].freeze
+
+  # The locale the citizen portal renders in for this user, falling back
+  # to Kreyòl when the stored value is blank or unsupported.
+  def portal_locale
+    locale = preferred_locale.to_s
+    CITIZEN_LOCALES.include?(locale) ? locale : "ht"
+  end
 
   # === Enums ===
   enum :sex, { male: 0, female: 1, other: 2 }
@@ -412,6 +432,18 @@ alias name full_name
     identity_submissions.approved.exists?
   end
 
+  # Stricter than bonid_verified?: the identity must be approved, actually
+  # verified, and not expired *right now*. A BonID stays on the account
+  # after its identity is revoked (e.g. name change suspension) or
+  # expires, so having a BonID is not proof it is still valid. Used to
+  # gate transaction consents, where money moves on the citizen's say-so.
+  def identity_currently_verified?
+    identity_submissions.approved
+      .where.not(verified_at: nil)
+      .where("identity_submissions.expires_at > ?", Time.current)
+      .exists?
+  end
+
   # Returns true when the citizen's profile holds a CIN that doesn't match
   # ONI's January 2026 NINU mandate (10 digits). Used to surface the
   # migrate-to-NINU banner on the dashboard and the profile edit page —
@@ -480,6 +512,29 @@ alias name full_name
   # IdentitySubmission flow expects (10-digit NINU for CIN; 6–9 alphanumeric
   # for Passport). Skipped when the value is unchanged so legacy rows don't
   # break other profile updates.
+  # Passport holders give only their NINU on the profile wizard; store it as
+  # the ID number too so BonID generation (last 4 digits), profile_complete?
+  # and the presence checks keep working.
+  def use_ninu_as_passport_number
+    return unless id_type.to_s == "passport"
+
+    digits = ninu.to_s.gsub(/\D/, "")
+    self.id_number = digits if digits.length == 10
+  end
+
+  def ninu_required_for_passport
+    return unless id_type.to_s == "passport"
+
+    digits = ninu.to_s.gsub(/\D/, "")
+    if digits.blank?
+      errors.add(:ninu, I18n.t("alerts.validation.user.ninu_required"))
+    elsif digits.length != 10
+      errors.add(:ninu, I18n.t("alerts.validation.user.ninu_format"))
+    else
+      self.ninu = digits
+    end
+  end
+
   def id_number_format_when_changed
     return unless id_number_changed?
     return if id_number.blank?
@@ -491,7 +546,7 @@ alias name full_name
     if id_type.to_s == "cin"
       errors.add(:id_number, CinNumberValidator::CIN_ERROR)
     else
-      errors.add(:id_number, "Nimewo paspò pa valid. Dwe gen 6 a 9 karaktè (lèt oswa chif).")
+      errors.add(:id_number, I18n.t("alerts.validation.user.passport_number"))
     end
   end
 

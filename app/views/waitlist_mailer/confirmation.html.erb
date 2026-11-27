@@ -1,57 +1,39 @@
-<h2 style="color: #00209F; font-family: 'Montserrat', Arial, sans-serif; margin-bottom: 5px;">
-  Ou sou lis la!
-</h2>
-<p style="color: #666; font-size: 13px; margin-top: 0;">You're on the list! &middot; Vous etes inscrit!</p>
+<%# Waitlist confirmation, in the language the person signed up in
+    (mailers.waitlist_confirmation.*). One goal, like the confirmation
+    page: share the link. %>
+<% c = ->(key, **opts) { t("mailers.waitlist_confirmation.#{key}", **opts) } %>
 
-<p>
-  Mesi paske ou enskri pou BonID<%= " nan #{@commune_name}" if @commune_name %>.
-  Nou pral kontakte ou le nou lanse nan zon ou.
+<h2 style="color: #00209F; font-family: 'Montserrat', Arial, sans-serif; margin: 0 0 16px;">
+  <%= c.(:heading) %>
+</h2>
+
+<% if @signup.first_name.present? %>
+  <p style="margin: 0 0 12px;"><%= c.(:greeting, name: @signup.first_name) %></p>
+<% end %>
+
+<p style="margin: 0 0 16px;">
+  <%= @commune_name ? c.(:intro_commune, commune: @commune_name) : c.(:intro) %>
 </p>
 
-<% if @commune_count && @commune_count > 1 %>
-  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin: 20px 0; text-align: center;">
-    <strong style="color: #166534;"><%= @commune_count %> moun</strong>
-    <span style="color: #166534;"> deja enskri nan <%= @commune_name %></span>
+<% if @commune_name && @commune_count.to_i >= Commune::SOCIAL_PROOF_THRESHOLD %>
+  <div style="background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 8px; padding: 12px 16px; margin: 20px 0; text-align: center; color: #065F46; font-weight: 600;">
+    <%= c.(:count, count: number_with_delimiter(@commune_count), commune: @commune_name) %>
   </div>
 <% end %>
 
-<div style="background: #111827; border-radius: 12px; padding: 25px; margin: 25px 0; color: #fff;">
-  <p style="font-size: 15px; line-height: 1.6; margin-top: 0; color: #d1d5db;">
-    Si ou vle yon Ayiti ki pi sekirize, kote pou premye fwa ou gen kontwol total sou enfomasyon ou,
-    ou ka we ki kote yo te itilize l, epi ou pataje selman sa ou vle pataje...
-  </p>
+<p style="margin: 0 0 20px; color: #374151;"><%= c.(:mission) %></p>
 
-  <p style="font-weight: 600; color: #fff; margin-bottom: 8px;">Pataje kod ou ak lot moun pou yo enskri:</p>
+<div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin: 24px 0; text-align: center;">
+  <p style="font-weight: 600; color: #111827; margin: 0 0 14px;"><%= c.(:share_title) %></p>
 
-  <div style="background: #1f2937; border-radius: 8px; padding: 15px; text-align: center; margin: 10px 0;">
-    <div style="font-size: 24px; font-weight: 700; letter-spacing: 2px; color: #60a5fa; font-family: monospace;">
-      <%= @signup.referral_code %>
-    </div>
-  </div>
-
-  <div style="text-align: center; margin-top: 15px;">
-    <a href="<%= @share_url %>"
-       style="display: inline-block; background: #3b82f6; color: #fff !important; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-family: 'Montserrat', Arial, sans-serif;">
-      Pataje Lyen Ou
-    </a>
-  </div>
-</div>
-
-<p style="font-size: 13px; color: #666; line-height: 1.6;">
-  <strong>English:</strong> If you care about a secure and safe Haiti, where for the very first time
-  you will have full, complete control over your information, see where it was used, and share only
-  what you want to share, send this code to others so they can sign up too.
-</p>
-
-<p style="font-size: 13px; color: #666; line-height: 1.6;">
-  <strong>Francais:</strong> Si vous souhaitez un Haiti plus sur, ou pour la premiere fois vous aurez
-  un controle total sur vos informations, vous pourrez voir ou elles ont ete utilisees et ne partager
-  que ce que vous souhaitez, partagez ce code avec d'autres pour qu'ils s'inscrivent.
-</p>
-
-<div style="text-align: center; margin-top: 25px;">
-  <a href="<%= @share_url %>"
-     style="font-size: 13px; color: #3b82f6; word-break: break-all;">
-    <%= @share_url %>
+  <a href="https://wa.me/?text=<%= ERB::Util.url_encode(c.(:share_text, url: @share_url)) %>"
+     style="display: inline-block; background: #25D366; color: #fff !important; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; font-family: 'Montserrat', Arial, sans-serif;">
+    <%= c.(:whatsapp) %>
   </a>
+
+  <p style="margin: 14px 0 0;">
+    <a href="<%= @share_url %>" style="font-size: 13px; color: #00209F; word-break: break-all;"><%= @share_url %></a>
+  </p>
 </div>
+
+<p style="margin: 20px 0 0; color: #475467;"><%= c.(:signoff) %></p>

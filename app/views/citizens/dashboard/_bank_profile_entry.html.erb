@@ -16,12 +16,12 @@
       <div class="col-md-6">
         <%= f.input :account_source,
               collection: [
-                ["Traditional Bank", "bank"],
-                ["Mobile Wallet (MonCash, NatCash)", "mobile_wallet"],
-                ["Crypto Wallet", "crypto_wallet"]
+                [t("citizen_portal.profile.bank.source_bank"), "bank"],
+                [t("citizen_portal.profile.bank.source_mobile"), "mobile_wallet"],
+                [t("citizen_portal.profile.bank.source_crypto"), "crypto_wallet"]
               ],
-              label: "Account Type",
-              prompt: "Select Account Type",
+              label: t("citizen_portal.profile.bank.account_type"),
+              prompt: t("citizen_portal.profile.bank.select_account_type"),
               valid_class: nil,
               input_html: {
                 class: "form-select",
@@ -33,8 +33,8 @@
       <div class="col-md-6">
         <%= f.input :currency,
               collection: BankProfile::CURRENCIES.map { |k, v| [k, v.downcase] },
-              label: "Currency",
-              prompt: "Select Currency",
+              label: t("citizen_portal.profile.bank.currency"),
+              prompt: t("citizen_portal.profile.bank.select_currency"),
               valid_class: nil,
               input_html: { class: "form-select" } %>
       </div>
@@ -48,9 +48,9 @@
         <% banks = Bank.order(:name).pluck(:name, :name) rescue [] %>
         <% if banks.any? %>
           <%= f.input :bank_name,
-                collection: banks + [["Other", "other"]],
-                label: "Bank",
-                prompt: "Select Bank",
+                collection: banks + [[t("citizen_portal.profile.bank.other"), "other"]],
+                label: t("citizen_portal.profile.bank.bank"),
+                prompt: t("citizen_portal.profile.bank.select_bank"),
                 valid_class: nil,
                 input_html: {
                   class: "form-select",
@@ -59,8 +59,8 @@
         <% else %>
           <%= f.input :bank_name,
                 collection: BankProfile::BANKS,
-                label: "Bank",
-                prompt: "Select Bank",
+                label: t("citizen_portal.profile.bank.bank"),
+                prompt: t("citizen_portal.profile.bank.select_bank"),
                 valid_class: nil,
                 input_html: {
                   class: "form-select",
@@ -72,9 +72,9 @@
       <%# SWIFT Code - auto-populated when bank is selected %>
       <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
         <%= f.input :swift_code,
-              label: "SWIFT Code",
-              placeholder: "Auto-filled when bank is selected",
-              hint: "Automatically filled when you select a bank",
+              label: t("citizen_portal.profile.bank.swift_code"),
+              placeholder: t("citizen_portal.profile.bank.swift_placeholder"),
+              hint: t("citizen_portal.profile.bank.swift_hint"),
               valid_class: nil,
               input_html: {
                 class: "form-control text-uppercase bg-light",
@@ -86,7 +86,7 @@
       <%# Account Number %>
       <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
         <%= f.input :account_number,
-              label: "Account Number",
+              label: t("citizen_portal.profile.bank.account_number"),
               placeholder: "e.g., 175-1021-1750802",
               valid_class: nil,
               input_html: { class: "form-control" } %>
@@ -96,12 +96,12 @@
       <div class="col-md-6 d-none" data-bank-selector-target="bankFields">
         <%= f.input :account_type,
               collection: [
-                ["Checking", "checking"],
-                ["Savings", "savings"],
-                ["Business", "business"]
+                [t("citizen_portal.profile.bank.checking"), "checking"],
+                [t("citizen_portal.profile.bank.savings"), "savings"],
+                [t("citizen_portal.profile.bank.business"), "business"]
               ],
-              label: "Account Category",
-              prompt: "Select Category",
+              label: t("citizen_portal.profile.bank.account_category"),
+              prompt: t("citizen_portal.profile.bank.select_category"),
               valid_class: nil,
               input_html: { class: "form-select" } %>
       </div>
@@ -114,8 +114,8 @@
       <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields">
         <%= f.input :wallet_provider,
               collection: BankProfile::MOBILE_WALLET_PROVIDERS,
-              label: "Wallet Provider",
-              prompt: "Select Provider",
+              label: t("citizen_portal.profile.bank.wallet_provider"),
+              prompt: t("citizen_portal.profile.bank.select_provider"),
               valid_class: nil,
               input_html: {
                 class: "form-select",
@@ -126,7 +126,7 @@
       <%# Phone Number (hidden when Zellus is selected) %>
       <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields phoneField">
         <%= f.input :wallet_address,
-              label: "Phone Number",
+              label: t("citizen_portal.profile.bank.phone_number"),
               placeholder: "e.g., +509 3456 7890",
               valid_class: nil,
               input_html: { class: "form-control", type: "tel" } %>
@@ -135,7 +135,7 @@
       <%# Cashtag (only shown when Zellus is selected) %>
       <div class="col-md-6 d-none" data-bank-selector-target="mobileWalletFields cashtagField">
         <%= f.input :cashtag,
-              label: "Cashtag",
+              label: t("citizen_portal.profile.bank.cashtag"),
               placeholder: "e.g., $marc",
               valid_class: nil,
               input_html: { class: "form-control font-monospace" } %>
@@ -149,8 +149,8 @@
       <div class="col-md-4 d-none" data-bank-selector-target="cryptoWalletFields">
         <%= f.input :wallet_provider,
               collection: BankProfile::CRYPTO_WALLET_PROVIDERS,
-              label: "Wallet Provider",
-              prompt: "Select Provider",
+              label: t("citizen_portal.profile.bank.wallet_provider"),
+              prompt: t("citizen_portal.profile.bank.select_provider"),
               valid_class: nil,
               input_html: { class: "form-select" } %>
       </div>
@@ -159,8 +159,8 @@
       <div class="col-md-4 d-none" data-bank-selector-target="cryptoWalletFields">
         <%= f.input :chain,
               collection: BankProfile::CRYPTO_CHAINS,
-              label: "Network / Chain",
-              prompt: "Select Chain",
+              label: t("citizen_portal.profile.bank.chain"),
+              prompt: t("citizen_portal.profile.bank.select_chain"),
               valid_class: nil,
               input_html: { class: "form-select" } %>
       </div>
@@ -168,7 +168,7 @@
       <%# Public Wallet Address %>
       <div class="col-md-4 d-none" data-bank-selector-target="cryptoWalletFields">
         <%= f.input :wallet_address,
-              label: "Public Address",
+              label: t("citizen_portal.profile.bank.public_address"),
               placeholder: "e.g., 9F9jYt...xZmE",
               valid_class: nil,
               input_html: { class: "form-control font-monospace", style: "font-size: 0.85rem;" } %>
@@ -182,7 +182,7 @@
               class="btn btn-outline-danger btn-sm px-3"
               style="border-radius: 0.5rem;"
               data-action="click->nested-form#removeAssociation">
-        <i class="ri-delete-bin-line me-1"></i> Remove
+        <i class="ri-delete-bin-line me-1"></i> <%= t("citizen_portal.profile.bank.remove") %>
       </button>
     </div>
   </div>
@@ -209,20 +209,20 @@
           <%# Account Name / Title %>
           <h6 class="mb-0 fw-bold">
             <% if profile.account_source_bank? %>
-              <%= profile.bank_name || "Bank Account" %>
+              <%= profile.bank_name || t("citizen_portal.dashboard.financial.bank_account") %>
             <% elsif profile.account_source_mobile_wallet? %>
-              <%= profile.wallet_provider&.titleize || "Mobile Wallet" %>
+              <%= profile.wallet_provider&.titleize || t("citizen_portal.dashboard.financial.mobile_wallet") %>
             <% else %>
-              <%= profile.wallet_provider&.titleize || "Crypto Wallet" %>
+              <%= profile.wallet_provider&.titleize || t("citizen_portal.dashboard.financial.crypto_wallet") %>
             <% end %>
           </h6>
 
           <%# Account Type Badge %>
           <small class="text-muted">
             <% if profile.account_source_bank? %>
-              <span class="badge bg-primary-subtle text-primary me-1"><%= profile.account_type&.titleize || "Account" %></span>
+              <span class="badge bg-primary-subtle text-primary me-1"><%= profile.account_type.present? ? t("citizen_portal.profile.bank.#{profile.account_type}", default: profile.account_type.titleize) : t("citizen_portal.profile.bank.account") %></span>
             <% elsif profile.account_source_mobile_wallet? %>
-              <span class="badge bg-warning-subtle text-warning me-1">Mobile Wallet</span>
+              <span class="badge bg-warning-subtle text-warning me-1"><%= t("citizen_portal.dashboard.financial.mobile_wallet") %></span>
             <% else %>
               <span class="badge bg-info-subtle text-info me-1"><%= profile.chain&.titleize || "Crypto" %></span>
             <% end %>
@@ -284,8 +284,8 @@
         <button type="button"
                 class="btn btn-sm btn-outline-primary edit-profile-btn d-flex align-items-center justify-content-center"
                 style="border-radius: 0.5rem; min-height: 36px; width: 36px; padding: 0;"
-                aria-label="Edit"
-                title="Edit"
+                aria-label="<%= t("citizen_portal.profile.bank.edit") %>"
+                title="<%= t("citizen_portal.profile.bank.edit") %>"
                 onclick="toggleEditProfile(this)">
           <i class="ri-pencil-line"></i>
         </button>
@@ -294,8 +294,8 @@
         <button type="button"
                 class="btn btn-sm btn-outline-danger d-flex align-items-center justify-content-center"
                 style="border-radius: 0.5rem; min-height: 36px; width: 36px; padding: 0;"
-                aria-label="Remove"
-                title="Remove"
+                aria-label="<%= t("citizen_portal.profile.bank.remove") %>"
+                title="<%= t("citizen_portal.profile.bank.remove") %>"
                 data-action="click->nested-form#removeAssociation">
           <i class="ri-delete-bin-line"></i>
         </button>
@@ -308,13 +308,13 @@
         <% if profile.account_source_mobile_wallet? %>
           <div class="col-md-6">
             <%= f.input :wallet_address,
-                  label: "Telefòn",
+                  label: t("citizen_portal.profile.bank.phone_number"),
                   valid_class: nil,
                   input_html: { class: "form-control", type: "tel" } %>
           </div>
           <div class="col-md-6">
             <%= f.input :cashtag,
-                  label: "Cashtag (Zellus)",
+                  label: t("citizen_portal.profile.bank.cashtag_zellus"),
                   placeholder: "e.g., $marc",
                   valid_class: nil,
                   input_html: { class: "form-control font-monospace" } %>
@@ -322,14 +322,14 @@
         <% elsif profile.account_source_bank? %>
           <div class="col-md-6">
             <%= f.input :account_number,
-                  label: "Account Number",
+                  label: t("citizen_portal.profile.bank.account_number"),
                   valid_class: nil,
                   input_html: { class: "form-control" } %>
           </div>
         <% elsif profile.account_source_crypto_wallet? %>
           <div class="col-md-6">
             <%= f.input :wallet_address,
-                  label: "Wallet Address",
+                  label: t("citizen_portal.profile.bank.wallet_address"),
                   valid_class: nil,
                   input_html: { class: "form-control font-monospace" } %>
           </div>
@@ -349,8 +349,8 @@ function toggleEditProfile(btn) {
     btn.innerHTML = isOpen
       ? '<i class="ri-close-line"></i>'
       : '<i class="ri-pencil-line"></i>';
-    btn.setAttribute('aria-label', isOpen ? 'Cancel' : 'Edit');
-    btn.setAttribute('title', isOpen ? 'Cancel' : 'Edit');
+    btn.setAttribute('aria-label', isOpen ? '<%= j t("citizen_portal.common.cancel") %>' : '<%= j t("citizen_portal.profile.bank.edit") %>');
+    btn.setAttribute('title', isOpen ? '<%= j t("citizen_portal.common.cancel") %>' : '<%= j t("citizen_portal.profile.bank.edit") %>');
   }
 }
 </script>

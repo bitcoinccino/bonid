@@ -96,7 +96,7 @@ class EmergencyContact < ApplicationRecord
   # === Validation Rules ===
   def cannot_add_own_bonid
     return if bonid.blank? || user.blank?
-    errors.add(:bonid, "cannot be your own BonID") if bonid == user.bonid
+    errors.add(:bonid, I18n.t("alerts.validation.emergency_contact.own_bonid")) if bonid == user.bonid
   end
 
   # === Normalization ===

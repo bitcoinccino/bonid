@@ -4,19 +4,26 @@ module Citizens
   class RegistrationsController < Devise::RegistrationsController
     layout "citizen_auth"
 
-    before_action :load_partner
+    # /signup opens on any of three green lights:
+    #   ?partner=slug   verified partner (registers under that partner)
+    #   ?commune=HT0112 launched commune (direct, partner_id stays nil)
+    #   ?invite=CODE    available invite code (redeemed on account creation)
+    # With none of them, the visitor goes to the waitlist form to pick
+    # their commune there.
+    before_action :load_partner, :load_signup_unlock
+    helper_method :signup_unlocked?, :signup_context_params
 
     def new
-      if @partner.nil?
-        redirect_to partners_path, alert: "Citizen sign-up must be started via a verified partner."
-      else
+      if signup_unlocked?
         super
+      else
+        redirect_to waitlist_path, alert: t("citizen_portal.auth.flash.join_waitlist")
       end
     end
 
     def create
-      if @partner.nil?
-        redirect_to partners_path, alert: "Invalid or unverified partner."
+      unless signup_unlocked?
+        redirect_to waitlist_path, alert: t("citizen_portal.auth.flash.join_waitlist")
         return
       end
 
@@ -25,14 +32,14 @@ module Citizens
       if existing_email.present?
         existing_user = User.find_by("LOWER(email) = ?", existing_email)
         if existing_user
-          store_partner_context_for_otp(@partner)
+          store_partner_context_for_otp(@partner) if @partner
 
-          if existing_user.identity_submissions.status_approved.exists?
+          if @partner && existing_user.identity_submissions.status_approved.exists?
             redirect_to login_path(from_partner: @partner.slug),
-                        notice: "You have already verified. Sign in to continue to #{@partner.name}."
+                        notice: t("citizen_portal.auth.flash.already_verified_partner", partner: @partner.name)
           else
-            redirect_to login_path(from_partner: @partner.slug),
-                        notice: "You already have an account. Sign in to continue."
+            redirect_to login_path(from_partner: @partner&.slug),
+                        notice: t("citizen_portal.auth.flash.have_account")
           end
           return
         end
@@ -43,27 +50,38 @@ module Citizens
           # Assign citizen role
           citizen.add_role(:citizen) if citizen.respond_to?(:add_role)
 
-          # Link to initiating partner
-          citizen.update(partner: @partner)
+          # Link to initiating partner (nil when a launched commune or a
+          # partner-less invite code opened the gate)
+          citizen.update(partner: @partner) if @partner
+
+          # Invite codes count a use only once an account exists
+          if @invite_code && !@invite_code.redeem!
+            Rails.logger.warn("Invite code #{@invite_code.code} no longer available at sign-up")
+          end
+
+          # Waitlist entry (same email) → converted
+          WaitlistSignup.convert_for!(citizen.email)
 
           # Generate OTP for immediate 2FA verification
           CitizenOtpService.new(citizen).generate!(ip: request.remote_ip)
 
-          # Store pending consent context securely
-          cookies.encrypted[:pending_consent] = {
-            value: {
-              partner_id: @partner.id,
-              scopes: [ "identity" ],
-              redirect_uri: citizens_dashboard_path
-            }.to_json,
-            expires: 15.minutes.from_now,
-            httponly: true,
-            secure: Rails.application.config.force_ssl,
-            same_site: :strict
-          }
+          # Store pending consent context securely (partner sign-ups only)
+          if @partner
+            cookies.encrypted[:pending_consent] = {
+              value: {
+                partner_id: @partner.id,
+                scopes: [ "identity" ],
+                redirect_uri: citizens_dashboard_path
+              }.to_json,
+              expires: 15.minutes.from_now,
+              httponly: true,
+              secure: Rails.application.config.force_ssl,
+              same_site: :strict
+            }
+          end
 
           # Optional: Log successful registration
-          Rails.logger.info("New citizen registered: #{citizen.email} via partner #{@partner.slug}")
+          Rails.logger.info("New citizen registered: #{citizen.email} via #{signup_source}")
         end
       end
     end
@@ -87,9 +105,46 @@ module Citizens
       @partner = nil unless @partner&.verified_at?
     end
 
+    def load_signup_unlock
+      @invite_code = InviteCode.find_available(params[:invite]) if params[:invite].present?
+
+      # An invite issued for a verified partner signs the citizen up there
+      invite_partner = @invite_code&.partner
+      @partner ||= invite_partner if invite_partner&.verified_at?
+
+      if params[:commune].present?
+        @commune = Commune.find_by(code: params[:commune].to_s.upcase.strip)
+        @commune = nil unless @commune&.launched?
+      end
+    end
+
+    def signup_unlocked?
+      @partner.present? || @commune.present? || @invite_code.present?
+    end
+
+    # Carried through the form so create sees the same green light as new
+    def signup_context_params
+      { partner: @partner&.slug, commune: @commune&.code, invite: @invite_code&.code }.compact
+    end
+
+    def signup_source
+      if @partner then "partner #{@partner.slug}"
+      elsif @invite_code then "invite #{@invite_code.code}"
+      else "commune #{@commune.code}"
+      end
+    end
+
+    # The homepage waitlist form, where a visitor picks their commune
+    def waitlist_path
+      enskri_path(lang: I18n.locale.to_s == "fr" ? "fr" : nil)
+    end
+
     def build_resource(hash = {})
       super
       resource.skip_password = true
+      # Start the portal in the language they signed up in (globe picker on
+      # the sign-up page); otherwise the column default (Kreyòl) applies.
+      resource.preferred_locale = I18n.locale.to_s if User::CITIZEN_LOCALES.include?(I18n.locale.to_s)
     end
 
     def sign_up_params

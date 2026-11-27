@@ -32,16 +32,6 @@
   position: relative;
 }
 
-/* Subtle dot-grid pattern overlay */
-.citizen-auth .auth-left::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 28px 28px;
-  pointer-events: none;
-}
-
 .citizen-auth .auth-left-inner {
   max-width: 640px;
   width: 100%;
@@ -57,6 +47,31 @@
   font-family: "Montserrat", sans-serif;
   font-weight: 700;
   color: #ffffff;
+}
+
+/* Tame Bootstrap's display/lead sizes on the left panel (display-5 ≈ 3rem) */
+.citizen-auth .auth-left h2.display-5 {
+  font-size: clamp(1.6rem, 1.1rem + 1.2vw, 2.1rem);
+  line-height: 1.2;
+}
+
+.citizen-auth .auth-left .lead {
+  font-size: 1rem;
+}
+
+/* Benefit tiles: clear title vs. supporting text hierarchy */
+.citizen-auth .auth-left .auth-benefit-title {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.citizen-auth .auth-left .auth-benefit-desc {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .citizen-auth .auth-left p {
@@ -85,22 +100,69 @@
   font-size: 2.75rem;
 }
 
-/* Requirement items with icon circles */
-.citizen-auth .req-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 0.5rem;
+/* Sign-up requirements: compact 2×2 grid + one-line disclaimer.
+   Three clear levels: heading (large, bold) → items (regular, inside a
+   card) → note (small, faded, below the card). */
+.citizen-auth .auth-req {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
-.citizen-auth .req-icon-wrap i {
-  font-size: 1.35rem;
-  color: #ffffff !important;
+.citizen-auth .auth-req__title {
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-bottom: 0.875rem;
+  text-align: center;
+  color: #ffffff;
+}
+
+.citizen-auth .auth-req__grid {
+  list-style: none;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+}
+
+.citizen-auth .auth-req__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.92);
+
+  i {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 16px;
+    line-height: 1;
+    color: #ffffff !important;
+  }
+}
+
+.citizen-auth .auth-req__note {
+  max-width: 480px;
+  margin: 2rem auto 0;   // sits below the requirements, at the bottom of the panel
+  font-size: 0.75rem;
+  font-style: italic;
+  line-height: 1.4;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+
+  i { font-style: normal; font-size: 0.875rem; vertical-align: -2px; margin-right: 0.3rem; }
 }
 
 /* ================= RIGHT — WHITE (40%) ================= */
@@ -116,7 +178,16 @@
 
 .citizen-auth .auth-right-inner {
   width: 100%;
-  max-width: 440px;
+  max-width: 480px;
+}
+
+/* Single-column variant: no left panel, card centered on a soft background */
+.citizen-auth .auth-layout--single .auth-right {
+  background: #f8f9fa;
+}
+
+.citizen-auth .auth-layout--single .auth-right-inner {
+  max-width: 520px;
 }
 
 /* ================= LOGIN CARD (BORDERED CONTAINER) ================= */
@@ -150,6 +221,87 @@
   color: var(--primary);
 }
 
+.citizen-auth .auth-brand-title {
+  font-family: "Montserrat", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #0F172A;
+  margin: 0;
+}
+
+/* Language picker pinned to the page's top-right corner */
+.citizen-auth .auth-right {
+  position: relative;
+}
+
+.citizen-auth .auth-lang-switch {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.5rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primary);
+}
+
+@media (max-width: 576px) {
+  .citizen-auth .auth-lang-switch {
+    top: 0.85rem;
+    right: 1rem;
+  }
+}
+
+.citizen-auth .auth-lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+.citizen-auth .auth-lang-switch .dropdown-menu {
+  min-width: 10rem;
+  font-size: 0.85rem;
+}
+
+.citizen-auth .auth-lang-switch .dropdown-item.active,
+.citizen-auth .auth-lang-switch .dropdown-item:active {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+/* "We'll email you in English · Change" under the sign-up email field */
+.citizen-auth .auth-email-language {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: -0.25rem 0 0.9rem;
+  font-size: 0.8rem;
+  color: #64748b;
+
+  i { font-size: 0.95rem; }
+}
+
+.citizen-auth .auth-email-language__change {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
 /* ================= UTILITIES ================= */
 
 .citizen-auth .font-heading {
@@ -176,7 +328,7 @@
 }
 
 .citizen-auth .carousel-indicators button.active {
-  background-color: #ffd700;
+  background-color: #ffffff;
 }
 
 /* ================= TYPOGRAPHY ================= */
@@ -499,5 +651,130 @@
   .citizen-auth .btn-ghost-haitian {
     font-size: 0.9rem;
     padding: 0.75rem 0.85rem;
+  }
+}
+
+// ── Partner × BonID co-brand (sign-in + sign-up, citizens/shared/_partner_cobrand)
+.auth-cobrand {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1rem 1rem;
+  background: #f0f4ff;
+  border: 1px solid rgba(0, 32, 159, 0.1);
+  border-radius: 1rem;
+}
+
+.auth-cobrand__logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.auth-cobrand__tile {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;          // keeps a square logo's corners inside the circle
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;   // whole logo, never cropped
+    display: block;
+  }
+}
+
+.auth-cobrand__fallback {
+  font-size: 1.75rem;
+  color: #64748b;
+}
+
+.auth-cobrand__link {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.auth-cobrand__name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0f172a;
+}
+
+.auth-cobrand__caption {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+@media (max-width: 575.98px) {
+  .auth-cobrand__tile { width: 64px; height: 64px; }
+}
+
+.auth-cobrand__tile--bonid {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+
+  i { font-size: 2rem; line-height: 1; }
+}
+
+// ── "How to know it's really BonID" (citizens/shared/_how_to_know)
+.auth-how-to-know {
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+  color: #475569;
+
+  summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+    color: var(--primary);
+
+    &::-webkit-details-marker { display: none; }
+    &:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+  }
+
+  .auth-how-to-know__chevron { transition: transform 0.15s ease; }
+  &[open] .auth-how-to-know__chevron { transform: rotate(180deg); }
+
+  ul {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0.75rem 0.9rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    line-height: 1.45;
+
+    i { color: var(--primary); font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
   }
 }

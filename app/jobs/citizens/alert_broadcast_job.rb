@@ -11,12 +11,15 @@ module Citizens
       citizen = User.find_by(id: citizen_id)
       return unless citizen
 
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "citizen_alerts:#{citizen.id}",
-        target:  "citizen_alert_bell",
-        partial: "citizens/shared/alert_bell",
-        locals:  { current_citizen: citizen }
-      )
+      # Render in the citizen's language — jobs run with the app default.
+      I18n.with_locale(citizen.portal_locale) do
+        Turbo::StreamsChannel.broadcast_replace_to(
+          "citizen_alerts:#{citizen.id}",
+          target:  "citizen_alert_bell",
+          partial: "citizens/shared/alert_bell",
+          locals:  { current_citizen: citizen }
+        )
+      end
     end
   end
 end

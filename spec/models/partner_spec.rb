@@ -124,9 +124,16 @@ RSpec.describe Partner, type: :model do
   # ── Webhook ─────────────────────────────────────────────────
   describe "webhook" do
     describe "#webhook_enabled?" do
-      it "returns true when URL and verified" do
-        partner = build(:partner, webhook_url: "https://example.com/hook", verified_at: Time.current)
+      it "returns true when URL, signing secret and verified" do
+        partner = build(:partner, webhook_url: "https://example.com/hook", webhook_secret: SecureRandom.hex(32),
+                                  verified_at: Time.current)
         expect(partner.webhook_enabled?).to be true
+      end
+
+      it "returns false without a signing secret (never send unsigned)" do
+        partner = build(:partner, webhook_url: "https://example.com/hook", webhook_secret: nil, verified_at: Time.current)
+        expect(partner.webhook_enabled?).to be false
+        expect(partner.webhook_blocker).to eq("no_webhook_secret")
       end
 
       it "returns false without URL" do
@@ -184,15 +191,49 @@ RSpec.describe Partner, type: :model do
     end
 
     describe "#scope_allowed?" do
-      it "allows all scopes when no restrictions" do
-        partner = build(:partner, allowed_scopes: nil)
+      it "allows base scopes by default but not crime or health scopes" do
+        partner = build(:partner, allowed_scopes: nil, sector: "banking")
         expect(partner.scope_allowed?("identity:verify")).to be true
+        expect(partner.scope_allowed?("identity:details")).to be false
+        expect(partner.scope_allowed?("crime:status")).to be false
+        expect(partner.scope_allowed?("crime:full")).to be false
+        expect(partner.scope_allowed?("health")).to be false
+        expect(partner.scope_allowed?("physical")).to be false
+      end
+
+      it "adds crime scopes by default for law-enforcement partners" do
+        partner = build(:partner, allowed_scopes: nil, sector: "law_enforcement")
+        expect(partner.scope_allowed?("identity:verify")).to be true
+        expect(partner.scope_allowed?("crime:status")).to be true
+        expect(partner.scope_allowed?("crime:full")).to be true
+        expect(partner.scope_allowed?("identity:details")).to be false
+        expect(partner.scope_allowed?("health")).to be false
       end
 
       it "checks against allowed scopes" do
         partner = build(:partner, allowed_scopes: [ "identity:verify" ])
         expect(partner.scope_allowed?("identity:verify")).to be true
         expect(partner.scope_allowed?("crime:full")).to be false
+      end
+    end
+
+    describe "#filter_scopes" do
+      it "drops identity:details unless explicitly allowed" do
+        partner = build(:partner, allowed_scopes: nil, sector: "banking")
+        expect(partner.filter_scopes(%w[openid identity:details])).to eq(%w[openid])
+
+        explicit = build(:partner, allowed_scopes: %w[openid identity:details])
+        expect(explicit.filter_scopes(%w[openid identity:details])).to eq(%w[openid identity:details])
+      end
+
+      it "drops crime scopes a non-law-enforcement partner asks for" do
+        partner = build(:partner, allowed_scopes: nil, sector: "banking")
+        expect(partner.filter_scopes(%w[openid profile crime:full])).to eq(%w[openid profile])
+      end
+
+      it "keeps crime scopes for a law-enforcement partner" do
+        partner = build(:partner, allowed_scopes: nil, sector: "law_enforcement")
+        expect(partner.filter_scopes(%w[openid crime:status])).to eq(%w[openid crime:status])
       end
     end
   end

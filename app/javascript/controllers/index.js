@@ -16,6 +16,7 @@ const registerControllers = () => {
   register("confirmation", () => import("./confirmation_controller"))
   register("cookie-consent", () => import("./cookie_consent_controller"))
   register("global-loading", () => import("./global_loading_controller"))
+  register("open-dropdown", () => import("./open_dropdown_controller"))
 
   // ───────── Forms ─────────
   register("form-handler", () => import("./form_handler_controller"))
@@ -103,10 +104,15 @@ register("certificate-toggle", () =>
   register("health-multiselect", () => import("./health_multiselect_controller"))
   register("complaint-form", () => import("./complaint_form_controller"))
   register("profile-review", () => import("./profile_review_controller"))
+  register("name-change-reason", () => import("./name_change_reason_controller"))
+  register("correction-picker", () => import("./correction_picker_controller"))
   register("faq", () => import("./faq_controller"))
   register("otp-consent", () => import("./otp_consent_controller"))
   register("otp-input", () => import("./otp_input_controller"))
   register("auto-modal", () => import("./auto_modal_controller"))
+  register("email-change-form", () => import("./email_change_form_controller"))
+  register("modal-form", () => import("./modal_form_controller"))
+  register("auto-submit", () => import("./auto_submit_controller"))
   register("consent-focus", () => import("./consent_focus_controller"))
   register("consent-liveness", () => import("./consent_liveness_controller"))
   register("liveness-gate", () => import("./liveness_gate_controller"))

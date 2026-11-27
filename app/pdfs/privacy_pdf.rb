@@ -58,7 +58,7 @@ class PrivacyPdf < Prawn::Document
     section_title "7. Contact Us"
     body_text "For privacy inquiries, contact us at:"
     bullet_points [
-      "Email: support@bonid.ht",
+      "Email: support@verifyem.ht",
       "Website: https://bonid.ht",
       "Address: BonID, 123 Haiti Street, Port-au-Prince, Haiti"
     ]

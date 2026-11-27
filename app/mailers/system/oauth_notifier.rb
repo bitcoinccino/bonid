@@ -2,10 +2,11 @@
 module System
   class OauthNotifier < VerifyemMailer
     default from: "noreply@verifyem.ht",
-            reply_to: "support@bonid.ht"
+            reply_to: "support@verifyem.ht"
 
     # 🚀 Sent to citizen when a partner requests consent
     def consent_requested(consent_grant)
+      @email_product = "bonid" # sent to the citizen
       @grant = consent_grant
       return unless @grant&.citizen&.email && @grant&.partner&.name
 
@@ -39,6 +40,7 @@ module System
 
     # 🚨 SECURITY ALERT: Sent to citizen when consent is revoked
     def consent_revoked_to_citizen(consent_grant)
+      @email_product = "bonid" # sent to the citizen
       @grant = consent_grant
       @citizen = @grant.citizen
       @partner = @grant.partner

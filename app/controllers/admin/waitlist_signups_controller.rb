@@ -3,7 +3,7 @@
 module Admin
   class WaitlistSignupsController < BaseController
     def index
-      @signups = WaitlistSignup.includes(:commune, :partner).order(created_at: :desc)
+      @signups = WaitlistSignup.with_referrals_count.includes(:commune, :partner).order(created_at: :desc)
       @signups = @signups.where(signup_type: params[:type]) if params[:type].present?
       @signups = @signups.where(status: params[:status]) if params[:status].present?
       @signups = @signups.where(diaspora: true) if params[:diaspora] == "1"
@@ -15,6 +15,13 @@ module Admin
         @signups = @signups.where(commune_id: commune_ids)
       end
       @signups = @signups.where(commune_id: params[:commune_id]) if params[:commune_id].present?
+
+      # Referrals: "top" sorts everyone by people brought in; "3" keeps only
+      # 3+ referrers (sorted). Lets batch invites reach ambassadors first.
+      case params[:referrals]
+      when "top" then @signups = @signups.reorder(nil).top_referrers_first
+      when "3"   then @signups = @signups.min_referrals(3).reorder(nil).top_referrers_first
+      end
 
       @total = WaitlistSignup.count
       @citizens = WaitlistSignup.citizens.count
@@ -84,10 +91,11 @@ module Admin
 
     private
 
+    # One-person code (DEL-7KQ2XA) that opens /signup?invite=… directly
     def generate_invite_code(signup)
       InviteCode.create!(
         commune_id: signup.commune_id,
-        code_type: "community",
+        code_type: "personal",
         max_uses: 1,
         expires_at: 30.days.from_now,
         note: "Waitlist invite for #{signup.email}"

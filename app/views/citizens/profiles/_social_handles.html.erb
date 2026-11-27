@@ -4,26 +4,25 @@
     <div class="alert alert-info alert-dismissible d-flex align-items-start mb-3 compact-info-banner" role="alert">
       <i class="ri-shield-check-line me-2 mt-1"></i>
       <span>
-        <strong>Your social media information is encrypted and secure.</strong>
-        Link your social accounts for <strong>faster identity verification</strong> with partners. BonID shares your data <strong>only with your explicit consent</strong> through secure, auditable access.
+        <%= t("citizen_portal.profile.social.banner_html") %>
       </span>
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<%= t("citizen_portal.common.close") %>"></button>
     </div>
 
     <%# Column Headers (desktop only) %>
     <div class="row g-4 d-none d-md-flex social-col-header mb-2">
-      <div class="col-md-3">Platform</div>
-      <div class="col-md-4">Handle</div>
+      <div class="col-md-3"><%= t("citizen_portal.profile.social.platform") %></div>
+      <div class="col-md-4"><%= t("citizen_portal.profile.social.handle") %></div>
       <div class="col-md-2">
-        Share?
+        <%= t("citizen_portal.profile.social.share") %>
         <span data-bs-toggle="tooltip"
               data-bs-placement="top"
-              title="Private: only you can see this. Partners: shared with verified agencies for visa processing."
+              title="<%= t("citizen_portal.profile.social.share_tooltip") %>"
               class="social-tooltip-icon">
           <i class="ri-information-line"></i>
         </span>
       </div>
-      <div class="col-md-3">Status</div>
+      <div class="col-md-3"><%= t("citizen_portal.profile.social.status") %></div>
     </div>
 
     <%# Container for social handles - REQUIRED for Stimulus controller %>
@@ -49,7 +48,7 @@
           <div class="col-12 col-md-3">
             <%= sh_form.input :platform,
                   collection: SocialHandle::PLATFORMS.invert,
-                  prompt: "Select Platform",
+                  prompt: t("citizen_portal.profile.social.select_platform"),
                   label: false,
                   input_html: { class: "form-select" } %>
           </div>
@@ -57,14 +56,14 @@
           <%# Handle %>
           <div class="col-12 col-md-4">
             <%= sh_form.input :handle,
-                  placeholder: "@username",
+                  placeholder: t("citizen_portal.profile.social.handle_placeholder"),
                   label: false,
                   input_html: { class: "form-control" } %>
           </div>
 
           <%# Visibility — Segmented Toggle %>
           <div class="col-6 col-md-2">
-            <div class="btn-group btn-group-sm w-100 social-vis-toggle" role="group" aria-label="Visibility">
+            <div class="btn-group btn-group-sm w-100 social-vis-toggle" role="group" aria-label="<%= t("citizen_portal.profile.social.visibility") %>">
               <input type="radio"
                      class="btn-check"
                      name="<%= sh_form.object_name %>[visibility]"
@@ -73,8 +72,8 @@
                      <%= current_vis == "private" ? "checked" : "" %>
                      autocomplete="off">
               <label class="btn btn-outline-secondary" for="vis_private_<%= row_id %>"
-                     title="Only you can see this">
-                <i class="ri-lock-line"></i> No
+                     title="<%= t("citizen_portal.profile.social.private_title") %>">
+                <i class="ri-lock-line"></i> <%= t("citizen_portal.profile.social.no") %>
               </label>
 
               <input type="radio"
@@ -85,8 +84,8 @@
                      <%= current_vis == "partners_only" ? "checked" : "" %>
                      autocomplete="off">
               <label class="btn btn-outline-secondary" for="vis_partners_<%= row_id %>"
-                     title="Shared with verified agencies">
-                <i class="ri-team-line"></i> Yes
+                     title="<%= t("citizen_portal.profile.social.partners_title") %>">
+                <i class="ri-team-line"></i> <%= t("citizen_portal.profile.social.yes") %>
               </label>
             </div>
           </div>
@@ -98,20 +97,20 @@
               <% case status %>
               <% when "verified" %>
                 <span class="social-status-verified">
-                  <i class="ri-checkbox-circle-line me-1"></i>Verified
+                  <i class="ri-checkbox-circle-line me-1"></i><%= t("citizen_portal.profile.social.verified") %>
                 </span>
               <% when "pending" %>
                 <span class="social-status-pending">
-                  <i class="ri-time-line me-1"></i>Pending
+                  <i class="ri-time-line me-1"></i><%= t("citizen_portal.profile.social.pending") %>
                 </span>
               <% when "failed" %>
                 <span class="social-status-failed">
-                  <i class="ri-close-circle-line me-1"></i>Failed
+                  <i class="ri-close-circle-line me-1"></i><%= t("citizen_portal.profile.social.failed") %>
                 </span>
               <% else %>
                 <span class="social-status-unverified" role="button" tabindex="0"
-                      title="Verify this handle to strengthen your profile">
-                  <i class="ri-error-warning-line me-1"></i>Verify
+                      title="<%= t("citizen_portal.profile.social.verify_title") %>">
+                  <i class="ri-error-warning-line me-1"></i><%= t("citizen_portal.profile.social.verify") %>
                 </span>
               <% end %>
 
@@ -120,7 +119,7 @@
               <button type="button"
                       class="social-remove-btn"
                       data-action="click->social-handles#remove"
-                      title="Remove">
+                      title="<%= t("citizen_portal.profile.social.remove") %>">
                 <i class="ri-close-line"></i>
               </button>
             </div>
@@ -135,7 +134,7 @@
       <button type="button"
               class="btn btn-ghost-social"
               data-action="click->social-handles#add">
-        <i class="ri-add-line me-1"></i> Add Platform
+        <i class="ri-add-line me-1"></i> <%= t("citizen_portal.profile.social.add_platform") %>
       </button>
     </div>
 

@@ -64,7 +64,7 @@ import "./visual/constellation";
 // ─────────────────────────────────────────
 // Intercepts ALL data-turbo-confirm attributes and shows #confirmationModal
 // instead of the native window.confirm() browser popup.
-Turbo.config.forms.confirm = (message) => {
+Turbo.config.forms.confirm = (message, element, submitter) => {
   return new Promise((resolve) => {
     const modalEl = document.getElementById("confirmationModal");
     if (!modalEl) {
@@ -76,6 +76,11 @@ Turbo.config.forms.confirm = (message) => {
     // Inject the confirm message text into the modal body
     const body = modalEl.querySelector("#confirmationModalBody");
     if (body) body.textContent = message;
+
+    // Destructive actions (delete, revoke, deny) get a red confirm button:
+    // data-confirm-variant="destructive" on the button or its form.
+    const variant = submitter?.dataset?.confirmVariant || element?.dataset?.confirmVariant;
+    modalEl.classList.toggle("bonid-confirmation-modal--destructive", variant === "destructive");
 
     // Show the Bootstrap modal
     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -120,8 +125,22 @@ Turbo.config.forms.confirm = (message) => {
 // submissions. Prevents double-clicks in low-bandwidth environments (Haiti).
 // Skips buttons already managed by a Stimulus form-handler controller.
 // Opt out per-button with data-no-processing="true".
+// Override the label per-button with data-processing-label="…" (translated).
 ;(() => {
   const ATTR_ORIGINAL = "_bonid_original_html"
+
+  // Default label in the page's language (<html lang>), for buttons
+  // without their own translated data-processing-label.
+  const DEFAULT_LABELS = { en: "Processing\u2026", fr: "Traitement\u2026", ht: "Ap trete\u2026" }
+  const defaultLabel = () =>
+    DEFAULT_LABELS[(document.documentElement.lang || "").slice(0, 2).toLowerCase()] || DEFAULT_LABELS.en
+
+  // Shared modal footers (shared/_modal_footer) also lock their Cancel
+  // button while the form submits, so the modal can't be closed mid-save.
+  const cancelButtonsFor = (submitter) =>
+    submitter.closest(".modal, form")?.querySelectorAll("[data-modal-cancel]") || []
+  const setCancelDisabled = (submitter, disabled) =>
+    cancelButtonsFor(submitter).forEach((btn) => { btn.disabled = disabled })
 
   document.addEventListener("turbo:submit-start", (event) => {
     const submitter = event.detail?.formSubmission?.submitter
@@ -132,22 +151,26 @@ Turbo.config.forms.confirm = (message) => {
     const form = submitter.closest("form")
     if (form?.dataset.controller?.match(/form-handler|qr-refresh/)) return
 
+    const label = submitter.dataset.processingLabel || defaultLabel()
+    setCancelDisabled(submitter, true)
+
     // Store original content and disable
     if (submitter.tagName === "INPUT") {
       submitter._bonid_original_value = submitter.value
       submitter.disabled = true
-      submitter.value = "Processing\u2026"
+      submitter.value = label
     } else {
       submitter[ATTR_ORIGINAL] = submitter.innerHTML
       submitter.disabled = true
       submitter.innerHTML =
-        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing\u2026'
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + label
     }
   })
 
   function restoreButton(event) {
     const submitter = event.detail?.formSubmission?.submitter
     if (!submitter) return
+    setCancelDisabled(submitter, false)
 
     if (submitter.tagName === "INPUT" && submitter._bonid_original_value) {
       submitter.disabled = false
@@ -173,18 +196,34 @@ Turbo.config.forms.confirm = (message) => {
     if (!submitter || submitter.dataset.noProcessing === "true") return
     if (form.dataset.controller?.match(/form-handler|qr-refresh/)) return
 
+    const label = submitter.dataset.processingLabel || defaultLabel()
+    setCancelDisabled(submitter, true)
+
     if (submitter.tagName === "INPUT") {
       submitter._bonid_original_value = submitter.value
       submitter.disabled = true
-      submitter.value = "Processing\u2026"
+      submitter.value = label
     } else {
       submitter[ATTR_ORIGINAL] = submitter.innerHTML
       submitter.disabled = true
       submitter.innerHTML =
-        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing\u2026'
+        '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + label
     }
   })
 })()
+
+// ─────────────────────────────────────────
+// Modal portal
+// ─────────────────────────────────────────
+// Modals marked data-modal-portal are moved to <body> on load. Left inside
+// the layout shell, the page's stacking contexts keep the topbar/sidebar
+// above the backdrop, so the modal reads as an inline card instead of an
+// overlay. (auto_modal_controller does the same for auto-opened modals.)
+document.addEventListener("turbo:load", () => {
+  document.querySelectorAll("[data-modal-portal]").forEach((el) => {
+    if (el.parentElement !== document.body) document.body.appendChild(el)
+  })
+})
 
 // ─────────────────────────────────────────
 // Bootstrap Re-init (Turbo-safe)
@@ -229,11 +268,18 @@ function cleanupBootstrapModals() {
 document.addEventListener("turbo:before-cache", cleanupBootstrapModals);
 
 document.addEventListener("turbo:load", () => {
-  // Clean up any backdrops that survived the navigation
-  document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
-  document.body.classList.remove("modal-open");
-  document.body.style.removeProperty("overflow");
-  document.body.style.removeProperty("padding-right");
+  // Clean up any backdrops that survived the navigation, unless a modal is
+  // open right now: pages that open a modal on load (the waitlist form from a
+  // share link, after a server error, #enskri) need their backdrop.
+  // Bootstrap sets body.modal-open as soon as show() starts; .show on the
+  // modal only lands after the fade, so check both.
+  const modalOpening = document.body.classList.contains("modal-open") || document.querySelector(".modal.show")
+  if (!modalOpening) {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+  }
 
   initBootstrap();
   Chartkick?.eachChart((chart) => chart.redraw());

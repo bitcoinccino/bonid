@@ -52,7 +52,7 @@ class TransactionConsent < ApplicationRecord
     "crypto_sell"        => 5.minutes,   # Crypto-to-fiat off-ramp — AML reporting required
     "crypto_transfer"    => 10.minutes,  # Peer-to-peer on-chain — Travel Rule for transfers > $1000
     "crypto_swap"        => 10.minutes,  # Token-to-token exchange — no fiat, lower risk
-    "crypto_kyc"         => 30.minutes,  # Exchange onboarding — enhanced due diligence (EDD)
+    "crypto_kyc"         => 15.minutes,  # Exchange onboarding — enhanced due diligence (EDD)
     # ── Diplomacy / Embassies (US, CA, FR, BR) ──
     "consular_id"        => 15.minutes,  # Embassy — consular ID issuance / renewal
     "passport_renewal"   => 15.minutes,  # Embassy — passport renewal for diaspora
@@ -74,6 +74,26 @@ class TransactionConsent < ApplicationRecord
   }.freeze
 
   DEFAULT_TTL = 10.minutes
+
+  # Types that move money or value. Their consent tokens are one-time use
+  # (burn-after-read): the partner can pull identity data once, then the
+  # token is spent. Enforced on create, so partners can't opt out.
+  MONEY_MOVEMENT_TYPES = %w[
+    wire_transfer p2p_transfer remittance bill_payment merchant_payment
+    cash_out cash_in mobile_topup
+    crypto_buy crypto_sell crypto_transfer crypto_swap
+  ].freeze
+
+  # ── Currencies ──
+  # Fiat a Haitian partner realistically settles in: gourdes, plus the
+  # diaspora corridors (US, Canada, France/EU, Dominican Republic).
+  FIAT_CURRENCIES = %w[HTG USD CAD EUR DOP].freeze
+  # Crypto assets — accepted only on crypto_* transaction types.
+  CRYPTO_CURRENCIES = %w[BTC ETH USDC USDT].freeze
+  CRYPTO_TYPES = %w[crypto_buy crypto_sell crypto_transfer crypto_swap crypto_kyc].freeze
+  # Max decimal places: cents for fiat, satoshis (8) for crypto.
+  FIAT_DECIMALS   = 2
+  CRYPTO_DECIMALS = 8
   VALID_TRANSACTION_TYPES = TTL_BY_TYPE.keys.freeze
 
   # ============================================================
@@ -132,23 +152,48 @@ class TransactionConsent < ApplicationRecord
 
   CIVIL_SECTORS = %w[notary ngo microfinance social_services community_org].freeze
 
-  def self.default_types_for_sector(sector)
+  # Which group a partner's sector belongs to. Order matters: a sector in
+  # two lists (microfinance) resolves to the first match (finance).
+  def self.sector_group(sector)
     s = sector.to_s.downcase
-    if FINANCE_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["finance"]
-    elsif GOVERNMENT_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["government"]
-    elsif LAW_ENFORCEMENT_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["law_enforcement"]
-    elsif DIPLOMACY_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["diplomacy"]
-    elsif HEALTHCARE_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["healthcare"]
-    elsif CIVIL_SECTORS.include?(s)
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["civil"]
-    else
-      DEFAULT_TRANSACTION_TYPES_BY_SECTOR["default"]
+    if FINANCE_SECTORS.include?(s)            then "finance"
+    elsif GOVERNMENT_SECTORS.include?(s)      then "government"
+    elsif LAW_ENFORCEMENT_SECTORS.include?(s) then "law_enforcement"
+    elsif DIPLOMACY_SECTORS.include?(s)       then "diplomacy"
+    elsif HEALTHCARE_SECTORS.include?(s)      then "healthcare"
+    elsif CIVIL_SECTORS.include?(s)           then "civil"
+    else "default"
     end
+  end
+
+  def self.default_types_for_sector(sector)
+    DEFAULT_TRANSACTION_TYPES_BY_SECTOR[sector_group(sector)]
+  end
+
+  # ── Consent scopes (what details a partner may ask the citizen for) ──
+  # Every scope IdentityController#filter_response_by_consent_scopes knows.
+  CONSENT_SCOPES = %w[
+    profile address email phone identity:verify identity:details
+    civil health physical tax emergency_contacts social
+  ].freeze
+
+  # What each sector group may request. Least privilege: a bank never
+  # needs health records, a pharmacy never needs a tax ID. identity:details
+  # (everything) is in no default set.
+  DEFAULT_SCOPES_BY_SECTOR = {
+    "finance"         => %w[profile address email phone identity:verify],
+    "government"      => %w[profile address email phone identity:verify civil tax],
+    "law_enforcement" => %w[profile address phone identity:verify physical civil],
+    # social: U.S. visa forms (DS-160/DS-260) ask for 5 years of social
+    # media handles; embassies may request them with citizen consent.
+    "diplomacy"       => %w[profile address email phone identity:verify civil social],
+    "healthcare"      => %w[profile address phone identity:verify health physical emergency_contacts],
+    "civil"           => %w[profile address email phone civil emergency_contacts],
+    "default"         => %w[profile phone]
+  }.freeze
+
+  def self.default_scopes_for_sector(sector)
+    DEFAULT_SCOPES_BY_SECTOR[sector_group(sector)]
   end
 
   # ============================================================
@@ -162,14 +207,21 @@ class TransactionConsent < ApplicationRecord
   validates :consent_token, presence: true, uniqueness: true
   validates :transaction_type, presence: true, inclusion: { in: VALID_TRANSACTION_TYPES }
   validates :expires_at, presence: true
+  validates :amount, numericality: { greater_than: 0 }, allow_nil: true
+  validate  :currency_allowed_for_type
+  validate  :citizen_identity_verified, on: :create
+  validate  :scopes_allowed_for_partner, on: :create
+  validate  :amount_precision_matches_currency
   validates :reference_id, uniqueness: { scope: [:citizen_id, :partner_id] },
             allow_blank: true
 
   # ============================================================
   # LIFECYCLE
   # ============================================================
+  before_validation :normalize_currency
   before_validation :generate_consent_token, on: :create
   before_validation :set_expiry, on: :create
+  before_validation :apply_one_time_use_for_money, on: :create
   before_save :expire_if_due
 
   # ============================================================
@@ -320,12 +372,12 @@ class TransactionConsent < ApplicationRecord
   # ============================================================
   # DOUBLE-LOCK: DATA ACCESS CONTROL
   # ============================================================
-  DEFAULT_DATA_ACCESS_WINDOW = 30.minutes
+  DEFAULT_DATA_ACCESS_WINDOW = 10.minutes
 
   # How long after approval the consent_token can pull identity data.
   # Configurable per-consent (set by partner plan or admin override).
   def data_access_window
-    (data_access_window_minutes || 30).minutes
+    data_access_window_minutes.present? ? data_access_window_minutes.minutes : DEFAULT_DATA_ACCESS_WINDOW
   end
 
   # Can this consent still be used to access identity data?
@@ -337,11 +389,29 @@ class TransactionConsent < ApplicationRecord
     true
   end
 
+  # Atomically claim the single read of a burn-after-read consent.
+  # One SQL UPDATE that only succeeds while the count is still 0, so two
+  # simultaneous requests can't both get the data. Returns true for the
+  # request that wins, false for every other one.
+  def claim_single_read!
+    claimed = self.class
+      .where(id: id, data_access_count: 0)
+      .update_all([ "data_access_count = data_access_count + 1, data_accessed_at = ?", Time.current ]) == 1
+    if claimed
+      invalidate_cache!
+      reload
+    end
+    claimed
+  end
+
   # Record that identity data was accessed via this consent.
-  # Called by background job (non-blocking).
-  def record_data_access!(ip:, scopes_used:)
-    increment!(:data_access_count)
-    update_columns(data_accessed_at: Time.current)
+  # Called by background job (non-blocking). `counted: true` means the
+  # read was already counted synchronously by claim_single_read!.
+  def record_data_access!(ip:, scopes_used:, counted: false)
+    unless counted
+      increment!(:data_access_count)
+      update_columns(data_accessed_at: Time.current)
+    end
     append_audit!("data_accessed", ip: ip, scopes: scopes_used, access_number: data_access_count)
   end
 
@@ -385,6 +455,57 @@ class TransactionConsent < ApplicationRecord
   def set_expiry
     self.expires_at ||= ttl_for_type.from_now
     self.otp_expires_at ||= self.expires_at
+  end
+
+  # Backstop for the API check: no consent can be created for a BonID
+  # whose identity isn't approved and unexpired right now.
+  def citizen_identity_verified
+    return if citizen.nil? || citizen.identity_currently_verified?
+    errors.add(:citizen, "BonID is not currently verified")
+  end
+
+  # Backstop for the API check: only known scopes, and only ones the
+  # partner's sector may request.
+  def scopes_allowed_for_partner
+    requested = Array(scopes).map(&:to_s)
+    unknown = requested - CONSENT_SCOPES
+    errors.add(:scopes, "unknown: #{unknown.join(', ')}") if unknown.any?
+    return if partner.nil?
+
+    not_allowed = requested - unknown - partner.allowed_consent_scopes
+    errors.add(:scopes, "not allowed for this partner: #{not_allowed.join(', ')}") if not_allowed.any?
+  end
+
+  def crypto_currency?
+    CRYPTO_CURRENCIES.include?(currency)
+  end
+
+  def normalize_currency
+    self.currency = currency.to_s.strip.upcase.presence || "HTG"
+  end
+
+  def currency_allowed_for_type
+    return if FIAT_CURRENCIES.include?(currency)
+
+    if crypto_currency?
+      return if CRYPTO_TYPES.include?(transaction_type)
+      errors.add(:currency, "#{currency} is only allowed on crypto transaction types (#{CRYPTO_TYPES.join(', ')})")
+    else
+      allowed = FIAT_CURRENCIES + (CRYPTO_TYPES.include?(transaction_type) ? CRYPTO_CURRENCIES : [])
+      errors.add(:currency, "#{currency.inspect} is not supported. Use one of: #{allowed.join(', ')}")
+    end
+  end
+
+  def amount_precision_matches_currency
+    return if amount.blank? || errors[:currency].any?
+
+    max = crypto_currency? ? CRYPTO_DECIMALS : FIAT_DECIMALS
+    decimals = amount.to_d.to_s("F").split(".", 2)[1].to_s.sub(/0+\z/, "").length
+    errors.add(:amount, "has too many decimal places for #{currency} (max #{max})") if decimals > max
+  end
+
+  def apply_one_time_use_for_money
+    self.burn_after_read = true if MONEY_MOVEMENT_TYPES.include?(transaction_type)
   end
 
   def expire_if_due

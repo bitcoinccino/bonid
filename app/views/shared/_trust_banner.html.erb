@@ -1,0 +1,28 @@
+<%# Top-of-page "How to know it's really BonID" strip (Haitian blue), on the
+    public home page and /enskri. Same tips as the sign-in page
+    (citizens/shared/_how_to_know). Native <details>: no JavaScript needed.
+    The address comes from BONID_BASE_URL, never from the request, so a copy
+    of the site can't "confirm" its own address. Sits inside the fixed
+    navbar as a full-width first row, so it stays on screen. %>
+<% official_host = URI.parse(Rails.configuration.bonid_base_url.to_s).host.presence || "verifyem.ht" rescue "verifyem.ht" %>
+<details class="trust-banner">
+  <summary>
+    <i class="ri-shield-check-line" aria-hidden="true"></i>
+    <span><%= t("citizen_portal.auth.how_to_know.summary") %></span>
+    <i class="ri-arrow-down-s-line trust-banner__chevron" aria-hidden="true"></i>
+  </summary>
+  <ul>
+    <li>
+      <i class="ri-lock-line" aria-hidden="true"></i>
+      <span><%= t("citizen_portal.auth.how_to_know.address_html", host: official_host) %></span>
+    </li>
+    <li>
+      <i class="ri-mail-check-line" aria-hidden="true"></i>
+      <span><%= t("citizen_portal.auth.how_to_know.sender_html") %></span>
+    </li>
+    <li>
+      <i class="ri-chat-off-line" aria-hidden="true"></i>
+      <span><%= t("citizen_portal.auth.how_to_know.never_share") %></span>
+    </li>
+  </ul>
+</details>

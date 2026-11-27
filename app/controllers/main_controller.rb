@@ -27,16 +27,51 @@ class MainController < ApplicationController
 
 
   def partners
-    @partners = Partner.where.not(verified_at: nil).order(:name)
-    Rails.logger.info "Verified partners: #{@partners.map { |p| [ p.id, p.name, p.verified_at, p.sector ] }}"
+    # "bonid-central" is the internal fallback partner for public sign-ups
+    # (see IdentitySubmissionsController#set_partner); it is not a real
+    # institution, so it stays out of the public directory.
+    @partners = Partner.where.not(verified_at: nil)
+                       .where.not(slug: "bonid-central")
+                       .includes(:oauth_application, logo_attachment: :blob)
+                       .order(:name)
 
-    @partners = @partners.where("name ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+    if params[:search].present?
+      @partners = @partners.where("name ILIKE ?", "%#{Partner.sanitize_sql_like(params[:search].to_s.strip)}%")
+    end
     @partners = @partners.where(sector: params[:sector]) if params[:sector].present?
+
+    # Sector-group chips: counts come from every match (so the chips don't
+    # vanish once one is picked); the selected chip narrows the sections.
+    @all_sections = helpers.partner_directory_sections(@partners.to_a)
+    @group        = params[:group].presence_in(@all_sections.map(&:first))
+    @sections     = @group ? @all_sections.select { |slug, _| slug == @group } : @all_sections
+    @total_count  = @all_sections.sum { |_, list| list.size }
+
+    # Section headings only help once the list is long; with a handful of
+    # partners each heading holds one or two cards and the grid looks broken.
+    # Short lists render as one even grid by name, with the problem/solution
+    # on each card. Grouped (long list, or one picked sector chip): each
+    # sector shows its problem/solution once under the heading.
+    @grouped = @group.present? || (@sections.size > 1 && @total_count > GROUPED_DIRECTORY_MIN)
+    unless @grouped
+      @sections = [ [ nil, @sections.flat_map(&:last).sort_by { |p| p.name.downcase } ] ]
+      @sections = [] if @sections.first.last.empty?
+    end
+
+    # In the full grouped list each sector shows its first few cards and a
+    # "see N more" link to that sector; a picked sector shows everyone.
+    @section_cap = (@grouped && @group.blank?) ? SECTION_CARD_CAP : nil
   end
+
+  # Partner count above which /partners shows one heading per sector group.
+  GROUPED_DIRECTORY_MIN = 12
+  # Cards per sector in the full grouped list.
+  SECTION_CARD_CAP = 6
 
   def required_documents; end
   def terms; end
   def privacy; end
+  def cookie_policy; end
 
   def start
     partner_slug = params[:partner]
@@ -45,9 +80,9 @@ class MainController < ApplicationController
     if partner_slug.blank?
       if Rails.application.config.allow_public_signup
         session[:bonid_partner_id] = nil
-        redirect_to signup_path, notice: "Starting public BonID registration."
+        redirect_to signup_path, notice: t("alerts.partner_start.public_signup")
       else
-        redirect_to partners_path, alert: "ℹ️ Please choose a verified partner to begin."
+        redirect_to partners_path, alert: t("alerts.partner_start.choose_partner")
       end
       return
     end
@@ -55,13 +90,13 @@ class MainController < ApplicationController
     # Find partner
     partner = Partner.find_by(slug: partner_slug)
     unless partner
-      redirect_to partners_path, alert: "🚫 Partner not found."
+      redirect_to partners_path, alert: t("alerts.partner_start.not_found")
       return
     end
 
     # Unverified partner
     unless partner.verified_at.present?
-      redirect_to partners_path, alert: "🚫 This partner is not yet verified."
+      redirect_to partners_path, alert: t("alerts.partner_start.not_verified")
       return
     end
 

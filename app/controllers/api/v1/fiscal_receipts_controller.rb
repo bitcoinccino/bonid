@@ -9,12 +9,16 @@
 #   PATCH  /api/v1/fiscal_receipts/consume  — Mark a receipt as consumed (one-time use)
 #
 # Auth: Standard partner API key (X-Partner-Api-Key) or OAuth Bearer token.
-# Scope: fiscal_receipts:consume (required for consume action)
+# Scope: fiscal_receipts:read (lookup) / fiscal_receipts:consume (consume),
+#        granted explicitly in the partner's allowed_scopes — never by default.
 # =============================================
 
 module Api
   module V1
     class FiscalReceiptsController < Api::V1::BaseController
+      # Explicit grant only, for API-key AND OAuth callers: the partner's own
+      # allowed_scopes must list the action's scope (never a sector default).
+      before_action :require_fiscal_scope!, only: %i[lookup consume]
       before_action :find_fiscal_receipt, only: %i[lookup consume]
 
       # ============================================================
@@ -136,6 +140,22 @@ module Api
       # ============================================================
       # Find the fiscal receipt by receipt_number (JSONB query)
       # ============================================================
+      FISCAL_SCOPES = { "lookup" => "fiscal_receipts:read", "consume" => "fiscal_receipts:consume" }.freeze
+
+      def require_fiscal_scope!
+        required = FISCAL_SCOPES.fetch(action_name)
+        partner_granted = Array(@partner&.allowed_scopes).map(&:to_s).include?(required)
+        token_granted   = @oauth_token.nil? || Array(@oauth_token.scopes).map(&:to_s).include?(required)
+        return if partner_granted && token_granted
+
+        render json: {
+          status: "forbidden",
+          error: "Insufficient scope. Required: #{required}",
+          required_scope: required,
+          timestamp: Time.current.iso8601
+        }, status: :forbidden
+      end
+
       def find_fiscal_receipt
         receipt_number = params[:receipt_number].to_s.strip
 

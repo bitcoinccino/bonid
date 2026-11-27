@@ -28,14 +28,17 @@
      after confirming there's no prior consent in localStorage. Prevents
      the "slide in then immediately vanish" flash on repeat visits. */
   opacity: 0;
+  visibility: hidden;   // keeps the hidden banner out of tab order / screen readers
   transform: translateY(1.5rem);
   pointer-events: none;
-  transition: transform 0.45s ease, opacity 0.45s ease;
+  transition: transform 0.45s ease, opacity 0.45s ease, visibility 0s linear 0.45s;
 
   &.is-revealed {
     opacity: 1;
+    visibility: visible;
     transform: translateY(0);
     pointer-events: auto;
+    transition: transform 0.45s ease, opacity 0.45s ease, visibility 0s;
   }
 
   /* User clicked one of the action buttons — slide out and fade. */
@@ -44,6 +47,12 @@
     opacity: 0;
     pointer-events: none;
   }
+}
+
+/* While a modal is open the banner sits under the backdrop (1050) so it
+   doesn't cover the dialog; it comes back on top when the modal closes. */
+body.modal-open .cookie-banner {
+  z-index: 1040;
 }
 
 /* ── Layout wrapper ── */

@@ -1,94 +1,125 @@
 import { Controller } from "@hotwired/stimulus";
 
-// data-controller="cookie-consent"
+// data-controller="cookie-consent" (shared/_cookie_banner)
+//
+// - First visit: the banner fades in until the visitor chooses.
+// - After a choice it stays in the page, hidden, so it can be reopened
+//   from any [data-cookie-settings] link (footer, privacy policy) to
+//   change or withdraw consent.
+// - Analytics loads only with consent AND a configured measurement ID
+//   (<meta name="ga-measurement-id">); without one nothing is sent.
+// - Choices live in localStorage, which can be unavailable (private
+//   mode, blocked storage): the banner then just shows each visit.
+const STORAGE_KEY = "cookieConsent";
+
 export default class extends Controller {
-  static targets = ["banner", "analytics", "marketing"];
+  static targets = ["banner", "analytics"];
 
   connect() {
-    const consent = JSON.parse(localStorage.getItem("cookieConsent") || "{}");
+    this.openFromLink = this.openFromLink.bind(this);
+    document.addEventListener("click", this.openFromLink);
 
-    // If consent was already saved → remove the banner instantly (no
-    // slide-out animation) and load any approved scripts. Slide-out is
-    // only for the user-clicks-a-button case.
-    if (consent.functional || consent.analytics || consent.marketing) {
-      if (this.hasBannerTarget) this.bannerTarget.remove();
+    const consent = this.readConsent();
+    if (consent) {
       this.loadScripts(consent);
-      return;
+      return; // stays hidden until reopened
     }
-
-    // First-time visit: reveal the banner now that Stimulus has had a
-    // chance to confirm no prior consent. The .is-revealed class is
-    // what triggers the fade-in transition defined in SCSS.
-    if (this.hasBannerTarget) {
-      requestAnimationFrame(() => {
-        this.bannerTarget.classList.add("is-revealed");
-      });
-    }
+    this.reveal();
   }
 
+  disconnect() {
+    document.removeEventListener("click", this.openFromLink);
+  }
+
+  openFromLink(event) {
+    const link = event.target.closest("[data-cookie-settings]");
+    if (!link) return;
+    event.preventDefault();
+    this.open();
+  }
+
+  // Reopen with the saved choices ticked.
+  open() {
+    const consent = this.readConsent() || {};
+    if (this.hasAnalyticsTarget) this.analyticsTarget.checked = !!consent.analytics;
+    this.reveal();
+  }
+
+  // Only consent to what the banner actually offered: without the
+  // analytics option (no measurement ID), "accept" means essential only.
   acceptAll() {
-    const consent = {
-      functional: true,
-      analytics: true,
-      marketing: true,
-    };
-    localStorage.setItem("cookieConsent", JSON.stringify(consent));
-    this.hideBanner();
-    this.loadScripts(consent);
+    this.save({ functional: true, analytics: this.hasAnalyticsTarget });
   }
 
+  // Also the single "Got it" button of the essential-only notice.
   rejectNonEssential() {
-    const consent = {
-      functional: true,
-      analytics: false,
-      marketing: false,
-    };
-    localStorage.setItem("cookieConsent", JSON.stringify(consent));
-    this.hideBanner();
-    this.loadScripts(consent);
+    this.save({ functional: true, analytics: false });
   }
 
   savePreferences() {
-    const consent = {
-      functional: true, // always true
-      analytics: this.hasAnalyticsTarget ? this.analyticsTarget.checked : false,
-      marketing: this.hasMarketingTarget ? this.marketingTarget.checked : false,
-    };
-    localStorage.setItem("cookieConsent", JSON.stringify(consent));
-    this.hideBanner();
+    this.save({
+      functional: true, // always on
+      analytics: this.hasAnalyticsTarget && this.analyticsTarget.checked,
+    });
+  }
+
+  // ── internals ────────────────────────────────────────────────
+
+  save(consent) {
+    const previous = this.readConsent();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+    } catch (_) { /* storage blocked: the choice applies to this page only */ }
+
+    this.hide();
+
+    // A loaded script can't be unloaded: withdrawing analytics after it
+    // ran needs a fresh page.
+    if (previous?.analytics && !consent.analytics && document.getElementById("ga-script")) {
+      window.location.reload();
+      return;
+    }
     this.loadScripts(consent);
   }
 
-  hideBanner() {
-    if (this.hasBannerTarget) {
-      // 👇 Apply the fade-out class
-      this.bannerTarget.classList.add("hidden");
-
-      // Optional: remove it from DOM after fade-out finishes
-      setTimeout(() => {
-        this.bannerTarget.remove();
-      }, 500); // matches CSS transition (0.4s)
+  readConsent() {
+    try {
+      const consent = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      return consent && consent.functional ? consent : null;
+    } catch (_) {
+      return null;
     }
   }
 
+  reveal() {
+    if (!this.hasBannerTarget) return;
+    this.bannerTarget.classList.remove("hidden");
+    requestAnimationFrame(() => this.bannerTarget.classList.add("is-revealed"));
+  }
+
+  hide() {
+    if (!this.hasBannerTarget) return;
+    this.bannerTarget.classList.remove("is-revealed");
+    this.bannerTarget.classList.add("hidden");
+  }
+
   loadScripts(consent) {
-    if (consent.analytics) {
-      if (!document.querySelector("#ga-script")) {
-        const script = document.createElement("script");
-        script.id = "ga-script";
-        script.src = "https://www.googletagmanager.com/gtag/js?id=YOUR_GA_ID";
-        script.async = true;
-        document.head.appendChild(script);
+    if (consent.analytics) this.loadAnalytics();
+  }
 
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){ window.dataLayer.push(arguments); }
-        gtag("js", new Date());
-        gtag("config", "YOUR_GA_ID");
-      }
-    }
+  loadAnalytics() {
+    const id = document.querySelector('meta[name="ga-measurement-id"]')?.content;
+    if (!id || document.getElementById("ga-script")) return;
 
-    if (consent.marketing) {
-      console.log("✅ Marketing scripts would load here");
-    }
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+    window.gtag("js", new Date());
+    window.gtag("config", id);
+
+    const script = document.createElement("script");
+    script.id = "ga-script";
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
+    document.head.appendChild(script);
   }
 }

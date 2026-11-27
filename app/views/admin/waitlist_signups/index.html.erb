@@ -62,7 +62,7 @@
     <!-- Filters -->
     <%= form_with url: admin_waitlist_signups_path, method: :get, class: "mb-4" do |f| %>
       <div class="row g-3">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <%= f.text_field :search,
                 value: params[:search],
                 placeholder: "Search by email...",
@@ -89,8 +89,14 @@
                 {}, class: "form-select form-select-sm", id: "waitlist-commune-filter", onchange: "this.form.submit()" %>
         </div>
         <div class="col-md-1">
+          <%= f.select :referrals,
+                options_for_select([["All refs", ""], ["Top refs", "top"], ["3+ refs", "3"]], params[:referrals]),
+                {}, class: "form-select form-select-sm", title: "Referrals: sort by people brought in, or only 3+ referrers",
+                onchange: "this.form.submit()" %>
+        </div>
+        <div class="col-md-1">
           <%= f.submit "Filter", class: "btn btn-primary btn-sm w-100" %>
-          <% if params[:search].present? || params[:type].present? || params[:status].present? || params[:commune_id].present? || params[:department_id].present? %>
+          <% if params[:search].present? || params[:type].present? || params[:status].present? || params[:commune_id].present? || params[:department_id].present? || params[:referrals].present? %>
             <%= link_to "Clear", admin_waitlist_signups_path, class: "btn btn-outline-secondary btn-sm w-100 mt-1" %>
           <% end %>
         </div>
@@ -161,6 +167,7 @@
               <th>Commune</th>
               <th>Status</th>
               <th>Referral Code</th>
+              <th>Referrals</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -196,7 +203,7 @@
                 <td>
                   <% if signup.diaspora? %>
                     <span class="badge bg-warning-subtle text-warning">
-                      <i class="ri-global-line me-1"></i><%= signup.country_of_residence || "Diaspora" %>
+                      <i class="ri-global-line me-1"></i><%= [signup.residence_place, signup.country_of_residence].compact_blank.join(" · ").presence || "Diaspora" %>
                     </span>
                   <% elsif signup.commune %>
                     <%= signup.commune.name %>
@@ -216,6 +223,16 @@
                 </td>
                 <td class="text-center">
                   <code class="small"><%= signup.referral_code %></code>
+                  <% if signup.referred_by_code.present? %>
+                    <br><small class="text-muted">via <code><%= signup.referred_by_code %></code></small>
+                  <% end %>
+                </td>
+                <td class="text-center">
+                  <% if signup.referrals_count.to_i.positive? %>
+                    <span class="badge bg-success"><%= signup.referrals_count %></span>
+                  <% else %>
+                    <span class="text-muted">0</span>
+                  <% end %>
                 </td>
                 <td class="text-center small">
                   <%= signup.created_at.strftime("%b %d, %Y") %>

@@ -24,7 +24,7 @@ module Citizens
 
     def create
       redirect_to login_path(from_partner: params[:from_partner]),
-                  notice: "Please use one-time code to sign in."
+                  notice: t("citizen_portal.auth.flash.use_code")
     end
 
     # =========================================================
@@ -52,7 +52,7 @@ module Citizens
 
       if raw_input.blank?
         return redirect_to login_path(partner_slug: partner_slug),
-                           alert: "Please enter your email or BonID number."
+                           alert: t("citizen_portal.auth.flash.enter_email")
       end
 
       user =
@@ -64,7 +64,7 @@ module Citizens
 
       unless user
         return redirect_to login_path(partner_slug: partner_slug),
-                           alert: "No account found with that email or BonID."
+                           alert: t("citizen_portal.auth.flash.no_account")
       end
 
       # Ensure citizen role
@@ -82,11 +82,11 @@ module Citizens
         partner_slug: partner_slug,
         email: user.email,
         signup: "false"
-      ), notice: "We sent a one-time code to your email."
+      ), notice: t("citizen_portal.auth.flash.code_sent")
     rescue => e
       Rails.logger.error("OTP generation failed: #{e.message}")
       redirect_to login_path(partner_slug: partner_slug),
-                  alert: "Could not send code. Please try again."
+                  alert: t("citizen_portal.auth.flash.send_failed")
     end
 
     def verify_otp
@@ -96,14 +96,14 @@ module Citizens
 
       unless user
         return redirect_to login_path,
-                           alert: "Session expired. Please start again."
+                           alert: t("citizen_portal.auth.flash.session_expired")
       end
 
       if request.post? && params[:otp].present?
         if CitizenOtpService.new(user).verify!(params[:otp], fingerprint: request_fingerprint)
           sign_in_citizen(user, params[:otp], partner_slug)
         else
-          flash.now[:alert] = "Invalid or expired code."
+          flash.now[:alert] = t("citizen_portal.auth.flash.invalid_code")
           render :verify_otp, status: :unprocessable_entity
         end
       else
@@ -117,17 +117,26 @@ module Citizens
 
       unless user
         return redirect_to login_path,
-                           alert: "Session expired. Please start again."
+                           alert: t("citizen_portal.auth.flash.session_expired")
       end
 
-      CitizenOtpService.new(user).generate!(fingerprint: request_fingerprint)
-      flash.now[:notice] = "New code sent to your email."
+      # Always redirect back to the GET verify page (POST/redirect/GET) so a
+      # browser refresh never re-submits the resend and mails another code.
+      back_to_verify = citizens_verify_otp_path(
+        partner_slug: partner_slug,
+        email: user.email,
+        signup: params[:signup].presence || "false"
+      )
 
-      render :verify_otp, locals: { partner_slug: partner_slug, signup: params[:signup], email: user.email }
-    rescue => e
-      Rails.logger.error("OTP resend failed: #{e.message}")
-      flash.now[:alert] = "Could not resend code. Try again."
-      render :verify_otp, locals: { partner_slug: partner_slug, signup: params[:signup], email: user.email }
+      begin
+        CitizenOtpService.new(user).generate!(fingerprint: request_fingerprint)
+        redirect_to back_to_verify, notice: t("citizen_portal.auth.flash.new_code_sent")
+      rescue CitizenOtpService::CooldownError
+        redirect_to back_to_verify, alert: t("citizen_portal.auth.flash.resend_wait")
+      rescue => e
+        Rails.logger.error("OTP resend failed: #{e.message}")
+        redirect_to back_to_verify, alert: t("citizen_portal.auth.flash.resend_failed")
+      end
     end
 
     # =========================================================
@@ -239,17 +248,26 @@ module Citizens
 
       # No greeting on a partner login: the citizen lands on the consent
       # screen mid-handoff, where "Welcome back!" makes no sense.
+      # Switch to the citizen's saved language now, so the flash below and
+      # the redirect URL (default_url_options adds ?lang=) match the portal
+      # they're about to land on (Citizens::BaseController#apply_citizen_locale).
+      # Partner hand-offs keep the language the citizen is reading.
+      if partner_slug.blank?
+        I18n.locale    = user.portal_locale
+        session[:lang] = user.portal_locale
+      end
+
       notice =
         if partner_slug.present? then nil
-        elsif params[:signup] == "true" then "Welcome! Please complete your profile."
-        else "Welcome back!"
+        elsif params[:signup] == "true" then t("alerts.sign_in.welcome_new")
+        else t("alerts.sign_in.welcome_back")
         end
 
       redirect_to after_sign_in_path_for(user), notice: notice
     rescue => e
       Rails.logger.error("Citizen sign-in failed: #{e.message}")
       redirect_to login_path,
-                  alert: "Login failed. Please try again."
+                  alert: t("citizen_portal.auth.flash.login_failed")
     end
 
     # -----------------------------
@@ -316,7 +334,7 @@ end
 
 #     def create
 #       raw_input = params.dig(:citizen, :email)&.strip
-#       return redirect_to(citizens_sign_in_path, alert: "Please enter your email or BonID number.") if raw_input.blank?
+#       return redirect_to(citizens_sign_in_path, alert: t("citizen_portal.auth.flash.enter_email")) if raw_input.blank?
 
 #       user =
 #         if raw_input.include?("@")
@@ -393,7 +411,7 @@ end
 #         if CitizenOtpService.new(user).verify!(params[:otp].to_s, fingerprint: request_fingerprint)
 #           sign_in_citizen(user)
 #         else
-#           flash.now[:alert] = "Invalid or expired code."
+#           flash.now[:alert] = t("citizen_portal.auth.flash.invalid_code")
 #           render :verify_otp, status: :unprocessable_entity
 #         end
 #       else

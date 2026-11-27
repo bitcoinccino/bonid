@@ -1,0 +1,28 @@
+<%# Partner × BonID co-brand block for the sign-in and sign-up pages.
+    Two equal tiles: the partner's logo (whole, not cropped) and the BonID
+    logo, joined by a link icon, then a caption.
+    locals: partner (Partner), caption (String, may be html_safe),
+            show_name (default true; off when the caption already names the partner) %>
+<div class="auth-cobrand">
+  <div class="auth-cobrand__logos">
+    <div class="auth-cobrand__tile">
+      <% if partner.logo.attached? %>
+        <%= image_tag partner.logo.variant(resize_to_limit: [ 192, 192 ]), alt: partner.name %>
+      <% else %>
+        <i class="ri-building-2-line auth-cobrand__fallback" aria-hidden="true"></i>
+      <% end %>
+    </div>
+
+    <span class="auth-cobrand__link" aria-hidden="true"><i class="ri-link-m"></i></span>
+
+    <%# BonID mark: white shield on BonID blue. %>
+    <div class="auth-cobrand__tile auth-cobrand__tile--bonid" role="img" aria-label="BonID">
+      <i class="ri-shield-check-line" aria-hidden="true"></i>
+    </div>
+  </div>
+
+  <% if local_assigns.fetch(:show_name, true) %>
+    <div class="auth-cobrand__name"><%= partner.name %></div>
+  <% end %>
+  <div class="auth-cobrand__caption"><%= caption %></div>
+</div>

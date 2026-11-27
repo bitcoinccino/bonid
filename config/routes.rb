@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   get  "/enskri/confirmation", to: "landing#confirmation", as: :enskri_confirmation
   get  "/enskri/arrondissements", to: "landing#arrondissements"
   get  "/enskri/communes",        to: "landing#communes"
+  get  "/enskri/us_cities",       to: "landing#us_cities"
 
   # One-time secret portal (OAuth credentials)
   get "/secrets/:token", to: "one_time_secrets#show", as: :one_time_secret
@@ -46,6 +47,7 @@ Rails.application.routes.draw do
   get "/privacy.pdf", to: "pdfs#privacy", as: :privacy_pdf
   get "/terms",       to: "main#terms",   as: :terms
   get "/privacy",     to: "main#privacy", as: :privacy
+  get "/cookies",     to: "main#cookie_policy", as: :cookie_policy
 
   # ===========================================================================
   # PUBLIC API DOCS & VERSION
@@ -571,6 +573,9 @@ end
     # ✅ Unified Activity Feed (Aktivite) — consolidates scans, consents,
     # transaction consents, and service applications into one timeline.
     get "activity", to: "activity#index", as: :activity
+    # Bell: "Mark all as read", and open one notification (marks it read).
+    post "notifications/seen", to: "activity#mark_seen", as: :notifications_seen
+    post "notifications/open", to: "activity#open_notification", as: :notification_open
 
     resource  :profile, only: [ :new, :create, :show, :edit, :update ]
     resources :verification_records
@@ -802,7 +807,9 @@ end
 
     resources :access_logs, only: [ :index ]
     resources :partner_audit_logs, only: [ :index, :show ]
-    resources :settings, only: [ :index, :update ]
+    resources :settings, only: [ :index, :update ] do
+      post :regenerate_webhook_secret, on: :collection
+    end
     resources :metrics,     only: [ :show ]
 
     # Default partner features

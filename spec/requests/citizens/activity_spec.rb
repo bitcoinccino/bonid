@@ -135,13 +135,13 @@ RSpec.describe "Citizens::Activity", type: :request do
     it "sessions tab renders session rows and no consent rows" do
       get citizens_activity_path, params: { tab: "sessions" }
       expect(activity_body).to include("Ou konekte sou BonID ou")
-                          .or  include("Nouvo aparèy konekte sou BonID ou")
-      expect(activity_body).not_to include("Ou bay") # consent-approved phrasing
+                          .or  include("Yon nouvo aparèy konekte sou BonID ou")
+      expect(activity_body).not_to include("Ou kite") # consent-approved phrasing
     end
 
     it "consents tab renders consent rows and no session rows" do
       get citizens_activity_path, params: { tab: "consents" }
-      expect(activity_body).to include("Ou bay")
+      expect(activity_body).to include("Ou kite")
       expect(activity_body).not_to include("konekte sou BonID")
     end
 

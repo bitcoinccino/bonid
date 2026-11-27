@@ -36,7 +36,7 @@
       <% if consent.amount.present? && consent.amount > 0 %>
         <div class="flex-shrink-0 text-end" style="min-width: 70px;">
           <span class="fw-bold small" style="color:var(--primary);">
-            <%= number_to_currency(consent.amount, unit: consent.currency == "HTG" ? "G " : "$ ", precision: 0) %>
+            <%= consent_amount_display(consent.amount, consent.currency) %>
           </span>
         </div>
       <% end %>
@@ -45,11 +45,11 @@
       <div class="flex-shrink-0 text-end" style="min-width: 90px;">
         <span class="small text-muted">
           <% if consent.decided_at.present? %>
-            <%= time_ago_in_words(consent.decided_at) %> ago
+            <%= t("citizen_portal.consents.ago", time: time_ago_in_words(consent.decided_at)) %>
           <% elsif consent.pending? && consent.expires_at > Time.current %>
-            <i class="ri-timer-line me-1"></i>Expires <%= time_ago_in_words(consent.expires_at) %>
+            <i class="ri-timer-line me-1"></i><%= t("citizen_portal.consents.expires_in", time: time_ago_in_words(consent.expires_at)) %>
           <% else %>
-            <%= time_ago_in_words(consent.created_at) %> ago
+            <%= t("citizen_portal.consents.ago", time: time_ago_in_words(consent.created_at)) %>
           <% end %>
         </span>
       </div>

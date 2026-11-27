@@ -47,7 +47,7 @@ module Citizens
       def sign_oath
         unless params[:oath_accepted] == "1"
           redirect_to citizens_election_vote_oath_path,
-                      alert: "Ou dwe aksepte sèman an pou w kapab vote."
+                      alert: t("alerts.election.oath_required")
           return
         end
 
@@ -151,7 +151,7 @@ module Citizens
         voter_record = VoterEligibilityRecord.check_eligibility(election: election, bonid: current_citizen.bonid)
         unless voter_record&.biometric_fingerprint.present?
           redirect_to citizens_election_vote_path,
-                      alert: "Ou pa gen anrejistreman biyometrik. Ale nan yon biwo CEP pou w enskri figi ou anvan w vote."
+                      alert: t("alerts.election.no_biometrics")
           return
         end
 
@@ -170,7 +170,7 @@ module Citizens
           )
           mark_scan_cooldown!
           redirect_to citizens_election_vote_path,
-                      alert: "Figi eskané a pa matche ak figi ki nan dosye idantite ou. Pou sekirite vòt ou, nou pa ka kontinye."
+                      alert: t("alerts.election.face_mismatch")
           return
         end
 
@@ -432,7 +432,7 @@ module Citizens
         return if ENV["FEATURE_BONVOTE_TALLY"].to_s.downcase == "true"
 
         redirect_to citizens_election_enrollment_path,
-                    alert: "Vòt an liy poze pou kounye a. BonVote ap ede w anrejistre sèlman nan faz sa a."
+                    alert: t("alerts.election.online_paused")
       end
 
       def enable_immersive_form
@@ -453,7 +453,7 @@ module Citizens
 
         unless election.allows_online_voting?
           redirect_to citizens_election_enrollment_path,
-                      alert: "Eleksyon sa a se vote an pèsòn sèlman. Ale nan biwo vòt ou a."
+                      alert: t("alerts.election.in_person_only")
           return
         end
 
@@ -463,7 +463,7 @@ module Citizens
         return unless voter_record&.preferred_channel == "in_person"
 
         redirect_to citizens_election_enrollment_path,
-                    alert: "Ou te chwazi vote an pèsòn. Ale nan biwo vòt ou a oswa chanje preferans ou."
+                    alert: t("alerts.election.chose_in_person")
       end
 
       # ── Oath ───────────────────────────────────────────────────

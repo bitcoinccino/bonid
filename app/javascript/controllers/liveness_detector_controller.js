@@ -522,7 +522,7 @@ export default class extends Controller {
              style="font-size: clamp(0.8rem, 2.5vw, 0.875rem); font-family: Montserrat, sans-serif; font-weight: 600; background: ${dark ? "rgba(255,255,255,0.10)" : "#fff"}; color: ${dark ? "#fff" : "#1f2937"}; border: 1px solid ${dark ? "rgba(255,255,255,0.18)" : "#d1d5db"}; text-decoration: none;">
             <i class="ri-arrow-left-line me-1"></i> Retounen
           </a>
-          <a href="mailto:support@bonid.ht" class="btn btn-sm rounded-pill px-4"
+          <a href="mailto:support@verifyem.ht" class="btn btn-sm rounded-pill px-4"
              style="font-size: clamp(0.8rem, 2.5vw, 0.875rem); font-family: Montserrat, sans-serif; font-weight: 600; background: ${iconColor}; color: #fff; text-decoration: none;">
             <i class="ri-customer-service-2-line me-1"></i> Kontakte Sipò
           </a>

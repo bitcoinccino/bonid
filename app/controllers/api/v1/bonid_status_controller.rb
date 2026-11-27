@@ -31,28 +31,20 @@ module Api
         end
 
         submission = user.verified_identity_submission
-        photo_url = submission.selfie.attached? ?
-          Rails.application.routes.url_helpers.rails_blob_url(submission.selfie, only_path: false) : nil
 
+        # Verification status only — no name, DOB, address, photo or QR.
+        # Personal data needs the citizen's consent (GET /api/v1/identity/:bonid
+        # with a consent_token), the same rule as the identity endpoint.
         payload = {
           status: "verified",
           bonid: user.bonid,
-          citizen: {
-            first_name:  user.first_name,
-            last_name:   user.last_name,
-            dob:         safe_time(user.dob),
-            sex:         user.sex,
-            age:         user.age,
-            address:     user.full_address,
-            nationality: user.nationality
-          },
           verification: {
             verified_on: safe_time(submission.updated_at),
-            verified_by: submission.reviewer&.full_name,
-            qr_url:      submission.qr_png_base64.present? ?
-                           "data:image/png;base64,#{submission.qr_png_base64}" : nil,
-            photo_url:   photo_url
+            expires_at:  safe_time(submission.expires_at),
+            reference:   submission.uuid # dispute reference; never the reviewer
           },
+          access_level: "verification_only",
+          hint:      "Identity details require citizen consent: use GET /api/v1/identity/:bonid?consent_token=...",
           partner:   @current_partner.name,
           timestamp: safe_time(Time.current)
         }

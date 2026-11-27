@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
+ActiveRecord::Schema[8.0].define(version: 2026_11_26_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -305,8 +305,10 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
     t.bigint "department_id", null: false
     t.boolean "launched", default: false, null: false
     t.datetime "launched_at"
+    t.string "invite_prefix", limit: 4
     t.index ["arrondissement_id"], name: "index_communes_on_arrondissement_id"
     t.index ["department_id"], name: "index_communes_on_department_id"
+    t.index ["invite_prefix"], name: "index_communes_on_invite_prefix", unique: true
     t.index ["name"], name: "index_communes_on_name"
   end
 
@@ -1171,9 +1173,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
     t.datetime "reviewed_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "old_dob"
+    t.date "new_dob"
+    t.datetime "applied_at"
     t.index ["reviewed_by_id"], name: "index_name_change_requests_on_reviewed_by_id"
     t.index ["status"], name: "index_name_change_requests_on_status"
     t.index ["user_id"], name: "index_name_change_requests_on_user_id"
+  end
+
+  create_table "notification_reads", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "key", limit: 100, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "key"], name: "index_notification_reads_on_user_id_and_key", unique: true
+    t.index ["user_id"], name: "index_notification_reads_on_user_id"
   end
 
   create_table "o_auth_access_tokens", force: :cascade do |t|
@@ -2117,7 +2131,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
     t.string "transaction_type", null: false
     t.integer "status", default: 0, null: false
     t.text "scopes", default: [], array: true
-    t.decimal "amount", precision: 12, scale: 2
+    t.decimal "amount", precision: 20, scale: 8
     t.string "currency", default: "HTG"
     t.text "description"
     t.string "reference_id"
@@ -2480,9 +2494,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
     t.string "rank"
     t.string "unit_type"
     t.string "unit_name"
+    t.string "residence_state", limit: 3
+    t.string "residence_city", limit: 80
+    t.string "locale", limit: 5
+    t.string "referred_by_code"
     t.index ["commune_id"], name: "index_waitlist_signups_on_commune_id"
     t.index ["email"], name: "index_waitlist_signups_on_email", unique: true
     t.index ["referral_code"], name: "index_waitlist_signups_on_referral_code", unique: true
+    t.index ["referred_by_code"], name: "index_waitlist_signups_on_referred_by_code"
     t.index ["signup_type"], name: "index_waitlist_signups_on_signup_type"
     t.index ["status"], name: "index_waitlist_signups_on_status"
   end
@@ -2580,6 +2599,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_11_08_000100) do
   add_foreign_key "local_contacts", "visitor_submissions"
   add_foreign_key "name_change_requests", "admin_users", column: "reviewed_by_id"
   add_foreign_key "name_change_requests", "users"
+  add_foreign_key "notification_reads", "users"
   add_foreign_key "o_auth_access_tokens", "partners"
   add_foreign_key "o_auth_access_tokens", "users", column: "citizen_id"
   add_foreign_key "oauth_applications", "partners"

@@ -70,6 +70,12 @@ module Api
         if consent_token
           @consent = validate_consent_token!(consent_token, bonid)
           return unless @consent # validation rendered an error
+
+          # One-time tokens: claim the single read atomically *before*
+          # returning data, so parallel requests can't each get a copy.
+          if @consent.burn_after_read? && !@consent.claim_single_read!
+            return render_consent_error("Consent token has been consumed (burn-after-read)", :gone)
+          end
         end
 
         # Lookup person (citizen or tourist)
@@ -86,7 +92,8 @@ module Api
             RecordConsentDataAccessJob.perform_later(
               consent_id: @consent.id,
               ip: request.remote_ip,
-              scopes_used: @consent.scopes
+              scopes_used: @consent.scopes,
+              counted: @consent.burn_after_read? # already counted by claim_single_read!
             )
           elsif @oauth_token.nil?
             # No consent, no OAuth → strip all PII, return verification status only
@@ -220,6 +227,52 @@ module Api
         render json: payload, status: status
       end
 
+      # ── Scope → identity fields (ALLOW-LIST) ─────────────────────────
+      # The ONLY identity keys a partner can ever receive. A key that is not
+      # listed here is never sent — so a field added to build_citizen_result
+      # or build_tourist_result stays hidden until it is mapped to a scope.
+      # qr_code is deliberately in no scope: it is never sent to partners.
+      ALWAYS_IDENTITY_FIELDS = %i[bonid masked_bonid id_type verification].freeze
+
+      ADDRESS_FIELDS = %i[
+        address department commune street_address locality
+        communal_section arrondissement postal_code country
+        accommodation
+      ].freeze
+
+      SCOPE_IDENTITY_FIELDS = {
+        "profile"            => %i[first_name middle_name last_name full_name date_of_birth age
+                                   sex nationality photo_url
+                                   country_code passport_number passport_expiry visa_type
+                                   entry_date stay_duration_days],
+        "email"              => %i[email],
+        "phone"              => %i[phone],
+        "address"            => ADDRESS_FIELDS,
+        "health"             => %i[blood_type organ_donor allergies chronic_conditions medications],
+        "physical"           => %i[height weight eye_color hair_color hair_style body_type skin_tone
+                                   race facial_hair handedness],
+        "identity:verify"    => %i[photo_url biometrics biometric_verification],
+        "tax"                => %i[nif matricule_fiscale tax_id],
+        "civil"              => %i[place_of_birth family_members birth_certificate_ref],
+        "emergency_contacts" => %i[emergency_contacts],
+        "social"             => %i[social_handles]
+      }.freeze
+
+      # identity:details = every mapped field (still never qr_code).
+      ALL_SCOPED_IDENTITY_FIELDS = SCOPE_IDENTITY_FIELDS.values.flatten.uniq.freeze
+
+      def allowed_identity_fields(scopes)
+        scopes = Array(scopes).map(&:to_s)
+        scoped = scopes.include?("identity:details") ? ALL_SCOPED_IDENTITY_FIELDS : scopes.flat_map { |sc| SCOPE_IDENTITY_FIELDS.fetch(sc, []) }
+        (ALWAYS_IDENTITY_FIELDS + scoped).uniq
+      end
+
+      # Keep only the identity keys the scopes allow.
+      def apply_identity_allow_list!(identity, scopes)
+        allowed = allowed_identity_fields(scopes)
+        identity.keep_if { |k, _| allowed.include?(k.to_sym) }
+      end
+
       # ── Transaction-Type Implicit Scopes ──────────────────────────
       # Certain transaction types REQUIRE specific data to function.
       # These scopes are auto-injected regardless of what the partner
@@ -245,8 +298,7 @@ module Api
       }.freeze
 
       # ── Double-Lock: Consent Scope Filtering ────────────────────
-      # Returns ONLY the data the citizen consented to.
-      # Photo is guarded under "profile" or "identity:verify" scope.
+      # Returns ONLY the data the citizen consented to (allow-list).
       # Transaction-type implicit scopes are auto-injected.
       # ───────────────────────────────────────────────────────────────
       def filter_response_by_consent_scopes(payload, consent_scopes)
@@ -261,66 +313,7 @@ module Api
         identity = payload[:identity]
         return payload unless identity.is_a?(Hash)
 
-        # Full access scope — skip filtering
-        return payload if scopes.include?("identity:details")
-
-        # Profile: name, DOB, sex, nationality, photo
-        unless scopes.include?("profile")
-          %i[first_name middle_name last_name full_name
-             date_of_birth age sex nationality].each { |k| identity.delete(k) }
-          # Photo is ONLY available with "profile" or "identity:verify"
-          identity.delete(:photo_url) unless scopes.include?("identity:verify")
-        end
-
-        # Email
-        identity.delete(:email) unless scopes.include?("email")
-
-        # Phone
-        identity.delete(:phone) unless scopes.include?("phone")
-
-        # Address
-        unless scopes.include?("address")
-          %i[address department commune].each { |k| identity.delete(k) }
-        end
-
-        # Health (blood type, organ donor, allergies, conditions, medications)
-        unless scopes.include?("health")
-          %i[blood_type organ_donor allergies chronic_conditions medications].each { |k| identity.delete(k) }
-        end
-
-        # Physical traits
-        unless scopes.include?("physical")
-          %i[height weight eye_color hair_color hair_style body_type skin_tone
-             race facial_hair handedness].each { |k| identity.delete(k) }
-        end
-
-        # Biometrics: only with identity:verify
-        unless scopes.include?("identity:verify")
-          identity.delete(:biometrics)
-        end
-
-        # Tax data (NIF / Matricule Fiscale) — future field
-        unless scopes.include?("tax")
-          %i[nif matricule_fiscale tax_id].each { |k| identity.delete(k) }
-        end
-
-        # Civil registry data (family members, place of birth)
-        unless scopes.include?("civil")
-          %i[family_members place_of_birth birth_certificate_ref].each { |k| identity.delete(k) }
-        end
-
-        # Emergency contacts
-        unless scopes.include?("emergency_contacts")
-          identity.delete(:emergency_contacts)
-        end
-
-        # Social handles
-        unless scopes.include?("social")
-          identity.delete(:social_handles)
-        end
-
-        # QR code: never included in consent-gated responses
-        identity.delete(:qr_code)
+        apply_identity_allow_list!(identity, scopes)
 
         payload[:granted_scopes] = scopes
         payload[:consent_token] = @consent.consent_token
@@ -348,60 +341,18 @@ module Api
         payload
       end
 
-      # ── Scope-Based Response Filtering ─────────────────────────────
-      # Strips identity fields that the Bearer token doesn't have
-      # scope access to. API-key-only requests (no OAuth token) get
-      # full access — scope restrictions apply only to OAuth tokens.
+      # ── OAuth Scope Filtering ──────────────────────────────────────
+      # Bearer-token callers get only the fields their token's scopes allow
+      # (same allow-list as consent). Only called when @oauth_token exists.
       # ───────────────────────────────────────────────────────────────
       def filter_response_by_scopes(payload)
-        # API-key auth = full access (no token, no filtering)
-        return payload if @oauth_token.nil?
+        return strip_pii(payload) if @oauth_token.nil?
 
         scopes   = Array(@oauth_token.scopes).map(&:to_s)
         identity = payload[:identity]
         return payload unless identity.is_a?(Hash)
 
-        # Profile scope: name, DOB, sex, nationality, photo
-        unless scopes.include?("profile")
-          %i[first_name middle_name last_name full_name
-             date_of_birth age sex nationality photo_url].each { |k| identity.delete(k) }
-        end
-
-        # Email scope
-        unless scopes.include?("email")
-          identity.delete(:email)
-        end
-
-        # Phone scope
-        unless scopes.include?("phone")
-          identity.delete(:phone)
-        end
-
-        # Address scope
-        unless scopes.include?("address")
-          %i[address department commune].each { |k| identity.delete(k) }
-        end
-
-        # Health scope
-        unless scopes.include?("health")
-          %i[blood_type organ_donor allergies chronic_conditions medications].each { |k| identity.delete(k) }
-        end
-
-        # Physical scope
-        unless scopes.include?("physical")
-          %i[height weight eye_color hair_color hair_style body_type skin_tone
-             race facial_hair handedness].each { |k| identity.delete(k) }
-        end
-
-        # Emergency contacts scope
-        unless scopes.include?("emergency_contacts")
-          identity.delete(:emergency_contacts)
-        end
-
-        # Social handles scope
-        unless scopes.include?("social")
-          identity.delete(:social_handles)
-        end
+        apply_identity_allow_list!(identity, scopes)
 
         # Include granted scopes in response for transparency
         payload[:granted_scopes] = scopes
@@ -501,7 +452,8 @@ module Api
           data: {
             bonid: user.bonid,
             masked_bonid: mask_bonid(user.bonid),
-            id_type: "BonID",
+            # Document the identity was verified with: "cin" or "passport"
+            id_type: submission.id_type,
             first_name: user.first_name,
             middle_name: user.middle_name,
             last_name: user.last_name,
@@ -510,9 +462,21 @@ module Api
             age: user.age,
             sex: user.sex,
             nationality: user.nationality || "Haitian",
+            # Contact — guarded by the "email" / "phone" scopes in both filters
+            email: user.email.presence,
+            phone: user.phone.presence,
             address: user.full_address,
             department: user.address&.department&.name,
             commune: user.address&.commune&.name,
+            # Structured address parts (same fields the citizen fills on
+            # their profile). Guarded by the "address" scope — see
+            # ADDRESS_FIELDS in both scope filters.
+            street_address: user.address&.street_address,
+            locality: user.address&.locality,
+            communal_section: user.address&.communal_section&.name,
+            arrondissement: (user.address&.arrondissement || user.address&.commune&.arrondissement)&.name,
+            postal_code: user.address&.postal_code,
+            country: user.address&.country.presence || (user.address && "Haiti"),
             # Health (HealthProfile)
             blood_type: user.health_profile&.blood_type,
             organ_donor: user.health_profile&.organ_donor,
@@ -556,10 +520,12 @@ module Api
             verification: {
               verified: true,
               verified_at: submission.updated_at&.iso8601,
-              verified_by: submission.reviewer&.full_name,
               expires_at: submission.expires_at&.iso8601,
               submission_type: submission.submission_type,
-              document_type: submission.id_type
+              document_type: submission.id_type,
+              # Dispute reference for this verification only (submission UUID).
+              # Never the reviewer: BonID support maps it to the reviewer internally.
+              reference: submission.uuid
             },
             biometric_verification: build_biometric_verification(submission),
             biometrics: build_biometrics_block(submission),
@@ -581,7 +547,7 @@ module Api
           data: {
             bonid: visitor.bonid,
             masked_bonid: mask_bontouris(visitor.bonid),
-            id_type: "BonTouris",
+            id_type: "passport", # BonTouris visitors verify with their passport
             first_name: visitor.first_name,
             middle_name: visitor.middle_name,
             last_name: visitor.last_name,
@@ -590,6 +556,9 @@ module Api
             age: visitor.dob.present? ? ((Date.current - visitor.dob.to_date) / 365.25).to_i : nil,
             sex: visitor.sex,
             nationality: visitor.nationality,
+            # Contact — guarded by the "email" / "phone" scopes in both filters
+            email: visitor.email.presence,
+            phone: visitor.phone.presence,
             country_code: visitor.residence_country || extract_country_code(visitor.bonid),
             passport_number: mask_passport(visitor.passport_number),
             passport_expiry: visitor.passport_expiry_date&.iso8601,
@@ -625,9 +594,10 @@ module Api
 
         if user
           submission = user.verified_identity_submission
+          document = submission || user.identity_submissions.order(created_at: :desc).first
           result = {
             found: true,
-            id_type: "BonID",
+            id_type: document&.id_type, # "cin" / "passport" (nil before any submission)
             verified: submission.present?,
             status: submission.present? ? "verified" : "pending",
             expires_at: submission&.expires_at&.iso8601
@@ -647,7 +617,7 @@ module Api
         if visitor
           return {
             found: true,
-            id_type: "BonTouris",
+            id_type: "passport",
             verified: visitor.approved?,
             status: visitor.status,
             nationality: visitor.nationality,
@@ -664,7 +634,8 @@ module Api
         response = {
           status: "success",
           bonid: result[:data][:bonid],
-          id_type: result[:type].to_s,
+          id_type: result[:data][:id_type],   # document: "cin" / "passport"
+          holder_type: result[:type].to_s,    # "citizen" / "tourist"
           verified: result[:verified],
           identity: result[:data],
           partner: @partner&.name,

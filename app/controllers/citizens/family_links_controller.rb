@@ -10,27 +10,30 @@ module Citizens
       fm = FamilyMember.find_by(link_consent_token: params[:token])
 
       if fm.nil?
-        flash[:alert] = "Lyen sa a pa valid oswa li deja itilize."
+        flash[:alert] = t("alerts.family.invalid_link")
         redirect_to root_path and return
       end
 
       if fm.link_confirmed?
-        flash[:info] = "Relasyon sa a deja konfime."
+        flash[:info] = t("alerts.family.already_confirmed")
         redirect_to root_path and return
       end
 
       fm.confirm_link!(ip: request.remote_ip)
       fm.update!(verification_status: :verified)
 
-      # Real-time update on the citizen's dashboard
-      Turbo::StreamsChannel.broadcast_replace_to(
-        "citizen_#{fm.user_id}_family",
-        target: "family-member-#{fm.id}",
-        partial: "citizens/dashboard/family_member_item",
-        locals: { fm: fm }
-      )
+      # Real-time update on the citizen's dashboard — rendered in *their*
+      # portal language, not the confirming visitor's.
+      I18n.with_locale(fm.user.portal_locale) do
+        Turbo::StreamsChannel.broadcast_replace_to(
+          "citizen_#{fm.user_id}_family",
+          target: "family-member-#{fm.id}",
+          partial: "citizens/dashboard/family_member_item",
+          locals: { fm: fm }
+        )
+      end
 
-      flash[:success] = "Mèsi! Ou konfime relasyon fanmi ak #{fm.user.first_name} #{fm.user.last_name}."
+      flash[:success] = t("alerts.family.confirmed", name: "#{fm.user.first_name} #{fm.user.last_name}")
       redirect_to root_path
     end
 
@@ -39,12 +42,12 @@ module Citizens
       fm = FamilyMember.find_by(link_consent_token: params[:token])
 
       if fm.nil?
-        flash[:alert] = "Lyen sa a pa valid oswa li deja itilize."
+        flash[:alert] = t("alerts.family.invalid_link")
         redirect_to root_path and return
       end
 
       if fm.link_confirmed?
-        flash[:info] = "Relasyon sa a deja konfime. Kontakte sipò si gen yon erè."
+        flash[:info] = t("alerts.family.already_confirmed_support")
         redirect_to root_path and return
       end
 
@@ -63,7 +66,7 @@ module Citizens
         )
       )
 
-      flash[:info] = "Ou refize relasyon sa a. Done ou pa pataje."
+      flash[:info] = t("alerts.family.declined")
       redirect_to root_path
     end
   end

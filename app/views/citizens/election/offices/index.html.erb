@@ -4,10 +4,10 @@
 
   <div class="ballot-head text-center">
     <h1 class="ballot-title">
-      <i class="ri-map-pin-line me-2"></i>Biwo BED / BEK
+      <i class="ri-map-pin-line me-2"></i><%= t("citizen_portal.election.misc.offices_title") %>
     </h1>
     <p class="ballot-subtitle mb-0">
-      Biwo CEP kote w ka ale pou èd ak enskripsyon
+      <%= t("citizen_portal.election.misc.offices_subtitle") %>
     </p>
   </div>
 
@@ -15,9 +15,9 @@
     <div class="col-lg-9">
 
       <% all_groups = [
-        ["BEK — nan komin ou a", @bek_offices, "ri-community-line"],
-        ["BED — nan depatman ou a", @bed_offices, "ri-building-line"],
-        ["Lòt biwo ki louvri", @fallback_offices, "ri-map-2-line"]
+        [t("citizen_portal.election.misc.group_bek"), @bek_offices, "ri-community-line"],
+        [t("citizen_portal.election.misc.group_bed"), @bed_offices, "ri-building-line"],
+        [t("citizen_portal.election.misc.group_other"), @fallback_offices, "ri-map-2-line"]
       ] %>
 
       <% if all_groups.all? { |_, list, _| list.empty? } %>
@@ -26,10 +26,9 @@
             <div class="election-icon-circle" style="background: #FEF3C7;">
               <i class="ri-information-line" style="color: #D97706;"></i>
             </div>
-            <h5 class="fw-bold mb-2">Pa gen biwo ki disponib</h5>
+            <h5 class="fw-bold mb-2"><%= t("citizen_portal.election.misc.no_offices") %></h5>
             <p class="text-muted mb-0 small">
-              CEP poko ajoute BED/BEK yo nan sistèm BonID. Tcheke retounen
-              byento oswa vizite <a href="https://cephaiti.ht" target="_blank" rel="noopener">cephaiti.ht</a>.
+              <%= t("citizen_portal.election.misc.no_offices_body_html") %>
             </p>
           </div>
         </div>
@@ -68,7 +67,7 @@
                     <span>
                       <i class="ri-circle-fill me-1"
                          style="color: <%= o.status == 'open' ? '#16A34A' : '#D97706' %>; font-size: 0.5rem;"></i>
-                      <%= o.status.titleize %>
+                      <%= t("citizen_portal.election.misc.office_statuses.#{o.status}", default: o.status.titleize) %>
                     </span>
                   </div>
                 </div>
@@ -79,7 +78,7 @@
       <% end %>
 
       <div class="text-center mt-4">
-        <%= link_to "Retounen Eleksyon Mwen", citizens_election_enrollment_path,
+        <%= link_to t("citizen_portal.election.misc.back_to_election"), citizens_election_enrollment_path,
                     class: "btn btn-outline-primary" %>
       </div>
     </div>

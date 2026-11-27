@@ -70,6 +70,21 @@ class QrScan < ApplicationRecord
     end
   end
 
+  # The IP lookup's org is the scanner's network provider, e.g.
+  # "AS7922 Comcast Cable Communications, LLC". For citizen-facing copy,
+  # drop the AS number and legal suffix → "Comcast Cable Communications".
+  LEGAL_SUFFIX = /[,\s]+(L\.?L\.?C|Inc|Incorporated|Ltd|Limited|Corp|Corporation|Co|S\.?A\.?S?|GmbH|PLC|B\.?V|LP)\.?\z/i
+
+  def self.short_organization(org)
+    name = org.to_s.strip.sub(/\AAS\d+\s+/i, "")
+    name = name.sub(LEGAL_SUFFIX, "") while name.match?(LEGAL_SUFFIX)
+    name.strip.presence
+  end
+
+  def short_organization
+    self.class.short_organization(organization)
+  end
+
   private
 
   # === Auto context inference (FIXED) ===

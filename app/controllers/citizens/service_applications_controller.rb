@@ -10,6 +10,7 @@
 #
 module Citizens
   class ServiceApplicationsController < Citizens::BaseController
+    include CitizenServicesPausable # v1 launch: paused unless CITIZEN_SERVICES_ENABLED=true (see concern)
     before_action :set_citizen
     before_action :enable_immersive_form, only: [ :new, :create, :show ]
     before_action :find_application, only: [ :show, :update, :submit, :receipt ]
@@ -142,7 +143,7 @@ module Citizens
     # ============================================================
     def update
       unless @application.status == "draft"
-        redirect_to citizens_service_application_path(@application), alert: "Aplikasyon sa a deja soumèt."
+        redirect_to citizens_service_application_path(@application), alert: t("alerts.services.already_submitted")
         return
       end
 
@@ -159,7 +160,7 @@ module Citizens
         # Auto-save between steps — redirect back to form
         redirect_to citizens_service_application_path(@application, step: params[:next_step])
       else
-        redirect_to citizens_service_application_path(@application), notice: "Done sove."
+        redirect_to citizens_service_application_path(@application), notice: t("alerts.services.draft_saved")
       end
     end
 
@@ -195,7 +196,7 @@ module Citizens
     # ============================================================
     def submit
       unless @application.status == "draft"
-        redirect_to citizens_service_application_path(@application), alert: "Aplikasyon sa a deja soumèt."
+        redirect_to citizens_service_application_path(@application), alert: t("alerts.services.already_submitted")
         return
       end
 
@@ -222,7 +223,7 @@ module Citizens
         @partner = @application.partner
         @schema = @application.partner_schema
         prepare_form_data
-        flash.now[:alert] = "Tanpri ranpli tout chan obligatwa: #{missing.join(', ')}"
+        flash.now[:alert] = t("alerts.services.required_fields", fields: missing.join(", "))
         render :new, status: :unprocessable_entity
         return
       end
@@ -260,7 +261,7 @@ module Citizens
             return
           rescue => e
             Rails.logger.error("Zellus checkout failed: #{e.message}")
-            flash[:alert] = "Peman Zellus echwe: #{e.message}"
+            flash[:alert] = t("alerts.services.zellus_failed")
             @partner = @application.partner
             @schema = @application.partner_schema
             prepare_form_data
@@ -278,7 +279,7 @@ module Citizens
       end
 
       redirect_to receipt_citizens_service_application_path(@application),
-                  notice: "Aplikasyon soumèt avèk siksè!"
+                  notice: t("alerts.services.submitted")
     end
 
     # ============================================================
@@ -316,14 +317,14 @@ module Citizens
           )
           @application.submit! if @application.draft?
           redirect_to receipt_citizens_service_application_path(@application),
-                      notice: "Peman reyisi! Aplikasyon soumèt."
+                      notice: t("alerts.services.paid_submitted")
         else
-          flash[:alert] = "Peman pa konplete. Tanpri eseye ankò."
+          flash[:alert] = t("alerts.services.payment_incomplete")
           redirect_to citizens_service_application_path(@application)
         end
       rescue => e
         Rails.logger.error("Zellus callback error: #{e.message}")
-        flash[:alert] = "Erè nan verifikasyon peman."
+        flash[:alert] = t("alerts.services.payment_check_failed")
         redirect_to citizens_service_application_path(@application)
       end
     end

@@ -37,9 +37,7 @@
 .wallet-stack-container {
   position: relative;
   margin-bottom: 2rem;
-  // Reserve space for stacked cards peeking from top
-  // Must be >= health card's top (80px) so the red card peeks above BonID
-  padding-top: 96px;
+  // padding-top is set inline: 16px per enabled profile card (see view)
 }
 
 // Card wrapper for positioning - all cards stack with top edges peeking
@@ -98,31 +96,11 @@
     }
   }
 
-  // Stack positions - cards peek from TOP, each one higher
-  // First card (health) is closest to BonID, last card (physical) is at very top
-  &.stacked[data-card="health"] {
-    z-index: 46;
-    top: 80px;
-  }
-  &.stacked[data-card="bank"] {
-    z-index: 45;
-    top: 64px;
-  }
-  &.stacked[data-card="emergency"] {
-    z-index: 44;
-    top: 48px;
-  }
-  &.stacked[data-card="family"] {
-    z-index: 43;
-    top: 32px;
-  }
-  &.stacked[data-card="social"] {
-    z-index: 42;
-    top: 16px;
-  }
-  &.stacked[data-card="physical"] {
-    z-index: 41;
-    top: 0px;
+  // Stack positions — set per card from the view (wallet_stack_style), so
+  // only enabled cards stack and each peeks 16px above the one in front.
+  &.stacked {
+    top: var(--stack-top, 0px);
+    z-index: var(--stack-z, 41);
   }
 
   // Pushed back (BonID when viewing another card)
@@ -411,40 +389,152 @@
   }
 }
 
-.wallet-status {
-  .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.75rem;
+// "Active" status — under the name, next to the masked BonID
+.wallet-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(40, 167, 69, 0.25);
+  border: 1px solid rgba(40, 167, 69, 0.4);
+  color: #7dff9e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px rgba(125, 255, 158, 0.18);
+  }
+}
+
+// ⋮ menu — positioned on .wallet-card-wrapper over the card header
+.wallet-card-menu {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+  z-index: 5;
+}
+
+// Hide the menu when another profile card is in front
+.wallet-card-wrapper:not(.active) .wallet-card-menu {
+  display: none;
+}
+
+.wallet-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 1.4rem;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+
+  &:hover,
+  &:focus-visible,
+  &[aria-expanded="true"] {
+    opacity: 1;
+    outline: none;
+  }
+}
+
+.wallet-menu {
+  // Explicit width: the menu is anchored to a 36px button, so without this
+  // its width is computed from that tiny box. Cap it to the viewport on phones.
+  width: min(17.5rem, calc(100vw - 2rem));
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid #e9ecef;
+  border-radius: 0.85rem;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+
+  .dropdown-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.6rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #0f172a;
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    // Label (+ hint) takes the remaining width and wraps inside it
+    > span:not(.wallet-menu-soon) {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    > i {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      line-height: 1.2;
+      color: var(--haitian-blue, #00209F);
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: #f1f5ff;
+    }
+
+    &.disabled {
+      color: #94a3b8;
+      > i { color: #94a3b8; }
+    }
+  }
+
+  .wallet-menu-hint {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: #64748b;
+  }
+
+  .wallet-menu-soon {
+    flex-shrink: 0;
+    margin-left: auto;
+    align-self: center;
+    white-space: nowrap;
+    padding: 0.1rem 0.45rem;
     border-radius: 999px;
-    font-size: 0.75rem;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &.active {
-      background: rgba(40, 167, 69, 0.25);
-      color: #7dff9e;
-      border: 1px solid rgba(40, 167, 69, 0.4);
-    }
-
-    i {
-      font-size: 0.85rem;
-    }
+    letter-spacing: 0.4px;
   }
 }
 
 // ==========================================================
 // WALLET CARD BODY - Photo & Info
 // ==========================================================
+// Photo centered on top, name / BonID / status stacked under it — same
+// on desktop and phones.
 .wallet-card-body {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  text-align: center;
+  gap: 0.85rem;
   padding: 0.5rem 1.5rem 1.25rem;
   position: relative;
   z-index: 1;
+
+  .wallet-photo img { display: block; } // no inline-image baseline gap
+  .wallet-info { text-align: center; }
 }
 
 .wallet-photo {
@@ -491,11 +581,13 @@
 
   .wallet-bonid {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 0.9rem;
+    // Never wrap at the hyphens; shrink a little in narrow columns instead.
+    font-size: clamp(0.72rem, 0.6rem + 0.6vw, 0.9rem);
     font-weight: 500;
     color: rgba(255, 255, 255, 0.75);
     margin: 0;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
   }
 }
 
@@ -691,41 +783,6 @@
     letter-spacing: 0.3px;
   }
 }
-
-// ==========================================================
-// CERTIFICATE ACTION BUTTON
-// ==========================================================
-.certificate-action {
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.certificate-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #ffffff;
-  border: 1px solid #e9ecef;
-  border-radius: 999px;
-  color: var(--haitian-blue, #00209F);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: var(--haitian-blue, #00209F);
-    border-color: var(--haitian-blue, #00209F);
-    color: #ffffff;
-  }
-
-  i {
-    font-size: 1.1rem;
-  }
-}
-
 
 // ==========================================================
 // PENDING VERIFICATION STATE
@@ -1501,4 +1558,125 @@
       border-color: #fff;
     }
   }
+}
+
+/* ── Get started: vertical stepper (done → current → next) ── */
+.gs-stepper {
+  list-style: none;
+  max-width: 44rem;
+  margin: 0 auto 1.5rem;
+  padding: 0;
+}
+
+.gs-step {
+  position: relative;
+  display: flex;
+  gap: 0.9rem;
+  padding-bottom: 1rem;
+
+  /* connector line between markers */
+  &:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    top: 2.25rem;
+    bottom: 0.25rem;
+    width: 2px;
+    transform: translateX(-50%);
+    background: #e2e8f0;
+  }
+
+  &.is-done:not(:last-child)::before { background: #10B981; }
+}
+
+.gs-step__marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 2px solid #e2e8f0;
+
+  i { font-size: 1.05rem; }
+}
+
+.gs-step__body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+
+.gs-step__title {
+  margin: 0 0 0.15rem;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.gs-step__desc {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.gs-step__tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #00209F;
+
+  span { color: #64748b; font-weight: 400; }
+}
+
+/* Done: one quiet line with a green check */
+.gs-step.is-done {
+  .gs-step__marker { color: #fff; background: #10B981; border-color: #10B981; }
+  .gs-step__title { font-size: 0.92rem; color: #334155; }
+}
+
+/* Current: open card with the checklist and the button */
+.gs-step.is-current {
+  .gs-step__marker {
+    color: #fff;
+    background: #00209F;
+    border-color: #00209F;
+    box-shadow: 0 0 0 4px rgba(0, 32, 159, 0.12);
+  }
+
+  .gs-step__body {
+    padding: 1rem 1.1rem 1.1rem;
+    border: 1px solid rgba(0, 32, 159, 0.15);
+    border-radius: 0.9rem;
+    background: #ffffff;
+    box-shadow: 0 6px 18px -10px rgba(15, 23, 42, 0.18);
+  }
+
+  .gs-step__desc { margin-bottom: 0.35rem; }
+}
+
+/* Next: a short preview */
+.gs-step.is-next {
+  .gs-step__title { color: #475569; }
+}
+
+.gs-step__cta.election-btn-primary {
+  margin-top: 0.9rem;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+
+  @media (min-width: 576px) { width: auto; padding: 0.8rem 2rem; }
 }

@@ -5,14 +5,9 @@
 
     <!-- INTRO -->
     <div class="text-center mb-4 mb-lg-5">
-      <h2 class="display-5 fw-bold mb-3 font-heading">
-        Create Your BonID
+      <h2 class="display-5 fw-bold mb-0 font-heading">
+        <%= t("citizen_portal.auth.signup.left_title") %>
       </h2>
-
-      <p class="lead opacity-90 mx-auto max-w-text">
-        A private digital identity for citizens in Haiti,
-        secure, fast, and accepted everywhere that matters.
-      </p>
     </div>
 
     <!-- CAROUSEL -->
@@ -22,23 +17,21 @@
          data-bs-interval="9000">
 
       <div class="carousel-indicators position-static justify-content-center mb-3">
-        <% 5.times do |i| %>
+        <% 3.times do |i| %>
           <button type="button"
                   data-bs-target="#bonidCarousel"
                   data-bs-slide-to="<%= i %>"
                   class="<%= i.zero? ? 'active' : '' %>"
-                  aria-label="Slide <%= i + 1 %>"></button>
+                  aria-label="<%= t("citizen_portal.auth.signup.slide_aria", n: i + 1) %>"></button>
         <% end %>
       </div>
 
       <div class="carousel-inner">
 
         <% [
-          { icon: "ri-bank-line",        title: "Accepted at Major Institutions",  desc: "Recognized by banks, schools, hospitals, embassies, and police across Haiti." },
-          { icon: "ri-qr-code-line",     title: "Secure QR Sharing",               desc: "Share only what's needed using a time limited, encrypted QR code." },
-          { icon: "ri-eye-line",         title: "Full Visibility",                  desc: "See exactly when and where your BonID was used, always in your control." },
-          { icon: "ri-lock-2-line",      title: "Privacy by Design",               desc: "Your data is encrypted and never sold or shared without your explicit consent." },
-          { icon: "ri-global-line",      title: "Built for Haiti",                  desc: "Works reliably on slow networks and offline, designed for real conditions." }
+          { icon: "ri-qr-code-line",     title: t("citizen_portal.auth.signup.slides.qr.title"),           desc: t("citizen_portal.auth.signup.slides.qr.desc") },
+          { icon: "ri-eye-line",         title: t("citizen_portal.auth.signup.slides.visibility.title"),   desc: t("citizen_portal.auth.signup.slides.visibility.desc") },
+          { icon: "ri-lock-2-line",      title: t("citizen_portal.auth.signup.slides.privacy.title"),      desc: t("citizen_portal.auth.signup.slides.privacy.desc") }
         ].each_with_index do |slide, i| %>
           <div class="carousel-item <%= i.zero? ? 'active' : '' %> text-center px-3">
             <i class="<%= slide[:icon] %> ri-4x text-haitian-cyan mb-3"></i>
@@ -52,61 +45,39 @@
       </div>
     </div>
 
-    <!-- REQUIREMENTS -->
-    <div class="text-center mt-4">
-      <h5 class="fw-bold mb-3">What you will need to register</h5>
+    <!-- REQUIREMENTS — compact 2×2 grid + one-line disclaimer -->
+    <div class="auth-req">
+      <h3 class="auth-req__title font-heading"><%= t("citizen_portal.auth.signup.need_title") %></h3>
 
-      <div class="row g-3 justify-content-center mb-4">
+      <ul class="auth-req__grid">
         <% [
-          ["ri-id-card-line",   "CIN or passport"],
-          ["ri-camera-line",    "Clear selfie"],
-          ["ri-file-text-line", "Supporting doc"],
-          ["ri-mail-line",      "Email address"]
+          ["ri-id-card-line",    t("citizen_portal.auth.signup.need.id")],
+          ["ri-smartphone-line", t("citizen_portal.auth.signup.need.selfie")],
+          ["ri-file-text-line",  t("citizen_portal.auth.signup.need.doc")],
+          ["ri-mail-line",       t("citizen_portal.auth.signup.need.email")]
         ].each do |icon, label| %>
-          <div class="col-6 col-md-3">
-            <div class="text-center">
-              <div class="req-icon-wrap">
-                <i class="<%= icon %>"></i>
-              </div>
-              <div class="small fw-medium"><%= label %></div>
-            </div>
-          </div>
+          <li class="auth-req__item">
+            <i class="<%= icon %>" aria-hidden="true"></i><span><%= label %></span>
+          </li>
         <% end %>
-      </div>
-
-      <p class="small opacity-75 fst-italic">
-        BonID is a private digital identity service, not a government ID.
-        It does not replace your CIN or passport.
-      </p>
+      </ul>
     </div>
+
+    <!-- DISCLAIMER — pinned to the bottom of the panel -->
+    <p class="auth-req__note"><i class="ri-information-line" aria-hidden="true"></i><span><%= t("citizen_portal.auth.login.not_gov_id") %></span></p>
 
   </div>
 <% end %>
 
 
 <div class="login-card">
+  <%= render "citizens/shared/how_to_know" %>
 
   <%# Partner badge — shown at the very top when a partner is present %>
-  <% if params[:partner].present? %>
-    <% partner = Partner.find_by(slug: params[:partner]) %>
-    <% if partner %>
-      <div class="text-center mb-4 pb-4" style="border-bottom: 1px solid rgba(0,32,159,0.10);">
-        <% if partner.logo.attached? %>
-          <%= image_tag url_for(partner.logo),
-                alt: partner.name,
-                style: "max-height: 64px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto;" %>
-        <% else %>
-          <div style="width: 64px; height: 64px; background: rgba(0,32,159,0.08); border-radius: 50%;
-                      display: flex; align-items: center; justify-content: center; margin: 0 auto;
-                      border: 2px solid rgba(0,32,159,0.12);">
-            <i class="ri-building-line" style="font-size: 1.5rem; color: var(--primary);"></i>
-          </div>
-        <% end %>
-        <div class="small text-muted mt-2">
-          Signing up via <strong class="text-dark"><%= partner.name %></strong>
-        </div>
-      </div>
-    <% end %>
+  <% if @partner %>
+    <%= render "citizens/shared/partner_cobrand", partner: @partner,
+               caption: t("citizen_portal.auth.signup.via_html", partner: @partner.name),
+               show_name: false %>
   <% else %>
     <%# Icon badge — only shown when no partner %>
     <div class="text-center mb-4">
@@ -118,16 +89,16 @@
 
   <%# Flash rendered by citizen_auth layout %>
 
-  <% if params[:partner].blank? %>
-    <%# No partner warning %>
+  <% unless signup_unlocked? %>
+    <%# No green light (partner / launched commune / invite) — normally
+        unreachable, the controller sends these visitors to the waitlist %>
     <div class="alert alert-warning text-center py-4" role="alert">
       <i class="ri-error-warning-line fs-3 mb-3 d-block"></i>
-      <h5 class="fw-semibold">Partner Required</h5>
+      <h5 class="fw-semibold"><%= t("citizen_portal.auth.signup.partner_required") %></h5>
       <p class="mb-3 small">
-        You need to start your BonID sign up through a verified partner
-        (bank, hospital, government service, etc.).
+        <%= t("citizen_portal.auth.signup.partner_required_body") %>
       </p>
-      <%= link_to "Browse Verified Partners", partners_path, class: "btn btn-haitian-primary w-100" %>
+      <%= link_to t("citizen_portal.auth.signup.browse_partners"), partners_path, class: "btn btn-haitian-primary w-100" %>
     </div>
 
   <% else %>
@@ -145,56 +116,72 @@
     <%# Registration Form %>
     <%= simple_form_for(resource,
                         as: resource_name,
-                        url: registration_path(resource_name, partner: params[:partner]),
+                        url: registration_path(resource_name, signup_context_params),
                         html: {
                           class: "needs-validation",
                           novalidate: true,
-                          data: { turbo: false },
+                          data: { turbo: false, controller: "modal-form", modal_form_require_change_value: false },
                           id: "registration-form"
                         }) do |f| %>
 
-      <%= hidden_field_tag :partner, params[:partner] %>
+      <% signup_context_params.each do |name, value| %>
+        <%= hidden_field_tag name, value %>
+      <% end %>
 
       <div class="form-floating mb-3">
         <%= f.input_field :email,
               autofocus: true,
               autocomplete: "email",
               required: true,
-              placeholder: "you@example.com",
+              inputmode: "email",
+              placeholder: t("citizen_portal.auth.signup.email_placeholder"),
               class: "form-control" %>
-        <%= f.label :email, "Email Address" %>
+        <%= f.label :email, t("citizen_portal.auth.login.email_label") %>
       </div>
 
-      <%= f.button :submit, "Create Account",
+      <%# Emails go out in the language this page is in (saved as the
+          account's language, see RegistrationsController#build_resource);
+          "Change" opens the globe menu at the top right. %>
+      <p class="auth-email-language">
+        <i class="ri-mail-line" aria-hidden="true"></i>
+        <span><%= t("citizen_portal.auth.signup.email_language", language: { "ht" => "Kreyòl", "fr" => "français", "en" => "English" }.fetch(I18n.locale.to_s, "Kreyòl")) %></span>
+        <span aria-hidden="true">·</span>
+        <button type="button" class="auth-email-language__change"
+                data-controller="open-dropdown"
+                data-open-dropdown-toggle-value=".auth-lang-toggle"
+                data-action="open-dropdown#open"><%= t("citizen_portal.auth.signup.email_language_change") %></button>
+      </p>
+
+      <%= f.button :submit, t("citizen_portal.auth.signup.create"),
             class: "btn btn-haitian-primary w-100 mt-2",
             id: "submit-button",
-            data: { disable_with: '<span class="spinner-border spinner-border-sm me-2"></span>Creating account…' } %>
+            data: { processing_label: t("citizen_portal.auth.signup.creating"), modal_form_target: "submit" } %>
 
       <div class="trust-badge">
         <i class="ri-shield-check-line"></i>
-        <span>Secure &amp; encrypted</span>
+        <span><%= t("citizen_portal.auth.secure") %></span>
       </div>
 
       <div class="auth-privacy-note">
-        <i class="ri-lock-line"></i>We'll never share your email with third parties.
+        <i class="ri-lock-line"></i><%= t("citizen_portal.auth.login.never_share") %>
       </div>
     <% end %>
 
     <%# Divider %>
     <div class="login-divider my-4">
-      <span>or</span>
+      <span><%= t("citizen_portal.auth.or") %></span>
     </div>
 
     <%# Already have an account %>
     <div class="mb-3">
-      <%= link_to login_path(from_partner: params[:partner]),
+      <%= link_to login_path(from_partner: @partner&.slug),
             class: "btn btn-ghost-haitian w-100" do %>
-        <i class="ri-login-box-line me-2"></i>Already have an account? Sign in
+        <i class="ri-login-box-line me-2"></i><%= t("citizen_portal.auth.signup.have_account") %>
       <% end %>
     </div>
 
     <div class="auth-help-link">
-      <a href="mailto:support@bonid.ht">Need help?</a>
+      <a href="mailto:support@verifyem.ht"><%= t("citizen_portal.auth.need_help") %></a>
     </div>
   <% end %>
 </div>

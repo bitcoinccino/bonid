@@ -81,6 +81,35 @@ class QrScanLogger
     nil
   end
 
+  # For flows that already saved their own QrScan (the partner portal and
+  # agent "Scan / Look up BonID" pages, which also record charges and
+  # metadata): write the matching QrScanLog and email the citizen, as log!
+  # does. The citizen's bell and scan alert read QrScanLog only, so without
+  # this a partner or agent check never reached the citizen.
+  # Never raises: a logging or email problem must not break a lookup the
+  # partner has already paid for.
+  def self.log_existing!(qr_scan, source:)
+    scan_log = QrScanLog.create!(
+      qr_scan: qr_scan,
+      identity_submission: qr_scan.identity_submission,
+      partner: qr_scan.partner,
+      officer: qr_scan.officer,
+      ip_address: qr_scan.ip_address,
+      user_agent: qr_scan.user_agent,
+      scanned_at: qr_scan.scanned_at || Time.current,
+      source: normalize_source(source),
+      country: qr_scan.country,
+      city: qr_scan.city,
+      region: qr_scan.region,
+      organization: qr_scan.organization
+    )
+    Citizens::QrScanMailer.scan_alert(scan_log).deliver_later
+    scan_log
+  rescue => e
+    Rails.logger.error("[QrScanLogger] log_existing! #{e.class}: #{e.message}")
+    nil
+  end
+
   # ==================================================
   private
   # ==================================================
