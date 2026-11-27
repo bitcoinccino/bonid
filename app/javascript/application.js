@@ -268,11 +268,18 @@ function cleanupBootstrapModals() {
 document.addEventListener("turbo:before-cache", cleanupBootstrapModals);
 
 document.addEventListener("turbo:load", () => {
-  // Clean up any backdrops that survived the navigation
-  document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
-  document.body.classList.remove("modal-open");
-  document.body.style.removeProperty("overflow");
-  document.body.style.removeProperty("padding-right");
+  // Clean up any backdrops that survived the navigation, unless a modal is
+  // open right now: pages that open a modal on load (the waitlist form from a
+  // share link, after a server error, #enskri) need their backdrop.
+  // Bootstrap sets body.modal-open as soon as show() starts; .show on the
+  // modal only lands after the fade, so check both.
+  const modalOpening = document.body.classList.contains("modal-open") || document.querySelector(".modal.show")
+  if (!modalOpening) {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+  }
 
   initBootstrap();
   Chartkick?.eachChart((chart) => chart.redraw());

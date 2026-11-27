@@ -147,10 +147,10 @@
             <%= f.hidden_field :diaspora, id: "modal_diaspora", value: "0" %>
           </div>
 
-          <%# Haiti fields: Department → Commune %>
+          <%# Haiti fields: Department, then Commune once a department is picked %>
           <div id="modal-haiti-fields">
             <div class="row g-3 mb-3">
-              <div class="col-md-6">
+              <div class="col-12">
                 <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.department") %></label>
                 <select class="form-select enskri-input" id="modal_dept" onchange="modalLoadCommunes(this.value)">
                   <option value=""><%= t("main.signup_form.choose") %></option>
@@ -159,7 +159,7 @@
                   <% end %>
                 </select>
               </div>
-              <div class="col-md-6">
+              <div class="col-12" id="modal-commune-wrap" style="display: none;">
                 <label class="form-label fw-semibold enskri-label"><%= t("main.signup_form.commune") %></label>
                 <select name="waitlist_signup[commune_id]" class="form-select enskri-input" id="modal_commune" disabled>
                   <option value=""><%= t("main.signup_form.choose") %></option>
@@ -398,7 +398,7 @@
       var msg = document.createElement('div');
       msg.className = 'enskri-field-error';
       msg.textContent = e.msg;
-      (el.closest('.col-md-6, .mb-3') || el.parentNode).appendChild(msg);
+      (el.closest('.col-12, .col-md-6, .mb-3') || el.parentNode).appendChild(msg);
     });
     // Looks disabled but stays clickable: a click on it shows every missing
     // field instead of doing nothing.
@@ -506,6 +506,7 @@
       country.disabled = false;
       modalCountryChange(country.value);
       document.getElementById('modal_dept').value = '';
+      document.getElementById('modal-commune-wrap').style.display = 'none';
       var commune = document.getElementById('modal_commune');
       commune.innerHTML = '<option value="">' + modalData.choose + '</option>';
       commune.disabled = true;
@@ -630,6 +631,8 @@
 
   /* ── Commune AJAX ── */
   function modalLoadCommunes(deptId) {
+    // Commune appears only once a department is chosen
+    document.getElementById('modal-commune-wrap').style.display = deptId ? '' : 'none';
     var sel = document.getElementById('modal_commune');
     sel.innerHTML = '<option value="">' + modalData.choose + '</option>';
     sel.disabled = true;
@@ -681,7 +684,12 @@
 
     if (window.location.hash === '#enskri' || modalData.autoOpen === '1' ||
         document.querySelector('#enskriModal .alert-danger')) {
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('enskriModal')).show();
+      // Move it to <body> before showing (what the data-modal-portal hook
+      // does on turbo:load, which runs after this), so it opens where it
+      // will stay.
+      var modalEl = document.getElementById('enskriModal');
+      if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 
     document.getElementById('enskriModal').addEventListener('hidden.bs.modal', function() {
