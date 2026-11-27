@@ -27,6 +27,11 @@ module ApplicationHelper
     BontourisPausable.enabled?
   end
 
+  # IDPol in the public Products menu (off for v1: the site leads with BonID)
+  def idpol_enabled?
+    ActiveModel::Type::Boolean.new.cast(ENV.fetch("IDPOL_ENABLED", false))
+  end
+
   # Whether BonVote appears in the navbar product menu. Paused for v1: left
   # out of the menu entirely. Only the nav link is gated; /election/verify
   # and receipt verify stay public.

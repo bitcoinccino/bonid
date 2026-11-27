@@ -21,17 +21,20 @@ module NavbarHelper
       {
         label_key: "main.navbar.government",
         items: [
-          {
-            name: "IDPol",
-            description: t("main.navbar.idpol_desc"),
-            icon: "ri-shield-user-line",
-            path: new_officer_session_path,
-            # Shown but not clickable for v1 (the dropdown renders disabled items as a span).
-            disabled: true,
-            **soon_badge
-          },
-          # Paused for v1: BonVote and BonTouris are left out of the menu
-          # entirely until BONVOTE_ENABLED / BONTOURIS_ENABLED are turned on.
+          # Paused for v1 (focus on BonID): IDPol, BonVote and BonTouris are
+          # left out of the menu entirely until IDPOL_ENABLED /
+          # BONVOTE_ENABLED / BONTOURIS_ENABLED are turned on.
+          (if idpol_enabled?
+            {
+              name: "IDPol",
+              description: t("main.navbar.idpol_desc"),
+              icon: "ri-shield-user-line",
+              path: new_officer_session_path,
+              # Shown but not clickable yet (the dropdown renders disabled items as a span).
+              disabled: true,
+              **soon_badge
+            }
+          end),
           (if bonvote_enabled?
             {
               name: "BonVote",
@@ -63,7 +66,7 @@ module NavbarHelper
           }
         ]
       }
-    ]
+    ].reject { |g| g[:items].empty? } # no heading over an empty group (BonGouv while paused)
   end
 
   # Keep backwards-compat for any other views that call core_products
