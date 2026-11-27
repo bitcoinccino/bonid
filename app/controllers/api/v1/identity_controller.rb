@@ -452,7 +452,8 @@ module Api
           data: {
             bonid: user.bonid,
             masked_bonid: mask_bonid(user.bonid),
-            id_type: "BonID",
+            # Document the identity was verified with: "cin" or "passport"
+            id_type: submission.id_type,
             first_name: user.first_name,
             middle_name: user.middle_name,
             last_name: user.last_name,
@@ -546,7 +547,7 @@ module Api
           data: {
             bonid: visitor.bonid,
             masked_bonid: mask_bontouris(visitor.bonid),
-            id_type: "BonTouris",
+            id_type: "passport", # BonTouris visitors verify with their passport
             first_name: visitor.first_name,
             middle_name: visitor.middle_name,
             last_name: visitor.last_name,
@@ -593,9 +594,10 @@ module Api
 
         if user
           submission = user.verified_identity_submission
+          document = submission || user.identity_submissions.order(created_at: :desc).first
           result = {
             found: true,
-            id_type: "BonID",
+            id_type: document&.id_type, # "cin" / "passport" (nil before any submission)
             verified: submission.present?,
             status: submission.present? ? "verified" : "pending",
             expires_at: submission&.expires_at&.iso8601
@@ -615,7 +617,7 @@ module Api
         if visitor
           return {
             found: true,
-            id_type: "BonTouris",
+            id_type: "passport",
             verified: visitor.approved?,
             status: visitor.status,
             nationality: visitor.nationality,
@@ -632,7 +634,8 @@ module Api
         response = {
           status: "success",
           bonid: result[:data][:bonid],
-          id_type: result[:type].to_s,
+          id_type: result[:data][:id_type],   # document: "cin" / "passport"
+          holder_type: result[:type].to_s,    # "citizen" / "tourist"
           verified: result[:verified],
           identity: result[:data],
           partner: @partner&.name,
